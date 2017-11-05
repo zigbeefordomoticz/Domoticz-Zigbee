@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="gizmocuz" version="1.0.0" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="1.0.0" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default=""/>
 		<param field="Mode6" label="Debug" width="75px">
