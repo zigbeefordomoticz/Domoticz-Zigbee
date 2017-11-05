@@ -3,9 +3,10 @@
 # Author: zaraki673
 #
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="1.0.0" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.1" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
-		<param field="SerialPort" label="Serial Port" width="150px" required="true" default=""/>
+		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="">
+		</param>
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -16,15 +17,20 @@
 </plugin>
 """
 import Domoticz
+import datetime
+
 
 class BasePlugin:
 	enabled = False
+	lastHeartbeat = datetime.datetime.now()
+
 	def __init__(self):
 		#self.var = 123
 		return
 
 	def onStart(self):
 		Domoticz.Log("onStart called")
+		global ReqRcv
 		global SerialConn
 		if Parameters["Mode6"] == "Debug":
 			Domoticz.Debugging(1)
@@ -33,8 +39,8 @@ class BasePlugin:
 		SerialConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
 		SerialConn.Connect()
 		ReqRcv=''
-
 		
+
 	def onStop(self):
 		Domoticz.Log("onStop called")
 
@@ -44,6 +50,7 @@ class BasePlugin:
 		if (Status == 0):
 			isConnected = True
 			Domoticz.Log("Connected successfully to: "+Parameters["SerialPort"])
+			ZigateConf()
 		else:
 			Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Parameters["SerialPort"])
 			Domoticz.Debug("Failed to connect ("+str(Status)+") to: "+Parameters["SerialPort"]+" with error: "+Description)
@@ -65,15 +72,12 @@ class BasePlugin:
 			ReqRcv+=Tmprcv
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
-			########## TODO : verifier si une trame ZIA n est pas en milieu de message (2messages collés ou perturbation+ message accoller)
-			if ReqRcv.startswith("ZIA--{"):
-				Domoticz.Debug(ReqRcv)
-				ReadConf(ReqRcv)
-			if ReqRcv.startswith("ZIA33"):
-				Domoticz.Debug(ReqRcv)
-				ReadData(ReqRcv)
 			ReqRcv=''
 		self.lastHeartbeat = datetime.datetime.now()
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print(ReqRcv, file=text_file)
+		ReqRcv=""
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
@@ -140,3 +144,23 @@ def DumpConfigToLog():
 		Domoticz.Debug("Device sValue:   '" + Devices[x].sValue + "'")
 		Domoticz.Debug("Device LastLevel: " + str(Devices[x].LastLevel))
 	return
+
+def ZigateConf():
+	################### ZiGate - get status ##################
+	#lineinput="01021010021002101003".decode("hex") 
+	#SerialConn.Send(lineinput)
+	
+	#01 02 10 49 02 10 02 14 B0 FF FC FE 02 10 03  > passer en mode discover devices
+	
+	
+	################### ZiGate - set channel 11 ##################
+	lineinput="!-"   # convertion de "01 02 10 21 02 10 02 14 2D 02 10 02 10 02 18 02 10 03 " en ascii (hexa>ascii) 
+	SerialConn.Send(lineinput)
+
+	################### ZiGate - Set Type COORDINATOR#################
+	lineinput='#"'   ###"010210230210021122021003".decode("hex") 
+	SerialConn.Send(lineinput)
+	
+	################### ZiGate - start network##################
+	lineinput= '$$'   ##"01021024021002102403".decode("hex") 
+	SerialConn.Send(lineinput)
