@@ -18,7 +18,7 @@
 """
 import Domoticz
 import datetime
-
+import binascii
 
 class BasePlugin:
 	enabled = False
@@ -61,30 +61,31 @@ class BasePlugin:
 		global Tmprcv
 		global ReqRcv
 		###########################################
-		Tmprcv=Data.decode(errors='ignore')
+		#Tmprcv=Data.decode(errors='ignore')
+		Tmprcv=binascii.hexlify(Data).decode('utf-8')
+		
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print(Tmprcv, file=text_file)
+		
 		################## check if more than 1 sec between two message, if yes clear ReqRcv
 		lastHeartbeatDelta = (datetime.datetime.now()-self.lastHeartbeat).total_seconds()
 		if (lastHeartbeatDelta > 1):
 			ReqRcv=''
 			Domoticz.Debug("Last Message was "+str(lastHeartbeatDelta)+" seconds ago, Message clear")
-		#Wait not end of data '\r'
-		if Tmprcv.endswith('\r',0,len(Tmprcv))==False :
+		#Wait not end of data '03'
+		if Tmprcv.endswith('03',0,len(Tmprcv))==True :
 			ReqRcv+=Tmprcv
+			ZigateDecode(ReqRcv)
+			ReqRcv=""
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
-			ReqRcv=''
+			#ReqRcv=''
 		self.lastHeartbeat = datetime.datetime.now()
-		if Parameters["Mode6"] == "Debug":
-			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print(ReqRcv, file=text_file)
-		ReqRcv=""
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
 		Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level))
-
-	def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
-		Domoticz.Log("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
 
 	def onDisconnect(self, Connection):
 		Domoticz.Log("onDisconnect called")
@@ -118,10 +119,6 @@ def onCommand(Unit, Command, Level, Hue):
 	global _plugin
 	_plugin.onCommand(Unit, Command, Level, Hue)
 
-def onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile):
-	global _plugin
-	_plugin.onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile)
-
 def onDisconnect(Connection):
 	global _plugin
 	_plugin.onDisconnect(Connection)
@@ -154,13 +151,21 @@ def ZigateConf():
 	
 	
 	################### ZiGate - set channel 11 ##################
-	lineinput="!-"   # convertion de "01 02 10 21 02 10 02 14 2D 02 10 02 10 02 18 02 10 03 " en ascii (hexa>ascii) 
-	SerialConn.Send(lineinput)
+	lineinput="01 02 10 21 02 10 02 14 2D 02 10 02 10 02 18 02 10 03 "
+	SerialConn.Send(bytes.fromhex(lineinput))
 
 	################### ZiGate - Set Type COORDINATOR#################
-	lineinput='#"'   ###"010210230210021122021003".decode("hex") 
-	SerialConn.Send(lineinput)
+	lineinput="010210230210021122021003"
+	SerialConn.Send(bytes.fromhex(lineinput))
 	
 	################### ZiGate - start network##################
-	lineinput= '$$'   ##"01021024021002102403".decode("hex") 
-	SerialConn.Send(lineinput)
+	lineinput= "01021024021002102403" 
+	SerialConn.Send(bytes.fromhex(lineinput))
+
+def ZigateDecode(Data):
+	if Parameters["Mode6"] == "Debug":
+		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+			print("decodind data : " + Tmprcv, file=text_file)
+	return
+	
+	
