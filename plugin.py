@@ -17,12 +17,12 @@
 </plugin>
 """
 import Domoticz
-import datetime
+#import datetime
 import binascii
 
 class BasePlugin:
 	enabled = False
-	lastHeartbeat = datetime.datetime.now()
+#	lastHeartbeat = datetime.datetime.now()
 
 	def __init__(self):
 		#self.var = 123
@@ -64,24 +64,27 @@ class BasePlugin:
 		#Tmprcv=Data.decode(errors='ignore')
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		
-		if Parameters["Mode6"] == "Debug":
-			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print(Tmprcv, file=text_file)
+#		if Parameters["Mode6"] == "Debug":
+#			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+#				print(Tmprcv, file=text_file)
 		
-		################## check if more than 1 sec between two message, if yes clear ReqRcv
-		lastHeartbeatDelta = (datetime.datetime.now()-self.lastHeartbeat).total_seconds()
-		if (lastHeartbeatDelta > 1):
-			ReqRcv=''
-			Domoticz.Debug("Last Message was "+str(lastHeartbeatDelta)+" seconds ago, Message clear")
-		#Wait not end of data '03'
+		################## si 1 secondes de delai entre deux receptions , efface ReqRcv
+#		lastHeartbeatDelta = (datetime.datetime.now()-self.lastHeartbeat).total_seconds()
+#		if (lastHeartbeatDelta > 1):
+#			if Parameters["Mode6"] == "Debug":
+#				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+#					print("Clear cache ReqRcv after : "+str(lastHeartbeatDelta)+" seconds" , file=text_file)
+#			ReqRcv=""
+#			Domoticz.Debug("Last Message was "+str(lastHeartbeatDelta)+" seconds ago, Message clear")
+		#verifie si la fin de trame est arrivé, '03'
 		if Tmprcv.endswith('03',0,len(Tmprcv))==True :
-			ReqRcv+=Tmprcv
-			ZigateDecode(ReqRcv)
-			ReqRcv=""
+			ReqRcv+=Tmprcv #
+			ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
+			ReqRcv=""  # efface le tampon
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 			#ReqRcv=''
-		self.lastHeartbeat = datetime.datetime.now()
+#		self.lastHeartbeat = datetime.datetime.now()
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
@@ -91,7 +94,7 @@ class BasePlugin:
 		Domoticz.Log("onDisconnect called")
 
 	def onHeartbeat(self):
-		Domoticz.Log("onHeartbeat called")
+#		Domoticz.Log("onHeartbeat called")
 		if (SerialConn.Connected() != True):
 			SerialConn.Connect()
 		return True
@@ -165,7 +168,10 @@ def ZigateConf():
 def ZigateDecode(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-			print("decodind data : " + Tmprcv, file=text_file)
+			print("decodind data : " + Data, file=text_file)
+	
+	#transcode(Data,From)
+	
 	return
 	
 	
