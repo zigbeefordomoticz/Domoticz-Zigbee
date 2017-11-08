@@ -17,12 +17,10 @@
 </plugin>
 """
 import Domoticz
-#import datetime
 import binascii
 
 class BasePlugin:
 	enabled = False
-#	lastHeartbeat = datetime.datetime.now()
 
 	def __init__(self):
 		#self.var = 123
@@ -60,31 +58,14 @@ class BasePlugin:
 		Domoticz.Log("onMessage called")
 		global Tmprcv
 		global ReqRcv
-		###########################################
-		#Tmprcv=Data.decode(errors='ignore')
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		
-#		if Parameters["Mode6"] == "Debug":
-#			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-#				print(Tmprcv, file=text_file)
-		
-		################## si 1 secondes de delai entre deux receptions , efface ReqRcv
-#		lastHeartbeatDelta = (datetime.datetime.now()-self.lastHeartbeat).total_seconds()
-#		if (lastHeartbeatDelta > 1):
-#			if Parameters["Mode6"] == "Debug":
-#				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-#					print("Clear cache ReqRcv after : "+str(lastHeartbeatDelta)+" seconds" , file=text_file)
-#			ReqRcv=""
-#			Domoticz.Debug("Last Message was "+str(lastHeartbeatDelta)+" seconds ago, Message clear")
-		#verifie si la fin de trame est arrivé, '03'
 		if Tmprcv.endswith('03',0,len(Tmprcv))==True :
 			ReqRcv+=Tmprcv #
-			ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
+			Zdata=ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
+			ZigateRead(Zdata)
 			ReqRcv=""  # efface le tampon
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
-			#ReqRcv=''
-#		self.lastHeartbeat = datetime.datetime.now()
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
@@ -169,9 +150,32 @@ def ZigateDecode(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("decodind data : " + Data, file=text_file)
+	Out=""
+	Outtmp=""
+	Transcode = False
+	for c in Data :
+		Outtmp+=c
+		if len(Outtmp)==2 :
+			if Outtmp == "02" :
+				Transcode=True
+			else :
+				if Transcode == True:
+					Transcode = False
+					if Outtmp[0]=="1" :
+						Out+="0"
+					else :
+						Out+="1"
+					Out+=Outtmp[1]
+					#Out+=str(int(str(Outtmp)) - 10)
+				else :
+					Out+=Outtmp
+			Outtmp=""
 	
-	#transcode(Data,From)
+	return Out
 	
-	return
-	
-	
+def ZigateRead(Data):
+	if Parameters["Mode6"] == "Debug":
+		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+			print("decoded data : " + Data, file=text_file)	
+
+	return 
