@@ -59,12 +59,12 @@ class BasePlugin:
 		global Tmprcv
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		#if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
-		if Tmprcv.find('03') != -1 :### fin de messages detecter dans Data
-			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
+		if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
+		#if Tmprcv.find('03') != -1 :### fin de messages detecter dans Data
+			ReqRcv+=Tmprcv #[:Tmprcv.find('03')+2] #
 			Zdata=ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
 			ZigateRead(Zdata)
-			ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon
+			ReqRcv="" #Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
