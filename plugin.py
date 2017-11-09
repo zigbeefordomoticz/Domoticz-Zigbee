@@ -59,11 +59,12 @@ class BasePlugin:
 		global Tmprcv
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		if Tmprcv.endswith('03',0,len(Tmprcv))==True :
-			ReqRcv+=Tmprcv #
+		#if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
+		if Tmprcv.find('03') != -1 :### fin de messages detecter dans Data
+			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
 			Zdata=ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
 			ZigateRead(Zdata)
-			ReqRcv=""  # efface le tampon
+			ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
@@ -145,8 +146,12 @@ def ZigateConf():
 	################### ZiGate - start network##################
 	lineinput= "01021024021002102403" 
 	SerialConn.Send(bytes.fromhex(lineinput))
+	
+	################### ZiGate - discover mode 30sec ##################
+	lineinput= "0102104902100214B0FFFCFE021003" 
+	SerialConn.Send(bytes.fromhex(lineinput))	
 
-def ZigateDecode(Data):
+def ZigateDecode(Data):  # supprime le transcodage
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("decodind data : " + Data, file=text_file)
@@ -177,5 +182,147 @@ def ZigateRead(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("decoded data : " + Data, file=text_file)	
+	
+#Trame série													
+#													
+#0	 1	 2	 3	 4 	 5 	 6	 7	 8 	 9	 10	 11	 12	14 16 18 20 22 24 26 28 30 32 34 36 38 ...											
+#1		|2		|3		|4		|5		|6		|7  											|n+8	|n+9
+#0x01	|		|		|n				|		|												|		|0x03
+#Start	| MSG TYPE		|LENGTH			|CHKSM	|DATA											|RSSI	|STOP
+#		
+#01		 81		 02		 00		 0f		 06		 b9 cd 4d 01 04 03 00 10 00 29 00 02 27 3a		 93		 03			
+#01		 81		 02		 00		 0f		 89		 50 2a 61 01 04 02 00 00 00 29 00 02 07 fa		 cf 	 03		
+#01		 81		 02		 00		 0e		 c6		 c0 cd 4d 01 04 03 00 14 00 28 00 01 ff 		 cf 	 03
+#01		 81		 02		 00		 0f		 f9		 d6 cd 4d 01 04 05 00 00 00 21 00 02 16 d9 		 cf	 	 03
+#01		 81		 02		 00		 32		 c3		 bd cd 4d 01 00 00 ff 01 00 42 00 25 01 21 bd 0b 04 21 a8 13 05 21 06 00 06 24 01 00 00 00 00 64 29 75 07 65 21 22 16 66 2b b0 89 01 00 0a 21 00 00 	 cf		 03
+#01		 81		 02		 00		 0F		 AB		 02 6F 2F 01 04 02 00 00 00 29 00 02 09 89 		 C9		 03
+						
+	MsgType=Data[2:6]
+	MsgData=Data[12:len(Data)-4]
+	MsgRSSI=Data[len(Data)-4:len(Data)-2]
+	MsgLength=Data[6:10]
+	MsgCRC=Data[10:12]
+	if Parameters["Mode6"] == "Debug":
+		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+			print("Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)	
 
+	
+	if str(MsgType)=="8000":  # Status
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception status : " + Data, file=text_file)	
+			
+	elif str(MsgType)=="8102":  # Report Individual Attribute response
+		MsgSQN=Data[12:14]
+		MsgSrcAddr=Data[14:18]
+		MsgSrcEp=Data[18:20]
+		MsgClusterId=Data[20:24]
+		
+		if MsgClusterId=="0402" :  # Measurement: Temperature
+			MsgValue=Data[len(Data)-6:len(Data)-4]
+			SetTempHum(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),80)
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("reception temp : " + int(MsgValue,16) , file=text_file)	
+					
+		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique
+			MsgValue=Data[len(Data)-6:len(Data)-4]
+			SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),246)
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("reception atm : " + int(MsgValue,16) , file=text_file)	
+								
+		elif MsgClusterId=="0405" :  # Measurement: Humidity
+			MsgValue=Data[len(Data)-6:len(Data)-4]
+			SetTempHum(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),81)
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("reception hum : " + int(MsgValue,16) , file=text_file)	
+								
+		else :
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("Error/unknow Cluster Message : " + MsgClusterId, file=text_file)	
+					
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception data : " + Data + " ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)	
+				
+				
+	else: # unknow or not dev function
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("Unknow Message Type " + MsgType, file=text_file)	
+						
+	
 	return 
+
+	
+def SetTempHum(Addr,Ep, value, type):
+	IsCreated=False
+	x=0
+	nbrdevices=1
+	DeviceID=int(Addr,16)
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID):
+			IsCreated = True
+			Domoticz.Log("Devices already exist. Unit=" + str(x))
+			nbrdevices=x
+		if IsCreated == False :
+			nbrdevices=x
+	if IsCreated == False :
+		nbrdevices=nbrdevices+1
+		Domoticz.Device(DeviceID=str(DeviceID),Name="Temp - " + str(DeviceID), Unit=nbrdevices, Type=type, Switchtype=0).Create()
+		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
+	elif IsCreated == True :
+		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
+	#####################################################################################################################
+
+	
+def SetATM(Addr,Ep, value, type):
+	IsCreated=False
+	x=0
+	nbrdevices=1
+	DeviceID=int(Addr,16)
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID):
+			IsCreated = True
+			Domoticz.Log("Devices already exist. Unit=" + str(x))
+			nbrdevices=x
+		if IsCreated == False :
+			nbrdevices=x
+	if IsCreated == False :
+		nbrdevices=nbrdevices+1
+		Domoticz.Device(DeviceID=str(DeviceID),Name="ATM - " + str(DeviceID), Unit=nbrdevices, Type=243, Subtype=26, Switchtype=0).Create()
+		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
+	elif IsCreated == True :
+		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
+	#####################################################################################################################
+
+
+
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
