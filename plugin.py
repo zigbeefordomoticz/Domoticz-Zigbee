@@ -59,12 +59,18 @@ class BasePlugin:
 		global Tmprcv
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
-		#if Tmprcv.find('03') != -1 :### fin de messages detecter dans Data
-			ReqRcv+=Tmprcv #[:Tmprcv.find('03')+2] #
-			Zdata=ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
-			ZigateRead(Zdata)
-			ReqRcv="" #Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon
+		#if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
+		if Tmprcv.find('03') != -1 :### fin de messages detecter dans Data
+			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
+			try :
+				Zdata=ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
+				ZigateRead(Zdata)
+				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+			except :
+				if Parameters["Mode6"] == "Debug":
+					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+						print("effacement du tampon suite erreur de decodage : " + ReqRcv, file=text_file)
+				ReqRcv = "" # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
@@ -195,6 +201,7 @@ def ZigateRead(Data):
 #01		 81		 02		 00		 0e		 c6		 c0 cd 4d 01 04 03 00 14 00 28 00 01 ff 		 cf 	 03
 #01		 81		 02		 00		 0f		 f9		 d6 cd 4d 01 04 05 00 00 00 21 00 02 16 d9 		 cf	 	 03
 #01		 81		 02		 00		 32		 c3		 bd cd 4d 01 00 00 ff 01 00 42 00 25 01 21 bd 0b 04 21 a8 13 05 21 06 00 06 24 01 00 00 00 00 64 29 75 07 65 21 22 16 66 2b b0 89 01 00 0a 21 00 00 	 cf		 03
+#01		 81		 02		 00		 0e		 98		 c7	cd 4d 01 04 03 00 14 00 28 00 01 ff 		 96		 03
 #01		 81		 02		 00		 0F		 AB		 02 6F 2F 01 04 02 00 00 00 29 00 02 09 89 		 C9		 03
 						
 	MsgType=Data[2:6]
@@ -219,25 +226,26 @@ def ZigateRead(Data):
 		MsgClusterId=Data[20:24]
 		
 		if MsgClusterId=="0402" :  # Measurement: Temperature
-			MsgValue=Data[len(Data)-6:len(Data)-4]
-			SetTempHum(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),80)
+			MsgValue=Data[len(Data)-8:len(Data)-4]
+			SetTemp(MsgSrcAddr,MsgSrcEp,int(MsgValue,16)/100,80)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("reception temp : " + MsgValue , file=text_file)	
+					print("reception temp : " + str(int(MsgValue,16)/100) , file=text_file)	
 					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique
-			MsgValue=Data[len(Data)-6:len(Data)-4]
-			SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),246)
-			if Parameters["Mode6"] == "Debug":
-				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("reception atm : " + MsgValue , file=text_file)	
+			if str(Data[30:32])=="28":
+				MsgValue=Data[len(Data)-8:len(Data)-4]
+				SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,8)/100,243)
+				if Parameters["Mode6"] == "Debug":
+					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+						print("reception atm : " + str(int(MsgValue,8)/100) , file=text_file)	
 								
 		elif MsgClusterId=="0405" :  # Measurement: Humidity
-			MsgValue=Data[len(Data)-6:len(Data)-4]
-			SetTempHum(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),81)
+			MsgValue=Data[len(Data)-8:len(Data)-4]
+			SetHum(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),81)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("reception hum : " + MsgValue , file=text_file)	
+					print("reception hum : " + str(int(MsgValue,16)/100) , file=text_file)	
 								
 		else :
 			if Parameters["Mode6"] == "Debug":
@@ -258,13 +266,18 @@ def ZigateRead(Data):
 	return 
 
 	
-def SetTempHum(Addr,Ep, value, type):
+def SetTemp(Addr,Ep, value, type):
 	IsCreated=False
 	x=0
 	nbrdevices=1
 	DeviceID=int(Addr,16)
+	if str(type)=="80" :
+		typename = "Temperature"
+	if str(type)=="81" :
+		typename = "Humidity"
+		
 	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID):
+		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
 			IsCreated = True
 			Domoticz.Log("Devices already exist. Unit=" + str(x))
 			nbrdevices=x
@@ -272,10 +285,35 @@ def SetTempHum(Addr,Ep, value, type):
 			nbrdevices=x
 	if IsCreated == False :
 		nbrdevices=nbrdevices+1
-		Domoticz.Device(DeviceID=str(DeviceID),Name="Temp - " + str(DeviceID), Unit=nbrdevices, Type=type, Switchtype=0).Create()
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename).Create()
 		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
 	elif IsCreated == True :
 		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
+	#####################################################################################################################
+
+def SetHum(Addr,Ep, value, type):
+	IsCreated=False
+	x=0
+	nbrdevices=1
+	DeviceID=int(Addr,16)
+	if str(type)=="80" :
+		typename = "Temperature"
+	if str(type)=="81" :
+		typename = "Humidity"
+		
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
+			IsCreated = True
+			Domoticz.Log("Devices already exist. Unit=" + str(x))
+			nbrdevices=x
+		if IsCreated == False :
+			nbrdevices=x
+	if IsCreated == False :
+		nbrdevices=nbrdevices+1
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename).Create()
+		Devices[nbrdevices].Update(nValue = int(value), sValue = "0")
+	elif IsCreated == True :
+		Devices[nbrdevices].Update(nValue = int(value), sValue = "0")
 	#####################################################################################################################
 
 	
@@ -285,7 +323,7 @@ def SetATM(Addr,Ep, value, type):
 	nbrdevices=1
 	DeviceID=int(Addr,16)
 	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID):
+		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
 			IsCreated = True
 			Domoticz.Log("Devices already exist. Unit=" + str(x))
 			nbrdevices=x
@@ -293,7 +331,7 @@ def SetATM(Addr,Ep, value, type):
 			nbrdevices=x
 	if IsCreated == False :
 		nbrdevices=nbrdevices+1
-		Domoticz.Device(DeviceID=str(DeviceID),Name="ATM - " + str(DeviceID), Unit=nbrdevices, Type=243, Subtype=26, Switchtype=0).Create()
+		Domoticz.Device(DeviceID=str(DeviceID),Name="ATM - " + str(DeviceID), Unit=nbrdevices, TypeName="Pressure").Create()
 		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
 	elif IsCreated == True :
 		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
