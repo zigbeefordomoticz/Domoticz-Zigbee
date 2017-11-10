@@ -233,16 +233,28 @@ def ZigateRead(Data):
 					print("reception temp : " + str(int(MsgValue,16)/100) , file=text_file)	
 					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique
-			if str(Data[30:32])=="28":
+			if str(Data[26:32])=="000028":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
-				SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,8)/100,243)
+				SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,8),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("reception atm : " + str(int(MsgValue,8)/100) , file=text_file)	
+						print("reception atm : " + str(int(MsgValue,8)) , file=text_file)
+			if str(Data[26:32])=="100029":
+				MsgValue=Data[len(Data)-8:len(Data)-4]
+				SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,8),243)
+				if Parameters["Mode6"] == "Debug":
+					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+						print("reception atm : " + str(int(MsgValue,16)) , file=text_file)
+			if str(Data[26:32])=="000029":
+				MsgValue=Data[len(Data)-8:len(Data)-4]
+				SetATM(MsgSrcAddr,MsgSrcEp,int(MsgValue,8),243)
+				if Parameters["Mode6"] == "Debug":
+					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+						print("reception atm : " + str(int(MsgValue,16)/100) , file=text_file)	
 								
 		elif MsgClusterId=="0405" :  # Measurement: Humidity
 			MsgValue=Data[len(Data)-8:len(Data)-4]
-			SetHum(MsgSrcAddr,MsgSrcEp,int(MsgValue,16),81)
+			SetHum(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100),81)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("reception hum : " + str(int(MsgValue,16)/100) , file=text_file)	
