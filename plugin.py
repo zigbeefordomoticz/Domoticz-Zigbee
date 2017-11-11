@@ -213,12 +213,227 @@ def ZigateRead(Data):
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)	
 
+
+	if str(MsgType)=="004D":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Device announce : " + Data, file=text_file)	
+
+	elif str(MsgType)=="00D1":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Touchlink status : " + Data, file=text_file)	
 	
-	if str(MsgType)=="8000":  # Status
+	elif str(MsgType)=="8000":  # Status
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception status : " + Data, file=text_file)	
-			
+
+	elif str(MsgType)=="8001":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception log : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8002":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Data indication : " + Data, file=text_file)	
+	
+	elif str(MsgType)=="8003":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Liste des cluster de l'objet : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8004":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Liste des attributs de l'objet : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8005":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Liste des commandes de l'objet : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8006":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Non factory new restart : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8007":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Factory new restart : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8010":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Version list : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8014":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Permit join status response : " + Data, file=text_file)	
+				
+	elif str(MsgType)=="8024":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Network joined /formed : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8028":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Authenticate response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8029":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Out of band commissioning data response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="802B":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception User descriptor notify : " + Data, file=text_file)	
+
+	elif str(MsgType)=="802C":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception User descriptor response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8030":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Bind response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8031":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Unbind response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8034":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Coplex Descriptor response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8040":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Network address response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8041":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception IEEE address response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8042":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Node descriptor response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8043":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Simple descriptor response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8044":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Power descriptor response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8045":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Active endpoint response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8046":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Match descriptor response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8047":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Management leave response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8048":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Leave indication : " + Data, file=text_file)	
+
+	elif str(MsgType)=="804A":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Management Network Update response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="804B":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception System server discovery response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="804E":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Management LQI response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8060":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Add group response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8061":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Viex group response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8062":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Get group Membership response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8063":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Remove group response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="80A0":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception View scene response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="80A1":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Add scene response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="80A2":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Remove scene response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="80A3":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Remove all scene response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="80A4":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Store scene response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="80A6":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Scene membership response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8100":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Real individual attribute response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8101":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Default response : " + Data, file=text_file)	
+
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
 		MsgSQN=Data[12:14]
 		MsgSrcAddr=Data[14:18]
@@ -232,7 +447,7 @@ def ZigateRead(Data):
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("reception temp : " + str(int(MsgValue,16)/100) , file=text_file)	
 					
-		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique
+		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[26:32])=="000028":
 				MsgValue=Data[len(Data)-6:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,8)),243)
@@ -267,6 +482,36 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception data : " + Data + " ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)	
+
+	elif str(MsgType)=="8110":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Write attribute response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8120":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Configure reporting response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8140":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Attribute discovery response : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8401":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Zone status change notification : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8701":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception Router discovery confirm : " + Data, file=text_file)	
+
+	elif str(MsgType)=="8702":  # 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("reception APS Data confirm fail : " + Data, file=text_file)	
 				
 				
 	else: # unknow or not dev function
