@@ -158,7 +158,7 @@ def ZigateDecode(Data):  # supprime le transcodage
 	Out=""
 	Outtmp=""
 	Transcode = False
-	if Data[1]=="1":
+	if Data[0]=="1":
 		Data="0"+Data
 	if len(Data)%2!=0 :
 			if Parameters["Mode6"] == "Debug":
