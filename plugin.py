@@ -485,7 +485,7 @@ def ZigateRead(Data):
 					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[28:32])=="0028":
-				MsgValue=Data[len(Data)-6:len(Data)-4]
+				MsgValue=Data[len(Data)-6:len(Data)-4] ##bug !!!!!!!!!!!!!!!!
 				SetATM(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,8)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
