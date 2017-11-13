@@ -205,7 +205,10 @@ def ZigateRead(Data):
 			print("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)
 
 
-	if str(MsgType)=="004D":  #
+	if str(MsgType)=="004D":  # Device announce
+		MsgSrcAddr=MsgData[0:4]
+		MsgIEEE=MsgData[4:12]
+		MsgMacCap=MsgData[12:14]
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Device announce : " + Data, file=text_file)
@@ -216,14 +219,39 @@ def ZigateRead(Data):
 				print("reception Touchlink status : " + Data, file=text_file)
 
 	elif str(MsgType)=="8000":  # Status
+		MsgDataLenght=MsgData[0:4]
+		MsgDataStatus=MsgData[4:6]
+		if MsgDataStatus=="00" :
+			MsgDataStatus="Success"
+		elif MsgDataStatus=="01" :
+			MsgDataStatus="Incorrect Parameters"
+		elif MsgDataStatus=="02" :
+			MsgDataStatus="Unhandled Command"
+		elif MsgDataStatus=="03" :
+			MsgDataStatus="Command Failed"
+		elif MsgDataStatus=="04" :
+			MsgDataStatus="Busy"
+		elif MsgDataStatus=="05" :
+			MsgDataStatus="Stack Already Started"
+		else :
+			MsgDataStatus="ZigBee Error Code "+ MsgDataStatus
+		MsgDataSQN=MsgData[6:8]
+		if int(MsgDataLenght,16) > 2 :
+			MsgDataMessage=MsgData[8:len(MsgData)]
+		else :
+			MsgDataMessage=""
+		
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("ZigateRead - MsgType 8000 - reception status : ", file=text_file)
-
-	elif str(MsgType)=="8001":  #
+				print("ZigateRead - MsgType 8000 - reception status : " + MsgDataStatus + ", SQN : " + MsgDataSQN + ", Message : " + MsgDataMessage, file=text_file)
+		
+	elif str(MsgType)=="8001":  # Log
+		MsgLogLvl=MsgData[0:2]
+		MsgDataMessage=MsgData[2:len(MsgData)]
+		
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception log : " + Data, file=text_file)
+				print("reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage, file=text_file)
 
 	elif str(MsgType)=="8002":  #
 		if Parameters["Mode6"] == "Debug":
@@ -255,7 +283,9 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Factory new restart : " + Data, file=text_file)
 
-	elif str(MsgType)=="8010":  #
+	elif str(MsgType)=="8010":  # Version
+		MsgDataApp=MsgData[0:4]
+		MsgDataSDK=MsgData[4:8]
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Version list : " + Data, file=text_file)
@@ -426,15 +456,25 @@ def ZigateRead(Data):
 				print("reception Default response : " + Data, file=text_file)
 
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
-		MsgSQN=Data[12:14]
-		MsgSrcAddr=Data[14:18]
-		MsgSrcEp=Data[18:20]
-		MsgClusterId=Data[20:24]
+		MsgSQN=MsgData[0:2]
+		MsgSrcAddr=MsgData[2:6]
+		MsgSrcEp=MsgData[6:8]
+		MsgClusterId=MsgData[8:12]
+		MsgAttrID=MsgData[12:16]
+		MsgAttType=MsgData[16:20]
+		MsgAttSize=MsgData[20:24]
+		MsgClusterData=MsgData[24:len(MsgData)]
 
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
 
+		if MsgClusterId=="0000" :
+				
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + str(MsgClusterData) , file=text_file)
+						
 		if MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			SetTemp(MsgSrcAddr,MsgSrcEp,int(MsgValue,16)/100,80)
@@ -444,7 +484,7 @@ def ZigateRead(Data):
 		
 					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
-			if str(Data[26:32])=="000028":
+			if str(Data[28:32])=="0028":
 				MsgValue=Data[len(Data)-6:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,8)),243)
 				if Parameters["Mode6"] == "Debug":
@@ -452,7 +492,7 @@ def ZigateRead(Data):
 						print("ZigateRead - MsgType 8102 - reception atm : " + str(int(MsgValue,8)) , file=text_file)
 			if str(Data[26:32])=="000029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
-				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16)/100,1)),243)
+				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16),1)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 						print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/100,1)) , file=text_file)
