@@ -5,8 +5,7 @@
 """
 <plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.1" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
-		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="">
-		</param>
+		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -60,16 +59,15 @@ class BasePlugin:
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		#if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
-		if Tmprcv.find('03') != -1 :### fin de messages detecter dans Data
+		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
 			try :
-				Zdata=ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
-				ZigateRead(Zdata)
+				ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
 				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
 			except :
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("effacement du tampon suite erreur de decodage : " + ReqRcv, file=text_file)
+						print("onMessage - effacement du tampon suite erreur de decodage : " + ReqRcv, file=text_file)
 				ReqRcv = "" # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
@@ -136,7 +134,7 @@ def DumpConfigToLog():
 def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
-	lineinput="01 02 10 21 02 10 02 14 2D 02 10 02 10 02 18 02 10 03 "
+	lineinput="01021021021002142D021002100218021003"
 	SerialConn.Send(bytes.fromhex(lineinput))
 
 	################### ZiGate - Set Type COORDINATOR#################
@@ -154,41 +152,33 @@ def ZigateConf():
 def ZigateDecode(Data):  # supprime le transcodage
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-			print("decodind data : " + Data, file=text_file)
+			print("ZigateDecode - decodind data : " + Data, file=text_file)
 	Out=""
 	Outtmp=""
 	Transcode = False
-	if Data[0]=="1":
-		Data="0"+Data
-	if len(Data)%2!=0 :
-			if Parameters["Mode6"] == "Debug":
-				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("error decodind data not pair : " + Data, file=text_file)
-	else :
-		for c in Data :
-			Outtmp+=c
-			if len(Outtmp)==2 :
-				if Outtmp == "02" :
-					Transcode=True
-				else :
-					if Transcode == True:
-						Transcode = False
-						if Outtmp[0]=="1" :
-							Out+="0"
-						else :
-							Out+="1"
-						Out+=Outtmp[1]
-						#Out+=str(int(str(Outtmp)) - 10)
+	for c in Data :
+		Outtmp+=c
+		if len(Outtmp)==2 :
+			if Outtmp == "02" :
+				Transcode=True
+			else :
+				if Transcode == True:
+					Transcode = False
+					if Outtmp[0]=="1" :
+						Out+="0"
 					else :
-						Out+=Outtmp
-				Outtmp=""
-
-	return Out
+						Out+="1"
+					Out+=Outtmp[1]
+					#Out+=str(int(str(Outtmp)) - 10)
+				else :
+					Out+=Outtmp
+			Outtmp=""
+	ZigateRead(Out)
 
 def ZigateRead(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-			print("decoded data : " + Data, file=text_file)
+			print("ZigateRead - decoded data : " + Data, file=text_file)
 
 #Trame série
 #
@@ -212,7 +202,7 @@ def ZigateRead(Data):
 	MsgCRC=Data[10:12]
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-			print("Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)
+			print("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)
 
 
 	if str(MsgType)=="004D":  #
@@ -228,7 +218,7 @@ def ZigateRead(Data):
 	elif str(MsgType)=="8000":  # Status
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception status : " + Data, file=text_file)
+				print("ZigateRead - MsgType 8000 - reception status : ", file=text_file)
 
 	elif str(MsgType)=="8001":  #
 		if Parameters["Mode6"] == "Debug":
@@ -441,48 +431,49 @@ def ZigateRead(Data):
 		MsgSrcEp=Data[18:20]
 		MsgClusterId=Data[20:24]
 
+		if Parameters["Mode6"] == "Debug":
+			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+				print("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
+
 		if MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			SetTemp(MsgSrcAddr,MsgSrcEp,int(MsgValue,16)/100,80)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("reception temp : " + str(int(MsgValue,16)/100) , file=text_file)
-
+					print("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) , file=text_file)
+		
+					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[26:32])=="000028":
 				MsgValue=Data[len(Data)-6:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,8)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("reception atm : " + str(int(MsgValue,8)) , file=text_file)
+						print("ZigateRead - MsgType 8102 - reception atm : " + str(int(MsgValue,8)) , file=text_file)
 			if str(Data[26:32])=="000029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16)/100,1)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("reception atm : " + str(round(int(MsgValue,16)/100,1)) , file=text_file)
+						print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/100,1)) , file=text_file)
 			if str(Data[26:32])=="100029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16)/10,1)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("reception atm : " + str(round(int(MsgValue,16)/10,1)) , file=text_file)
+						print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/10,1)) , file=text_file)
 
 		elif MsgClusterId=="0405" :  # Measurement: Humidity
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			SetHum(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100),81)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("reception hum : " + str(int(MsgValue,16)/100) , file=text_file)
+					print("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) , file=text_file)
 
 		else :
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("Error/unknow Cluster Message : " + MsgClusterId, file=text_file)
-
-		if Parameters["Mode6"] == "Debug":
-			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception data : " + Data + " ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
+					print("ZigateRead - MsgType 8102 - Error/unknow Cluster Message : " + MsgClusterId, file=text_file)
 
 	elif str(MsgType)=="8110":  #
 		if Parameters["Mode6"] == "Debug":
@@ -518,7 +509,7 @@ def ZigateRead(Data):
 	else: # unknow or not dev function
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("Unknow Message Type " + MsgType, file=text_file)
+				print("ZigateRead - Unknow Message Type " + MsgType, file=text_file)
 
 
 	return
@@ -534,6 +525,8 @@ def SetTemp(Addr,Ep, value, type):
 	if str(type)=="81" :
 		typename = "Humidity"
 
+	#Domoticz.Log("Devices already exist. Unit=" + str(x))
+		
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
 			IsCreated = True
