@@ -67,8 +67,8 @@ class BasePlugin:
 			except :
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("onMessage - effacement du tampon suite erreur de decodage : " + ReqRcv, file=text_file)
-				ReqRcv = "" # efface le tampon en cas d erreur
+						print("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv, file=text_file)
+				ReqRcv = ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
@@ -487,19 +487,17 @@ def ZigateRead(Data):
 				print("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
 
 		if MsgClusterId=="0000" :
-			
-			if MsgAttrID=="FF01" :
-				MsgBattery=MsgClusterData[61]+MsgClusterData[63]+MsgClusterData[62]
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + str(MsgClusterData) , file=text_file)			
+			if MsgAttrID=="ff01" :
+				MsgBattery=MsgClusterData[61:64]
+				MsgBattery=MsgBattery[0:1]+MsgBattery[2:3]+MsgBattery[1:2]
 				MsgBattery=round(int(MsgBattery,16)/100,2)
 				UpdateBattery(MsgSrcAddr,MsgBattery)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 						print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : " + MsgBattery + "% pour le device addr : " +  MsgSrcAddr, file=text_file)
-			
-			
-			if Parameters["Mode6"] == "Debug":
-				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + str(MsgClusterData) , file=text_file)
 						
 		if MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
@@ -673,9 +671,9 @@ def UpdateBattery(DeviceID,BatteryLvl):
 			nbrdevices=x
 		if IsCreated == False :
 			nbrdevices=x
-	if IsCreated == False :
+	#if IsCreated == False :
 		# rien à faire
-	elif IsCreated == True :
+	if IsCreated == True :
 		Devices[nbrdevices].Update(nValue = Devices[nbrdevices].nValue,sValue = Devices[nbrdevices].sValue, BatteryLevel = BatteryLvl)
 	#####################################################################################################################
 
