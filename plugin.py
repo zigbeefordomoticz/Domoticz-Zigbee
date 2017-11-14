@@ -350,10 +350,16 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Node descriptor response : " + Data, file=text_file)
 
-	elif str(MsgType)=="8043":  #
+	elif str(MsgType)=="8043":  # Simple Descriptor Response
+		MsgDataSQN=MsgData[0:2]
+		MsgDataStatus=MsgData[2:4]
+		MsgDataShAddr=MsgData[4:8]
+		MsgDataLenght=MsgData[8:10]
+			# if int(MsgDataLenght,16)>0 :
+				# MsgDataEp=MsgData[8:10]
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception Simple descriptor response : " + Data, file=text_file)
+				print("reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght " + MsgDataLenght, file=text_file)
 
 	elif str(MsgType)=="8044":  #
 		if Parameters["Mode6"] == "Debug":
