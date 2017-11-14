@@ -489,23 +489,33 @@ def ZigateRead(Data):
 		if MsgClusterId=="0000" :
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + str(MsgClusterData) , file=text_file)			
+					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + MsgClusterData , file=text_file)			
 			if MsgAttrID=="ff01" :
 				MsgBattery=MsgClusterData[61:64]
-				MsgBattery=MsgBattery[0:1]+MsgBattery[2:3]+MsgBattery[1:2]
-				MsgBattery=round(int(MsgBattery,16)/100,2)
-				UpdateBattery(MsgSrcAddr,MsgBattery)
-				if Parameters["Mode6"] == "Debug":
-					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-						print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : " + MsgBattery + "% pour le device addr : " +  MsgSrcAddr, file=text_file)
-						
-		if MsgClusterId=="0402" :  # Measurement: Temperature
+				try :
+					MsgBattery=MsgBattery[0:1]+MsgBattery[2:3]+MsgBattery[1:2]
+					MsgBattery=round(int(MsgBattery,16)/100,2)
+					UpdateBattery(MsgSrcAddr,MsgBattery)
+					if Parameters["Mode6"] == "Debug":
+						with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+							print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : " + MsgBattery + "% pour le device addr : " +  MsgSrcAddr, file=text_file)
+				except :
+					if Parameters["Mode6"] == "Debug":
+						with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+							print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : erreur de lecture pour le device addr : " +  MsgSrcAddr, file=text_file)
+							
+		elif MsgClusterId=="0006" :  # General: On/Off
+			SetSwitch(MsgSrcAddr,MsgSrcEp,MsgValue,16)
+			if Parameters["Mode6"] == "Debug":
+				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+					print("ZigateRead - MsgType 8102 - reception General: On/Off : " + str(MsgClusterData) , file=text_file)			
+		
+		elif MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			SetTemp(MsgSrcAddr,MsgSrcEp,int(MsgValue,16)/100,80)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) , file=text_file)
-		
 					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[28:32])=="0028":
@@ -584,6 +594,36 @@ def ZigateRead(Data):
 
 
 	return
+	
+
+
+
+def SetSwitch(Addr,Ep, value, type):
+	IsCreated=False
+	x=0
+	nbrdevices=1
+	DeviceID=int(Addr,16)
+
+	#Domoticz.Log("Devices already exist. Unit=" + str(x))
+	if str(type)=="16" : 
+		TypeName="Swich"
+	if value == "01" :
+		state="On"
+	elif value == "00" :
+		state="Off"
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
+			IsCreated = True
+			Domoticz.Log("Devices already exist. Unit=" + str(x))
+			nbrdevices=x
+		if IsCreated == False :
+			nbrdevices=x
+	if IsCreated == False :
+		nbrdevices=nbrdevices+1
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename).Create()
+		Devices[nbrdevices].Update(nValue = int(value),sValue = str(state))
+	elif IsCreated == True :
+		Devices[nbrdevices].Update(nValue = int(value),sValue = str(state))
 
 
 def SetTemp(Addr,Ep, value, type):
