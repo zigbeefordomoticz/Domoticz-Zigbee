@@ -484,10 +484,19 @@ def ZigateRead(Data):
 
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
+				print("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
 
 		if MsgClusterId=="0000" :
-				
+			
+			if MsgAttrID=="FF01" :
+				MsgBattery=MsgClusterData[61]+MsgClusterData[63]+MsgClusterData[62]
+				MsgBattery=round(int(MsgBattery,16)/100,2)
+				UpdateBattery(MsgSrcAddr,MsgBattery)
+				if Parameters["Mode6"] == "Debug":
+					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+						print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : " + MsgBattery + "% pour le device addr : " +  MsgSrcAddr, file=text_file)
+			
+			
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + str(MsgClusterData) , file=text_file)
@@ -651,3 +660,25 @@ def SetATM(Addr,Ep, value, type):
 	elif IsCreated == True :
 		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
 	#####################################################################################################################
+
+def UpdateBattery(DeviceID,BatteryLvl):
+	IsCreated=False
+	x=0
+	nbrdevices=1
+	DeviceID=int(Addr,16)
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID):
+			IsCreated = True
+			Domoticz.Log("Devices already exist. Unit=" + str(x))
+			nbrdevices=x
+		if IsCreated == False :
+			nbrdevices=x
+	if IsCreated == False :
+		# rien à faire
+	elif IsCreated == True :
+		Devices[nbrdevices].Update(nValue = Devices[nbrdevices].nValue,sValue = Devices[nbrdevices].sValue, BatteryLevel = BatteryLvl)
+	#####################################################################################################################
+
+
+
+	
