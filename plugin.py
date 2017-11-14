@@ -208,10 +208,10 @@ def ZigateRead(Data):
 	if str(MsgType)=="004D":  # Device announce
 		MsgSrcAddr=MsgData[0:4]
 		MsgIEEE=MsgData[4:12]
-		MsgMacCap=MsgData[12:14]
+		MsgMacCapa=MsgData[12:14]
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception Device announce : " + Data, file=text_file)
+				print("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa, file=text_file)
 
 	elif str(MsgType)=="00D1":  #
 		if Parameters["Mode6"] == "Debug":
@@ -360,10 +360,16 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Power descriptor response : " + Data, file=text_file)
 
-	elif str(MsgType)=="8045":  #
+	elif str(MsgType)=="8045":  # Active Endpoints Response
+		MsgDataSQN=MsgData[0:2]
+		MsgDataStatus=MsgData[2:4]
+		MsgDataShAddr=MsgData[4:8]
+		MsgDataEpCount=MsgData[8:10]
+		MsgDataEPlist=MsgData[10:len(MsgData)]
+		
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception Active endpoint response : " + Data, file=text_file)
+				print("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list" + MsgDataEPlist, file=text_file)
 
 	elif str(MsgType)=="8046":  #
 		if Parameters["Mode6"] == "Debug":
@@ -450,10 +456,15 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Real individual attribute response : " + Data, file=text_file)
 
-	elif str(MsgType)=="8101":  #
+	elif str(MsgType)=="8101":  # Default Response
+		MsgDataSQN=MsgData[0:2]
+		MsgDataEp=MsgData[2:4]
+		MsgClusterId=MsgData[4:8]
+		MsgDataCommand=MsgData[8:10]
+		MsgDataStatus=MsgData[10:12]
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception Default response : " + Data, file=text_file)
+				print("reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus, file=text_file)
 
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
 		MsgSQN=MsgData[0:2]
@@ -540,10 +551,17 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Router discovery confirm : " + Data, file=text_file)
 
-	elif str(MsgType)=="8702":  #
+	elif str(MsgType)=="8702":  # APS Data Confirm Fail
+		MsgDataStatus=MsgData[0:2]
+		MsgDataSrcEp=MsgData[2:4]
+		MsgDataDestEp=MsgData[4:6]
+		MsgDataDestMode=MsgData[6:8]
+		MsgDataDestAddr=MsgData[8:12]
+		MsgDataSQN=MsgData[12:14]
+		
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				print("reception APS Data confirm fail : " + Data, file=text_file)
+				print("reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN, file=text_file)
 
 
 	else: # unknow or not dev function
