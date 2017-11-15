@@ -146,7 +146,7 @@ def ZigateConf():
 	SerialConn.Send(bytes.fromhex(lineinput))
 
 	################### ZiGate - discover mode 30sec ##################
-	lineinput= "0102104902100214B0FFFCFE021003"
+	lineinput= "0102104902100214B0FFFCE1021003"
 	SerialConn.Send(bytes.fromhex(lineinput))
 
 def ZigateDecode(Data):  # supprime le transcodage
@@ -205,15 +205,15 @@ def ZigateRead(Data):
 			print("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)
 
 
-	if str(MsgType)=="004D":  # Device announce
+	if str(MsgType)=="004d":  # Device announce
 		MsgSrcAddr=MsgData[0:4]
-		MsgIEEE=MsgData[4:12]
-		MsgMacCapa=MsgData[12:14]
+		MsgIEEE=MsgData[4:20]
+		MsgMacCapa=MsgData[20:22]
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa, file=text_file)
 
-	elif str(MsgType)=="00D1":  #
+	elif str(MsgType)=="00d1":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Touchlink status : " + Data, file=text_file)
@@ -310,12 +310,12 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Out of band commissioning data response : " + Data, file=text_file)
 
-	elif str(MsgType)=="802B":  #
+	elif str(MsgType)=="802b":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception User descriptor notify : " + Data, file=text_file)
 
-	elif str(MsgType)=="802C":  #
+	elif str(MsgType)=="802c":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception User descriptor response : " + Data, file=text_file)
@@ -392,17 +392,17 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Leave indication : " + Data, file=text_file)
 
-	elif str(MsgType)=="804A":  #
+	elif str(MsgType)=="804a":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Management Network Update response : " + Data, file=text_file)
 
-	elif str(MsgType)=="804B":  #
+	elif str(MsgType)=="804b":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception System server discovery response : " + Data, file=text_file)
 
-	elif str(MsgType)=="804E":  #
+	elif str(MsgType)=="804e":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Management LQI response : " + Data, file=text_file)
@@ -427,32 +427,32 @@ def ZigateRead(Data):
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Remove group response : " + Data, file=text_file)
 
-	elif str(MsgType)=="80A0":  #
+	elif str(MsgType)=="80a0":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception View scene response : " + Data, file=text_file)
 
-	elif str(MsgType)=="80A1":  #
+	elif str(MsgType)=="80a1":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Add scene response : " + Data, file=text_file)
 
-	elif str(MsgType)=="80A2":  #
+	elif str(MsgType)=="80a2":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Remove scene response : " + Data, file=text_file)
 
-	elif str(MsgType)=="80A3":  #
+	elif str(MsgType)=="80a3":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Remove all scene response : " + Data, file=text_file)
 
-	elif str(MsgType)=="80A4":  #
+	elif str(MsgType)=="80a4":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Store scene response : " + Data, file=text_file)
 
-	elif str(MsgType)=="80A6":  #
+	elif str(MsgType)=="80a6":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Scene membership response : " + Data, file=text_file)
