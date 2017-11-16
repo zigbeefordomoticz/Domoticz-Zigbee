@@ -81,6 +81,7 @@ class BasePlugin:
 
 	def onHeartbeat(self):
 #		Domoticz.Log("onHeartbeat called")
+		#sendZigateCmd("0045","0002", "75de")    # Envoie une demande Active Endpoint request
 		if (SerialConn.Connected() != True):
 			SerialConn.Connect()
 		return True
@@ -134,8 +135,9 @@ def DumpConfigToLog():
 def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
-	lineinput="01021021021002142D021002100218021003"
-	SerialConn.Send(bytes.fromhex(lineinput))
+	#lineinput="01021021021002142D021002100218021003"
+	#SerialConn.Send(bytes.fromhex(lineinput))
+	sendZigateCmd("0021","0004", "00000800")
 
 	################### ZiGate - Set Type COORDINATOR#################
 	lineinput="010210230210021122021003"
@@ -146,7 +148,7 @@ def ZigateConf():
 	SerialConn.Send(bytes.fromhex(lineinput))
 
 	################### ZiGate - discover mode 30sec ##################
-	lineinput= "0102104902100214B0FFFCE1021003"
+	lineinput= " 01 02 10 49 02 10 02 14 B0 FF FC FE 02 10 03"
 	SerialConn.Send(bytes.fromhex(lineinput))
 
 def ZigateDecode(Data):  # supprime le transcodage
@@ -175,6 +177,44 @@ def ZigateDecode(Data):  # supprime le transcodage
 			Outtmp=""
 	ZigateRead(Out)
 
+def ZigateEncode(Data):  # ajoute le transcodage
+	if Parameters["Mode6"] == "Debug":
+		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+			print("ZigateDecode - Encodind data : " + Data, file=text_file)
+	Out=""
+	Outtmp=""
+	Transcode = False
+	for c in Data :
+		Outtmp+=c
+		if len(Outtmp)==2 :
+			#if int(Outtmp,16) <= int("10",16) :
+			#	Out+="02" + str(int(Outtmp,16) ^ 10)
+			#else :
+			#	Out+=Outtmp
+			if Outtmp[0] == "1" :
+				if Outtmp[1] == "0" :
+					Outtmp="0200"
+					Out+=Outtmp
+				else :
+					Out+=Outtmp
+			elif Outtmp[0] == "0" :
+				Out+="021" + Outtmp[1]
+			else :
+				Out+=Outtmp
+			Outtmp=""
+	Domoticz.Debug("Transcode in : " + str(Data) + "  / out :" + str(Out) )
+	return Out
+
+def sendZigateCmd(cmd,length,datas) :
+	if datas =="" :
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,"0")) + "03" 
+	else :
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03"   
+	Domoticz.Debug("Comand send : " + str(lineinput))
+	SerialConn.Send(bytes.fromhex(str(lineinput)))	
+#01 00 21 00 04 37 00 00 10 21 00 3
+
+	
 def ZigateRead(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
@@ -209,13 +249,15 @@ def ZigateRead(Data):
 		MsgSrcAddr=MsgData[0:4]
 		MsgIEEE=MsgData[4:20]
 		MsgMacCapa=MsgData[20:22]
-		Lineinput="0102104502100212FB" + MsgSrcAddr + "03"   # cheksum a recalculer ???  (FB)
-		SerialConn.Send(bytes.fromhex(lineinput))
-		
+	
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa, file=text_file)
 
+		#lineinput="0102104502100212"+ getChecksum() + str(MsgSrcAddr) + "03"   # cheksum a recalculer ???  (FB)   Envoie une demande Active Endpoint request
+		sendZigateCmd("0045","0002", MsgSrcAddr)    # Envoie une demande Active Endpoint request
+		#SerialConn.Send(bytes.fromhex(lineinput))
+		
 	elif str(MsgType)=="00d1":  #
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
@@ -600,7 +642,11 @@ def ZigateRead(Data):
 	return
 	
 
-
+def getChecksum(msgtype,length,datas) :
+	temp = 0 ^ int(msgtype[0:2],16) ^ int(msgtype[2:4],16) ^ int(length[0:2],16) ^ int(length[2:4],16)
+	for i in range(0,len(datas),2) :
+		temp ^= int(datas[i:i+1],16)
+	return temp
 
 def SetSwitch(Addr,Ep, value, type):
 	IsCreated=False
