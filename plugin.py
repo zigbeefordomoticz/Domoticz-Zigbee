@@ -1,11 +1,11 @@
 # Zigate Python Plugin
 #
 # Author: zaraki673
-#
+#<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
 """
 <plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.2" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
-		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
+		
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -68,6 +68,7 @@ class BasePlugin:
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 						print("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv, file=text_file)
+				Domoticz.Debug("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv)
 				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
@@ -136,6 +137,7 @@ def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
 	#lineinput="01021021021002142D021002100218021003"
+				
 	#SerialConn.Send(bytes.fromhex(lineinput))
 	sendZigateCmd("0021","0004", "00000800")
 
@@ -147,7 +149,7 @@ def ZigateConf():
 	lineinput= "01021024021002102403"
 	SerialConn.Send(bytes.fromhex(lineinput))
 
-	################### ZiGate - discover mode 30sec ##################
+	################### ZiGate - discover mode 255sec ##################
 	lineinput= " 01 02 10 49 02 10 02 14 B0 FF FC FE 02 10 03"
 	SerialConn.Send(bytes.fromhex(lineinput))
 
@@ -155,6 +157,7 @@ def ZigateDecode(Data):  # supprime le transcodage
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("ZigateDecode - decodind data : " + Data, file=text_file)
+	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
 	Out=""
 	Outtmp=""
 	Transcode = False
@@ -181,6 +184,7 @@ def ZigateEncode(Data):  # ajoute le transcodage
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("ZigateDecode - Encodind data : " + Data, file=text_file)
+	Domoticz.Debug("ZigateDecode - Encodind data : " + Data)
 	Out=""
 	Outtmp=""
 	Transcode = False
@@ -210,16 +214,19 @@ def sendZigateCmd(cmd,length,datas) :
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,"0")) + "03" 
 	else :
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03"   
-	Domoticz.Debug("Comand send : " + str(lineinput))
+	if Parameters["Mode6"] == "Debug":
+		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+			print("sendZigateCmd - Comand send : " + str(lineinput), file=text_file)
+	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
 	SerialConn.Send(bytes.fromhex(str(lineinput)))	
-#01 00 21 00 04 37 00 00 10 21 00 3
+
 
 	
 def ZigateRead(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("ZigateRead - decoded data : " + Data, file=text_file)
-
+	Domoticz.Debug("ZigateRead - decoded data : " + Data)
 #Trame série
 #
 #0	 1	 2	 3	 4 	 5 	 6	 7	 8 	 9	 10	 11	 12	14 16 18 20 22 24 26 28 30 32 34 36 38 ...
@@ -243,7 +250,7 @@ def ZigateRead(Data):
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC, file=text_file)
-
+	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
 
 	if str(MsgType)=="004d":  # Device announce
 		MsgSrcAddr=MsgData[0:4]
@@ -253,9 +260,9 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa, file=text_file)
-
+		Domoticz.Debug("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 		#lineinput="0102104502100212"+ getChecksum() + str(MsgSrcAddr) + "03"   # cheksum a recalculer ???  (FB)   Envoie une demande Active Endpoint request
-		sendZigateCmd("0045","0002", MsgSrcAddr)    # Envoie une demande Active Endpoint request
+		sendZigateCmd("0045","0002", str(MsgSrcAddr))    # Envoie une demande Active Endpoint request
 		#SerialConn.Send(bytes.fromhex(lineinput))
 		
 	elif str(MsgType)=="00d1":  #
@@ -289,7 +296,8 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("ZigateRead - MsgType 8000 - reception status : " + MsgDataStatus + ", SQN : " + MsgDataSQN + ", Message : " + MsgDataMessage, file=text_file)
-		
+		Domoticz.Debug("ZigateRead - MsgType 8000 - reception status : " + MsgDataStatus + ", SQN : " + MsgDataSQN + ", Message : " + MsgDataMessage)
+
 	elif str(MsgType)=="8001":  # Log
 		MsgLogLvl=MsgData[0:2]
 		MsgDataMessage=MsgData[2:len(MsgData)]
@@ -405,6 +413,7 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght " + MsgDataLenght, file=text_file)
+		Domoticz.Debug("reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght " + MsgDataLenght)
 
 	elif str(MsgType)=="8044":  #
 		if Parameters["Mode6"] == "Debug":
@@ -422,6 +431,7 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list" + MsgDataEPlist, file=text_file)
+		Domoticz.Debug("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list" + MsgDataEPlist)
 
 	elif str(MsgType)=="8046":  #
 		if Parameters["Mode6"] == "Debug":
@@ -517,6 +527,7 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus, file=text_file)
+		Domoticz.Debug("reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus)
 
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
 		MsgSQN=MsgData[0:2]
@@ -531,11 +542,13 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp, file=text_file)
-
+		Domoticz.Debug("ZigateRead - MsgType 8102 - reception data : " + Data + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
+				
 		if MsgClusterId=="0000" :
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + MsgClusterData , file=text_file)			
+					print("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + MsgClusterData , file=text_file)	
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception heartbeat (0000) : " + MsgClusterData)
 			if MsgAttrID=="ff01" :
 				MsgBattery=MsgClusterData[61:64]
 				try :
@@ -545,16 +558,19 @@ def ZigateRead(Data):
 					if Parameters["Mode6"] == "Debug":
 						with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 							print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : " + MsgBattery + "% pour le device addr : " +  MsgSrcAddr, file=text_file)
+					Domoticz.Debug("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : " + MsgBattery + "% pour le device addr : " +  MsgSrcAddr)
 				except :
 					if Parameters["Mode6"] == "Debug":
 						with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 							print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : erreur de lecture pour le device addr : " +  MsgSrcAddr, file=text_file)
+					Domoticz.Debug("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : erreur de lecture pour le device addr : " +  MsgSrcAddr)
 							
 		elif MsgClusterId=="0006" :  # General: On/Off
 			SetSwitch(MsgSrcAddr,MsgSrcEp,MsgClusterData,16)
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("ZigateRead - MsgType 8102 - reception General: On/Off : " + str(MsgClusterData) , file=text_file)			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception General: On/Off : " + str(MsgClusterData) )
 		
 		elif MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
@@ -562,6 +578,7 @@ def ZigateRead(Data):
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) , file=text_file)
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) )
 					
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[28:32])=="0028":
@@ -570,18 +587,21 @@ def ZigateRead(Data):
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 						print("ZigateRead - MsgType 8102 - reception atm : " + str(int(MsgValue,8)) , file=text_file)
+				Domoticz.Debug("ZigateRead - MsgType 8102 - reception atm : " + str(int(MsgValue,8)) )
 			if str(Data[26:32])=="000029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16),1)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 						print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/100,1)) , file=text_file)
+				Domoticz.Debug("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/100,1)))
 			if str(Data[26:32])=="100029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
 				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16)/10,1)),243)
 				if Parameters["Mode6"] == "Debug":
 					with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 						print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/10,1)) , file=text_file)
+				Domoticz.Debug("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/10,1)))
 
 		elif MsgClusterId=="0405" :  # Measurement: Humidity
 			MsgValue=Data[len(Data)-8:len(Data)-4]
@@ -589,11 +609,13 @@ def ZigateRead(Data):
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) , file=text_file)
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) )
 
 		else :
 			if Parameters["Mode6"] == "Debug":
 				with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					print("ZigateRead - MsgType 8102 - Error/unknow Cluster Message : " + MsgClusterId, file=text_file)
+			Domoticz.Debug("ZigateRead - MsgType 8102 - Error/unknow Cluster Message : " + MsgClusterId)
 
 	elif str(MsgType)=="8110":  #
 		if Parameters["Mode6"] == "Debug":
@@ -631,13 +653,13 @@ def ZigateRead(Data):
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN, file=text_file)
-
+		Domoticz.Debug("reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
 
 	else: # unknow or not dev function
 		if Parameters["Mode6"] == "Debug":
 			with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				print("ZigateRead - Unknow Message Type " + MsgType, file=text_file)
-
+		Domoticz.Debug("ZigateRead - Unknow Message Type " + MsgType)
 
 	return
 	
@@ -646,7 +668,12 @@ def getChecksum(msgtype,length,datas) :
 	temp = 0 ^ int(msgtype[0:2],16) ^ int(msgtype[2:4],16) ^ int(length[0:2],16) ^ int(length[2:4],16)
 	for i in range(0,len(datas),2) :
 		temp ^= int(datas[i:i+1],16)
-	return temp
+		chk=hex(temp)
+	if Parameters["Mode6"] == "Debug":
+		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
+			print("getChecksum - Checksum : " + chk, file=text_file)
+	Domoticz.Debug("getChecksum - Checksum : " + chk)
+	return chk[2:4]
 
 def SetSwitch(Addr,Ep, value, type):
 	IsCreated=False
