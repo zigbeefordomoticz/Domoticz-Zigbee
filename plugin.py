@@ -665,14 +665,22 @@ def ZigateRead(Data):
 	
 
 def getChecksum(msgtype,length,datas) :
-	temp = 0 ^ int(msgtype[0:2],16) ^ int(msgtype[2:4],16) ^ int(length[0:2],16) ^ int(length[2:4],16)
+	temp = 0 ^ int(msgtype[0:2],16) 
+	#Domoticz.Debug("getChecksum - msgtype[0:2] : " + str(msgtype[0:2]))
+	temp ^= int(msgtype[2:4],16) 
+	#Domoticz.Debug("getChecksum - msgtype[2:4] : " + str(msgtype[2:4]))
+	temp ^= int(length[0:2],16) 
+	#Domoticz.Debug("getChecksum - length[0:2] : " + str(length[0:2]))
+	temp ^= int(length[2:4],16)
+	#Domoticz.Debug("getChecksum - length[2:4] : " + str(length[2:4]))
 	for i in range(0,len(datas),2) :
-		temp ^= int(datas[i:i+1],16)
+		temp ^= int(datas[i:i+2],16)
+		#Domoticz.Debug("getChecksum - datas[" + str(i) + ":" + str(i+2) + "] : " + str(datas[i:i+2]))
 		chk=hex(temp)
 	if Parameters["Mode6"] == "Debug":
 		with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			print("getChecksum - Checksum : " + chk, file=text_file)
-	Domoticz.Debug("getChecksum - Checksum : " + chk)
+	Domoticz.Debug("getChecksum - Checksum : " + str(chk))
 	return chk[2:4]
 
 def SetSwitch(Addr,Ep, value, type):
