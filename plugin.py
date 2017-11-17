@@ -137,21 +137,24 @@ def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
 	#lineinput="01021021021002142D021002100218021003"
-				
 	#SerialConn.Send(bytes.fromhex(lineinput))
 	sendZigateCmd("0021","0004", "00000800")
 
 	################### ZiGate - Set Type COORDINATOR#################
-	lineinput="010210230210021122021003"
-	SerialConn.Send(bytes.fromhex(lineinput))
-
+	#lineinput="010210230210021122021003"
+	#SerialConn.Send(bytes.fromhex(lineinput))
+	sendZigateCmd("0023","0001","00")
+	
 	################### ZiGate - start network##################
-	lineinput= "01021024021002102403"
-	SerialConn.Send(bytes.fromhex(lineinput))
+	#lineinput= "01021024021002102403"
+	#SerialConn.Send(bytes.fromhex(lineinput))
+	sendZigateCmd("0024","0000","")
 
 	################### ZiGate - discover mode 255sec ##################
-	lineinput= " 01 02 10 49 02 10 02 14 B0 FF FC FE 02 10 03"
-	SerialConn.Send(bytes.fromhex(lineinput))
+	#lineinput= "01 0210 49 0210 0214 B0 FFFCFE0210 03"
+	#SerialConn.Send(bytes.fromhex(lineinput))
+	sendZigateCmd("0049","0004","FFFCFE00")
+	
 
 def ZigateDecode(Data):  # supprime le transcodage
 	if Parameters["Mode6"] == "Debug":
