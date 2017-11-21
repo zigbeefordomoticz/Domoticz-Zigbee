@@ -57,16 +57,13 @@ class BasePlugin:
 		global Tmprcv
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		#if Tmprcv.endswith('03',0,len(Tmprcv))==True :   ### a modifier on peut recevoir 0301 (fin-début) qui ne serais pas interprété
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
 			try :
 				ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
 				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
 			except :
-				#if Parameters["Mode6"] == "Debug":
-				#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
-				#		print("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv, file=text_file)
+				#verifier si pas deux messages coller ensemble
 				Domoticz.Debug("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv)
 				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
@@ -243,6 +240,9 @@ def ZigateRead(Data):
 #01		 81		 02		 00		 32		 c3		 bd cd 4d 01 00 00 ff 01 00 42 00 25 01 21 bd 0b 04 21 a8 13 05 21 06 00 06 24 01 00 00 00 00 64 29 75 07 65 21 22 16 66 2b b0 89 01 00 0a 21 00 00 	 cf		 03
 #01		 81		 02		 00		 0e		 98		 c7	cd 4d 01 04 03 00 14 00 28 00 01 ff 		 96		 03
 #01		 81		 02		 00		 0F		 AB		 02 6F 2F 01 04 02 00 00 00 29 00 02 09 89 		 C9		 03
+#01		 80		 45		 00		 07		 23		 290007780101									 b7		 03
+#01		 80		 43		 02		 10		 1e		 021f3302106a0217160211021102145f0211021102140210021002100213ffff0210021602130210021002100213ffff02100216	 c6		 03
+#01		 80		 43		 00	 	 1e		 8c		 42008439160101045f01010400000003ffff00060300000003ffff0006				e4 		03
 
 	MsgType=Data[2:6]
 	MsgData=Data[12:len(Data)-4]
@@ -263,7 +263,8 @@ def ZigateRead(Data):
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa, file=text_file)
 		Domoticz.Debug("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
-		#lineinput="0102104502100212"+ getChecksum() + str(MsgSrcAddr) + "03"   # cheksum a recalculer ???  (FB)   Envoie une demande Active Endpoint request
+		
+		# tester si le device existe deja dans la base domoticz
 		sendZigateCmd("0045","0002", str(MsgSrcAddr))    # Envoie une demande Active Endpoint request
 		#SerialConn.Send(bytes.fromhex(lineinput))
 		
@@ -271,6 +272,7 @@ def ZigateRead(Data):
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Touchlink status : " + Data, file=text_file)
+		Domoticz.Debug("reception Touchlink status : " + Data)
 
 	elif str(MsgType)=="8000":  # Status
 		MsgDataLenght=MsgData[0:4]
@@ -307,36 +309,43 @@ def ZigateRead(Data):
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage, file=text_file)
+		Domoticz.Debug("reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage)
 
 	elif str(MsgType)=="8002":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Data indication : " + Data, file=text_file)
+		Domoticz.Debug("reception Data indication : " + Data)
 
 	elif str(MsgType)=="8003":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Liste des cluster de l'objet : " + Data, file=text_file)
+		Domoticz.Debug("reception Liste des cluster de l'objet : " + Data)
 
 	elif str(MsgType)=="8004":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Liste des attributs de l'objet : " + Data, file=text_file)
+		Domoticz.Debug("reception Liste des attributs de l'objet : " + Data)
 
 	elif str(MsgType)=="8005":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Liste des commandes de l'objet : " + Data, file=text_file)
+		Domoticz.Debug("reception Liste des commandes de l'objet : " + Data)
 
 	elif str(MsgType)=="8006":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Non factory new restart : " + Data, file=text_file)
+		Domoticz.Debug("reception Non factory new restart : " + Data)
 
 	elif str(MsgType)=="8007":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Factory new restart : " + Data, file=text_file)
+		Domoticz.Debug("reception Factory new restart : " + Data)
 
 	elif str(MsgType)=="8010":  # Version
 		MsgDataApp=MsgData[0:4]
@@ -344,66 +353,79 @@ def ZigateRead(Data):
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Version list : " + Data, file=text_file)
+		Domoticz.Debug("reception Version list : " + Data)
 
 	elif str(MsgType)=="8014":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Permit join status response : " + Data, file=text_file)
+		Domoticz.Debug("reception Permit join status response : " + Data)
 
 	elif str(MsgType)=="8024":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Network joined /formed : " + Data, file=text_file)
+		Domoticz.Debug("reception Network joined /formed : " + Data)
 
 	elif str(MsgType)=="8028":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Authenticate response : " + Data, file=text_file)
+		Domoticz.Debug("reception Authenticate response : " + Data)
 
 	elif str(MsgType)=="8029":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Out of band commissioning data response : " + Data, file=text_file)
+		Domoticz.Debug("reception Out of band commissioning data response : " + Data)
 
 	elif str(MsgType)=="802b":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception User descriptor notify : " + Data, file=text_file)
+		Domoticz.Debug("reception User descriptor notify : " + Data)
 
 	elif str(MsgType)=="802c":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception User descriptor response : " + Data, file=text_file)
+		Domoticz.Debug("reception User descriptor response : " + Data)
 
 	elif str(MsgType)=="8030":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Bind response : " + Data, file=text_file)
+		Domoticz.Debug("reception Bind response : " + Data)
 
 	elif str(MsgType)=="8031":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Unbind response : " + Data, file=text_file)
+		Domoticz.Debug("reception Unbind response : " + Data)
 
 	elif str(MsgType)=="8034":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Coplex Descriptor response : " + Data, file=text_file)
+		Domoticz.Debug("reception Coplex Descriptor response : " + Data)
 
 	elif str(MsgType)=="8040":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Network address response : " + Data, file=text_file)
+		Domoticz.Debug("reception Network address response : " + Data)
 
 	elif str(MsgType)=="8041":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception IEEE address response : " + Data, file=text_file)
+		Domoticz.Debug("reception IEEE address response : " + Data)
 
 	elif str(MsgType)=="8042":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Node descriptor response : " + Data, file=text_file)
+		Domoticz.Debug("reception Node descriptor response : " + Data)
 
 	elif str(MsgType)=="8043":  # Simple Descriptor Response
 		MsgDataSQN=MsgData[0:2]
@@ -421,6 +443,7 @@ def ZigateRead(Data):
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Power descriptor response : " + Data, file=text_file)
+		Domoticz.Debug("reception Power descriptor response : " + Data)
 
 	elif str(MsgType)=="8045":  # Active Endpoints Response
 		MsgDataSQN=MsgData[0:2]
@@ -428,97 +451,122 @@ def ZigateRead(Data):
 		MsgDataShAddr=MsgData[4:8]
 		MsgDataEpCount=MsgData[8:10]
 		MsgDataEPlist=MsgData[10:len(MsgData)]
-		#for i in MsgDataEPlist :
-			
+		
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list" + MsgDataEPlist, file=text_file)
-		Domoticz.Debug("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list" + MsgDataEPlist)
+		Domoticz.Debug("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+		
+		OutEPlist=""
+		for i in MsgDataEPlist :
+			OutEPlist+=i
+			if len(OutEPlist)==2 :
+				Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + OutEPlist + ", du device adresse : " + MsgDataShAddr)
+				sendZigateCmd("0043","0004", str(MsgDataShAddr)+str(OutEPlist))    # Envoie une demande Simple Descriptor request pour avoir les informations du EP
+				OutEPlisttmp=""
+		
 
 	elif str(MsgType)=="8046":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Match descriptor response : " + Data, file=text_file)
+		Domoticz.Debug("reception Match descriptor response : " + Data)
 
 	elif str(MsgType)=="8047":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Management leave response : " + Data, file=text_file)
+		Domoticz.Debug("reception Management leave response : " + Data)
 
 	elif str(MsgType)=="8048":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Leave indication : " + Data, file=text_file)
+		Domoticz.Debug("reception Leave indication : " + Data)
 
 	elif str(MsgType)=="804a":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Management Network Update response : " + Data, file=text_file)
+		Domoticz.Debug("reception Management Network Update response : " + Data)
 
 	elif str(MsgType)=="804b":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception System server discovery response : " + Data, file=text_file)
+		Domoticz.Debug("reception System server discovery response : " + Data)
 
 	elif str(MsgType)=="804e":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Management LQI response : " + Data, file=text_file)
+		Domoticz.Debug("reception Management LQI response : " + Data)
 
 	elif str(MsgType)=="8060":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Add group response : " + Data, file=text_file)
+		Domoticz.Debug("reception Add group response : " + Data)
 
 	elif str(MsgType)=="8061":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Viex group response : " + Data, file=text_file)
+		Domoticz.Debug("reception Viex group response : " + Data)
 
 	elif str(MsgType)=="8062":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Get group Membership response : " + Data, file=text_file)
+		Domoticz.Debug("reception Get group Membership response : " + Data)
 
 	elif str(MsgType)=="8063":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Remove group response : " + Data, file=text_file)
+		Domoticz.Debug("reception Remove group response : " + Data)
 
 	elif str(MsgType)=="80a0":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception View scene response : " + Data, file=text_file)
+		Domoticz.Debug("reception View scene response : " + Data)
 
 	elif str(MsgType)=="80a1":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Add scene response : " + Data, file=text_file)
+		Domoticz.Debug("reception Add scene response : " + Data)
 
 	elif str(MsgType)=="80a2":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Remove scene response : " + Data, file=text_file)
+		Domoticz.Debug("reception Remove scene response : " + Data)
 
 	elif str(MsgType)=="80a3":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Remove all scene response : " + Data, file=text_file)
+		Domoticz.Debug("reception Remove all scene response : " + Data)
 
 	elif str(MsgType)=="80a4":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Store scene response : " + Data, file=text_file)
+		Domoticz.Debug("reception Store scene response : " + Data)
 
 	elif str(MsgType)=="80a6":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Scene membership response : " + Data, file=text_file)
+		Domoticz.Debug("reception Scene membership response : " + Data)
 
 	elif str(MsgType)=="8100":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Real individual attribute response : " + Data, file=text_file)
+		Domoticz.Debug("reception Real individual attribute response : " + Data)
 
 	elif str(MsgType)=="8101":  # Default Response
 		MsgDataSQN=MsgData[0:2]
@@ -623,26 +671,31 @@ def ZigateRead(Data):
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Write attribute response : " + Data, file=text_file)
+		Domoticz.Debug("reception Write attribute response : " + Data)
 
 	elif str(MsgType)=="8120":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Configure reporting response : " + Data, file=text_file)
+		Domoticz.Debug("reception Configure reporting response : " + Data)
 
 	elif str(MsgType)=="8140":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Attribute discovery response : " + Data, file=text_file)
+		Domoticz.Debug("reception Attribute discovery response : " + Data)
 
 	elif str(MsgType)=="8401":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Zone status change notification : " + Data, file=text_file)
+		Domoticz.Debug("reception Zone status change notification : " + Data)
 
 	elif str(MsgType)=="8701":  #
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Router discovery confirm : " + Data, file=text_file)
+		Domoticz.Debug("reception Router discovery confirm : " + Data)
 
 	elif str(MsgType)=="8702":  # APS Data Confirm Fail
 		MsgDataStatus=MsgData[0:2]
