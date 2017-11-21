@@ -624,7 +624,7 @@ def ZigateRead(Data):
 		
 		elif MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
-			SetTemp(MsgSrcAddr,MsgSrcEp,int(MsgValue,16)/100,80)
+			SetTemp(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100,1),80)
 			#if Parameters["Mode6"] == "Debug":
 			#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			#		print("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) , file=text_file)
@@ -655,7 +655,7 @@ def ZigateRead(Data):
 
 		elif MsgClusterId=="0405" :  # Measurement: Humidity
 			MsgValue=Data[len(Data)-8:len(Data)-4]
-			SetHum(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100),81)
+			SetHum(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100,1),81)
 			#if Parameters["Mode6"] == "Debug":
 			#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			#		print("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) , file=text_file)
