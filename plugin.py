@@ -265,7 +265,7 @@ def ZigateRead(Data):
 		Domoticz.Debug("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 		
 		# tester si le device existe deja dans la base domoticz
-		sendZigateCmd("0045","0002", str(MsgSrcAddr))    # Envoie une demande Active Endpoint request
+		#sendZigateCmd("0045","0002", str(MsgSrcAddr))    # Envoie une demande Active Endpoint request
 		#SerialConn.Send(bytes.fromhex(lineinput))
 		
 	elif str(MsgType)=="00d1":  #
@@ -457,13 +457,13 @@ def ZigateRead(Data):
 		#		print("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list" + MsgDataEPlist, file=text_file)
 		Domoticz.Debug("reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 		
-		OutEPlist=""
-		for i in MsgDataEPlist :
-			OutEPlist+=i
-			if len(OutEPlist)==2 :
-				Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + OutEPlist + ", du device adresse : " + MsgDataShAddr)
-				sendZigateCmd("0043","0004", str(MsgDataShAddr)+str(OutEPlist))    # Envoie une demande Simple Descriptor request pour avoir les informations du EP
-				OutEPlisttmp=""
+		#OutEPlist=""
+		#for i in MsgDataEPlist :
+		#	OutEPlist+=i
+		#	if len(OutEPlist)==2 :
+		#		Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + OutEPlist + ", du device adresse : " + MsgDataShAddr)
+		#		sendZigateCmd("0043","0004", str(MsgDataShAddr)+str(OutEPlist))    # Envoie une demande Simple Descriptor request pour avoir les informations du EP
+		#		OutEPlisttmp=""
 		
 
 	elif str(MsgType)=="8046":  #
