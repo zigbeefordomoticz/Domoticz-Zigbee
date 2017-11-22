@@ -62,8 +62,8 @@ class BasePlugin:
 			try :
 				ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
 				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-			except :
 				#verifier si pas deux messages coller ensemble
+			except :
 				Domoticz.Debug("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv)
 				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
@@ -602,7 +602,7 @@ def ZigateRead(Data):
 			if MsgAttrID=="ff01" :
 				MsgBattery=MsgClusterData[61:64]
 				try :
-					#MsgBattery=MsgBattery[0:1]+MsgBattery[2:3]+MsgBattery[1:2]
+					MsgBattery=MsgBattery[0]+MsgBattery[2]+MsgBattery[1]
 					MsgBattery=round(int(MsgBattery,16)/100,2)
 					UpdateBattery(MsgSrcAddr,MsgBattery)
 					#if Parameters["Mode6"] == "Debug":
@@ -614,7 +614,27 @@ def ZigateRead(Data):
 					#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 					#		print("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : erreur de lecture pour le device addr : " +  MsgSrcAddr, file=text_file)
 					Domoticz.Debug("ZigateRead - MsgType 8102 - reception batteryLVL (0000) : erreur de lecture pour le device addr : " +  MsgSrcAddr)
-							
+			
+			if MsgAttrID=="0005" :
+				Type=binascii.unhexlify(MsgClusterData).decode('utf-8')
+				Domoticz.Debug("ZigateRead - MsgType 8102 - reception heartbeat (0000) - MsgAttrID (0005) - Type de Device : " + Type)
+				IsCreated=False
+				x=0
+				nbrdevices=0
+				DeviceID=MsgSrcAddr #int(MsgSrcAddr,16)
+				for x in Devices:
+					#Domoticz.Debug("ZigateRead - MsgType 8102 - reception heartbeat (0000) - MsgAttrID (0005) - Type de Device : " + Type + " read Devices id : " + x )
+					if Devices[x].DeviceID == str(DeviceID) and {k: DOptions.get(k, None) for k in ('devices_type','EP')} == {k: Options.get(k, None) for k in ('devices_type','EP')}:
+						IsCreated = True
+						Domoticz.Log("Devices already exist. Unit=" + str(x))
+					if IsCreated == False :
+						nbrdevices=x
+				if IsCreated == False :
+					nbrdevices=nbrdevices+1
+					Domoticz.Debug("ZigateRead - MsgType 8102 - reception heartbeat (0000) - MsgAttrID (0005) - Type de Device : " + Type + " Device not found, creating device " )
+					CreateDomoDevice(nbrdevices,MsgSrcAddr,MsgSrcEp,Type)
+				
+			
 		elif MsgClusterId=="0006" :  # General: On/Off
 			SetSwitch(MsgSrcAddr,MsgSrcEp,MsgClusterData,16)
 			#if Parameters["Mode6"] == "Debug":
@@ -624,7 +644,8 @@ def ZigateRead(Data):
 		
 		elif MsgClusterId=="0402" :  # Measurement: Temperature
 			MsgValue=Data[len(Data)-8:len(Data)-4]
-			SetTemp(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100,1),80)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(int(MsgValue,16)/100,1))
+			#SetTemp(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100,1),80)
 			#if Parameters["Mode6"] == "Debug":
 			#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			#		print("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) , file=text_file)
@@ -633,21 +654,24 @@ def ZigateRead(Data):
 		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[28:32])=="0028":
 				MsgValue=Data[len(Data)-6:len(Data)-4] ##bug !!!!!!!!!!!!!!!!
-				SetATM(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,8)),243)
+				#MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgValue,8))
+				#SetATM(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,8)),243)
 				#if Parameters["Mode6"] == "Debug":
 				#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				#		print("ZigateRead - MsgType 8102 - reception atm : " + str(int(MsgValue,8)) , file=text_file)
 				Domoticz.Debug("ZigateRead - MsgType 8102 - reception atm : " + str(int(MsgValue,8)) )
 			if str(Data[26:32])=="000029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
-				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16),1)),243)
+				MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgValue,16),1))
+				#SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16),1)),243)
 				#if Parameters["Mode6"] == "Debug":
 				#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				#		print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/100,1)) , file=text_file)
 				Domoticz.Debug("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/100,1)))
 			if str(Data[26:32])=="100029":
 				MsgValue=Data[len(Data)-8:len(Data)-4]
-				SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16)/10,1)),243)
+				MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgValue,16)/10,1))
+				#SetATM(MsgSrcAddr,MsgSrcEp,str(round(int(MsgValue,16)/10,1)),243)
 				#if Parameters["Mode6"] == "Debug":
 				#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 				#		print("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/10,1)) , file=text_file)
@@ -655,7 +679,8 @@ def ZigateRead(Data):
 
 		elif MsgClusterId=="0405" :  # Measurement: Humidity
 			MsgValue=Data[len(Data)-8:len(Data)-4]
-			SetHum(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100,1),81)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Humidity",round(int(MsgValue,16)/100,1))
+			#SetHum(MsgSrcAddr,MsgSrcEp,round(int(MsgValue,16)/100,1),81)
 			#if Parameters["Mode6"] == "Debug":
 			#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 			#		print("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) , file=text_file)
@@ -691,7 +716,7 @@ def ZigateRead(Data):
 		#		print("reception Zone status change notification : " + Data, file=text_file)
 		Domoticz.Debug("reception Zone status change notification : " + Data)
 
-	elif str(MsgType)=="8701":  #
+	elif str(MsgType)=="8701":  # reception Router discovery confirm
 		#if Parameters["Mode6"] == "Debug":
 		#	with open(Parameters["HomeFolder"]+"Debug.txt", "at") as text_file:
 		#		print("reception Router discovery confirm : " + Data, file=text_file)
@@ -718,6 +743,112 @@ def ZigateRead(Data):
 
 	return
 	
+def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
+	DeviceID=Addr #int(Addr,16)
+	Domoticz.Debug("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(Type) )
+	if Type=="lumi.weather" :  # Detecteur temp/hum/baro xiaomi (v2)
+		typename="Temp+Hum+Baro"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Temp+Hum"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+1, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Temperature"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+2, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Humidity"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+3, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Barometer"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+4, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		
+	if Type=="lumi.sensor_ht" : # Detecteur temp/humi xiaomi (v1)
+		typename="Temp+Hum"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Temperature"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+1, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Humidity"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+2, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		
+	if Type=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet": # capteur ouverture/fermeture xiaomi  (v1 et v2)
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		
+	if Type=="lumi.sensor_motion" :  # detecteur de presence (v1)
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		
+def MajDomoDevice(Addr,Ep,Type,value) :
+	x=0
+	nbrdevices=1
+	DeviceID=Addr #int(Addr,16)
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID) : # and {k: DOptions.get(k, None) for k in ('devices_type','EP')} == {k: Options.get(k, None) for k in ('Type','EP')}:
+			DOptions = Devices[x].Options
+			DType=DOptions['devices_type']
+			Dtypename=DOptions['typename']
+			if DType=="lumi.weather" :
+				if Type=="Temperature" and Dtypename=="Temperature" :
+					Devices[x].Update(nValue = 0,sValue = str(value))
+				if Type=="Humidity" and Dtypename=="Humidity" :
+					Devices[x].Update(nValue = int(value), sValue = "0")
+				if Type=="Barometer" and Dtypename=="Barometer" :
+					Devices[x].Update(nValue = 0,sValue = str(value))
+				if Dtypename=="Temp+Hum+Baro" :
+					if Type=="Temperature" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						TEMP;HUM;HUM_STAT;BAR;BAR_FOR=CurrentsValue.split(";")
+						NewSvalue=value + ";" +  HUM + ";" + HUM_STAT + ";" + BAR + ";" + BAR_FOR
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+					if Type=="Humidity" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						TEMP;HUM;HUM_STAT;BAR;BAR_FOR=CurrentsValue.split(";")
+						NewSvalue=TEMP + ";" +  value + ";" + HUM_STAT + ";" + BAR + ";" + BAR_FOR
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+					if Type=="Barometer" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						TEMP;HUM;HUM_STAT;BAR;BAR_FOR=CurrentsValue.split(";")
+						NewSvalue=TEMP + ";" +  HUM + ";" + HUM_STAT + ";" + value + ";" + BAR_FOR
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+				if Dtypename=="Temp+Hum" :
+					if Type=="Temperature" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						TEMP,HUM,HUM_STAT=CurrentsValue.split(";")
+						NewSvalue=value + ";" +  HUM + ";" + HUM_STAT
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+					if Type=="Humidity" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						TEMP,HUM,HUM_STAT=CurrentsValue.split(";")
+						NewSvalue=TEMP + ";" +  value + ";" + HUM_STAT
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))					
+	
+			if DType=="lumi.sensor_ht" :
+				if Type=="Temperature" and Dtypename=="Temperature" :
+					Devices[x].Update(nValue = 0,sValue = str(value))
+				if Type=="Humidity" and Dtypename=="Humidity" :
+					Devices[x].Update(nValue = int(value), sValue = "0")
+				#if Dtypename=="Temp+Hum" :
+					#Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, options={"EP":Ep, "devices_type": str(Type), "typename":str(typename)}).Create()				
+					
+			if DType=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet":
+				if value == "01" :
+					state="On"
+				elif value == "00" :
+					state="Off"
+				Dtypename="Switch"
+				Devices[x].Update(nValue = 0,sValue = str(state))
+				
+			if DType=="lumi.sensor_motion" :
+				if value == "01" :
+					state="On"
+				elif value == "00" :
+					state="Off"
+				Dtypename="Switch"
+				Devices[x].Update(nValue = 0,sValue = str(state))
+			
+			
+	
 
 def getChecksum(msgtype,length,datas) :
 	temp = 0 ^ int(msgtype[0:2],16) 
@@ -738,105 +869,6 @@ def getChecksum(msgtype,length,datas) :
 	Domoticz.Debug("getChecksum - Checksum : " + str(chk))
 	return chk[2:4]
 
-def SetSwitch(Addr,Ep, value, type):
-	IsCreated=False
-	x=0
-	nbrdevices=1
-	DeviceID=int(Addr,16)
-
-	if str(type)=="16" : 
-		typename="Switch"
-	if value == "01" :
-		state="On"
-	elif value == "00" :
-		state="Off"
-	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID) : # and str(Devices[x].Type)==str(type):
-			IsCreated = True
-			Domoticz.Log("Devices already exist. Unit=" + str(x))
-			nbrdevices=x
-		if IsCreated == False :
-			nbrdevices=x
-	if IsCreated == False :
-		nbrdevices=nbrdevices+1
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename).Create()
-		Devices[nbrdevices].Update(nValue = 0,sValue = str(state))
-	elif IsCreated == True :
-		Devices[nbrdevices].Update(nValue = 0,sValue = str(state))
-
-
-def SetTemp(Addr,Ep, value, type):
-	IsCreated=False
-	x=0
-	nbrdevices=1
-	DeviceID=int(Addr,16)
-	if str(type)=="80" :
-		typename = "Temperature"
-	if str(type)=="81" :
-		typename = "Humidity"
-
-	#Domoticz.Log("Devices already exist. Unit=" + str(x))
-		
-	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
-			IsCreated = True
-			Domoticz.Log("Devices already exist. Unit=" + str(x))
-			nbrdevices=x
-		if IsCreated == False :
-			nbrdevices=x
-	if IsCreated == False :
-		nbrdevices=nbrdevices+1
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename).Create()
-		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
-	elif IsCreated == True :
-		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
-	#####################################################################################################################
-
-def SetHum(Addr,Ep, value, type):
-	IsCreated=False
-	x=0
-	nbrdevices=1
-	DeviceID=int(Addr,16)
-	if str(type)=="80" :
-		typename = "Temperature"
-	if str(type)=="81" :
-		typename = "Humidity"
-
-	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
-			IsCreated = True
-			Domoticz.Log("Devices already exist. Unit=" + str(x))
-			nbrdevices=x
-		if IsCreated == False :
-			nbrdevices=x
-	if IsCreated == False :
-		nbrdevices=nbrdevices+1
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename).Create()
-		Devices[nbrdevices].Update(nValue = int(value), sValue = "0")
-	elif IsCreated == True :
-		Devices[nbrdevices].Update(nValue = int(value), sValue = "0")
-	#####################################################################################################################
-
-
-def SetATM(Addr,Ep, value, type):
-	IsCreated=False
-	x=0
-	nbrdevices=1
-	DeviceID=int(Addr,16)
-	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID) and str(Devices[x].Type)==str(type):
-			IsCreated = True
-			Domoticz.Log("Devices already exist. Unit=" + str(x))
-			nbrdevices=x
-		if IsCreated == False :
-			nbrdevices=x
-	if IsCreated == False :
-		nbrdevices=nbrdevices+1
-		Domoticz.Device(DeviceID=str(DeviceID),Name="ATM - " + str(DeviceID), Unit=nbrdevices, TypeName="Pressure").Create()
-		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
-	elif IsCreated == True :
-		Devices[nbrdevices].Update(nValue = 0,sValue = str(value))
-	#####################################################################################################################
 
 def UpdateBattery(DeviceID,BatteryLvl):
 	IsCreated=False
