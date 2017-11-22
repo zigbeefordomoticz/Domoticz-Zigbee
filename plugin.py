@@ -775,6 +775,7 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
 def MajDomoDevice(Addr,Ep,Type,value) :
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
 	x=0
 	nbrdevices=1
 	DeviceID=Addr #int(Addr,16)
@@ -789,38 +790,55 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 				if Type=="Humidity" and Dtypename=="Humidity" :
 					Devices[x].Update(nValue = int(value), sValue = "0")
 				if Type=="Barometer" and Dtypename=="Barometer" :
-					Devices[x].Update(nValue = 0,sValue = str(value))
+					valueBaro='%s;0' % (value)
+					Devices[x].Update(nValue = 0,sValue = str(valueBaro))
 				if Dtypename=="Temp+Hum+Baro" :
 					if Type=="Temperature" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
-						TEMP;HUM;HUM_STAT;BAR;BAR_FOR=CurrentsValue.split(";")
-						NewSvalue=value + ";" +  HUM + ";" + HUM_STAT + ";" + BAR + ";" + BAR_FOR
+						Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						NewSvalue='%s;%s;%s;%s;%s'	% (str(value) ,  SplitData[1] , SplitData[2] , SplitData[3] , SplitData[4])
+						Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
 					if Type=="Humidity" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
-						TEMP;HUM;HUM_STAT;BAR;BAR_FOR=CurrentsValue.split(";")
-						NewSvalue=TEMP + ";" +  value + ";" + HUM_STAT + ";" + BAR + ";" + BAR_FOR
+						Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2] , SplitData[3] , SplitData[4])
+						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
 					if Type=="Barometer" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
-						TEMP;HUM;HUM_STAT;BAR;BAR_FOR=CurrentsValue.split(";")
-						NewSvalue=TEMP + ";" +  HUM + ";" + HUM_STAT + ";" + value + ";" + BAR_FOR
+						Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						
+						NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], SplitData[1] , SplitData[2] , str(value) , SplitData[3])
+						Domoticz.Debug("MajDomoDevice bar NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
 				if Dtypename=="Temp+Hum" :
 					if Type=="Temperature" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
-						TEMP,HUM,HUM_STAT=CurrentsValue.split(";")
-						NewSvalue=value + ";" +  HUM + ";" + HUM_STAT
+						Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
+						Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
 					if Type=="Humidity" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
-						TEMP,HUM,HUM_STAT=CurrentsValue.split(";")
-						NewSvalue=TEMP + ";" +  value + ";" + HUM_STAT
+						Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
+						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))					
 	
 			if DType=="lumi.sensor_ht" :
@@ -830,7 +848,27 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 					Devices[x].Update(nValue = int(value), sValue = "0")
 				#if Dtypename=="Temp+Hum" :
 					#Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, options={"EP":Ep, "devices_type": str(Type), "typename":str(typename)}).Create()				
-					
+				if Dtypename=="Temp+Hum" :
+					if Type=="Temperature" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						#NewSvalue=str(value) + ";" +  HUM + ";" + HUM_STAT
+						NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
+						Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+					if Type=="Humidity" :
+						CurrentnValue=Devices[x].nValue
+						CurrentsValue=Devices[x].sValue
+						Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+						SplitData=CurrentsValue.split(";")
+						Domoticz.Debug("MajDomoDevice spli ok")
+						#NewSvalue=TEMP + ";" +  str(value) + ";" + HUM_STAT
+						NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
+						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
+						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 			if DType=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet":
 				if value == "01" :
 					state="On"
