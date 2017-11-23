@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.2" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.3" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
 		<param field="Mode6" label="Debug" width="75px">
@@ -58,9 +58,13 @@ class BasePlugin:
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
 			try :
-				ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-				#verifier si pas deux messages coller ensemble
+				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+					ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+				else : 
+					ZigateDecode(ReqRcv[:ReqRcv.find("0301")+2])
+					ZigateDecode(ReqRcv[ReqRcv.find("0301")+2:])
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
 			except :
 				Domoticz.Debug("onMessage - effacement de la trame suite à une erreur de decodage : " + ReqRcv)
 				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
@@ -485,12 +489,12 @@ def ZigateRead(Data):
 				IsCreated=False
 				x=0
 				nbrdevices=0
-				DeviceID=MsgSrcAddr
 				for x in Devices:
 					#Domoticz.Debug("ZigateRead - MsgType 8102 - reception heartbeat (0000) - MsgAttrID (0005) - Type de Device : " + Type + " read Devices id : " + x )
-					if Devices[x].DeviceID == str(DeviceID) and {k: DOptions.get(k, None) for k in ('devices_type','EP')} == {k: Options.get(k, None) for k in ('devices_type','EP')}:
+					#DOptions = Devices[x].Options
+					if Devices[x].DeviceID == str(MsgSrcAddr) : #and DOptions['devices_type'] == str(Type) and DOptions['Ep'] == str(MsgSrcEp) :
 						IsCreated = True
-						Domoticz.Log("Devices already exist. Unit=" + str(x))
+						Domoticz.Debug("Devices already exist. Unit=" + str(x))
 					if IsCreated == False :
 						nbrdevices=x
 				if IsCreated == False :
@@ -575,7 +579,6 @@ def ZigateRead(Data):
 	
 		Domoticz.Debug("ZigateRead - Unknow Message Type " + MsgType)
 
-	return
 	
 def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 	DeviceID=Addr #int(Addr,16)
