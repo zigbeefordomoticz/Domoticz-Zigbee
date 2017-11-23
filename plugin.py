@@ -143,7 +143,6 @@ def ZigateConf():
 
 	################### ZiGate - discover mode 255sec ##################
 	sendZigateCmd("0049","0004","FFFCFE00")
-	
 
 def ZigateDecode(Data):  # supprime le transcodage
 	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
@@ -228,10 +227,12 @@ def ZigateRead(Data):
 	MsgCRC=Data[10:12]
 	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
 
+
 	if str(MsgType)=="004d":  # Device announce
 		MsgSrcAddr=MsgData[0:4]
 		MsgIEEE=MsgData[4:20]
 		MsgMacCapa=MsgData[20:22]
+
 		Domoticz.Debug("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 		
 		# tester si le device existe deja dans la base domoticz
@@ -326,6 +327,7 @@ def ZigateRead(Data):
 	
 		Domoticz.Debug("reception User descriptor response : " + Data)
 
+
 	elif str(MsgType)=="8030":  #
 	
 		Domoticz.Debug("reception Bind response : " + Data)
@@ -395,6 +397,7 @@ def ZigateRead(Data):
 		Domoticz.Debug("reception Leave indication : " + Data)
 
 	elif str(MsgType)=="804a":  #
+
 	
 		Domoticz.Debug("reception Management Network Update response : " + Data)
 
@@ -423,6 +426,7 @@ def ZigateRead(Data):
 		Domoticz.Debug("reception Remove group response : " + Data)
 
 	elif str(MsgType)=="80a0":  #
+
 	
 		Domoticz.Debug("reception View scene response : " + Data)
 
@@ -504,6 +508,7 @@ def ZigateRead(Data):
 				
 			
 		elif MsgClusterId=="0006" :  # General: On/Off
+
 			#SetSwitch(MsgSrcAddr,MsgSrcEp,MsgClusterData,16)
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
 			
@@ -615,7 +620,6 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-		
 def MajDomoDevice(Addr,Ep,Type,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
 	x=0
