@@ -607,6 +607,11 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 	if Type=="lumi.sensor_motion" :  # detecteur de presence (v1)
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+
+	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # detecteur de presence (v1)
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+
 		
 def MajDomoDevice(Addr,Ep,Type,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
@@ -706,7 +711,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 				Dtypename="Switch"
 				Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_motion" :
+			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" :
 				if value == "01" :
 					state="On"
 				elif value == "00" :
