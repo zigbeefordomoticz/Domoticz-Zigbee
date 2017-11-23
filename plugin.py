@@ -500,7 +500,8 @@ def ZigateRead(Data):
 				
 			
 		elif MsgClusterId=="0006" :  # General: On/Off
-			SetSwitch(MsgSrcAddr,MsgSrcEp,MsgClusterData,16)
+			#SetSwitch(MsgSrcAddr,MsgSrcEp,MsgClusterData,16)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception General: On/Off : " + str(MsgClusterData) )
 		
@@ -534,6 +535,11 @@ def ZigateRead(Data):
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Humidity",round(int(MsgValue,16)/100,1))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) )
+	
+		elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
+			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
 		else :
 		
@@ -596,11 +602,11 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		
 	if Type=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet": # capteur ouverture/fermeture xiaomi  (v1 et v2)
 		typename="Switch"
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=2 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
 	if Type=="lumi.sensor_motion" :  # detecteur de presence (v1)
 		typename="Switch"
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
 def MajDomoDevice(Addr,Ep,Type,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
@@ -691,13 +697,14 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
+
 			if DType=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet":
 				if value == "01" :
-					state="On"
+					state="Open"
 				elif value == "00" :
-					state="Off"
+					state="Close"
 				Dtypename="Switch"
-				Devices[x].Update(nValue = 0,sValue = str(state))
+				Devices[x].Update(nValue = int(value),sValue = str(state))
 				
 			if DType=="lumi.sensor_motion" :
 				if value == "01" :
@@ -705,7 +712,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 				elif value == "00" :
 					state="Off"
 				Dtypename="Switch"
-				Devices[x].Update(nValue = 0,sValue = str(state))
+				Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 			
 	
