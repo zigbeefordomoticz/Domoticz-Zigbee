@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.3" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.3" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
 		<param field="Mode6" label="Debug" width="75px">
@@ -566,7 +566,7 @@ def ZigateRead(Data):
 	elif str(MsgType)=="8401":  #
 		Domoticz.Debug("reception Zone status change notification : " + Data)
 		MsgSrcAddr=MsgData[10:14]
-		MsgDataSrcEp=MsgData[2:4]
+		MsgSrcEp=MsgData[2:4]
 		MsgClusterData=MsgData[16:18]
 		MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
 
