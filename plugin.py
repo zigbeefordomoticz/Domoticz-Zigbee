@@ -719,21 +719,21 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 
-			if DType=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet":
-				if value == "01" :
-					state="Open"
-				elif value == "00" :
-					state="Close"
-				Dtypename="Switch"
-				Devices[x].Update(nValue = int(value),sValue = str(state))
+			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" : 
+				if Dtypename=="Switch":
+					if value == "01" :
+						state="Open"
+					elif value == "00" :
+						state="Closed"
+					Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke":
-				if value == "01" :
-					state="On"
-				elif value == "00" :
-					state="Off"
-				Dtypename="Switch"
-				Devices[x].Update(nValue = int(value),sValue = str(state))
+			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" :
+				if Dtypename=="Switch":
+					if value == "01" :
+						state="On"
+					elif value == "00" :
+						state="Off"
+					Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 			
 	
