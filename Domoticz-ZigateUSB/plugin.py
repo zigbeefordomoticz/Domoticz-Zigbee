@@ -657,11 +657,11 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 			DType=DOptions['devices_type']
 			Dtypename=DOptions['typename']
 			if DType=="lumi.weather" : #temp+hum+baro xiaomi
-				if Type==Dtypename :  # temperature
+				if Type==Dtypename=="Temperature" :  # temperature
 					Devices[x].Update(nValue = 0,sValue = str(value))
-				if Type==Dtypename :   # humidité
+				if Type==Dtypename=="Humidity" :   # humidité
 					Devices[x].Update(nValue = int(value), sValue = "0")
-				if Type==Dtypename :  # barometre
+				if Type==Dtypename=="Barometer" :  # barometre
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
@@ -712,9 +712,9 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))					
 	
 			if DType=="lumi.sensor_ht" :
-				if Type==Dtypename :
+				if Type==Dtypename=="Temperature" :
 					Devices[x].Update(nValue = 0,sValue = str(value))
-				if Type==Dtypename :
+				if Type==Dtypename=="Humidity" :
 					Devices[x].Update(nValue = int(value), sValue = "0")
 				#if Dtypename=="Temp+Hum" :
 					#Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, options={"EP":Ep, "devices_type": str(Type), "typename":str(typename)}).Create()				
