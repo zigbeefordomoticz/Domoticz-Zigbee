@@ -17,6 +17,7 @@
 """
 import Domoticz
 import binascii
+import time
 
 class BasePlugin:
 	enabled = False
@@ -80,6 +81,8 @@ class BasePlugin:
 
 	def onHeartbeat(self):
 #		Domoticz.Log("onHeartbeat called")
+		ResetDevice("lumi.sensor_motion.aq2")
+		ResetDevice("lumi.sensor_motion")
 		if (SerialConn.Connected() != True):
 			SerialConn.Connect()
 		return True
@@ -748,22 +751,22 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosité
 				if Type==Dtypename :
-					Devices[x].Update(nValue = 0,sValue = str(value))xw
+					Devices[x].Update(nValue = 0,sValue = str(value))
 			
-def ResetDevice() :
+def ResetDevice(Type) :
 	x=0
-	nbrdevices=1
-	DeviceID=Addr #int(Addr,16)
 	for x in Devices: 
+		LUpdate=Devices[x].LastUpdate
+		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
+		current = time.time()
 		DOptions = Devices[x].Options
 		DType=DOptions['devices_type']
 		Dtypename=DOptions['typename']
-			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" :
+		if (current-LUpdate)> 30 :
+			if DType==Type :
 				if Dtypename=="Switch":
-					if value == "01" :
-						state="On"
-					elif value == "00" :
-						state="Off"
+					value = "00"
+					state="Off"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 			
