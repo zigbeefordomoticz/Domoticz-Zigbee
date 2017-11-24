@@ -65,7 +65,7 @@ class BasePlugin:
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
 			try :
 				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-					ZigateDecode(ReqRcv) #demande de decodage de la trame reçu
+					ZigateDecode(ReqRcv) #demande de decodage de la trame recu
 					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
 				else : 
 					ZigateDecode(ReqRcv[:ReqRcv.find("0301")+2])
@@ -208,7 +208,7 @@ def sendZigateCmd(cmd,length,datas) :
 
 def ZigateRead(Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data)
-#Trame série
+#Trame serie
 #
 #0	 1	 2	 3	 4 	 5 	 6	 7	 8 	 9	 10	 11	 12	14 16 18 20 22 24 26 28 30 32 34 36 38 ...
 #1		|2		|3		|4		|5		|6		|7  											|n+8	|n+9
@@ -630,11 +630,11 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carré (v1)
+	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carre (v1)
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-	if Type=="lumi.sensor_smoke" :  # detecteur de fumée (v1) xiaomi
+	if Type=="lumi.sensor_smoke" :  # detecteur de fumee (v1) xiaomi
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=5 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
@@ -661,7 +661,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 			if DType=="lumi.weather" : #temp+hum+baro xiaomi
 				if Type==Dtypename=="Temperature" :  # temperature
 					Devices[x].Update(nValue = 0,sValue = str(value))
-				if Type==Dtypename=="Humidity" :   # humidité
+				if Type==Dtypename=="Humidity" :   # humidite
 					Devices[x].Update(nValue = int(value), sValue = "0")
 				if Type==Dtypename=="Barometer" :  # barometre
 					CurrentnValue=Devices[x].nValue
@@ -754,7 +754,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						state="Off"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 
-			if DType=="lumi.sensor_motion.aq2":  # detecteur de presence et luminosité (v2) Xiaomi
+			if DType=="lumi.sensor_motion.aq2":  # detecteur de presence et luminosite (v2) Xiaomi
 				if Type==Dtypename :
 					Devices[x].Update(nValue = 0 ,sValue = str(value))
 				elif Type==Dtypename :
