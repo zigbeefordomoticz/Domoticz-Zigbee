@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="Zigate" name="Zigate USB plugin" author="zaraki673" version="1.0.3" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.4" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
 		<param field="Mode6" label="Debug" width="75px">
@@ -17,6 +17,7 @@
 """
 import Domoticz
 import binascii
+import time
 
 class BasePlugin:
 	enabled = False
@@ -80,6 +81,8 @@ class BasePlugin:
 
 	def onHeartbeat(self):
 #		Domoticz.Log("onHeartbeat called")
+		ResetDevice("lumi.sensor_motion.aq2")
+		ResetDevice("lumi.sensor_motion")
 		if (SerialConn.Connected() != True):
 			SerialConn.Connect()
 		return True
@@ -550,6 +553,11 @@ def ZigateRead(Data):
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
+		elif MsgClusterId=="0400" :  # (Measurement: LUX)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Lux",MsgClusterData)
+			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception LUX Sensor : " + str(MsgClusterData) )
+
 		else :
 		
 			Domoticz.Debug("ZigateRead - MsgType 8102 - Error/unknow Cluster Message : " + MsgClusterId)
@@ -565,6 +573,10 @@ def ZigateRead(Data):
 
 	elif str(MsgType)=="8401":  #
 		Domoticz.Debug("reception Zone status change notification : " + Data)
+		MsgSrcAddr=MsgData[10:14]
+		MsgSrcEp=MsgData[2:4]
+		MsgClusterData=MsgData[16:18]
+		MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
 
 	elif str(MsgType)=="8701":  # reception Router discovery confirm
 	
@@ -620,6 +632,17 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
+	if Type=="lumi.sensor_smoke" :  # detecteur de fumée (v1)
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=5 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+
+	if Type=="lumi.sensor_motion.aq2" :  # Lux sensors + detecteur xiaomi v2
+		typename="Lux"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=246, Subtype=1 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+
+		
 def MajDomoDevice(Addr,Ep,Type,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
 	x=0
@@ -631,11 +654,11 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 			DType=DOptions['devices_type']
 			Dtypename=DOptions['typename']
 			if DType=="lumi.weather" :
-				if Type=="Temperature" and Dtypename=="Temperature" :
+				if Type==Dtypename :  # temperature
 					Devices[x].Update(nValue = 0,sValue = str(value))
-				if Type=="Humidity" and Dtypename=="Humidity" :
+				if Type==Dtypename :   # humidité
 					Devices[x].Update(nValue = int(value), sValue = "0")
-				if Type=="Barometer" and Dtypename=="Barometer" :
+				if Type==Dtypename :  # barometre
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
@@ -686,9 +709,9 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))					
 	
 			if DType=="lumi.sensor_ht" :
-				if Type=="Temperature" and Dtypename=="Temperature" :
+				if Type==Dtypename :
 					Devices[x].Update(nValue = 0,sValue = str(value))
-				if Type=="Humidity" and Dtypename=="Humidity" :
+				if Type==Dtypename :
 					Devices[x].Update(nValue = int(value), sValue = "0")
 				#if Dtypename=="Temp+Hum" :
 					#Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, options={"EP":Ep, "devices_type": str(Type), "typename":str(typename)}).Create()				
@@ -710,21 +733,41 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 
-			if DType=="lumi.sensor_magnet.aq2" or Type=="lumi.sensor_magnet":
-				if value == "01" :
-					state="Open"
-				elif value == "00" :
-					state="Close"
-				Dtypename="Switch"
-				Devices[x].Update(nValue = int(value),sValue = str(state))
+			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture
+				if Type==Dtypename :
+					if value == "01" :
+						state="Open"
+					elif value == "00" :
+						state="Closed"
+					Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" :
-				if value == "01" :
-					state="On"
-				elif value == "00" :
+			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion.aq2" :  # detecteur de presence ou ionterrupteur
+				if Type==Dtypename :
+					if value == "01" :
+						state="On"
+					elif value == "00" :
+						state="Off"
+					Devices[x].Update(nValue = int(value),sValue = str(state))
+
+			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosité
+				if Type==Dtypename :
+					Devices[x].Update(nValue = 0,sValue = str(value))
+			
+def ResetDevice(Type) :
+	x=0
+	for x in Devices: 
+		LUpdate=Devices[x].LastUpdate
+		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
+		current = time.time()
+		DOptions = Devices[x].Options
+		DType=DOptions['devices_type']
+		Dtypename=DOptions['typename']
+		if (current-LUpdate)> 30 :
+			if DType==Type :
+				if Dtypename=="Switch":
+					value = "00"
 					state="Off"
-				Dtypename="Switch"
-				Devices[x].Update(nValue = int(value),sValue = str(state))
+					Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 			
 	
