@@ -3,9 +3,10 @@
 # Author: zaraki673
 #
 """
-<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.4" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateWifi" name="Zigate Wifi plugin" author="zaraki673" version="1.0.4" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
-		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="" />
+		<param field="Address" label="IP" width="150px" required="true" default=""/>
+		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -28,11 +29,14 @@ class BasePlugin:
 	def onStart(self):
 		Domoticz.Log("onStart called")
 		global ReqRcv
-		global SerialConn
+		global httpConn
 		if Parameters["Mode6"] == "Debug":
 			Domoticz.Debugging(1)
-		SerialConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
-		SerialConn.Connect()
+		#SerialConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
+		#SerialConn.Connect()
+		httpConn = Domoticz.Connection(Name="ZigateTCP", Transport="TCP/IP", Protocol="Line", Address=Parameters["Address"], Port=Parameters["Port"])
+		httpConn.Connect()
+		
 		ReqRcv=''
 
 
@@ -44,11 +48,11 @@ class BasePlugin:
 		global isConnected
 		if (Status == 0):
 			isConnected = True
-			Domoticz.Log("Connected successfully to: "+Parameters["SerialPort"])
+			Domoticz.Log("Connected successfully to: "+Parameters["Address"])
 			ZigateConf()
 		else:
-			Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Parameters["SerialPort"])
-			Domoticz.Debug("Failed to connect ("+str(Status)+") to: "+Parameters["SerialPort"]+" with error: "+Description)
+			Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Parameters["Address"])
+			Domoticz.Debug("Failed to connect ("+str(Status)+") to: "+Parameters["Address"]+" with error: "+Description)
 		return True
 
 	def onMessage(self, Connection, Data):
@@ -83,8 +87,8 @@ class BasePlugin:
 #		Domoticz.Log("onHeartbeat called")
 		ResetDevice("lumi.sensor_motion.aq2")
 		ResetDevice("lumi.sensor_motion")
-		if (SerialConn.Connected() != True):
-			SerialConn.Connect()
+		if (httpConn.Connected() != True):
+			httpConn.Connect()
 		return True
 
 global _plugin
@@ -199,10 +203,8 @@ def sendZigateCmd(cmd,length,datas) :
 	else :
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
-	SerialConn.Send(bytes.fromhex(str(lineinput)))	
+	httpConn.Send(bytes.fromhex(str(lineinput)))	
 
-
-	
 def ZigateRead(Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data)
 #Trame série
@@ -596,7 +598,6 @@ def ZigateRead(Data):
 	
 		Domoticz.Debug("ZigateRead - Unknow Message Type " + MsgType)
 
-	
 def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 	DeviceID=Addr #int(Addr,16)
 	Domoticz.Debug("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(Type) )
@@ -642,7 +643,6 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-		
 def MajDomoDevice(Addr,Ep,Type,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
 	x=0
@@ -752,7 +752,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosité
 				if Type==Dtypename :
 					Devices[x].Update(nValue = 0,sValue = str(value))
-			
+
 def ResetDevice(Type) :
 	x=0
 	for x in Devices: 
@@ -768,9 +768,6 @@ def ResetDevice(Type) :
 					value = "00"
 					state="Off"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
-			
-			
-	
 
 def getChecksum(msgtype,length,datas) :
 	temp = 0 ^ int(msgtype[0:2],16) 
