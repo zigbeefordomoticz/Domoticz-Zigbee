@@ -554,7 +554,7 @@ def ZigateRead(Data):
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
 		elif MsgClusterId=="0400" :  # (Measurement: LUX)
-			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Lux",MsgClusterData)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Lux", str(int(MsgClusterData,16) ))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception LUX Sensor : " + str(MsgClusterData) )
 
@@ -628,7 +628,7 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # detecteur de presence (v1)
+	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carré (v1)
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
@@ -640,7 +640,7 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Lux"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=246, Subtype=1 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		typename="Switch"
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+1, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
 		
 def MajDomoDevice(Addr,Ep,Type,value) :
@@ -741,7 +741,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						state="Closed"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion.aq2" :  # detecteur de presence ou ionterrupteur
+			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke"  :  # detecteur de presence ou ionterrupteur
 				if Type==Dtypename :
 					if value == "01" :
 						state="On"
@@ -751,7 +751,16 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosité
 				if Type==Dtypename :
-					Devices[x].Update(nValue = 0,sValue = str(value))
+					Devices[x].Update(nValue = 0 ,sValue = str(value))
+				elif Type==Dtypename :
+					if value == "01" :
+						state="On"
+					elif value == "00" :
+						state="Off"
+					Devices[x].Update(nValue = int(value),sValue = str(state))
+
+				
+
 			
 def ResetDevice(Type) :
 	x=0
