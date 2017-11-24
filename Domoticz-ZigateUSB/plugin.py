@@ -510,20 +510,20 @@ def ZigateRead(Data):
 					CreateDomoDevice(nbrdevices,MsgSrcAddr,MsgSrcEp,Type)
 				
 			
-		elif MsgClusterId=="0006" :  # General: On/Off
+		elif MsgClusterId=="0006" :  # General: On/Off xiaomi
 
 			#SetSwitch(MsgSrcAddr,MsgSrcEp,MsgClusterData,16)
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception General: On/Off : " + str(MsgClusterData) )
 		
-		elif MsgClusterId=="0402" :  # Measurement: Temperature
+		elif MsgClusterId=="0402" :  # Measurement: Temperature xiaomi
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(int(MsgValue,16)/100,1))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) )
 					
-		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique    ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
+		elif MsgClusterId=="0403" :  # Measurement: Pression atmospherique xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 			if str(Data[28:32])=="0028":
 				MsgValue=Data[len(Data)-6:len(Data)-4] ##bug !!!!!!!!!!!!!!!!
 				#MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgValue,8))
@@ -542,18 +542,18 @@ def ZigateRead(Data):
 				
 				Domoticz.Debug("ZigateRead - MsgType 8102 - reception atm : " + str(round(int(MsgValue,16)/10,1)))
 
-		elif MsgClusterId=="0405" :  # Measurement: Humidity
+		elif MsgClusterId=="0405" :  # Measurement: Humidity xiaomi
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Humidity",round(int(MsgValue,16)/100,1))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception hum : " + str(int(MsgValue,16)/100) )
 	
-		elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing)
+		elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing) xiaomi
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
-		elif MsgClusterId=="0400" :  # (Measurement: LUX)
+		elif MsgClusterId=="0400" :  # (Measurement: LUX) xiaomi
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Lux",str(int(MsgClusterData,16) ))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception LUX Sensor : " + str(MsgClusterData) )
@@ -624,15 +624,15 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=2 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
-	if Type=="lumi.sensor_motion" :  # detecteur de presence (v1)
+	if Type=="lumi.sensor_motion" :  # detecteur de presence (v1) xiaomi
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carré (v1)
+	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carré xiaomi (v1)
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-	if Type=="lumi.sensor_smoke" :  # detecteur de fumée (v1)
+	if Type=="lumi.sensor_smoke" :  # detecteur de fumée (v1) xiaomi
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=5 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
@@ -642,6 +642,9 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices+1, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
+	if Type=="lumi.sensor_86sw1":  # inter sans fils 1 touche 86sw1 xiaomi
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=9 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
 def MajDomoDevice(Addr,Ep,Type,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
@@ -653,7 +656,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 			DOptions = Devices[x].Options
 			DType=DOptions['devices_type']
 			Dtypename=DOptions['typename']
-			if DType=="lumi.weather" :
+			if DType=="lumi.weather" : #temp+hum+baro xiaomi
 				if Type==Dtypename :  # temperature
 					Devices[x].Update(nValue = 0,sValue = str(value))
 				if Type==Dtypename :   # humidité
@@ -690,7 +693,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], SplitData[1] , SplitData[2] , str(value) , SplitData[3])
 						Domoticz.Debug("MajDomoDevice bar NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
-				if Dtypename=="Temp+Hum" :
+				if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 					if Type=="Temperature" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
@@ -733,7 +736,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 
-			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture
+			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture Xiaomi
 				if Type==Dtypename :
 					if value == "01" :
 						state="Open"
