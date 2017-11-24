@@ -59,7 +59,8 @@ class BasePlugin:
 		Domoticz.Log("onMessage called")
 		global Tmprcv
 		global ReqRcv
-		Tmprcv=binascii.hexlify(Data).decode('utf-8')
+		Tmprcv=Data#.decode('utf-8')
+		Domoticz.Debug("Data recu : "+Tmprcv)
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
 			try :
