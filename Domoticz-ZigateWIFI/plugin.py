@@ -34,7 +34,7 @@ class BasePlugin:
 			Domoticz.Debugging(1)
 		#SerialConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
 		#SerialConn.Connect()
-		httpConn = Domoticz.Connection(Name="ZigateTCP", Transport="TCP/IP", Protocol="Line", Address=Parameters["Address"], Port=Parameters["Port"])
+		httpConn = Domoticz.Connection(Name="ZigateTCP", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
 		httpConn.Connect()
 		
 		ReqRcv=''
