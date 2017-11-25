@@ -736,7 +736,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 
-			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture Xiaomi
+			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture Xiaomi
 				if Type==Dtypename :
 					if value == "01" :
 						state="Open"
