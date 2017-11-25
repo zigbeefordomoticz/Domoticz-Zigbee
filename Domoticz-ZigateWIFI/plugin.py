@@ -203,7 +203,7 @@ def sendZigateCmd(cmd,length,datas) :
 	else :
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
-	httpConn.Send(bytes.fromhex(str(lineinput)))	
+	httpConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'))	
 
 def ZigateRead(Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data)
