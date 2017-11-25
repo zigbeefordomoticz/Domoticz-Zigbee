@@ -199,11 +199,11 @@ def ZigateEncode(Data):  # ajoute le transcodage
 
 def sendZigateCmd(cmd,length,datas) :
 	if datas =="" :
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,"0")) + "03" 
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,"0")) + "03000D" 
 	else :
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03"   
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03000D"   
 	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
-	httpConn.Send(bytes.fromhex(str(lineinput))+  "\r")	
+	httpConn.Send(bytes.fromhex(str(lineinput)))	
 
 def ZigateRead(Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data)
