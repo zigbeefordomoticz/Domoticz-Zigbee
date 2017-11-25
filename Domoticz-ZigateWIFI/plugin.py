@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="ZigateWifi" name="Zigate Wifi plugin" author="zaraki673" version="1.0.4" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateWifi" name="Zigate Wifi plugin" author="zaraki673" version="1.0.5" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Address" label="IP" width="150px" required="true" default=""/>
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
