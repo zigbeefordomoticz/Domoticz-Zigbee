@@ -629,10 +629,14 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
 	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carre xiaomi (v1)
-		typename="Switch"
-		#Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Switch"		
 		Options = {"LevelActions": "||||", "LevelNames": "Off|1 Click|2 Clicks|3 Clicks|4 Clicks", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
 		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_switch.aq2" + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+		
+	if Type=="lumi.sensor_86sw2"  :  #inter sans fils 2 touches 86sw2 xiaomi
+		typename="Switch"		
+		Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
+		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_86sw2" + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 		
 	if Type=="lumi.sensor_smoke" :  # detecteur de fumee (v1) xiaomi
 		typename="Switch"
@@ -739,7 +743,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 
 			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture Xiaomi
-				if Type==Dtypename=="Switch"  :
+				if Type==Dtypename :
 					if value == "01" :
 						state="Open"
 					elif value == "00" :
@@ -755,27 +759,49 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 					
 					
-			if DType=="lumi.sensor_switch" or DType=="lumi.sensor_switch.aq2"  :  # detecteur de presence ou ionterrupteur
-				if Type==Dtypename=="Switch" :
-					if value == "01" :
-						state="10"
-					elif value == "02" :
-						state="20"
-					elif value == "03" :
-						state="30"
-					elif value == "04" :
-						state="40"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+			if DType=="lumi.sensor_switch" or DType=="lumi.sensor_switch.aq2"  :  # interrupteur xiaomi rond et carre
+				if Type==Dtypename :
+					if Type=="Switch" :
+						if value == "01" :
+							state="10"
+						elif value == "02" :
+							state="20"
+						elif value == "03" :
+							state="30"
+						elif value == "04" :
+							state="40"
+						Devices[x].Update(nValue = int(value),sValue = str(state))
+						
+						
+			if DType=="lumi.sensor_86sw2"   :  # inter 2 touches xiaomi 86sw2
+				if Type==Dtypename :
+					if Type=="Switch" :
+						if Ep == "01" :
+							if value == "01" :
+								state="10"
+								data="01"
+						elif Ep == "02" :
+							if value == "01" :
+								state="20"
+								data="02"
+						elif Ep == "03" :
+							if value == "01" :
+								state="30"
+								data="03"
+						Devices[x].Update(nValue = int(data),sValue = str(state))
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosite
-				if Type==Dtypename=="Lux" :
-					Devices[x].Update(nValue = 0 ,sValue = str(value))
+				if Type==Dtypename :
+					if Type=="Lux" :
+						Devices[x].Update(nValue = 0 ,sValue = str(value))
+						
 				elif Type==Dtypename :
-					if value == "01" :
-						state="On"
-					elif value == "00" :
-						state="Off"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+					if Type=="Switch" :
+						if value == "01" :
+							state="On"
+						elif value == "00" :
+							state="Off"
+						Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 def ResetDevice(Type) :
 	x=0
