@@ -792,13 +792,16 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosite
 				if Type==Dtypename :
-					Devices[x].Update(nValue = 0 ,sValue = str(value))
+					if Type=="Lux" :
+						Devices[x].Update(nValue = 0 ,sValue = str(value))
+						
 				elif Type==Dtypename :
-					if value == "01" :
-						state="On"
-					elif value == "00" :
-						state="Off"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+					if Type=="Switch" :
+						if value == "01" :
+							state="On"
+						elif value == "00" :
+							state="Off"
+						Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 def ResetDevice(Type) :
 	x=0
