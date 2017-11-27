@@ -739,15 +739,15 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
 
 			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture Xiaomi
-				if Type==Dtypename :
+				if Type==Dtypename=="Switch"  :
 					if value == "01" :
 						state="Open"
 					elif value == "00" :
 						state="Closed"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_86sw1" :  # detecteur de presence ou ionterrupteur
-				if Type==Dtypename :
+			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion :  # detecteur de presence / interrupteur / detecteur de fumée
+				if Type==Dtypename=="Switch" :
 					if value == "01" :
 						state="On"
 					elif value == "00" :
@@ -755,8 +755,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 					
 					
-			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2"  :  # detecteur de presence ou ionterrupteur
-				if Type==Dtypename :
+			if DType=="lumi.sensor_switch" or DType=="lumi.sensor_switch.aq2"  :  # detecteur de presence ou ionterrupteur
+				if Type==Dtypename=="Switch" :
 					if value == "01" :
 						state="10"
 					elif value == "02" :
@@ -768,7 +768,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosite
-				if Type==Dtypename :
+				if Type==Dtypename=="Lux" :
 					Devices[x].Update(nValue = 0 ,sValue = str(value))
 				elif Type==Dtypename :
 					if value == "01" :
