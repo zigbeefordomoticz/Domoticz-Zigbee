@@ -557,7 +557,21 @@ def ZigateRead(Data):
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Lux",str(int(MsgClusterData,16) ))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception LUX Sensor : " + str(MsgClusterData) )
-
+			
+			
+		elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
+			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
+			
+		elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Vert Rot",MsgClusterData)
+			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
+			
+		
+			
+			
 		else :
 		
 			Domoticz.Debug("ZigateRead - MsgType 8102 - Error/unknow Cluster Message : " + MsgClusterId)
@@ -652,8 +666,15 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=9 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
+	if Type=="lumi.sensor_cube" :  # Xiaomi Magic Cube
+		#typename="Text"
+		#Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_cube-text" + " - " + str(DeviceID), Unit=nbrdevices, Type=243, Subtype=19 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Switch"		
+		Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
+		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_cube" + " - " + str(DeviceID), Unit=nbrdevices+1, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+		
 def MajDomoDevice(Addr,Ep,Type,value) :
-	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " - Device EP : " + str(Ep) + " - Type : " + str(Type)  + " - Value : " + str(value) )
 	x=0
 	nbrdevices=1
 	DeviceID=Addr #int(Addr,16)
@@ -789,6 +810,48 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 								state="30"
 								data="03"
 						Devices[x].Update(nValue = int(data),sValue = str(state))
+						
+						
+						
+			if DType=="lumi.sensor_cube"   :  # Xiaomi Magic Cube
+				if Type==Dtypename :
+					if Type=="Switch" :
+						if Ep == "02" :
+							if value == "0000" : #shake
+								state="10"
+								data="01"
+						
+							elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
+								state="50"
+								data="05"
+							
+							elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
+								state="20"
+								data="02"
+							
+							elif value == "0003" : #Free Fall
+								state="70"
+								data="07"
+								
+							elif value >= "0004" and value <= "0059": #90°
+								state="30"
+								data="03"
+								
+							elif value >= "0060" : #180°
+								state="90"
+								data="09"
+					# elif Type=="Switch" : #rotation
+						# elif MsgClusterId=="000c":
+							# if Ep == "03" :
+								# if value == "40404040" or value=="41414141" or value=="42424242" or value=="43434343" : #clockwise
+								  # state="40"
+								  # data="04"
+						
+							# # elif value == "0204" or value == "0200": #tap
+								# # state="50"
+								# # data="05"
+								
+							Devices[x].Update(nValue = int(data),sValue = str(state))
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosite
 				if Type==Dtypename :
