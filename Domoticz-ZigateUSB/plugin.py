@@ -670,7 +670,7 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		#typename="Text"
 		#Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_cube-text" + " - " + str(DeviceID), Unit=nbrdevices, Type=243, Subtype=19 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		typename="Switch"		
-		Options = {"LevelActions": "|||||||", "LevelNames": "Off|Shake|Slide|Horiz Rota|Clockwise|Tap|Move|Free Fall|Anti Clockwise", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
+		Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
 		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_cube" + " - " + str(DeviceID), Unit=nbrdevices+1, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 		
 def MajDomoDevice(Addr,Ep,Type,value) :
@@ -821,11 +821,11 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 								state="10"
 								data="01"
 						
-							elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202": #tap
+							elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
 								state="50"
 								data="05"
 							
-							elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102": #Slide
+							elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
 								state="20"
 								data="02"
 							
@@ -833,6 +833,13 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 								state="70"
 								data="07"
 								
+							elif value >= "0004" and value <= "0059": #90°
+								state="30"
+								data="03"
+								
+							elif value >= "0060" : #180°
+								state="90"
+								data="09"
 					# elif Type=="Switch" : #rotation
 						# elif MsgClusterId=="000c":
 							# if Ep == "03" :
