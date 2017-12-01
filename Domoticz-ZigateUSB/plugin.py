@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.5" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.6" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default=""/>
 		<param field="Mode6" label="Debug" width="75px">
@@ -557,7 +557,21 @@ def ZigateRead(Data):
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Lux",str(int(MsgClusterData,16) ))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception LUX Sensor : " + str(MsgClusterData) )
-
+			
+			
+		elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Switch",MsgClusterData)
+			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
+			
+		elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Vert Rot",MsgClusterData)
+			
+			Domoticz.Debug("ZigateRead - MsgType 8102 - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
+			
+		
+			
+			
 		else :
 		
 			Domoticz.Debug("ZigateRead - MsgType 8102 - Error/unknow Cluster Message : " + MsgClusterId)
@@ -629,9 +643,15 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=8 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
 	if Type=="lumi.sensor_switch.aq2" or Type=="lumi.sensor_switch"  :  # petit inter rond ou carre xiaomi (v1)
-		typename="Switch"
-		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
-
+		typename="Switch"		
+		Options = {"LevelActions": "||||", "LevelNames": "Off|1 Click|2 Clicks|3 Clicks|4 Clicks", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
+		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_switch.aq2" + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+		
+	if Type=="lumi.sensor_86sw2"  :  #inter sans fils 2 touches 86sw2 xiaomi
+		typename="Switch"		
+		Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
+		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_86sw2" + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+		
 	if Type=="lumi.sensor_smoke" :  # detecteur de fumee (v1) xiaomi
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=5 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
@@ -646,8 +666,15 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=9 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 		
+	if Type=="lumi.sensor_cube" :  # Xiaomi Magic Cube
+		#typename="Text"
+		#Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_cube-text" + " - " + str(DeviceID), Unit=nbrdevices, Type=243, Subtype=19 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+		typename="Switch"		
+		Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}
+		Domoticz.Device(DeviceID=str(DeviceID),Name="lumi.sensor_cube" + " - " + str(DeviceID), Unit=nbrdevices+1, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+		
 def MajDomoDevice(Addr,Ep,Type,value) :
-	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " Device EP : " + str(Ep) + " Type : " + str(Type)  + " Value : " + str(value) )
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(Addr) + " - Device EP : " + str(Ep) + " - Type : " + str(Type)  + " - Value : " + str(value) )
 	x=0
 	nbrdevices=1
 	DeviceID=Addr #int(Addr,16)
@@ -744,23 +771,101 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						state="Closed"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" :  # detecteur de presence ou ionterrupteur
-				if Type==Dtypename :
+
+			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion" :  # detecteur de presence / interrupteur / detecteur de fumée
+				if Type==Dtypename=="Switch" :
 					if value == "01" :
 						state="On"
 					elif value == "00" :
 						state="Off"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
+					
+					
+			if DType=="lumi.sensor_switch" or DType=="lumi.sensor_switch.aq2"  :  # interrupteur xiaomi rond et carre
+				if Type==Dtypename :
+					if Type=="Switch" :
+						if value == "01" :
+							state="10"
+						elif value == "02" :
+							state="20"
+						elif value == "03" :
+							state="30"
+						elif value == "04" :
+							state="40"
+						Devices[x].Update(nValue = int(value),sValue = str(state))
+						
+						
+			if DType=="lumi.sensor_86sw2"   :  # inter 2 touches xiaomi 86sw2
+				if Type==Dtypename :
+					if Type=="Switch" :
+						if Ep == "01" :
+							if value == "01" :
+								state="10"
+								data="01"
+						elif Ep == "02" :
+							if value == "01" :
+								state="20"
+								data="02"
+						elif Ep == "03" :
+							if value == "01" :
+								state="30"
+								data="03"
+						Devices[x].Update(nValue = int(data),sValue = str(state))
+						
+						
+						
+			if DType=="lumi.sensor_cube"   :  # Xiaomi Magic Cube
+				if Type==Dtypename :
+					if Type=="Switch" :
+						if Ep == "02" :
+							if value == "0000" : #shake
+								state="10"
+								data="01"
+						
+							elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
+								state="50"
+								data="05"
+							
+							elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
+								state="20"
+								data="02"
+							
+							elif value == "0003" : #Free Fall
+								state="70"
+								data="07"
+								
+							elif value >= "0004" and value <= "0059": #90°
+								state="30"
+								data="03"
+								
+							elif value >= "0060" : #180°
+								state="90"
+								data="09"
+					# elif Type=="Switch" : #rotation
+						# elif MsgClusterId=="000c":
+							# if Ep == "03" :
+								# if value == "40404040" or value=="41414141" or value=="42424242" or value=="43434343" : #clockwise
+								  # state="40"
+								  # data="04"
+						
+							# # elif value == "0204" or value == "0200": #tap
+								# # state="50"
+								# # data="05"
+								
+							Devices[x].Update(nValue = int(data),sValue = str(state))
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosite
 				if Type==Dtypename :
-					Devices[x].Update(nValue = 0 ,sValue = str(value))
+					if Type=="Lux" :
+						Devices[x].Update(nValue = 0 ,sValue = str(value))
+						
 				elif Type==Dtypename :
-					if value == "01" :
-						state="On"
-					elif value == "00" :
-						state="Off"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+					if Type=="Switch" :
+						if value == "01" :
+							state="On"
+						elif value == "00" :
+							state="Off"
+						Devices[x].Update(nValue = int(value),sValue = str(state))
 			
 def ResetDevice(Type) :
 	x=0
@@ -805,3 +910,8 @@ def UpdateBattery(DeviceID,BatteryLvl):
 			Domoticz.Log("BatteryLvl = " + str(BatteryLvl))
 			Devices[x].Update(nValue = int(CurrentnValue),sValue = str(CurrentsValue), BatteryLevel = BatteryLvl )
 	#####################################################################################################################
+
+
+
+	
+
