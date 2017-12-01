@@ -745,7 +745,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						state="Closed"
 					Devices[x].Update(nValue = int(value),sValue = str(state))
 				
-			if DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" :  # detecteur de presence (v1) ou ionterrupteur Xiaomi
+			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_motion" or DType=="lumi.sensor_switch.aq2" or DType=="lumi.sensor_switch" or DType=="lumi.sensor_smoke" :  # detecteur de presence (v1) ou ionterrupteur Xiaomi
 				if Type==Dtypename :
 					if value == "01" :
 						state="On"
