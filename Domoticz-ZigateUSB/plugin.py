@@ -3,7 +3,7 @@
 # Author: zaraki673
 #
 """
-<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.6" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.7" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default=""/>
 		<param field="Mode6" label="Debug" width="75px">
@@ -685,16 +685,19 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 			Dtypename=DOptions['typename']
 			if DType=="lumi.weather" : #temp+hum+baro xiaomi
 				if Type==Dtypename=="Temperature" :  # temperature
-					Devices[x].Update(nValue = 0,sValue = str(value))
+					#Devices[x].Update(nValue = 0,sValue = str(value))	
+					UpdateDevice(x,0,str(value))				
 				if Type==Dtypename=="Humidity" :   # humidite
-					Devices[x].Update(nValue = int(value), sValue = "0")
+					#Devices[x].Update(nValue = int(value), sValue = "0")	
+					UpdateDevice(x,int(value),"0")				
 				if Type==Dtypename=="Barometer" :  # barometre
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
 					SplitData=CurrentsValue.split(";")
 					valueBaro='%s;%s' % (value,SplitData[0])
-					Devices[x].Update(nValue = 0,sValue = str(valueBaro))
+					#Devices[x].Update(nValue = 0,sValue = str(valueBaro))	
+					UpdateDevice(x,0,str(valueBaro))				
 				if Dtypename=="Temp+Hum+Baro" :
 					if Type=="Temperature" :
 						CurrentnValue=Devices[x].nValue
@@ -703,7 +706,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s;%s;%s'	% (str(value) ,  SplitData[1] , SplitData[2] , SplitData[3] , SplitData[4])
 						Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
+						UpdateDevice(x,0,str(NewSvalue))									
 					if Type=="Humidity" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
@@ -711,7 +715,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2] , SplitData[3] , SplitData[4])
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
+						UpdateDevice(x,0,str(NewSvalue))									
 					if Type=="Barometer" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
@@ -719,7 +724,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], SplitData[1] , SplitData[2] , str(value) , SplitData[3])
 						Domoticz.Debug("MajDomoDevice bar NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
+						UpdateDevice(x,0,str(NewSvalue))									
 				if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 					if Type=="Temperature" :
 						CurrentnValue=Devices[x].nValue
@@ -728,7 +734,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
 						Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))			
+						UpdateDevice(x,0,str(NewSvalue))								
 					if Type=="Humidity" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
@@ -736,13 +743,16 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))					
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))	
+						UpdateDevice(x,0,str(NewSvalue))				
 	
 			if DType=="lumi.sensor_ht" :
 				if Type==Dtypename=="Temperature" :
-					Devices[x].Update(nValue = 0,sValue = str(value))
+					#Devices[x].Update(nValue = 0,sValue = str(value))
+					UpdateDevice(x,0,str(value))
 				if Type==Dtypename=="Humidity" :
-					Devices[x].Update(nValue = int(value), sValue = "0")
+					#Devices[x].Update(nValue = int(value), sValue = "0")
+					UpdateDevice(x,int(value),"0")
 				#if Dtypename=="Temp+Hum" :
 					#Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, TypeName=typename, options={"EP":Ep, "devices_type": str(Type), "typename":str(typename)}).Create()				
 				if Dtypename=="Temp+Hum" :
@@ -753,7 +763,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
 						Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))						
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
+						UpdateDevice(x,0,str(NewSvalue))				
 					if Type=="Humidity" :
 						CurrentnValue=Devices[x].nValue
 						CurrentsValue=Devices[x].sValue
@@ -761,7 +772,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						SplitData=CurrentsValue.split(";")
 						NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 						Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-						Devices[x].Update(nValue = 0,sValue = str(NewSvalue))		
+						#Devices[x].Update(nValue = 0,sValue = str(NewSvalue))
+						UpdateDevice(x,0,str(NewSvalue))		
 
 			if DType=="lumi.sensor_magnet.aq2" or DType=="lumi.sensor_magnet" :  # detecteur ouverture/fermeture Xiaomi
 				if Type==Dtypename :
@@ -769,7 +781,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						state="Open"
 					elif value == "00" :
 						state="Closed"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+					#Devices[x].Update(nValue = int(value),sValue = str(state))
+					UpdateDevice(x,int(value),str(state))
 				
 
 			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion" :  # detecteur de presence / interrupteur / detecteur de fumée
@@ -778,7 +791,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 						state="On"
 					elif value == "00" :
 						state="Off"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+					#Devices[x].Update(nValue = int(value),sValue = str(state))
+					UpdateDevice(x,int(value),str(state))
 					
 					
 			if DType=="lumi.sensor_switch" or DType=="lumi.sensor_switch.aq2"  :  # interrupteur xiaomi rond et carre
@@ -792,7 +806,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 							state="30"
 						elif value == "04" :
 							state="40"
-						Devices[x].Update(nValue = int(value),sValue = str(state))
+						#Devices[x].Update(nValue = int(value),sValue = str(state))
+						UpdateDevice(x,int(value),str(state))
 						
 						
 			if DType=="lumi.sensor_86sw2"   :  # inter 2 touches xiaomi 86sw2
@@ -810,7 +825,8 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 							if value == "01" :
 								state="30"
 								data="03"
-						Devices[x].Update(nValue = int(data),sValue = str(state))
+						#Devices[x].Update(nValue = int(data),sValue = str(state))
+						UpdateDevice(x,int(data),str(state))
 						
 						
 						
@@ -852,13 +868,14 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 								# # state="50"
 								# # data="05"
 								
-							Devices[x].Update(nValue = int(data),sValue = str(state))
+							#Devices[x].Update(nValue = int(data),sValue = str(state))
+							UpdateDevice(x,int(data),str(state))
 
 			if DType=="lumi.sensor_motion.aq2":  # detecteur de luminosite
 				if Type==Dtypename :
 					if Type=="Lux" :
-						Devices[x].Update(nValue = 0 ,sValue = str(value))
-						
+						#Devices[x].Update(nValue = 0 ,sValue = str(value))
+						UpdateDevice(x,0,str(value))
 				elif Type==Dtypename :
 					if Type=="Switch" :
 						if value == "01" :
@@ -870,18 +887,22 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 def ResetDevice(Type) :
 	x=0
 	for x in Devices: 
-		LUpdate=Devices[x].LastUpdate
-		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
-		current = time.time()
-		DOptions = Devices[x].Options
-		DType=DOptions['devices_type']
-		Dtypename=DOptions['typename']
-		if (current-LUpdate)> 30 :
-			if DType==Type :
-				if Dtypename=="Switch":
-					value = "00"
-					state="Off"
-					Devices[x].Update(nValue = int(value),sValue = str(state))
+		try :
+			LUpdate=Devices[x].LastUpdate
+			LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
+			current = time.time()
+			DOptions = Devices[x].Options
+			DType=DOptions['devices_type']
+			Dtypename=DOptions['typename']
+			if (current-LUpdate)> 30 :
+				if DType==Type :
+					if Dtypename=="Switch":
+						value = "00"
+						state="Off"
+						#Devices[x].Update(nValue = int(value),sValue = str(state))
+						UpdateDevice(x,int(value),str(state))	
+		except :
+			return
 			
 			
 	
@@ -910,6 +931,14 @@ def UpdateBattery(DeviceID,BatteryLvl):
 			Domoticz.Log("BatteryLvl = " + str(BatteryLvl))
 			Devices[x].Update(nValue = int(CurrentnValue),sValue = str(CurrentsValue), BatteryLevel = BatteryLvl )
 	#####################################################################################################################
+
+def UpdateDevice(Unit, nValue, sValue):
+    # Make sure that the Domoticz device still exists (they can be deleted) before updating it 
+    if (Unit in Devices):
+        if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
+            Devices[Unit].Update(nValue=nValue, sValue=str(sValue))
+            Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+    return
 
 
 
