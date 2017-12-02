@@ -887,19 +887,22 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 def ResetDevice(Type) :
 	x=0
 	for x in Devices: 
-		LUpdate=Devices[x].LastUpdate
-		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
-		current = time.time()
-		DOptions = Devices[x].Options
-		DType=DOptions['devices_type']
-		Dtypename=DOptions['typename']
-		if (current-LUpdate)> 30 :
-			if DType==Type :
-				if Dtypename=="Switch":
-					value = "00"
-					state="Off"
-					#Devices[x].Update(nValue = int(value),sValue = str(state))
-					UpdateDevice(x,int(value),str(state))				
+		try :
+			LUpdate=Devices[x].LastUpdate
+			LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
+			current = time.time()
+			DOptions = Devices[x].Options
+			DType=DOptions['devices_type']
+			Dtypename=DOptions['typename']
+			if (current-LUpdate)> 30 :
+				if DType==Type :
+					if Dtypename=="Switch":
+						value = "00"
+						state="Off"
+						#Devices[x].Update(nValue = int(value),sValue = str(state))
+						UpdateDevice(x,int(value),str(state))	
+		except :
+			return
 			
 			
 	
