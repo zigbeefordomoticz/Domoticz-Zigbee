@@ -2,8 +2,9 @@
 #
 # Author: zaraki673
 #
+
 """
-<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.7" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.8" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default=""/>
 		<param field="Mode6" label="Debug" width="75px">
@@ -15,6 +16,7 @@
 	</params>
 </plugin>
 """
+
 import Domoticz
 import binascii
 import time
@@ -519,7 +521,11 @@ def ZigateRead(Data):
 		
 		elif MsgClusterId=="0402" :  # Measurement: Temperature xiaomi
 			MsgValue=Data[len(Data)-8:len(Data)-4]
-			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(int(MsgValue,16)/100,1))
+			if MsgValue[0] == "f" :
+				MsgValue=int(MsgValue,16)^int("FFFF",16)
+			else :
+				MsgValue=int(Data[len(Data)-8:len(Data)-4],16)
+			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(MsgValue/100,1))
 			
 			Domoticz.Debug("ZigateRead - MsgType 8102 - reception temp : " + str(int(MsgValue,16)/100) )
 					
@@ -655,6 +661,10 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 	if Type=="lumi.sensor_smoke" :  # detecteur de fumee (v1) xiaomi
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=5 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
+
+	if Type=="lumi.sensor_wleak.aq1" :  # detecteur de fumee (v1) xiaomi
+		typename="Switch"
+		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
 	if Type=="lumi.sensor_motion.aq2" :  # Lux sensors + detecteur xiaomi v2
 		typename="Lux"
@@ -876,13 +886,13 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 					if Type=="Lux" :
 						#Devices[x].Update(nValue = 0 ,sValue = str(value))
 						UpdateDevice(x,0,str(value))
-				elif Type==Dtypename :
 					if Type=="Switch" :
 						if value == "01" :
 							state="On"
 						elif value == "00" :
 							state="Off"
-						Devices[x].Update(nValue = int(value),sValue = str(state))
+						#Devices[x].Update(nValue = int(value),sValue = str(state))
+						UpdateDevice(x,int(value),str(state))
 			
 def ResetDevice(Type) :
 	x=0
@@ -914,7 +924,7 @@ def getChecksum(msgtype,length,datas) :
 	temp ^= int(length[2:4],16)
 	for i in range(0,len(datas),2) :
 		temp ^= int(datas[i:i+2],16)
-		chk=hex(temp)
+	chk=hex(temp)
 	Domoticz.Debug("getChecksum - Checksum : " + str(chk))
 	return chk[2:4]
 
