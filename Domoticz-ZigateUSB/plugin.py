@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="1.0.9" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin V1" author="zaraki673" version="1.0.9" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -15,12 +15,13 @@
 		<param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
-		<param field="Mode2" label="Duree association (entre 0 et 255) : " width="75px" required="true" default="254"/>
+		<param field="Mode2" label="Duree association entre 0 et 255 : " width="75px" required="true" default="254" />
 		<param field="Mode3" label="Full reset : " width="75px">
 			<options>
 				<option label="True" value="True"/>
 				<option label="False" value="False"  default="true" />
 			</options>
+		</param>
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -168,7 +169,7 @@ def ZigateConf():
 	sendZigateCmd("0024","0000","")
 
 	################### ZiGate - discover mode 255sec ##################
-	sendZigateCmd("0049","0004","FFFC" + hex(Parameters["Mode2"]) + "00")
+	sendZigateCmd("0049","0004","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
 
 def ZigateDecode(Data):  # supprime le transcodage
 	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
@@ -274,7 +275,7 @@ def ZigateRead(Data):
 		Domoticz.Debug("reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 		
 		# tester si le device existe deja dans la base domoticz
-		#sendZigateCmd("0045","0002", str(MsgSrcAddr))    # Envoie une demande Active Endpoint request
+		#sendZigateCmd("0045","0002", str(MsgSrcAddr))	# Envoie une demande Active Endpoint request
 		#SerialConn.Send(bytes.fromhex(lineinput))
 		
 	elif str(MsgType)=="00d1":  #
@@ -418,7 +419,7 @@ def ZigateRead(Data):
 		#	OutEPlist+=i
 		#	if len(OutEPlist)==2 :
 		#		Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + OutEPlist + ", du device adresse : " + MsgDataShAddr)
-		#		sendZigateCmd("0043","0004", str(MsgDataShAddr)+str(OutEPlist))    # Envoie une demande Simple Descriptor request pour avoir les informations du EP
+		#		sendZigateCmd("0043","0004", str(MsgDataShAddr)+str(OutEPlist))	# Envoie une demande Simple Descriptor request pour avoir les informations du EP
 		#		OutEPlisttmp=""
 		
 
@@ -976,12 +977,12 @@ def UpdateBattery(DeviceID,BatteryLvl):
 	#####################################################################################################################
 
 def UpdateDevice(Unit, nValue, sValue):
-    # Make sure that the Domoticz device still exists (they can be deleted) before updating it 
-    if (Unit in Devices):
-        if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
-            Devices[Unit].Update(nValue=nValue, sValue=str(sValue))
-            Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
-    return
+	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
+	if (Unit in Devices):
+		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
+			Devices[Unit].Update(nValue=nValue, sValue=str(sValue))
+			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+	return
 
 
 
