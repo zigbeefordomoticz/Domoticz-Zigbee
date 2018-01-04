@@ -4,9 +4,23 @@
 #
 
 """
-<plugin key="ZigateUSB" name="Zigate USB plugin" author="zaraki673" version="1.0.8" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="1.0.9" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
-		<param field="SerialPort" label="Serial Port" width="150px" required="true" default=""/>
+		<param field="Mode1" label="Type" width="75px">
+			<options>
+				<option label="USB" value="USB" default="true" />
+				<option label="Wifi" value="Wifi"/>
+			</options>
+		</param>
+		<param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
+		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
+		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
+		<param field="Mode2" label="Duree association (entre 0 et 255) : " width="75px" required="true" default="254"/>
+		<param field="Mode3" label="Full reset : " width="75px">
+			<options>
+				<option label="True" value="True"/>
+				<option label="False" value="False"  default="true" />
+			</options>
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -30,11 +44,15 @@ class BasePlugin:
 	def onStart(self):
 		Domoticz.Log("onStart called")
 		global ReqRcv
-		global SerialConn
+		global ZigateConn
 		if Parameters["Mode6"] == "Debug":
 			Domoticz.Debugging(1)
-		SerialConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
-		SerialConn.Connect()
+		if Parameters["Mode1"] == "USB":
+			ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
+			ZigateConn.Connect()
+		if Parameters["Mode1"] == "Wifi":
+			ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None", Address=Parameters["Address"], Port=Parameters["Port"])
+			ZigateConn.Connect()
 		ReqRcv=''
 
 
@@ -46,15 +64,18 @@ class BasePlugin:
 		global isConnected
 		if (Status == 0):
 			isConnected = True
-			Domoticz.Log("Connected successfully to: "+Parameters["SerialPort"])
+			Domoticz.Log("Connected successfully")
+			if Parameters["Mode3"] == "True":
+			################### ZiGate - ErasePD ##################
+				sendZigateCmd("0012","0000", "")
 			ZigateConf()
 		else:
-			Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Parameters["SerialPort"])
-			Domoticz.Debug("Failed to connect ("+str(Status)+") to: "+Parameters["SerialPort"]+" with error: "+Description)
+			Domoticz.Log("Failed to connect ("+str(Status)+")")
+			Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
 		return True
 
 	def onMessage(self, Connection, Data):
-		Domoticz.Log("onMessage called")
+#		Domoticz.Log("onMessage called")
 		global Tmprcv
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
@@ -85,8 +106,8 @@ class BasePlugin:
 #		Domoticz.Log("onHeartbeat called")
 		ResetDevice("lumi.sensor_motion.aq2")
 		ResetDevice("lumi.sensor_motion")
-		if (SerialConn.Connected() != True):
-			SerialConn.Connect()
+		if (ZigateConn.Connected() != True):
+			ZigateConn.Connect()
 		return True
 
 global _plugin
@@ -147,7 +168,7 @@ def ZigateConf():
 	sendZigateCmd("0024","0000","")
 
 	################### ZiGate - discover mode 255sec ##################
-	sendZigateCmd("0049","0004","FFFCFE00")
+	sendZigateCmd("0049","0004","FFFC" + hex(Parameters["Mode2"]) + "00")
 
 def ZigateDecode(Data):  # supprime le transcodage
 	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
@@ -197,12 +218,24 @@ def ZigateEncode(Data):  # ajoute le transcodage
 
 def sendZigateCmd(cmd,length,datas) :
 	if datas =="" :
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,"0")) + "03" 
+		checksumCmd=getChecksum(cmd,length,"0")
+		if len(checksumCmd)==1 :
+			strchecksum="0" + str(checksumCmd)
+		else :
+			strchecksum=checksumCmd
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(strchecksum) + "03" 
 	else :
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(getChecksum(cmd,length,datas)) + str(ZigateEncode(datas)) + "03"   
+		checksumCmd=getChecksum(cmd,length,datas)
+		if len(checksumCmd)==1 :
+			strchecksum="0" + str(checksumCmd)
+		else :
+			strchecksum=checksumCmd
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(strchecksum) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
-	SerialConn.Send(bytes.fromhex(str(lineinput)))	
-
+	if Parameters["Mode1"] == "USB":
+		ZigateConn.Send(bytes.fromhex(str(lineinput)))	
+	if Parameters["Mode1"] == "Wifi":
+		ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
 	
 def ZigateRead(Data):
@@ -662,7 +695,7 @@ def CreateDomoDevice(nbrdevices,Addr,Ep,Type) :
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=5 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
-	if Type=="lumi.sensor_wleak.aq1" :  # detecteur de fumee (v1) xiaomi
+	if Type=="lumi.sensor_wleak.aq1" :  # detecteur d'eau (v1) xiaomi
 		typename="Switch"
 		Domoticz.Device(DeviceID=str(DeviceID),Name=str(typename) + " - " + str(DeviceID), Unit=nbrdevices, Type=244, Subtype=73 , Switchtype=0 , Options={"EP":str(Ep), "devices_type": str(Type), "typename":str(typename)}).Create()
 
@@ -795,7 +828,7 @@ def MajDomoDevice(Addr,Ep,Type,value) :
 					UpdateDevice(x,int(value),str(state))
 				
 
-			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion" :  # detecteur de presence / interrupteur / detecteur de fumée
+			if DType=="lumi.sensor_86sw1" or DType=="lumi.sensor_smoke" or DType=="lumi.sensor_motion" or Dtype=="lumi.sensor_wleak.aq1" :  # detecteur de presence / interrupteur / detecteur de fumée
 				if Type==Dtypename=="Switch" :
 					if value == "01" :
 						state="On"
