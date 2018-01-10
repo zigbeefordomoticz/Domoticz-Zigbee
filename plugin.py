@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="1.1.0" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="1.1.1" wikilink="http://www.domoticz.com/wiki/plugins/zigate.html" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -556,7 +556,7 @@ def ZigateRead(Data):
 		elif MsgClusterId=="0402" :  # Measurement: Temperature xiaomi
 			MsgValue=Data[len(Data)-8:len(Data)-4]
 			if MsgValue[0] == "f" :
-				MsgValue=int(MsgValue,16)^int("FFFF",16)
+				MsgValue=-(int(MsgValue,16)^int("FFFF",16))
 			else :
 				MsgValue=int(Data[len(Data)-8:len(Data)-4],16)
 			MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(MsgValue/100,1))
