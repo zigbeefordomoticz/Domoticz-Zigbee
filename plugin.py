@@ -335,7 +335,7 @@ def sendZigateCmd(cmd,length,datas) :
 	if Parameters["Mode1"] == "USB":
 		ZigateConn.Send(bytes.fromhex(str(lineinput)))	
 	if Parameters["Mode1"] == "Wifi":
-		ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'))
+		ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
 def ZigateRead(self, Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data)
