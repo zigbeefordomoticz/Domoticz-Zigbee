@@ -762,10 +762,6 @@ def CreateDomoDevice(self, DeviceID) :
 				self.ListOfDevices[DeviceID]['Status']="inDB"
 				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-			if t=="Smoke" :  # detecteur de fumee (v1) xiaomi
-				self.ListOfDevices[DeviceID]['Status']="inDB"
-				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73 , Switchtype=5 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
-
 			if t=="LvlControl" :  # variateur de luminosité
 				self.ListOfDevices[DeviceID]['Status']="inDB"
 				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
@@ -1017,7 +1013,11 @@ def ReadCluster(self, MsgData):
 	
 	elif MsgClusterId=="0402" :  # (Measurement: Temperature) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
+		if MsgValue[0] == "f" :
+			MsgValue=-(int(MsgValue,16)^int("FFFF",16))
+		else :
+			MsgValue=int(Data[len(Data)-8:len(Data)-4],16)
+		MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(MsgValue/100,1))
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(int(MsgClusterData,16)/100) )
 				
