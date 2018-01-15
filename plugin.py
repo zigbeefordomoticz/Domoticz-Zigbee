@@ -1013,11 +1013,11 @@ def ReadCluster(self, MsgData):
 	
 	elif MsgClusterId=="0402" :  # (Measurement: Temperature) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
-		if MsgValue[0] == "f" :
-			MsgValue=-(int(MsgValue,16)^int("FFFF",16))
+		if MsgClusterData[0] == "f" :
+			MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
 		else :
-			MsgValue=int(Data[len(Data)-8:len(Data)-4],16)
-		MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(MsgValue/100,1))
+			MsgClusterData=int(Data[len(Data)-8:len(Data)-4],16)
+		MajDomoDevice(MsgSrcAddr,MsgSrcEp,"Temperature",round(MsgClusterData/100,1))
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(int(MsgClusterData,16)/100) )
 				
