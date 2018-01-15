@@ -1015,7 +1015,7 @@ def ReadCluster(self, MsgData):
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		if MsgClusterData[0] == "f" :  # cas temperature negative
 			MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
+		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(int(MsgClusterData,16)/100,1))
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(int(MsgClusterData,16)/100) )
 				
