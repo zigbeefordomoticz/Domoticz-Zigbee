@@ -120,17 +120,17 @@ class BasePlugin:
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-			#try :
-			if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-				ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-			else : 
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-				ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-			#except :
-			#	Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-			#	ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+			try :
+				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+				else : 
+					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
+					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
+			except :
+				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
@@ -662,9 +662,11 @@ def ReadCluster(self, MsgData):
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		if MsgClusterData[0] == "f" :  # cas temperature negative
 			MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(int(MsgClusterData,16)/100,1))
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(int(MsgClusterData,16)/100) )
+		else : 
+			MsgClusterData=int(MsgClusterData,16)
+		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
+		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData/100,1))
+		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100))
 				
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 		if MsgAttType=="0028":
