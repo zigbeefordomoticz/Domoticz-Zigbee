@@ -159,22 +159,31 @@ class BasePlugin:
 
 		if Command == "On" :
 			#if Dtypename == "Switch" :
-			sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
+			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
 			UpdateDevice(Unit, 1, "On")
 		if Command == "Off" :
 			#if Dtypename == "Switch" :
-			sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 			UpdateDevice(Unit, 0, "Off")
 
 		if Command == "Set Level" :
 			if Dtypename == "LvlControl" :
 				if Level == 0 :
-					sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 					UpdateDevice(Unit, 0, "Off")
 				else :
-					sendZigateCmd("0081","0009","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + hex(round(Level*255/100))[2:4] + "0010")
+					value=hex(round(Level*255/100))[2:4]
+					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
 					UpdateDevice(Unit, 1, "On")
-		
+
+			if Dtypename == "ColorControl" :
+				if Level == 0 :
+					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+					UpdateDevice(Unit, 0, "Off")
+				else :
+					value=hex(round(2200+Level*5))[2:4]
+					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0000")
+					UpdateDevice(Unit, 1, "On")
 		
 		
 		
@@ -302,16 +311,16 @@ def DumpConfigToLog():
 def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
-	sendZigateCmd("0021","0004", "00000B00")
+	sendZigateCmd("0021", "00000B00")
 
 	################### ZiGate - Set Type COORDINATOR#################
-	sendZigateCmd("0023","0001","00")
+	sendZigateCmd("0023","00")
 	
 	################### ZiGate - start network##################
-	sendZigateCmd("0024","0000","")
+	sendZigateCmd("0024","")
 
 	################### ZiGate - discover mode 255sec ##################
-	sendZigateCmd("0049","0004","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
+	sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
 
 def ZigateDecode(self, Data):  # supprime le transcodage
 	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
@@ -359,21 +368,26 @@ def ZigateEncode(Data):  # ajoute le transcodage
 	Domoticz.Debug("Transcode in : " + str(Data) + "  / out :" + str(Out) )
 	return Out
 
-def sendZigateCmd(cmd,length,datas) :
+def sendZigateCmd(cmd,datas) :
+	if datas == "" :
+		length="0000"
+	else :
+		length=returnlen(4,str(round(len(datas)/2)))
+		Domoticz.Debug("sendZigateCmd - length is : " + str(length) )
 	if datas =="" :
 		checksumCmd=getChecksum(cmd,length,"0")
 		if len(checksumCmd)==1 :
 			strchecksum="0" + str(checksumCmd)
 		else :
 			strchecksum=checksumCmd
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(strchecksum) + "03" 
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + "03" 
 	else :
 		checksumCmd=getChecksum(cmd,length,datas)
 		if len(checksumCmd)==1 :
 			strchecksum="0" + str(checksumCmd)
 		else :
 			strchecksum=checksumCmd
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(strchecksum) + str(ZigateEncode(datas)) + "03"   
+		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
 	if Parameters["Mode1"] == "USB":
 		ZigateConn.Send(bytes.fromhex(str(lineinput)))	
@@ -1171,4 +1185,8 @@ def WriteDeviceList(self, count):
 		Domoticz.Debug("HB count = " + str(self.HBcount))
 		self.HBcount=self.HBcount+1
 
-
+def returnlen(taille , value) :
+	while len(value)<taille:
+		value="0"+value
+	returnlen=value
+	return str(returnlen)
