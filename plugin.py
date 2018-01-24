@@ -172,7 +172,7 @@ class BasePlugin:
 					sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 					UpdateDevice(Unit, 0, "Off")
 				else :
-					sendZigateCmd("0081","0009","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + hex(round(Level*255/100))[2:4] + "0011")
+					sendZigateCmd("0081","0009","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + hex(round(Level*255/100))[2:4] + "0010")
 					UpdateDevice(Unit, 1, "On")
 		
 		
@@ -345,7 +345,7 @@ def ZigateEncode(Data):  # ajoute le transcodage
 	for c in Data :
 		Outtmp+=c
 		if len(Outtmp)==2 :
-			if Outtmp[0] == "1" :
+			if Outtmp[0] == "1" and Outtmp != "10":
 				if Outtmp[1] == "0" :
 					Outtmp="0200"
 					Out+=Outtmp
