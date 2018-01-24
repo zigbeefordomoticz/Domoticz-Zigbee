@@ -140,8 +140,15 @@ class BasePlugin:
 		Dtypename=DOptions['TypeName']
 		Dzigate=eval(DOptions['Zigate'])
 		EPin="01"
+		if Dtypename=="Switch" :
+			ClusterSearch="0006"
+		if Dtypename=="LvlControl" :
+			ClusterSearch="0008"
+		if Dtypename=="ColorControl" :
+			ClusterSearch="0300"
+		
 		for tmpEp in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'] :
-			if "0006" in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
+			if ClusterSearch in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
 				EPout=tmpEp
 				EPfound=True
 			else :
@@ -151,15 +158,22 @@ class BasePlugin:
 
 
 		if Command == "On" :
-			if Dtypename == "Switch" :
-				sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
-				UpdateDevice(Unit, 1, "On")
+			#if Dtypename == "Switch" :
+			sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
+			UpdateDevice(Unit, 1, "On")
 		if Command == "Off" :
-			if Dtypename == "Switch" :
-				sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-				UpdateDevice(Unit, 0, "Off")
+			#if Dtypename == "Switch" :
+			sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+			UpdateDevice(Unit, 0, "Off")
 
-		
+		if Command == "Set Level" :
+			if Dtypename == "LvlControl" :
+				if Level == 0 :
+					sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+					UpdateDevice(Unit, 0, "Off")
+				else :
+					sendZigateCmd("0081","0009","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + hex(round(Level*255/100))[2:4] + "0011")
+					UpdateDevice(Unit, 1, "On")
 		
 		
 		
