@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.0.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.0.2" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -136,6 +136,35 @@ class BasePlugin:
 
 	def onCommand(self, Unit, Command, Level, Hue):
 		Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level))
+		DOptions = Devices[Unit].Options
+		Dtypename=DOptions['TypeName']
+		Dzigate=eval(DOptions['Zigate'])
+		EPin="01"
+		for tmpEp in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'] :
+			if "0006" in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
+				EPout=tmpEp
+				EPfound=True
+			else :
+				EPfound=False
+		if EPfound==False :
+			EPout="01"
+
+
+		if Command == "On" :
+			if Dtypename == "Switch" :
+				sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
+				UpdateDevice(Unit, 1, "On")
+		if Command == "Off" :
+			if Dtypename == "Switch" :
+				sendZigateCmd("0092","0006","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+				UpdateDevice(Unit, 0, "Off")
+
+		
+		
+		
+		
+		
+		
 
 	def onDisconnect(self, Connection):
 		Domoticz.Log("onDisconnect called")
@@ -188,7 +217,7 @@ class BasePlugin:
 					if self.ListOfDevices[key]['ProfileID']=="c05e" :
 						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.Tradfi"
+							self.ListOfDevices[key]['Model']="Ampoule.Tradfri"
 							IsCreated=False
 							x=0
 							nbrdevices=0
@@ -607,7 +636,7 @@ def Decode8010(self,MsgData) : # Reception Version list
 	MsgDataApp=MsgData[0:4]
 	MsgDataSDK=MsgData[4:8]
 	Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
-	
+
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	MsgDataSQN=MsgData[0:2]
 	MsgDataStatus=MsgData[2:4]
@@ -647,7 +676,6 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				MsgDataCluster=""
 				i=i+1
 
-
 def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataSQN=MsgData[0:2]
 	MsgDataStatus=MsgData[2:4]
@@ -665,7 +693,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 			if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
 				self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
 				OutEPlist=""
-	
+
 def Decode8101(self, MsgData) :  # Default Response
 	MsgDataSQN=MsgData[0:2]
 	MsgDataEp=MsgData[2:4]
