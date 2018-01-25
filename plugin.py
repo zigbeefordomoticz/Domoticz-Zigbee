@@ -942,7 +942,7 @@ def ResetDevice(Type,HbCount) :
 
 def DeviceExist(self, Addr) :
 	#check in ListOfDevices
-	if Addr in self.ListOfDevices :
+	if Addr in self.ListOfDevices and 'Status' in self.ListOfDevices[Addr]: {}:
 		return True
 	else :  # devices inconnu ds listofdevices et ds db
 		self.ListOfDevices[Addr]={}
