@@ -138,7 +138,7 @@ class BasePlugin:
 		Dtypename=DOptions['TypeName']
 		Dzigate=eval(DOptions['Zigate'])
 		EPin="01"
-		if Dtypename=="Switch" :
+		if Dtypename=="Switch" or Dtypename=="Plug":
 			ClusterSearch="0006"
 		if Dtypename=="LvlControl" :
 			ClusterSearch="0008"
