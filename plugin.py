@@ -105,7 +105,7 @@ class BasePlugin:
 			Domoticz.Log("Connected successfully")
 			if Parameters["Mode3"] == "True":
 			################### ZiGate - ErasePD ##################
-				sendZigateCmd("0012","0000", "")
+				sendZigateCmd("0012", "")
 			ZigateConf()
 		else:
 			Domoticz.Log("Failed to connect ("+str(Status)+")")
