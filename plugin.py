@@ -172,7 +172,7 @@ class BasePlugin:
 					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 					UpdateDevice(Unit, 0, "Off")
 				else :
-					value=hex(round(Level*255/100))[2:4]
+					value=returnlen(2,hex(round(Level*255/100))[2:])
 					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
 					UpdateDevice(Unit, 1, "On")
 
@@ -181,8 +181,8 @@ class BasePlugin:
 					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 					UpdateDevice(Unit, 0, "Off")
 				else :
-					value=hex(round(2200+Level*5))[2:4]
-					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0000")
+					value=returnlen(4,hex(round(Level*1700/100))[2:])
+					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + value + "0000")
 					UpdateDevice(Unit, 1, "On")
 		
 		
