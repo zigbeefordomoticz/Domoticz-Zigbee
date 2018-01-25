@@ -201,7 +201,7 @@ class BasePlugin:
 			self.ListOfDevices[key]['Heartbeat']=str(int(self.ListOfDevices[key]['Heartbeat'])+1)
 			# Envoi une demande Active Endpoint request
 			if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
-				sendZigateCmd("0045","0002", str(key))
+				sendZigateCmd("0045", str(key))
 				self.ListOfDevices[key]['Status']="0045"
 				self.ListOfDevices[key]['Heartbeat']="0"
 			if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="10":
@@ -213,7 +213,7 @@ class BasePlugin:
 			if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
 				for cle in self.ListOfDevices[key]['Ep']:
 					Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + cle + ", du device adresse : " + key)
-					sendZigateCmd("0043","0004", str(key)+str(cle))
+					sendZigateCmd("0043", str(key)+str(cle))
 				self.ListOfDevices[key]['Status']="0043"
 				self.ListOfDevices[key]['Heartbeat']="0"
 			if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="10":
