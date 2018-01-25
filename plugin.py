@@ -16,7 +16,7 @@
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
 		<param field="Mode2" label="Duree association (entre 0 et 255) au demarrage : " width="75px" required="true" default="254" />
-		<param field="Mode3" label="Erase Persistent Data ( !!! réassociation de tous les devices obligatoirs !!! ): " width="75px">
+		<param field="Mode3" label="Erase Persistent Data ( !!! reassociation de tous les devices obligatoirs !!! ): " width="75px">
 			<options>
 				<option label="True" value="True"/>
 				<option label="False" value="False" default="true" />
@@ -809,11 +809,15 @@ def CreateDomoDevice(self, DeviceID) :
 					Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
-				if t=="Water" :  # detecteur d'eau (v1) xiaomi
+				if t=="Water" :  # detecteur d'eau 
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73 , Switchtype=0 , Image=11 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="LvlControl" :  # variateur de luminosité
+				if t=="Plug" :  # prise pilote
+					self.ListOfDevices[DeviceID]['Status']="inDB"
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73 , Switchtype=0 , Image=1 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+
+				if t=="LvlControl" :  # variateur de luminosite
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
@@ -1132,7 +1136,7 @@ def CheckType(self, MsgSrcAddr) :
 		self.ListOfDevices[MsgSrcAddr]['Status']="inDB"
 
 def GetType(self, Addr, Ep) :
-	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a été détecté et est connu dans le fichier DeviceConf.txt
+	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
 		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
