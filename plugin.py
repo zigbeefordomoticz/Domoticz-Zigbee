@@ -378,7 +378,8 @@ def sendZigateCmd(cmd,datas) :
 	if datas == "" :
 		length="0000"
 	else :
-		length=returnlen(4,str(round(len(datas)/2)))
+		#length=returnlen(4,str(round(len(datas)/2)))
+		length=returnlen(4,(str(hex(int(round(len(datas)/2)))).split('x')[-1]))  # by Cortexlegeni 
 		Domoticz.Debug("sendZigateCmd - length is : " + str(length) )
 	if datas =="" :
 		checksumCmd=getChecksum(cmd,length,"0")
