@@ -82,6 +82,7 @@ class BasePlugin:
 			tmpread2=myfile2.read().replace('\n', '')
 			self.DeviceList=eval(tmpread2)
 			Domoticz.Debug("DeviceList.txt = " + str(eval(tmpread2)))
+			CheckDeviceList(self)
 		if Parameters["Mode4"] != "False":
 			tmpMD=Parameters["Mode5"].split("-")
 			MDiD=tmpMD[0]
@@ -112,34 +113,35 @@ class BasePlugin:
 
 	def onMessage(self, Connection, Data):
 		Domoticz.Log("onMessage called")
-		#global Tmprcv
+		global Tmprcv
 		global ReqRcv
-		#Tmprcv=binascii.hexlify(Data).decode('utf-8')
-#		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
-#			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-#			try :
-#				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-#					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-#					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-##				else : 
-#					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-#					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-#					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-#			except :
-#				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-#				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
-#		else : # while end of data is receive
-#			ReqRcv+=Tmprcv
+		Tmprcv=binascii.hexlify(Data).decode('utf-8')
+		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
+			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
+			try :
+				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+				else : 
+					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
+					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
+			except :
+				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+		else : # while end of data is receive
+			ReqRcv+=Tmprcv
 
-		#"""Read ZiGate output and split messages"""  from https://github.com/doudz/zigate/blob/master/zigate/core.py
-		ReqRcv += binascii.hexlify(Data).decode('utf-8')
-		endpos = ReqRcv.find('03')
-		while endpos != -1:
-			startpos = ReqRcv.find('01')
-			# stripping starting 0x01 & ending 0x03
-			ZigateDecode(self, ReqRcv[startpos :endpos+2])
-			ReqRcv = ReqRcv[endpos+2 :]
-			endpos = ReqRcv.find('03')
+#		#"""Read ZiGate output and split messages"""  from https://github.com/doudz/zigate/blob/master/zigate/core.py
+#		ReqRcv += binascii.hexlify(Data).decode('utf-8')
+#		endpos = ReqRcv.find('03')
+#		startpos = 0
+#		while endpos != -1 and len(ReqRcv[startpos :endpos+2])%2==0:
+#			startpos = ReqRcv.find('01')
+#			# stripping starting 0x01 & ending 0x03
+#			ZigateDecode(self, ReqRcv[startpos :endpos+2])
+#			ReqRcv = ReqRcv[endpos+2 :]
+#			endpos = ReqRcv.find('03')
 
 		return
 
@@ -296,7 +298,7 @@ def onHeartbeat():
 	global _plugin
 	_plugin.onHeartbeat()
 
-	# Generic helper functions
+# Generic helper functions
 def DumpConfigToLog():
 	for x in Parameters:
 		if Parameters[x] != "":
@@ -311,7 +313,6 @@ def DumpConfigToLog():
 		Domoticz.Debug("Device LastLevel: " + str(Devices[x].LastLevel))
 		Domoticz.Debug("Device Options: " + str(Devices[x].Options))
 	return
-
 
 def ZigateConf():
 
@@ -848,7 +849,6 @@ def CreateDomoDevice(self, DeviceID) :
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=73 , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-
 def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
 	x=0
@@ -948,7 +948,6 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="Off"
 				UpdateDevice(x,int(value),str(state))
 
-
 def ResetDevice(Type,HbCount) :
 	x=0
 	for x in Devices: 
@@ -998,7 +997,6 @@ def getChecksum(msgtype,length,datas) :
 	Domoticz.Debug("getChecksum - Checksum : " + str(chk))
 	return chk[2:4]
 
-
 def UpdateBattery(DeviceID,BatteryLvl):
 	x=0
 	found=False
@@ -1015,9 +1013,6 @@ def UpdateBattery(DeviceID,BatteryLvl):
 	if found==False :
 		self.ListOfDevices[DeviceID]['Status']="004d"
 		self.ListOfDevices[DeviceID]['Battery']=BatteryLvl
-		
-		
-	#####################################################################################################################
 
 def UpdateDevice(Unit, nValue, sValue):
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
@@ -1233,3 +1228,9 @@ def returnlen(taille , value) :
 	while len(value)<taille:
 		value="0"+value
 	return str(value)
+
+def CheckDeviceList(self) :
+	Domoticz.Debug("CheckDeviceList ")
+	for key in self.DeviceList :
+		if DeviceExist(self, key)==False :
+			return
