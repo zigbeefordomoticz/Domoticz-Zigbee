@@ -112,24 +112,35 @@ class BasePlugin:
 
 	def onMessage(self, Connection, Data):
 		Domoticz.Log("onMessage called")
-		global Tmprcv
+		#global Tmprcv
 		global ReqRcv
-		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
-			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-			try :
-				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-				else : 
-					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-			except :
-				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
-		else : # while end of data is receive
-			ReqRcv+=Tmprcv
+		#Tmprcv=binascii.hexlify(Data).decode('utf-8')
+#		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
+#			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
+#			try :
+#				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+#					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
+#					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+##				else : 
+#					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
+#					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
+#					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
+#			except :
+#				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+#				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+#		else : # while end of data is receive
+#			ReqRcv+=Tmprcv
+
+		#"""Read ZiGate output and split messages"""  from https://github.com/doudz/zigate/blob/master/zigate/core.py
+		ReqRcv += binascii.hexlify(Data).decode('utf-8')
+		endpos = ReqRcv.find('03')
+		while endpos != -1:
+			startpos = ReqRcv.find('01')
+			# stripping starting 0x01 & ending 0x03
+			ZigateDecode(self, ReqRcv[startpos :endpos+2])
+			ReqRcv = ReqRcv[endpos+2 :]
+			endpos = ReqRcv.find('03')
+
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
@@ -341,7 +352,7 @@ def ZigateDecode(self, Data):  # supprime le transcodage
 	ZigateRead(self, Out)
 
 def ZigateEncode(Data):  # ajoute le transcodage
-	Domoticz.Debug("ZigateDecode - Encodind data : " + Data)
+	Domoticz.Debug("ZigateEncode - Encodind data : " + Data)
 	Out=""
 	Outtmp=""
 	Transcode = False
