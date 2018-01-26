@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.1.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.1.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -625,6 +625,8 @@ def ZigateRead(self, Data):
 	else: # unknow or not dev function
 		Domoticz.Debug("ZigateRead - Unknow Message Type for : " + Data)
 		return
+	
+	return
 
 def Decode004d(self, MsgData) : # Reception Device announce
 	MsgSrcAddr=MsgData[0:4]
@@ -635,6 +637,7 @@ def Decode004d(self, MsgData) : # Reception Device announce
 	if DeviceExist(self, MsgSrcAddr)==False :
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
+	return
 
 def Decode8000(self, MsgData) : # Reception status
 	MsgDataLenght=MsgData[0:4]
@@ -659,16 +662,19 @@ def Decode8000(self, MsgData) : # Reception status
 	else :
 		MsgDataMessage=""
 	Domoticz.Debug("Decode8000 - Reception status : " + MsgDataStatus + ", SQN : " + MsgDataSQN + ", Message : " + MsgDataMessage)
+	return
 
 def Decode8001(self, MsgData) : # Reception log Level
 	MsgLogLvl=MsgData[0:2]
 	MsgDataMessage=MsgData[2:len(MsgData)]
 	Domoticz.Debug("ZigateRead - MsgType 8001 - Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage)
+	return
 
 def Decode8010(self,MsgData) : # Reception Version list
 	MsgDataApp=MsgData[0:4]
 	MsgDataSDK=MsgData[4:8]
 	Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	MsgDataSQN=MsgData[0:2]
@@ -708,6 +714,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+	return
 
 def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataSQN=MsgData[0:2]
@@ -726,6 +733,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 			if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
 				self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
 				OutEPlist=""
+	return
 
 def Decode8101(self, MsgData) :  # Default Response
 	MsgDataSQN=MsgData[0:2]
@@ -734,6 +742,7 @@ def Decode8101(self, MsgData) :  # Default Response
 	MsgDataCommand=MsgData[8:10]
 	MsgDataStatus=MsgData[10:12]
 	Domoticz.Debug("Decode8101 - reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus)
+	return
 
 def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	MsgSQN=MsgData[0:2]
@@ -746,6 +755,7 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	MsgClusterData=MsgData[24:len(MsgData)]
 	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)	
 	ReadCluster(self, MsgData) 
+	return
 
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 	MsgDataStatus=MsgData[0:2]
@@ -755,6 +765,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 	MsgDataDestAddr=MsgData[8:12]
 	MsgDataSQN=MsgData[12:14]
 	Domoticz.Debug("Decode 8702 - Reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+	return
 
 def Decode8401(self, MsgData) : # Reception Zone status change notification
 	Domoticz.Debug("Decode8401 - Reception Zone status change notification : " + MsgData)
@@ -762,7 +773,8 @@ def Decode8401(self, MsgData) : # Reception Zone status change notification
 	MsgSrcEp=MsgData[2:4]
 	MsgClusterData=MsgData[16:18]
 	MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, "0006", MsgClusterData)
-		
+	return
+
 def CreateDomoDevice(self, DeviceID) :
 	#DeviceID=Addr #int(Addr,16)
 	for Ep in self.ListOfDevices[DeviceID]['Ep'] :
@@ -957,7 +969,7 @@ def ResetDevice(Type,HbCount) :
 
 def DeviceExist(self, Addr) :
 	#check in ListOfDevices
-	if Addr in self.ListOfDevices :
+	if Addr in self.ListOfDevices and Addr != '' :
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
 	else :  # devices inconnu ds listofdevices et ds db
@@ -1054,6 +1066,7 @@ def ReadCluster(self, MsgData):
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			except :
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
+				return
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			MType=binascii.unhexlify(MsgClusterData).decode('utf-8')
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
@@ -1072,12 +1085,17 @@ def ReadCluster(self, MsgData):
 				self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[Modeltmp]['Type']
 		else :
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			return
 	
 	elif MsgClusterId=="0006" :  # (General: On/Off) xiaomi
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
-	
+		if MsgAttrID=="0000":
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
+			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
+		else :
+			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			return
+
 	elif MsgClusterId=="0402" :  # (Measurement: Temperature) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		if MsgClusterData[0] == "f" :  # cas temperature negative
@@ -1087,7 +1105,7 @@ def ReadCluster(self, MsgData):
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData/100,1))
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
-				
+
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 		if MsgAttType=="0028":
 			#MajDomoDevice(self, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
@@ -1134,6 +1152,7 @@ def ReadCluster(self, MsgData):
 		
 	else :
 		Domoticz.Debug("ReadCluster (8102) - Error/unknow Cluster Message : " + MsgClusterId)
+		return
 
 def CheckType(self, MsgSrcAddr) :
 	Domoticz.Debug("CheckType of device : " + MsgSrcAddr)
