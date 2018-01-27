@@ -23,12 +23,6 @@
 				<option label="False" value="False" default="true" />
 			</options>
 		</param>
-		<param field="Mode4" label="Manual Devices" width="75px">
-			<options>
-				<option label="False" value="False" default="true" />
-				<option label="Switch" value="Switch"/>
-			</options>
-		</param>
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -317,7 +311,7 @@ def DumpConfigToLog():
 def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
-	sendZigateCmd("0021", "0000" + hex(int(Parameters["Mode5"]))[2:4] + "00")
+	sendZigateCmd("0021", "0000" + returnlen(2,hex(int(Parameters["Mode5"]))[2:4]) + "00")
 
 	################### ZiGate - Set Type COORDINATOR#################
 	sendZigateCmd("0023","00")
