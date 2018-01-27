@@ -15,6 +15,7 @@
 		<param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
+		<param field="Mode5" label="Channel " width="50px" required="true" default="11" />
 		<param field="Mode2" label="Duree association (entre 0 et 255) au demarrage : " width="75px" required="true" default="254" />
 		<param field="Mode3" label="Erase Persistent Data ( !!! reassociation de tous les devices obligatoirs !!! ): " width="75px">
 			<options>
@@ -28,7 +29,6 @@
 				<option label="Switch" value="Switch"/>
 			</options>
 		</param>
-		<param field="Mode5" label="Device ID & EP (format : ID-EP, ID compris entre 0000 et ffff, et EP entre 01 et 09) " width="200px"/>
 		<param field="Mode6" label="Debug" width="75px">
 			<options>
 				<option label="True" value="Debug"/>
@@ -317,7 +317,7 @@ def DumpConfigToLog():
 def ZigateConf():
 
 	################### ZiGate - set channel 11 ##################
-	sendZigateCmd("0021", "00000B00")
+	sendZigateCmd("0021", "0000" + hex(int(Parameters["Mode5"]))[2:4] + "00")
 
 	################### ZiGate - Set Type COORDINATOR#################
 	sendZigateCmd("0023","00")
@@ -972,20 +972,26 @@ def DeviceExist(self, Addr) :
 	if Addr in self.ListOfDevices and Addr != '' :
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
+		else :
+			initDeviceInList(self, Addr)
+			return False
 	else :  # devices inconnu ds listofdevices et ds db
-		self.ListOfDevices[Addr]={}
-		self.ListOfDevices[Addr]['Ep']={}
-		self.ListOfDevices[Addr]['Status']="004d"
-		self.ListOfDevices[Addr]['Heartbeat']="0"
-		self.ListOfDevices[Addr]['RIA']="0"
-		self.ListOfDevices[Addr]['Battery']={}
-		self.ListOfDevices[Addr]['Model']={}
-		self.ListOfDevices[Addr]['MacCapa']={}
-		self.ListOfDevices[Addr]['IEEE']={}
-		self.ListOfDevices[Addr]['Type']={}
-		self.ListOfDevices[Addr]['ProfileID']={}
-		self.ListOfDevices[Addr]['ZDeviceID']={}
+		initDeviceInList(self, Addr)
 		return False
+
+def initDeviceInList(self, Addr) :
+	self.ListOfDevices[Addr]={}
+	self.ListOfDevices[Addr]['Ep']={}
+	self.ListOfDevices[Addr]['Status']="004d"
+	self.ListOfDevices[Addr]['Heartbeat']="0"
+	self.ListOfDevices[Addr]['RIA']="0"
+	self.ListOfDevices[Addr]['Battery']={}
+	self.ListOfDevices[Addr]['Model']={}
+	self.ListOfDevices[Addr]['MacCapa']={}
+	self.ListOfDevices[Addr]['IEEE']={}
+	self.ListOfDevices[Addr]['Type']={}
+	self.ListOfDevices[Addr]['ProfileID']={}
+	self.ListOfDevices[Addr]['ZDeviceID']={}
 
 def getChecksum(msgtype,length,datas) :
 	temp = 0 ^ int(msgtype[0:2],16) 
@@ -1234,4 +1240,18 @@ def CheckDeviceList(self) :
 	Domoticz.Debug("CheckDeviceList ")
 	for key in self.DeviceList :
 		if DeviceExist(self, key)==False :
+			self.ListOfDevices[key]['RIA']="10"
+			if 'Type' in self.DeviceList[key] :
+				self.ListOfDevices[key]['Type']=self.DeviceList[key]['Type']
+			if 'Model' in self.DeviceList[key] :
+				self.ListOfDevices[key]['Model']=self.DeviceList[key]['Model']
+			if 'MacCapa' in self.DeviceList[key] :
+				self.ListOfDevices[key]['MacCapa']=self.DeviceList[key]['MacCapa']
+			if 'IEEE' in self.DeviceList[key] :
+				self.ListOfDevices[key]['IEEE']=self.DeviceList[key]['IEEE']
+			if 'ProfileID' in self.DeviceList[key] :
+				self.ListOfDevices[key]['ProfileID']=self.DeviceList[key]['ProfileID']
+			if 'ZDeviceID' in self.DeviceList[key] :
+				self.ListOfDevices[key]['ZDeviceID']=self.DeviceList[key]['ZDeviceID']
+
 			return
