@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.1.4" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.0" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -217,7 +217,19 @@ class BasePlugin:
 			if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="10":
 				self.ListOfDevices[key]['Heartbeat']="0"
 				self.ListOfDevices[key]['Status']="8045"
-		
+
+				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+					if self.ListOfDevices[key]['ProfileID']=="c05e" :
+						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
+							# exemple ampoule Tradfi
+							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+				
+				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
+						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
+							# exemple ampoule Tradfi
+							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+
 			if status != "inDB" :
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
@@ -231,30 +243,6 @@ class BasePlugin:
 					if IsCreated == False :
 						Domoticz.Debug("HearBeat - creating device id : " + str(key))
 						CreateDomoDevice(self, key)
-
-				if self.ListOfDevices[key]['MacCapa']=="8e" : 
-					if self.ListOfDevices[key]['ProfileID']=="c05e" :
-						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-				
-				if self.ListOfDevices[key]['MacCapa']=="8e" : 
-					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile haume automation
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type lumiere on/off
-							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-				
-				
-#							IsCreated=False
-#							x=0
-#							nbrdevices=0
-#							for x in Devices:
-#								if Devices[x].DeviceID == str(key) :
-#									IsCreated = True
-#									Domoticz.Debug("HearBeat - Devices already exist. Unit=" + str(x))
-#							if IsCreated == False :
-#								Domoticz.Debug("HearBeat - creating device id : " + str(key))
-#								CreateDomoDevice(self, key)
 
 		ResetDevice("Motion",5)
 		WriteDeviceList(self, 200)
@@ -893,7 +881,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch
 				if value == "00" :
 					state="00"
-				if value == "01" :
+				elif value == "01" :
 					state="10"
 				elif value == "02" :
 					state="20"
