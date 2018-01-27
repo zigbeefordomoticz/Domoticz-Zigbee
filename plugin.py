@@ -73,18 +73,12 @@ class BasePlugin:
 			Domoticz.Debug("DeviceConf.txt = " + str(self.DeviceConf))
 		#Import DeviceList.txt
 		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
-			tmpread2=myfile2.read().replace('\n', '')
-			self.DeviceList=eval(tmpread2)
-			Domoticz.Debug("DeviceList.txt = " + str(eval(tmpread2)))
-			CheckDeviceList(self)
-		if Parameters["Mode4"] != "False":
-			tmpMD=Parameters["Mode5"].split("-")
-			MDiD=tmpMD[0]
-			MDEP=tmpMD[1]
-			DeviceExist(self, MDiD)
-			self.ListOfDevices[MDiD]['Ep'][MDEP]={}
-			self.ListOfDevices[MDiD]['Ep'][MDEP]["0006"]={}
-			self.ListOfDevices[MDiD]['RIA']=10
+			Domoticz.Debug("DeviceList.txt open ")
+			for line in myfile2:
+				(key, val) = line.split(":",1)
+				CheckDeviceList(self, key, val)
+		return
+
 
 	def onStop(self):
 		ZigateConn.Disconnect()
@@ -202,6 +196,7 @@ class BasePlugin:
 			self.ListOfDevices[key]['Heartbeat']=str(int(self.ListOfDevices[key]['Heartbeat'])+1)
 			# Envoi une demande Active Endpoint request
 			if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
+				Domoticz.Debug("Envoie une demande Active Endpoint request pour avoir la liste des EP du device adresse : " + key)
 				sendZigateCmd("0045", str(key))
 				self.ListOfDevices[key]['Status']="0045"
 				self.ListOfDevices[key]['Heartbeat']="0"
@@ -1218,7 +1213,8 @@ def TypeFromCluster(cluster):
 def WriteDeviceList(self, count):
 	if self.HBcount>=count :
 		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'wt') as file:
-			file.write(str(self.ListOfDevices))
+			for key in self.ListOfDevices :
+				file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
 		Domoticz.Debug("Write DeviceList.txt = " + str(self.ListOfDevices))
 		self.HBcount=0
 	else :
@@ -1230,22 +1226,27 @@ def returnlen(taille , value) :
 		value="0"+value
 	return str(value)
 
-def CheckDeviceList(self) :
-	Domoticz.Debug("CheckDeviceList ")
-	for key in self.DeviceList :
-		if DeviceExist(self, key)==False :
-			self.ListOfDevices[key]['RIA']="10"
-			if 'Type' in self.DeviceList[key] :
-				self.ListOfDevices[key]['Type']=self.DeviceList[key]['Type']
-			if 'Model' in self.DeviceList[key] :
-				self.ListOfDevices[key]['Model']=self.DeviceList[key]['Model']
-			if 'MacCapa' in self.DeviceList[key] :
-				self.ListOfDevices[key]['MacCapa']=self.DeviceList[key]['MacCapa']
-			if 'IEEE' in self.DeviceList[key] :
-				self.ListOfDevices[key]['IEEE']=self.DeviceList[key]['IEEE']
-			if 'ProfileID' in self.DeviceList[key] :
-				self.ListOfDevices[key]['ProfileID']=self.DeviceList[key]['ProfileID']
-			if 'ZDeviceID' in self.DeviceList[key] :
-				self.ListOfDevices[key]['ZDeviceID']=self.DeviceList[key]['ZDeviceID']
-
-			return
+def CheckDeviceList(self, key, val) :
+	Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
+	Domoticz.Debug("CheckDeviceList - with value : " + str(val))
+	
+	DeviceListVal=eval(val)
+	if DeviceExist(self, key)==False :
+		Domoticz.Debug("CheckDeviceList - Address will be add : " + str(key))
+		self.ListOfDevices[key]['RIA']="10"
+		self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
+		if 'Type' in DeviceListVal :
+			self.ListOfDevices[key]['Type']=DeviceListVal['Type']
+		if 'Model' in DeviceListVal :
+			self.ListOfDevices[key]['Model']=DeviceListVal['Model']
+		if 'MacCapa' in DeviceListVal :
+			self.ListOfDevices[key]['MacCapa']=DeviceListVal['MacCapa']
+		if 'IEEE' in DeviceListVal :
+			self.ListOfDevices[key]['IEEE']=DeviceListVal['IEEE']
+		if 'ProfileID' in DeviceListVal :
+			self.ListOfDevices[key]['ProfileID']=DeviceListVal['ProfileID']
+		if 'ZDeviceID' in DeviceListVal :
+			self.ListOfDevices[key]['ZDeviceID']=DeviceListVal['ZDeviceID']
+		if 'Status' in DeviceListVal :
+			self.ListOfDevices[key]['Status']=DeviceListVal['Status']
+	return
