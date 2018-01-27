@@ -236,17 +236,25 @@ class BasePlugin:
 					if self.ListOfDevices[key]['ProfileID']=="c05e" :
 						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.Tradfri"
-							IsCreated=False
-							x=0
-							nbrdevices=0
-							for x in Devices:
-								if Devices[x].DeviceID == str(key) :
-									IsCreated = True
-									Domoticz.Debug("HearBeat - Devices already exist. Unit=" + str(x))
-							if IsCreated == False :
-								Domoticz.Debug("HearBeat - creating device id : " + str(key))
-								CreateDomoDevice(self, key)
+							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+				
+				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile haume automation
+						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type lumiere on/off
+							# exemple ampoule Tradfi
+							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+				
+				
+#							IsCreated=False
+#							x=0
+#							nbrdevices=0
+#							for x in Devices:
+#								if Devices[x].DeviceID == str(key) :
+#									IsCreated = True
+#									Domoticz.Debug("HearBeat - Devices already exist. Unit=" + str(x))
+#							if IsCreated == False :
+#								Domoticz.Debug("HearBeat - creating device id : " + str(key))
+#								CreateDomoDevice(self, key)
 
 		ResetDevice("Motion",5)
 		WriteDeviceList(self, 200)
