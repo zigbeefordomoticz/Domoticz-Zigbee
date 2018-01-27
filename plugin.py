@@ -798,7 +798,7 @@ def CreateDomoDevice(self, DeviceID) :
 
 				if t=="MSwitch"  :  # interrupteur multi lvl
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||", "LevelNames": "Off|1 Click|2 Clicks|3 Clicks|4 Clicks", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Clicks|3 Clicks|4 Clicks", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="DSwitch"  :  # interrupteur double sur EP different
@@ -883,6 +883,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="Off"
 				UpdateDevice(x,int(value),str(state))
 			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch
+				if value == "00" :
+					state="00"
 				if value == "01" :
 					state="10"
 				elif value == "02" :
