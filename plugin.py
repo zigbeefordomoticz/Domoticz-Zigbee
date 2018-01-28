@@ -218,21 +218,22 @@ class BasePlugin:
 				self.ListOfDevices[key]['Heartbeat']="0"
 				self.ListOfDevices[key]['Status']="8045"
 
-			if self.ListOfDevices[key]['MacCapa']=="8e" : 
-				if self.ListOfDevices[key]['ProfileID']=="c05e" :
-					if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-						# exemple ampoule Tradfi
-						self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-						self.ListOfDevices[key]['Ep']="'01': {'0006', '0008','300'}"
-			
-			if self.ListOfDevices[key]['MacCapa']=="8e" : 
-				if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-					if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-						# exemple ampoule Tradfi
-						self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-						self.ListOfDevices[key]['Ep']="'01': {'0006', '0008'}"
-
 			if status != "inDB" :
+
+				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+					if self.ListOfDevices[key]['ProfileID']=="c05e" :
+						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
+							# exemple ampoule Tradfi
+							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+							self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
+				
+				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
+						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
+							# exemple ampoule Tradfi
+							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+							self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
 					IsCreated=False
