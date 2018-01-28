@@ -76,7 +76,7 @@ class BasePlugin:
 			Domoticz.Debug("DeviceList.txt open ")
 			for line in myfile2:
 				(key, val) = line.split(":",1)
-				CheckDeviceList(self, key, val)
+				CheckDeviceList(self, key.replace("'",""), val)
 		return
 
 
@@ -218,17 +218,19 @@ class BasePlugin:
 				self.ListOfDevices[key]['Heartbeat']="0"
 				self.ListOfDevices[key]['Status']="8045"
 
-				if self.ListOfDevices[key]['MacCapa']=="8e" : 
-					if self.ListOfDevices[key]['ProfileID']=="c05e" :
-						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-				
-				if self.ListOfDevices[key]['MacCapa']=="8e" : 
-					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+			if self.ListOfDevices[key]['MacCapa']=="8e" : 
+				if self.ListOfDevices[key]['ProfileID']=="c05e" :
+					if self.ListOfDevices[key]['ZDeviceID']=="0220" :
+						# exemple ampoule Tradfi
+						self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+						self.ListOfDevices[key]['Ep']="'01': {'0006', '0008','300'}"
+			
+			if self.ListOfDevices[key]['MacCapa']=="8e" : 
+				if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
+					if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
+						# exemple ampoule Tradfi
+						self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+						self.ListOfDevices[key]['Ep']="'01': {'0006', '0008'}"
 
 			if status != "inDB" :
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
@@ -763,7 +765,6 @@ def Decode8401(self, MsgData) : # Reception Zone status change notification
 	return
 
 def CreateDomoDevice(self, DeviceID) :
-	#DeviceID=Addr #int(Addr,16)
 	for Ep in self.ListOfDevices[DeviceID]['Ep'] :
 		if self.ListOfDevices[DeviceID]['Type']== {} :
 			Type=GetType(self, DeviceID, Ep).split("/")
