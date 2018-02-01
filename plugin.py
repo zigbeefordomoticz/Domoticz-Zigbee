@@ -68,15 +68,23 @@ class BasePlugin:
 			self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
 		#Import DeviceConf.txt
 		with open(Parameters["HomeFolder"]+"DeviceConf.txt", 'r') as myfile:
-			tmpread=myfile.read().replace('\n', '')
-			self.DeviceConf=eval(tmpread)
-			Domoticz.Debug("DeviceConf.txt = " + str(self.DeviceConf))
+			for line in myfile2:
+				(key, val) = line.split(":",1)
+				key = key.replace(" ","")
+				key = key.replace("'","")
+				self.DeviceConf[key]= {}
+				self.DeviceConf[key]=eval(val)
+			#tmpread=myfile.read().replace('\n', '')
+			#self.DeviceConf=eval(tmpread)
+			#Domoticz.Debug("DeviceConf.txt = " + str(self.DeviceConf))
 		#Import DeviceList.txt
 		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
 			Domoticz.Debug("DeviceList.txt open ")
 			for line in myfile2:
 				(key, val) = line.split(":",1)
-				CheckDeviceList(self, key.replace("'",""), val)
+				key = key.replace(" ","")
+				key = key.replace("'","")
+				CheckDeviceList(self, key, val)
 		return
 
 
@@ -106,17 +114,17 @@ class BasePlugin:
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-			try :
-				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-				else : 
-					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-			except :
-				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+			#try :
+			if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+				ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
+				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+			else : 
+				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
+				ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
+				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
+			#except :
+			#Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+			#ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 
@@ -225,14 +233,25 @@ class BasePlugin:
 						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 							# exemple ampoule Tradfi
 							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-							self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
-				
-				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
+						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  # device id type plug osram
+							self.ListOfDevices[key]['Model']="plug.osram"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
 					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
 						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
 							# exemple ampoule Tradfi
 							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-							self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  # phillips hue
+						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
+							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+
+							
 
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
@@ -1059,21 +1078,24 @@ def ReadCluster(self, MsgData):
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
 				return
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
-			MType=binascii.unhexlify(MsgClusterData).decode('utf-8')
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
-			self.ListOfDevices[MsgSrcAddr]['Model']=MType
-			if self.ListOfDevices[MsgSrcAddr]['Model']!= {} and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf : # verifie que le model existe ds le fichier de conf des models
-				Modeltmp=str(self.ListOfDevices[MsgSrcAddr]['Model'])
-				for Ep in self.DeviceConf[Modeltmp]['Ep'] :
-					if Ep in self.ListOfDevices[MsgSrcAddr]['Ep'] :
-						for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
-							if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :
+			try : 
+				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')
+				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
+				self.ListOfDevices[MsgSrcAddr]['Model']=MType
+				if self.ListOfDevices[MsgSrcAddr]['Model']!= {} and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf : # verifie que le model existe ds le fichier de conf des models
+					Modeltmp=str(self.ListOfDevices[MsgSrcAddr]['Model'])
+					for Ep in self.DeviceConf[Modeltmp]['Ep'] :
+						if Ep in self.ListOfDevices[MsgSrcAddr]['Ep'] :
+							for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
+								if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :
+									self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
+						else :
+							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}
+							for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
 								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
-					else :
-						self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}
-						for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
-							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
-				self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[Modeltmp]['Type']
+					self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[Modeltmp]['Type']
+			except:
+				return
 		else :
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
 			return
@@ -1094,7 +1116,7 @@ def ReadCluster(self, MsgData):
 		else : 
 			MsgClusterData=int(MsgClusterData,16)
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData/100,1))
+		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
 
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
@@ -1128,8 +1150,8 @@ def ReadCluster(self, MsgData):
 
 	elif MsgClusterId=="0400" :  # (Measurement: LUX) xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0400 - reception LUX Sensor : " + str(MsgClusterData) )
+		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
+		Domoticz.Debug("ReadCluster (8102) - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
