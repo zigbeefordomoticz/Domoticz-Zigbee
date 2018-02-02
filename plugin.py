@@ -67,16 +67,12 @@ class BasePlugin:
 			self.ListOfDevices[ID]={}
 			self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
 		#Import DeviceConf.txt
+		tmpread=""
 		with open(Parameters["HomeFolder"]+"DeviceConf.txt", 'r') as myfile:
-			for line in myfile2:
-				(key, val) = line.split(":",1)
-				key = key.replace(" ","")
-				key = key.replace("'","")
-				self.DeviceConf[key]= {}
-				self.DeviceConf[key]=eval(val)
-			#tmpread=myfile.read().replace('\n', '')
-			#self.DeviceConf=eval(tmpread)
-			#Domoticz.Debug("DeviceConf.txt = " + str(self.DeviceConf))
+			tmpread+=myfile.read().replace('\n', '')
+		myfile.close()
+		Domoticz.Debug("DeviceConf.txt = " + str(tmpread))
+		self.DeviceConf=eval(tmpread)
 		#Import DeviceList.txt
 		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
 			Domoticz.Debug("DeviceList.txt open ")

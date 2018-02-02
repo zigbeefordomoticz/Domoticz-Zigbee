@@ -1,17 +1,19 @@
-'lumi.weather' : {'Ep' : {'01': {'0402', '0405', '0403'}},'Type' : 'Temp/Humi/Baro'}
-'lumi.sensor_ht' : {'Ep' : {'01': {'0402', '0405'}},'Type' : 'Temp/Humi'}
-'lumi.sensor_magnet.aq2' : {'Ep' : {'01': {'0006'}},'Type' : 'Door'}
-'lumi.sensor_motion' : {'Ep' : {'01': {'0006'}},'Type' : 'Motion'}
-'lumi.sensor_switch.aq2' : {'Ep' : {'01': {'0006'}},'Type' : 'Switch'}
-'lumi.sensor_switch' : {'Ep' : {'01': {'0006'}},'Type' : 'MSwitch'}
-'lumi.sensor_86sw2' : {'Ep' : {'01': {'0006'},'02': {'0006'}},'Type' : 'DSwitch'}
-'lumi.sensor_smoke' : {'Ep' : {'01': {'0006'}},'Type' : 'Smoke'}
-'lumi.sensor_wleak.aq1' : {'Ep' : {'01': {'0006'}},'Type' : 'Water'}
-'lumi.sensor_86sw1' : {'Ep' : {'01': {'0006'}},'Type' : 'Switch'}
-'lumi.sensor_motion.aq2' : {'Ep' : {'01': {'0406', '0400'}},'Type' : 'Motion/Lux'}
-'lumi.sensor_cube' : {'Ep' : {'01': {'0012', '000c'}},'Type' : 'XCube'}
-'lumi.plug' : {'Ep' : {'01': {'0006'}},'Type' : 'Plug'}
-'Ampoule.LED1545G12.Tradfri' : {'Ep' : {'01': {'0006', '0008', '0300'}},'Type' : 'Switch/LvlControl/ColorControl'}
-'Ampoule.LED1622G12.Tradfri' : {'Ep' : {'01': {'0006', '0008'}},'Type' : 'Switch/LvlControl'}
-'Ampoule.phillips.hue' : {'Ep' : {'01': {'0006', '0008'}},'Type' : 'Switch/LvlControl'}
-'plug.Osram' : ' {'Ep' : {'03': {'0006'}},'Type' : 'Plug'}
+{
+'lumi.weather':{'Ep':{'01':{'0402','0405','0403'}},'Type':'Temp/Humi/Baro'},
+'lumi.sensor_ht':{'Ep':{'01':{'0402','0405'}},'Type':'Temp/Humi'},
+'lumi.sensor_magnet.aq2':{'Ep':{'01':{'0006'}},'Type':'Door'},
+'lumi.sensor_motion':{'Ep':{'01':{'0006'}},'Type':'Motion'},
+'lumi.sensor_switch.aq2':{'Ep':{'01':{'0006'}},'Type':'Switch'},
+'lumi.sensor_switch':{'Ep':{'01':{'0006'}},'Type':'MSwitch'},
+'lumi.sensor_86sw2':{'Ep':{'01':{'0006'},'02':{'0006'}},'Type':'DSwitch'},
+'lumi.sensor_smoke':{'Ep':{'01':{'0006'}},'Type':'Smoke'},
+'lumi.sensor_wleak.aq1':{'Ep':{'01':{'0006'}},'Type':'Water'},
+'lumi.sensor_86sw1':{'Ep':{'01':{'0006'}},'Type':'Switch'},
+'lumi.sensor_motion.aq2':{'Ep':{'01':{'0406','0400'}},'Type':'Motion/Lux'},
+'lumi.sensor_cube':{'Ep':{'01':{'0012','000c'}},'Type':'XCube'},
+'lumi.plug':{'Ep':{'01':{'0006'}},'Type':'Plug'},
+'Ampoule.LED1545G12.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
+'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
+'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
+'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug'}
+}
