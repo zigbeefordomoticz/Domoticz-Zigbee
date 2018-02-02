@@ -119,8 +119,8 @@ class BasePlugin:
 					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
 					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
 			except :
-			Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-			ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 
