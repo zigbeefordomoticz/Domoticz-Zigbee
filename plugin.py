@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.2" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -110,17 +110,17 @@ class BasePlugin:
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-			#try :
-			if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-				ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-			else : 
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-				ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-			#except :
-			#Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-			#ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+			try :
+				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+				else : 
+					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
+					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
+			except :
+			Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+			ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 
