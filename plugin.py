@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.4" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -52,9 +52,6 @@ class BasePlugin:
 		if Parameters["Mode6"] == "Debug":
 			Domoticz.Debugging(1)
 			DumpConfigToLog()
-			#Domoticz.Log("Debugger started, use 'telnet 0.0.0.0 4444' to connect")
-			#import rpdb
-			#rpdb.set_trace()
 		if Parameters["Mode1"] == "USB":
 			ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
 			ZigateConn.Connect()
@@ -123,18 +120,6 @@ class BasePlugin:
 				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
-
-#		#"""Read ZiGate output and split messages"""  from https://github.com/doudz/zigate/blob/master/zigate/core.py
-#		ReqRcv += binascii.hexlify(Data).decode('utf-8')
-#		endpos = ReqRcv.find('03')
-#		startpos = 0
-#		while endpos != -1 and len(ReqRcv[startpos :endpos+2])%2==0:
-#			startpos = ReqRcv.find('01')
-#			# stripping starting 0x01 & ending 0x03
-#			ZigateDecode(self, ReqRcv[startpos :endpos+2])
-#			ReqRcv = ReqRcv[endpos+2 :]
-#			endpos = ReqRcv.find('03')
-
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
@@ -1097,7 +1082,7 @@ def ReadCluster(self, MsgData):
 			return
 	
 	elif MsgClusterId=="0006" :  # (General: On/Off) xiaomi
-		if MsgAttrID=="0000":
+		if MsgAttrID=="0000" or MsgAttrID=="8000":
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
