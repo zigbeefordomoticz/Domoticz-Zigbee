@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.4" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.5" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -304,16 +304,16 @@ def DumpConfigToLog():
 
 def ZigateConf():
 
-	################### ZiGate - set channel 11 ##################
+	################### ZiGate - set channel ##################
 	sendZigateCmd("0021", "0000" + returnlen(2,hex(int(Parameters["Mode5"]))[2:4]) + "00")
 
-	################### ZiGate - Set Type COORDINATOR#################
+	################### ZiGate - Set Type COORDINATOR #################
 	sendZigateCmd("0023","00")
 	
-	################### ZiGate - start network##################
+	################### ZiGate - start network ##################
 	sendZigateCmd("0024","")
 
-	################### ZiGate - discover mode 255sec ##################
+	################### ZiGate - discover mode 255 sec Max ##################
 	sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
 
 def ZigateDecode(self, Data):  # supprime le transcodage
@@ -334,7 +334,6 @@ def ZigateDecode(self, Data):  # supprime le transcodage
 					else :
 						Out+="1"
 					Out+=Outtmp[1]
-					#Out+=str(int(str(Outtmp)) - 10)
 				else :
 					Out+=Outtmp
 			Outtmp=""
@@ -366,7 +365,6 @@ def sendZigateCmd(cmd,datas) :
 	if datas == "" :
 		length="0000"
 	else :
-		#length=returnlen(4,str(round(len(datas)/2)))
 		length=returnlen(4,(str(hex(int(round(len(datas)/2)))).split('x')[-1]))  # by Cortexlegeni 
 		Domoticz.Debug("sendZigateCmd - length is : " + str(length) )
 	if datas =="" :
