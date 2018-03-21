@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.5" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.6" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
