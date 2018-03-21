@@ -770,6 +770,9 @@ def CreateDomoDevice(self, DeviceID) :
 		else :
 			Type=self.ListOfDevices[DeviceID]['Type'].split("/")
 		if Type !="" :
+			if "Humi" in Type and "Temp" in Type :
+				t="Temp+Hum"
+				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 			for t in Type :
 				Domoticz.Debug("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
 				if t=="Temp" : # Detecteur temp
@@ -856,6 +859,25 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
 			Dtypename=DOptions['TypeName']
+			
+			if Dtypename=="Temp+Hum" : #temp+hum xiaomi
+				if Type=="Temp" :
+					CurrentnValue=Devices[x].nValue
+					CurrentsValue=Devices[x].sValue
+					Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
+					SplitData=CurrentsValue.split(";")
+					NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
+					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)	
+					UpdateDevice(x,0,str(NewSvalue))								
+				if Type=="Humi" :
+					CurrentnValue=Devices[x].nValue
+					CurrentsValue=Devices[x].sValue
+					Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+					SplitData=CurrentsValue.split(";")
+					NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
+					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
+					UpdateDevice(x,0,str(NewSvalue))
+			
 			if Type==Dtypename=="Temp" :  # temperature
 				UpdateDevice(x,0,str(value))				
 			if Type==Dtypename=="Humi" :   # humidite
