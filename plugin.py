@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.7" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.8" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -1108,7 +1108,7 @@ def ReadCluster(self, MsgData):
 			MsgBattery=MsgClusterData[4:8]
 			try :
 				ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
-				ValueBattery=round(int(ValueBattery,16)/10/3)
+				ValueBattery=round(int(ValueBattery,16)/10/3.3)
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
 				if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
 					UpdateBattery(MsgSrcAddr,ValueBattery)
