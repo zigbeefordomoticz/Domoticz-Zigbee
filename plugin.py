@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.8" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.2.9" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Type" width="75px">
 			<options>
@@ -1010,7 +1010,7 @@ def ResetDevice(Type,HbCount) :
 					value = "00"
 					state="Off"
 					#Devices[x].Update(nValue = int(value),sValue = str(state))
-					UpdateDevice(x,int(value),str(state))	
+					UpdateDevice(x,int(value),str(state),DOptions)	
 		except :
 			return
 
