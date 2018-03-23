@@ -2,6 +2,7 @@
 'lumi.weather':{'Ep':{'01':{'0402','0405','0403'}},'Type':'Temp/Humi/Baro'},
 'lumi.sensor_ht':{'Ep':{'01':{'0402','0405'}},'Type':'Temp/Humi'},
 'lumi.sensor_magnet.aq2':{'Ep':{'01':{'0006'}},'Type':'Door'},
+'lumi.sensor_magnet':{'Ep':{'01':{'0006'}},'Type':'Door'},
 'lumi.sensor_motion':{'Ep':{'01':{'0006'}},'Type':'Motion'},
 'lumi.sensor_switch.aq2':{'Ep':{'01':{'0006'}},'Type':'Switch'},
 'lumi.sensor_switch':{'Ep':{'01':{'0006'}},'Type':'MSwitch'},
