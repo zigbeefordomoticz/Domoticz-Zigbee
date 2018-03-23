@@ -4,9 +4,9 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.0" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
-		<param field="Mode1" label="Type" width="75px">
+		<param field="Mode1" label="Model" width="75px">
 			<options>
 				<option label="USB" value="USB" default="true" />
 				<option label="Wifi" value="Wifi"/>
@@ -16,8 +16,8 @@
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
 		<param field="Mode5" label="Channel " width="50px" required="true" default="11" />
-		<param field="Mode2" label="Duree association (entre 0 et 255) au demarrage : " width="75px" required="true" default="254" />
-		<param field="Mode3" label="Erase Persistent Data ( !!! reassociation de tous les devices obligatoirs !!! ): " width="75px">
+		<param field="Mode2" label="Permit join time on start (between 0 et 255) " width="75px" required="true" default="254" />
+		<param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
 			<options>
 				<option label="True" value="True"/>
 				<option label="False" value="False" default="true" />
