@@ -26,7 +26,7 @@ To update:
 
 In Domoticz, go in Setup>Hardware, in Type select "Zigate plugin".
 
-![](..\images\Zigate-Configuration.png)
+![](https://github.com/sasu-drooz/Domoticz-Zigate/blob/dev2/images/Zigate-Configuration.png)
 
 - Select a name for your hardware (here it's zigate)
 - Select your model (USB or Wifi)
@@ -55,7 +55,7 @@ To add a new device your zigate must be in Permit Join mode
 
 Just turn off/on 6 times your bulb (not with ikea remote, shut off then on power). Your bulb will send a device announce to your zigate, then your zigate will ask some information to your bulb to know wich model it is and add it to Domoticz. If your model is not in DeviceConf.txt it should take a little longer but it will be automatically add as soon as the zigate will have information need foor this.
 
-![](..\images\Bulb-Device.png)
+![](https://github.com/sasu-drooz/Domoticz-Zigate/blob/dev2/images/Bulb-Device.png)
 
 You should find between 1 and 3 new devices in your Domoticz Device list :
 
