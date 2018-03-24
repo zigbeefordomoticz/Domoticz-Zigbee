@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.2" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Model" width="75px">
 			<options>
@@ -128,7 +128,7 @@ class BasePlugin:
 		Dtypename=DOptions['TypeName']
 		Dzigate=eval(DOptions['Zigate'])
 		EPin="01"
-		if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch":
+		if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch" or Dtypename=="Smoke" or Dtypename=="DSwitch":
 			ClusterSearch="0006"
 		if Dtypename=="LvlControl" :
 			ClusterSearch="0008"
@@ -809,7 +809,7 @@ def CreateDomoDevice(self, DeviceID) :
 
 				if t=="MSwitch"  :  # interrupteur multi lvl
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||", "LevelNames": "Release|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="DSwitch"  :  # interrupteur double sur EP different
