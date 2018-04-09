@@ -4,7 +4,7 @@
 'lumi.sensor_magnet.aq2':{'Ep':{'01':{'0006'}},'Type':'Door'},
 'lumi.sensor_magnet':{'Ep':{'01':{'0006'}},'Type':'Door'},
 'lumi.sensor_motion':{'Ep':{'01':{'0006'}},'Type':'Motion'},
-'lumi.sensor_switch.aq2':{'Ep':{'01':{'0006'}},'Type':'Switch'},
+'lumi.sensor_switch.aq2':{'Ep':{'01':{'0006'}},'Type':'MSwitch'},
 'lumi.sensor_switch':{'Ep':{'01':{'0006'}},'Type':'MSwitch'},
 'lumi.sensor_86sw2':{'Ep':{'01':{'0006'},'02':{'0006'}},'Type':'DSwitch'},
 'lumi.sensor_smoke':{'Ep':{'01':{'0006'}},'Type':'Smoke'},
@@ -16,5 +16,6 @@
 'Ampoule.LED1545G12.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
 'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
-'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug'}
+'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug'},
+'plug.Salus':{'Ep':{'09':{'0005'}},'Type':'Plug'},
 }

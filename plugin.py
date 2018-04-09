@@ -209,23 +209,32 @@ class BasePlugin:
 
 			if status != "inDB" :
 
-				if self.ListOfDevices[key]['MacCapa']=="8e" : 
+				if self.ListOfDevices[key]['MacCapa']=="8e" :				
 					if self.ListOfDevices[key]['ProfileID']=="c05e" :
 						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-							# exemple ampoule Tradfi
-							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+							# exemple ampoule Tradfi LED1545G12.Tradfr
+							self.ListOfDevices[key]['Model']="Ampoule.i"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
-						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  # device id type plug osram
-							self.ListOfDevices[key]['Model']="plug.osram"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
-					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-							# exemple ampoule Tradfi
+						#ampoule Tradfri LED1622G12.Tradfri
+						if self.ListOfDevices[key]['ZDeviceID']=="100" :
 							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+						
+						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  # device id type plug osram
+							self.ListOfDevices[key]['Model']="plug.Osram"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
+					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
+					#plug salus
+						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
+							self.ListOfDevices[key]['Model']="plug.Salus"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'09': {'0005'}}
+					#plug salus
+					
+					
 					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  # phillips hue
 						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
 							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
@@ -807,7 +816,7 @@ def CreateDomoDevice(self, DeviceID) :
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=8 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="MSwitch"  :  # interrupteur multi lvl
+				if t=="MSwitch"  :  # interrupteur multi lvl 86sw2 xiaomi
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
@@ -954,15 +963,15 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				UpdateDevice(x,int(value),str(state),DOptions)
 			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ...
 				if Ep == "01" :
-					if value == "01" :
+					if value == "01" or value =="00" :
 						state="10"
 						data="01"
 				elif Ep == "02" :
-					if value == "01" :
+					if value == "01" or value =="00":
 						state="20"
 						data="02"
 				elif Ep == "03" :
-					if value == "01" :
+					if value == "01" or value =="00" :
 						state="30"
 						data="03"
 				UpdateDevice(x,int(data),str(state),DOptions)
