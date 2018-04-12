@@ -206,14 +206,14 @@ class BasePlugin:
 			if status != "inDB" :
 
 				if self.ListOfDevices[key]['MacCapa']=="8e" :
-					if self.ListOfDevices[key]['ProfileID']=="c05e" :
+					if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
 						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 					# ampoule Tradfi LED1545G12.Tradfri
 							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
 					# ampoule Tradfri LED1622G12.Tradfri
-						if self.ListOfDevices[key]['ZDeviceID']=="100" :
+						if self.ListOfDevices[key]['ZDeviceID']=="0100" :
 							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
@@ -226,6 +226,8 @@ class BasePlugin:
 					# ampoule Tradfi
 						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
 							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}							
 					# plug salus
 						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
 							self.ListOfDevices[key]['Model']="plug.Salus"
