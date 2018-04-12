@@ -107,18 +107,13 @@ class BasePlugin:
 		global ReqRcv
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
-			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-			try :
-				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-				else : 
-					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-			except :
-				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
+			while (ReqRcv.find("0301") != -1): #Tant qu'il reste des messages colles
+				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])#demande de decodage de la trame recu
+				ReqRcv=ReqRcv[ReqRcv.find("0301")+2:]
+			if ReqRcv.find('03') != -1 : #est ce qu il reste une derniere trame complete ?
+				ZigateDecode(self, ReqRcv[:ReqRcv.find("03")+2]) #demande de decodage de la trame recu
+				ReqRcv=ReqRcv[ReqRcv.find('03')+2:]
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
@@ -799,6 +794,7 @@ def CreateDomoDevice(self, DeviceID) :
 			if "Humi" in Type and "Temp" in Type :
 				t="Temp+Hum"
 				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+
 			for t in Type :
 				Domoticz.Debug("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
 				if t=="Temp" : # Detecteur temp
