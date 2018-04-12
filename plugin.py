@@ -4,7 +4,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.4" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Model" width="75px">
 			<options>
@@ -36,6 +36,7 @@
 import Domoticz
 import binascii
 import time
+import struct
 
 class BasePlugin:
 	enabled = False
@@ -107,17 +108,17 @@ class BasePlugin:
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv[:Tmprcv.find('03')+2] #
-			#try :
-			if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
-				ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
-			else : 
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
-				ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
-				ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
-		#except :
-			#	Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
-			#	ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
+			try :
+				if ReqRcv.find("0301") == -1 : #verifie si pas deux messages coller ensemble
+					ZigateDecode(self, ReqRcv) #demande de decodage de la trame recu
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]  # traite la suite du tampon
+				else : 
+					ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])
+					ZigateDecode(self, ReqRcv[ReqRcv.find("0301")+2:])
+					ReqRcv=Tmprcv[Tmprcv.find('03')+2:]
+			except :
+				Domoticz.Debug("onMessage - effacement de la trame suite a une erreur de decodage : " + ReqRcv)
+				ReqRcv = Tmprcv[Tmprcv.find('03')+2:]  # efface le tampon en cas d erreur
 		else : # while end of data is receive
 			ReqRcv+=Tmprcv
 		return
@@ -209,33 +210,34 @@ class BasePlugin:
 
 			if status != "inDB" :
 
-				if self.ListOfDevices[key]['MacCapa']=="8e" :				
+				if self.ListOfDevices[key]['MacCapa']=="8e" :
 					if self.ListOfDevices[key]['ProfileID']=="c05e" :
 						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-							# exemple ampoule Tradfi LED1545G12.Tradfr
-							self.ListOfDevices[key]['Model']="Ampoule.i"
+					# ampoule Tradfi LED1545G12.Tradfri
+							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
-						#ampoule Tradfri LED1622G12.Tradfri
+					# ampoule Tradfri LED1622G12.Tradfri
 						if self.ListOfDevices[key]['ZDeviceID']=="100" :
 							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
-						
-						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  # device id type plug osram
+					# plug osram
+						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  
 							self.ListOfDevices[key]['Model']="plug.Osram"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
 					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-					#plug salus
+					# ampoule Tradfi
+						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
+							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+					# plug salus
 						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
 							self.ListOfDevices[key]['Model']="plug.Salus"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'09': {'0005'}}
-					#plug salus
-					
-					
-					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  # phillips hue
+					# phillips hue
+					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
 						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
 							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
 							if self.ListOfDevices[key]['Ep']=={} :
@@ -859,6 +861,12 @@ def CreateDomoDevice(self, DeviceID) :
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
+				#Ajout meter
+				if t=="PowerMeter" :  # Power Prise Xiaomi
+					Domoticz.Debug("Ajout Meter")
+					self.ListOfDevices[DeviceID]['Status']="inDB"
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+
 #def UpdateDomoDevice(self, DeviceID) :
 #	IEEEexist=False
 #	x=0
@@ -1004,7 +1012,10 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				elif value == "00" :
 					state="Off"
 				UpdateDevice(x,int(value),str(state),DOptions)
-
+			#Modif Meter
+			if clusterID=="000c":
+				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
+				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 def ResetDevice(Type,HbCount) :
 	x=0
 	for x in Devices: 
@@ -1206,10 +1217,14 @@ def ReadCluster(self, MsgData):
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
 		
-	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation
+	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
+		Domoticz.Debug("Dans le CLuster 000C")
+		if MsgAttrID=="0055":
+			Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
+		else :
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
+			Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
 		
 	else :
 		Domoticz.Debug("ReadCluster (8102) - Error/unknow Cluster Message : " + MsgClusterId)
