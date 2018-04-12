@@ -23,10 +23,16 @@
 				<option label="False" value="False" default="true" />
 			</options>
 		</param>
-		<param field="Mode6" label="Debug" width="75px">
+		<param field="Mode6" label="Debug" width="150px">
 			<options>
-				<option label="True" value="Debug"/>
-				<option label="False" value="Normal"  default="true" />
+				<option label="None" value="0"  default="true" />
+				<option label="Python Only" value="2"/>
+				<option label="Basic Debugging" value="62"/>
+				<option label="Basic+Messages" value="126"/>
+				<option label="Connections Only" value="16"/>
+				<option label="Connections+Python" value="18"/>
+				<option label="Connections+Queue" value="144"/>
+				<option label="All" value="-1"/>
 			</options>
 		</param>
 	</params>
@@ -50,8 +56,8 @@ class BasePlugin:
 		Domoticz.Log("onStart called")
 		global ReqRcv
 		global ZigateConn
-		if Parameters["Mode6"] == "Debug":
-			Domoticz.Debugging(1)
+		if Parameters["Mode6"] != "0":
+			Domoticz.Debugging(int(Parameters["Mode6"]))
 			DumpConfigToLog()
 		if Parameters["Mode1"] == "USB":
 			ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
@@ -1076,18 +1082,19 @@ def DeviceExist(self, Addr) :
 		return False
 
 def initDeviceInList(self, Addr) :
-	self.ListOfDevices[Addr]={}
-	self.ListOfDevices[Addr]['Ep']={}
-	self.ListOfDevices[Addr]['Status']="004d"
-	self.ListOfDevices[Addr]['Heartbeat']="0"
-	self.ListOfDevices[Addr]['RIA']="0"
-	self.ListOfDevices[Addr]['Battery']={}
-	self.ListOfDevices[Addr]['Model']={}
-	self.ListOfDevices[Addr]['MacCapa']={}
-	self.ListOfDevices[Addr]['IEEE']={}
-	self.ListOfDevices[Addr]['Type']={}
-	self.ListOfDevices[Addr]['ProfileID']={}
-	self.ListOfDevices[Addr]['ZDeviceID']={}
+	if Addr != '' :
+		self.ListOfDevices[Addr]={}
+		self.ListOfDevices[Addr]['Ep']={}
+		self.ListOfDevices[Addr]['Status']="004d"
+		self.ListOfDevices[Addr]['Heartbeat']="0"
+		self.ListOfDevices[Addr]['RIA']="0"
+		self.ListOfDevices[Addr]['Battery']={}
+		self.ListOfDevices[Addr]['Model']={}
+		self.ListOfDevices[Addr]['MacCapa']={}
+		self.ListOfDevices[Addr]['IEEE']={}
+		self.ListOfDevices[Addr]['Type']={}
+		self.ListOfDevices[Addr]['ProfileID']={}
+		self.ListOfDevices[Addr]['ZDeviceID']={}
 
 def getChecksum(msgtype,length,datas) :
 	temp = 0 ^ int(msgtype[0:2],16) 
