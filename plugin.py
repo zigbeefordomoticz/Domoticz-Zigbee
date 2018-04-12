@@ -793,6 +793,9 @@ def CreateDomoDevice(self, DeviceID) :
 		else :
 			Type=self.ListOfDevices[DeviceID]['Type'].split("/")
 		if Type !="" :
+			if "Humi" in Type and "Temp" in Type and "Baro" in Type:
+				t="Temp+Hum+Baro" # Detecteur temp + Hum + Baro
+				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 			if "Humi" in Type and "Temp" in Type :
 				t="Temp+Hum"
 				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
@@ -902,6 +905,34 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			Dtypename=DOptions['TypeName']
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			
+			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
+				Bar_for = 0 # Set barometer forecast to 0 = No info
+				if Type=="Temp" :
+					CurrentnValue=Devices[x].nValue
+					CurrentsValue=Devices[x].sValue
+					Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
+					SplitData=CurrentsValue.split(";")
+					#NewSvalue='%s;%s;%s;%s;0'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3])
+					NewSvalue='%s;%s;%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3], Bar_for)
+					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
+					UpdateDevice(x,0,str(NewSvalue),DOptions)								
+				if Type=="Humi" :
+					CurrentnValue=Devices[x].nValue
+					CurrentsValue=Devices[x].sValue
+					Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+					SplitData=CurrentsValue.split(";")
+					#NewSvalue='%s;%s;%s;%s;0'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3])
+					NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3], Bar_for)
+					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
+					UpdateDevice(x,0,str(NewSvalue),DOptions)
+				if Type=="Baro" :  # barometre
+					CurrentnValue=Devices[x].nValue
+					CurrentsValue=Devices[x].sValue
+					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
+					SplitData=CurrentsValue.split(";")
+					#valueBaro='%s;%s;%s;%s;0' % (SplitData[0], SplitData[1], str(value) , SplitData[3])
+					valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], str(value) , SplitData[3], Bar_for)
+					UpdateDevice(x,0,str(valueBaro),DOptions)
 			if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 				if Type=="Temp" :
 					CurrentnValue=Devices[x].nValue
