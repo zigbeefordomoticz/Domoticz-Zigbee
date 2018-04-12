@@ -17,5 +17,5 @@
 'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug'},
-'plug.Salus':{'Ep':{'09':{'0005'}},'Type':'Plug'},
+'plug.Salus':{'Ep':{'09':{'0006'}},'Type':'Plug'},
 }

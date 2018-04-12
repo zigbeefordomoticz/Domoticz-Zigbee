@@ -232,7 +232,7 @@ class BasePlugin:
 						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
 							self.ListOfDevices[key]['Model']="plug.Salus"
 							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'09': {'0005'}}
+								self.ListOfDevices[key]['Ep']={'09': {'0006'}}
 					# phillips hue
 					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
 						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
