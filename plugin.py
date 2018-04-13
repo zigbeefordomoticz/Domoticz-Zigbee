@@ -1128,11 +1128,15 @@ def UpdateBattery(DeviceID,BatteryLvl):
 
 def UpdateDevice(Unit, nValue, sValue, Options):
 	Dzigate=eval(Options['Zigate'])
-	BatteryLvl=Dzigate['Battery']
+	BatteryLvl=str(Dzigate['Battery'])
+	if BatteryLvl == '{}' :
+		BatteryLvl=255
+	Domoticz.Debug("BatteryLvl = " + str(BatteryLvl))
+	Domoticz.Debug("Options = " + str(Options))
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
 	if (Unit in Devices):
-		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Options != Options):
-			Devices[Unit].Update(nValue=nValue, sValue=str(sValue), Options=Options, BatteryLevel = BatteryLvl)
+		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
+			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), BatteryLevel=int(BatteryLvl))
 			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return	
 
