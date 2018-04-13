@@ -208,8 +208,11 @@ class BasePlugin:
 			if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="10":
 				self.ListOfDevices[key]['Heartbeat']="0"
 				self.ListOfDevices[key]['Status']="8045"
-
-			if status != "inDB" :
+			if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="10" and self.ListOfDevices[key]['RIA']>="10":
+				self.ListOfDevices[key]['Heartbeat']="0"
+				self.ListOfDevices[key]['Status']="UNKNOW"
+				
+			if status != "inDB" and status != "UNKNOW" :
 
 				if self.ListOfDevices[key]['MacCapa']=="8e" :
 					if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
@@ -245,8 +248,6 @@ class BasePlugin:
 							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
-
-							
 
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
@@ -898,7 +899,7 @@ def FreeUnit(self) :
 		FreeUnit=len(Devices)+1
 	Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(x))
 	return FreeUnit
-					
+
 def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
 	x=0
@@ -1050,7 +1051,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			#Modif Meter
 			if clusterID=="000c":
 				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
-				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
+				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
+
 def ResetDevice(Type,HbCount) :
 	x=0
 	for x in Devices: 
@@ -1125,10 +1127,12 @@ def UpdateBattery(DeviceID,BatteryLvl):
 		self.ListOfDevices[DeviceID]['Battery']=BatteryLvl
 
 def UpdateDevice(Unit, nValue, sValue, Options):
+	Dzigate=eval(Options['Zigate'])
+	BatteryLvl=Dzigate['Battery']
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Options != Options):
-			Devices[Unit].Update(nValue=nValue, sValue=str(sValue), Options=Options)
+			Devices[Unit].Update(nValue=nValue, sValue=str(sValue), Options=Options, BatteryLevel = BatteryLvl)
 			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return	
 
@@ -1166,8 +1170,8 @@ def ReadCluster(self, MsgData):
 				ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
 				ValueBattery=round(int(ValueBattery,16)/10/3.3)
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
-				if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
-					UpdateBattery(MsgSrcAddr,ValueBattery)
+				#if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
+				#	UpdateBattery(MsgSrcAddr,ValueBattery)
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			except :
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
