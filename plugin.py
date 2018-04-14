@@ -211,17 +211,16 @@ class BasePlugin:
 			if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="10" and self.ListOfDevices[key]['RIA']>="10":
 				self.ListOfDevices[key]['Heartbeat']="0"
 				self.ListOfDevices[key]['Status']="UNKNOW"
-				
-			if status != "inDB" and status != "UNKNOW" :
 
-				if self.ListOfDevices[key]['MacCapa']=="8e" :
+			if status != "inDB" and status != "UNKNOW" :
+				if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
 					if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
-						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 					# ampoule Tradfi LED1545G12.Tradfri
+						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
-					# ampoule Tradfri LED1622G12.Tradfri
+					# ampoule Tradfri LED1622G12.Tradfri ou phillips hue white
 						if self.ListOfDevices[key]['ZDeviceID']=="0100" :
 							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
 							if self.ListOfDevices[key]['Ep']=={} :
@@ -232,22 +231,28 @@ class BasePlugin:
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
 					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-					# ampoule Tradfi
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}							
 					# plug salus
 						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
 							self.ListOfDevices[key]['Model']="plug.Salus"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'09': {'0006'}}
+					# ampoule Tradfi
+						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
+							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+					# shutter profalux
+						if self.ListOfDevices[key]['ZDeviceID']=="0200" :  # device id type shutter
+							self.ListOfDevices[key]['Model']="shutter.Profalux"
+							if self.ListOfDevices[key]['Ep']=={} :
+								self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
 					# phillips hue
 					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
 						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
 							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
 							if self.ListOfDevices[key]['Ep']=={} :
 								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+
 
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
@@ -955,7 +960,6 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)
-			
 			if Type==Dtypename=="Temp" :  # temperature
 				UpdateDevice(x,0,str(value),DOptions)				
 			if Type==Dtypename=="Humi" :   # humidite
