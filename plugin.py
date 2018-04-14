@@ -130,7 +130,7 @@ class BasePlugin:
 		Dtypename=DOptions['TypeName']
 		Dzigate=eval(DOptions['Zigate'])
 		EPin="01"
-		if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch" or Dtypename=="Smoke" or Dtypename=="DSwitch":
+		if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch" or Dtypename=="Smoke" or Dtypename=="DSwitch" or Dtypename=="Button" or Dtypename=="DButton":
 			ClusterSearch="0006"
 		if Dtypename=="LvlControl" :
 			ClusterSearch="0008"
@@ -841,6 +841,11 @@ def CreateDomoDevice(self, DeviceID) :
 					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
+				if t=="DButton"  :  # interrupteur double sur EP different
+					self.ListOfDevices[DeviceID]['Status']="inDB"
+					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+
 				if t=="Smoke" :  # detecteur de fumee
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=5 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
@@ -852,6 +857,10 @@ def CreateDomoDevice(self, DeviceID) :
 				if t=="Switch":  # inter sans fils 1 touche 86sw1 xiaomi
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+
+				if t=="Button":  # inter sans fils 1 touche 86sw1 xiaomi
+					self.ListOfDevices[DeviceID]['Status']="inDB"
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=9 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="XCube" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['Status']="inDB"
@@ -983,6 +992,17 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				elif value == "00" :
 					state="Off"
 				UpdateDevice(x,int(value),str(state),DOptions)
+				if value == "01" :
+					state="Open"
+				elif value == "00" :
+					state="Closed"
+				UpdateDevice(x,int(value),str(state),DOptions)
+			if Type=="Switch" and Dtypename=="Button": # boutton simple
+				if value == "01" :
+					state="On"
+					UpdateDevice(x,int(value),str(state),DOptions)
+				else:
+					return
 			if Type=="Switch" and Dtypename=="Water" : # detecteur d eau
 				if value == "01" :
 					state="On"
@@ -1009,7 +1029,21 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				else :
 					state="0"
 				UpdateDevice(x,int(value),str(state),DOptions)
-			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ...
+			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
+				if Ep == "01" :
+					if value == "01" or value =="00" :
+						state="10"
+						data="01"
+				elif Ep == "02" :
+					if value == "01" or value =="00":
+						state="20"
+						data="02"
+				elif Ep == "03" :
+					if value == "01" or value =="00" :
+						state="30"
+						data="03"
+				UpdateDevice(x,int(data),str(state),DOptions)
+			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different   ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
 					if value == "01" or value =="00" :
 						state="10"
