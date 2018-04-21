@@ -925,14 +925,13 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
-				Bar_for = 0 # Set barometer forecast to 0 = No info
+				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
 					SplitData=CurrentsValue.split(";")
-					#NewSvalue='%s;%s;%s;%s;0'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3])
-					NewSvalue='%s;%s;%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3], Bar_for)
+					NewSvalue='%s;%s;%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)								
 				if Type=="Humi" :
@@ -940,17 +939,15 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
 					SplitData=CurrentsValue.split(";")
-					#NewSvalue='%s;%s;%s;%s;0'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3])
-					NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3], Bar_for)
+					NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)
-				if Type=="Baro" :  # barometre
+				if Type=="Baro" :  # barometer
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
 					SplitData=CurrentsValue.split(";")
-					#valueBaro='%s;%s;%s;%s;0' % (SplitData[0], SplitData[1], str(value) , SplitData[3])
-					valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], str(value) , SplitData[3], Bar_for)
+					valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], str(value) , SplitData[3], Bar_forecast)
 					UpdateDevice(x,0,str(valueBaro),DOptions)
 			if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 				if Type=="Temp" :
