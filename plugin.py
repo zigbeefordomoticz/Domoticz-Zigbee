@@ -346,7 +346,9 @@ def ZigateConf():
 	sendZigateCmd("0024","")
 
 	################### ZiGate - discover mode 255 sec Max ##################
-	sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
+	#### Set discover mode only if requested - so != 0                  #####
+	if Parameters["Mode2"] != "0":
+		sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
 
 def ZigateDecode(self, Data):  # supprime le transcodage
 	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
