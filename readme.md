@@ -30,14 +30,14 @@ In Domoticz, go in Setup>Hardware, in Type select "Zigate plugin".
 
 - Select a name for your hardware (here it's zigate)
 - Select your model (USB or Wifi)
-  - if Wifi enter IP of your Zigate, keep port to 9999 (not possible to change this on the zigate yet)
+  - if Wifi, enter IP of your Zigate, keep port to 9999 (not possible to change this on the zigate yet)
   - if USB, select your device port (always /dev/ttyUSBx under linux, COMx for Windows)
 - Select ZigBee channel (by default it's set to 11, but if you have pluzzy device, ou need to set it to 19, see [zigate.fr](zigate.fr) for more information)
-- Set Permit join time, between 0 and 255 to Permit join devices on plugin or Domoticz start
-- Set Erase Persistent Data to true if you want to clean Zigate memory (devices know list in zigate)
-- Set Debug to true if you have trouble
+- Set 'Permit join time on start' between 0 and 255 to permit join devices on plugin or Domoticz start
+- Set 'Erase Persistent Data' to true if you want to clean Zigate memory (devices know list in zigate)
+- Set 'Debug' to 'True' if you have trouble
 
-## How it's work
+## How it works
 
 Your Device need to send a device announce while zigate is in permit join mode.
 
@@ -53,13 +53,13 @@ To add a new device your zigate must be in Permit Join mode
 
 ### Ikea Tradfri Bulb
 
-Just turn off/on 6 times your bulb (not with ikea remote, shut off then on power). Your bulb will send a device announce to your zigate, then your zigate will ask some information to your bulb to know wich model it is and add it to Domoticz. If your model is not in DeviceConf.txt it should take a little longer but it will be automatically add as soon as the zigate will have information need foor this.
+Just turn off/on 6 times your bulb (not with Ikea remote, shut off then on power). Your bulb will send a device announce to your zigate, then your zigate will ask some information to your bulb to know wich model it is and add it to Domoticz. If your model is not in DeviceConf.txt it should take a little longer but it will be automatically add as soon as the zigate will have information need foor this.
 
 ![](https://github.com/sasu-drooz/Domoticz-Zigate/blob/dev2/images/Zigate-Bulb-Device.png)
 
 You should find between 1 and 3 new devices in your Domoticz Device list :
 
-- simple switch, to turn on or off your bulb
+- Simple switch, to turn on or off your bulb
 - Level Control (LvlControl), to set brigthness level of your bulb
 - Color Control (ColorControl), to set color of your bulb
 
@@ -67,7 +67,7 @@ You should find between 1 and 3 new devices in your Domoticz Device list :
 
 Push reset button while your device blink 3 times quickly, then your device will be announce to your zigate and it will be add to your device list
 
-#### support Xiaomi know device are :
+#### Support Xiaomi know device are :
 
 - Motion sensor (v1 and v2)
 - Door/window sensor 
