@@ -158,13 +158,17 @@ class BasePlugin:
 
 		if Command == "Set Level" :
 			if Dtypename == "LvlControl" :
-				if Level == 0 :
-					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-					UpdateDevice(Unit, 0, "Off",DOptions)
-				else :
-					value=returnlen(2,hex(round(Level*255/100))[2:])
-					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-					UpdateDevice(Unit, 1, "On",DOptions)
+                                if Level == 0 :
+                                        sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+                                        UpdateDevice(Unit, 0, "Off",DOptions)
+                                if Level == 100 :
+                                        value=returnlen(2,hex(round(Level*255/100))[2:])
+                                        sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
+                                        UpdateDevice(Unit, 1, "On",DOptions)
+                                else :
+                                        value=returnlen(2,hex(round(Level*255/100))[2:])
+                                        sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
+                                        UpdateDevice(Unit, 1, str(Level) ,DOptions)
 
 			if Dtypename == "ColorControl" :
 				if Level == 0 :
