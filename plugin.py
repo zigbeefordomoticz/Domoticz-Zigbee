@@ -683,10 +683,19 @@ def Decode8000(self, MsgData) : # Reception status
 	else :
 		MsgDataStatus="ZigBee Error Code "+ MsgDataStatus
 	MsgDataSQN=MsgData[6:8]
-	if int(MsgDataLenght,16) > 2 :
-		MsgDataMessage=MsgData[8:len(MsgData)]
-	else :
+	#Correction Thiklop : MsgDataLenght n'est pas toujours un entier
+	#Encapsulation des 4 lignes dans un try except pour sortir proprement en testant le type de MsgDataLenght
+	try :
+		int(MsgDataLenght,16)
+	except :
+		Domoticz.Log("ERREUR - Fonction Decode 8000 problème de MsgDataLenght, pas un int")
 		MsgDataMessage=""
+        else :
+		if int(MsgDataLenght,16) > 2 :
+			MsgDataMessage=MsgData[8:len(MsgData)]
+		else :
+			MsgDataMessage=""
+	#Fin de la correction
 	Domoticz.Debug("Decode8000 - Reception status : " + MsgDataStatus + ", SQN : " + MsgDataSQN + ", Message : " + MsgDataMessage)
 	return
 
@@ -751,14 +760,22 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
 	DeviceExist(self, MsgDataShAddr)
-	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
-		self.ListOfDevices[MsgDataShAddr]['Status']="8045"
-	for i in MsgDataEPlist :
-		OutEPlist+=i
-		if len(OutEPlist)==2 :
-			if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
-				self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
-				OutEPlist=""
+	#Correction Thiklop : MsgDataShAddr provoque un Keyerror (?)
+	#Sortie propre par try except
+	try :
+		temp_sert_a_rien = self.ListOfDevices[MsgDataShAddr]['Status']!="inDB"
+	except :
+		Domoticz.Log("ERREUR - Erreur ReadCluster KeyError : MsgDataShAddr = " + MsgDataShAddr)
+	else :
+		if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
+			self.ListOfDevices[MsgDataShAddr]['Status']="8045"
+		for i in MsgDataEPlist :
+			OutEPlist+=i
+			if len(OutEPlist)==2 :
+				if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
+					self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
+					OutEPlist=""
+	#Fin de correction
 	return
 
 def Decode8101(self, MsgData) :  # Default Response
@@ -986,9 +1003,13 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			if Type=="Switch" and Dtypename=="Door" :  # porte / fenetre
 				if value == "01" :
 					state="Open"
+					#Correction Thiklop : value n'est pas toujours un entier. Exécution de l'updatedevice dans le test
+					UpdateDevice(x,int(value),str(state),DOptions)
 				elif value == "00" :
 					state="Closed"
-				UpdateDevice(x,int(value),str(state),DOptions)
+					#Correction Thiklop : idem
+					UpdateDevice(x,int(value),str(state),DOptions)
+					#Fin de la correction
 			if Type==Dtypename=="Switch" : # switch simple
 				if value == "01" :
 					state="On"
@@ -1084,11 +1105,16 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			if Type==Dtypename=="Lux" :
 				UpdateDevice(x,0,str(value),DOptions)
 			if Type==Dtypename=="Motion" :
+				#Correction Thiklop : value pas toujours un entier :
+				#'onMessage' failed 'ValueError':'invalid literal for int() with base 10: '00031bd000''.
+				# UpdateDevice dans le if
 				if value == "01" :
 					state="On"
+					UpdateDevice(x,int(value),str(state),DOptions)
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice(x,int(value),str(state),DOptions)
+				#Fin de correction
 			#Modif Meter
 			if clusterID=="000c":
 				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
@@ -1193,9 +1219,14 @@ def ReadCluster(self, MsgData):
 	tmpEp=""
 	tmpClusterid=""
 	if DeviceExist(self, MsgSrcAddr)==False :
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
-
+		#Correction Thiklop : MsgSrcEp n'est pas toujours dans la ListOfDevices (?)
+		#Encapsulation dans un try except pour sortir proprement
+		try :
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
+		except :
+			Domoticz.Log("ERREUR - Erreur ReadCluster KeyError : MsgData = " + MsgData)
+		#Fin de la correction
 	else :
 		self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
 		try : 
@@ -1255,13 +1286,25 @@ def ReadCluster(self, MsgData):
 
 	elif MsgClusterId=="0402" :  # (Measurement: Temperature) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
-		if MsgClusterData[0] == "f" :  # cas temperature negative
-			MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
+		#Correction Thiklop : onMessage' failed 'IndexError':'string index out of range'.
+		if MsgClusterData != "":
+			if MsgClusterData[0] == "f" :  # cas temperature negative
+				MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
+				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
+				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+			#Correction Thiklop 2 : cas des température > 1000°C
+			elif int(MsgClusterData,16) < 100000 : #1000 °C x 100
+				MsgClusterData=int(MsgClusterData,16)
+				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
+				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+                        else :
+                                Domoticz.Log("Température > 1000°C")
+                        #Fin de correction 2
 		else : 
-			MsgClusterData=int(MsgClusterData,16)
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+			Domoticz.Log("MsgClusterData vide")
+		#Fin de la correction
 
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 		if MsgAttType=="0028":
@@ -1283,9 +1326,17 @@ def ReadCluster(self, MsgData):
 
 	elif MsgClusterId=="0405" :  # (Measurement: Humidity) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
+		#Correction Thiklop : le MsgClusterData n'est pas toujours un entier et est vide ?!
+		#Encapsulation dans un try except pour gérer proprement le problème
+		try :
+			int(MsgClusterData,16)
+		except :
+			Domoticz.Log("ERREUR - Erreur decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
+                else :
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
+			Domoticz.Debug("ReadCluster (8102) - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
+		#Fin de correction
 
 	elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing) xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
@@ -1293,9 +1344,17 @@ def ReadCluster(self, MsgData):
 		Domoticz.Debug("ReadCluster (8102) - ClusterId=0406 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
 	elif MsgClusterId=="0400" :  # (Measurement: LUX) xiaomi
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
-		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
+		#Correction Thiklop : le MsgClusterData n'est pas un entier hexa (message vide dans certains cas ?)
+		#Encapsulation dans un try except pour une sortie propre
+		try :
+			int(MsgClusterData,16)
+		except :
+			Domoticz.Log("ERREUR - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
+		else :
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
+			Domoticz.Debug("ReadCluster (8102) - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
+		#Fin de la correction
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
