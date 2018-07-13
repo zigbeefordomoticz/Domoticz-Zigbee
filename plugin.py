@@ -1294,13 +1294,14 @@ def ReadCluster(self, MsgData):
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
 			#Correction Thiklop 2 : cas des température > 1000°C
-			elif int(MsgClusterData,16) < 100000 : #1000 °C x 100
+			#elif int(MsgClusterData,16) < 100000 : #1000 °C x 100
+			else:
 				MsgClusterData=int(MsgClusterData,16)
 				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
-                        else :
-                                Domoticz.Log("Température > 1000°C")
+                        #else :
+                        #        Domoticz.Log("Température > 1000°C")
                         #Fin de correction 2
 		else : 
 			Domoticz.Log("MsgClusterData vide")
