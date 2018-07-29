@@ -158,17 +158,17 @@ class BasePlugin:
 
 		if Command == "Set Level" :
 			if Dtypename == "LvlControl" :
-                                if Level == 0 :
-                                        sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-                                        UpdateDevice(Unit, 0, "Off",DOptions)
-                                if Level == 100 :
-                                        value=returnlen(2,hex(round(Level*255/100))[2:])
-                                        sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-                                        UpdateDevice(Unit, 1, "On",DOptions)
-                                else :
-                                        value=returnlen(2,hex(round(Level*255/100))[2:])
-                                        sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-                                        UpdateDevice(Unit, 1, str(Level) ,DOptions)
+				if Level == 0 :
+					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+					UpdateDevice(Unit, 0, "Off",DOptions)
+				if Level == 100 :
+					value=returnlen(2,hex(round(Level*255/100))[2:])
+					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
+					UpdateDevice(Unit, 1, "On",DOptions)
+				else :
+					value=returnlen(2,hex(round(Level*255/100))[2:])
+					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
+					UpdateDevice(Unit, 1, str(Level) ,DOptions)
 
 			if Dtypename == "ColorControl" :
 				if Level == 0 :
@@ -690,7 +690,7 @@ def Decode8000(self, MsgData) : # Reception status
 	except :
 		Domoticz.Log("ERREUR - Fonction Decode 8000 problème de MsgDataLenght, pas un int")
 		MsgDataMessage=""
-        else :
+	else :
 		if int(MsgDataLenght,16) > 2 :
 			MsgDataMessage=MsgData[8:len(MsgData)]
 		else :
@@ -1300,9 +1300,9 @@ def ReadCluster(self, MsgData):
 				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
 				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
-                        #else :
-                        #        Domoticz.Log("Température > 1000°C")
-                        #Fin de correction 2
+			#else :
+			#	Domoticz.Log("Température > 1000°C")
+			#Fin de correction 2
 		else : 
 			Domoticz.Log("MsgClusterData vide")
 		#Fin de la correction
@@ -1333,7 +1333,7 @@ def ReadCluster(self, MsgData):
 			int(MsgClusterData,16)
 		except :
 			Domoticz.Log("ERREUR - Erreur decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
-                else :
+		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
