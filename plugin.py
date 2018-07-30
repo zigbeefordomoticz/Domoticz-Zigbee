@@ -348,6 +348,10 @@ def ZigateConf():
 	
 	################### ZiGate - start network ##################
 	sendZigateCmd("0024","")
+	
+	################### ZiGate - get Firmware version #############
+	# answer is expected on message 8010
+	sendZigateCmd("0010","")
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
@@ -709,6 +713,7 @@ def Decode8010(self,MsgData) : # Reception Version list
 	MsgDataApp=MsgData[0:4]
 	MsgDataSDK=MsgData[4:8]
 	Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+	Domoticz.Log("Firmware version: " + MsgData[5] + "." + MsgData[6] + MsgData[7] )
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
