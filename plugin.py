@@ -712,8 +712,11 @@ def Decode8001(self, MsgData) : # Reception log Level
 def Decode8010(self,MsgData) : # Reception Version list
 	MsgDataApp=MsgData[0:4]
 	MsgDataSDK=MsgData[4:8]
-	Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
-	Domoticz.Log("Firmware version: " + MsgData[5] + "." + MsgData[6] + MsgData[7] )
+	try:
+		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+		Domoticz.Log("Firmware version: " + MsgData[5] + "." + MsgData[6] + MsgData[7] )
+	except:
+		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
