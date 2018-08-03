@@ -1,0 +1,19 @@
+onMessage() Call back is documented as follow in the Developing a Python Plugin ( https://www.domoticz.com/wiki/Developing_a_Python_plugin )
+Parameters: Connection, Data.
+
+Called when a single, complete message is received from the external hardware (as defined by the Protocol setting). This callback should be used to interpret messages from the device and set the related Domoticz devices as required.
+Connection is the Domoticz Connection object associated with the event.
+Data is normally a ByteArray except where the Protocol for the Connection has structure (such as HTTP or ICMP), in that case Data will be a Dictionary containing Protocol specific details such as Status and Headers. 
+
+In the Zigate plugin here is the call flow from onMessage()
+
+onMessage()
+  ZigateDecode()
+    ZigateRead()
+      One possibility is to drop the message. In fact no action are taken from this point
+      Decodexxxx()
+        Update global data (self.ListofDevices[] )
+        ReadCluster()
+          Update global data (self.ListofDevices[] )
+          Update Domoticz Devices through MajDomoDevices()
+          
