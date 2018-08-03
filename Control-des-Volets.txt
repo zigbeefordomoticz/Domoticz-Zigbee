@@ -41,3 +41,8 @@ Mode de fonctionnement du Switch Blinds Inverted Percent
         nValue 1 and sValue 100 ==>> Opened
 
         the value in the LastLevel field reflects the display of the bar
+        
+        
+ Références:
+ - Commandes Zigate :  https://zigate.fr/wiki/commandes-zigate/ 
+ - Documentation profalux
