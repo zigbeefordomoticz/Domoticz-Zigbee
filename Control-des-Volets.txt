@@ -31,6 +31,8 @@ Modifications:
         Récupérer et convertir l'etat du volet. On transforme un Hex en Int, et on ramene à un niveau de %.
         Mise à jour du device correspondant
 
+- onCommand()
+  Quelques amménagements pour notamment traiter le SwitchType 16 ( Blind Inverted Percent ). cela n'a pas grand chose à voir avec le monitoring, mais c'est le management du switch de type 16. cf NB ci-après
 
 NOTA BENE:
 Mode de fonctionnement du Switch Blinds Inverted Percent
