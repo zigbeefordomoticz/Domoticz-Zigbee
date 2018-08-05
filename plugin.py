@@ -1006,13 +1006,22 @@ def FreeUnit(self) :
 def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
 	x=0
-	Type=TypeFromCluster(clusterID)
+	try:
+		Type=TypeFromCluster(ClusterID)
+	except:
+		Domoticz.Log("MajDomoDevice ERROR not found TypeFromCluster : " + str(ClusterID))
+		return
+		
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
-			DOptions = Devices[x].Options
-			Dtypename=DOptions['TypeName']
-			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
-			
+			try:
+				DOptions = Devices[x].Options
+				Dtypename=DOptions['TypeName']
+				DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
+			except:
+				Domoticz.Log('MajDomoDevice ERROR while retrieving DOption : ' str(DOptions))
+				return
+					     
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :
