@@ -1168,7 +1168,15 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					elif value >= "0060" : #180°
 						state="90"
 						data="09"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					try:
+						tstdata=data
+						tststate=state
+					except:
+						Domoticz.Log("MajDomoDevice - ERROR - unexpected value = " + str(value) )
+					else:
+						Domoticz.Log("MajDomoDevice - Cube update device with data = " + str(data) + " state = " + str(state) )
+						UpdateDevice(x,int(data),str(state),DOptions)
+
 			if Type==Dtypename=="Lux" :
 				UpdateDevice(x,0,str(value),DOptions)
 			if Type==Dtypename=="Motion" :
