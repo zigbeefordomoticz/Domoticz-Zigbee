@@ -1,0 +1,4 @@
+0001 - Encapsulate all variable assignements into a try: except: else: in order to avoid unitialized value during execution.
+	This will require to understand what to do in the except phase. exit , or just continue ....
+
+
