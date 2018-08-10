@@ -1,0 +1,23 @@
+Domoticz has a native hardware Class for managing the Xiaomi Gateway.
+
+Investigations :
+	As part of the Gateway it has the capabilities to manage/handle :
+	- Xiaomi Cube
+	- Aqara Cube
+	
+	as well as others Xiaomi devices
+	
+	
+	For the Cube and Aqara Cube a Switch selector is created with the following Level Names
+	- Xiaomi Cube : flip90/flip180/move/tap_twice/shake_air/swing/alert/free_fall
+                	Off|flip90|flip180|move|tap_twice|shake_air|swing|alert|free_fall|clock_wise|anti_clock_wise
+	
+	- Aqara Cube :  flip90/flip180/move/tap_twice/shake_air/swing/alert/free_fall/rotate
+                	Off|flip90|flip180|move|tap_twice|shake_air|swing|alert|free_fall|rotate"
+	
+	=> Xiaomi Cube doesn't have rotate, while Aqara Cube has clock wise and and anti clock wise 
+	
+	
+	Looks like there is also a TextSensor  which is updated with the degrees of rotation, which is 90° or 180°
+
+
