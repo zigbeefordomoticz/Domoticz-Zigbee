@@ -810,7 +810,7 @@ def Decode8010(self,MsgData) : # Reception Version list
 
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
 	numberofdev=len(MsgData)	
-	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(numberofdev) )
+	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/13)) )
 	idx=0
 	while idx < (len(MsgData)-13):
 		DevID=MsgData[idx:idx+2]
@@ -1326,14 +1326,11 @@ def DeviceExist(self, Addr) :
 	#check in ListOfDevices
 	if Addr in self.ListOfDevices and Addr != '' :
 		if 'Status' in self.ListOfDevices[Addr] :
-			Domoticz.Log("DeviceExit Addr: " + str(Addr) + " exist in ListOfDevices" )
 			return True
 		else :
-			Domoticz.Log("DeviceExit Addr: " + str(Addr) + " does not exist in ListOfDevices" )
 			initDeviceInList(self, Addr)
 			return False
 	else :  # devices inconnu ds listofdevices et ds db
-		Domoticz.Log("DeviceExit Addr: " + str(Addr) + " unknown" )
 		initDeviceInList(self, Addr)
 		return False
 
@@ -1670,8 +1667,8 @@ def returnlen(taille , value) :
 	return str(value)
 
 def CheckDeviceList(self, key, val) :
-	Domoticz.Log("CheckDeviceList - Address search : " + str(key))
-	Domoticz.Log("CheckDeviceList - with value : " + str(val))
+	Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
+	Domoticz.Debug("CheckDeviceList - with value : " + str(val))
 	
 	DeviceListVal=eval(val)
 	if DeviceExist(self, key)==False :
