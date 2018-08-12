@@ -395,6 +395,10 @@ def ZigateConf():
 	# answer is expected on message 8010
 	sendZigateCmd("0010","")
 
+	################### ZiGate - Request Device List #############
+	# answer is expected on message 8010
+	sendZigateCmd("0015","")
+
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
 	if Parameters["Mode2"] != "0":
@@ -492,6 +496,7 @@ def ZigateRead(self, Data):
 	elif str(MsgType)=="8000":  # Status
 		Domoticz.Debug("ZigateRead - MsgType 8000 - reception status : " + Data)
 		Decode8000(self, MsgData)
+		Decode8000_v2(self, MsgData)
 		return
 
 	elif str(MsgType)=="8001":  # Log
@@ -537,6 +542,12 @@ def ZigateRead(self, Data):
 	elif str(MsgType)=="8014":  #
 		Domoticz.Debug("ZigateRead - MsgType 8014 - Reception Permit join status response : " + Data)
 		return
+
+	elif str(MsgType)=="8015":  #
+		Domoticz.Debug("ZigateRead - MsgType 8015 - Get devices list : " + Data)
+		Decode8015(self, MsgData)
+		return
+		
 		
 	elif str(MsgType)=="8024":  #
 		Domoticz.Debug("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
@@ -720,6 +731,13 @@ def Decode004d(self, MsgData) : # Reception Device announce
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
 	return
 
+def Decode8000_v2(self, MsgData) : # Status
+	Status=MsgData[0:2]
+	Seq=MsgData[2:4]
+	PacketType=MsgData[4:8]
+	Domoticz.Log("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+	return
+	
 def Decode8000(self, MsgData) : # Reception status
 	MsgDataLenght=MsgData[0:4]
 	MsgDataStatus=MsgData[4:6]
@@ -787,6 +805,21 @@ def Decode8010(self,MsgData) : # Reception Version list
 		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
 	else :
 		FirmwareVersion = MsgData[5] + "." + MsgData[6] + MsgData[7]
+
+	return
+
+def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
+	numberofdev=len(MsgData)	
+	Domoticz.Log("Decode8015 : Number of device = " + str(numberofdev) )
+	idx=0
+	while idx < (len(MsgData)-13):
+		DevID=MsgData[idx:idx+2]
+		saddr=MsgData[idx+2:idx+6]
+		ieee=MsgData[idx+6:idx+22]
+		power=MsgData[idx+22:idx+23]
+		link=MsgData[idx+23:idx+25]
+		Domoticz.Log("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " Link Quality = " + link )
+		idx=idx+13
 
 	return
 
