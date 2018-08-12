@@ -733,6 +733,13 @@ def Decode004d(self, MsgData) : # Reception Device announce
 
 def Decode8000_v2(self, MsgData) : # Status
 	Status=MsgData[0:2]
+	if Status=="00" : Status="Success"
+	elif Status=="01" : Status="Incorrect Parameters"
+	elif Status=="02" : Status="Unhandled Command"
+	elif Status=="03" : Status="Command Failed"
+	elif Status=="04" : Status="Busy"
+	elif Status=="05" : Status="Stack Already Started"
+	else : Status="ZigBee Error Code "+ MsgDataStatus
 	Seq=MsgData[2:4]
 	PacketType=MsgData[4:8]
 	Domoticz.Log("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
