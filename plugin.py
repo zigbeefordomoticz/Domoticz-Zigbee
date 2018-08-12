@@ -44,6 +44,10 @@ import binascii
 import time
 import struct
 
+
+FirmwareVersion = ''
+HeartbeatCount = 89     # request a network status 10s after start
+
 class BasePlugin:
 	enabled = False
 
@@ -112,6 +116,7 @@ class BasePlugin:
 		Domoticz.Debug("onMessage called")
 		global Tmprcv
 		global ReqRcv
+
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
@@ -202,8 +207,21 @@ class BasePlugin:
 		Domoticz.Log("onDisconnect called")
 
 	def onHeartbeat(self):
-		#Domoticz.Log("onHeartbeat called")
+		global FirmwareVersion
+		global HeartbeatCount
+
+		#Domoticz.Log("onHeartbeat called: Firmware " + str(FirmwareVersion) )
 		Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
+
+		## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
+		if str(FirmwareVersion) == "3.0d" :
+			if HeartbeatCount >= 90 :
+				Domoticz.Log("request Network Status")
+				sendZigateCmd("0009","")
+				HeartbeatCount = 0
+			else :
+				HeartbeatCount = HeartbeatCount + 1
+
 		for key in self.ListOfDevices :
 			status=self.ListOfDevices[key]['Status']
 			RIA=int(self.ListOfDevices[key]['RIA'])
@@ -505,6 +523,12 @@ def ZigateRead(self, Data):
 		Domoticz.Debug("ZigateRead - MsgType 8007 - Reception Factory new restart : " + Data)
 		return
 
+	elif str(MsgType)=="8009":  #
+		Domoticz.Debug("ZigateRead - MsgType 8009 - Network State response : " + Data)
+		Decode8009( self, MsgData)
+		return
+
+
 	elif str(MsgType)=="8010":  # Version
 		Domoticz.Debug("ZigateRead - MsgType 8010 - Reception Version list : " + Data)
 		Decode8010(self, MsgData)
@@ -556,6 +580,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8042":  #
 		Domoticz.Debug("ZigateRead - MsgType 8042 - Reception Node descriptor response : " + Data)
+		Decode8042(self, MsgData)
 		return
 
 	elif str(MsgType)=="8043":  # Simple Descriptor Response
@@ -735,7 +760,24 @@ def Decode8001(self, MsgData) : # Reception log Level
 	Domoticz.Debug("ZigateRead - MsgType 8001 - Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage)
 	return
 
+def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
+	addr=MsgData[0:4]
+	extaddr=MsgData[4:20]
+	PanID=MsgData[20:24]
+	extPanID=MsgData[24:40]
+	Channel=MsgData[40:42]
+	Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + Channel )
+	# from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
+	if str(PanID) == "0" : 
+		Domoticz.Log("Decode8009: Network state DOWN ! " )
+	else :
+		Domoticz.Log("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + Channel )
+
+	return
+
 def Decode8010(self,MsgData) : # Reception Version list
+	global FirmwareVersion
+
 	MsgDataApp=MsgData[0:4]
 	MsgDataSDK=MsgData[4:8]
 	try :
@@ -743,7 +785,24 @@ def Decode8010(self,MsgData) : # Reception Version list
 		Domoticz.Log("Firmware version: " + MsgData[5] + "." + MsgData[6] + MsgData[7] )
 	except :
 		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+	else :
+		FirmwareVersion = MsgData[5] + "." + MsgData[6] + MsgData[7]
 
+	return
+
+def Decode8042(self, MsgData) : # Node Descriptor response
+	sequence=MsgData[0:2]
+	status=MsgData[2:4]
+	addr=MsgData[4:8]
+	manufacturer=MsgData[8:12]
+	max_rx=MsgData[12:16]
+	max_tx=MsgData[16:20]
+	server_mask=MsgData[20:24]
+	descriptor_capability=MsgData[24:26]
+	mac_capability=MsgData[26:28]
+	max_buffer=MsgData[28:30]
+	bit_field=MsgData[30:34]
+	Domoticz.Log("Decode8042 - Reception Node Descriptor : Seq : " + sequence + " Status : " + status )
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
@@ -855,12 +914,9 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	return
 
 def Decode8701(self, MsgData) : # Reception Router Disovery Confirm StatusReception Router Disovery Confirm Status
-	MsgStatus=MsgData[0:4]
-	NwkStatus=MsgData[4:8]
-	try:
-		Domoticz.Log("Decode8701 - Reception Router Disovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
-	except:
-		Domoticz.Log("Decode8701 - ERROR - MsgData" + MsgData)
+	MsgStatus=MsgData[0:2]
+	NwkStatus=MsgData[2:4]
+	Domoticz.Debug("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
 	return
 
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
