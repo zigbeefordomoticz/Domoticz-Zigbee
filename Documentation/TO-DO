@@ -1,4 +1,36 @@
 0001 - Encapsulate all variable assignements into a try: except: else: in order to avoid unitialized value during execution.
 	This will require to understand what to do in the except phase. exit , or just continue ....
 
+0002 - Decode8701 à clarifier ... Que faire des Status
 
+0003 - Test Network to see if this is on. starting 03d
+	https://github.com/fairecasoimeme/ZiGate/issues/15
+
+0004 - Decode8042 Node Descriptor response à implémenter
+	sequence[0:2]
+	status[2:4]
+	addr[4:8]
+	manufacturer[8:12]
+	max_rx[12:16]
+	max_tx[16:20]
+	server_mask[20:24]
+	descriptor_capability[24:26]
+	mac_capability[26:28]
+	max_buffer[28:30]
+	bit_field[30:34]
+
+
+0005 - Decode8015 Get List of Device ( response to 0015 )
+
+0006 - We neeed to review the Device management and have a checking fonction for Database consitency
+	Domoticz store the Domoticz Devices
+	Zigate plugin store in an ASCI text file the plugin devices
+	Zigate HW store the list of paired devices
+	(1) For the Zigate DeviceList.txt we need to implement :
+		Load_DeviceList()
+		Write_DeviceList()
+		Remove_DeviceList()
+
+	(2) Check
+		Source of truth is Zigate HW
+		DeviceExist(self, Addr)
