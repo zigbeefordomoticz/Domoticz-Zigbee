@@ -737,6 +737,9 @@ def Decode004d(self, MsgData) : # Reception Device announce
 
 def Decode8000_v2(self, MsgData) : # Status
 	Status=MsgData[0:2]
+	Seq=MsgData[2:4]
+	PacketType=MsgData[4:8]
+
 	if Status=="00" : Status="Success"
 	elif Status=="01" : Status="Incorrect Parameters"
 	elif Status=="02" : Status="Unhandled Command"
@@ -744,8 +747,6 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif Status=="04" : Status="Busy"
 	elif Status=="05" : Status="Stack Already Started"
 	else : Status="ZigBee Error Code "+ Status
-	Seq=MsgData[2:4]
-	PacketType=MsgData[4:8]
 	Domoticz.Log("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
 	return
 	
@@ -798,9 +799,9 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
 	Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + Channel )
 	# from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
 	if str(PanID) == "0" : 
-		Domoticz.Log("Decode8009: Network state DOWN ! " )
+		Domoticz.Error("Decode8009: Network state DOWN ! " )
 	else :
-		Domoticz.Log("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + Channel )
+		Domoticz.Status("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + Channel )
 
 	return
 
@@ -969,20 +970,76 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	return
 
 def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
-	MsgStatus=MsgData[0:2]
-	NwkStatus=MsgData[2:4]
-	Domoticz.Log("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
-	return
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8702 - MsgLen = " + str(MsgLen))
+
+	if MsgLen==0 :
+		return
+	else:
+		MsgStatus=MsgData[0:2]
+		NwkStatus=MsgData[2:4]
+		Domoticz.Log("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
+	
+		# As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
+		if str(NwkStatus)=="00" :   NwkStatus="Success"
+		elif str(NwkStatus)=="c1" : NwkStatus="An invalid or out-of-range parameter has been passed"
+		elif str(NwkStatus)=="c2" : NwkStatus="Request cannot be processed"
+		elif str(NwkStatus)=="c3" : NwkStatus="NLME-JOIN.request not permitted"
+		elif str(NwkStatus)=="c4" : NwkStatus="NLME-NETWORK-FORMATION.request failed"
+		elif str(NwkStatus)=="c5" : NwkStatus="NLME-DIRECT-JOIN.request failure - device already present"
+		elif str(NwkStatus)=="c6" : NwkStatus="NLME-SYNC.request has failed"
+		elif str(NwkStatus)=="c7" : NwkStatus="NLME-DIRECT-JOIN.request failure - no space in Router table"
+		elif str(NwkStatus)=="c8" : NwkStatus="NLME-LEAVE.request failure - device not in Neighbour table"
+		elif str(NwkStatus)=="c9" : NwkStatus="NLME-GET/SET.request unknown attribute identified"
+		elif str(NwkStatus)=="ca" : NwkStatus="NLME-JOIN.request detected no networks"
+		elif str(NwkStatus)=="cb" : NwkStatus="Reserved"
+		elif str(NwkStatus)=="cc" : NwkStatus="Security processing has failed on outgoing frame due to maximum frame counter"
+		elif str(NwkStatus)=="cd" : NwkStatus="Security processing has failed on outgoing frame due to no key"
+		elif str(NwkStatus)=="ce" : NwkStatus="Security processing has failed on outgoing frame due CCM"
+		elif str(NwkStatus)=="cf" : NwkStatus="Attempt at route discovery has failed due to lack of table space"
+		elif str(NwkStatus)=="d0" : NwkStatus="Attempt at route discovery has failed due to any reason except lack of table space"
+		elif str(NwkStatus)=="d1" : NwkStatus="NLDE-DATA.request has failed due to routing failure on sending device"
+		elif str(NwkStatus)=="d2" : NwkStatus="Broadcast or broadcast-mode multicast has failed as there is no room in BTT"
+		elif str(NwkStatus)=="d3" : NwkStatus="Unicast mode multi-cast frame was discarded pending route discovery"
+		elif str(NwkStatus)=="d4" : NwkStatus="Unicast frame does not have a route available but it is buffered for automatic resend"
+		else : NwkStatus="Unknow NWK codes : " + NwkStatus
+	
+		if NwkStatus != "Success" : Domoticz.Error("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
+		return
 
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
-	MsgDataStatus=MsgData[0:2]
-	MsgDataSrcEp=MsgData[2:4]
-	MsgDataDestEp=MsgData[4:6]
-	MsgDataDestMode=MsgData[6:8]
-	MsgDataDestAddr=MsgData[8:12]
-	MsgDataSQN=MsgData[12:14]
-	Domoticz.Debug("Decode 8702 - Reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
-	return
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8702 - MsgLen = " + str(MsgLen))
+	if MsgLen==0 : 
+		return
+	else:
+		MsgDataStatus=MsgData[0:2]
+		MsgDataSrcEp=MsgData[2:4]
+		MsgDataDestEp=MsgData[4:6]
+		MsgDataDestMode=MsgData[6:8]
+		MsgDataDestAddr=MsgData[8:12]
+		MsgDataSQN=MsgData[12:14]
+		Domoticz.Debug("Decode 8702 - Reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+	
+		# As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
+		if str(MsgDataStatus)=="a0":   Status="A transmit request failed since the ASDU is too large and fragmentation is not supported"
+		elif str(MsgDataStatus)=="a1": Status="A received fragmented frame could not be defragmented at the current time"
+		elif str(MsgDataStatus)=="a2": Status="A received fragmented frame could not be defragmented since the device does not support fragmentation"
+		elif str(MsgDataStatus)=="a3": Status="A parameter value was out of range"
+		elif str(MsgDataStatus)=="a4": Status="An APSME-UNBIND.request failed due to the requested binding link not existing in the binding table"
+		elif str(MsgDataStatus)=="a5": Status="An APSME-REMOVE-GROUP.request has been issued with a group identified that does not appear in the group table"
+		elif str(MsgDataStatus)=="a6": Status="A parameter value was invaid or out of range"
+		elif str(MsgDataStatus)=="a7": Status="An APSDE-DATA.request requesting ack transmission failed due to no ack being received"
+		elif str(MsgDataStatus)=="a8": Status="An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to there being no devices bound to this device"
+		elif str(MsgDataStatus)=="a9": Status="An APSDE-DATA.request with a destination addressing mode set to 0x03 failed due to no corresponding short address found in the address map table"
+		elif str(MsgDataStatus)=="aa": Status="An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to a binding table not being supported on the device"
+		elif str(MsgDataStatus)=="ab": Status="An ASDU was received that was secured using a link key"
+		elif str(MsgDataStatus)=="ac": Status="An ASDU was received that was secured using a network key"
+		elif str(MsgDataStatus)=="ad": Status="An APSDE-DATA.request requesting security has resulted in an error during the corresponding security processing"
+		else:                          Status="Unknown code : " + MsgDataStatus
+	
+		Domoticz.Error("Decode 8702 - " + Status + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+		return
 
 def Decode8401(self, MsgData) : # Reception Zone status change notification
 	Domoticz.Debug("Decode8401 - Reception Zone status change notification : " + MsgData)
