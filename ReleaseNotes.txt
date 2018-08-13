@@ -1,0 +1,5 @@
+- Deco8000 version 2
+- Retreive from Zigate the list of known devices. Check if they exist in the 
+  ListOfDevice and if not start the process to create.
+- Implement polling of Profalux Shutter through the Read Request Attribute
+- Print Zigate firmware version at plugin start

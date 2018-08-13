@@ -214,7 +214,7 @@ class BasePlugin:
 		Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
 
 		## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
-		if str(FirmwareVersion) == "3.0d" :
+		if str(FirmwareVersion) == "030d" :
 			if HeartbeatCount >= 90 :
 				Domoticz.Log("request Network Status")
 				sendZigateCmd("0009","")
@@ -381,6 +381,11 @@ def DumpConfigToLog():
 	return
 
 def ZigateConf():
+	global FirmwareVersion
+
+	################### ZiGate - get Firmware version #############
+	# answer is expected on message 8010
+	sendZigateCmd("0010","")
 
 	################### ZiGate - set channel ##################
 	sendZigateCmd("0021", "0000" + returnlen(2,hex(int(Parameters["Mode5"]))[2:4]) + "00")
@@ -390,18 +395,16 @@ def ZigateConf():
 	
 	################### ZiGate - start network ##################
 	sendZigateCmd("0024","")
-	
-	################### ZiGate - get Firmware version #############
-	# answer is expected on message 8010
-	sendZigateCmd("0010","")
 
 	################### ZiGate - Request Device List #############
-	# answer is expected on message 8010
-	sendZigateCmd("0015","")
+	# answer is expected on message 8015. Only available since firmware 03.0b
+	if str(FirmwareVersion) == "030d" or str(FirmwareVersion) == "030c" or str(FirmwareVersion == "030b") :
+		sendZigateCmd("0015","")
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
 	if Parameters["Mode2"] != "0":
+		Domoticz.Log("Zigate enter in discover mode for " + str(Parameters["Mode2"]) + " Secs" )
 		sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
 
 def ZigateDecode(self, Data):  # supprime le transcodage
@@ -803,15 +806,16 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
 def Decode8010(self,MsgData) : # Reception Version list
 	global FirmwareVersion
 
-	MsgDataApp=MsgData[0:4]
-	MsgDataSDK=MsgData[4:8]
+	MajorVersNum=MsgData[0:4]
+	InstaVersNum=MsgData[4:8]
 	try :
 		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
-		Domoticz.Log("Firmware version: " + MsgData[5] + "." + MsgData[6] + MsgData[7] )
+		Domoticz.Log("Major Version Num: " + MajorVersNum )
+		Domoticz.Log("Installer Version Number: " + InstaVersNum )
 	except :
-		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+		Domoticz.Debug("Decode8010 - ERROR - Reception Version list : " + MsgData)
 	else :
-		FirmwareVersion = MsgData[5] + "." + MsgData[6] + MsgData[7]
+		FirmwareVersion = InstaVersNum
 
 	return
 
