@@ -544,6 +544,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8014":  #
 		Domoticz.Debug("ZigateRead - MsgType 8014 - Reception Permit join status response : " + Data)
+		Decode8014(self, MsgData)
 		return
 
 	elif str(MsgType)=="8015":  #
@@ -818,6 +819,13 @@ def Decode8010(self,MsgData) : # Reception Version list
 		FirmwareVersion = InstaVersNum
 
 	return
+
+def Decode8014(self,MsgData) : # "Permit Join" status response
+	Status=MsgData[0:1]
+	if ( MsgData[0:1]== "0" ) : Domoticz.Log("Permit Join is Off")
+	elif ( MsgData[0:1]== "1" ) : Domoticz.Log("Permit Join is On")
+	else : Domoticz.Log("Decode8014 - ERROR - Unexpected value "+str(MsgData))
+
 
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
 	numberofdev=len(MsgData)	
