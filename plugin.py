@@ -1124,50 +1124,59 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					if value == "01" or value =="00" :
 						state="10"
 						data="01"
+						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "02" :
 					if value == "01" or value =="00":
 						state="20"
 						data="02"
+						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "03" :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-				UpdateDevice(x,int(data),str(state),DOptions)
+						UpdateDevice(x,int(data),str(state),DOptions)
 			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different   ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
 					if value == "01" or value =="00" :
 						state="10"
 						data="01"
+						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "02" :
 					if value == "01" or value =="00":
 						state="20"
 						data="02"
+						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "03" :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-				UpdateDevice(x,int(data),str(state),DOptions)
+						UpdateDevice(x,int(data),str(state),DOptions)
 			if Type==Dtypename=="XCube" :  # cube xiaomi
 				if Ep == "02" :
 					if value == "0000" : #shake
 						state="10"
 						data="01"
+						UpdateDevice(x,int(data),str(state),DOptions)
 					elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
 						state="50"
 						data="05"
+						UpdateDevice(x,int(data),str(state),DOptions)
 					elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
 						state="20"
 						data="02"
+						UpdateDevice(x,int(data),str(state),DOptions)
 					elif value == "0003" : #Free Fall
 						state="70"
 						data="07"
+						UpdateDevice(x,int(data),str(state),DOptions)
 					elif value >= "0004" and value <= "0059": #90°
 						state="30"
 						data="03"
+						UpdateDevice(x,int(data),str(state),DOptions)
 					elif value >= "0060" : #180°
 						state="90"
 						data="09"
-					UpdateDevice(x,int(data),str(state),DOptions)
+						UpdateDevice(x,int(data),str(state),DOptions)
 			if Type==Dtypename=="Lux" :
 				UpdateDevice(x,0,str(value),DOptions)
 			if Type==Dtypename=="Motion" :
