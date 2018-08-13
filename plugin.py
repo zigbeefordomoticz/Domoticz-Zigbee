@@ -16,7 +16,7 @@
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
 		<param field="Mode5" label="Channel " width="50px" required="true" default="11" />
-		<param field="Mode2" label="Permit join time on start (between 0 et 255) " width="75px" required="true" default="254" />
+		<param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="254" />
 		<param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
 			<options>
 				<option label="True" value="True"/>
@@ -1449,17 +1449,17 @@ def ReadCluster(self, MsgData):
 			try :
 				ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
 				ValueBattery=round(int(ValueBattery,16)/10/3.3)
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
+				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
 				#if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
 				#	UpdateBattery(MsgSrcAddr,ValueBattery)
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			except :
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
+				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
 				return
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
 				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
+				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType
 				if self.ListOfDevices[MsgSrcAddr]['Model']!= {} and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf : # verifie que le model existe ds le fichier de conf des models
 					Modeltmp=str(self.ListOfDevices[MsgSrcAddr]['Model'])
@@ -1474,22 +1474,23 @@ def ReadCluster(self, MsgData):
 								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
 					self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[Modeltmp]['Type']
 			except:
+				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Model info Xiaomi : " +  MsgSrcAddr)
 				return
 		else :
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			Domoticz.Debug("ReadCluster - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
 			return
 	
 	elif MsgClusterId=="0006" :  # (General: On/Off) xiaomi
 		if MsgAttrID=="0000" or MsgAttrID=="8000":
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
 		else :
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgData)
 			return
 
 	elif MsgClusterId=="0008" :  # (Cluster Level Control )
-		Domoticz.Debug("ReadCluster (8100) - ClusterId=0008 - Level Control : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0008 - Level Control : " + str(MsgClusterData) )
 		Domoticz.Debug("MsgSQN: " + MsgSQN )
 		Domoticz.Debug("MsgSrcAddr: " + MsgSrcAddr )
 		Domoticz.Debug("MsgSrcEp: " + MsgSrcEp )
@@ -1508,38 +1509,38 @@ def ReadCluster(self, MsgData):
 				MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
 				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+				Domoticz.Debug("ReadCluster - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
 			#Correction Thiklop 2 : cas des température > 1000°C
 			#elif int(MsgClusterData,16) < 100000 : #1000 °C x 100
 			else:
 				MsgClusterData=int(MsgClusterData,16)
 				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+				Domoticz.Debug("ReadCluster - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
 			#else :
 			#	Domoticz.Log("Température > 1000°C")
 			#Fin de correction 2
 		else : 
-			Domoticz.Log("MsgClusterData vide")
+			Domoticz.Error("ReadCluster - ClusterId=0402 - MsgClusterData vide")
 		#Fin de la correction
 
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 		if MsgAttType=="0028":
 			#MajDomoDevice(self, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0403 - reception atm : " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(MsgClusterData) )
 			
 		if MsgAttType=="0029" and MsgAttrID=="0000":
 			#MsgValue=Data[len(Data)-8:len(Data)-4]
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16),1)))
+			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16),1)))
 			
 		if MsgAttType=="0029" and MsgAttrID=="0010":
 			#MsgValue=Data[len(Data)-8:len(Data)-4]
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/10,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/10,1)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16)/10,1)))
+			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16)/10,1)))
 
 	elif MsgClusterId=="0405" :  # (Measurement: Humidity) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
@@ -1548,17 +1549,17 @@ def ReadCluster(self, MsgData):
 		try :
 			int(MsgClusterData,16)
 		except :
-			Domoticz.Error("ReadCluster - decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
+			Domoticz.Error("ReadCluster -ClusterID=0405 - decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
 		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
+			Domoticz.Debug("ReadCluster - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
 		#Fin de correction
 
 	elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing) xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0406 - reception Occupancy Sensor : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0406 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
 	elif MsgClusterId=="0400" :  # (Measurement: LUX) xiaomi
 		#Correction Thiklop : le MsgClusterData n'est pas un entier hexa (message vide dans certains cas ?)
@@ -1570,25 +1571,25 @@ def ReadCluster(self, MsgData):
 		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
+			Domoticz.Debug("ReadCluster - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
 		#Fin de la correction
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 		Domoticz.Debug("Dans le CLuster 000C")
 		if MsgAttrID=="0055":
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
+			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
 		else :
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
 		
 	else :
-		Domoticz.Debug("ReadCluster (8102) - Error/unknow Cluster Message : " + MsgClusterId)
+		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId)
 		return
 
 def ReadAttributeRequest_0008(self, key) :
