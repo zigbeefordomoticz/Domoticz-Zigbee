@@ -746,8 +746,10 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif Status=="03" : Status="Command Failed"
 	elif Status=="04" : Status="Busy"
 	elif Status=="05" : Status="Stack Already Started"
-	else : Status="ZigBee Error Code "+ Status
-	Domoticz.Log("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+	else : Status="ZigBee Error Code "+ Status        # https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf - Section 10.1
+
+	Domoticz.Debug("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+	if str(Status) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
 	return
 	
 def Decode8000(self, MsgData) : # Reception status
@@ -831,7 +833,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
 
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
 	numberofdev=len(MsgData)	
-	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/13)) )
+	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/13)-1) )
 	idx=0
 	while idx < (len(MsgData)-13):
 		DevID=MsgData[idx:idx+2]
@@ -839,9 +841,11 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		ieee=MsgData[idx+6:idx+22]
 		power=MsgData[idx+22:idx+23]
 		rssi=MsgData[idx+23:idx+25]
-		Domoticz.Log("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
-		if DeviceExist(self, saddr)==True :
-			Domoticz.Log("Decode8015 : Addr = " + saddr + " found in ListOfDevice")
+		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
+		if DeviceExist(self, saddr)==True : 
+			Domoticz.Log("Decode8015 : [ " + str(round(idx/13)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " found in ListOfDevice")
+		else: 
+			Domoticz.Log("Decode8015 : [ " + str(round(idx/13)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+13
 
 	return
