@@ -113,7 +113,7 @@ class BasePlugin:
 		return True
 
 	def onMessage(self, Connection, Data):
-		Domoticz.Debug("onMessage called")
+		Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
 		global Tmprcv
 		global ReqRcv
 
@@ -811,8 +811,8 @@ def Decode8010(self,MsgData) : # Reception Version list
 	InstaVersNum=MsgData[4:8]
 	try :
 		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
-		Domoticz.Log("Major Version Num: " + MajorVersNum )
-		Domoticz.Log("Installer Version Number: " + InstaVersNum )
+		Domoticz.Status("Major Version Num: " + MajorVersNum )
+		Domoticz.Status("Installer Version Number: " + InstaVersNum )
 	except :
 		Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
 	else :
