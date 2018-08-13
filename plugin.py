@@ -772,7 +772,7 @@ def Decode8000(self, MsgData) : # Reception status
 	try :
 		int(MsgDataLenght,16)
 	except :
-		Domoticz.Log("ERREUR - Fonction Decode 8000 problème de MsgDataLenght, pas un int")
+		Domoticz.Error("Decode8000 - Fonction Decode 8000 problème de MsgDataLenght, pas un int")
 		MsgDataMessage=""
 	else :
 		if int(MsgDataLenght,16) > 2 :
@@ -814,7 +814,7 @@ def Decode8010(self,MsgData) : # Reception Version list
 		Domoticz.Log("Major Version Num: " + MajorVersNum )
 		Domoticz.Log("Installer Version Number: " + InstaVersNum )
 	except :
-		Domoticz.Debug("Decode8010 - ERROR - Reception Version list : " + MsgData)
+		Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
 	else :
 		FirmwareVersion = InstaVersNum
 
@@ -824,7 +824,8 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
 	Status=MsgData[0:1]
 	if ( MsgData[0:1]== "0" ) : Domoticz.Log("Permit Join is Off")
 	elif ( MsgData[0:1]== "1" ) : Domoticz.Log("Permit Join is On")
-	else : Domoticz.Log("Decode8014 - ERROR - Unexpected value "+str(MsgData))
+	else : Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
+	return
 
 
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
@@ -913,7 +914,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	try :
 		temp_sert_a_rien = self.ListOfDevices[MsgDataShAddr]['Status']!="inDB"
 	except :
-		Domoticz.Log("ERREUR - Erreur ReadCluster KeyError : MsgDataShAddr = " + MsgDataShAddr)
+		Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
 	else :
 		if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 			self.ListOfDevices[MsgDataShAddr]['Status']="8045"
@@ -937,7 +938,7 @@ def Decode8100(self, MsgData) :  # Report Individual Attribute response
 		MsgAttSize=MsgData[20:24]
 		MsgClusterData=MsgData[24:len(MsgData)]
 	except:
-		Domoticz.Log("Decode8100 - ERROR - MsgData = " + MsgData)
+		Domoticz.Error("Decode8100 - MsgData = " + MsgData)
 
 	else:
 		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
@@ -1282,7 +1283,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						tstdata=data
 						tststate=state
 					except:
-						Domoticz.Log("MajDomoDevice - ERROR - unexpected value = " + str(value) )
+						Domoticz.Error("MajDomoDevice - unexpected value = " + str(value) )
 					else:
 						Domoticz.Log("MajDomoDevice - Cube update device with data = " + str(data) + " state = " + str(state) )
 						UpdateDevice(x,int(data),str(state),DOptions)
@@ -1305,7 +1306,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				try:
 					sValue =  round((int(value,16)/255)*100)
 				except:
-					Domoticz.Log("MajDomoDevice - ERROR value is not an int = " + str(value) )
+					Domoticz.Error("MajDomoDevice - value is not an int = " + str(value) )
 				else:
 					Domoticz.Debug("MajDomoDevice LvlControl - DvID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
 					if sValue == 0 :
@@ -1428,7 +1429,7 @@ def ReadCluster(self, MsgData):
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 		except :
-			Domoticz.Log("ERREUR - Erreur ReadCluster KeyError : MsgData = " + MsgData)
+			Domoticz.Error("ReadCluster - KeyError : MsgData = " + MsgData)
 		#Fin de la correction
 	else :
 		self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
@@ -1547,7 +1548,7 @@ def ReadCluster(self, MsgData):
 		try :
 			int(MsgClusterData,16)
 		except :
-			Domoticz.Log("ERREUR - Erreur decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
+			Domoticz.Error("ReadCluster - decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
 		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
@@ -1565,7 +1566,7 @@ def ReadCluster(self, MsgData):
 		try :
 			int(MsgClusterData,16)
 		except :
-			Domoticz.Log("ERREUR - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
+			Domoticz.Error("readCluster - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
 		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
