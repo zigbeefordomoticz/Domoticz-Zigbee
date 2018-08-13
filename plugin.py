@@ -739,7 +739,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif Status=="03" : Status="Command Failed"
 	elif Status=="04" : Status="Busy"
 	elif Status=="05" : Status="Stack Already Started"
-	else : Status="ZigBee Error Code "+ MsgDataStatus
+	else : Status="ZigBee Error Code "+ Status
 	Seq=MsgData[2:4]
 	PacketType=MsgData[4:8]
 	Domoticz.Log("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
