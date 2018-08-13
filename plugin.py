@@ -959,10 +959,10 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	ReadCluster(self, MsgData) 
 	return
 
-def Decode8701(self, MsgData) : # Reception Router Disovery Confirm StatusReception Router Disovery Confirm Status
+def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 	MsgStatus=MsgData[0:2]
 	NwkStatus=MsgData[2:4]
-	Domoticz.Debug("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
+	Domoticz.Log("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
 	return
 
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
