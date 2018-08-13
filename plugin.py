@@ -749,7 +749,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	else : Status="ZigBee Error Code "+ Status        # https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf - Section 10.1
 
 	Domoticz.Debug("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
-	if str(Status) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+	if str(MsgData[0:2]) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
 	return
 	
 def Decode8000(self, MsgData) : # Reception status
@@ -982,7 +982,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 	else:
 		MsgStatus=MsgData[0:2]
 		NwkStatus=MsgData[2:4]
-		Domoticz.Log("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
+		Domoticz.Debug("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
 	
 		# As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
 		if str(NwkStatus)=="00" :   NwkStatus="Success"
