@@ -501,7 +501,7 @@ def ZigateRead(self, Data):
 		
 	elif str(MsgType)=="8000":  # Status
 		Domoticz.Debug("ZigateRead - MsgType 8000 - reception status : " + Data)
-		Decode8000(self, MsgData)
+		#Decode8000(self, MsgData)
 		Decode8000_v2(self, MsgData)
 		return
 
@@ -608,6 +608,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8044":  #
 		Domoticz.Debug("ZigateRead - MsgType 8044 - Reception Power descriptor response : " + Data)
+		Decode8044(self, MsgData)
 		return
 
 	elif str(MsgType)=="8045":  # Active Endpoints Response
@@ -742,8 +743,11 @@ def Decode8000_v2(self, MsgData) : # Status
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8000_v2 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
+	if MsgLen != 8 :
+		return
+
 	Status=MsgData[0:2]
-	Seq=MsgData[2:4]
+	SEQ=MsgData[2:4]
 	PacketType=MsgData[4:8]
 
 	if Status=="00" : Status="Success"
@@ -754,14 +758,15 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif Status=="05" : Status="Stack Already Started"
 	else : Status="ZigBee Error Code "+ DisplayStatusCode(Status)
 
-	Domoticz.Debug("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+	Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
 	if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
 	elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
 	elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
 	elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
+	elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
-	if str(MsgData[0:2]) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+	if str(MsgData[0:2]) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 	return
 	
 def Decode8000(self, MsgData) : # Reception status
@@ -897,7 +902,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	mac_capability=MsgData[26:28]
 	max_buffer=MsgData[28:30]
 	bit_field=MsgData[30:34]
-	Domoticz.Debug("Decode8042 - Reception Node Descriptor : Seq : " + sequence + " Status : " + status )
+	Domoticz.Debug("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status )
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
@@ -941,6 +946,15 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+	return
+
+
+def Decode8044(self, MsgData): # Power Descriptior response
+	MsgLen=len(MsgData)
+	SQNum=MsgData[0:2]
+	Status=MsgData[2:4]
+	PowerCode=MsgData[4:8]
+	Domoticz.Log("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power Code = " + PowerCode )
 	return
 
 def Decode8045(self, MsgData) : # Reception Active endpoint response
