@@ -34,3 +34,10 @@
 	(2) Check
 		Source of truth is Zigate HW
 		DeviceExist(self, Addr)
+
+
+0007 - Implement a DeleteDomoDevice() to delete a Device from Domoticz
+	Use Device[Unit].Delete()
+
+0008 - Implement Zigate Remove Device to delete a device from Zigate
+	0x0026 command with Short Address (64bits) and Extended Address (64bits)
