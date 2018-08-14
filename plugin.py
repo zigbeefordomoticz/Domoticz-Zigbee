@@ -767,6 +767,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
 	if str(MsgData[0:2]) != "00" : Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+
 	return
 	
 def Decode8000(self, MsgData) : # Reception status
@@ -1489,8 +1490,10 @@ def ReadCluster(self, MsgData):
 	Domoticz.Debug("ReadCluster - MsgData lenght is : " + str(MsgLen) + " out of 24+")
 
 	if MsgLen < 24 :
+		Domoticz.Log("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
+		Domoticz.Log("ReadCluster - MsgData : '" +str(MsgData) + "'")
 		return
-	
+
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
 	MsgSrcEp=MsgData[6:8]
