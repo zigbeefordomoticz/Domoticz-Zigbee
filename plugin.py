@@ -874,7 +874,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		power=MsgData[idx+22:idx+24]
 		rssi=MsgData[idx+24:idx+26]
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
-		if DeviceExist(self, saddr)==True : 
+		if saddr in  self.ListOfDevices:
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " found in ListOfDevice")
 		else: 
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
