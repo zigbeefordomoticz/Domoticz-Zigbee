@@ -766,7 +766,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
 	elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
-	if str(MsgData[0:2]) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+	if str(MsgData[0:2]) != "00" : Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 	return
 	
 def Decode8000(self, MsgData) : # Reception status
@@ -1054,9 +1054,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 		MsgDataDestMode=MsgData[6:8]
 		MsgDataDestAddr=MsgData[8:12]
 		MsgDataSQN=MsgData[12:14]
-		Domoticz.Debug("Decode 8702 - Reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
-	
-		Domoticz.Error("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+		Domoticz.Log("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
 		return
 
 def Decode8401(self, MsgData) : # Reception Zone status change notification
