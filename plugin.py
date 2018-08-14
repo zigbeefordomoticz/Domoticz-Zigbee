@@ -1030,7 +1030,7 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 
 def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 	MsgLen=len(MsgData)
-	Domoticz.Debug("Decode8702 - MsgLen = " + str(MsgLen))
+	Domoticz.Debug("Decode8701 - MsgLen = " + str(MsgLen))
 
 	if MsgLen==0 :
 		return
@@ -1490,6 +1490,8 @@ def ReadCluster(self, MsgData):
 	MsgLen=len(MsgData)
 	Domoticz.Debug("ReadCluster - MsgData lenght is : " + str(MsgLen) + " out of 24+")
 
+	if MsgLen < 24 :
+		return
 	
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
@@ -1668,7 +1670,8 @@ def ReadCluster(self, MsgData):
 			Domoticz.Debug("ReadCluster - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
 		
 	else :
-		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId)
+		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
+		Domoticz.Error("                           MsgAttrId = " + MsgAttrId + " MsgAttType = " + MsgAttType )
 		return
 
 def ReadAttributeRequest_0008(self, key) :
