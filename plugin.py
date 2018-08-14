@@ -1,4 +1,4 @@
-# Zigate Python Plugin
+
 #
 # Author: zaraki673
 #
@@ -752,9 +752,15 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif Status=="03" : Status="Command Failed"
 	elif Status=="04" : Status="Busy"
 	elif Status=="05" : Status="Stack Already Started"
-	else : Status="ZigBee Error Code "+ Status        # https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf - Section 10.1
+	else : Status="ZigBee Error Code "+ DisplayStatusCode(Status)
 
 	Domoticz.Debug("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
+
+	if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
+	elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
+	elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
+	elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
+
 	if str(MsgData[0:2]) != "00" : Domoticz.Error("Decode8000_v2 - status: " + Status + " Seq: " + Seq + " Packet Type: " + PacketType )
 	return
 	
@@ -853,21 +859,26 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
 
 
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
+	# id: 2bytes
+	# addr: 4bytes
+	# ieee: 8bytes
+	# power_type: 2bytes
+	# rssi : 2 bytes
 	numberofdev=len(MsgData)	
-	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/13)-1) )
+	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/26)) )
 	idx=0
-	while idx < (len(MsgData)-13):
+	while idx < (len(MsgData)):
 		DevID=MsgData[idx:idx+2]
 		saddr=MsgData[idx+2:idx+6]
 		ieee=MsgData[idx+6:idx+22]
-		power=MsgData[idx+22:idx+23]
-		rssi=MsgData[idx+23:idx+25]
-		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
-		if DeviceExist(self, saddr)==True : 
-			Domoticz.Log("Decode8015 : [ " + str(round(idx/13)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " found in ListOfDevice")
-		else: 
-			Domoticz.Log("Decode8015 : [ " + str(round(idx/13)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
-		idx=idx+13
+		power=MsgData[idx+22:idx+24]
+		rssi=MsgData[idx+24:idx+26]
+		Domoticz.Log("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
+#		#if DeviceExist(self, saddr)==True : 
+#	#		Domoticz.Log("Decode8015 : [ " + str(round(idx/13)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " found in ListOfDevice")
+#		else: 
+#			Domoticz.Log("Decode8015 : [ " + str(round(idx/13)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
+		idx=idx+26
 
 	return
 
@@ -1767,9 +1778,9 @@ def CheckDeviceList(self, key, val) :
 	return
 
 def DisplayStatusCode( StatusCode ) :
-	StatusMsg=""
+	# As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
 
-# As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
+	StatusMsg=""
 	if str(StatusCode)=="00" :   StatusMsg="Success"
 	elif str(StatusCode)=="c1" : StatusMsg="An invalid or out-of-range parameter has been passed"
 	elif str(StatusCode)=="c2" : StatusMsg="Request cannot be processed"
@@ -1812,3 +1823,18 @@ def DisplayStatusCode( StatusCode ) :
 
 	return StatusMsg
 
+
+def removeZigateDevice( self, key ) :
+	# remove a device in Zigate
+	# Key is the short address of the device
+	# extended address is ieee address
+	
+	if key in  self.ListOfDevices:
+		ieee =  self.ListOfDevices[key]['IEEE']
+		Domoticz.Log("Remove from Zigate Device = " + str(key) + " IEEE = " +str(ieee) )
+		sendZigateCmd("0026", str(ieee) + str(ieee) )
+	else :
+		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
+		
+
+	return
