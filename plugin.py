@@ -46,7 +46,7 @@ import struct
 
 
 FirmwareVersion = ''
-HeartbeatCount = 89     # request a network status 10s after start
+HeartbeatCount = 88     # request a network status 10s after start
 
 class BasePlugin:
 	enabled = False
@@ -210,7 +210,7 @@ class BasePlugin:
 		global FirmwareVersion
 		global HeartbeatCount
 
-		Domoticz.Debug("onHeartbeat called: Firmware " + str(FirmwareVersion) )
+		Domoticz.Log("onHeartbeat called" )
 		Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
 
 		## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
@@ -756,7 +756,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	elif Status=="03" : Status="Command Failed"
 	elif Status=="04" : Status="Busy"
 	elif Status=="05" : Status="Stack Already Started"
-	else : Status="ZigBee Error Code "+ DisplayStatusCode(Status)
+	elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ DisplayStatusCode(Status)
 
 	Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
