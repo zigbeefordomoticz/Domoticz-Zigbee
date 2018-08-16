@@ -506,7 +506,7 @@ def ZigateRead(self, Data):
 
 	if ( int(calculatedchecksum,16) != int(MsgCRC,16) ) :
 		Domoticz.Error("ZigateRead -  Checksum error: " + calculatedchecksum + " / " + MsgCRC + " MsgType = " + MsgType + " MsgLength : " + MsgLength + " MsgData '" + MsgData  + "'" )
-		return
+#		return
 
 	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
 
