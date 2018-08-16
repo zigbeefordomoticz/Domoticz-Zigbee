@@ -1673,7 +1673,7 @@ def ReadCluster(self, MsgData):
 	else :
 		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
 		Domoticz.Error("                           MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
-        	Domoticz.Error("                           MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
+		Domoticz.Error("                           MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
 
 def ReadAttributeRequest_0008(self, key) :
