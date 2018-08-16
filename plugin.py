@@ -487,7 +487,7 @@ def ZigateRead(self, Data):
 	FrameStart=Data[0:2]
 	FrameStop=Data[len(Data)-2:len(Data)]
 	if ( FrameStart != "01" and FrameStop != "03" ): 
-		Domoticz.Error("ZigateRead received a non-zigate frame : " + Data + " " + FrameStart + "/" + FrameStop )
+		Domoticz.Error("ZigateRead received a non-zigate frame Data : " + Data + " FS/FS = " + FrameStart + "/" + FrameStop )
 		return
 
 	MsgType=Data[2:6]
@@ -498,14 +498,14 @@ def ZigateRead(self, Data):
 		# We have Payload : data + rssi
 		MsgData=Data[12:len(Data)-4]
 		MsgRSSI=Data[len(Data)-4:len(Data)-2]
+		calculatedchecksum=getChecksum( MsgType , MsgLength , MsgData + MsgRSSI)
 	else :
 		MsgData=""
 		MsgRSSI=""
+		calculatedchecksum=getChecksum( MsgType , MsgLength , "0")
 
-	calculatedchecksum=getChecksum( MsgType , MsgLength , MsgData + MsgRSSI)
 	if ( int(calculatedchecksum,16) != int(MsgCRC,16) ) :
-		Domoticz.Error("ZigateRead -  Checksum error: calculatedchecksum : " + calculatedchecksum + " / " + MsgCRC )
-		Domoticz.Error("ZigateRead -  MsgType = " + MsgType + " MsgLength : " + MsgLength + " MsgData " + MsgData )
+		Domoticz.Error("ZigateRead -  Checksum error: " + calculatedchecksum + " / " + MsgCRC + " MsgType = " + MsgType + " MsgLength : " + MsgLength + " MsgData '" + MsgData  + "'" )
 		return
 
 	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
