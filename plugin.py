@@ -95,6 +95,7 @@ class BasePlugin:
 
 	def onStop(self):
 		ZigateConn.Disconnect()
+		WriteDeviceList(self, 0)
 		Domoticz.Log("onStop called")
 
 	def onConnect(self, Connection, Status, Description):
@@ -118,16 +119,38 @@ class BasePlugin:
 		global ReqRcv
 
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
-			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
-			while (ReqRcv.find("0301") != -1): #Tant qu'il reste des messages colles
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])#demande de decodage de la trame recu
-				ReqRcv=ReqRcv[ReqRcv.find("0301")+2:]
-			if ReqRcv.find('03') != -1 : #est ce qu il reste une derniere trame complete ?
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("03")+2]) #demande de decodage de la trame recu
-				ReqRcv=ReqRcv[ReqRcv.find('03')+2:]
-		else : # while end of data is receive
-			ReqRcv+=Tmprcv
+
+		Domoticz.Debug("onMessage called  incoming Data : '" + Tmprcv+ "'" + " len = " + str(len(Tmprcv)))
+		Domoticz.Debug("onMessage called  past Data     : '" + ReqRcv+ "'" + " len = "  +str(len(ReqRcv)))
+
+		ReqRcv+=Tmprcv
+		idx=0
+		ZigateFrame=""
+		Domoticz.Debug("onMessage process : '" + ReqRcv+ "'" + " len = " + str(len(ReqRcv)))
+		while idx <= len(ReqRcv) :
+			if ( ZigateFrame == "" and ReqRcv[idx:idx+2] == "01" ) : ZigateFrame+=ReqRcv[idx:idx+2]
+			elif ( ZigateFrame != "" and ReqRcv[idx:idx+2] == "03") : 
+				ZigateFrame+=ReqRcv[idx:idx+2]
+				Domoticz.Debug("onMessage Frame = " + ZigateFrame)	
+				ZigateDecode(self, ZigateFrame)
+				ZigateFrame=""
+			elif ZigateFrame != "" : ZigateFrame+=ReqRcv[idx:idx+2]		
+			idx=idx+2
+		ReqRcv = ZigateFrame
+		Domoticz.Debug("onMessage Remaining Frame : " + ReqRcv )
+			
+#		Tmprcv=binascii.hexlify(Data).decode('utf-8')
+#		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
+#			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
+#			while (ReqRcv.find("0301") != -1): #Tant qu'il reste des messages colles
+#				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])#demande de decodage de la trame recu
+#				ReqRcv=ReqRcv[ReqRcv.find("0301")+2:]
+#			if ReqRcv.find('03') != -1 : #est ce qu il reste une derniere trame complete ?
+#				ZigateDecode(self, ReqRcv[:ReqRcv.find("03")+2]) #demande de decodage de la trame recu
+#				ReqRcv=ReqRcv[ReqRcv.find('03')+2:]
+#		else : # while end of data is receive
+#			ReqRcv+=Tmprcv
+
 		return
 
 	def onCommand(self, Unit, Command, Level, Hue):
@@ -506,7 +529,7 @@ def ZigateRead(self, Data):
 
 	if ( int(calculatedchecksum,16) != int(MsgCRC,16) ) :
 		Domoticz.Error("ZigateRead -  Checksum error: " + calculatedchecksum + " / " + MsgCRC + " MsgType = " + MsgType + " MsgLength : " + MsgLength + " MsgData '" + MsgData  + "'" )
-#		return
+		return
 
 	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
 
@@ -902,6 +925,8 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
 		if saddr in  self.ListOfDevices:
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " found in ListOfDevice")
+			# let's store the RSSI
+			# self.ListOfDevices[saddr]['RSSI']=rssi
 		else: 
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
@@ -1090,8 +1115,11 @@ def CreateDomoDevice(self, DeviceID) :
 	for Ep in self.ListOfDevices[DeviceID]['Ep'] :
 		if self.ListOfDevices[DeviceID]['Type']== {} :
 			Type=GetType(self, DeviceID, Ep).split("/")
+			Domoticz.Log("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )
 		else :
 			Type=self.ListOfDevices[DeviceID]['Type'].split("/")
+			Domoticz.Log("CreateDomoDevice - Type : '" + str(Type) + "'")
+
 		if Type !="" :
 			if "Humi" in Type and "Temp" in Type and "Baro" in Type:
 				t="Temp+Hum+Baro" # Detecteur temp + Hum + Baro
@@ -1101,7 +1129,7 @@ def CreateDomoDevice(self, DeviceID) :
 				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 			for t in Type :
-				Domoticz.Debug("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
+				Domoticz.Log("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
 				if t=="Temp" : # Detecteur temp
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName="Temperature", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
@@ -1458,6 +1486,7 @@ def initDeviceInList(self, Addr) :
 		self.ListOfDevices[Addr]['Battery']={}
 		self.ListOfDevices[Addr]['Model']={}
 		self.ListOfDevices[Addr]['MacCapa']={}
+#		self.ListOfDevices[Addr]['RSSI']={}
 		self.ListOfDevices[Addr]['IEEE']={}
 		self.ListOfDevices[Addr]['Type']={}
 		self.ListOfDevices[Addr]['ProfileID']={}
