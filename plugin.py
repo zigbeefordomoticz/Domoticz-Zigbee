@@ -533,6 +533,7 @@ def ZigateRead(self, Data):
 
 	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
 
+	
 	if str(MsgType)=="004d":  # Device announce
 		Domoticz.Debug("ZigateRead - MsgType 004d - Reception Device announce : " + Data)
 		Decode004d(self, MsgData)
@@ -725,7 +726,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8100":  #
 		Domoticz.Debug("ZigateRead - MsgType 8100 - Reception Real individual attribute response : " + Data)
-		Decode8100(self, MsgData)
+		Decode8100(self, MsgData, MsgRSSI)
 		return
 
 	elif str(MsgType)=="8101":  # Default Response
@@ -735,7 +736,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
 		Domoticz.Debug("ZigateRead - MsgType 8102 - Report Individual Attribute response : " + Data)	
-		Decode8102(self, MsgData)
+		Decode8102(self, MsgData, MsgRSSI)
 		return
 		
 	elif str(MsgType)=="8110":  #
@@ -925,9 +926,8 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
 		if saddr in  self.ListOfDevices:
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
-			# let's store the RSSI and normalized in a value betwen 1 and 12
-			if ( int(rssi,16) < 255 and int(rssi,16) > 0 ) :
-				self.ListOfDevices[saddr]['RSSI']= ( round(int(rssi,16) * 12 ) / 255)
+			if rssi !="00" :
+				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
 			else  :
 				self.ListOfDevices[saddr]['RSSI']= 12
 			UpdateSignalLevel( saddr, self.ListOfDevices[saddr]['RSSI'] )
@@ -1037,7 +1037,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	#Fin de correction
 	return
 
-def Decode8100(self, MsgData) :  # Report Individual Attribute response
+def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
 		MsgSQN=MsgData[0:2]
 		MsgSrcAddr=MsgData[2:6]
@@ -1052,6 +1052,11 @@ def Decode8100(self, MsgData) :  # Report Individual Attribute response
 
 	else:
 		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
+		if  MsgRSSI != "" :
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+		else :
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+
 		ReadCluster(self, MsgData)
 	return
 
@@ -1065,7 +1070,7 @@ def Decode8101(self, MsgData) :  # Default Response
 	Domoticz.Debug("Decode8101 - reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus)
 	return
 
-def Decode8102(self, MsgData) :  # Report Individual Attribute response
+def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
 	MsgSrcEp=MsgData[6:8]
@@ -1075,6 +1080,10 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	MsgAttSize=MsgData[20:24]
 	MsgClusterData=MsgData[24:len(MsgData)]
 	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)	
+	if  MsgRSSI != "" :
+		self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+	else :
+		self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 	ReadCluster(self, MsgData) 
 	return
 
@@ -1250,7 +1259,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			DOptions = Devices[x].Options
 			Dtypename=DOptions['TypeName']
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
-			
+			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
+	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :
@@ -1261,6 +1271,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					NewSvalue='%s;%s;%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)								
+					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Humi" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1269,6 +1280,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)
+					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Baro" :  # barometer
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1276,6 +1288,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], str(value) , SplitData[3], Bar_forecast)
 					UpdateDevice(x,0,str(valueBaro),DOptions)
+					#UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)								
 			if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 				if Type=="Temp" :
 					CurrentnValue=Devices[x].nValue
@@ -1285,6 +1298,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)								
+					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Humi" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1293,10 +1307,13 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
 					UpdateDevice(x,0,str(NewSvalue),DOptions)
+					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 			if Type==Dtypename=="Temp" :  # temperature
 				UpdateDevice(x,0,str(value),DOptions)				
+				#UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)								
 			if Type==Dtypename=="Humi" :   # humidite
 				UpdateDevice(x,int(value),"0",DOptions)				
+				#UpdateDevice_v2(x,int(value),"0",DOptions, SignalLevel)								
 			if Type==Dtypename=="Baro" :  # barometre
 				CurrentnValue=Devices[x].nValue
 				CurrentsValue=Devices[x].sValue
@@ -1304,6 +1321,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				SplitData=CurrentsValue.split(";")
 				valueBaro='%s;%s' % (value,SplitData[0])
 				UpdateDevice(x,0,str(valueBaro),DOptions)
+				#UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Door" :  # porte / fenetre
 				if value == "01" :
 					state="Open"
@@ -1320,15 +1338,18 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				elif value == "00" :
 					state="Off"
 				UpdateDevice(x,int(value),str(state),DOptions)
+				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				if value == "01" :
 					state="Open"
 				elif value == "00" :
 					state="Closed"
 				UpdateDevice(x,int(value),str(state),DOptions)
+				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Button": # boutton simple
 				if value == "01" :
 					state="On"
 					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				else:
 					return
 			if Type=="Switch" and Dtypename=="Water" : # detecteur d eau
@@ -1337,12 +1358,14 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				elif value == "00" :
 					state="Off"
 				UpdateDevice(x,int(value),str(state),DOptions)
+				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Smoke" : # detecteur de fume
 				if value == "01" :
 					state="On"
 				elif value == "00" :
 					state="Off"
 				UpdateDevice(x,int(value),str(state),DOptions)
+				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch
 				if value == "00" :
 					state="00"
@@ -1357,6 +1380,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				else :
 					state="0"
 				UpdateDevice(x,int(value),str(state),DOptions)
+				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
 				if Ep == "01" :
 					if value == "01" or value =="00" :
@@ -1371,6 +1395,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						state="30"
 						data="03"
 				UpdateDevice(x,int(data),str(state),DOptions)
+				#UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different   ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
 					if value == "01" or value =="00" :
@@ -1385,6 +1410,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						state="30"
 						data="03"
 				UpdateDevice(x,int(data),str(state),DOptions)
+				#UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 			if Type==Dtypename=="XCube" :  # cube xiaomi
 				if Ep == "02" :
 					if value == "0000" : #shake
@@ -1413,9 +1439,11 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					else:
 						Domoticz.Log("MajDomoDevice - Cube update device with data = " + str(data) + " state = " + str(state) )
 						UpdateDevice(x,int(data),str(state),DOptions)
+						#UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 
 			if Type==Dtypename=="Lux" :
 				UpdateDevice(x,0,str(value),DOptions)
+				#UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)
 			if Type==Dtypename=="Motion" :
 				#Correction Thiklop : value pas toujours un entier :
 				#'onMessage' failed 'ValueError':'invalid literal for int() with base 10: '00031bd000''.
@@ -1423,9 +1451,11 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				if value == "01" :
 					state="On"
 					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				elif value == "00" :
 					state="Off"
 					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				#Fin de correction
 
 			if Type==Dtypename=="LvlControl" :
@@ -1443,7 +1473,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						nValue = 2
 					if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) :
 						Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-						UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
+						#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
+						UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel)
 
 			#Modif Meter
 			if clusterID=="000c":
@@ -1515,7 +1546,9 @@ def UpdateSignalLevel( DeviceID, SignalLvl) :
 			CurrentnValue=Devices[x].nValue
 			CurrentsValue=Devices[x].sValue
 			CurrentsOptions=Devices[x].Options
-			Devices[x].Update(nValue=int(CurrentnValue), sValue=str(CurrentsValue), Options=str(CurrentsOptions), SignalLevel=int(SignalLvl) )
+			rssi= round( (SignalLvl * 12 ) / 200) # Should be 255, but there is no chance to have 255 !
+			Domoticz.Debug("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
+			Devices[x].Update(nValue=int(CurrentnValue), sValue=str(CurrentsValue), Options=str(CurrentsOptions), SignalLevel=int(rssi) )
 	return
 
 def UpdateBattery(DeviceID,BatteryLvl):
@@ -1534,6 +1567,24 @@ def UpdateBattery(DeviceID,BatteryLvl):
 	if found==False :
 		self.ListOfDevices[DeviceID]['Status']="004d"
 		self.ListOfDevices[DeviceID]['Battery']=BatteryLvl
+
+
+def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl):
+	# V2 update Domoticz with SignaleLevel/RSSI
+	Dzigate=eval(Options['Zigate'])
+	BatteryLvl=str(Dzigate['Battery'])
+	rssi= round( (SignalLvl * 12 ) / 255)
+	if BatteryLvl == '{}' :
+		BatteryLvl=255
+	Domoticz.Debug("BatteryLvl = " + str(BatteryLvl))
+	Domoticz.Debug("Signal Level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
+	Domoticz.Debug("Options = " + str(Options))
+	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
+	if (Unit in Devices):
+		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
+			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+			Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+	return	
 
 def UpdateDevice(Unit, nValue, sValue, Options):
 	Dzigate=eval(Options['Zigate'])
@@ -1771,6 +1822,7 @@ def GetType(self, Addr, Ep) :
 		Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
 		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
+		Domoticz.Log("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
 		Type=""
 		for cluster in self.ListOfDevices[Addr]['Ep'][Ep] :
 			Domoticz.Debug("GetType - Type will be set to : " + str(Type) )
@@ -1790,6 +1842,8 @@ def GetType(self, Addr, Ep) :
 		if Type != "" :
 			self.ListOfDevices[Addr]['Type']=Type
 			Domoticz.Debug("GetType - Type is now set to : " + str(Type) )
+		else :
+			Domoticz.Error("GetType - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Model : " + str(self.ListOfDevices[Addr]['Model']) )
 	return Type
 
 def TypeFromCluster(cluster):
