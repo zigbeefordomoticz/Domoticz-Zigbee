@@ -48,6 +48,12 @@ En retour on recevra un message 0x8000 de status avec comme Packet type 49
 	onMessage() -> ZigateDecode() -> ZigateRead() -> MsgType == 8043 -> Decode8043
 	On vérifie également si il s'agit d'un nouveau Device non encore créé dans la base. Si c'est le cas
 	on va alors traiter tout nouveau EndPoint en l'ajoutant au Device correspondant de ListOfDevices	
+	8043 va permettre de recevoir les informations essentielles à la creation :
+		ProfileID 
+		ZDeviceID
+		La liste des Clusters IN que le device est capable de gérer
+		La liste des Clusters OUT que le device est capable de gérer
+
 
 
 
