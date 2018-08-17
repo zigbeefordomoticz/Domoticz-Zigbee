@@ -1,3 +1,5 @@
+- onMessage new way to capture Zigate incoming messages
+- ZigateRead more resilience: Check that is a Zigate Frame, Check Checksum ( 31d189952ba87459be7f06c731a951d1105461bb )
 - Deco8000 version 2
 - Retreive from Zigate the list of known devices. Check if they exist in the 
   ListOfDevice and if not start the process to create.
