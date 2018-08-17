@@ -1511,7 +1511,7 @@ def UpdateSignalLevel( DeviceID, SignalLvl) :
 	x=0
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID):
-			Domoticz.Log("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) )
+			Domoticz.Debug("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) )
 			CurrentnValue=Devices[x].nValue
 			CurrentsValue=Devices[x].sValue
 			CurrentsOptions=Devices[x].Options
