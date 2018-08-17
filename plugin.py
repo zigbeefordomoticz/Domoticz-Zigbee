@@ -922,9 +922,9 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		ieee=MsgData[idx+6:idx+22]
 		power=MsgData[idx+22:idx+24]
 		rssi=MsgData[idx+24:idx+26]
-		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
+		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
 		if saddr in  self.ListOfDevices:
-			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + rssi + " Power = " + power + " found in ListOfDevice")
+			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
 			# let's store the RSSI and normalized in a value betwen 1 and 12
 			if ( int(rssi,16) < 255 and int(rssi,16) > 0 ) :
 				self.ListOfDevices[saddr]['RSSI']= ( round(int(rssi,16) * 12 ) / 255)
