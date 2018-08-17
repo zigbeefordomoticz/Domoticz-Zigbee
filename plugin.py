@@ -528,7 +528,7 @@ def ZigateRead(self, Data):
 		calculatedchecksum=getChecksum( MsgType , MsgLength , "0")
 
 	if ( int(calculatedchecksum,16) != int(MsgCRC,16) ) :
-		Domoticz.Error("ZigateRead -  Checksum error: " + calculatedchecksum + " / " + MsgCRC + " MsgType = " + MsgType + " MsgLength : " + MsgLength + " MsgData '" + MsgData  + "'" )
+		Domoticz.Error("ZigateRead -  Checksum error: " + calculatedchecksum + " / " + MsgCRC + " MsgType = " + MsgType + " MsgLength : " + MsgLength + " RawData '" + Data  + "'" )
 		return
 
 	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
@@ -1530,6 +1530,8 @@ def UpdateDevice(Unit, nValue, sValue, Options):
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
+			# RSSI need to be normalized as Domoticz expect something below 12 !
+			# Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=12, BatteryLevel=int(BatteryLvl))
 			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), BatteryLevel=int(BatteryLvl))
 			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return	
