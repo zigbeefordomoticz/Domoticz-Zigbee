@@ -120,13 +120,13 @@ class BasePlugin:
 
 		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 
-		Domoticz.Debug("onMessage called  incoming Data : '" + Tmprcv+ "'" + " len = " + str(len(Tmprcv)))
-		Domoticz.Debug("onMessage called  past Data     : '" + ReqRcv+ "'" + " len = "  +str(len(ReqRcv)))
+		#Domoticz.Debug("onMessage called  incoming Data : '" + Tmprcv+ "'" + " len = " + str(len(Tmprcv)))
+		#Domoticz.Debug("onMessage called  past Data     : '" + ReqRcv+ "'" + " len = "  +str(len(ReqRcv)))
 
 		ReqRcv+=Tmprcv
 		idx=0
 		ZigateFrame=""
-		Domoticz.Debug("onMessage process : '" + ReqRcv+ "'" + " len = " + str(len(ReqRcv)))
+		#Domoticz.Debug("onMessage process : '" + ReqRcv+ "'" + " len = " + str(len(ReqRcv)))
 		while idx <= len(ReqRcv) :
 			if ( ZigateFrame == "" and ReqRcv[idx:idx+2] == "01" ) : ZigateFrame+=ReqRcv[idx:idx+2]
 			elif ( ZigateFrame != "" and ReqRcv[idx:idx+2] == "03") : 
@@ -137,7 +137,7 @@ class BasePlugin:
 			elif ZigateFrame != "" : ZigateFrame+=ReqRcv[idx:idx+2]		
 			idx=idx+2
 		ReqRcv = ZigateFrame
-		Domoticz.Debug("onMessage Remaining Frame : " + ReqRcv )
+		#Domoticz.Debug("onMessage Remaining Frame : " + ReqRcv )
 			
 #		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 #		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
@@ -423,6 +423,8 @@ def ZigateConf():
 	# answer is expected on message 8015. Only available since firmware 03.0b
 	if str(FirmwareVersion) == "030d" or str(FirmwareVersion) == "030c" or str(FirmwareVersion == "030b") :
 		sendZigateCmd("0015","")
+	else :
+		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(FirmwareVersion) )
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
@@ -985,6 +987,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+	
 		MsgDataOutClusterCount=MsgData[24+(int(MsgDataInClusterCount,16)*4):26+(int(MsgDataInClusterCount,16)*4)]
 		Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Out Cluster Count : " + MsgDataOutClusterCount)
 		i=1
@@ -996,6 +999,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+	Domoticz.Debug("Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
 	return
 
 
@@ -1326,30 +1330,32 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				if value == "01" :
 					state="Open"
 					#Correction Thiklop : value n'est pas toujours un entier. Exécution de l'updatedevice dans le test
-					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				elif value == "00" :
 					state="Closed"
 					#Correction Thiklop : idem
-					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 					#Fin de la correction
 			if Type==Dtypename=="Switch" : # switch simple
 				if value == "01" :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
-				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				if value == "01" :
 					state="Open"
 				elif value == "00" :
 					state="Closed"
-				UpdateDevice(x,int(value),str(state),DOptions)
-				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Button": # boutton simple
 				if value == "01" :
 					state="On"
-					UpdateDevice(x,int(value),str(state),DOptions)
-					#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				else:
 					return
 			if Type=="Switch" and Dtypename=="Water" : # detecteur d eau
@@ -1480,6 +1486,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			if clusterID=="000c":
 				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
+				#UpdateDevice_v2(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions, SignalLevel)
 
 def ResetDevice(Type,HbCount) :
 	x=0
@@ -1605,8 +1612,8 @@ def ReadCluster(self, MsgData):
 	Domoticz.Debug("ReadCluster - MsgData lenght is : " + str(MsgLen) + " out of 24+")
 
 	if MsgLen < 24 :
-		Domoticz.Log("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
-		Domoticz.Log("ReadCluster - MsgData : '" +str(MsgData) + "'")
+		Domoticz.Error("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
+		Domoticz.Error("ReadCluster - MsgData : '" +str(MsgData) + "'")
 		return
 
 	MsgSQN=MsgData[0:2]
