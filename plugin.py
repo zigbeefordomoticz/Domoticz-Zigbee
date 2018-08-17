@@ -1511,6 +1511,7 @@ def GetType(self, Addr, Ep) :
 		Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
 		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
+		Domoticz.Log("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
 		Type=""
 		for cluster in self.ListOfDevices[Addr]['Ep'][Ep] :
 			Domoticz.Debug("GetType - Type will be set to : " + str(Type) )
@@ -1530,6 +1531,8 @@ def GetType(self, Addr, Ep) :
 		if Type != "" :
 			self.ListOfDevices[Addr]['Type']=Type
 			Domoticz.Debug("GetType - Type is now set to : " + str(Type) )
+		else :
+			Domoticz.Error("GetType - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Model : " + str(self.ListOfDevices[Addr]['Model']) )
 	return Type
 
 def TypeFromCluster(cluster):
