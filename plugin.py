@@ -911,8 +911,8 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 	# id: 2bytes
 	# addr: 4bytes
 	# ieee: 8bytes
-	# power_type: 2bytes
-	# rssi : 2 bytes
+	# power_type: 2bytes - 0 Battery, 1 AC Power
+	# rssi : 2 bytes - Signal Strength between 1 - 255
 	numberofdev=len(MsgData)	
 	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/26)) )
 	idx=0
@@ -924,9 +924,13 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		rssi=MsgData[idx+24:idx+26]
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + rssi )
 		if saddr in  self.ListOfDevices:
-			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " found in ListOfDevice")
-			# let's store the RSSI
-			# self.ListOfDevices[saddr]['RSSI']=rssi
+			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + rssi + " Power = " + power + " found in ListOfDevice")
+			# let's store the RSSI and normalized in a value betwen 1 and 12
+			if ( int(rssi,16) < 255 and int(rssi,16) > 0 ) :
+				self.ListOfDevices[saddr]['RSSI']= ( round(int(rssi,16) * 12 ) / 255)
+			else  :
+				self.ListOfDevices[saddr]['RSSI']= 12
+			UpdateSignalLevel( saddr, self.ListOfDevices[saddr]['RSSI'] )
 		else: 
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
@@ -1483,10 +1487,10 @@ def initDeviceInList(self, Addr) :
 		self.ListOfDevices[Addr]['Status']="004d"
 		self.ListOfDevices[Addr]['Heartbeat']="0"
 		self.ListOfDevices[Addr]['RIA']="0"
+		self.ListOfDevices[Addr]['RSSI']={}
 		self.ListOfDevices[Addr]['Battery']={}
 		self.ListOfDevices[Addr]['Model']={}
 		self.ListOfDevices[Addr]['MacCapa']={}
-#		self.ListOfDevices[Addr]['RSSI']={}
 		self.ListOfDevices[Addr]['IEEE']={}
 		self.ListOfDevices[Addr]['Type']={}
 		self.ListOfDevices[Addr]['ProfileID']={}
@@ -1502,6 +1506,17 @@ def getChecksum(msgtype,length,datas) :
 		chk=hex(temp)
 	Domoticz.Debug("getChecksum - Checksum : " + str(chk))
 	return chk[2:4]
+
+def UpdateSignalLevel( DeviceID, SignalLvl) :
+	x=0
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID):
+			Domoticz.Log("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) )
+			CurrentnValue=Devices[x].nValue
+			CurrentsValue=Devices[x].sValue
+			CurrentsOptions=Devices[x].Options
+			Devices[x].Update(nValue=int(CurrentnValue), sValue=str(CurrentsValue), Options=str(CurrentsOptions), SignalLevel=int(SignalLvl) )
+	return
 
 def UpdateBattery(DeviceID,BatteryLvl):
 	x=0
@@ -1530,8 +1545,7 @@ def UpdateDevice(Unit, nValue, sValue, Options):
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
-			# RSSI need to be normalized as Domoticz expect something below 12 ! For now, 12 is set - as unknown -
-			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=12, BatteryLevel=int(BatteryLvl))
+			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), BatteryLevel=int(BatteryLvl))
 			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return	
 
