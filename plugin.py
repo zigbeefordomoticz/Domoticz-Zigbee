@@ -781,8 +781,14 @@ def Decode004d(self, MsgData) : # Reception Device announce
 	Domoticz.Debug("Decode004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	# tester si le device existe deja dans la base domoticz
 	if DeviceExist(self, MsgSrcAddr)==False :
+		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
+		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
+	else :
+		Domoticz.Debug("Decode004d - Existing device")
+		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
+		
 	return
 
 def Decode8000_v2(self, MsgData) : # Status
@@ -1032,6 +1038,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	else :
 		if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 			self.ListOfDevices[MsgDataShAddr]['Status']="8045"
+		# PP: Does that mean that if we Device is already in the Database, we might overwrite 'EP' ?
 		for i in MsgDataEPlist :
 			OutEPlist+=i
 			if len(OutEPlist)==2 :
@@ -1039,6 +1046,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 					self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
 					OutEPlist=""
 	#Fin de correction
+	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
 
 def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
