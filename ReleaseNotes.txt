@@ -1,3 +1,7 @@
+- onMessage - version 3 of Frame capture in binary now in order to avoid potential mistakes with ASCII code
+- Review the way to create Devices
+- Handle TRADFRI LED LED1624G9 (Big thanks to Thorgal)
+- Implementation of Color Level Control (Big thanks to Thorgal )
 - As Decode8015 get the Quality Link from each device, report it to Domoticz RSSI. This is normalized in Domoticz between 1 to 12, while we got a signal quality from 1-255
 - onMessage new way to capture Zigate incoming messages
 - ZigateRead more resilience: Check that is a Zigate Frame, Check Checksum ( 31d189952ba87459be7f06c731a951d1105461bb )

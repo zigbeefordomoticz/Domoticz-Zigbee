@@ -70,7 +70,7 @@ class BasePlugin:
 		if Parameters["Mode1"] == "Wifi":
 			ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
 			ZigateConn.Connect()
-		ReqRcv=''
+		ReqRcv=bytearray()
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			ID = Devices[x].DeviceID
 			self.ListOfDevices[ID]={}
@@ -101,6 +101,7 @@ class BasePlugin:
 	def onConnect(self, Connection, Status, Description):
 		Domoticz.Log("onConnect called")
 		global isConnected
+
 		if (Status == 0):
 			isConnected = True
 			Domoticz.Log("Connected successfully")
@@ -115,30 +116,51 @@ class BasePlugin:
 
 	def onMessage(self, Connection, Data):
 		Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
-		global Tmprcv
 		global ReqRcv
 
-		Tmprcv=binascii.hexlify(Data).decode('utf-8')
+# Version 3 - Binary reading to avoid mixing end of Frame 
+		ReqRcv += Data				# Add the incoming data
+		Domoticz.Debug("onMessage process : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
 
-		#Domoticz.Debug("onMessage called  incoming Data : '" + Tmprcv+ "'" + " len = " + str(len(Tmprcv)))
-		#Domoticz.Debug("onMessage called  past Data     : '" + ReqRcv+ "'" + " len = "  +str(len(ReqRcv)))
+		while 1 :				# Loop until we have 0x03
+			Zero3=-1
+			idx = 0
+			for val in ReqRcv[0:len(ReqRcv)] :
+				if val == 3 :			# Do we get a 0x03
+					Zero3 = idx + 1
+					break			# If we got 0x03, let process the Frame
+				idx += 1
+			if Zero3 == -1 :			# No 0x03 in the Buffer, let's breat and wait to get more data
+				return
 
-		ReqRcv+=Tmprcv
-		idx=0
-		ZigateFrame=""
-		#Domoticz.Debug("onMessage process : '" + ReqRcv+ "'" + " len = " + str(len(ReqRcv)))
-		while idx <= len(ReqRcv) :
-			if ( ZigateFrame == "" and ReqRcv[idx:idx+2] == "01" ) : ZigateFrame+=ReqRcv[idx:idx+2]
-			elif ( ZigateFrame != "" and ReqRcv[idx:idx+2] == "03") : 
-				ZigateFrame+=ReqRcv[idx:idx+2]
-				Domoticz.Debug("onMessage Frame = " + ZigateFrame)	
-				ZigateDecode(self, ZigateFrame)
-				ZigateFrame=""
-			elif ZigateFrame != "" : ZigateFrame+=ReqRcv[idx:idx+2]		
-			idx=idx+2
-		ReqRcv = ZigateFrame
-		#Domoticz.Debug("onMessage Remaining Frame : " + ReqRcv )
+			BinMsg = ReqRcv[0:Zero3]		# What is before 0x03 is in the Frame to be process
+			ReqRcv = ReqRcv[Zero3:]			# What is after 0x03 has to be reworked.
+
+			# Process the incoming Frame
+			AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
+			ZigateDecode(self, AsciiMsg) 		# decode this Frame
+		Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
+
+# Version 2
+#		global Tmprcv
+#		Tmprcv=binascii.hexlify(Data).decode('utf-8')
+#		ReqRcv+=Tmprcv
+#		idx=0
+#		ZigateFrame=""
+#		#Domoticz.Debug("onMessage process : '" + ReqRcv+ "'" + " len = " + str(len(ReqRcv)))
+#		while idx <= len(ReqRcv) :
+#			if ( ZigateFrame == "" and ReqRcv[idx:idx+2] == "01" ) : ZigateFrame+=ReqRcv[idx:idx+2]
+#			elif ( ZigateFrame != "" and ReqRcv[idx:idx+2] == "03") : 
+#				ZigateFrame+=ReqRcv[idx:idx+2]
+#				Domoticz.Debug("onMessage Frame = " + ZigateFrame)	
+#				ZigateDecode(self, ZigateFrame)
+#				ZigateFrame=""
+#			elif ZigateFrame != "" : ZigateFrame+=ReqRcv[idx:idx+2]		
+#			idx=idx+2
+#		ReqRcv = ZigateFrame
+#		#Domoticz.Debug("onMessage Remaining Frame : " + ReqRcv )
 			
+# Version 1
 #		Tmprcv=binascii.hexlify(Data).decode('utf-8')
 #		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
 #			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
@@ -222,10 +244,48 @@ class BasePlugin:
 					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 					UpdateDevice(Unit, 0, "Off",DOptions)
 				else :
-					value=returnlen(4,hex(round(Level*1700/100))[2:])
-					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + value + "0000")
-					UpdateDevice(Unit, 1, "On",DOptions)
-
+					def hex_to_rgb(h):
+						''' convert hex color to rgb tuple '''
+						h = h.strip('#')
+						return tuple(int(h[i:i+2], 16)/255 for i in (0, 2 ,4))
+					 
+					def rgb_to_xy(rgb):
+						''' convert rgb tuple to xy tuple '''
+						red, green, blue = rgb
+						r = ((red + 0.055) / (1.0 + 0.055))**2.4 if (red > 0.04045) else (red / 12.92)
+						g = ((green + 0.055) / (1.0 + 0.055))**2.4 if (green > 0.04045) else (green / 12.92)
+						b = ((blue + 0.055) / (1.0 + 0.055))**2.4 if (blue > 0.04045) else (blue / 12.92)
+						X = r * 0.664511 + g * 0.154324 + b * 0.162028
+						Y = r * 0.283881 + g * 0.668433 + b * 0.047685
+						Z = r * 0.000088 + g * 0.072310 + b * 0.986039
+						cx = 0
+						cy = 0
+						if (X + Y + Z) != 0:
+							cx = X / (X + Y + Z)
+							cy = Y / (X + Y + Z)
+						return (cx, cy)
+					 
+					def hex_to_xy(h):
+						''' convert hex color to xy tuple '''
+						return rgb_to_xy(hex_to_rgb(h))
+                      					 
+					#On converti level en une valeur de #000000 a #ffffff
+					rgb = Level * 167772
+					ttt = returnlen(6,hex(rgb)[2:])
+                  					 
+					x, y = hex_to_xy(ttt)
+                  					 
+					#With that x, y can be integer 0-65536 or float 0-1.0
+					if isinstance(x, float) and x <= 1:
+						x = int(x*65536)
+					if isinstance(y, float) and y <= 1:
+						y = int(y*65536)
+                     					 
+					strxy = returnlen(4,hex(x)[2:]) + returnlen(4,hex(y)[2:])
+					 
+					sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "00")
+					UpdateDevice(Unit, 1, strxy ,DOptions)
+ 
 	def onDisconnect(self, Connection):
 		Domoticz.Log("onDisconnect called")
 
@@ -253,7 +313,7 @@ class BasePlugin:
 			########## Known Devices 
 			if status == "inDB" : 
 				# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
-				if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and status == "inDB" and self.ListOfDevices[key]['Heartbeat']>="30" :
+				if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and self.ListOfDevices[key]['Heartbeat']>="30" :
 					Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
 					self.ListOfDevices[key]['Heartbeat']="0"
 					ReadAttributeRequest_0008(self, key)
@@ -277,23 +337,21 @@ class BasePlugin:
 	
 				# Timeout Management
 				# We should wonder if we want to go in an infinite loop.
-				# I consider that after 2 cycles, if we are not successfull, we should forget about this device and log it as an Error
-				#if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="9":
-				#	Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + key)
-				#	self.ListOfDevices[key]['Heartbeat']="0"
-				#if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="9":
-				#	Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
-				#	self.ListOfDevices[key]['Heartbeat']="0"
-				#	self.ListOfDevices[key]['Status']="004d"
-				#if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="9":
-				#	Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
-				#	self.ListOfDevices[key]['Heartbeat']="0"
-				#	We should restart the process from status="004d" in order to request again 0x0045
-				#	self.ListOfDevices[key]['Status']="004d"
-				#if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="9":
-				#	Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + key)
-				#	self.ListOfDevices[key]['Heartbeat']="0"
-				#	self.ListOfDevices[key]['Status']="8045"
+				if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+				if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="004d"
+				if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="004d"
+				if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="8045"
 	
 				# What RIA stand for ???????
 				if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="9" and self.ListOfDevices[key]['RIA']>="10":
@@ -303,6 +361,16 @@ class BasePlugin:
 				if status != "UNKNOW" :
 					if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
 						if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
+							# telecommande Tradfi 30338849.Tradfri
+							if self.ListOfDevices[key]['ZDeviceID']=="0830" :
+								self.ListOfDevices[key]['Model']="Command.30338849.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0000','0001','0009','0b05','1000'}}
+							# ampoule Tradfri LED1624G9
+							if self.ListOfDevices[key]['ZDeviceID']=="0200" :
+								self.ListOfDevices[key]['Model']="Ampoule.LED1624G9.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0006','0008','0300'}}
 							# ampoule Tradfi LED1545G12.Tradfri
 							if self.ListOfDevices[key]['ZDeviceID']=="0220" :
 								self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
@@ -342,33 +410,35 @@ class BasePlugin:
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
 				
-				# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
+					# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
 	
-				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
-					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
-					IsCreated=False
-					#IEEEexist=False
-					x=0
-					nbrdevices=0
-					for x in Devices:
-						if Devices[x].DeviceID == str(key) :
-							IsCreated = True
-							Domoticz.Debug("HearBeat - Devices already exist. Unit=" + str(x))
-						#DOptions = Devices[x].Options
-						#Dzigate=eval(DOptions['Zigate'])
-						#Domoticz.Debug("HearBeat - Devices[x].Options['Zigate']['IEEE']=" + str(Dzigate['IEEE']))
-						#Domoticz.Debug("HearBeat - self.ListOfDevices[key]['IEEE']=" + str(self.ListOfDevices[key]['IEEE']))
-						#if Dzigate['IEEE']!='' and self.ListOfDevices[key]['IEEE']!='' :
-						#	if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
-						#		IEEEexist = True
-						#		Domoticz.Debug("HearBeat - Devices IEEE already exist. Unit=" + str(x))
-					if IsCreated == False : #and IEEEexist == False:
-						Domoticz.Debug("HearBeat - creating device id : " + str(key))
-						CreateDomoDevice(self, key)
-					#if IsCreated == False and IEEEexist == True :
-					#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
-					#	UpdateDomoDevice(self, key)
+					if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
+						#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
+						IsCreated=False
+						#IEEEexist=False
+						x=0
+						nbrdevices=0
+						for x in Devices:
+							if Devices[x].DeviceID == str(key) :
+								IsCreated = True
+								Domoticz.Debug("onHeartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
+							#DOptions = Devices[x].Options
+							#Dzigate=eval(DOptions['Zigate'])
+							#Domoticz.Debug("HearBeat - Devices[x].Options['Zigate']['IEEE']=" + str(Dzigate['IEEE']))
+							#Domoticz.Debug("HearBeat - self.ListOfDevices[key]['IEEE']=" + str(self.ListOfDevices[key]['IEEE']))
+							#if Dzigate['IEEE']!='' and self.ListOfDevices[key]['IEEE']!='' :
+							#	if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
+							#		IEEEexist = True
+							#		Domoticz.Debug("HearBeat - Devices IEEE already exist. Unit=" + str(x))
+						if IsCreated == False : #and IEEEexist == False:
+							Domoticz.Debug("onHeartbeat - creating device id : " + str(key) + " with : " + str(self.ListOfDevices[key]) )
+							CreateDomoDevice(self, key)
+						#if IsCreated == False and IEEEexist == True :
+						#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
+						#	UpdateDomoDevice(self, key)
 
+					#end (RIA>=10 or self.ListOfDevices[key]['Model']!= {})
+				#end status != "UNKNOW"	
 			#end status != inDB
 		#end for key in ListOfDevices
 
@@ -1244,11 +1314,11 @@ def CreateDomoDevice(self, DeviceID) :
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Image=1 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="LvlControl" and self.ListOfDevices[DeviceID]['ZDeviceID']=="0200" :  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
+				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']=="shutter.Profalux" :  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=16 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="LvlControl" and self.ListOfDevices[DeviceID]['ZDeviceID']!="0200" :  # variateur de luminosite
+				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']!="shutter.Profalux" :  # variateur de luminosite
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
@@ -1883,7 +1953,7 @@ def GetType(self, Addr, Ep) :
 			self.ListOfDevices[Addr]['Type']=Type
 			Domoticz.Debug("GetType - Type is now set to : " + str(Type) )
 		else :
-			Domoticz.Error("GetType - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Model : " + str(self.ListOfDevices[Addr]['Model']) )
+			Domoticz.Error("GetType - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Device Info : " + str(self.ListOfDevices[Addr]) )
 	return Type
 
 def TypeFromCluster(cluster):
@@ -2013,5 +2083,4 @@ def removeZigateDevice( self, key ) :
 	else :
 		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
 		
-
 	return
