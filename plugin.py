@@ -1380,8 +1380,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)								
-					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
+					#UpdateDevice(x,0,str(NewSvalue),DOptions)								
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Humi" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1389,16 +1389,16 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)
-					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
+					#UpdateDevice(x,0,str(NewSvalue),DOptions)
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Baro" :  # barometer
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
 					SplitData=CurrentsValue.split(";")
 					valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], str(value) , SplitData[3], Bar_forecast)
-					UpdateDevice(x,0,str(valueBaro),DOptions)
-					#UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)								
+					#UpdateDevice(x,0,str(valueBaro),DOptions)
+					UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)								
 			if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 				if Type=="Temp" :
 					CurrentnValue=Devices[x].nValue
@@ -1407,8 +1407,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)								
-					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
+					#UpdateDevice(x,0,str(NewSvalue),DOptions)								
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Humi" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1416,22 +1416,22 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)
-					#UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
+					#UpdateDevice(x,0,str(NewSvalue),DOptions)
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 			if Type==Dtypename=="Temp" :  # temperature
-				UpdateDevice(x,0,str(value),DOptions)				
-				#UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)								
+				#UpdateDevice(x,0,str(value),DOptions)				
+				UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)								
 			if Type==Dtypename=="Humi" :   # humidite
-				UpdateDevice(x,int(value),"0",DOptions)				
-				#UpdateDevice_v2(x,int(value),"0",DOptions, SignalLevel)								
+				#UpdateDevice(x,int(value),"0",DOptions)				
+				UpdateDevice_v2(x,int(value),"0",DOptions, SignalLevel)								
 			if Type==Dtypename=="Baro" :  # barometre
 				CurrentnValue=Devices[x].nValue
 				CurrentsValue=Devices[x].sValue
 				Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
 				SplitData=CurrentsValue.split(";")
 				valueBaro='%s;%s' % (value,SplitData[0])
-				UpdateDevice(x,0,str(valueBaro),DOptions)
-				#UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)
+				#UpdateDevice(x,0,str(valueBaro),DOptions)
+				UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Door" :  # porte / fenetre
 				if value == "01" :
 					state="Open"
@@ -1455,8 +1455,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="Open"
 				elif value == "00" :
 					state="Closed"
-				#UpdateDevice(x,int(value),str(state),DOptions)
-				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				UpdateDevice(x,int(value),str(state),DOptions)
+				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Button": # boutton simple
 				if value == "01" :
 					state="On"
@@ -1469,15 +1469,15 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
-				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Smoke" : # detecteur de fume
 				if value == "01" :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
-				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch
 				if value == "00" :
 					state="00"
@@ -1491,8 +1491,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="40"
 				else :
 					state="0"
-				UpdateDevice(x,int(value),str(state),DOptions)
-				#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
 				if Ep == "01" :
 					if value == "01" or value =="00" :
@@ -1506,8 +1506,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-				UpdateDevice(x,int(data),str(state),DOptions)
-				#UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(data),str(state),DOptions)
+				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different   ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
 					if value == "01" or value =="00" :
@@ -1521,8 +1521,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-				UpdateDevice(x,int(data),str(state),DOptions)
-				#UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
+				#UpdateDevice(x,int(data),str(state),DOptions)
+				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 			if Type==Dtypename=="XCube" :  # cube xiaomi
 				if Ep == "02" :
 					if value == "0000" : #shake
@@ -1550,12 +1550,12 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						Domoticz.Error("MajDomoDevice - unexpected value = " + str(value) )
 					else:
 						Domoticz.Log("MajDomoDevice - Cube update device with data = " + str(data) + " state = " + str(state) )
-						UpdateDevice(x,int(data),str(state),DOptions)
-						#UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
+						#UpdateDevice(x,int(data),str(state),DOptions)
+						UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 
 			if Type==Dtypename=="Lux" :
-				UpdateDevice(x,0,str(value),DOptions)
-				#UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)
+				#UpdateDevice(x,0,str(value),DOptions)
+				UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)
 			if Type==Dtypename=="Motion" :
 				#Correction Thiklop : value pas toujours un entier :
 				#'onMessage' failed 'ValueError':'invalid literal for int() with base 10: '00031bd000''.
