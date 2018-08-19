@@ -249,80 +249,101 @@ class BasePlugin:
 			status=self.ListOfDevices[key]['Status']
 			RIA=int(self.ListOfDevices[key]['RIA'])
 			self.ListOfDevices[key]['Heartbeat']=str(int(self.ListOfDevices[key]['Heartbeat'])+1)
-			# Envoi une demande Active Endpoint request
-			if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
-				Domoticz.Debug("Envoie une demande Active Endpoint request pour avoir la liste des EP du device adresse : " + key)
-				sendZigateCmd("0045", str(key))
-				self.ListOfDevices[key]['Status']="0045"
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-				self.ListOfDevices[key]['Status']="004d"
-			# Envoie une demande Simple Descriptor request par EP
-			if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
-				for cle in self.ListOfDevices[key]['Ep']:
-					Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + cle + ", du device adresse : " + key)
-					sendZigateCmd("0043", str(key)+str(cle))
-				self.ListOfDevices[key]['Status']="0043"
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-				self.ListOfDevices[key]['Status']="8045"
-			if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="10" and self.ListOfDevices[key]['RIA']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-				self.ListOfDevices[key]['Status']="UNKNOW"
 
-			# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
-			if status == "inDB" and self.ListOfDevices[key]['ZDeviceID']=="0200" and self.ListOfDevices[key]['Heartbeat']>="30" :
-				self.ListOfDevices[key]['Heartbeat']="0"
-				ReadAttributeRequest_0008(self, key)
+			########## Known Devices 
+			if status == "inDB" : 
+				# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
+				if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and status == "inDB" and self.ListOfDevices[key]['Heartbeat']>="30" :
+					Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
+					self.ListOfDevices[key]['Heartbeat']="0"
+					ReadAttributeRequest_0008(self, key)
 
-			if status != "inDB" and status != "UNKNOW" :
-				if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
-					if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
-					# ampoule Tradfi LED1545G12.Tradfri
-						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
-					# ampoule Tradfri LED1622G12.Tradfri ou phillips hue white
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :
-							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
-					# plug osram
-						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  
-							self.ListOfDevices[key]['Model']="plug.Osram"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
-					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-					# plug salus
-						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
-							self.ListOfDevices[key]['Model']="plug.Salus"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'09': {'0006'}}
-					# ampoule Tradfi
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
-					# shutter profalux
-						if self.ListOfDevices[key]['ZDeviceID']=="0200" :  # device id type shutter
-							self.ListOfDevices[key]['Model']="shutter.Profalux"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
-					# phillips hue
-					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
-						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
-							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+			########## UnKnown Devices  - Creation process
+			if status != "inDB" :
+				# Request EP list
+				if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
+					Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
+					sendZigateCmd("0045", str(key))
+					self.ListOfDevices[key]['Status']="0045"
+					self.ListOfDevices[key]['Heartbeat']="0"
+				# Request Simple Descriptor for each EP	
+				if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
+					for cle in self.ListOfDevices[key]['Ep']:
+						Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
+						sendZigateCmd("0043", str(key)+str(cle))
+					self.ListOfDevices[key]['Status']="0043"
+					self.ListOfDevices[key]['Heartbeat']="0"
+	
+				# Timeout Management
+				# We should wonder if we want to go in an infinite loop.
+				# I consider that after 2 cycles, if we are not successfull, we should forget about this device and log it as an Error
+				#if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="9":
+				#	Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + key)
+				#	self.ListOfDevices[key]['Heartbeat']="0"
+				#if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="9":
+				#	Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
+				#	self.ListOfDevices[key]['Heartbeat']="0"
+				#	self.ListOfDevices[key]['Status']="004d"
+				#if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="9":
+				#	Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
+				#	self.ListOfDevices[key]['Heartbeat']="0"
+				#	We should restart the process from status="004d" in order to request again 0x0045
+				#	self.ListOfDevices[key]['Status']="004d"
+				#if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="9":
+				#	Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + key)
+				#	self.ListOfDevices[key]['Heartbeat']="0"
+				#	self.ListOfDevices[key]['Status']="8045"
+	
+				# What RIA stand for ???????
+				if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="9" and self.ListOfDevices[key]['RIA']>="10":
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="UNKNOW"
+	
+				if status != "UNKNOW" :
+					if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
+						if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
+							# ampoule Tradfi LED1545G12.Tradfri
+							if self.ListOfDevices[key]['ZDeviceID']=="0220" :
+								self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
+							# ampoule Tradfri LED1622G12.Tradfri ou phillips hue white
+							if self.ListOfDevices[key]['ZDeviceID']=="0100" :
+								self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+							# plug osram
+							if self.ListOfDevices[key]['ZDeviceID']=="0010" :  
+								self.ListOfDevices[key]['Model']="plug.Osram"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'03': {'0006'}}
 
-
+						if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
+							# plug salus
+							if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
+								self.ListOfDevices[key]['Model']="plug.Salus"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'09': {'0006'}}
+							# ampoule Tradfi
+							if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
+								self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+							# shutter profalux
+							if self.ListOfDevices[key]['ZDeviceID']=="0200" :  # device id type shutter
+								self.ListOfDevices[key]['Model']="shutter.Profalux"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
+						# phillips hue
+						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
+							if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
+								self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+				
+				# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
+	
 				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
 					IsCreated=False
@@ -348,11 +369,15 @@ class BasePlugin:
 					#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
 					#	UpdateDomoDevice(self, key)
 
+			#end status != inDB
+		#end for key in ListOfDevices
+
 		ResetDevice("Motion",5)
 		WriteDeviceList(self, 200)
 
 		if (ZigateConn.Connected() != True):
 			ZigateConn.Connect()
+
 		return True
 
 
