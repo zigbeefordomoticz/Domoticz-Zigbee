@@ -66,5 +66,6 @@ During the Discovery to Creation process, Tiemout are also managed
 		- If in 0x0045 -> restart to 0x004d
 		- If in 0x004d -> restart
 
-
 	- There is also an other field used called 'RIA'
+		- In case we reach 0x8043, Hearbeat >= 9 and RIA >= 10 then we stop processing this Device and we put it as unknown.
+
