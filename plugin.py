@@ -1324,7 +1324,10 @@ def CreateDomoDevice(self, DeviceID) :
 
 				if t=="ColorControl" :  # variateur de couleur
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					# Type 0xF1    pTypeColorSwitch
+					# SubType 0x07 sTypeColor_RGB_CW_WW_Z
+					# Switchtype 7 STYPE_Dimmer
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=241, Subtype=7 , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				#Ajout meter
 				if t=="PowerMeter" :  # Power Prise Xiaomi
