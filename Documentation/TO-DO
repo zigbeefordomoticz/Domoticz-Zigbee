@@ -1,26 +1,4 @@
-0001 - Encapsulate all variable assignements into a try: except: else: in order to avoid unitialized value during execution.
-	This will require to understand what to do in the except phase. exit , or just continue ....
-
 0002 - Decode8701 à clarifier ... Que faire des Status
-
-0003 - Test Network to see if this is on. starting 03d
-	https://github.com/fairecasoimeme/ZiGate/issues/15
-
-0004 - Decode8042 Node Descriptor response à implémenter
-	sequence[0:2]
-	status[2:4]
-	addr[4:8]
-	manufacturer[8:12]
-	max_rx[12:16]
-	max_tx[16:20]
-	server_mask[20:24]
-	descriptor_capability[24:26]
-	mac_capability[26:28]
-	max_buffer[28:30]
-	bit_field[30:34]
-
-
-0005 - Decode8015 Get List of Device ( response to 0015 )
 
 0006 - We neeed to review the Device management and have a checking fonction for Database consitency
 	Domoticz store the Domoticz Devices
@@ -35,9 +13,14 @@
 		Source of truth is Zigate HW
 		DeviceExist(self, Addr)
 
-
 0007 - Implement a DeleteDomoDevice() to delete a Device from Domoticz
 	Use Device[Unit].Delete()
 
 0008 - Implement Zigate Remove Device to delete a device from Zigate
 	0x0026 command with Short Address (64bits) and Extended Address (64bits)
+
+0009 - From Fred  Zigate developper, it looks that time to time devices might come with a new Short Address. In such case the reference must be the IEEE address
+
+0010 - Zigate provides a SQN ... Shall and How to use/implement it in order to follow-up on commands send to Zigate.
+
+0011 - Final Review of Domo Creation and new device handling. Especially what and how to use properly RIA.
