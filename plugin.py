@@ -120,58 +120,37 @@ class BasePlugin:
 
 # Version 3 - Binary reading to avoid mixing end of Frame 
 		ReqRcv += Data				# Add the incoming data
-		Domoticz.Debug("onMessage process : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
+		Domoticz.Log("onMessage incoming data : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
 
-		while 1 :				# Loop until we have 0x03
+		# Zigate Frames start with 0x01 and finished with 0x03	
+		# It happens that we get some 
+		while 1 :					# Loop until we have 0x03
+			Zero1=-1
 			Zero3=-1
 			idx = 0
 			for val in ReqRcv[0:len(ReqRcv)] :
-				if val == 3 :			# Do we get a 0x03
+				if Zero1 == - 1 and Zero3  == -1 and val == 1 :	# Do we get a 0x01
+					Zero1 = idx		# we have identify the Frame start
+
+				if Zero1 != -1 and val == 3 :	# If we have already started a Frame and do we get a 0x03
 					Zero3 = idx + 1
 					break			# If we got 0x03, let process the Frame
 				idx += 1
+
 			if Zero3 == -1 :			# No 0x03 in the Buffer, let's breat and wait to get more data
 				return
 
-			BinMsg = ReqRcv[0:Zero3]		# What is before 0x03 is in the Frame to be process
+			Domoticz.Log("onMessage Frame : Zero1=" + str(Zero1) + " Zero3=" + str(Zero3) )
+
+			BinMsg = ReqRcv[Zero1:Zero3]		# What is before 0x03 is in the Frame to be process
 			ReqRcv = ReqRcv[Zero3:]			# What is after 0x03 has to be reworked.
 
 			# Process the incoming Frame
 			AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
+			Domoticz.Log("onMessage Frame : " + str(AsciiMsg) )
 			ZigateDecode(self, AsciiMsg) 		# decode this Frame
-		Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
 
-# Version 2
-#		global Tmprcv
-#		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-#		ReqRcv+=Tmprcv
-#		idx=0
-#		ZigateFrame=""
-#		#Domoticz.Debug("onMessage process : '" + ReqRcv+ "'" + " len = " + str(len(ReqRcv)))
-#		while idx <= len(ReqRcv) :
-#			if ( ZigateFrame == "" and ReqRcv[idx:idx+2] == "01" ) : ZigateFrame+=ReqRcv[idx:idx+2]
-#			elif ( ZigateFrame != "" and ReqRcv[idx:idx+2] == "03") : 
-#				ZigateFrame+=ReqRcv[idx:idx+2]
-#				Domoticz.Debug("onMessage Frame = " + ZigateFrame)	
-#				ZigateDecode(self, ZigateFrame)
-#				ZigateFrame=""
-#			elif ZigateFrame != "" : ZigateFrame+=ReqRcv[idx:idx+2]		
-#			idx=idx+2
-#		ReqRcv = ZigateFrame
-#		#Domoticz.Debug("onMessage Remaining Frame : " + ReqRcv )
-			
-# Version 1
-#		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-#		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
-#			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
-#			while (ReqRcv.find("0301") != -1): #Tant qu'il reste des messages colles
-#				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])#demande de decodage de la trame recu
-#				ReqRcv=ReqRcv[ReqRcv.find("0301")+2:]
-#			if ReqRcv.find('03') != -1 : #est ce qu il reste une derniere trame complete ?
-#				ZigateDecode(self, ReqRcv[:ReqRcv.find("03")+2]) #demande de decodage de la trame recu
-#				ReqRcv=ReqRcv[ReqRcv.find('03')+2:]
-#		else : # while end of data is receive
-#			ReqRcv+=Tmprcv
+		Domoticz.Log("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
 
 		return
 
