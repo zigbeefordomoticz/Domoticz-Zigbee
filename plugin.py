@@ -120,7 +120,7 @@ class BasePlugin:
 
 # Version 3 - Binary reading to avoid mixing end of Frame 
 		ReqRcv += Data				# Add the incoming data
-		Domoticz.Log("onMessage incoming data : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
+		Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
 
 		# Zigate Frames start with 0x01 and finished with 0x03	
 		# It happens that we get some 
@@ -140,17 +140,17 @@ class BasePlugin:
 			if Zero3 == -1 :			# No 0x03 in the Buffer, let's breat and wait to get more data
 				return
 
-			Domoticz.Log("onMessage Frame : Zero1=" + str(Zero1) + " Zero3=" + str(Zero3) )
+			Domoticz.Debug("onMessage Frame : Zero1=" + str(Zero1) + " Zero3=" + str(Zero3) )
 
 			BinMsg = ReqRcv[Zero1:Zero3]		# What is before 0x03 is in the Frame to be process
 			ReqRcv = ReqRcv[Zero3:]			# What is after 0x03 has to be reworked.
 
 			# Process the incoming Frame
 			AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
-			Domoticz.Log("onMessage Frame : " + str(AsciiMsg) )
+			Domoticz.Debug("onMessage Frame : " + str(AsciiMsg) )
 			ZigateDecode(self, AsciiMsg) 		# decode this Frame
 
-		Domoticz.Log("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
+		Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
 
 		return
 
