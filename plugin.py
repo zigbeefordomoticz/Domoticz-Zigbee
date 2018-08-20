@@ -118,7 +118,7 @@ class BasePlugin:
 		Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
 		global ReqRcv
 
-# Version 3 - Binary reading to avoid mixing end of Frame 
+# Version 3 - Binary reading to avoid mixing end of Frame - Thanks to CLDFR
 		ReqRcv += Data				# Add the incoming data
 		Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
 
