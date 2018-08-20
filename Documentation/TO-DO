@@ -24,3 +24,10 @@
 0010 - Zigate provides a SQN ... Shall and How to use/implement it in order to follow-up on commands send to Zigate.
 
 0011 - Final Review of Domo Creation and new device handling. Especially what and how to use properly RIA.
+
+0012 - Thinking about restructuring the code. This is now more than 2000 Lines of code. It might be good to split in different files.
+	We also need to agree on some fundamentals like:
+		- where control are done
+		- what do we allow and don't allow to do in MajDomoDevice
+		- What do we allow and don't allow to do in Decodexxxx functions
+		- What do we allow and don't allow to do in ReadCluster
