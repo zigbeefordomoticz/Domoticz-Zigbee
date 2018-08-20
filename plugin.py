@@ -222,7 +222,7 @@ class BasePlugin:
 			if Dtypename == "ColorControl" :
 
 				if Hue == "" :
-					Domoticz.Log("onCommand - ColorControl - Level = " + str(Level) )
+					Domoticz.Debug("onCommand - ColorControl - Level = " + str(Level) )
 					if Level == 0 :
 						sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 						UpdateDevice(Unit, 0, "0",DOptions)
@@ -272,7 +272,7 @@ class BasePlugin:
 						else :
 							UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel)
 				else : # Hue != ""
-					Domoticz.Log("onCommand - ColorControl - Hue = " + str(Hue) )
+					Domoticz.Debug("onCommand - ColorControl - Hue = " + str(Hue) )
 					# Decode Hue
 					# rgb_to_xy
 
@@ -317,7 +317,7 @@ class BasePlugin:
 					if self.ListOfDevices[key]['IEEE'] in self.ListOfDevices :
 						for dup in self.ListOfDevices :
 							if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[wdup]['IEEE'] :
-								Domoticz.Log("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
+								Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
 								self.ListOfDevices[key]['Status']="DUP"
 								self.ListOfDevices[key]['Heartbeat']="0"
 								self.ListOfDevices[key]['RIA']="99"
@@ -359,7 +359,7 @@ class BasePlugin:
 					self.ListOfDevices[key]['Heartbeat']="0"
 					self.ListOfDevices[key]['Status']="UNKNOW"
 	
-				if status != "UNKNOW" :
+				if status != "UNKNOW" and status != "DUP":
 					if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
 						if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
 							# telecommande Tradfi 30338849.Tradfri
@@ -1111,7 +1111,7 @@ def Decode8044(self, MsgData): # Power Descriptior response
 	SQNum=MsgData[0:2]
 	Status=MsgData[2:4]
 	PowerCode=MsgData[4:8]
-	Domoticz.Log("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power Code = " + PowerCode )
+	Domoticz.Debug("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power Code = " + PowerCode )
 	return
 
 def Decode8045(self, MsgData) : # Reception Active endpoint response
@@ -1220,7 +1220,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 		MsgDataDestMode=MsgData[6:8]
 		MsgDataDestAddr=MsgData[8:12]
 		MsgDataSQN=MsgData[12:14]
-		Domoticz.Log("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+		Domoticz.Debug("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
 		return
 
 def Decode8401(self, MsgData) : # Reception Zone status change notification
@@ -1595,7 +1595,8 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 
 			#Modif Meter
 			if clusterID=="000c":
-				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
+				Domoticz.Log("Update Value Meter : "+str(int(value,16)))
+				Domoticz.Log("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
 				#UpdateDevice_v2(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions, SignalLevel)
 
@@ -1892,9 +1893,56 @@ def ReadCluster(self, MsgData):
 		#Fin de la correction
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
+		# Thanks to : https://github.com/dresden-elektronik/deconz-rest-plugin/issues/138#issuecomment-325101635
+		#         +---+
+		#         | 2 |
+		#     +---+---+---+
+		#     | 4 | 0 | 1 |
+		#     +---+---+---+
+		#         | 5 |
+		#         +---+
+		#         | 3 |
+		#         +---+
+		#     Side 5 is with the MI logo; side 3 contains the battery door.
+		#
+		#     Shake: 0x0000 (side on top doesn't matter)
+		#     90º Flip from side x on top to side y on top: 0x0040 + (x << 3) + y
+		#     180º Flip to side x on top: 0x0080 + x
+		#     Push while side x is on top: 0x0100 + x
+		#     Double Tap while side x is on top: 0x0200 + x
+		#     Push works in any direction.
+		#     For Double Tap you really need to lift the cube and tap it on the table twice.
+		def cube_decode(value):
+			value=int(value,16)
+			if value == '' or value is None:
+				return value
+			events = {0x0000: 'Shake',
+				0x0002: 'Wakeup',
+				0x0003: 'Drop',
+				}
+			if value in events:
+				return events[value]
+			elif value & 0x0080 != 0:  # flip180
+				face = value ^ 0x0080
+				value = 'Flip180_{}'.format(face)
+			elif value & 0x0100 != 0:  # push/Move
+				face = value ^ 0x0100
+				value = 'Push_{}'.format(face)
+			elif value & 0x0200 != 0:  # double_tap
+				face = value ^ 0x0200
+				value = 'Double_tap_{}'.format(face)
+			else:  # flip90
+				face = value ^ 0x0040
+				face1 = face >> 3
+				face2 = face ^ (face1 << 3)
+				value = 'Flip90_{}{}'.format(face1, face2)
+			return value
+
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
+		Domoticz.Log("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(cube_decode(MsgClusterData)) )
+		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
@@ -2094,3 +2142,4 @@ def removeZigateDevice( self, key ) :
 		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
 		
 	return
+
