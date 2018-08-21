@@ -333,18 +333,24 @@ class BasePlugin:
 				# Request EP list
 				if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
 					# We should check if the device has not been already created via IEEE
-					if self.ListOfDevices[key]['IEEE'] in self.ListOfDevices :
-						for dup in self.ListOfDevices :
-							if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[wdup]['IEEE'] :
-								Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
-								self.ListOfDevices[key]['Status']="DUP"
-								self.ListOfDevices[key]['Heartbeat']="0"
-								self.ListOfDevices[key]['RIA']="99"
+					try :
+						self.ListOfDevices[key]['IEEE']
+					except:
+						#Nothing to do
+						dummy=0
 					else :
-						Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
-						sendZigateCmd("0045", str(key))
-						self.ListOfDevices[key]['Status']="0045"
-						self.ListOfDevices[key]['Heartbeat']="0"
+						if self.ListOfDevices[key]['IEEE'] in self.ListOfDevices :
+							for dup in self.ListOfDevices :
+								if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[wdup]['IEEE'] :
+									Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
+									self.ListOfDevices[key]['Status']="DUP"
+									self.ListOfDevices[key]['Heartbeat']="0"
+									self.ListOfDevices[key]['RIA']="99"
+						else :
+							Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
+							sendZigateCmd("0045", str(key))
+							self.ListOfDevices[key]['Status']="0045"
+							self.ListOfDevices[key]['Heartbeat']="0"
 
 				# Request Simple Descriptor for each EP	
 				if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
@@ -1326,7 +1332,7 @@ def CreateDomoDevice(self, DeviceID) :
 
 				if t=="Aqara" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "|||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="Water" :  # detecteur d'eau 
@@ -1570,7 +1576,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						tstdata=data
 						tststate=state
 					except:
-						Domoticz.Error("MajDomoDevice - unexpected value = " + str(value) )
+						Domoticz.Log("MajDomoDevice - WARNING - unexpected value = " + str(value) )
 					else:
 						Domoticz.Log("MajDomoDevice - Cube update device with data = " + str(data) + " state = " + str(state) )
 						#UpdateDevice(x,int(data),str(state),DOptions)
@@ -1958,26 +1964,36 @@ def ReadCluster(self, MsgData):
 			value=int(value,16)
 			if value == '' or value is None:
 				return value
-			events = {0x0000: 'Shake',
-				0x0002: 'Wakeup',
-				0x0003: 'Drop',
-				}
-			if value in events:
-				return events[value]
-			elif value & 0x0080 != 0:  # flip180
-				face = value ^ 0x0080
-				value = 'Flip180_{}'.format(face)
-			elif value & 0x0100 != 0:  # push/Move
-				face = value ^ 0x0100
-				value = 'Push_{}'.format(face)
-			elif value & 0x0200 != 0:  # double_tap
-				face = value ^ 0x0200
-				value = 'Double_tap_{}'.format(face)
-			else:  # flip90
+
+			if value == 0x0000 : 		
+				Domoticz.Log("cube action : " + 'Shake' )
+				value='10'
+			elif value == 0x0002 :			
+				Domoticz.Log("cube action : " + 'Wakeup' )
+				value = '20'
+			elif value == 0x0003 :
+				Domoticz.Log("cube action : " + 'Drop' )
+				value = '30'
+			elif value & 0x0040 != 0 :	
 				face = value ^ 0x0040
 				face1 = face >> 3
 				face2 = face ^ (face1 << 3)
-				value = 'Flip90_{}{}'.format(face1, face2)
+				Domoticz.Log("cube action : " + 'Flip90_{}{}'.format(face1, face2))
+				value = '40'
+			elif value & 0x0080 != 0:  
+				face = value ^ 0x0080
+				Domoticz.Log("cube action : " + 'Flip180_{}'.format(face) )
+				value = '50'
+			elif value & 0x0100 != 0:  
+				face = value ^ 0x0100
+				Domoticz.Log("cube action : " + 'Push/Move_{}'.format(face) )
+				value = '60'
+			elif value & 0x0200 != 0:  # double_tap
+				face = value ^ 0x0200
+				Domoticz.Log("cube action : " + 'Double_tap_{}'.format(face) )
+				value = '70'
+			else:  
+				Domoticz.Log("cube action : Not expected value" + value )
 			return value
 
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
@@ -2053,7 +2069,7 @@ def GetType(self, Addr, Ep) :
 			self.ListOfDevices[Addr]['Type']=Type
 			Domoticz.Debug("GetType - Type is now set to : " + str(Type) )
 		else :
-			Domoticz.Error("GetType - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Device Info : " + str(self.ListOfDevices[Addr]) )
+			Domoticz.Log("GetType - WARNING - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Device Info : " + str(self.ListOfDevices[Addr]) )
 	return Type
 
 def TypeFromCluster(cluster):
