@@ -1209,7 +1209,7 @@ def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	MsgAttType=MsgData[16:20]
 	MsgAttSize=MsgData[20:24]
 	MsgClusterData=MsgData[24:len(MsgData)]
-	Domoticz.debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
+	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
 	if MsgSrcAddr  in self.ListOfDevices:
 		try:
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
