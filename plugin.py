@@ -332,25 +332,22 @@ class BasePlugin:
 			if status != "inDB" :
 				# Request EP list
 				if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
+					Domoticz.Log("Creation process for " + str(key) + " Info: " + str(self.ListOfDevices[key]) )
 					# We should check if the device has not been already created via IEEE
-					try :
-						self.ListOfDevices[key]['IEEE']
-					except:
-						#Nothing to do
-						dummy=0
+					if IEEEExist( self, self.ListOfDevices[key]['IEEE'] ) == False :
+						Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
+						sendZigateCmd("0045", str(key))
+						self.ListOfDevices[key]['Status']="0045"
+						self.ListOfDevices[key]['Heartbeat']="0"
 					else :
-						if self.ListOfDevices[key]['IEEE'] in self.ListOfDevices :
-							for dup in self.ListOfDevices :
-								if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[wdup]['IEEE'] :
-									Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
-									self.ListOfDevices[key]['Status']="DUP"
-									self.ListOfDevices[key]['Heartbeat']="0"
-									self.ListOfDevices[key]['RIA']="99"
-						else :
-							Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
-							sendZigateCmd("0045", str(key))
-							self.ListOfDevices[key]['Status']="0045"
-							self.ListOfDevices[key]['Heartbeat']="0"
+						for dup in self.ListOfDevices :
+							if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['status'] == "inDB":
+								Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
+								self.ListOfDevices[key]['Status']="DUP"
+								self.ListOfDevices[key]['Heartbeat']="0"
+								self.ListOfDevices[key]['RIA']="99"
+								oktocreate=True
+								break
 
 				# Request Simple Descriptor for each EP	
 				if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
@@ -543,7 +540,7 @@ def ZigateConf():
 	################### ZiGate - Request Device List #############
 	# answer is expected on message 8015. Only available since firmware 03.0b
 	if str(FirmwareVersion) == "030d" or str(FirmwareVersion) == "030c" or str(FirmwareVersion == "030b") :
-		Domoticz.Log("ZigateConf -  Request : Get List of Device due to low firmware level" + str(FirmwareVersion) )
+		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(FirmwareVersion) )
 		sendZigateCmd("0015","")
 	else :
 		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(FirmwareVersion) )
@@ -1636,6 +1633,13 @@ def ResetDevice(Type,HbCount) :
 					UpdateDevice(x,int(value),str(state),DOptions)	
 		except :
 			return
+def IEEEExist(self, IEEE) :
+	#check in ListOfDevices for an existing IEEE
+	if IEEE : 
+		if IEEE in self.ListOfDevices and IEEE != '' :
+			return True
+		else:
+			return False
 
 def DeviceExist(self, Addr) :
 	#check in ListOfDevices
