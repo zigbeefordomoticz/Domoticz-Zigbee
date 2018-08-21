@@ -1646,11 +1646,10 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			#Modif Meter
 			if clusterID=="000c":
 				# Problem with such value: Update Value Meter : 3247660071
-				if iselement(value,16) :
-					Domoticz.Log("Update Value Meter : "+str(int(value,16)))
-					Domoticz.Log("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
-					UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
-					#UpdateDevice_v2(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions, SignalLevel)
+				Domoticz.Log("Update Value Meter : "+str(int(value,16)))
+				Domoticz.Log("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
+				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
+				#UpdateDevice_v2(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions, SignalLevel)
 
 def ResetDevice(Type,HbCount) :
 	x=0
@@ -1752,8 +1751,13 @@ def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl):
 	Domoticz.Debug("UpdateDevice_v2 - Options = " + str(Options))
 	Dzigate=eval(Options['Zigate'])
 
-	rssi= round( (SignalLvl * 12 ) / 255)
-	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Signal Level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
+	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Signal Level = " + str(SignalLvl) )
+	if isinstance(SignalLvl,int) :
+		rssi= round( (SignalLvl * 12 ) / 255)
+		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " RSSI = " + str(rssi) )
+	else:
+		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " SignalLvl is not an int" )
+		rssi=12
 
 	BatteryLvl=str(Dzigate['Battery'])
 	if BatteryLvl == '{}' :
