@@ -164,7 +164,6 @@ class BasePlugin:
 		Dtypename=DOptions['TypeName']
 		Dzigate=eval(DOptions['Zigate'])
 		SignalLevel = self.ListOfDevices[Devices[Unit].DeviceID]['RSSI']
-		Domoticz.Log("Signal Level = " +str(SignalLevel) )
 
 		EPin="01"
 		EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
@@ -1057,6 +1056,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
 			else  :
 				self.ListOfDevices[saddr]['RSSI']= 12
+			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
 		else: 
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
@@ -1181,9 +1181,12 @@ def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 		Domoticz.Error("Decode8100 - MsgData = " + MsgData)
 
 	else:
-		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
-		if  isinstance(MsgRSSI,int) : self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
-		else : self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+		Domoticz.Log("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+		try :
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+		except : 
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		ReadCluster(self, MsgData) 
 	return
 
@@ -1206,10 +1209,13 @@ def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	MsgAttType=MsgData[16:20]
 	MsgAttSize=MsgData[20:24]
 	MsgClusterData=MsgData[24:len(MsgData)]
-	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)	
+	Domoticz.debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
 	if MsgSrcAddr  in self.ListOfDevices:
-		if  isinstance(MsgRSSI,int) : self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
-		else : self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+		try:
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+		except:
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		ReadCluster(self, MsgData) 
 	else :
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
@@ -1713,14 +1719,16 @@ def UpdateBattery(DeviceID,BatteryLvl):
 
 def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl):
 	# V2 update Domoticz with SignaleLevel/RSSI
+	Domoticz.Debug("UpdateDevice_v2 - Options = " + str(Options))
 	Dzigate=eval(Options['Zigate'])
-	BatteryLvl=str(Dzigate['Battery'])
+
 	rssi= round( (SignalLvl * 12 ) / 255)
+	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Signal Level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
+
+	BatteryLvl=str(Dzigate['Battery'])
 	if BatteryLvl == '{}' :
 		BatteryLvl=255
-	Domoticz.Debug("BatteryLvl = " + str(BatteryLvl))
-	Domoticz.Debug("Signal Level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
-	Domoticz.Debug("Options = " + str(Options))
+	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " BatteryLvl = " + str(BatteryLvl))
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
