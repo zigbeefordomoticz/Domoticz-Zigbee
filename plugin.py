@@ -1325,12 +1325,7 @@ def CreateDomoDevice(self, DeviceID) :
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=9 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="XCube" :  # Xiaomi Magic Cube
-					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
-
-				if t=="Aqara" :  # Xiaomi Magic Cube
+				if t=="Aqara" or t=="XCube" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Options = {"LevelActions": "|||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
@@ -1552,35 +1547,11 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						data="03"
 				#UpdateDevice(x,int(data),str(state),DOptions)
 				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
-			if Type==Dtypename=="XCube" :  # cube xiaomi
-				if Ep == "02" :
-					if value == "0000" : #shake
-						state="10"
-						data="01"
-					elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
-						state="50"
-						data="05"
-					elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
-						state="20"
-						data="02"
-					elif value == "0003" : #Free Fall
-						state="70"
-						data="07"
-					elif value >= "0004" and value <= "0059": #90°
-						state="30"
-						data="03"
-					elif value >= "0060" : #180°
-						state="90"
-						data="09"
-					try:
-						tstdata=data
-						tststate=state
-					except:
-						Domoticz.Log("MajDomoDevice - WARNING - unexpected value = " + str(value) )
-					else:
-						Domoticz.Log("MajDomoDevice - Cube update device with data = " + str(data) + " state = " + str(state) )
-						#UpdateDevice(x,int(data),str(state),DOptions)
-						UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
+
+			if Type==Dtypename=="XCube":
+				if EP == "02" :
+					Domoticz.Log("MajDomoDevice - XCube update device with data = " + str(data) )
+					UpdateDevice_v2( x, int(value), str(value), DOptions, SignalLevel )
 
 			if Type==Dtypename=="Lux" :
 				#UpdateDevice(x,0,str(value),DOptions)
@@ -1996,7 +1967,7 @@ def ReadCluster(self, MsgData):
 				Domoticz.Log("cube action : Not expected value" + value )
 			return value
 
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
+		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
 		Domoticz.Log("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(cube_decode(MsgClusterData)) )
