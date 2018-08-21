@@ -1388,15 +1388,18 @@ def FreeUnit(self) :
 	return FreeUnit
 
 def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
-	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
+	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
 	x=0
 	Type=TypeFromCluster(clusterID)
+	Domoticz.Log("MajDomoDevice - Type = " + str(Type) )
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
 			Dtypename=DOptions['TypeName']
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
+
+			Domoticz.Log("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
@@ -1551,10 +1554,35 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				#UpdateDevice(x,int(data),str(state),DOptions)
 				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 
-			if Type==Dtypename=="XCube":
-				if EP == "02" :
-					Domoticz.Log("MajDomoDevice - XCube update device with data = " + str(data) )
+			if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
+					Domoticz.Log("MajDomoDevice - XCube update device with data = " + str(value) )
 					UpdateDevice_v2( x, int(value), str(value), DOptions, SignalLevel )
+
+			if Type==Dtypename=="XCube" and Ep == "02":  # cube xiaomi
+				if value == "0000" : #shake
+					state="10"
+					data="01"
+					UpdateDevice(x,int(data),str(state),DOptions)
+				elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
+					state="50"
+					data="05"
+					UpdateDevice(x,int(data),str(state),DOptions)
+				elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
+					state="20"
+					data="02"
+					UpdateDevice(x,int(data),str(state),DOptions)
+				elif value == "0003" : #Free Fall
+					state="70"
+					data="07"
+					UpdateDevice(x,int(data),str(state),DOptions)
+				elif value >= "0004" and value <= "0059": #90°
+					state="30"
+					data="03"
+					UpdateDevice(x,int(data),str(state),DOptions)
+				elif value >= "0060" : #180°
+					state="90"
+					data="09"
+					UpdateDevice(x,int(data),str(state),DOptions)
 
 			if Type==Dtypename=="Lux" :
 				#UpdateDevice(x,0,str(value),DOptions)
@@ -1617,10 +1645,12 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 
 			#Modif Meter
 			if clusterID=="000c":
-				Domoticz.Log("Update Value Meter : "+str(int(value,16)))
-				Domoticz.Log("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
-				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
-				#UpdateDevice_v2(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions, SignalLevel)
+				# Problem with such value: Update Value Meter : 3247660071
+				if iselement(value,16) :
+					Domoticz.Log("Update Value Meter : "+str(int(value,16)))
+					Domoticz.Log("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
+					UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
+					#UpdateDevice_v2(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions, SignalLevel)
 
 def ResetDevice(Type,HbCount) :
 	x=0
