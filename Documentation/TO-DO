@@ -31,3 +31,9 @@
 		- what do we allow and don't allow to do in MajDomoDevice
 		- What do we allow and don't allow to do in Decodexxxx functions
 		- What do we allow and don't allow to do in ReadCluster
+
+0013 - Revue du code et protection de toutes les convertions type str -> int 
+	Revue du code et protection des tests vis-à-vis variables non initialisée
+
+
+0014 - Lors de l'exit du code / Lister le dictionnaire python
