@@ -196,7 +196,7 @@ class BasePlugin:
 			if Dtypename == "Switch" :
 				sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 				UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
-			elif (Dtypename == "LvlControl")
+			elif (Dtypename == "LvlControl") :
 				Command = "Set Level"
 				Level = 0
 			else:
