@@ -1388,7 +1388,7 @@ def FreeUnit(self) :
 	return FreeUnit
 
 def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
-	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
 	x=0
 	Type=TypeFromCluster(clusterID)
 	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
