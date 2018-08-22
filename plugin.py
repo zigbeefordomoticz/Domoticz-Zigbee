@@ -78,6 +78,8 @@ class BasePlugin:
 				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
 			else :
 				self.ListOfDevices[ID]={}
+				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + Devices[x].Options['Zigate'] + " loaded into self.ListOfDevices")
+
 		#Import DeviceConf.txt
 		tmpread=""
 		with open(Parameters["HomeFolder"]+"DeviceConf.txt", 'r') as myfile:

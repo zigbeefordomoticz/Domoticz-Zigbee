@@ -37,3 +37,6 @@
 
 
 0014 - Lors de l'exit du code / Lister le dictionnaire python
+
+
+0015 - Update of Device[ID].Options['Zigate'] . Currently this is never updated as far as I understood. So it might be good to update .
