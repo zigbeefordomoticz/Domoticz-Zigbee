@@ -1181,7 +1181,7 @@ def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 		Domoticz.Error("Decode8100 - MsgData = " + MsgData)
 
 	else:
-		Domoticz.Log("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
 		try :
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
 		except : 
@@ -1330,7 +1330,7 @@ def CreateDomoDevice(self, DeviceID) :
 
 				if t=="Aqara" or t=="XCube" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Clock Wise|Anti Clock Wise|", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="Water" :  # detecteur d'eau 
@@ -1391,7 +1391,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
 	x=0
 	Type=TypeFromCluster(clusterID)
-	Domoticz.Log("MajDomoDevice - Type = " + str(Type) )
+	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
@@ -1399,7 +1399,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
 
-			Domoticz.Log("MajDomoDevice - Dtypename = " + str(Dtypename) )
+			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
@@ -1555,11 +1555,11 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 
 			if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
-					Domoticz.Log("MajDomoDevice - XCube update device with data = " + str(value) )
+					Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
 					UpdateDevice_v2( x, int(value), str(value), DOptions, SignalLevel )
 
 			if Type=="XCube" and Dtypename=="Aqara" and Ep == "03": #Magic Cube Acara Rotation
-					Domoticz.Log("MajDomoDevice - XCube update device with data = " + str(value) )
+					Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
 					UpdateDevice_v2( x, int(value), str(value), DOptions, SignalLevel )
 
 			if Type==Dtypename=="XCube" and Ep == "02":  # cube xiaomi
@@ -2014,24 +2014,22 @@ def ReadCluster(self, MsgData):
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
-		Domoticz.Log("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(cube_decode(MsgClusterData)) )
+		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(cube_decode(MsgClusterData)) )
 		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
-		Domoticz.Log("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
-		if MsgAttrID=="0055":
-			Domoticz.Log("ReadCluster - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot Anti-Clock wise OR reception Conso Prise Xiaomi: " + str(MsgClusterData) )
-			# It seems that Xcube Anti-Clock rotation send MsgAttrID of 0xff05 and immediatly after a 0x0055 , with a large value above 255
-			# This part could be buggy.
-			if ( int(MsgClusterData,16) < 255 ) :
-				Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
-				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
+		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
+			Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 
-		elif MsgAttrID=="ff05":
-			Domoticz.Log("ReadCluster - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot Anti-Clock wise: " + str(MsgClusterData) )
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="90"
-			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,"90")
+		elif MsgAttrID=="ff05" and MsgSrcEp == '03' : # Rotation - horinzontal
+			Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
+		else :
+			Domoticz.Log("ReadCluster - ClusterID=000c - unknown 000c message - EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 		
 	else :
 		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
