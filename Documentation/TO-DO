@@ -22,6 +22,9 @@
 0009 - From Fred  Zigate developper, it looks that time to time devices might come with a new Short Address. In such case the reference must be the IEEE address
 
 0010 - Zigate provides a SQN ... Shall and How to use/implement it in order to follow-up on commands send to Zigate.
+	- SQN is per device 
+	- We might enable a SQN field for each device, and detect out of range.
+	- We might be able to track Command/Status, by implementing a a Pile where we store the command during the sendZigateCmd, and then when receive 8102, we can check that the command is successful. Otherwise, we can handle Error as well as Timeout
 
 0011 - Final Review of Domo Creation and new device handling. Especially what and how to use properly RIA.
 
@@ -40,3 +43,6 @@
 
 
 0015 - Update of Device[ID].Options['Zigate'] . Currently this is never updated as far as I understood. So it might be good to update .
+
+
+0016 - Ajout de str(Ep) dans la création du device domoticz, comme nom par defaut ...
