@@ -70,6 +70,7 @@ class BasePlugin:
 			ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
 			ZigateConn.Connect()
 		ReqRcv=bytearray()
+
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			ID = Devices[x].DeviceID
 			try:
@@ -162,8 +163,6 @@ class BasePlugin:
 	def onCommand(self, Unit, Command, Level, Hue):
 		Domoticz.Log("#########################")
 		Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Hue: " + str(Hue) )
-		if Hue:
-			Hue = json.loads(Hue)
 
 		DSwitchtype= str(Devices[Unit].SwitchType)
 		DOptions = Devices[Unit].Options
@@ -184,127 +183,98 @@ class BasePlugin:
 		for tmpEp in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'] :
 			if ClusterSearch in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
 				EPout=tmpEp
+			Domoticz.Log("Dtypename : " + Dtypename)
 
-		#Disable on/off for other device than switch
-		#Disabled for color control because it may induce flashing on bulb (With rgb command in same time than color control)
-		if Command == "On" :
-			if Dtypename == "Switch" :
+			if Command == "On" :
 				sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
 				UpdateDevice_v2(Unit, 1, "On",DOptions, SignalLevel)
-			elif (Dtypename == "LvlControl"):
-				Command = "Set Level"
-				Level = 100
-			else :
-				pass
-				#Do nothing for other
 
-		if Command == "Off" :
-			if Dtypename == "Switch" :
-				sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-				UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
-			elif (Dtypename == "LvlControl") :
-				Command = "Set Level"
-				Level = 0
-			else:
-				pass
-				#Do nothing for other
+			if Command == "Off" :
+				if (False):#Pas trouve un moyen sans problemes
+					if (Dtypename=="LvlControl") or (Dtypename == 'ColorControl') :
+						#Disabled for level control and color control
+						Command == "Set Level"
+						Level = 1
+				else:
+					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+					UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
 
-		if Command == "Set Level" :
-			if Dtypename == "LvlControl":
+			if Command == "Set Level" :
+				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 88  # Let's force a refresh of Attribute in the next Hearbeat
+				OnOff = '01' # 00 = off, 01 = on
+				value=Hex_Format(2,round(1+Level*253/100)) #To prevent off state with dimmer, only available with switch
+				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0010")
+				UpdateDevice_v2(Unit, 1, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
+
+			if Command == "Set Color" :
+				Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Hue = " + str(Hue) )
+				Hue_List = json.loads(Hue)
+
+				def hex_to_rgb(h):
+					''' convert hex color to rgb tuple '''
+					h = h.strip('#')
+					return tuple(int(h[i:i+2], 16)/255 for i in (0, 2 ,4))
+
+				def rgb_to_xy(rgb):
+					''' convert rgb tuple to xy tuple '''
+					red, green, blue = rgb
+					r = ((red + 0.055) / (1.0 + 0.055))**2.4 if (red > 0.04045) else (red / 12.92)
+					g = ((green + 0.055) / (1.0 + 0.055))**2.4 if (green > 0.04045) else (green / 12.92)
+					b = ((blue + 0.055) / (1.0 + 0.055))**2.4 if (blue > 0.04045) else (blue / 12.92)
+					X = r * 0.664511 + g * 0.154324 + b * 0.162028
+					Y = r * 0.283881 + g * 0.668433 + b * 0.047685
+					Z = r * 0.000088 + g * 0.072310 + b * 0.986039
+					cx = 0
+					cy = 0
+					if (X + Y + Z) != 0:
+						cx = X / (X + Y + Z)
+						cy = Y / (X + Y + Z)
+					return (cx, cy)
+
 				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
 
-				value=returnlen(2,hex(round(Level*255/100))[2:])
-				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-				UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel)
+				#First manage level
+				OnOff = '01' # 00 = off, 01 = on
+				value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0000")
 
-			if Dtypename == "ColorControl" :
-				#With level
-				if Hue == "" :
-					Domoticz.Debug("onCommand - ColorControl - Level = " + str(Level) )
+				#Now color
+				#CT mode
+				if Hue_List['m'] == 2:
+					#Value is in mireds (not kelvin)
+					#Correct values are from 153 (6500K) up to 588 (1700K)
+					# t is 0 > 255
+					TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
+					TempMired = 1000000 // TempKelvin
+					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+				#CW WW mode, don't exist ???
+				elif Hue_List['m'] == 9999:
+					ww = int(Hue_List['ww'])
+					cw = int(Hue_List['cw'])
+					cwww = Hex_Format(2,cw) + Hex_Format(2,ww)
+					#Use it as it ?
+					strTemp = str(cwww)
+					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + strTemp + "0000")
+				#RGB mode
+				elif Hue_List['m'] == 3:
+					x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))	   
+					#Convert 0>1 to 0>FFFF
+					x = int(x*65536)
+					y = int(y*65536)																   
+					strxy = Hex_Format(4,x) + Hex_Format(4,y)
+					sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "0000")
+				#With saturation and hue, not seen in domoticz but present on zigate
+				elif Hue_List['m'] == 9998:
+					saturation = 0 #0 > 100
+					hue2 = 0		#0 > 360
+					hue2 = int(hue2*254//360)
+					saturation = int(saturation*254//100)
+					sendZigateCmd("0C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(2,hue2) + Hex_Format(2,saturation) + "0000")
 
-					#Grosse bidouille en provisoire, convertion du level en couleur XY
-					Level_xy = Level * 42949672
-					strxy = returnlen(8,hex(Level_xy)[2:])
-									 
-					sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "00")
-					UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel)
-				#with Hue
-				else :
-					Domoticz.Debug("onCommand - ColorControl - Hue = " + str(Hue) )
-					Domoticz.Debug("TODO !!!")
-
-		if Command == "Set Color" :
-			if Dtypename == "ColorControl" :
-				if Hue:
-					Domoticz.Debug("onCommand - Set Color - Hue = " + str(Hue) )
-					
-					def hex_to_rgb(h):
-						''' convert hex color to rgb tuple '''
-						h = h.strip('#')
-						return tuple(int(h[i:i+2], 16)/255 for i in (0, 2 ,4))
-										 
-					def rgb_to_xy(rgb):
-						''' convert rgb tuple to xy tuple '''
-						red, green, blue = rgb
-						r = ((red + 0.055) / (1.0 + 0.055))**2.4 if (red > 0.04045) else (red / 12.92)
-						g = ((green + 0.055) / (1.0 + 0.055))**2.4 if (green > 0.04045) else (green / 12.92)
-						b = ((blue + 0.055) / (1.0 + 0.055))**2.4 if (blue > 0.04045) else (blue / 12.92)
-						X = r * 0.664511 + g * 0.154324 + b * 0.162028
-						Y = r * 0.283881 + g * 0.668433 + b * 0.047685
-						Z = r * 0.000088 + g * 0.072310 + b * 0.986039
-						cx = 0
-						cy = 0
-						if (X + Y + Z) != 0:
-							cx = X / (X + Y + Z)
-							cy = Y / (X + Y + Z)
-						return (cx, cy)
-					 
-					def hex_to_xy(h):
-						''' convert hex color to xy tuple '''
-						return rgb_to_xy(hex_to_rgb(h))
-						
-					if Hue['m'] == 2:#CW WW mode
-									 
-						ww = int(Hue['ww'])
-						cw = int(Hue['cw'])
-						
-						#Need to find convertion
-						strTemp = 0
-						
-						sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strTemp + "00")
-						UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel)
-									
-						
-					elif Hue['m'] == 3:#RGB mode
-						x, y = rgb_to_xy((int(Hue['r']),int(Hue['g']),int(Hue['b'])))
-									
-						#Convert 0>1 to 0>FFFF		 
-						x = int(x*65536)
-						y = int(y*65536)
-																 
-						strxy = returnlen(4,hex(x)[2:]) + returnlen(4,hex(y)[2:])
-						Level = int(strxy,16) / 42949672
-										 
-						sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "00")
-						UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel)
-											
-				else:
-					Domoticz.Debug("onCommand - Set Color - Hue = " + str(Hue) )
-					Domoticz.Debug("TODO !!!")
+				#Update Device
+				UpdateDevice_v2(Unit, 1, str(value) ,DOptions, SignalLevel, str(Hue))
 
 
-#			if Dtypename == "LvlControl" and DSwitchtype != "16" : # Old behaviour
-#				if Level == 0 :
-#					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-#					UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
-#				if Level == 100 :
-#					value=returnlen(2,hex(round(Level*255/100))[2:])
-#					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-#					UpdateDevice_v2(Unit, 1, "On",DOptions, SignalLevel)
-#				else :
-#					value=returnlen(2,hex(round(Level*255/100))[2:])
-#					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-#					UpdateDevice_v2(Unit, 1, str(Level) ,DOptions, SignalLevel)
 
 	def onDisconnect(self, Connection):
 		Domoticz.Log("onDisconnect called")
@@ -1285,6 +1255,12 @@ def CreateDomoDevice(self, DeviceID) :
 				t="Temp+Hum"
 				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
+			#For color Bulb
+			if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
+				Type = ['ColorControl']
+			elif ("Switch" in Type) and ("LvlControl" in Type):
+				Type = ['LvlControl']
+
 			for t in Type :
 				Domoticz.Log("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
 				if t=="Temp" : # Detecteur temp
@@ -1355,16 +1331,27 @@ def CreateDomoDevice(self, DeviceID) :
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=16 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']!="shutter.Profalux" :  # variateur de luminosite
+				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']!="shutter.Profalux" :  # variateur de luminosite + On/off
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="ColorControl" :  # variateur de couleur
+				if t=="ColorControl" :  # variateur de couleur/luminosite/on-off
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					# Type 0xF1    pTypeColorSwitch
 					# SubType 0x07 sTypeColor_RGB_CW_WW_Z
+					# SubType 0x02 sTypeColor_RGB
+					# SubType 0x08 sTypeColor_CW_WW
+
 					# Switchtype 7 STYPE_Dimmer
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=241, Subtype=7 , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+
+					if self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1624G9.Tradfri":
+						Subtype_ = 2
+					if self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1545G12.Tradfri":
+						Subtype_ = 8
+					else:
+						Subtype_ = 7
+
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=241, Subtype=Subtype_ , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				#Ajout meter
 				if t=="PowerMeter" :  # Power Prise Xiaomi
@@ -1397,11 +1384,11 @@ def FreeUnit(self) :
 	Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(x))
 	return FreeUnit
 
-def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
-	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
+def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
+	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 	x=0
 	Type=TypeFromCluster(clusterID)
-	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
+	Domoticz.Log("MajDomoDevice - Type = " + str(Type) )
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
@@ -1409,7 +1396,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
 
-			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
+			Domoticz.Log("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
@@ -1630,6 +1617,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 						#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
 						UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel)
 
+
 			if Type==Dtypename=="ColorControl" :
 				try:
 					sValue =  round((int(value,16)/255)*100)
@@ -1637,14 +1625,14 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					Domoticz.Error("MajDomoDevice - value is not an int = " + str(value) )
 				else:
 					Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
-	 
-					nValue = 2
-				   				 
-					if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) :
-						Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-						#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
-						UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel)
-
+			
+				nValue = 2
+			
+				if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) or str(Color_) != str(Devices[x].Color):
+					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
+					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].Color) + " to " + str(Color_))
+					#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
+					UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel, Color_)
 						#Modif Meter
 			if clusterID=="000c" and Type != "XCube":
 				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
@@ -1745,7 +1733,8 @@ def UpdateBattery(DeviceID,BatteryLvl):
 		self.ListOfDevices[DeviceID]['Battery']=BatteryLvl
 
 
-def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl):
+
+def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl, Color_ = ''):
 	# V2 update Domoticz with SignaleLevel/RSSI
 	Domoticz.Debug("UpdateDevice_v2 - Options = " + str(Options))
 	Dzigate=eval(Options['Zigate'])
@@ -1761,13 +1750,20 @@ def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl):
 	BatteryLvl=str(Dzigate['Battery'])
 	if BatteryLvl == '{}' :
 		BatteryLvl=255
-	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " BatteryLvl = " + str(BatteryLvl))
-	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
+		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " BatteryLvl = " + str(BatteryLvl))
+
+	# Make sure that the Domoticz device still exists (they can be deleted) before updating it
 	if (Unit in Devices):
-		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
-			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
+
+			if Color_:
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
+			else:
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+
 			Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
-	return	
+	return
 
 def UpdateDevice(Unit, nValue, sValue, Options):
 	Dzigate=eval(Options['Zigate'])
@@ -2132,6 +2128,15 @@ def WriteDeviceList(self, count):
 		self.HBcount=self.HBcount+1
 
 def returnlen(taille , value) :
+	while len(value)<taille:
+		value="0"+value
+	return str(value)
+
+
+def Hex_Format(taille, value):
+	value = hex(int(value))[2:]
+	if len(value) > taille:
+		return 'f' * taille
 	while len(value)<taille:
 		value="0"+value
 	return str(value)
