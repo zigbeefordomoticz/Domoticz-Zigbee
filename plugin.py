@@ -165,8 +165,16 @@ class BasePlugin:
 		Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Hue: " + str(Hue) )
 
 		DSwitchtype= str(Devices[Unit].SwitchType)
+		Domoticz.Debug("DSwitchtype : " + DSwitchtype)
+
+		DSubType= str(Devices[Unit].SubType)
+		Domoticz.Debug("DSubType : " + DSubType)
+
+		DType= str(Devices[Unit].Type)
 		DOptions = Devices[Unit].Options
+
 		Dtypename=DOptions['TypeName']
+		Domoticz.Debug("Dtypename : " + Dtypename)
 		Dzigate=eval(DOptions['Zigate'])
 		SignalLevel = self.ListOfDevices[Devices[Unit].DeviceID]['RSSI']
 
@@ -183,11 +191,14 @@ class BasePlugin:
 		for tmpEp in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'] :
 			if ClusterSearch in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
 				EPout=tmpEp
-			Domoticz.Log("Dtypename : " + Dtypename)
 
 			if Command == "On" :
+				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 				sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
-				UpdateDevice_v2(Unit, 1, "On",DOptions, SignalLevel)
+				if DSwitchtype == "16" :
+					UpdateDevice_v2(Unit, 1, "100",DOptions, SignalLevel)
+				else:
+					UpdateDevice_v2(Unit, 1, "On",DOptions, SignalLevel)
 
 			if Command == "Off" :
 				if (False):#Pas trouve un moyen sans problemes
@@ -196,15 +207,22 @@ class BasePlugin:
 						Command == "Set Level"
 						Level = 1
 				else:
+					self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-					UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
+					if DSwitchtype == "16" :
+						UpdateDevice_v2(Unit, 0, "0",DOptions, SignalLevel)
+					else :
+						UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
 
 			if Command == "Set Level" :
-				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 88  # Let's force a refresh of Attribute in the next Hearbeat
+				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 				OnOff = '01' # 00 = off, 01 = on
 				value=Hex_Format(2,round(1+Level*253/100)) #To prevent off state with dimmer, only available with switch
 				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0010")
-				UpdateDevice_v2(Unit, 1, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
+				if DSwitchtype == "16" :
+					UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
+				else:
+					UpdateDevice_v2(Unit, 1, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
 
 			if Command == "Set Color" :
 				Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Hue = " + str(Hue) )
@@ -306,7 +324,7 @@ class BasePlugin:
 				if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and self.ListOfDevices[key]['Heartbeat']>="30" :
 					Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
 					self.ListOfDevices[key]['Heartbeat']="0"
-					ReadAttributeRequest_0008(self, key)
+	#				ReadAttributeRequest_0008(self, key)
 
 			########## UnKnown Devices  - Creation process
 			if status != "inDB" :
@@ -1388,7 +1406,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 	x=0
 	Type=TypeFromCluster(clusterID)
-	Domoticz.Log("MajDomoDevice - Type = " + str(Type) )
+	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
@@ -1396,7 +1414,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
 
-			Domoticz.Log("MajDomoDevice - Dtypename = " + str(Dtypename) )
+			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
