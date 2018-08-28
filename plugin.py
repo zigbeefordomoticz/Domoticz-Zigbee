@@ -321,7 +321,7 @@ class BasePlugin:
 						self.ListOfDevices[key]['Heartbeat']="0"
 					else :
 						for dup in self.ListOfDevices :
-							if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['status'] == "inDB":
+							if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":
 								Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
 								self.ListOfDevices[key]['Status']="DUP"
 								self.ListOfDevices[key]['Heartbeat']="0"
