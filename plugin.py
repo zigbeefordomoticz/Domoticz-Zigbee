@@ -375,7 +375,7 @@ class BasePlugin:
 				if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and self.ListOfDevices[key]['Heartbeat']>="30" :
 					Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
 					self.ListOfDevices[key]['Heartbeat']="0"
-	#				ReadAttributeRequest_0008(self, key)
+					ReadAttributeRequest_0008(self, key)
 
 			########## UnKnown Devices  - Creation process
 			if status != "inDB" :
