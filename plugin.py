@@ -2231,6 +2231,19 @@ def DisplayStatusCode( StatusCode ) :
 	return StatusMsg
 
 
+def decodeMacCapa ( MsgMacCapa ) :
+	# MAC capability
+	#     Bit 0 – Alternate PAN Coordinator
+	#     Bit 1 – Device Type
+	#     Bit 2 – Power source
+	#     Bit 3 – Receiver On when Idle
+	#     Bit 4,5 – Reserved
+	#     Bit 6 – Security capability
+	#     Bit 7 – Allocate Address
+	# Implement the decoding of this bit field and return an 8 char array with 1 or 0 based on the MAC capabilities
+
+	return
+
 def removeZigateDevice( self, key ) :
 	# remove a device in Zigate
 	# Key is the short address of the device
