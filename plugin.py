@@ -160,9 +160,9 @@ class BasePlugin:
 
 		return
 
-	def onCommand(self, Unit, Command, Level, Hue):
+	def onCommand(self, Unit, Command, Level, Color):
 		Domoticz.Debug("#########################")
-		Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Hue: " + str(Hue) )
+		Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
 
 		DSwitchtype= str(Devices[Unit].SwitchType)
 		Domoticz.Debug("DSwitchtype : " + DSwitchtype)
@@ -192,6 +192,19 @@ class BasePlugin:
 			if ClusterSearch in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
 				EPout=tmpEp
 
+		# 00 -> OFF
+		# 01 -> ON
+		# 02 -> Toggle
+		#Can use timed on/off
+		#sendZigateCmd("0093","02" + Devices[Unit].DeviceID + EPin + EPout + on/off + on_time + off_time)
+		
+		if Command == "Off" :
+			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+			if DSwitchtype == "16" :
+				UpdateDevice_v2(Unit, 0, "0",DOptions, SignalLevel)
+			else :
+				UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
 		if Command == "On" :
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
@@ -200,21 +213,11 @@ class BasePlugin:
 			else:
 				UpdateDevice_v2(Unit, 1, "On",DOptions, SignalLevel)
 
-		if Command == "Off" :
-			if (False):#Pas trouve un moyen sans problemes
-				if (Dtypename=="LvlControl") or (Dtypename == 'ColorControl') :
-					#Disabled for level control and color control
-					Command == "Set Level"
-					Level = 1
-			else:
-				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-				sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-				if DSwitchtype == "16" :
-					UpdateDevice_v2(Unit, 0, "0",DOptions, SignalLevel)
-				else :
-					UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
-
 		if Command == "Set Level" :
+			#Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
+			#There is too, move max level, mode = 00/01 for 0%/100%
+			#sendZigateCmd("0080","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + mode + rate)
+			
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 			OnOff = '01' # 00 = off, 01 = on
 			value=Hex_Format(2,round(1+Level*253/100)) #To prevent off state with dimmer, only available with switch
@@ -225,8 +228,18 @@ class BasePlugin:
 				UpdateDevice_v2(Unit, 1, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
 
 		if Command == "Set Color" :
-			Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Hue = " + str(Hue) )
-			Hue_List = json.loads(Hue)
+			Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
+			Hue_List = json.loads(Color)
+			
+			#Color {
+			#	ColorMode m;
+			#	uint8_t t;     // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
+			#	uint8_t r;     // Range:0..255, Red level
+			#	uint8_t g;     // Range:0..255, Green level
+			#	uint8_t b;     // Range:0..255, Blue level
+			#	uint8_t cw;    // Range:0..255, Cold white level
+			#	uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
+			#}
 
 			def hex_to_rgb(h):
 				''' convert hex color to rgb tuple '''
@@ -249,6 +262,29 @@ class BasePlugin:
 					cy = Y / (X + Y + Z)
 				return (cx, cy)
 
+			def rgb_to_hsl(r, g, b):
+				r = float(r)
+				g = float(g)
+				b = float(b)
+				high = max(r, g, b)
+				low = min(r, g, b)
+				h, s, l = ((high + low) / 2,)*3
+
+				if high == low:
+					h = 0.0
+					s = 0.0
+				else:
+					d = high - low
+					s = d / (2 - high - low) if l > 0.5 else d / (high + low)
+					h = {
+						r: (g - b) / d + (6 if g < b else 0),
+						g: (b - r) / d + 2,
+						b: (r - g) / d + 4,
+					}[high]
+					h /= 6
+
+				return h, s, l
+
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
 
 			#First manage level
@@ -257,7 +293,13 @@ class BasePlugin:
 			sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0000")
 
 			#Now color
-			#CT mode
+			#ColorModeNone = 0   // Illegal
+			#ColorModeNone = 1   // White. Valid fields: none
+			if Hue_List['m'] == 1:
+				ww = int(Hue_List['ww']) # Can be used as level for monochrome white
+				#TODO : Jamais vu un device avec ca encore
+				Domoticz.Debug("Not implemented device color 1")	
+			#ColorModeTemp = 2   // White with color temperature. Valid fields: t
 			if Hue_List['m'] == 2:
 				#Value is in mireds (not kelvin)
 				#Correct values are from 153 (6500K) up to 588 (1700K)
@@ -265,15 +307,7 @@ class BasePlugin:
 				TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
 				TempMired = 1000000 // TempKelvin
 				sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
-			#CW WW mode, don't exist ???
-			elif Hue_List['m'] == 9999:
-				ww = int(Hue_List['ww'])
-				cw = int(Hue_List['cw'])
-				cwww = Hex_Format(2,cw) + Hex_Format(2,ww)
-				#Use it as it ?
-				strTemp = str(cwww)
-				sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + strTemp + "0000")
-			#RGB mode
+			#ColorModeRGB = 3    // Color. Valid fields: r, g, b.
 			elif Hue_List['m'] == 3:
 				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))	   
 				#Convert 0>1 to 0>FFFF
@@ -281,16 +315,27 @@ class BasePlugin:
 				y = int(y*65536)																   
 				strxy = Hex_Format(4,x) + Hex_Format(4,y)
 				sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "0000")
-			#With saturation and hue, not seen in domoticz but present on zigate
+			#ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
+			elif Hue_List['m'] == 4:
+				ww = int(Hue_List['ww'])
+				cw = int(Hue_List['cw'])
+				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))	
+				#TODO, Pas trouve de device avec ca encore ...
+				Domoticz.Debug("Not implemented device color 2")
+			#With saturation and hue, not seen in domoticz but present on zigate, and some device need it
 			elif Hue_List['m'] == 9998:
-				saturation = 0 #0 > 100
-				hue2 = 0		#0 > 360
-				hue2 = int(hue2*254//360)
+				h,l,s = rgb_to_hsl(int(Hue_List['r'])/255,int(Hue_List['g'])/255,int(Hue_List['b'])/255)	
+				saturation = s * 100   #0 > 100
+				hue = h *360	       #0 > 360
+				hue = int(hue*254//360)
 				saturation = int(saturation*254//100)
-				sendZigateCmd("0C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(2,hue2) + Hex_Format(2,saturation) + "0000")
+				value = int(l * 254//100)
+				sendZigateCmd("00B6","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
 
 			#Update Device
-			UpdateDevice_v2(Unit, 1, str(value) ,DOptions, SignalLevel, str(Hue))
+			UpdateDevice_v2(Unit, 1, str(value) ,DOptions, SignalLevel, str(Color))
+
 
 
 	def onDisconnect(self, Connection):
@@ -313,6 +358,13 @@ class BasePlugin:
 				HeartbeatCount = HeartbeatCount + 1
 
 		for key in self.ListOfDevices :
+			
+			#ok buged device , need to avoid it, just delete it after the making for the moment
+			if len(self.ListOfDevices[key]) == 0:
+				Domoticz.Debug("Bad devices detected, remove it")
+				del self.ListOfDevices[key]
+				continue
+				
 			status=self.ListOfDevices[key]['Status']
 			RIA=int(self.ListOfDevices[key]['RIA'])
 			self.ListOfDevices[key]['Heartbeat']=str(int(self.ListOfDevices[key]['Heartbeat'])+1)
@@ -1355,9 +1407,15 @@ def CreateDomoDevice(self, DeviceID) :
 				if t=="ColorControl" :  # variateur de couleur/luminosite/on-off
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					# Type 0xF1    pTypeColorSwitch
-					# SubType 0x07 sTypeColor_RGB_CW_WW_Z
-					# SubType 0x02 sTypeColor_RGB
-					# SubType 0x08 sTypeColor_CW_WW
+
+					#SubType sTypeColor_RGB_W                0x01 // RGB + white, either RGB or white can be lit
+					#SubType sTypeColor_RGB                  0x02 // RGB
+					#SubType sTypeColor_White                0x03 // Monochrome white
+					#SubType sTypeColor_RGB_CW_WW            0x04 // RGB + cold white + warm white, either RGB or white can be lit
+					#SubType sTypeColor_LivCol               0x05
+					#SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
+					#SubType sTypeColor_RGB_CW_WW_Z          0x07 // Like RGBWW, but allows combining RGB and white
+					#SubType sTypeColor_CW_WW                0x08 // Cold white + Warm white
 
 					# Switchtype 7 STYPE_Dimmer
 
@@ -1709,9 +1767,9 @@ def initDeviceInList(self, Addr) :
 		self.ListOfDevices[Addr]['ZDeviceID']={}
 
 def getChecksum(msgtype,length,datas) :
-	temp = 0 ^ int(msgtype[0:2],16) 
-	temp ^= int(msgtype[2:4],16) 
-	temp ^= int(length[0:2],16) 
+	temp = 0 ^ int(msgtype[0:2],16)
+	temp ^= int(msgtype[2:4],16)
+	temp ^= int(length[0:2],16)
 	temp ^= int(length[2:4],16)
 	for i in range(0,len(datas),2) :
 		temp ^= int(datas[i:i+2],16)
