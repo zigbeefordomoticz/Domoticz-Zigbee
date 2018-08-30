@@ -4,4 +4,5 @@ Either the information is coming from one of the plugin user (through direct com
 
 
 | Brand | Device | Domoticz features | Status |
-| Profalux | shutter | Blind percentage inverted switch | can command the shutter from the domoticz switch, but also you can pull shutter status and update the Domoticz device. |
+| --- | --- | --- | --- |
+| Profalux | shutter | Blind percentage inverted switch | can command the shutter from the domoticz switch, but also you can pull shutter status and update the Domoticz device. | Fully operationnal |
