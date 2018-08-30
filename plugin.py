@@ -1266,7 +1266,7 @@ def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
 		Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
-		Domoticz.Log("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " Attribute Data = " + str(MsgClusterData) )
+		Domoticz.Log("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 		ReadCluster(self, MsgData) 
 	else :
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
