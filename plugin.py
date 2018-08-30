@@ -1264,7 +1264,9 @@ def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
 		except:
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
-		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+
+		Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+		Domoticz.Log("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " Attribute Data = " + str(MsgClusterData) )
 		ReadCluster(self, MsgData) 
 	else :
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
@@ -1460,7 +1462,7 @@ def FreeUnit(self) :
 	return FreeUnit
 
 def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
-	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 	x=0
 	Type=TypeFromCluster(clusterID)
 	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
