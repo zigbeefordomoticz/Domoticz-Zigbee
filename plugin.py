@@ -241,11 +241,6 @@ class BasePlugin:
 			#	uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
 			#}
 
-			def hex_to_rgb(h):
-				''' convert hex color to rgb tuple '''
-				h = h.strip('#')
-				return tuple(int(h[i:i+2], 16)/255 for i in (0, 2 ,4))
-
 			def rgb_to_xy(rgb):
 				''' convert rgb tuple to xy tuple '''
 				red, green, blue = rgb
@@ -262,10 +257,12 @@ class BasePlugin:
 					cy = Y / (X + Y + Z)
 				return (cx, cy)
 
-			def rgb_to_hsl(r, g, b):
-				r = float(r)
-				g = float(g)
-				b = float(b)
+			def rgb_to_hsl(rgb):
+				''' convert rgb tuple to hls tuple '''
+				r, g, b = rgb
+				r = float(r/255)
+				g = float(g/255)
+				b = float(b/255)
 				high = max(r, g, b)
 				low = min(r, g, b)
 				h, s, l = ((high + low) / 2,)*3
@@ -309,7 +306,7 @@ class BasePlugin:
 				sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
 			#ColorModeRGB = 3    // Color. Valid fields: r, g, b.
 			elif Hue_List['m'] == 3:
-				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))	   
+				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
 				#Convert 0>1 to 0>FFFF
 				x = int(x*65536)
 				y = int(y*65536)																   
@@ -324,12 +321,13 @@ class BasePlugin:
 				Domoticz.Debug("Not implemented device color 2")
 			#With saturation and hue, not seen in domoticz but present on zigate, and some device need it
 			elif Hue_List['m'] == 9998:
-				h,l,s = rgb_to_hsl(int(Hue_List['r'])/255,int(Hue_List['g'])/255,int(Hue_List['b'])/255)	
+				h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
 				saturation = s * 100   #0 > 100
 				hue = h *360	       #0 > 360
 				hue = int(hue*254//360)
 				saturation = int(saturation*254//100)
 				value = int(l * 254//100)
+				OnOff = '01'
 				sendZigateCmd("00B6","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
 				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
 
@@ -357,11 +355,11 @@ class BasePlugin:
 			else :
 				HeartbeatCount = HeartbeatCount + 1
 
-		for key in self.ListOfDevices :
+		for key in list(self.ListOfDevices) :
 			
 			#ok buged device , need to avoid it, just delete it after the making for the moment
 			if len(self.ListOfDevices[key]) == 0:
-				Domoticz.Debug("Bad devices detected, remove it")
+				Domoticz.Debug("Bad devices detected (empty one), remove it, adr :" + str(key))
 				del self.ListOfDevices[key]
 				continue
 				
@@ -948,8 +946,9 @@ def Decode004d(self, MsgData) : # Reception Device announce
 	MsgMacCapa=MsgData[20:22]
 	Domoticz.Debug("Decode004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	# tester si le device existe deja dans la base domoticz
-	if DeviceExist(self, MsgSrcAddr)==False :
+	if DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
 		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
+		initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
 		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
@@ -1100,7 +1099,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		power=MsgData[idx+22:idx+24]
 		rssi=MsgData[idx+24:idx+26]
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
-		if saddr in  self.ListOfDevices:
+		if DeviceExist(self, saddr, ieee):
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
 			if rssi !="00" :
 				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
@@ -1195,12 +1194,9 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataEPlist=MsgData[10:len(MsgData)]
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
-	DeviceExist(self, MsgDataShAddr)
-	#Correction Thiklop : MsgDataShAddr provoque un Keyerror (?)
-	#Sortie propre par try except
-	try :
-		temp_sert_a_rien = self.ListOfDevices[MsgDataShAddr]['Status']!="inDB"
-	except :
+	
+	if DeviceExist(self, MsgDataShAddr) == False:
+		#Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
 		Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
 	else :
 		if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
@@ -1212,6 +1208,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 				if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
 					self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
 					OutEPlist=""
+					
 	#Fin de correction
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
@@ -1423,7 +1420,7 @@ def CreateDomoDevice(self, DeviceID) :
 
 					if self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1624G9.Tradfri":
 						Subtype_ = 2
-					if self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1545G12.Tradfri":
+					elif self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1545G12.Tradfri":
 						Subtype_ = 8
 					else:
 						Subtype_ = 7
@@ -1694,7 +1691,6 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 						#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
 						UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel)
 
-
 			if Type==Dtypename=="ColorControl" :
 				try:
 					sValue =  round((int(value,16)/255)*100)
@@ -1707,10 +1703,10 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 			
 				if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) or str(Color_) != str(Devices[x].Color):
 					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
-					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].Color) + " to " + str(Color_))
 					#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
 					UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel, Color_)
-						#Modif Meter
+
+			#Modif Meter
 			if clusterID=="000c" and Type != "XCube":
 				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
@@ -1732,6 +1728,7 @@ def ResetDevice(Type,HbCount) :
 					UpdateDevice(x,int(value),str(state),DOptions)	
 		except :
 			return
+			
 def IEEEExist(self, IEEE) :
 	#check in ListOfDevices for an existing IEEE
 	if IEEE : 
@@ -1740,17 +1737,27 @@ def IEEEExist(self, IEEE) :
 		else:
 			return False
 
-def DeviceExist(self, Addr) :
+def DeviceExist(self, Addr , IEE = ''):
+	#Validity check
+	if Addr == '':
+		return False
 	#check in ListOfDevices
-	if Addr in self.ListOfDevices and Addr != '' :
+	if Addr in self.ListOfDevices:
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
-		else :
-			initDeviceInList(self, Addr)
-			return False
-	else :  # devices inconnu ds listofdevices et ds db
-		initDeviceInList(self, Addr)
-		return False
+	#if gived, test IEE
+	if IEE:
+		for i in self.ListOfDevices:
+			d = self.ListOfDevices[i]
+			Domoticz.Debug("######" + str(d))
+			if d.get('IEEE','wrong iee') == IEE:
+				Domoticz.Debug("New adress but same IEE")
+				#update adress
+				self.ListOfDevices[Addr] = d
+				del i
+				return True
+	#unknow device
+	return False
 
 def initDeviceInList(self, Addr) :
 	if Addr != '' :
@@ -1875,17 +1882,10 @@ def ReadCluster(self, MsgData):
 	MsgClusterData=MsgData[24:len(MsgData)]
 	tmpEp=""
 	tmpClusterid=""
-	if DeviceExist(self, MsgSrcAddr)==False :
-		#Correction Thiklop : MsgSrcEp n'est pas toujours dans la ListOfDevices (?)
-		#Encapsulation dans un try except pour sortir proprement
-		try :
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
-		except :
-			Domoticz.Error("ReadCluster - KeyError : MsgData = " + MsgData)
-			# Si le Device n'existe pas . On recoit un cluster d'un device non identifié. Il faut alors le rejeté , non ?
-			return
-		#Fin de la correction
+	if DeviceExist(self, MsgSrcAddr) == False :
+		#Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
+		Domoticz.Error("ReadCluster - KeyError : MsgData = " + MsgData)
+		return
 	else :
 		self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
 		try : 
@@ -2223,10 +2223,12 @@ def CheckDeviceList(self, key, val) :
 	Domoticz.Debug("CheckDeviceList - with value : " + str(val))
 	
 	DeviceListVal=eval(val)
-	if DeviceExist(self, key)==False :
+	if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
 		Domoticz.Debug("CheckDeviceList - Address will be add : " + str(key))
+		initDeviceInList(self, key)
 		self.ListOfDevices[key]['RIA']="10"
-		self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
+		if 'Ep' in DeviceListVal :
+			self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
 		if 'Type' in DeviceListVal :
 			self.ListOfDevices[key]['Type']=DeviceListVal['Type']
 		if 'Model' in DeviceListVal :
