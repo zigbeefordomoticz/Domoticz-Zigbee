@@ -473,6 +473,12 @@ class BasePlugin:
 								self.ListOfDevices[key]['Model']="shutter.Profalux"
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
+							# Connected Plug Celian / Netatmo /Legrand
+							if self.ListOfDevices[key]['ZDeviceID']=="010a" :  # device id type a plug
+								self.ListOfDevices[key]['Model']="plug.Celiane.Legrand"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0000','0003','0004','0006','0005','fc01'}}
+
 						# phillips hue
 						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
 							if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
@@ -2104,6 +2110,9 @@ def ReadCluster(self, MsgData):
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown 000c message - EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
+
+	elif MsgClusterId=="0b04" :  # Legrand power meter cluster
+		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
 		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
