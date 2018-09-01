@@ -2110,6 +2110,9 @@ def ReadCluster(self, MsgData):
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown 000c message - EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
+
+	elif MsgClusterId=="0b04" :  # Legrand power meter cluster
+		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
 		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
