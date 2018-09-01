@@ -16,3 +16,4 @@ Either the information is coming from one of the plugin user (through direct com
 | IKEA/Tradfri | LED 1622G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | master > 2.3.5 |
 | Philio Technology Corporation | Slim Multisensor PST03-A/B/C |  | under developement | developement |
 | Legrand | Celiane with Netatmo Plug | Switch and Power Meter | It might happend the Power Meter doesn't work. In that case it is because the device requirers firmware update. To do so you need to have at your disposal the Legrand gateway | developement |
+| Legrand | Celiane with Netatmo switch/Dimmer W/O neutre | Switch, Dimmmer | Dimmer not working, need update firmware ? | developement |
