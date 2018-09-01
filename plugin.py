@@ -473,6 +473,12 @@ class BasePlugin:
 								self.ListOfDevices[key]['Model']="shutter.Profalux"
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
+							# Connected Plug Celian / Netatmo /Legrand
+							if self.ListOfDevices[key]['ZDeviceID']=="010a" :  # device id type a plug
+								self.ListOfDevices[key]['Model']="plug.Celiane.Legrand"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0000','0003','0004','0006','0005','fc01'}}
+
 						# phillips hue
 						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
 							if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
