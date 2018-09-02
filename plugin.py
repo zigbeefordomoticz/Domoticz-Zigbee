@@ -558,7 +558,7 @@ class BasePlugin:
 							if self.ListOfDevices[key]['ZDeviceID']=="010a" :
 								self.ListOfDevices[key]['Model']="plug.legrand.netamo"
 								if self.ListOfDevices[key]['Ep']=={} :
-									self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
+									self.ListOfDevices[key]['Ep']={'01':{'0000','0003','0004','0006','0005','fc01'}}
 
 						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  # profile unknow : phillips hue
 							if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
