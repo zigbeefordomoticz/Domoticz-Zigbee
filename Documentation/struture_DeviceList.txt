@@ -17,7 +17,7 @@ Field2: 	# list of values
 
 ZDeviceID
 0220 - "Ampoule.LED1545G12.Tradfri"
-0100 - "Ampoule.LED1622G12.Tradfri"
+0100 - "Ampoule.LED1622G12.Tradfri" / "switch.netamo.legrand"
 0010 - "plug.Osram"
 0051 - "plug.Salus"
 0200 - "shutter.Profalux" / "Ampoule.LED1624G9.Tradfri"
@@ -41,5 +41,5 @@ bit7 - 0 Network address need not be allocated to node; 1 Network address shoul 
 
 ProfileID
 c05e -  # ZLL: ZigBee Light Link / Tradfri
-0104 -  # profile home automation
+0104 -  # HA : profile home automation
 a1e0 - 
