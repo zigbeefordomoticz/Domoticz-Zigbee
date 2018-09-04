@@ -2191,7 +2191,7 @@ def ReadCluster(self, MsgData):
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown 000c message - EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
-	elif MsgClusterId=="0b04" or MsgClusterId=="0702":  # Power Control
+	elif MsgClusterId=="0b04" or MsgClusterId=="0702":  # 0b04 is Electrical Measurement Cluster
 		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
