@@ -480,6 +480,78 @@ class BasePlugin:
 					self.ListOfDevices[key]['Heartbeat']="0"
 					self.ListOfDevices[key]['Status']="UNKNOW"
 
+				#ZLL
+				#Lightning devices
+				# ZDeviceID = 0000 >> On/Off light
+				# ZDeviceID = 0010 >> on/off light but plug
+				# ZDeviceID = 0100 >> Dimable but no color
+				# ZDeviceID = 0110 >> Dimable but no color and plug
+				# ZDeviceID = 0200 >> Color light or shutter
+				# ZDeviceID = 0220 >> Temperature Color change
+				# ZDeviceID = 0210 >> Hue/Extended Color change
+				#Controllers devices
+				# ZDeviceID = 0800 >> Color controler
+				# ZDeviceID = 0810 >> Color scene controler
+				# ZDeviceID = 0820 >> Non color controler
+				# ZDeviceID = 0830 >> Non color scene controler
+				# ZDeviceID = 0840 >> Control bridge
+				# ZDeviceID = 0850 >> on/off sensor
+				
+				#ZHA
+				#Device
+				# ZDeviceID = 0000 >> On/Off switch
+				# ZDeviceID = 0001 >> Level control switch
+				# ZDeviceID = 0002 >> on/off output
+				# ZDeviceID = 0003 >> Level contro output
+				# ZDeviceID = 0004 >> Scene selector
+				# ZDeviceID = 0005 >> Configuration tool
+				# ZDeviceID = 0006 >> Remote control
+				# ZDeviceID = 0007 >> Combined interface
+				# ZDeviceID = 0008 >> Range extender
+				# ZDeviceID = 0009 >> Mains Power Outlet
+				# ZDeviceID = 000A >> Door lock
+				# ZDeviceID = 000B >> Door lock controler
+				# ZDeviceID = 000C >> HSimple sensor
+				# ZDeviceID = 000D >> Consumption awarness Device
+				# ZDeviceID = 0050 >> Home gateway
+				# ZDeviceID = 0051 >> Smart plug
+				# ZDeviceID = 0052 >> White goods
+				# ZDeviceID = 0053 >> Meter interface
+				# ZDeviceID = 0100 >> On/Off light
+				# ZDeviceID = 0101 >> Dimable light
+				# ZDeviceID = 0102 >> Color dimable light
+				# ZDeviceID = 0103 >> on/off light
+				# ZDeviceID = 0104 >> Dimmer switch
+				# ZDeviceID = 0105 >> Color Dimmer switch
+				# ZDeviceID = 0106 >> Light sensor
+				# ZDeviceID = 0107 >> Occupancy sensor
+				# ZDeviceID = 010a >> Unknow : plug legrand
+				# ZDeviceID = 0200 >> Shade
+				# ZDeviceID = 0201 >> Shade controler
+				# ZDeviceID = 0202 >> Window covering device
+				# ZDeviceID = 0203 >> Window Covering controler
+				# ZDeviceID = 0300 >> Heating/cooling Unit
+				# ZDeviceID = 0301 >> Thermostat
+				# ZDeviceID = 0302 >> Temperature sensor
+				# ZDeviceID = 0303 >> Pump
+				# ZDeviceID = 0304 >> Pump controler
+				# ZDeviceID = 0305 >> Pressure sensor
+				# ZDeviceID = 0306 >> flow sensor
+				# ZDeviceID = 0307 >> Mini split AC
+				# ZDeviceID = 0400 >> IAS Control and indicating equipement 
+				# ZDeviceID = 0401 >> IAS Ancillary Control Equipement
+				# ZDeviceID = 0402 >> IAS zone
+				# ZDeviceID = 0403 >> IAS Warning device
+				
+				# ProfileID = c05e >> ZLL: ZigBee Light Link
+				# ProfileID = 0104 >> ZHA : ZigBee Home Automation
+				# ProfileID = a1e0 >> Philips Hue ???
+				# ProfileID =      >> SEP: Smart Energy Profile
+				# There is too ZBA, ZTS, ZRS, ZHC but I haven't find information for them
+				
+				#ZigBee HA contains (nearly?) everything in ZigBee Light Link
+				
+
 				if status != "UNKNOW" and status != "DUP":
 					if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
 						if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
@@ -503,6 +575,9 @@ class BasePlugin:
 								self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+							# Not see yet
+							if self.ListOfDevices[key]['ZDeviceID']=="0210" :
+								pass								
 							# plug osram
 							if self.ListOfDevices[key]['ZDeviceID']=="0010" :  
 								self.ListOfDevices[key]['Model']="plug.Osram"
@@ -511,28 +586,33 @@ class BasePlugin:
 
 						if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
 							# plug salus
-							if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
+							if self.ListOfDevices[key]['ZDeviceID']=="0051" :
 								self.ListOfDevices[key]['Model']="plug.Salus"
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'09': {'0006'}}
-							# ampoule Tradfi
-							if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-								self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-								if self.ListOfDevices[key]['Ep']=={} :
-									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+							if self.ListOfDevices[key]['ZDeviceID']=="0100" :
+								# ampoule Tradfi
+								if '1000' in self.ListOfDevices[key]['Ep'].get('01',''): #1000 is ZLL: Commissioning, only for bulb
+									self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+									if self.ListOfDevices[key]['Ep']=={} :
+										self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+								#Legrand-netamo switch
+								else:
+									self.ListOfDevices[key]['Model']="switch.legrand.netamo"
+									if self.ListOfDevices[key]['Ep']=={} :
+										self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}									 
 							# shutter profalux
-							if self.ListOfDevices[key]['ZDeviceID']=="0200" :  # device id type shutter
+							if self.ListOfDevices[key]['ZDeviceID']=="0200" :
 								self.ListOfDevices[key]['Model']="shutter.Profalux"
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
-							# Connected Plug Celian / Netatmo /Legrand
-							if self.ListOfDevices[key]['ZDeviceID']=="010a" :  # device id type a plug
-								self.ListOfDevices[key]['Model']="plug.Celiane.Legrand"
+							# Plug legrand-netamo
+							if self.ListOfDevices[key]['ZDeviceID']=="010a" :
+								self.ListOfDevices[key]['Model']="plug.legrand.netamo"
 								if self.ListOfDevices[key]['Ep']=={} :
 									self.ListOfDevices[key]['Ep']={'01':{'0000','0003','0004','0006','0005','fc01'}}
 
-						# phillips hue
-						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
+						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  # profile unknow : phillips hue
 							if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
 								self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
 								if self.ListOfDevices[key]['Ep']=={} :
@@ -2232,7 +2312,7 @@ def ReadCluster(self, MsgData):
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown 000c message - EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
-	elif MsgClusterId=="0b04" :  # Legrand power meter cluster
+	elif MsgClusterId=="0b04" or MsgClusterId=="0702":  # 0b04 is Electrical Measurement Cluster
 		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
