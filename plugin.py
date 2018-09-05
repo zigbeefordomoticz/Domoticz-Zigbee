@@ -2014,6 +2014,16 @@ def ReadCluster(self, MsgData):
 
 	if MsgClusterId=="0000" :  # (General: Basic)
 		if MsgAttrID=="ff01" :  # xiaomi battery lvl
+			Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
+			if ( len(MsgClusterData) >= 62 ) :
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery Tag : " + str(MsgClusterData[0:4]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temp Tag : " + str(MsgClusterData[38:42]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temp     : " + str(MsgClusterData[42:44]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humi Tag : " + str(MsgClusterData[46:50]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humid    : " + str(MsgClusterData[50:54]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Pres Tag : " + str(MsgClusterData[54:58]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Pressure : " + str(MsgClusterData[58:62]) )
+
 			MsgBattery=MsgClusterData[4:8]
 			try :
 				ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
