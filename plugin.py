@@ -272,7 +272,7 @@ class BasePlugin:
 			
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 			OnOff = '01' # 00 = off, 01 = on
-			value=Hex_Format(2,round(1+Level*253/100)) #To prevent off state with dimmer, only available with switch
+			value=Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
 			sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0010")
 			if DSwitchtype == "16" :
 				UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
