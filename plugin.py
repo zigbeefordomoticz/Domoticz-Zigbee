@@ -1830,27 +1830,27 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 				if value == "0000" : #shake
 					state="10"
 					data="01"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
 				elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
 					state="50"
 					data="05"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
 				elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
 					state="20"
 					data="02"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
 				elif value == "0003" : #Free Fall
 					state="70"
 					data="07"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
 				elif value >= "0004" and value <= "0059": #90°
 					state="30"
 					data="03"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
 				elif value >= "0060" : #180°
 					state="90"
 					data="09"
-					UpdateDevice(x,int(data),str(state),DOptions)
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
 
 			if Type==Dtypename=="Lux" :
 				#UpdateDevice(x,0,str(value),DOptions)
@@ -1862,12 +1862,12 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 				# UpdateDevice dans le if
 				if value == "01" :
 					state="On"
-					UpdateDevice(x,int(value),str(state),DOptions)
-					#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				elif value == "00" :
 					state="Off"
-					UpdateDevice(x,int(value),str(state),DOptions)
-					#UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				#Fin de correction
 
 			if Type==Dtypename=="LvlControl" :
@@ -1882,7 +1882,6 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 					
 					if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) :
 						Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-						#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
 						UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel)
 
 			if Type==Dtypename=="ColorControl" :
@@ -1897,7 +1896,6 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
 			
 				if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) or str(Color_) != str(Devices[x].Color):
 					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
-					#UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
 					UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel, Color_)
 
 			#Modif Meter
