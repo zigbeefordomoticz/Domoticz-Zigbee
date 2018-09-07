@@ -2458,6 +2458,8 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['ZDeviceID']=DeviceListVal['ZDeviceID']
 		if 'Status' in DeviceListVal :
 			self.ListOfDevices[key]['Status']=DeviceListVal['Status']
+		if 'RSSI' in DeviceListVal :
+			self.ListOfDevices[key]['RSSI']=DeviceListVal['RSSI']
 	return
 
 def DisplayStatusCode( StatusCode ) :
