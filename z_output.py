@@ -39,8 +39,8 @@ def ZigateConf( channel, discover ):
 		if str(discover)=="255": 
 			Domoticz.Status("Zigate enter in discover mode for ever")
 		else : 
-			Domoticz.Status("Zigate enter in discover mode for " + str(Parameters["Mode2"]) + " Secs" )
-		sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
+			Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
+		sendZigateCmd("0049","FFFC" + hex(int(discover))[2:4] + "00")
 		
 def sendZigateCmd(cmd,datas) :
 	def ZigateEncode(Data):  # ajoute le transcodage
