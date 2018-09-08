@@ -1,6 +1,6 @@
 # Release Notes 
-## 8 September 2018 - 3.0.0
-We are keen to release the version 3.0.0 of the Zigate Plugin, which include a set of update, enhacement and bugfixing.
+## 8 September 2018 - 2.4.0
+We are keen to release this version off the Zigate Plugin, which include a set of update, enhacement and bugfixing.
 
 - Configuration file to enable further configuration parameters
 - New data capture from the zigate hardware. It involved also on the fly lenght and checksum validation, in order to ensure proper data transmitted to the plugin feature.
