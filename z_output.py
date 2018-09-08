@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
 """
 	Module: z_output.py
 
@@ -102,3 +104,31 @@ def sendZigateCmd(cmd,datas) :
 	if str(z_var.transport) == "Wifi":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
+
+def ReadAttributeRequest_0008(self, key) :
+	# Cluster 0x0008 with attribute 0x0000
+	# frame to be send is :
+	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
+	EPin = "01"
+	EPout= "01"
+	for tmpEp in self.ListOfDevices[key]['Ep'] :
+	        if "0008" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+	                EPout=tmpEp
+
+	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
+	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )
+
+
+def removeZigateDevice( self, key ) :
+	# remove a device in Zigate
+	# Key is the short address of the device
+	# extended address is ieee address
+
+	if key in  self.ListOfDevices:
+		ieee =  self.ListOfDevices[key]['IEEE']
+		Domoticz.Log("Remove from Zigate Device = " + str(key) + " IEEE = " +str(ieee) )
+		sendZigateCmd("0026", str(ieee) + str(ieee) )
+	else :
+		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
+
+	return
