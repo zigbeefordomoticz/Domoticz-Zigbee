@@ -44,8 +44,8 @@ import time
 import struct
 import json
 
-FirmwareVersion = ''
-HeartbeatCount = 88     # request a network status 10s after start
+import z_var          # Global variables
+
 
 class BasePlugin:
 	enabled = False
@@ -57,20 +57,19 @@ class BasePlugin:
 
 	def onStart(self):
 		Domoticz.Log("onStart called")
-		global ReqRcv
-		global ZigateConn
 		### CLD 
-		global CrcCheck
 
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
 			DumpConfigToLog()
 		if Parameters["Mode1"] == "USB":
-			ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
-			ZigateConn.Connect()
+			z_var.transport = "USB"
+			z_var.ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
+			z_var.ZigateConn.Connect()
 		if Parameters["Mode1"] == "Wifi":
-			ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
-			ZigateConn.Connect()
+			z_var.transport = "Wifi"
+			z_var.ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
+			z_var.ZigateConn.Connect()
 		
 		# CLD CLD
 		# Import PluginConf.txt
@@ -80,11 +79,11 @@ class BasePlugin:
 		myPluginConfFile.close()
 		Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
 		self.PluginConf=eval(tmpPluginConf)
-		CrcCheck = 1
+		z_var.CrcCheck = 1
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
-			CrcCheck = 0
+			z_var.CrcCheck = 0
 		
-		ReqRcv=bytearray()
+		z_var.ReqRcv=bytearray()
 
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			ID = Devices[x].DeviceID
@@ -115,7 +114,7 @@ class BasePlugin:
 
 
 	def onStop(self):
-		ZigateConn.Disconnect()
+		z_var.ZigateConn.Disconnect()
 		WriteDeviceList(self, 0)
 		Domoticz.Log("onStop called")
 
@@ -137,15 +136,13 @@ class BasePlugin:
 
 	def onMessage(self, Connection, Data):
 		Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
-		global ReqRcv
 		### CLD
-		global CrcCheck
 
 		FrameIsKo = 0					
 
 		# Version 3 - Binary reading to avoid mixing end of Frame - Thanks to CLDFR
-		ReqRcv += Data				# Add the incoming data
-		Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
+		z_var.ReqRcv += Data				# Add the incoming data
+		Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(z_var.ReqRcv).decode('utf-8'))+ "'" )
 
 		# Zigate Frames start with 0x01 and finished with 0x03	
 		# It happens that we get some 
@@ -153,7 +150,7 @@ class BasePlugin:
 			Zero1=-1
 			Zero3=-1
 			idx = 0
-			for val in ReqRcv[0:len(ReqRcv)] :
+			for val in z_var.ReqRcv[0:len(z_var.ReqRcv)] :
 				if Zero1 == - 1 and Zero3  == -1 and val == 1 :	# Do we get a 0x01
 					Zero1 = idx		# we have identify the Frame start
 
@@ -173,14 +170,14 @@ class BasePlugin:
 
 			# uncode the frame
 			BinMsg=bytearray()
-			iterReqRcv = iter (ReqRcv[Zero1:Zero3])
+			iterReqRcv = iter (z_var.ReqRcv[Zero1:Zero3])
 
 			for iByte in iterReqRcv :			# for each received byte
 				if iByte == 2 :				# Coded flag ?
 					iByte = next(iterReqRcv) ^ 16	# then uncode the next value
 				BinMsg.append(iByte)			# copy
 
-			ReqRcv = ReqRcv[Zero3:]                 # What is after 0x03 has to be reworked.
+			z_var.ReqRcv = z_var.ReqRcv[Zero3:]                 # What is after 0x03 has to be reworked.
 
                         # Check length
 			Zero1, MsgType, Length, ReceivedChecksum = struct.unpack ('>BHHB', BinMsg[0:6])
@@ -198,7 +195,7 @@ class BasePlugin:
 				if idx != 4 :				# Jump the checksum itself
 					ComputedChecksum ^= val
 			Domoticz.Debug("onMessage Frame : ComputedChekcum=" + str(ComputedChecksum) + " ReceivedChecksum=" + str(ReceivedChecksum) ) # For testing purpose
-			if ComputedChecksum != ReceivedChecksum and CrcCheck == 1 :
+			if ComputedChecksum != ReceivedChecksum and z_var.CrcCheck == 1 :
 				FrameIsKo = 1
 				Domoticz.Log("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + " received = " + str(ReceivedChecksum) )
 
@@ -207,7 +204,7 @@ class BasePlugin:
 			if FrameIsKo == 0 :
 				ZigateRead(self, AsciiMsg)		# process this frame
 
-		Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
+		Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(z_var.ReqRcv).decode('utf-8') ))
 
 		return
 
@@ -391,20 +388,18 @@ class BasePlugin:
 		Domoticz.Log("onDisconnect called")
 
 	def onHeartbeat(self):
-		global FirmwareVersion
-		global HeartbeatCount
 
 		#Domoticz.Log("onHeartbeat called" )
 		Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
 
-		## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
-		if str(FirmwareVersion) == "030d" :
-			if HeartbeatCount >= 90 :
+		## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
+		if str(z_var.FirmwareVersion) == "030d" :
+			if z_var.HeartbeatCount >= 90 :
 				Domoticz.Debug("request Network Status")
 				sendZigateCmd("0009","")
-				HeartbeatCount = 0
+				z_var.HeartbeatCount = 0
 			else :
-				HeartbeatCount = HeartbeatCount + 1
+				z_var.HeartbeatCount = z_var.HeartbeatCount + 1
 
 		for key in list(self.ListOfDevices) :
 			
@@ -652,8 +647,8 @@ class BasePlugin:
 		ResetDevice("Motion",5)
 		WriteDeviceList(self, 200)
 
-		if (ZigateConn.Connected() != True):
-			ZigateConn.Connect()
+		if (z_var.ZigateConn.Connected() != True):
+			z_var.ZigateConn.Connect()
 
 		return True
 
@@ -706,7 +701,6 @@ def DumpConfigToLog():
 	return
 
 def ZigateConf():
-	global FirmwareVersion
 
 	################### ZiGate - get Firmware version #############
 	# answer is expected on message 8010
@@ -723,11 +717,11 @@ def ZigateConf():
 
 	################### ZiGate - Request Device List #############
 	# answer is expected on message 8015. Only available since firmware 03.0b
-	if str(FirmwareVersion) == "030d" or str(FirmwareVersion) == "030c" or str(FirmwareVersion == "030b") :
-		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(FirmwareVersion) )
+	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion == "030b") :
+		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
 		sendZigateCmd("0015","")
 	else :
-		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(FirmwareVersion) )
+		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(z_var.FirmwareVersion) )
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
@@ -808,9 +802,9 @@ def sendZigateCmd(cmd,datas) :
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
 	if Parameters["Mode1"] == "USB":
-		ZigateConn.Send(bytes.fromhex(str(lineinput)))	
+		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
 	if Parameters["Mode1"] == "Wifi":
-		ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
+		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
 def ZigateRead(self, Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
@@ -1197,7 +1191,6 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
 	return
 
 def Decode8010(self,MsgData) : # Reception Version list
-	global FirmwareVersion
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8010 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
@@ -1211,7 +1204,7 @@ def Decode8010(self,MsgData) : # Reception Version list
 	except :
 		Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
 	else :
-		FirmwareVersion = InstaVersNum
+		z_var.FirmwareVersion = InstaVersNum
 
 	return
 
