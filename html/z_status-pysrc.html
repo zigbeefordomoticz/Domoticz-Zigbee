@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="ascii"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>z_status</title>
+  <link rel="stylesheet" href="epydoc.css" type="text/css" />
+  <script type="text/javascript" src="epydoc.js"></script>
+</head>
+
+<body bgcolor="white" text="black" link="blue" vlink="#204080"
+      alink="#204080">
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table width="100%" cellpadding="0" cellspacing="0">
+  <tr valign="top">
+    <td width="100%">
+      <span class="breadcrumbs">
+        Module&nbsp;z_status
+      </span>
+    </td>
+    <td>
+      <table cellpadding="0" cellspacing="0">
+        <!-- hide/show private -->
+        <tr><td align="right"><span class="options">[<a href="javascript:void(0);" class="privatelink"
+    onclick="toggle_private();">hide&nbsp;private</a>]</span></td></tr>
+        <tr><td align="right"><span class="options"
+            >[<a href="frames.html" target="_top">frames</a
+            >]&nbsp;|&nbsp;<a href="z_status-pysrc.html"
+            target="_top">no&nbsp;frames</a>]</span></td></tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<h1 class="epydoc">Source Code for <a href="z_status-module.html">Module z_status</a></h1>
+<pre class="py-src">
+<a name="L1"></a><tt class="py-lineno"> 1</tt>  <tt class="py-line"><tt class="py-comment">#!/usr/bin/env python3</tt> </tt>
+<a name="L2"></a><tt class="py-lineno"> 2</tt>  <tt class="py-line"><tt class="py-comment"># coding: utf-8 -*-</tt> </tt>
+<a name="L3"></a><tt class="py-lineno"> 3</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L4"></a><tt class="py-lineno"> 4</tt>  <tt class="py-line"><tt class="py-docstring">        Module: z_status.py</tt> </tt>
+<a name="L5"></a><tt class="py-lineno"> 5</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L6"></a><tt class="py-lineno"> 6</tt>  <tt class="py-line"><tt class="py-docstring">        Description: Display Status</tt> </tt>
+<a name="L7"></a><tt class="py-lineno"> 7</tt>  <tt class="py-line"><tt class="py-docstring"></tt> </tt>
+<a name="L8"></a><tt class="py-lineno"> 8</tt>  <tt class="py-line"><tt class="py-docstring">"""</tt> </tt>
+<a name="L9"></a><tt class="py-lineno"> 9</tt>  <tt class="py-line"> </tt>
+<a name="DisplayStatusCode"></a><div id="DisplayStatusCode-def"><a name="L10"></a><tt class="py-lineno">10</tt> <a class="py-toggle" href="#" id="DisplayStatusCode-toggle" onclick="return toggle('DisplayStatusCode');">-</a><tt class="py-line"><tt class="py-keyword">def</tt> <a class="py-def-name" href="z_status-module.html#DisplayStatusCode">DisplayStatusCode</a><tt class="py-op">(</tt> <tt class="py-param">StatusCode</tt> <tt class="py-op">)</tt> <tt class="py-op">:</tt> </tt>
+</div><div id="DisplayStatusCode-collapsed" style="display:none;" pad="++" indent="++++"></div><div id="DisplayStatusCode-expanded"><a name="L11"></a><tt class="py-lineno">11</tt>  <tt class="py-line">        <tt class="py-comment"># As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2</tt> </tt>
+<a name="L12"></a><tt class="py-lineno">12</tt>  <tt class="py-line"> </tt>
+<a name="L13"></a><tt class="py-lineno">13</tt>  <tt class="py-line">        <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">""</tt> </tt>
+<a name="L14"></a><tt class="py-lineno">14</tt>  <tt class="py-line">        <tt class="py-keyword">if</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"00"</tt> <tt class="py-op">:</tt>   <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Success"</tt> </tt>
+<a name="L15"></a><tt class="py-lineno">15</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c1"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An invalid or out-of-range parameter has been passed"</tt> </tt>
+<a name="L16"></a><tt class="py-lineno">16</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c2"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Request cannot be processed"</tt> </tt>
+<a name="L17"></a><tt class="py-lineno">17</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c3"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-JOIN.request not permitted"</tt> </tt>
+<a name="L18"></a><tt class="py-lineno">18</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c4"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-NETWORK-FORMATION.request failed"</tt> </tt>
+<a name="L19"></a><tt class="py-lineno">19</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c5"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-DIRECT-JOIN.request failure - device already present"</tt> </tt>
+<a name="L20"></a><tt class="py-lineno">20</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c6"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-SYNC.request has failed"</tt> </tt>
+<a name="L21"></a><tt class="py-lineno">21</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c7"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-DIRECT-JOIN.request failure - no space in Router table"</tt> </tt>
+<a name="L22"></a><tt class="py-lineno">22</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c8"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-LEAVE.request failure - device not in Neighbour table"</tt> </tt>
+<a name="L23"></a><tt class="py-lineno">23</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"c9"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-GET/SET.request unknown attribute identified"</tt> </tt>
+<a name="L24"></a><tt class="py-lineno">24</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"ca"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLME-JOIN.request detected no networks"</tt> </tt>
+<a name="L25"></a><tt class="py-lineno">25</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"cb"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Reserved"</tt> </tt>
+<a name="L26"></a><tt class="py-lineno">26</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"cc"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Security processing has failed on outgoing frame due to maximum frame counter"</tt> </tt>
+<a name="L27"></a><tt class="py-lineno">27</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"cd"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Security processing has failed on outgoing frame due to no key"</tt> </tt>
+<a name="L28"></a><tt class="py-lineno">28</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"ce"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Security processing has failed on outgoing frame due CCM"</tt> </tt>
+<a name="L29"></a><tt class="py-lineno">29</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"cf"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Attempt at route discovery has failed due to lack of table space"</tt> </tt>
+<a name="L30"></a><tt class="py-lineno">30</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"d0"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Attempt at route discovery has failed due to any reason except lack of table space"</tt> </tt>
+<a name="L31"></a><tt class="py-lineno">31</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"d1"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"NLDE-DATA.request has failed due to routing failure on sending device"</tt> </tt>
+<a name="L32"></a><tt class="py-lineno">32</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"d2"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Broadcast or broadcast-mode multicast has failed as there is no room in BTT"</tt> </tt>
+<a name="L33"></a><tt class="py-lineno">33</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"d3"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Unicast mode multi-cast frame was discarded pending route discovery"</tt> </tt>
+<a name="L34"></a><tt class="py-lineno">34</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"d4"</tt> <tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Unicast frame does not have a route available but it is buffered for automatic resend"</tt> </tt>
+<a name="L35"></a><tt class="py-lineno">35</tt>  <tt class="py-line"> </tt>
+<a name="L36"></a><tt class="py-lineno">36</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a0"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"A transmit request failed since the ASDU is too large and fragmentation is not supported"</tt> </tt>
+<a name="L37"></a><tt class="py-lineno">37</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a1"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"A received fragmented frame could not be defragmented at the current time"</tt> </tt>
+<a name="L38"></a><tt class="py-lineno">38</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a2"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"A received fragmented frame could not be defragmented since the device does not support fragmentation"</tt> </tt>
+<a name="L39"></a><tt class="py-lineno">39</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a3"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"A parameter value was out of range"</tt> </tt>
+<a name="L40"></a><tt class="py-lineno">40</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a4"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSME-UNBIND.request failed due to the requested binding link not existing in the binding table"</tt> </tt>
+<a name="L41"></a><tt class="py-lineno">41</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a5"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSME-REMOVE-GROUP.request has been issued with a group identified that does not appear in the group table"</tt> </tt>
+<a name="L42"></a><tt class="py-lineno">42</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a6"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"A parameter value was invaid or out of range"</tt> </tt>
+<a name="L43"></a><tt class="py-lineno">43</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a7"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSDE-DATA.request requesting ack transmission failed due to no ack being received"</tt> </tt>
+<a name="L44"></a><tt class="py-lineno">44</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a8"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to there being no devices bound to this device"</tt> </tt>
+<a name="L45"></a><tt class="py-lineno">45</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"a9"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSDE-DATA.request with a destination addressing mode set to 0x03 failed due to no corresponding short address found in the address map table"</tt> </tt>
+<a name="L46"></a><tt class="py-lineno">46</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"aa"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to a binding table not being supported on the device"</tt> </tt>
+<a name="L47"></a><tt class="py-lineno">47</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"ab"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An ASDU was received that was secured using a link key"</tt> </tt>
+<a name="L48"></a><tt class="py-lineno">48</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"ac"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An ASDU was received that was secured using a network key"</tt> </tt>
+<a name="L49"></a><tt class="py-lineno">49</tt>  <tt class="py-line">        <tt class="py-keyword">elif</tt> <tt class="py-name">str</tt><tt class="py-op">(</tt><tt class="py-name">StatusCode</tt><tt class="py-op">)</tt><tt class="py-op">==</tt><tt class="py-string">"ad"</tt><tt class="py-op">:</tt> <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"An APSDE-DATA.request requesting security has resulted in an error during the corresponding security processing"</tt> </tt>
+<a name="L50"></a><tt class="py-lineno">50</tt>  <tt class="py-line"> </tt>
+<a name="L51"></a><tt class="py-lineno">51</tt>  <tt class="py-line">        <tt class="py-keyword">else</tt><tt class="py-op">:</tt>                       <tt class="py-name">StatusMsg</tt><tt class="py-op">=</tt><tt class="py-string">"Unknown code : "</tt> <tt class="py-op">+</tt> <tt class="py-name">StatusCode</tt> </tt>
+<a name="L52"></a><tt class="py-lineno">52</tt>  <tt class="py-line"> </tt>
+<a name="L53"></a><tt class="py-lineno">53</tt>  <tt class="py-line"> </tt>
+<a name="L54"></a><tt class="py-lineno">54</tt>  <tt class="py-line">        <tt class="py-keyword">return</tt> <tt class="py-name">StatusMsg</tt> </tt>
+</div><a name="L55"></a><tt class="py-lineno">55</tt>  <tt class="py-line"> </tt><script type="text/javascript">
+<!--
+expandto(location.href);
+// -->
+</script>
+</pre>
+<br />
+<!-- ==================== NAVIGATION BAR ==================== -->
+<table class="navbar" border="0" width="100%" cellpadding="0"
+       bgcolor="#a0c0ff" cellspacing="0">
+  <tr valign="middle">
+
+  <!-- Tree link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="module-tree.html">Trees</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Index link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="identifier-index.html">Indices</a>&nbsp;&nbsp;&nbsp;</th>
+
+  <!-- Help link -->
+      <th>&nbsp;&nbsp;&nbsp;<a
+        href="help.html">Help</a>&nbsp;&nbsp;&nbsp;</th>
+
+      <th class="navbar" width="100%"></th>
+  </tr>
+</table>
+<table border="0" cellpadding="0" cellspacing="0" width="100%%">
+  <tr>
+    <td align="left" class="footer">
+    Generated by Epydoc 3.0.1
+    </td>
+    <td align="right" class="footer">
+      <a target="mainFrame" href="http://epydoc.sourceforge.net"
+        >http://epydoc.sourceforge.net</a>
+    </td>
+  </tr>
+</table>
+
+<script type="text/javascript">
+  <!--
+  // Private objects are initially displayed (because if
+  // javascript is turned off then we want them to be
+  // visible); but by default, we want to hide them.  So hide
+  // them unless we have a cookie that says to show them.
+  checkCookie();
+  // -->
+</script>
+</body>
+</html>
