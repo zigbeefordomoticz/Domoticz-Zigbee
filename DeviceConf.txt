@@ -23,5 +23,5 @@
 'Ampoule.LED1624G9.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
 'Command.30338849.Tradfri':{'Ep':{'01':{'0000','0001','0009','0b05','1000'}},'Type':'Command'},
 'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':'Motion/Door/Switch/Lux/Temp'},
-'plug.Celiane.Legrand':{'Ep': {'01':{'0000','0003','0004','0006','0005','fc01'}},'Type':'Switch/PowerMeter'},
+'plug.Celiane.Legrand':{'Ep': {'01':{'0000','0003','0004','0006','0005','fc01'}},'Type':'Plug/PowerMeter'},
 }
