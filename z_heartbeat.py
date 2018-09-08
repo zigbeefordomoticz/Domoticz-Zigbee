@@ -230,7 +230,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 				#		Domoticz.Debug("HearBeat - Devices IEEE already exist. Unit=" + str(x))
 			if IsCreated == False : #and IEEEexist == False:
 				Domoticz.Debug("onHeartbeat - creating device id : " + str(key) + " with : " + str(self.ListOfDevices[key]) )
-				z_domoticz.CreateDomoDevice(self, key)
+				z_domoticz.CreateDomoDevice(self, Devices, key)
 			#if IsCreated == False and IEEEexist == True :
 			#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
 			#	UpdateDomoDevice(self, key)
