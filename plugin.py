@@ -3,7 +3,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.5 developement" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="2.4.0" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Model" width="75px">
 			<options>
@@ -57,7 +57,6 @@ class BasePlugin:
 
 	def onStart(self):
 		Domoticz.Log("onStart called")
-		Domoticz.Log("Development branch")
 		global ReqRcv
 		global ZigateConn
 		### CLD 
