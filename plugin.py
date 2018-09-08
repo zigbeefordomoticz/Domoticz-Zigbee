@@ -1,10 +1,9 @@
-# Zigate Python Plugin
 #
 # Author: zaraki673
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.5" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673" version="2.3.5 developement" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Model" width="75px">
 			<options>
@@ -16,7 +15,7 @@
 		<param field="Port" label="Port" width="150px" required="true" default="9999"/>
 		<param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
 		<param field="Mode5" label="Channel " width="50px" required="true" default="11" />
-		<param field="Mode2" label="Permit join time on start (between 0 et 255) " width="75px" required="true" default="254" />
+		<param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="254" />
 		<param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
 			<options>
 				<option label="True" value="True"/>
@@ -43,6 +42,10 @@ import Domoticz
 import binascii
 import time
 import struct
+import json
+
+FirmwareVersion = ''
+HeartbeatCount = 88     # request a network status 10s after start
 
 class BasePlugin:
 	enabled = False
@@ -54,8 +57,12 @@ class BasePlugin:
 
 	def onStart(self):
 		Domoticz.Log("onStart called")
+		Domoticz.Log("Development branch")
 		global ReqRcv
 		global ZigateConn
+		### CLD 
+		global CrcCheck
+
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
 			DumpConfigToLog()
@@ -65,11 +72,31 @@ class BasePlugin:
 		if Parameters["Mode1"] == "Wifi":
 			ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
 			ZigateConn.Connect()
-		ReqRcv=''
+		
+		# CLD CLD
+		# Import PluginConf.txt
+		tmpPluginConf=""
+		with open(Parameters["HomeFolder"]+"PluginConf.txt", 'r') as myPluginConfFile:
+			tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
+		myPluginConfFile.close()
+		Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
+		self.PluginConf=eval(tmpPluginConf)
+		CrcCheck = 1
+		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
+			CrcCheck = 0
+		
+		ReqRcv=bytearray()
+
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			ID = Devices[x].DeviceID
-			self.ListOfDevices[ID]={}
-			self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
+			try:
+				self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
+			except: 
+				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
+			else :
+				self.ListOfDevices[ID]={}
+				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + Devices[x].Options['Zigate'] + " loaded into self.ListOfDevices")
+
 		#Import DeviceConf.txt
 		tmpread=""
 		with open(Parameters["HomeFolder"]+"DeviceConf.txt", 'r') as myfile:
@@ -90,11 +117,13 @@ class BasePlugin:
 
 	def onStop(self):
 		ZigateConn.Disconnect()
+		WriteDeviceList(self, 0)
 		Domoticz.Log("onStop called")
 
 	def onConnect(self, Connection, Status, Description):
 		Domoticz.Log("onConnect called")
 		global isConnected
+
 		if (Status == 0):
 			isConnected = True
 			Domoticz.Log("Connected successfully")
@@ -103,33 +132,103 @@ class BasePlugin:
 				sendZigateCmd("0012", "")
 			ZigateConf()
 		else:
-			Domoticz.Log("Failed to connect ("+str(Status)+")")
+			Domoticz.Error("Failed to connect ("+str(Status)+")")
 			Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
 		return True
 
 	def onMessage(self, Connection, Data):
-		Domoticz.Debug("onMessage called")
-		global Tmprcv
+		Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
 		global ReqRcv
-		Tmprcv=binascii.hexlify(Data).decode('utf-8')
-		if Tmprcv.find('03') != -1 and len(ReqRcv+Tmprcv[:Tmprcv.find('03')+2])%2==0 :### fin de messages detecter dans Data
-			ReqRcv+=Tmprcv#[:Tmprcv.find('03')+2] #
-			while (ReqRcv.find("0301") != -1): #Tant qu'il reste des messages colles
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("0301")+2])#demande de decodage de la trame recu
-				ReqRcv=ReqRcv[ReqRcv.find("0301")+2:]
-			if ReqRcv.find('03') != -1 : #est ce qu il reste une derniere trame complete ?
-				ZigateDecode(self, ReqRcv[:ReqRcv.find("03")+2]) #demande de decodage de la trame recu
-				ReqRcv=ReqRcv[ReqRcv.find('03')+2:]
-		else : # while end of data is receive
-			ReqRcv+=Tmprcv
+		### CLD
+		global CrcCheck
+
+		FrameIsKo = 0					
+
+		# Version 3 - Binary reading to avoid mixing end of Frame - Thanks to CLDFR
+		ReqRcv += Data				# Add the incoming data
+		Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(ReqRcv).decode('utf-8'))+ "'" )
+
+		# Zigate Frames start with 0x01 and finished with 0x03	
+		# It happens that we get some 
+		while 1 :					# Loop until we have 0x03
+			Zero1=-1
+			Zero3=-1
+			idx = 0
+			for val in ReqRcv[0:len(ReqRcv)] :
+				if Zero1 == - 1 and Zero3  == -1 and val == 1 :	# Do we get a 0x01
+					Zero1 = idx		# we have identify the Frame start
+
+				if Zero1 != -1 and val == 3 :	# If we have already started a Frame and do we get a 0x03
+					Zero3 = idx + 1
+					break			# If we got 0x03, let process the Frame
+				idx += 1
+
+			if Zero3 == -1 :			# No 0x03 in the Buffer, let's breat and wait to get more data
+				return
+
+			Domoticz.Debug("onMessage Frame : Zero1=" + str(Zero1) + " Zero3=" + str(Zero3) )
+
+			# CLD CLD
+			if Zero1 != 0 :
+				Domoticz.Log("onMessage : we have probably lost some datas, zero1 = " + str(Zero1) )
+
+			# uncode the frame
+			BinMsg=bytearray()
+			iterReqRcv = iter (ReqRcv[Zero1:Zero3])
+
+			for iByte in iterReqRcv :			# for each received byte
+				if iByte == 2 :				# Coded flag ?
+					iByte = next(iterReqRcv) ^ 16	# then uncode the next value
+				BinMsg.append(iByte)			# copy
+
+			ReqRcv = ReqRcv[Zero3:]                 # What is after 0x03 has to be reworked.
+
+                        # Check length
+			Zero1, MsgType, Length, ReceivedChecksum = struct.unpack ('>BHHB', BinMsg[0:6])
+			### Domoticz.Debug("onMessage Frame CLD : " + str(Zero1) + " " + str(MsgType) + " " + str(Length) )
+			ComputedLength = Length + 7
+			ReceveidLength = len(BinMsg)
+			Domoticz.Debug("onMessage Frame length : " + str(ComputedLength) + " " + str(ReceveidLength) ) # For testing purpose
+			if ComputedLength != ReceveidLength :
+				FrameIsKo = 1
+				Domoticz.Log("onMessage : Frame size is bad, computed = " + str(ComputedLength) + " received = " + str(ReceveidLength) )
+
+			# Compute checksum
+			ComputedChecksum = 0
+			for idx, val in enumerate(BinMsg[1:-1]) :
+				if idx != 4 :				# Jump the checksum itself
+					ComputedChecksum ^= val
+			Domoticz.Debug("onMessage Frame : ComputedChekcum=" + str(ComputedChecksum) + " ReceivedChecksum=" + str(ReceivedChecksum) ) # For testing purpose
+			if ComputedChecksum != ReceivedChecksum and CrcCheck == 1 :
+				FrameIsKo = 1
+				Domoticz.Log("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + " received = " + str(ReceivedChecksum) )
+
+			AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
+			# ZigateDecode(self, AsciiMsg) 		# decode this Frame
+			if FrameIsKo == 0 :
+				ZigateRead(self, AsciiMsg)		# process this frame
+
+		Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(ReqRcv).decode('utf-8') ))
+
 		return
 
-	def onCommand(self, Unit, Command, Level, Hue):
-		Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level))
+	def onCommand(self, Unit, Command, Level, Color):
+		Domoticz.Debug("#########################")
+		Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
+
 		DSwitchtype= str(Devices[Unit].SwitchType)
+		Domoticz.Debug("DSwitchtype : " + DSwitchtype)
+
+		DSubType= str(Devices[Unit].SubType)
+		Domoticz.Debug("DSubType : " + DSubType)
+
+		DType= str(Devices[Unit].Type)
 		DOptions = Devices[Unit].Options
+
 		Dtypename=DOptions['TypeName']
+		Domoticz.Debug("Dtypename : " + Dtypename)
 		Dzigate=eval(DOptions['Zigate'])
+		SignalLevel = self.ListOfDevices[Devices[Unit].DeviceID]['RSSI']
 
 		EPin="01"
 		EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
@@ -145,172 +244,418 @@ class BasePlugin:
 			if ClusterSearch in self.ListOfDevices[Devices[Unit].DeviceID]['Ep'][tmpEp] : #switch cluster
 				EPout=tmpEp
 
-		if Command == "On" :
-			#if Dtypename == "Switch" :
-			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
-			if Dtypename == "LvlControl" and DSwitchtype == "16" :
-				UpdateDevice(Unit, 1, "100",DOptions)
-			else :
-				UpdateDevice(Unit, 1, "On",DOptions)
+		# 00 -> OFF
+		# 01 -> ON
+		# 02 -> Toggle
+		#Can use timed on/off
+		#sendZigateCmd("0093","02" + Devices[Unit].DeviceID + EPin + EPout + on/off + on_time + off_time)
+		
 		if Command == "Off" :
-			#if Dtypename == "Switch" :
+			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-			if Dtypename == "LvlControl" and DSwitchtype == "16" :
-				UpdateDevice(Unit, 0, "0",DOptions)
+			if DSwitchtype == "16" :
+				UpdateDevice_v2(Unit, 0, "0",DOptions, SignalLevel)
+			else :
+				UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
+		if Command == "On" :
+			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
+			if DSwitchtype == "16" :
+				UpdateDevice_v2(Unit, 1, "100",DOptions, SignalLevel)
 			else:
-				UpdateDevice(Unit, 0, "Off",DOptions)
+				UpdateDevice_v2(Unit, 1, "On",DOptions, SignalLevel)
 
 		if Command == "Set Level" :
-			if Dtypename == "LvlControl" and DSwitchtype == "16" :
-				self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
-				if Level == 0 :
-					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-					UpdateDevice(Unit, 0, "0",DOptions)
-				if Level == 100 :
-					value=returnlen(2,hex(round(Level*255/100))[2:])
-					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-					UpdateDevice(Unit, 1, "100",DOptions)
-				else :
-					value=returnlen(2,hex(round(Level*255/100))[2:])
-					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-					UpdateDevice(Unit, 2, str(Level) ,DOptions)
+			#Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
+			#There is too, move max level, mode = 00/01 for 0%/100%
+			#sendZigateCmd("0080","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + mode + rate)
+			
+			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+			OnOff = '01' # 00 = off, 01 = on
+			value=Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
+			sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0010")
+			if DSwitchtype == "16" :
+				UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
+			else:
+				UpdateDevice_v2(Unit, 1, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
 
-			if Dtypename == "LvlControl" and DSwitchtype != "16" : # Old behaviour
-				if Level == 0 :
-					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-					UpdateDevice(Unit, 0, "Off",DOptions)
-				if Level == 100 :
-					value=returnlen(2,hex(round(Level*255/100))[2:])
-					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-					UpdateDevice(Unit, 1, "On",DOptions)
-				else :
-					value=returnlen(2,hex(round(Level*255/100))[2:])
-					sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + "00" + value + "0010")
-					UpdateDevice(Unit, 1, str(Level) ,DOptions)
+		if Command == "Set Color" :
+			Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
+			Hue_List = json.loads(Color)
+			
+			#Color {
+			#	ColorMode m;
+			#	uint8_t t;     // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
+			#	uint8_t r;     // Range:0..255, Red level
+			#	uint8_t g;     // Range:0..255, Green level
+			#	uint8_t b;     // Range:0..255, Blue level
+			#	uint8_t cw;    // Range:0..255, Cold white level
+			#	uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
+			#}
 
-			if Dtypename == "ColorControl" :
-				if Level == 0 :
-					sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
-					UpdateDevice(Unit, 0, "Off",DOptions)
-				else :
-					value=returnlen(4,hex(round(Level*1700/100))[2:])
-					sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + value + "0000")
-					UpdateDevice(Unit, 1, "On",DOptions)
+			def rgb_to_xy(rgb):
+				''' convert rgb tuple to xy tuple '''
+				red, green, blue = rgb
+				r = ((red + 0.055) / (1.0 + 0.055))**2.4 if (red > 0.04045) else (red / 12.92)
+				g = ((green + 0.055) / (1.0 + 0.055))**2.4 if (green > 0.04045) else (green / 12.92)
+				b = ((blue + 0.055) / (1.0 + 0.055))**2.4 if (blue > 0.04045) else (blue / 12.92)
+				X = r * 0.664511 + g * 0.154324 + b * 0.162028
+				Y = r * 0.283881 + g * 0.668433 + b * 0.047685
+				Z = r * 0.000088 + g * 0.072310 + b * 0.986039
+				cx = 0
+				cy = 0
+				if (X + Y + Z) != 0:
+					cx = X / (X + Y + Z)
+					cy = Y / (X + Y + Z)
+				return (cx, cy)
+
+			def rgb_to_hsl(rgb):
+				''' convert rgb tuple to hls tuple '''
+				r, g, b = rgb
+				r = float(r/255)
+				g = float(g/255)
+				b = float(b/255)
+				high = max(r, g, b)
+				low = min(r, g, b)
+				h, s, l = ((high + low) / 2,)*3
+
+				if high == low:
+					h = 0.0
+					s = 0.0
+				else:
+					d = high - low
+					s = d / (2 - high - low) if l > 0.5 else d / (high + low)
+					h = {
+						r: (g - b) / d + (6 if g < b else 0),
+						g: (b - r) / d + 2,
+						b: (r - g) / d + 4,
+					}[high]
+					h /= 6
+
+				return h, s, l
+
+			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
+
+			#First manage level
+			OnOff = '01' # 00 = off, 01 = on
+			value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+			sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0000")
+
+			#Now color
+			#ColorModeNone = 0   // Illegal
+			#ColorModeNone = 1   // White. Valid fields: none
+			if Hue_List['m'] == 1:
+				ww = int(Hue_List['ww']) # Can be used as level for monochrome white
+				#TODO : Jamais vu un device avec ca encore
+				Domoticz.Debug("Not implemented device color 1")	
+			#ColorModeTemp = 2   // White with color temperature. Valid fields: t
+			if Hue_List['m'] == 2:
+				#Value is in mireds (not kelvin)
+				#Correct values are from 153 (6500K) up to 588 (1700K)
+				# t is 0 > 255
+				TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
+				TempMired = 1000000 // TempKelvin
+				sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+			#ColorModeRGB = 3    // Color. Valid fields: r, g, b.
+			elif Hue_List['m'] == 3:
+				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+				#Convert 0>1 to 0>FFFF
+				x = int(x*65536)
+				y = int(y*65536)																   
+				strxy = Hex_Format(4,x) + Hex_Format(4,y)
+				sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "0000")
+			#ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
+			elif Hue_List['m'] == 4:
+				ww = int(Hue_List['ww'])
+				cw = int(Hue_List['cw'])
+				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))	
+				#TODO, Pas trouve de device avec ca encore ...
+				Domoticz.Debug("Not implemented device color 2")
+			#With saturation and hue, not seen in domoticz but present on zigate, and some device need it
+			elif Hue_List['m'] == 9998:
+				h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+				saturation = s * 100   #0 > 100
+				hue = h *360	       #0 > 360
+				hue = int(hue*254//360)
+				saturation = int(saturation*254//100)
+				value = int(l * 254//100)
+				OnOff = '01'
+				sendZigateCmd("00B6","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
+
+			#Update Device
+			UpdateDevice_v2(Unit, 1, str(value) ,DOptions, SignalLevel, str(Color))
+
+
 
 	def onDisconnect(self, Connection):
 		Domoticz.Log("onDisconnect called")
 
 	def onHeartbeat(self):
-		#Domoticz.Log("onHeartbeat called")
+		global FirmwareVersion
+		global HeartbeatCount
+
+		#Domoticz.Log("onHeartbeat called" )
 		Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
-		for key in self.ListOfDevices :
+
+		## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
+		if str(FirmwareVersion) == "030d" :
+			if HeartbeatCount >= 90 :
+				Domoticz.Debug("request Network Status")
+				sendZigateCmd("0009","")
+				HeartbeatCount = 0
+			else :
+				HeartbeatCount = HeartbeatCount + 1
+
+		for key in list(self.ListOfDevices) :
+			
+			#ok buged device , need to avoid it, just delete it after the making for the moment
+			if len(self.ListOfDevices[key]) == 0:
+				Domoticz.Debug("Bad devices detected (empty one), remove it, adr :" + str(key))
+				del self.ListOfDevices[key]
+				continue
+				
 			status=self.ListOfDevices[key]['Status']
 			RIA=int(self.ListOfDevices[key]['RIA'])
 			self.ListOfDevices[key]['Heartbeat']=str(int(self.ListOfDevices[key]['Heartbeat'])+1)
-			# Envoi une demande Active Endpoint request
-			if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
-				Domoticz.Debug("Envoie une demande Active Endpoint request pour avoir la liste des EP du device adresse : " + key)
-				sendZigateCmd("0045", str(key))
-				self.ListOfDevices[key]['Status']="0045"
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-				self.ListOfDevices[key]['Status']="004d"
-			# Envoie une demande Simple Descriptor request par EP
-			if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
-				for cle in self.ListOfDevices[key]['Ep']:
-					Domoticz.Debug("Envoie une demande Simple Descriptor request pour avoir les informations du EP :" + cle + ", du device adresse : " + key)
-					sendZigateCmd("0043", str(key)+str(cle))
-				self.ListOfDevices[key]['Status']="0043"
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-			if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-				self.ListOfDevices[key]['Status']="8045"
-			if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="10" and self.ListOfDevices[key]['RIA']>="10":
-				self.ListOfDevices[key]['Heartbeat']="0"
-				self.ListOfDevices[key]['Status']="UNKNOW"
 
-			# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
-			if status == "inDB" and self.ListOfDevices[key]['ZDeviceID']=="0200" and self.ListOfDevices[key]['Heartbeat']>="30" :
-				self.ListOfDevices[key]['Heartbeat']="0"
-				ReadAttributeRequest_0008(self, key)
+			########## Known Devices 
+			if status == "inDB" : 
+				# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
+				if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and self.ListOfDevices[key]['Heartbeat']>="30" :
+					Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
+					self.ListOfDevices[key]['Heartbeat']="0"
+					ReadAttributeRequest_0008(self, key)
 
-			if status != "inDB" and status != "UNKNOW" :
-				if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
-					if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
-					# ampoule Tradfi LED1545G12.Tradfri
-						if self.ListOfDevices[key]['ZDeviceID']=="0220" :
-							self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
-					# ampoule Tradfri LED1622G12.Tradfri ou phillips hue white
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :
-							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
-					# plug osram
-						if self.ListOfDevices[key]['ZDeviceID']=="0010" :  
-							self.ListOfDevices[key]['Model']="plug.Osram"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'03': {'0006'}}
-					if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
-					# plug salus
-						if self.ListOfDevices[key]['ZDeviceID']=="0051" :  # device id type plug on/off
-							self.ListOfDevices[key]['Model']="plug.Salus"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'09': {'0006'}}
-					# ampoule Tradfi
-						if self.ListOfDevices[key]['ZDeviceID']=="0100" :  # device id type light on/off
-							self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
-					# shutter profalux
-						if self.ListOfDevices[key]['ZDeviceID']=="0200" :  # device id type shutter
-							self.ListOfDevices[key]['Model']="shutter.Profalux"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
-					# phillips hue
-					if self.ListOfDevices[key]['ProfileID']=="a1e0" :  
-						if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
-							self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
-							if self.ListOfDevices[key]['Ep']=={} :
-								self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+			########## UnKnown Devices  - Creation process
+			if status != "inDB" :
+				# Request EP list
+				if status=="004d" and self.ListOfDevices[key]['Heartbeat']=="1":
+					Domoticz.Log("Creation process for " + str(key) + " Info: " + str(self.ListOfDevices[key]) )
+					# We should check if the device has not been already created via IEEE
+					if IEEEExist( self, self.ListOfDevices[key]['IEEE'] ) == False :
+						Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
+						sendZigateCmd("0045", str(key))
+						self.ListOfDevices[key]['Status']="0045"
+						self.ListOfDevices[key]['Heartbeat']="0"
+					else :
+						for dup in self.ListOfDevices :
+							if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":
+								Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
+								self.ListOfDevices[key]['Status']="DUP"
+								self.ListOfDevices[key]['Heartbeat']="0"
+								self.ListOfDevices[key]['RIA']="99"
+								oktocreate=True
+								break
 
+				# Request Simple Descriptor for each EP	
+				if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
+					for cle in self.ListOfDevices[key]['Ep']:
+						Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
+						sendZigateCmd("0043", str(key)+str(cle))
+					self.ListOfDevices[key]['Status']="0043"
+					self.ListOfDevices[key]['Heartbeat']="0"
+	
+				# Timeout Management
+				# We should wonder if we want to go in an infinite loop.
+				if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+				if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="004d"
+				if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="004d"
+				if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="9":
+					Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + key)
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="8045"
+	
+				# What RIA stand for ???????
+				if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="9" and self.ListOfDevices[key]['RIA']>="10":
+					self.ListOfDevices[key]['Heartbeat']="0"
+					self.ListOfDevices[key]['Status']="UNKNOW"
 
-				if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
-					#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
-					IsCreated=False
-					#IEEEexist=False
-					x=0
-					nbrdevices=0
-					for x in Devices:
-						if Devices[x].DeviceID == str(key) :
-							IsCreated = True
-							Domoticz.Debug("HearBeat - Devices already exist. Unit=" + str(x))
-						#DOptions = Devices[x].Options
-						#Dzigate=eval(DOptions['Zigate'])
-						#Domoticz.Debug("HearBeat - Devices[x].Options['Zigate']['IEEE']=" + str(Dzigate['IEEE']))
-						#Domoticz.Debug("HearBeat - self.ListOfDevices[key]['IEEE']=" + str(self.ListOfDevices[key]['IEEE']))
-						#if Dzigate['IEEE']!='' and self.ListOfDevices[key]['IEEE']!='' :
-						#	if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
-						#		IEEEexist = True
-						#		Domoticz.Debug("HearBeat - Devices IEEE already exist. Unit=" + str(x))
-					if IsCreated == False : #and IEEEexist == False:
-						Domoticz.Debug("HearBeat - creating device id : " + str(key))
-						CreateDomoDevice(self, key)
-					#if IsCreated == False and IEEEexist == True :
-					#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
-					#	UpdateDomoDevice(self, key)
+				#ZLL
+				#Lightning devices
+				# ZDeviceID = 0000 >> On/Off light
+				# ZDeviceID = 0010 >> on/off light but plug
+				# ZDeviceID = 0100 >> Dimable but no color
+				# ZDeviceID = 0110 >> Dimable but no color and plug
+				# ZDeviceID = 0200 >> Color light or shutter
+				# ZDeviceID = 0220 >> Temperature Color change
+				# ZDeviceID = 0210 >> Hue/Extended Color change
+				#Controllers devices
+				# ZDeviceID = 0800 >> Color controler
+				# ZDeviceID = 0810 >> Color scene controler
+				# ZDeviceID = 0820 >> Non color controler
+				# ZDeviceID = 0830 >> Non color scene controler
+				# ZDeviceID = 0840 >> Control bridge
+				# ZDeviceID = 0850 >> on/off sensor
+				
+				#ZHA
+				#Device
+				# ZDeviceID = 0000 >> On/Off switch
+				# ZDeviceID = 0001 >> Level control switch
+				# ZDeviceID = 0002 >> on/off output
+				# ZDeviceID = 0003 >> Level contro output
+				# ZDeviceID = 0004 >> Scene selector
+				# ZDeviceID = 0005 >> Configuration tool
+				# ZDeviceID = 0006 >> Remote control
+				# ZDeviceID = 0007 >> Combined interface
+				# ZDeviceID = 0008 >> Range extender
+				# ZDeviceID = 0009 >> Mains Power Outlet
+				# ZDeviceID = 000A >> Door lock
+				# ZDeviceID = 000B >> Door lock controler
+				# ZDeviceID = 000C >> HSimple sensor
+				# ZDeviceID = 000D >> Consumption awarness Device
+				# ZDeviceID = 0050 >> Home gateway
+				# ZDeviceID = 0051 >> Smart plug
+				# ZDeviceID = 0052 >> White goods
+				# ZDeviceID = 0053 >> Meter interface
+				# ZDeviceID = 0100 >> On/Off light
+				# ZDeviceID = 0101 >> Dimable light
+				# ZDeviceID = 0102 >> Color dimable light
+				# ZDeviceID = 0103 >> on/off light
+				# ZDeviceID = 0104 >> Dimmer switch
+				# ZDeviceID = 0105 >> Color Dimmer switch
+				# ZDeviceID = 0106 >> Light sensor
+				# ZDeviceID = 0107 >> Occupancy sensor
+				# ZDeviceID = 010a >> Unknow : plug legrand
+				# ZDeviceID = 0200 >> Shade
+				# ZDeviceID = 0201 >> Shade controler
+				# ZDeviceID = 0202 >> Window covering device
+				# ZDeviceID = 0203 >> Window Covering controler
+				# ZDeviceID = 0300 >> Heating/cooling Unit
+				# ZDeviceID = 0301 >> Thermostat
+				# ZDeviceID = 0302 >> Temperature sensor
+				# ZDeviceID = 0303 >> Pump
+				# ZDeviceID = 0304 >> Pump controler
+				# ZDeviceID = 0305 >> Pressure sensor
+				# ZDeviceID = 0306 >> flow sensor
+				# ZDeviceID = 0307 >> Mini split AC
+				# ZDeviceID = 0400 >> IAS Control and indicating equipement 
+				# ZDeviceID = 0401 >> IAS Ancillary Control Equipement
+				# ZDeviceID = 0402 >> IAS zone
+				# ZDeviceID = 0403 >> IAS Warning device
+				
+				# ProfileID = c05e >> ZLL: ZigBee Light Link
+				# ProfileID = 0104 >> ZHA : ZigBee Home Automation
+				# ProfileID = a1e0 >> Philips Hue ???
+				# ProfileID =      >> SEP: Smart Energy Profile
+				# There is too ZBA, ZTS, ZRS, ZHC but I haven't find information for them
+				
+				#ZigBee HA contains (nearly?) everything in ZigBee Light Link
+				
+
+				if status != "UNKNOW" and status != "DUP":
+					if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
+						if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
+							# telecommande Tradfi 30338849.Tradfri
+							if self.ListOfDevices[key]['ZDeviceID']=="0830" :
+								self.ListOfDevices[key]['Model']="Command.30338849.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0000','0001','0009','0b05','1000'}}
+							# ampoule Tradfri LED1624G9
+							if self.ListOfDevices[key]['ZDeviceID']=="0200" :
+								self.ListOfDevices[key]['Model']="Ampoule.LED1624G9.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0006','0008','0300'}}
+							# ampoule Tradfi LED1545G12.Tradfri
+							if self.ListOfDevices[key]['ZDeviceID']=="0220" :
+								self.ListOfDevices[key]['Model']="Ampoule.LED1545G12.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008', '0300'}}
+							# ampoule Tradfri LED1622G12.Tradfri ou phillips hue white
+							if self.ListOfDevices[key]['ZDeviceID']=="0100" :
+								self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+							# Not see yet
+							if self.ListOfDevices[key]['ZDeviceID']=="0210" :
+								pass								
+							# plug osram
+							if self.ListOfDevices[key]['ZDeviceID']=="0010" :  
+								self.ListOfDevices[key]['Model']="plug.Osram"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'03': {'0006'}}
+
+						if self.ListOfDevices[key]['ProfileID']=="0104" :  # profile home automation
+							# plug salus
+							if self.ListOfDevices[key]['ZDeviceID']=="0051" :
+								self.ListOfDevices[key]['Model']="plug.Salus"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'09': {'0006'}}
+							if self.ListOfDevices[key]['ZDeviceID']=="0100" :
+								# ampoule Tradfi
+								if '1000' in self.ListOfDevices[key]['Ep'].get('01',''): #1000 is ZLL: Commissioning, only for bulb
+									self.ListOfDevices[key]['Model']="Ampoule.LED1622G12.Tradfri"
+									if self.ListOfDevices[key]['Ep']=={} :
+										self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+								#Legrand-netamo switch
+								else:
+									self.ListOfDevices[key]['Model']="switch.legrand.netamo"
+									if self.ListOfDevices[key]['Ep']=={} :
+										self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}									 
+							# shutter profalux
+							if self.ListOfDevices[key]['ZDeviceID']=="0200" :
+								self.ListOfDevices[key]['Model']="shutter.Profalux"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0006','0008'}}
+							# Plug legrand-netamo
+							if self.ListOfDevices[key]['ZDeviceID']=="010a" :
+								self.ListOfDevices[key]['Model']="plug.legrand.netamo"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01':{'0000','0003','0004','0006','0005','fc01'}}
+
+						if self.ListOfDevices[key]['ProfileID']=="a1e0" :  # profile unknow : phillips hue
+							if self.ListOfDevices[key]['ZDeviceID']=="0061" : 
+								self.ListOfDevices[key]['Model']="Ampoule.phillips.hue"
+								if self.ListOfDevices[key]['Ep']=={} :
+									self.ListOfDevices[key]['Ep']={'01': {'0006', '0008'}}
+				
+					# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
+	
+					if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
+						#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
+						IsCreated=False
+						#IEEEexist=False
+						x=0
+						nbrdevices=0
+						for x in Devices:
+							if Devices[x].DeviceID == str(key) :
+								IsCreated = True
+								Domoticz.Debug("onHeartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
+							#DOptions = Devices[x].Options
+							#Dzigate=eval(DOptions['Zigate'])
+							#Domoticz.Debug("HearBeat - Devices[x].Options['Zigate']['IEEE']=" + str(Dzigate['IEEE']))
+							#Domoticz.Debug("HearBeat - self.ListOfDevices[key]['IEEE']=" + str(self.ListOfDevices[key]['IEEE']))
+							#if Dzigate['IEEE']!='' and self.ListOfDevices[key]['IEEE']!='' :
+							#	if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
+							#		IEEEexist = True
+							#		Domoticz.Debug("HearBeat - Devices IEEE already exist. Unit=" + str(x))
+						if IsCreated == False : #and IEEEexist == False:
+							Domoticz.Debug("onHeartbeat - creating device id : " + str(key) + " with : " + str(self.ListOfDevices[key]) )
+							CreateDomoDevice(self, key)
+						#if IsCreated == False and IEEEexist == True :
+						#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
+						#	UpdateDomoDevice(self, key)
+
+					#end (RIA>=10 or self.ListOfDevices[key]['Model']!= {})
+				#end status != "UNKNOW"	
+			#end status != inDB
+		#end for key in ListOfDevices
 
 		ResetDevice("Motion",5)
 		WriteDeviceList(self, 200)
 
 		if (ZigateConn.Connected() != True):
 			ZigateConn.Connect()
+
 		return True
 
 
@@ -362,6 +707,11 @@ def DumpConfigToLog():
 	return
 
 def ZigateConf():
+	global FirmwareVersion
+
+	################### ZiGate - get Firmware version #############
+	# answer is expected on message 8010
+	sendZigateCmd("0010","")
 
 	################### ZiGate - set channel ##################
 	sendZigateCmd("0021", "0000" + returnlen(2,hex(int(Parameters["Mode5"]))[2:4]) + "00")
@@ -371,16 +721,26 @@ def ZigateConf():
 	
 	################### ZiGate - start network ##################
 	sendZigateCmd("0024","")
-	
-	################### ZiGate - get Firmware version #############
-	# answer is expected on message 8010
-	sendZigateCmd("0010","")
+
+	################### ZiGate - Request Device List #############
+	# answer is expected on message 8015. Only available since firmware 03.0b
+	if str(FirmwareVersion) == "030d" or str(FirmwareVersion) == "030c" or str(FirmwareVersion == "030b") :
+		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(FirmwareVersion) )
+		sendZigateCmd("0015","")
+	else :
+		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(FirmwareVersion) )
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
 	if Parameters["Mode2"] != "0":
+		if str(Parameters["Mode2"])=="255": 
+			Domoticz.Status("Zigate enter in discover mode for ever")
+		else : 
+			Domoticz.Status("Zigate enter in discover mode for " + str(Parameters["Mode2"]) + " Secs" )
 		sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
-
+		
+# CLD
+'''
 def ZigateDecode(self, Data):  # supprime le transcodage
 	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
 	Out=""
@@ -403,6 +763,7 @@ def ZigateDecode(self, Data):  # supprime le transcodage
 					Out+=Outtmp
 			Outtmp=""
 	ZigateRead(self, Out)
+'''
 
 def ZigateEncode(Data):  # ajoute le transcodage
 	Domoticz.Debug("ZigateEncode - Encodind data : " + Data)
@@ -453,14 +814,38 @@ def sendZigateCmd(cmd,datas) :
 		ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
 def ZigateRead(self, Data):
-	Domoticz.Debug("ZigateRead - decoded data : " + Data)
+	Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
+
+	FrameStart=Data[0:2]
+	FrameStop=Data[len(Data)-2:len(Data)]
+	if ( FrameStart != "01" and FrameStop != "03" ): 
+		Domoticz.Error("ZigateRead received a non-zigate frame Data : " + Data + " FS/FS = " + FrameStart + "/" + FrameStop )
+		return
+
 	MsgType=Data[2:6]
-	MsgData=Data[12:len(Data)-4]
-	MsgRSSI=Data[len(Data)-4:len(Data)-2]
 	MsgLength=Data[6:10]
 	MsgCRC=Data[10:12]
-	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
 
+	# CLD 
+	if len(Data) > 12 :
+		# We have Payload : data + rssi
+		MsgData=Data[12:len(Data)-4]
+		MsgRSSI=Data[len(Data)-4:len(Data)-2]
+	##	calculatedchecksum=getChecksum( MsgType , MsgLength , MsgData + MsgRSSI)
+	else :
+		MsgData=""
+		MsgRSSI=""
+	##	calculatedchecksum=getChecksum( MsgType , MsgLength , "0")
+
+	'''
+	if ( int(calculatedchecksum,16) != int(MsgCRC,16) ) :
+		Domoticz.Error("ZigateRead -  Checksum error: " + calculatedchecksum + " / " + MsgCRC + " MsgType = " + MsgType + " MsgLength : " + MsgLength + " RawData '" + Data  + "'" )
+		return
+
+	Domoticz.Debug("ZigateRead - Message Type : " + MsgType + ", Data : " + MsgData + ", RSSI : " + MsgRSSI + ", Length : " + MsgLength + ", Checksum : " + MsgCRC)
+	'''
+
+	
 	if str(MsgType)=="004d":  # Device announce
 		Domoticz.Debug("ZigateRead - MsgType 004d - Reception Device announce : " + Data)
 		Decode004d(self, MsgData)
@@ -472,7 +857,8 @@ def ZigateRead(self, Data):
 		
 	elif str(MsgType)=="8000":  # Status
 		Domoticz.Debug("ZigateRead - MsgType 8000 - reception status : " + Data)
-		Decode8000(self, MsgData)
+		#Decode8000(self, MsgData)
+		Decode8000_v2(self, MsgData)
 		return
 
 	elif str(MsgType)=="8001":  # Log
@@ -504,6 +890,12 @@ def ZigateRead(self, Data):
 		Domoticz.Debug("ZigateRead - MsgType 8007 - Reception Factory new restart : " + Data)
 		return
 
+	elif str(MsgType)=="8009":  #
+		Domoticz.Debug("ZigateRead - MsgType 8009 - Network State response : " + Data)
+		Decode8009( self, MsgData)
+		return
+
+
 	elif str(MsgType)=="8010":  # Version
 		Domoticz.Debug("ZigateRead - MsgType 8010 - Reception Version list : " + Data)
 		Decode8010(self, MsgData)
@@ -511,7 +903,14 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8014":  #
 		Domoticz.Debug("ZigateRead - MsgType 8014 - Reception Permit join status response : " + Data)
+		Decode8014(self, MsgData)
 		return
+
+	elif str(MsgType)=="8015":  #
+		Domoticz.Debug("ZigateRead - MsgType 8015 - Get devices list : " + Data)
+		Decode8015(self, MsgData)
+		return
+		
 		
 	elif str(MsgType)=="8024":  #
 		Domoticz.Debug("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
@@ -555,6 +954,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8042":  #
 		Domoticz.Debug("ZigateRead - MsgType 8042 - Reception Node descriptor response : " + Data)
+		Decode8042(self, MsgData)
 		return
 
 	elif str(MsgType)=="8043":  # Simple Descriptor Response
@@ -564,6 +964,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8044":  #
 		Domoticz.Debug("ZigateRead - MsgType 8044 - Reception Power descriptor response : " + Data)
+		Decode8044(self, MsgData)
 		return
 
 	elif str(MsgType)=="8045":  # Active Endpoints Response
@@ -637,7 +1038,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8100":  #
 		Domoticz.Debug("ZigateRead - MsgType 8100 - Reception Real individual attribute response : " + Data)
-		Decode8100(self, MsgData)
+		Decode8100(self, MsgData, MsgRSSI)
 		return
 
 	elif str(MsgType)=="8101":  # Default Response
@@ -647,7 +1048,7 @@ def ZigateRead(self, Data):
 
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
 		Domoticz.Debug("ZigateRead - MsgType 8102 - Report Individual Attribute response : " + Data)	
-		Decode8102(self, MsgData)
+		Decode8102(self, MsgData, MsgRSSI)
 		return
 		
 	elif str(MsgType)=="8110":  #
@@ -689,12 +1090,53 @@ def Decode004d(self, MsgData) : # Reception Device announce
 	MsgMacCapa=MsgData[20:22]
 	Domoticz.Debug("Decode004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	# tester si le device existe deja dans la base domoticz
-	if DeviceExist(self, MsgSrcAddr)==False :
+	if DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
+		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
+		initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
+		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
+	else :
+		Domoticz.Debug("Decode004d - Existing device")
+		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
+		
 	return
 
+def Decode8000_v2(self, MsgData) : # Status
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8000_v2 - MsgData lenght is : " + str(MsgLen) + " out of 8")
+
+	if MsgLen != 8 :
+		return
+
+	Status=MsgData[0:2]
+	SEQ=MsgData[2:4]
+	PacketType=MsgData[4:8]
+
+	if Status=="00" : Status="Success"
+	elif Status=="01" : Status="Incorrect Parameters"
+	elif Status=="02" : Status="Unhandled Command"
+	elif Status=="03" : Status="Command Failed"
+	elif Status=="04" : Status="Busy"
+	elif Status=="05" : Status="Stack Already Started"
+	elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ DisplayStatusCode(Status)
+
+	Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+
+	if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
+	elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
+	elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
+	elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
+	elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
+
+	if str(MsgData[0:2]) != "00" : Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+
+	return
+	
 def Decode8000(self, MsgData) : # Reception status
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8000 - MsgData lenght is : " + str(MsgLen) + " out of 8")
+
 	MsgDataLenght=MsgData[0:4]
 	MsgDataStatus=MsgData[4:6]
 	if MsgDataStatus=="00" :
@@ -717,7 +1159,7 @@ def Decode8000(self, MsgData) : # Reception status
 	try :
 		int(MsgDataLenght,16)
 	except :
-		Domoticz.Log("ERREUR - Fonction Decode 8000 problème de MsgDataLenght, pas un int")
+		Domoticz.Error("Decode8000 - Fonction Decode 8000 probleme de MsgDataLenght, pas un int")
 		MsgDataMessage=""
 	else :
 		if int(MsgDataLenght,16) > 2 :
@@ -729,23 +1171,113 @@ def Decode8000(self, MsgData) : # Reception status
 	return
 
 def Decode8001(self, MsgData) : # Reception log Level
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8001 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
 	MsgLogLvl=MsgData[0:2]
 	MsgDataMessage=MsgData[2:len(MsgData)]
 	Domoticz.Debug("ZigateRead - MsgType 8001 - Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage)
 	return
 
-def Decode8010(self,MsgData) : # Reception Version list
-	MsgDataApp=MsgData[0:4]
-	MsgDataSDK=MsgData[4:8]
-	try :
-		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
-		Domoticz.Log("Firmware version: " + MsgData[5] + "." + MsgData[6] + MsgData[7] )
-	except :
-		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
+
+	addr=MsgData[0:4]
+	extaddr=MsgData[4:20]
+	PanID=MsgData[20:24]
+	extPanID=MsgData[24:40]
+	Channel=MsgData[40:42]
+	Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + Channel )
+	# from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
+	if str(PanID) == "0" : 
+		Domoticz.Error("Decode8009: Network state DOWN ! " )
+	else :
+		Domoticz.Status("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + Channel )
 
 	return
 
+def Decode8010(self,MsgData) : # Reception Version list
+	global FirmwareVersion
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8010 - MsgData lenght is : " + str(MsgLen) + " out of 8")
+
+
+	MajorVersNum=MsgData[0:4]
+	InstaVersNum=MsgData[4:8]
+	try :
+		Domoticz.Debug("Decode8010 - Reception Version list : " + MsgData)
+		Domoticz.Status("Major Version Num: " + MajorVersNum )
+		Domoticz.Status("Installer Version Number: " + InstaVersNum )
+	except :
+		Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
+	else :
+		FirmwareVersion = InstaVersNum
+
+	return
+
+def Decode8014(self,MsgData) : # "Permit Join" status response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8014 - MsgData lenght is : " + str(MsgLen) + " out of 1")
+
+	Status=MsgData[0:1]
+	if ( MsgData[0:1]== "0" ) : Domoticz.Status("Permit Join is Off")
+	elif ( MsgData[0:1]== "1" ) : Domoticz.Status("Permit Join is On")
+	else : Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
+	return
+
+
+def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
+	# id: 2bytes
+	# addr: 4bytes
+	# ieee: 8bytes
+	# power_type: 2bytes - 0 Battery, 1 AC Power
+	# rssi : 2 bytes - Signal Strength between 1 - 255
+	numberofdev=len(MsgData)	
+	Domoticz.Log("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/26)) )
+	idx=0
+	while idx < (len(MsgData)):
+		DevID=MsgData[idx:idx+2]
+		saddr=MsgData[idx+2:idx+6]
+		ieee=MsgData[idx+6:idx+22]
+		power=MsgData[idx+22:idx+24]
+		rssi=MsgData[idx+24:idx+26]
+		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
+		if DeviceExist(self, saddr, ieee):
+			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
+			if rssi !="00" :
+				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
+			else  :
+				self.ListOfDevices[saddr]['RSSI']= 12
+			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
+		else: 
+			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
+		idx=idx+26
+
+	return
+
+def Decode8042(self, MsgData) : # Node Descriptor response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
+
+	sequence=MsgData[0:2]
+	status=MsgData[2:4]
+	addr=MsgData[4:8]
+	manufacturer=MsgData[8:12]
+	max_rx=MsgData[12:16]
+	max_tx=MsgData[16:20]
+	server_mask=MsgData[20:24]
+	descriptor_capability=MsgData[24:26]
+	mac_capability=MsgData[26:28]
+	max_buffer=MsgData[28:30]
+	bit_field=MsgData[30:34]
+	Domoticz.Debug("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status )
+	return
+
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8043 - MsgData lenght is : " + str(MsgLen) )
+
 	MsgDataSQN=MsgData[0:2]
 	MsgDataStatus=MsgData[2:4]
 	MsgDataShAddr=MsgData[4:8]
@@ -772,6 +1304,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+	
 		MsgDataOutClusterCount=MsgData[24+(int(MsgDataInClusterCount,16)*4):26+(int(MsgDataInClusterCount,16)*4)]
 		Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Out Cluster Count : " + MsgDataOutClusterCount)
 		i=1
@@ -783,9 +1316,21 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+	Domoticz.Debug("Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
+	return
+
+def Decode8044(self, MsgData): # Power Descriptior response
+	MsgLen=len(MsgData)
+	SQNum=MsgData[0:2]
+	Status=MsgData[2:4]
+	PowerCode=MsgData[4:8]
+	Domoticz.Debug("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power Code = " + PowerCode )
 	return
 
 def Decode8045(self, MsgData) : # Reception Active endpoint response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8045 - MsgData lenght is : " + str(MsgLen) )
+
 	MsgDataSQN=MsgData[0:2]
 	MsgDataStatus=MsgData[2:4]
 	MsgDataShAddr=MsgData[4:8]
@@ -793,26 +1338,26 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataEPlist=MsgData[10:len(MsgData)]
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
-	DeviceExist(self, MsgDataShAddr)
-	#Correction Thiklop : MsgDataShAddr provoque un Keyerror (?)
-	#Sortie propre par try except
-	try :
-		temp_sert_a_rien = self.ListOfDevices[MsgDataShAddr]['Status']!="inDB"
-	except :
-		Domoticz.Log("ERREUR - Erreur ReadCluster KeyError : MsgDataShAddr = " + MsgDataShAddr)
+	
+	if DeviceExist(self, MsgDataShAddr) == False:
+		#Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
+		Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
 	else :
 		if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 			self.ListOfDevices[MsgDataShAddr]['Status']="8045"
+		# PP: Does that mean that if we Device is already in the Database, we might overwrite 'EP' ?
 		for i in MsgDataEPlist :
 			OutEPlist+=i
 			if len(OutEPlist)==2 :
 				if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
 					self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
 					OutEPlist=""
+					
 	#Fin de correction
+	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
 
-def Decode8100(self, MsgData) :  # Report Individual Attribute response
+def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
 		MsgSQN=MsgData[0:2]
 		MsgSrcAddr=MsgData[2:6]
@@ -823,11 +1368,16 @@ def Decode8100(self, MsgData) :  # Report Individual Attribute response
 		MsgAttSize=MsgData[20:24]
 		MsgClusterData=MsgData[24:len(MsgData)]
 	except:
-		Domoticz.Log("Decode8100 - ERROR - MsgData = " + MsgData)
+		Domoticz.Error("Decode8100 - MsgData = " + MsgData)
 
 	else:
-		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
-		ReadCluster(self, MsgData)
+		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+		try :
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+		except : 
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+		ReadCluster(self, MsgData) 
 	return
 
 
@@ -840,7 +1390,7 @@ def Decode8101(self, MsgData) :  # Default Response
 	Domoticz.Debug("Decode8101 - reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus)
 	return
 
-def Decode8102(self, MsgData) :  # Report Individual Attribute response
+def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
 	MsgSrcEp=MsgData[6:8]
@@ -849,134 +1399,241 @@ def Decode8102(self, MsgData) :  # Report Individual Attribute response
 	MsgAttType=MsgData[16:20]
 	MsgAttSize=MsgData[20:24]
 	MsgClusterData=MsgData[24:len(MsgData)]
-	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)	
-	ReadCluster(self, MsgData) 
+	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
+	if MsgSrcAddr  in self.ListOfDevices:
+		try:
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+		except:
+			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+
+		Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+		Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
+		ReadCluster(self, MsgData) 
+	else :
+		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
 	return
 
-def Decode8701(self, MsgData) : # Reception Router Disovery Confirm StatusReception Router Disovery Confirm Status
-	MsgStatus=MsgData[0:4]
-	NwkStatus=MsgData[4:8]
-	try:
-		Domoticz.Log("Decode8701 - Reception Router Disovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
-	except:
-		Domoticz.Log("Decode8701 - ERROR - MsgData" + MsgData)
-	return
+def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8701 - MsgLen = " + str(MsgLen))
+
+	if MsgLen==0 :
+		return
+	else:
+		MsgStatus=MsgData[0:2]
+		NwkStatus=MsgData[2:4]
+		Domoticz.Debug("Decode8701 - Reception Router Discovery Confirm Status:" + MsgStatus + ", Nwk Status : "+ NwkStatus )
+	
+		if NwkStatus != "00" : Domoticz.Error("Decode8701 - Reception Router Discovery Confirm Status:" + DisplayStatusCode( NwkStatus) + ", Nwk Status : "+ NwkStatus )
+		return
 
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
-	MsgDataStatus=MsgData[0:2]
-	MsgDataSrcEp=MsgData[2:4]
-	MsgDataDestEp=MsgData[4:6]
-	MsgDataDestMode=MsgData[6:8]
-	MsgDataDestAddr=MsgData[8:12]
-	MsgDataSQN=MsgData[12:14]
-	Domoticz.Debug("Decode 8702 - Reception APS Data confirm fail : Status : " + MsgDataStatus + ", Source Ep : " + MsgDataSrcEp + ", Destination Ep : " + MsgDataDestEp + ", Destination Mode : " + MsgDataDestMode + ", Destination Address : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
-	return
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8702 - MsgLen = " + str(MsgLen))
+	if MsgLen==0 : 
+		return
+	else:
+		MsgDataStatus=MsgData[0:2]
+		MsgDataSrcEp=MsgData[2:4]
+		MsgDataDestEp=MsgData[4:6]
+		MsgDataDestMode=MsgData[6:8]
+		MsgDataDestAddr=MsgData[8:12]
+		MsgDataSQN=MsgData[12:14]
+		Domoticz.Debug("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+		return
 
 def Decode8401(self, MsgData) : # Reception Zone status change notification
 	Domoticz.Debug("Decode8401 - Reception Zone status change notification : " + MsgData)
-	MsgSrcAddr=MsgData[10:14]
-	MsgSrcEp=MsgData[2:4]
-	MsgClusterData=MsgData[16:18]
-	MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, "0006", MsgClusterData)
+	MsgSQN=MsgData[0:2]			# sequence number: uint8_t
+	MsgEp=MsgData[2:4]			# endpoint : uint8_t
+	MsgClusterId=MsgData[4:8]		# cluster id: uint16_t
+	MsgSrcAddrMode=MsgData[8:10]		# src address mode: uint8_t
+	MsgSrcAddr=MsgData[10:14]		# src address: uint64_t or uint16_t based on address mode
+	MsgZoneStatus=MsgData[14:18]		# zone status: uint16_t
+	MsgExtStatus=MsgData[18:20]		# extended status: uint8_t
+	MsgZoneID=MsgData[20:22]		# zone id : uint8_t
+	MsgDelay=MsgData[22:24]			# delay: data each element uint16_t
+
+	# 0  0  0    0  1    1    1  2  2
+	# 0  2  4    8  0    4    8  0  2
+	# 5a 02 0500 02 0ffd 0010 00 ff 0001
+	# 5d 02 0500 02 0ffd 0011 00 ff 0001
+
+
+	## CLD CLD
+	Model =  self.ListOfDevices[MsgSrcAddr]['Model']
+	if Model == "PST03A-v2.2.5" :
+		# bit 3, battery status (0=Ok 1=to replace)
+		iData = int(MsgZoneStatus,16) & 8 >> 3	 			# Set batery level
+		if iData == 0 :
+			self.ListOfDevices[MsgSrcAddr]['Battery']="100"		# set to 100%
+		else :
+			self.ListOfDevices[MsgSrcAddr]['Battery']="0"
+		if MsgEp == "02" :					
+			iData = int(MsgZoneStatus,16) & 1      #  For EP 2, bit 0 = "door/window status"
+			# bit 0 = 1 (door is opened) ou bit 0 = 0 (door is closed)
+			value = "%02d" % iData
+			Domoticz.Debug("Decode8401 - PST03A-v2.2.5 door/windows status : " + value)
+			MajDomoDevice(self, MsgSrcAddr, MsgEp, "0500", value)
+			# Nota : tamper alarm on EP 2 are discarded
+		elif  MsgEp == "01" :
+			iData = (int(MsgZoneStatus,16) & 1)	# For EP 1, bit 0 = "movement"
+			# bit 0 = 1 ==> movement
+			if iData == 1 :	
+				value = "%02d" % iData
+				Domoticz.Debug("Decode8401 - PST03A-v2.2.5 mouvements alarm")
+				MajDomoDevice(self, MsgSrcAddr, MsgEp, "0406", value)
+			# bit 2 = 1 ==> tamper (device disassembly)
+			iData = (int(MsgZoneStatus,16) & 4) >> 2
+			if iData == 1 :	 
+				value = "%02d" % iData
+				Domoticz.Debug("Decode8401 - PST03A-V2.2.5  tamper alarm")
+				MajDomoDevice(self, MsgSrcAddr, MsgEp, "0006", value)
+		else :
+			Domoticz.Debug("Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgDataSrcEp)
+	else :	  ## default 
+		# Previously MsgZoneStatus length was only 2 char.
+		MajDomoDevice(self, MsgSrcAddr, MsgEp, "0006", MsgZoneStatus[2:4])
+ 
+
 	return
 
 def CreateDomoDevice(self, DeviceID) :
 	for Ep in self.ListOfDevices[DeviceID]['Ep'] :
-		if self.ListOfDevices[DeviceID]['Type']== {} :
-			Type=GetType(self, DeviceID, Ep).split("/")
+		# CLD CLD
+		# Use 'type' at level EndPoint if existe
+		if 'Type' in  self.ListOfDevices[DeviceID]['Ep'][Ep] :
+			if self.ListOfDevices[DeviceID]['Ep'][Ep]['Type'] != "" :
+				dType = self.ListOfDevices[DeviceID]['Ep'][Ep]['Type']
+				aType = str(dType)
+				Type = aType.split("/")
+				Domoticz.Log("CreateDomoDevice -  Type via GetType at EndPoint level: " + str(Type) + " Ep : " + str(Ep) )
 		else :
-			Type=self.ListOfDevices[DeviceID]['Type'].split("/")
+
+			if self.ListOfDevices[DeviceID]['Type']== {} :
+				Type=GetType(self, DeviceID, Ep).split("/")
+				Domoticz.Log("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )
+			else :
+				Type=self.ListOfDevices[DeviceID]['Type'].split("/")
+				Domoticz.Log("CreateDomoDevice - Type : '" + str(Type) + "'")
+
 		if Type !="" :
 			if "Humi" in Type and "Temp" in Type and "Baro" in Type:
 				t="Temp+Hum+Baro" # Detecteur temp + Hum + Baro
-				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 			if "Humi" in Type and "Temp" in Type :
 				t="Temp+Hum"
-				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+
+			#For color Bulb
+			if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
+				Type = ['ColorControl']
+			elif ("Switch" in Type) and ("LvlControl" in Type):
+				Type = ['LvlControl']
 
 			for t in Type :
-				Domoticz.Debug("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
+				Domoticz.Log("CreateDomoDevice - Device ID : " + str(DeviceID) + " Device EP : " + str(Ep) + " Type : " + str(t) )
 				if t=="Temp" : # Detecteur temp
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName="Temperature", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), TypeName="Temperature", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Humi" : # Detecteur hum
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName="Humidity", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), TypeName="Humidity", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Baro" : # Detecteur Baro
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), TypeName="Barometer", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), TypeName="Barometer", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Door": # capteur ouverture/fermeture xiaomi
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=2 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=2 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Motion" :  # detecteur de presence
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=8 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=8 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="MSwitch"  :  # interrupteur multi lvl 86sw2 xiaomi
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="DSwitch"  :  # interrupteur double sur EP different
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="DButton"  :  # interrupteur double sur EP different
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="Smoke" :  # detecteur de fumee
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=5 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=5 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Lux" :  # Lux sensors
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=246, Subtype=1 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=246, Subtype=1 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Switch":  # inter sans fils 1 touche 86sw1 xiaomi
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Button":  # inter sans fils 1 touche 86sw1 xiaomi
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=9 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=9 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="XCube" :  # Xiaomi Magic Cube
+				if t=="Aqara" or t=="XCube" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||||||", "LevelNames": "Off|Shake|Slide|90°|Clockwise|Tap|Move|Free Fall|Anti Clockwise|180°", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="Water" :  # detecteur d'eau 
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Image=11 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Image=11 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				if t=="Plug" :  # prise pilote
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Image=1 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=0 , Image=1 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="LvlControl" and self.ListOfDevices[DeviceID]['ZDeviceID']=="0200" :  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
+				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']=="shutter.Profalux" :  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=16 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=16 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="LvlControl" and self.ListOfDevices[DeviceID]['ZDeviceID']!="0200" :  # variateur de luminosite
+				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']!="shutter.Profalux" :  # variateur de luminosite + On/off
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
-				if t=="ColorControl" :  # variateur de couleur
+				if t=="ColorControl" :  # variateur de couleur/luminosite/on-off
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=FreeUnit(self), Type=244, Subtype=73 , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					# Type 0xF1    pTypeColorSwitch
+
+					#SubType sTypeColor_RGB_W                0x01 // RGB + white, either RGB or white can be lit
+					#SubType sTypeColor_RGB                  0x02 // RGB
+					#SubType sTypeColor_White                0x03 // Monochrome white
+					#SubType sTypeColor_RGB_CW_WW            0x04 // RGB + cold white + warm white, either RGB or white can be lit
+					#SubType sTypeColor_LivCol               0x05
+					#SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
+					#SubType sTypeColor_RGB_CW_WW_Z          0x07 // Like RGBWW, but allows combining RGB and white
+					#SubType sTypeColor_CW_WW                0x08 // Cold white + Warm white
+
+					# Switchtype 7 STYPE_Dimmer
+
+					if self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1624G9.Tradfri":
+						Subtype_ = 2
+					elif self.ListOfDevices[DeviceID]['Model'] == "Ampoule.LED1545G12.Tradfri":
+						Subtype_ = 8
+					else:
+						Subtype_ = 7
+
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self), Type=241, Subtype=Subtype_ , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				#Ajout meter
 				if t=="PowerMeter" :  # Power Prise Xiaomi
 					Domoticz.Debug("Ajout Meter")
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + " - " + str(DeviceID), Unit=len(Devices)+1, TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=len(Devices)+1, TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 #def UpdateDomoDevice(self, DeviceID) :
 #	IEEEexist=False
@@ -1003,16 +1660,20 @@ def FreeUnit(self) :
 	Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(x))
 	return FreeUnit
 
-def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
-	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) )
+def MajDomoDevice(self,DeviceID,Ep,clusterID,value,Color_='') :
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 	x=0
 	Type=TypeFromCluster(clusterID)
+	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
 			Dtypename=DOptions['TypeName']
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
-			
+			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
+
+			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
+	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :
@@ -1022,7 +1683,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)								
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Humi" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1030,14 +1691,14 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s;%s;%s'	% (SplitData[0], str(value) ,  SplitData[2] , SplitData[3], Bar_forecast)
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Baro" :  # barometer
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
 					Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
 					SplitData=CurrentsValue.split(";")
 					valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], str(value) , SplitData[3], Bar_forecast)
-					UpdateDevice(x,0,str(valueBaro),DOptions)
+					UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)								
 			if Dtypename=="Temp+Hum" : #temp+hum xiaomi
 				if Type=="Temp" :
 					CurrentnValue=Devices[x].nValue
@@ -1046,7 +1707,7 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s'	% (str(value), SplitData[1] , SplitData[2])
 					Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)								
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 				if Type=="Humi" :
 					CurrentnValue=Devices[x].nValue
 					CurrentsValue=Devices[x].sValue
@@ -1054,43 +1715,52 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					SplitData=CurrentsValue.split(";")
 					NewSvalue='%s;%s;%s'	% (SplitData[0], str(value) , SplitData[2])
 					Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-					UpdateDevice(x,0,str(NewSvalue),DOptions)
+					UpdateDevice_v2(x,0,str(NewSvalue),DOptions, SignalLevel)								
 			if Type==Dtypename=="Temp" :  # temperature
-				UpdateDevice(x,0,str(value),DOptions)				
+				UpdateDevice_v2(x,0,str(value),DOptions, SignalLevel)								
 			if Type==Dtypename=="Humi" :   # humidite
-				UpdateDevice(x,int(value),"0",DOptions)				
+				UpdateDevice_v2(x,int(value),"0",DOptions, SignalLevel)								
 			if Type==Dtypename=="Baro" :  # barometre
 				CurrentnValue=Devices[x].nValue
 				CurrentsValue=Devices[x].sValue
 				Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
 				SplitData=CurrentsValue.split(";")
 				valueBaro='%s;%s' % (value,SplitData[0])
-				UpdateDevice(x,0,str(valueBaro),DOptions)
+				UpdateDevice_v2(x,0,str(valueBaro),DOptions, SignalLevel)
+			# CLD CLD
+			if Type=="Door" and Dtypename=="Door" :  # Door / Window
+				if value == "01" :
+					state="Open"
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+				elif value == "00" :
+					state="Closed"
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
+
 			if Type=="Switch" and Dtypename=="Door" :  # porte / fenetre
 				if value == "01" :
 					state="Open"
 					#Correction Thiklop : value n'est pas toujours un entier. Exécution de l'updatedevice dans le test
-					UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				elif value == "00" :
 					state="Closed"
 					#Correction Thiklop : idem
-					UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 					#Fin de la correction
 			if Type==Dtypename=="Switch" : # switch simple
 				if value == "01" :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				if value == "01" :
 					state="Open"
 				elif value == "00" :
 					state="Closed"
-				UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Button": # boutton simple
 				if value == "01" :
 					state="On"
-					UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				else:
 					return
 			if Type=="Switch" and Dtypename=="Water" : # detecteur d eau
@@ -1098,13 +1768,13 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Smoke" : # detecteur de fume
 				if value == "01" :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch
 				if value == "00" :
 					state="00"
@@ -1118,98 +1788,118 @@ def MajDomoDevice(self,DeviceID,Ep,clusterID,value) :
 					state="40"
 				else :
 					state="0"
-				UpdateDevice(x,int(value),str(state),DOptions)
+				UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
 				if Ep == "01" :
 					if value == "01" or value =="00" :
 						state="10"
 						data="01"
-						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "02" :
 					if value == "01" or value =="00":
 						state="20"
 						data="02"
-						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "03" :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-						UpdateDevice(x,int(data),str(state),DOptions)
+				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different   ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
 					if value == "01" or value =="00" :
 						state="10"
 						data="01"
-						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "02" :
 					if value == "01" or value =="00":
 						state="20"
 						data="02"
-						UpdateDevice(x,int(data),str(state),DOptions)
 				elif Ep == "03" :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-						UpdateDevice(x,int(data),str(state),DOptions)
-			if Type==Dtypename=="XCube" :  # cube xiaomi
-				if Ep == "02" :
-					if value == "0000" : #shake
-						state="10"
-						data="01"
-						UpdateDevice(x,int(data),str(state),DOptions)
-					elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
-						state="50"
-						data="05"
-						UpdateDevice(x,int(data),str(state),DOptions)
-					elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
-						state="20"
-						data="02"
-						UpdateDevice(x,int(data),str(state),DOptions)
-					elif value == "0003" : #Free Fall
-						state="70"
-						data="07"
-						UpdateDevice(x,int(data),str(state),DOptions)
-					elif value >= "0004" and value <= "0059": #90°
-						state="30"
-						data="03"
-						UpdateDevice(x,int(data),str(state),DOptions)
-					elif value >= "0060" : #180°
-						state="90"
-						data="09"
-						UpdateDevice(x,int(data),str(state),DOptions)
+				UpdateDevice_v2(x,int(data),str(state),DOptions, SignalLevel)
+
+			if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
+					Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
+					UpdateDevice_v2( x, int(value), str(value), DOptions, SignalLevel )
+
+			if Type=="XCube" and Dtypename=="Aqara" and Ep == "03": #Magic Cube Acara Rotation
+					Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
+					UpdateDevice_v2( x, int(value), str(value), DOptions, SignalLevel )
+
+			if Type==Dtypename=="XCube" and Ep == "02":  # cube xiaomi
+				if value == "0000" : #shake
+					state="10"
+					data="01"
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
+				elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205": #tap
+					state="50"
+					data="05"
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
+				elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105": #Slide
+					state="20"
+					data="02"
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
+				elif value == "0003" : #Free Fall
+					state="70"
+					data="07"
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
+				elif value >= "0004" and value <= "0059": #90°
+					state="30"
+					data="03"
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
+				elif value >= "0060" : #180°
+					state="90"
+					data="09"
+					UpdateDevice_v2( x, int(data), str(state), DOptions, SignalLevel )
+
 			if Type==Dtypename=="Lux" :
-				UpdateDevice(x,0,str(value),DOptions)
+				#UpdateDevice(x,0,str(value),DOptions)
+				# CLD CLD
+				UpdateDevice_v2(x,int(value),str(value),DOptions, SignalLevel)
 			if Type==Dtypename=="Motion" :
 				#Correction Thiklop : value pas toujours un entier :
 				#'onMessage' failed 'ValueError':'invalid literal for int() with base 10: '00031bd000''.
 				# UpdateDevice dans le if
 				if value == "01" :
 					state="On"
-					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				elif value == "00" :
 					state="Off"
-					UpdateDevice(x,int(value),str(state),DOptions)
+					#UpdateDevice(x,int(value),str(state),DOptions)
+					UpdateDevice_v2(x,int(value),str(state),DOptions, SignalLevel)
 				#Fin de correction
 
 			if Type==Dtypename=="LvlControl" :
 				try:
 					sValue =  round((int(value,16)/255)*100)
 				except:
-					Domoticz.Log("MajDomoDevice - ERROR value is not an int = " + str(value) )
+					Domoticz.Error("MajDomoDevice - value is not an int = " + str(value) )
 				else:
 					Domoticz.Debug("MajDomoDevice LvlControl - DvID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
-					if sValue == 0 :
-						nValue= 0
-					elif sValue == 100 :
-						nValue = 1
-					else :
-						nValue = 2
+
+					nValue = 2
+					
 					if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) :
 						Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-						UpdateDevice(x, str(nValue), str(sValue) ,DOptions)
+						UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel)
+
+			if Type==Dtypename=="ColorControl" :
+				try:
+					sValue =  round((int(value,16)/255)*100)
+				except:
+					Domoticz.Error("MajDomoDevice - value is not an int = " + str(value) )
+				else:
+					Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
+			
+				nValue = 2
+			
+				if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) or str(Color_) != str(Devices[x].Color):
+					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
+					UpdateDevice_v2(x, str(nValue), str(sValue) ,DOptions, SignalLevel, Color_)
 
 			#Modif Meter
-			if clusterID=="000c":
+			if clusterID=="000c" and Type != "XCube":
 				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
 
@@ -1230,18 +1920,36 @@ def ResetDevice(Type,HbCount) :
 					UpdateDevice(x,int(value),str(state),DOptions)	
 		except :
 			return
+			
+def IEEEExist(self, IEEE) :
+	#check in ListOfDevices for an existing IEEE
+	if IEEE : 
+		if IEEE in self.ListOfDevices and IEEE != '' :
+			return True
+		else:
+			return False
 
-def DeviceExist(self, Addr) :
+def DeviceExist(self, Addr , IEE = ''):
+	#Validity check
+	if Addr == '':
+		return False
 	#check in ListOfDevices
-	if Addr in self.ListOfDevices and Addr != '' :
+	if Addr in self.ListOfDevices:
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
-		else :
-			initDeviceInList(self, Addr)
-			return False
-	else :  # devices inconnu ds listofdevices et ds db
-		initDeviceInList(self, Addr)
-		return False
+	#if gived, test IEE
+	if IEE:
+		for i in self.ListOfDevices:
+			d = self.ListOfDevices[i]
+			Domoticz.Debug("######" + str(d))
+			if d.get('IEEE','wrong iee') == IEE:
+				Domoticz.Debug("New adress but same IEE")
+				#update adress
+				self.ListOfDevices[Addr] = d
+				del i
+				return True
+	#unknow device
+	return False
 
 def initDeviceInList(self, Addr) :
 	if Addr != '' :
@@ -1250,6 +1958,7 @@ def initDeviceInList(self, Addr) :
 		self.ListOfDevices[Addr]['Status']="004d"
 		self.ListOfDevices[Addr]['Heartbeat']="0"
 		self.ListOfDevices[Addr]['RIA']="0"
+		self.ListOfDevices[Addr]['RSSI']={}
 		self.ListOfDevices[Addr]['Battery']={}
 		self.ListOfDevices[Addr]['Model']={}
 		self.ListOfDevices[Addr]['MacCapa']={}
@@ -1259,15 +1968,28 @@ def initDeviceInList(self, Addr) :
 		self.ListOfDevices[Addr]['ZDeviceID']={}
 
 def getChecksum(msgtype,length,datas) :
-	temp = 0 ^ int(msgtype[0:2],16) 
-	temp ^= int(msgtype[2:4],16) 
-	temp ^= int(length[0:2],16) 
+	temp = 0 ^ int(msgtype[0:2],16)
+	temp ^= int(msgtype[2:4],16)
+	temp ^= int(length[0:2],16)
 	temp ^= int(length[2:4],16)
 	for i in range(0,len(datas),2) :
 		temp ^= int(datas[i:i+2],16)
 		chk=hex(temp)
 	Domoticz.Debug("getChecksum - Checksum : " + str(chk))
 	return chk[2:4]
+
+def UpdateSignalLevel( DeviceID, SignalLvl) :
+	x=0
+	for x in Devices:
+		if Devices[x].DeviceID == str(DeviceID):
+			Domoticz.Debug("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) )
+			CurrentnValue=Devices[x].nValue
+			CurrentsValue=Devices[x].sValue
+			CurrentsOptions=Devices[x].Options
+			rssi= round( (SignalLvl * 12 ) / 200) # Should be 255, but there is no chance to have 255 !
+			Domoticz.Debug("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
+			Devices[x].Update(nValue=int(CurrentnValue), sValue=str(CurrentsValue), Options=str(CurrentsOptions), SignalLevel=int(rssi) )
+	return
 
 def UpdateBattery(DeviceID,BatteryLvl):
 	x=0
@@ -1286,6 +2008,39 @@ def UpdateBattery(DeviceID,BatteryLvl):
 		self.ListOfDevices[DeviceID]['Status']="004d"
 		self.ListOfDevices[DeviceID]['Battery']=BatteryLvl
 
+
+
+def UpdateDevice_v2(Unit, nValue, sValue, Options, SignalLvl, Color_ = ''):
+	# V2 update Domoticz with SignaleLevel/RSSI
+	Domoticz.Debug("UpdateDevice_v2 - Options = " + str(Options))
+	Dzigate=eval(Options['Zigate'])
+
+	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Signal Level = " + str(SignalLvl) )
+	if isinstance(SignalLvl,int) :
+		rssi= round( (SignalLvl * 12 ) / 255)
+		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " RSSI = " + str(rssi) )
+	else:
+		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " SignalLvl is not an int" )
+		rssi=12
+
+	BatteryLvl=str(Dzigate['Battery'])
+	if BatteryLvl == '{}' :
+		BatteryLvl=255
+		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " BatteryLvl = " + str(BatteryLvl))
+
+	# Make sure that the Domoticz device still exists (they can be deleted) before updating it
+	if (Unit in Devices):
+		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
+
+			if Color_:
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
+			else:
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+
+			Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+	return
+
 def UpdateDevice(Unit, nValue, sValue, Options):
 	Dzigate=eval(Options['Zigate'])
 	BatteryLvl=str(Dzigate['Battery'])
@@ -1301,6 +2056,14 @@ def UpdateDevice(Unit, nValue, sValue, Options):
 	return	
 
 def ReadCluster(self, MsgData):
+	MsgLen=len(MsgData)
+	Domoticz.Debug("ReadCluster - MsgData lenght is : " + str(MsgLen) + " out of 24+")
+
+	if MsgLen < 24 :
+		Domoticz.Error("ReadCluster - MsgData lenght is too short: " + str(MsgLen) + " out of 24+")
+		Domoticz.Error("ReadCluster - MsgData : '" +str(MsgData) + "'")
+		return
+
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
 	MsgSrcEp=MsgData[6:8]
@@ -1311,15 +2074,10 @@ def ReadCluster(self, MsgData):
 	MsgClusterData=MsgData[24:len(MsgData)]
 	tmpEp=""
 	tmpClusterid=""
-	if DeviceExist(self, MsgSrcAddr)==False :
-		#Correction Thiklop : MsgSrcEp n'est pas toujours dans la ListOfDevices (?)
-		#Encapsulation dans un try except pour sortir proprement
-		try :
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
-		except :
-			Domoticz.Log("ERREUR - Erreur ReadCluster KeyError : MsgData = " + MsgData)
-		#Fin de la correction
+	if DeviceExist(self, MsgSrcAddr) == False :
+		#Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
+		Domoticz.Error("ReadCluster - KeyError : MsgData = " + MsgData)
+		return
 	else :
 		self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
 		try : 
@@ -1334,35 +2092,46 @@ def ReadCluster(self, MsgData):
 
 	if MsgClusterId=="0000" :  # (General: Basic)
 		if MsgAttrID=="ff01" :  # xiaomi battery lvl
+			Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
+			if ( len(MsgClusterData) >= 62 ) :
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery Tag : " + str(MsgClusterData[0:4]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temp Tag : " + str(MsgClusterData[38:42]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temp     : " + str(MsgClusterData[42:44]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humi Tag : " + str(MsgClusterData[46:50]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humid    : " + str(MsgClusterData[50:54]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Pres Tag : " + str(MsgClusterData[54:58]) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Pressure : " + str(MsgClusterData[58:62]) )
+
 			MsgBattery=MsgClusterData[4:8]
 			try :
 				ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
 				ValueBattery=round(int(ValueBattery,16)/10/3.3)
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
+				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
 				#if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
 				#	UpdateBattery(MsgSrcAddr,ValueBattery)
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			except :
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
+				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
 				return
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
-				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
-				self.ListOfDevices[MsgSrcAddr]['Model']=MType
-				if self.ListOfDevices[MsgSrcAddr]['Model']!= {} and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf : # verifie que le model existe ds le fichier de conf des models
-					Modeltmp=str(self.ListOfDevices[MsgSrcAddr]['Model'])
-					for Ep in self.DeviceConf[Modeltmp]['Ep'] :
-						if Ep in self.ListOfDevices[MsgSrcAddr]['Ep'] :
-							for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
-								if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :
-									self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
-						else :
-							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}
-							for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
-								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
-					self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[Modeltmp]['Type']
+				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')                                        # Convert the model name to ASCII
+				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
+				self.ListOfDevices[MsgSrcAddr]['Model']=MType                                                   # Set the model name in database
+
+				if MType in self.DeviceConf :                                                                   # If the model exist in DeviceConf.txt
+					for Ep in self.DeviceConf[MType]['Ep'] :                                                # For each Ep in DeviceConf.txt
+						if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep'] :                             # If this EP doesn't exist in database
+							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                             # create it.
+						for cluster in self.DeviceConf[MType]['Ep'][Ep] :                               # For each cluster discribe in DeviceConf.txt
+							if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :            # If this cluster doesn't exist in database
+								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}            # create it.
+						if 'Type' in self.DeviceConf[MType]['Ep'][Ep] :                                 # If type exist at EP level : copy it
+							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[MType]['Ep'][Ep]['Type']
+					if 'Type' in self.DeviceConf[MType] :                                                   # If type exist at top level : copy it
+						self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[MType]['Type']
 			except:
+				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Model info Xiaomi : " +  MsgSrcAddr)
 				return
 		else :
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
@@ -1372,13 +2141,13 @@ def ReadCluster(self, MsgData):
 		if MsgAttrID=="0000" or MsgAttrID=="8000":
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
 		else :
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgData)
 			return
 
 	elif MsgClusterId=="0008" :  # (Cluster Level Control )
-		Domoticz.Debug("ReadCluster (8100) - ClusterId=0008 - Level Control : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0008 - Level Control : " + str(MsgClusterData) )
 		Domoticz.Debug("MsgSQN: " + MsgSQN )
 		Domoticz.Debug("MsgSrcAddr: " + MsgSrcAddr )
 		Domoticz.Debug("MsgSrcEp: " + MsgSrcEp )
@@ -1397,38 +2166,38 @@ def ReadCluster(self, MsgData):
 				MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
 				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+				Domoticz.Debug("ReadCluster - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
 			#Correction Thiklop 2 : cas des température > 1000°C
 			#elif int(MsgClusterData,16) < 100000 : #1000 °C x 100
 			else:
 				MsgClusterData=int(MsgClusterData,16)
 				MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-				Domoticz.Debug("ReadCluster (8102) - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
+				Domoticz.Debug("ReadCluster - ClusterId=0402 - reception temp : " + str(MsgClusterData/100) )
 			#else :
 			#	Domoticz.Log("Température > 1000°C")
 			#Fin de correction 2
 		else : 
-			Domoticz.Log("MsgClusterData vide")
+			Domoticz.Error("ReadCluster - ClusterId=0402 - MsgClusterData vide")
 		#Fin de la correction
 
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 		if MsgAttType=="0028":
 			#MajDomoDevice(self, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0403 - reception atm : " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(MsgClusterData) )
 			
 		if MsgAttType=="0029" and MsgAttrID=="0000":
 			#MsgValue=Data[len(Data)-8:len(Data)-4]
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16),1)))
+			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16),1)))
 			
 		if MsgAttType=="0029" and MsgAttrID=="0010":
 			#MsgValue=Data[len(Data)-8:len(Data)-4]
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/10,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/10,1)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16)/10,1)))
+			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16)/10,1)))
 
 	elif MsgClusterId=="0405" :  # (Measurement: Humidity) xiaomi
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
@@ -1437,17 +2206,17 @@ def ReadCluster(self, MsgData):
 		try :
 			int(MsgClusterData,16)
 		except :
-			Domoticz.Log("ERREUR - Erreur decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
+			Domoticz.Error("ReadCluster -ClusterID=0405 - decapteur Xiamo humidité. La valeur n'est pas un entier : " + MsgClusterData)
 		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
+			Domoticz.Debug("ReadCluster - ClusterId=0405 - reception hum : " + str(int(MsgClusterData,16)/100) )
 		#Fin de correction
 
 	elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing) xiaomi
 		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0406 - reception Occupancy Sensor : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0406 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
 	elif MsgClusterId=="0400" :  # (Measurement: LUX) xiaomi
 		#Correction Thiklop : le MsgClusterData n'est pas un entier hexa (message vide dans certains cas ?)
@@ -1455,29 +2224,96 @@ def ReadCluster(self, MsgData):
 		try :
 			int(MsgClusterData,16)
 		except :
-			Domoticz.Log("ERREUR - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
+			Domoticz.Error("readCluster - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
 		else :
 			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
+			Domoticz.Debug("ReadCluster - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
 		#Fin de la correction
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
+		# Thanks to : https://github.com/dresden-elektronik/deconz-rest-plugin/issues/138#issuecomment-325101635
+		#         +---+
+		#         | 2 |
+		#     +---+---+---+
+		#     | 4 | 0 | 1 |
+		#     +---+---+---+
+		#         | 5 |
+		#         +---+
+		#         | 3 |
+		#         +---+
+		#     Side 5 is with the MI logo; side 3 contains the battery door.
+		#
+		#     Shake: 0x0000 (side on top doesn't matter)
+		#     90º Flip from side x on top to side y on top: 0x0040 + (x << 3) + y
+		#     180º Flip to side x on top: 0x0080 + x
+		#     Push while side x is on top: 0x0100 + x
+		#     Double Tap while side x is on top: 0x0200 + x
+		#     Push works in any direction.
+		#     For Double Tap you really need to lift the cube and tap it on the table twice.
+		def cube_decode(value):
+			value=int(value,16)
+			if value == '' or value is None:
+				return value
+
+			if value == 0x0000 : 		
+				Domoticz.Debug("cube action : " + 'Shake' )
+				value='10'
+			elif value == 0x0002 :			
+				Domoticz.Debug("cube action : " + 'Wakeup' )
+				value = '20'
+			elif value == 0x0003 :
+				Domoticz.Debug("cube action : " + 'Drop' )
+				value = '30'
+			elif value & 0x0040 != 0 :	
+				face = value ^ 0x0040
+				face1 = face >> 3
+				face2 = face ^ (face1 << 3)
+				Domoticz.Debug("cube action : " + 'Flip90_{}{}'.format(face1, face2))
+				value = '40'
+			elif value & 0x0080 != 0:  
+				face = value ^ 0x0080
+				Domoticz.Debug("cube action : " + 'Flip180_{}'.format(face) )
+				value = '50'
+			elif value & 0x0100 != 0:  
+				face = value ^ 0x0100
+				Domoticz.Debug("cube action : " + 'Push/Move_{}'.format(face) )
+				value = '60'
+			elif value & 0x0200 != 0:  # double_tap
+				face = value ^ 0x0200
+				Domoticz.Debug("cube action : " + 'Double_tap_{}'.format(face) )
+				value = '70'
+			else:  
+				Domoticz.Debug("cube action : Not expected value" + value )
+			return value
+
+		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-		Domoticz.Debug("ReadCluster (8102) - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
+		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(cube_decode(MsgClusterData)) )
+		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
-		MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
-		Domoticz.Debug("Dans le CLuster 000C")
-		if MsgAttrID=="0055":
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
-		else :
+		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
+			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=000c - reception Xiaomi Magic Cube Value Vert Rot : " + str(MsgClusterData) )
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
+
+		elif MsgAttrID=="ff05" and MsgSrcEp == '03' : # Rotation - horinzontal
+			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
+			MajDomoDevice(self, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
+		else :
+			Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
+
+	elif MsgClusterId=="0b04" or MsgClusterId=="0702":  # 0b04 is Electrical Measurement Cluster
+		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
-		Domoticz.Debug("ReadCluster (8102) - Error/unknow Cluster Message : " + MsgClusterId)
+		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
+		Domoticz.Error("                           MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
+		Domoticz.Error("                           MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
 
 def ReadAttributeRequest_0008(self, key) :
@@ -1508,7 +2344,14 @@ def CheckType(self, MsgSrcAddr) :
 
 def GetType(self, Addr, Ep) :
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-		Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+		# CLD CLD
+		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
+			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
+				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+				Type = str(Type)
+		else :
+			Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+
 		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
 		Domoticz.Log("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
@@ -1532,7 +2375,7 @@ def GetType(self, Addr, Ep) :
 			self.ListOfDevices[Addr]['Type']=Type
 			Domoticz.Debug("GetType - Type is now set to : " + str(Type) )
 		else :
-			Domoticz.Error("GetType - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Model : " + str(self.ListOfDevices[Addr]['Model']) )
+			Domoticz.Log("GetType - WARNING - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Device Info : " + str(self.ListOfDevices[Addr]) )
 	return Type
 
 def TypeFromCluster(cluster):
@@ -1578,15 +2421,26 @@ def returnlen(taille , value) :
 		value="0"+value
 	return str(value)
 
+
+def Hex_Format(taille, value):
+	value = hex(int(value))[2:]
+	if len(value) > taille:
+		return 'f' * taille
+	while len(value)<taille:
+		value="0"+value
+	return str(value)
+
 def CheckDeviceList(self, key, val) :
 	Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
 	Domoticz.Debug("CheckDeviceList - with value : " + str(val))
 	
 	DeviceListVal=eval(val)
-	if DeviceExist(self, key)==False :
+	if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
 		Domoticz.Debug("CheckDeviceList - Address will be add : " + str(key))
+		initDeviceInList(self, key)
 		self.ListOfDevices[key]['RIA']="10"
-		self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
+		if 'Ep' in DeviceListVal :
+			self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
 		if 'Type' in DeviceListVal :
 			self.ListOfDevices[key]['Type']=DeviceListVal['Type']
 		if 'Model' in DeviceListVal :
@@ -1601,4 +2455,80 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['ZDeviceID']=DeviceListVal['ZDeviceID']
 		if 'Status' in DeviceListVal :
 			self.ListOfDevices[key]['Status']=DeviceListVal['Status']
+		if 'RSSI' in DeviceListVal :
+			self.ListOfDevices[key]['RSSI']=DeviceListVal['RSSI']
+	return
+
+def DisplayStatusCode( StatusCode ) :
+	# As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
+
+	StatusMsg=""
+	if str(StatusCode)=="00" :   StatusMsg="Success"
+	elif str(StatusCode)=="c1" : StatusMsg="An invalid or out-of-range parameter has been passed"
+	elif str(StatusCode)=="c2" : StatusMsg="Request cannot be processed"
+	elif str(StatusCode)=="c3" : StatusMsg="NLME-JOIN.request not permitted"
+	elif str(StatusCode)=="c4" : StatusMsg="NLME-NETWORK-FORMATION.request failed"
+	elif str(StatusCode)=="c5" : StatusMsg="NLME-DIRECT-JOIN.request failure - device already present"
+	elif str(StatusCode)=="c6" : StatusMsg="NLME-SYNC.request has failed"
+	elif str(StatusCode)=="c7" : StatusMsg="NLME-DIRECT-JOIN.request failure - no space in Router table"
+	elif str(StatusCode)=="c8" : StatusMsg="NLME-LEAVE.request failure - device not in Neighbour table"
+	elif str(StatusCode)=="c9" : StatusMsg="NLME-GET/SET.request unknown attribute identified"
+	elif str(StatusCode)=="ca" : StatusMsg="NLME-JOIN.request detected no networks"
+	elif str(StatusCode)=="cb" : StatusMsg="Reserved"
+	elif str(StatusCode)=="cc" : StatusMsg="Security processing has failed on outgoing frame due to maximum frame counter"
+	elif str(StatusCode)=="cd" : StatusMsg="Security processing has failed on outgoing frame due to no key"
+	elif str(StatusCode)=="ce" : StatusMsg="Security processing has failed on outgoing frame due CCM"
+	elif str(StatusCode)=="cf" : StatusMsg="Attempt at route discovery has failed due to lack of table space"
+	elif str(StatusCode)=="d0" : StatusMsg="Attempt at route discovery has failed due to any reason except lack of table space"
+	elif str(StatusCode)=="d1" : StatusMsg="NLDE-DATA.request has failed due to routing failure on sending device"
+	elif str(StatusCode)=="d2" : StatusMsg="Broadcast or broadcast-mode multicast has failed as there is no room in BTT"
+	elif str(StatusCode)=="d3" : StatusMsg="Unicast mode multi-cast frame was discarded pending route discovery"
+	elif str(StatusCode)=="d4" : StatusMsg="Unicast frame does not have a route available but it is buffered for automatic resend"
+
+	elif str(StatusCode)=="a0": StatusMsg="A transmit request failed since the ASDU is too large and fragmentation is not supported"
+	elif str(StatusCode)=="a1": StatusMsg="A received fragmented frame could not be defragmented at the current time"
+	elif str(StatusCode)=="a2": StatusMsg="A received fragmented frame could not be defragmented since the device does not support fragmentation"
+	elif str(StatusCode)=="a3": StatusMsg="A parameter value was out of range"
+	elif str(StatusCode)=="a4": StatusMsg="An APSME-UNBIND.request failed due to the requested binding link not existing in the binding table"
+	elif str(StatusCode)=="a5": StatusMsg="An APSME-REMOVE-GROUP.request has been issued with a group identified that does not appear in the group table"
+	elif str(StatusCode)=="a6": StatusMsg="A parameter value was invaid or out of range"
+	elif str(StatusCode)=="a7": StatusMsg="An APSDE-DATA.request requesting ack transmission failed due to no ack being received"
+	elif str(StatusCode)=="a8": StatusMsg="An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to there being no devices bound to this device"
+	elif str(StatusCode)=="a9": StatusMsg="An APSDE-DATA.request with a destination addressing mode set to 0x03 failed due to no corresponding short address found in the address map table"
+	elif str(StatusCode)=="aa": StatusMsg="An APSDE-DATA.request with a destination addressing mode set to 0x00 failed due to a binding table not being supported on the device"
+	elif str(StatusCode)=="ab": StatusMsg="An ASDU was received that was secured using a link key"
+	elif str(StatusCode)=="ac": StatusMsg="An ASDU was received that was secured using a network key"
+	elif str(StatusCode)=="ad": StatusMsg="An APSDE-DATA.request requesting security has resulted in an error during the corresponding security processing"
+
+	else:                       StatusMsg="Unknown code : " + StatusCode
+
+
+	return StatusMsg
+
+
+def decodeMacCapa ( MsgMacCapa ) :
+	# MAC capability
+	#     Bit 0 – Alternate PAN Coordinator
+	#     Bit 1 – Device Type
+	#     Bit 2 – Power source
+	#     Bit 3 – Receiver On when Idle
+	#     Bit 4,5 – Reserved
+	#     Bit 6 – Security capability
+	#     Bit 7 – Allocate Address
+	# Implement the decoding of this bit field and return an 8 char array with 1 or 0 based on the MAC capabilities
+
+	return
+
+def removeZigateDevice( self, key ) :
+	# remove a device in Zigate
+	# Key is the short address of the device
+	# extended address is ieee address
+	
+	if key in  self.ListOfDevices:
+		ieee =  self.ListOfDevices[key]['IEEE']
+		Domoticz.Log("Remove from Zigate Device = " + str(key) + " IEEE = " +str(ieee) )
+		sendZigateCmd("0026", str(ieee) + str(ieee) )
+	else :
+		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
+		
 	return

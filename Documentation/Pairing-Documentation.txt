@@ -1,0 +1,71 @@
+Objectif: Documenter ce qu'il se passe lors de l'appairage d'un appareil à la Zigate
+
+
+(1) Pour commencer, il faut s'assurer que la Zigate soit bien en mode association.
+Il faut avoir "Permit join time on start (between 0 et 255)" à une valeure supérieur à 0 pour autoriser l'assoiation pendant les n seconds.
+On utilise alors la commande Zigate "0x0049" "Permit Joining request" avec comme paramètre:
+	0 => Disable Joining
+	1-254 => time in seconds to allow joins
+	255 => Allow joins all of the time
+
+
+En retour on recevra un message 0x8000 de status avec comme Packet type 49
+
+
+
+(2) On devrait à la suite d'un join, recevoir un message du type 0x004D "Device announce"
+	onMessage() -> ZigateDecode() -> ZigateRead() -> MsgType == 004d -> Decode004d
+	On test alors si ce Device existe dans la liste des Devices ( ListOfDevices )
+		- Si il exist on ne fait rien
+		- si il n'existe pas et qu'il y a bien une address associée
+			- Initialisation du Device dans ListOfDevices
+			- Status set to "004d" pour traitement ultérieur dans onHeartbeat
+
+(3) On continue le processing dans onhearbeat()
+
+	Lors du scan de chacun des devices de ListeOfDevices on cherche les devices avec un status == "004d". 
+		Pour chacun on va faire une demande de la liste des EndPoints pour ce device
+		via la commande 0x0045
+		on positionne le status à 0045
+
+(4) On devrait alors recevoir un message de type 0x8045 "Active EndPoints respone" via onMessage()
+	onMessage() -> ZigateDecode() -> ZigateRead() -> MsgType == 8045 -> Decode8045
+	On fait alors un DeciceExist() de ce device
+	On positionne le status de ce device à 8045, qui va etre traiter au prochaine onHeartbeat()
+	Puis pour chaque EndPoint .....
+		A VERIFIER ... JE NE COMPRENDS PAS TROP CE QU'iL SE PASSE
+
+	
+(5)  On continue le processing dans onhearbeat()
+
+	Lors du scan de chacun des device de ListOfDevices on cherche les devices dont le status est "8045"
+		- Si le HearBeat == 1 alors on va demander un "Simple Descriptor request" afin d'obtenir les info du EP, 
+		- via la commande 0x0043
+		- On positionne alors le status à 0043
+
+
+(6)  On devrait alors recevoir un message de type 0x8043 "Active EndPoints respone" via onMessage()
+	onMessage() -> ZigateDecode() -> ZigateRead() -> MsgType == 8043 -> Decode8043
+	On vérifie également si il s'agit d'un nouveau Device non encore créé dans la base. Si c'est le cas
+	on va alors traiter tout nouveau EndPoint en l'ajoutant au Device correspondant de ListOfDevices	
+	8043 va permettre de recevoir les informations essentielles à la creation :
+		ProfileID 
+		ZDeviceID
+		La liste des Clusters IN que le device est capable de gérer
+		La liste des Clusters OUT que le device est capable de gérer
+
+
+
+
+During the Discovery to Creation process, Tiemout are also managed
+
+	- When request devices information through commands 0x0043, 0x0045 there is a Timeout of 9 heartbeat ( 1'30 )
+	- In case of Timeout we restart to previous stage
+		- If in 0x0043 -> restart to 0x8045
+		- If in 0x8045 -> restart to 0x004d
+		- If in 0x0045 -> restart to 0x004d
+		- If in 0x004d -> restart
+
+	- There is also an other field used called 'RIA'
+		- In case we reach 0x8043, Hearbeat >= 9 and RIA >= 10 then we stop processing this Device and we put it as unknown.
+

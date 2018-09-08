@@ -1,0 +1,57 @@
+
+plugin.py    /* La structure de base définie par domoticz
+    - Class BasePlugin
+    - onStart
+    - onStop
+    - onConnect
+    - onCommand - on déporte le code dans un module indépendant
+    - onDisconnect
+    - onHearBeat - on déporte le code dans un module indépendant
+
+zigateOUTCom.py     /* Manage all communication from plugin to Zigate - outbound
+    - ZigateEncode
+    - sendZigateCmd
+
+zigateINCom.py      /* Manage all communication from Zigate to plugin - inbound
+    - ZigateRead
+    - ZigateDecode
+    - zigateDecodexxxx.py
+    - All Decodexxxx    /* We might think to put them into an independant module 
+
+zigateCluster.py     /* Manage all incoming cluster
+    - ReadCluster
+
+zigateCommand.py    /* onCommand
+    - onCommand
+
+zigateHeartbeat.py  /* onHeartbeat
+    - onHearbeat
+
+
+zigateDomo.py       /* Manage all Domoticz interaction
+    - CreateDomoDevice
+    - MajDomoDevice
+    - UpdateBattery    ????? Si utille car pas utilisée
+    - UpdateDevice_v2
+    - UpdateDevice    ????? Si utilise car j’ai mis en place la v2, qui met à jour le RSSI dans Domoticz
+
+
+zigateOthers.py    /* Other Zigate related functions
+    - ReadAttributeRequest_0008
+    - DisplayStatusCode
+    - RemoveZigateDevice
+    - getCheckSum
+
+zigateDB.py       /* Manage the plugin Database
+    - WriteDeviceList
+    - CheckDeviceList
+
+zigateBasic      /* plugin basic functions
+    - FreeUnit
+    - ResetDevice
+    - DeviceExist
+    - initDeviceInList
+    - CheckType
+    - GetType
+    - TypeFrom Cluster
+    - returnlen
