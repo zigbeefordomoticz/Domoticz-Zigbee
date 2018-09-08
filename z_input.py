@@ -226,7 +226,7 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8100":  #
 		Domoticz.Debug("ZigateRead - MsgType 8100 - Reception Real individual attribute response : " + Data)
-		Decode8100(self, MsgData, MsgRSSI)
+		Decode8100(self, Devices, MsgData, MsgRSSI)
 		return
 
 	elif str(MsgType)=="8101":  # Default Response
@@ -236,7 +236,7 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8102":  # Report Individual Attribute response
 		Domoticz.Debug("ZigateRead - MsgType 8102 - Report Individual Attribute response : " + Data)	
-		Decode8102(self, MsgData, MsgRSSI)
+		Decode8102(self, Devices, MsgData, MsgRSSI)
 		return
 		
 	elif str(MsgType)=="8110":  #
@@ -544,7 +544,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
 
-def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
+def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
 		MsgSQN=MsgData[0:2]
 		MsgSrcAddr=MsgData[2:6]
@@ -564,7 +564,7 @@ def Decode8100(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 		except : 
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
-		ReadCluster(self, MsgData) 
+		ReadCluster(self, Devices, MsgData) 
 	return
 
 
@@ -577,7 +577,7 @@ def Decode8101(self, MsgData) :  # Default Response
 	Domoticz.Debug("Decode8101 - reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + MsgDataStatus)
 	return
 
-def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
+def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
 	MsgSrcEp=MsgData[6:8]
@@ -595,7 +595,7 @@ def Decode8102(self, MsgData, MsgRSSI) :  # Report Individual Attribute response
 
 		Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
-		ReadCluster(self, MsgData) 
+		ReadCluster(self, Devices, MsgData) 
 	else :
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
 	return
@@ -685,7 +685,7 @@ def Decode8401(self, MsgData) : # Reception Zone status change notification
 
 	return
 
-def ReadCluster(self, MsgData):
+def ReadCluster(self, Devices, MsgData):
 	MsgLen=len(MsgData)
 	Domoticz.Debug("ReadCluster - MsgData lenght is : " + str(MsgLen) + " out of 24+")
 
