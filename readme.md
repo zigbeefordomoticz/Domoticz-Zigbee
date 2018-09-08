@@ -33,8 +33,8 @@ In Domoticz, go in Setup>Hardware, in Type select "Zigate plugin".
   - if Wifi enter IP of your Zigate, keep port to 9999 (not possible to change this on the zigate yet)
   - if USB, select your device port (always /dev/ttyUSBx under linux, COMx for Windows)
 - Select ZigBee channel (by default it's set to 11, but if you have pluzzy device, ou need to set it to 19, see [zigate.fr](zigate.fr) for more information)
-- Set Permit join time, between 0 and 255 to Permit join devices on plugin or Domoticz start
-- Set Erase Persistent Data to true if you want to clean Zigate memory (devices know list in zigate)
+- Set Permit join time, between 0 (for no) , 1 and 254 ( for 1 to 254 cycles) and 255 (always)  to Permit join devices on plugin or Domoticz start
+- Set Erase Persistent Data to true if you want to clean Zigate memory (devices know list in zigate). Be CARREFUL, as you might create some discrapancy between the Zigate HW and the Domoticz Devices.
 - Set Debug to true if you have trouble
 
 ## How it's work
@@ -79,6 +79,5 @@ Push reset button while your device blink 3 times quickly, then your device will
 - Smoke sensor
 
 ### Other Zigbee device
-
-Other zigbee device should be add do domoticz after zigate will have receive a device announce.
+ zigbee device should be add do domoticz after zigate will have receive a device announce.
 
