@@ -1,6 +1,6 @@
 = Zigate Plugin for Domoticz =
 
-[[zigate.fr|Zigate]] Python Plugin for Domoticz home automation.
+[[zigate.fr|Zigate]] Python Plugin for Domoticz home automation providing ZigBee network to Domoticz via the Zigate gateway..
 
 == Installation ==
 
@@ -8,11 +8,22 @@ Python version 3.4 or higher required &amp; Domoticz version 3.87xx or greater.
 
 To install:
 
+* as most of the Domoticz plugin, the installation is done by pulling a github repository into your environment.
+* 2 environments are at your disposal :
+ * Stable environment under the branch name "master" (default)
+ * Beta environement under constent developement to provide new functionality and incorporate more devices.
 * Go in your Domoticz directory using a command line and open the plugins directory.
 * Run: <code>git clone https://github.com/sasu-drooz/Domoticz-Zigate.git</code>
+ * In case you want to move to the beta branch named "developement" run the following command :
+  * Do a backup of you plugin and especially the file DeviceList.txt
+<code> git checkout developement</code>
+ * If you want to fall back to the master branh run the following command :
+<code> git checkout master</code>
+
 * Restart Domoticz.
 
 In the web UI, navigate to the Hardware page. In the hardware dropdown there will be an entry called &quot;Zigate plugin&quot;.
+
 
 == Updating ==
 
@@ -34,7 +45,11 @@ In Domoticz, go in Setup&gt;Hardware, in Type select &quot;Zigate plugin&quot;.
 ** if USB, select your device port (always /dev/ttyUSBx under linux, COMx for Windows)
 * Select ZigBee channel (by default it's set to 11, but if you have pluzzy device, ou need to set it to 19, see [[zigate.fr|zigate.fr]] for more information)
 * Set Permit join time, between 0 and 255 to Permit join devices on plugin or Domoticz start
+ * 0 : no pairing. This is mostlikely the normal way to run the plugin. You cannot add any new devices.
+ * 1-254 : period of time during pairing is possible. This is what you will set when looking to add a new devices.
+ * 255 : pairing is all of the time. 
 * Set Erase Persistent Data to true if you want to clean Zigate memory (devices know list in zigate)
+ * Be carefull that in that case, all of the devices paired in Zigate will be removed. But you will have to manually remove them from Domoticz and from the Zigate plugin file ( DeviceList.txt)
 * Set Debug to true if you have trouble
 
 == How it's work ==
