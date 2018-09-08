@@ -45,6 +45,8 @@ import struct
 import json
 
 import z_var          # Global variables
+import z_tools
+import z_output
 
 
 class BasePlugin:
@@ -127,8 +129,8 @@ class BasePlugin:
 			Domoticz.Log("Connected successfully")
 			if Parameters["Mode3"] == "True":
 			################### ZiGate - ErasePD ##################
-				sendZigateCmd("0012", "")
-			ZigateConf()
+				z_output.sendZigateCmd("0012", "")
+			z_output.ZigateConf(Parameters["Mode5"], Parameters["Mode2"])
 		else:
 			Domoticz.Error("Failed to connect ("+str(Status)+")")
 			Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
@@ -244,18 +246,18 @@ class BasePlugin:
 		# 01 -> ON
 		# 02 -> Toggle
 		#Can use timed on/off
-		#sendZigateCmd("0093","02" + Devices[Unit].DeviceID + EPin + EPout + on/off + on_time + off_time)
+		#z_output.sendZigateCmd("0093","02" + Devices[Unit].DeviceID + EPin + EPout + on/off + on_time + off_time)
 		
 		if Command == "Off" :
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
+			z_output.sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "00")
 			if DSwitchtype == "16" :
 				UpdateDevice_v2(Unit, 0, "0",DOptions, SignalLevel)
 			else :
 				UpdateDevice_v2(Unit, 0, "Off",DOptions, SignalLevel)
 		if Command == "On" :
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-			sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
+			z_output.sendZigateCmd("0092","02" + Devices[Unit].DeviceID + EPin + EPout + "01")
 			if DSwitchtype == "16" :
 				UpdateDevice_v2(Unit, 1, "100",DOptions, SignalLevel)
 			else:
@@ -264,12 +266,12 @@ class BasePlugin:
 		if Command == "Set Level" :
 			#Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
 			#There is too, move max level, mode = 00/01 for 0%/100%
-			#sendZigateCmd("0080","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + mode + rate)
+			#z_output.sendZigateCmd("0080","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + mode + rate)
 			
 			self.ListOfDevices[Devices[Unit].DeviceID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 			OnOff = '01' # 00 = off, 01 = on
-			value=Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
-			sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0010")
+			value=z_tools.Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
+			z_output.sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0010")
 			if DSwitchtype == "16" :
 				UpdateDevice_v2(Unit, 2, str(Level) ,DOptions, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
 			else:
@@ -334,8 +336,8 @@ class BasePlugin:
 
 			#First manage level
 			OnOff = '01' # 00 = off, 01 = on
-			value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
-			sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0000")
+			value=z_tools.Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+			z_output.sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + value + "0000")
 
 			#Now color
 			#ColorModeNone = 0   // Illegal
@@ -351,15 +353,15 @@ class BasePlugin:
 				# t is 0 > 255
 				TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
 				TempMired = 1000000 // TempKelvin
-				sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+				z_output.sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
 			#ColorModeRGB = 3    // Color. Valid fields: r, g, b.
 			elif Hue_List['m'] == 3:
 				x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
 				#Convert 0>1 to 0>FFFF
 				x = int(x*65536)
 				y = int(y*65536)																   
-				strxy = Hex_Format(4,x) + Hex_Format(4,y)
-				sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "0000")
+				strxy = z_tools.Hex_Format(4,x) + z_tools.Hex_Format(4,y)
+				z_output.sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "0000")
 			#ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
 			elif Hue_List['m'] == 4:
 				ww = int(Hue_List['ww'])
@@ -376,8 +378,8 @@ class BasePlugin:
 				saturation = int(saturation*254//100)
 				value = int(l * 254//100)
 				OnOff = '01'
-				sendZigateCmd("00B6","02" + Devices[Unit].DeviceID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
-				sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
+				z_output.sendZigateCmd("00B6","02" + Devices[Unit].DeviceID + EPin + EPout + z_tools.Hex_Format(2,hue) + z_tools.Hex_Format(2,saturation) + "0000")
+				z_output.sendZigateCmd("0081","02" + Devices[Unit].DeviceID + EPin + EPout + OnOff + z_tools.Hex_Format(2,value) + "0010")
 
 			#Update Device
 			UpdateDevice_v2(Unit, 1, str(value) ,DOptions, SignalLevel, str(Color))
@@ -396,7 +398,7 @@ class BasePlugin:
 		if str(z_var.FirmwareVersion) == "030d" :
 			if z_var.HeartbeatCount >= 90 :
 				Domoticz.Debug("request Network Status")
-				sendZigateCmd("0009","")
+				z_output.sendZigateCmd("0009","")
 				z_var.HeartbeatCount = 0
 			else :
 				z_var.HeartbeatCount = z_var.HeartbeatCount + 1
@@ -429,7 +431,7 @@ class BasePlugin:
 					# We should check if the device has not been already created via IEEE
 					if IEEEExist( self, self.ListOfDevices[key]['IEEE'] ) == False :
 						Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
-						sendZigateCmd("0045", str(key))
+						z_output.sendZigateCmd("0045", str(key))
 						self.ListOfDevices[key]['Status']="0045"
 						self.ListOfDevices[key]['Heartbeat']="0"
 					else :
@@ -447,7 +449,7 @@ class BasePlugin:
 					Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
 					for cle in self.ListOfDevices[key]['Ep']:
 						Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
-						sendZigateCmd("0043", str(key)+str(cle))
+						z_output.sendZigateCmd("0043", str(key)+str(cle))
 					self.ListOfDevices[key]['Status']="0043"
 					self.ListOfDevices[key]['Heartbeat']="0"
 	
@@ -699,112 +701,6 @@ def DumpConfigToLog():
 		Domoticz.Debug("Device LastLevel: " + str(Devices[x].LastLevel))
 		Domoticz.Debug("Device Options: " + str(Devices[x].Options))
 	return
-
-def ZigateConf():
-
-	################### ZiGate - get Firmware version #############
-	# answer is expected on message 8010
-	sendZigateCmd("0010","")
-
-	################### ZiGate - set channel ##################
-	sendZigateCmd("0021", "0000" + returnlen(2,hex(int(Parameters["Mode5"]))[2:4]) + "00")
-
-	################### ZiGate - Set Type COORDINATOR #################
-	sendZigateCmd("0023","00")
-	
-	################### ZiGate - start network ##################
-	sendZigateCmd("0024","")
-
-	################### ZiGate - Request Device List #############
-	# answer is expected on message 8015. Only available since firmware 03.0b
-	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion == "030b") :
-		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
-		sendZigateCmd("0015","")
-	else :
-		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(z_var.FirmwareVersion) )
-
-	################### ZiGate - discover mode 255 sec Max ##################
-	#### Set discover mode only if requested - so != 0                  #####
-	if Parameters["Mode2"] != "0":
-		if str(Parameters["Mode2"])=="255": 
-			Domoticz.Status("Zigate enter in discover mode for ever")
-		else : 
-			Domoticz.Status("Zigate enter in discover mode for " + str(Parameters["Mode2"]) + " Secs" )
-		sendZigateCmd("0049","FFFC" + hex(int(Parameters["Mode2"]))[2:4] + "00")
-		
-# CLD
-'''
-def ZigateDecode(self, Data):  # supprime le transcodage
-	Domoticz.Debug("ZigateDecode - decodind data : " + Data)
-	Out=""
-	Outtmp=""
-	Transcode = False
-	for c in Data :
-		Outtmp+=c
-		if len(Outtmp)==2 :
-			if Outtmp == "02" :
-				Transcode=True
-			else :
-				if Transcode == True:
-					Transcode = False
-					if Outtmp[0]=="1" :
-						Out+="0"
-					else :
-						Out+="1"
-					Out+=Outtmp[1]
-				else :
-					Out+=Outtmp
-			Outtmp=""
-	ZigateRead(self, Out)
-'''
-
-def ZigateEncode(Data):  # ajoute le transcodage
-	Domoticz.Debug("ZigateEncode - Encodind data : " + Data)
-	Out=""
-	Outtmp=""
-	Transcode = False
-	for c in Data :
-		Outtmp+=c
-		if len(Outtmp)==2 :
-			if Outtmp[0] == "1" and Outtmp != "10":
-				if Outtmp[1] == "0" :
-					Outtmp="0200"
-					Out+=Outtmp
-				else :
-					Out+=Outtmp
-			elif Outtmp[0] == "0" :
-				Out+="021" + Outtmp[1]
-			else :
-				Out+=Outtmp
-			Outtmp=""
-	Domoticz.Debug("Transcode in : " + str(Data) + "  / out :" + str(Out) )
-	return Out
-
-def sendZigateCmd(cmd,datas) :
-	if datas == "" :
-		length="0000"
-	else :
-		length=returnlen(4,(str(hex(int(round(len(datas)/2)))).split('x')[-1]))  # by Cortexlegeni 
-		Domoticz.Debug("sendZigateCmd - length is : " + str(length) )
-	if datas =="" :
-		checksumCmd=getChecksum(cmd,length,"0")
-		if len(checksumCmd)==1 :
-			strchecksum="0" + str(checksumCmd)
-		else :
-			strchecksum=checksumCmd
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + "03" 
-	else :
-		checksumCmd=getChecksum(cmd,length,datas)
-		if len(checksumCmd)==1 :
-			strchecksum="0" + str(checksumCmd)
-		else :
-			strchecksum=checksumCmd
-		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
-	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
-	if Parameters["Mode1"] == "USB":
-		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
-	if Parameters["Mode1"] == "Wifi":
-		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
 def ZigateRead(self, Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
@@ -2319,7 +2215,7 @@ def ReadAttributeRequest_0008(self, key) :
 			EPout=tmpEp
 	
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )
+	z_output.sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )
 
 
 def CheckType(self, MsgSrcAddr) :
@@ -2407,20 +2303,6 @@ def WriteDeviceList(self, count):
 	else :
 		Domoticz.Debug("HB count = " + str(self.HBcount))
 		self.HBcount=self.HBcount+1
-
-def returnlen(taille , value) :
-	while len(value)<taille:
-		value="0"+value
-	return str(value)
-
-
-def Hex_Format(taille, value):
-	value = hex(int(value))[2:]
-	if len(value) > taille:
-		return 'f' * taille
-	while len(value)<taille:
-		value="0"+value
-	return str(value)
 
 def CheckDeviceList(self, key, val) :
 	Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
@@ -2519,7 +2401,7 @@ def removeZigateDevice( self, key ) :
 	if key in  self.ListOfDevices:
 		ieee =  self.ListOfDevices[key]['IEEE']
 		Domoticz.Log("Remove from Zigate Device = " + str(key) + " IEEE = " +str(ieee) )
-		sendZigateCmd("0026", str(ieee) + str(ieee) )
+		z_output.sendZigateCmd("0026", str(ieee) + str(ieee) )
 	else :
 		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
 		
