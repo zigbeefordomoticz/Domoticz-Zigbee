@@ -280,7 +280,7 @@ def Decode004d(self, MsgData) : # Reception Device announce
 	# tester si le device existe deja dans la base domoticz
 	if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
 		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
-		initDeviceInList(self, MsgSrcAddr)
+		z_tools.initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
 		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
