@@ -8,6 +8,7 @@
 """
 
 import Domoticz
+import z_domoticz
 import z_var
 import z_tools
 import z_status
