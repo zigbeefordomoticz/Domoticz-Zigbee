@@ -1936,19 +1936,20 @@ def DeviceExist(self, Addr , IEE = ''):
 	if Addr in self.ListOfDevices:
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
-	#if gived, test IEE
-	if IEE:
-		for i in self.ListOfDevices:
-			d = self.ListOfDevices[i]
-			Domoticz.Debug("######" + str(d))
-			if d.get('IEEE','wrong iee') == IEE:
-				Domoticz.Debug("New adress but same IEE")
-				#update adress
-				self.ListOfDevices[Addr] = d
-				del i
-				return True
-	#unknow device
 	return False
+#	#if gived, test IEE
+#	if IEE:
+#		for i in self.ListOfDevices:
+#			d = self.ListOfDevices[i]
+#			Domoticz.Debug("######" + str(d))
+#			if d.get('IEEE','wrong iee') == IEE:
+#				Domoticz.Debug("New adress but same IEE")
+#				#update adress
+#				self.ListOfDevices[Addr] = d
+#				del i
+#				return True
+#	#unknow device
+#	return False
 
 def initDeviceInList(self, Addr) :
 	if Addr != '' :
