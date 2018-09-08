@@ -13,8 +13,8 @@ We are keen to release this version off the Zigate Plugin, which include a set o
 
 Please feel free to report issue through github: https://github.com/sasu-drooz/Domoticz-Zigate/issues
 And if you have any questions, problem please use first the Domoticz forum.
-- French channel : https://easydomoticz.com/forum
-- English channel : https://www.domoticz.com/forum/
+- French channel : https://easydomoticz.com/forum/viewtopic.php?f=8&t=7099
+- English channel : https://www.domoticz.com/forum/viewtopic.php?f=28&t=24789
 
 If you want to contribue , please let us know , we are looking for help in various areas:
 - certifying new ZigBee devices
