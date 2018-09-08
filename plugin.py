@@ -1466,7 +1466,7 @@ def Decode8401(self, MsgData) : # Reception Zone status change notification
 		# bit 3, battery status (0=Ok 1=to replace)
 		iData = int(MsgZoneStatus,16) & 8 >> 3	 			# Set batery level
 		if iData == 0 :
-			self.ListOfDevices[MsgSrcAddr]['Battery']="255"		# To check : which value is ok, 100 or 255
+			self.ListOfDevices[MsgSrcAddr]['Battery']="100"		# set to 100%
 		else :
 			self.ListOfDevices[MsgSrcAddr]['Battery']="0"
 		if MsgEp == "02" :					
@@ -2115,24 +2115,21 @@ def ReadCluster(self, MsgData):
 				return
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
-				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')
+				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')                                        # Convert the model name to ASCII
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
-				self.ListOfDevices[MsgSrcAddr]['Model']=MType
-				if self.ListOfDevices[MsgSrcAddr]['Model']!= {} and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf : # verifie que le model existe ds le fichier de conf des models
-					Modeltmp=str(self.ListOfDevices[MsgSrcAddr]['Model'])
-					for Ep in self.DeviceConf[Modeltmp]['Ep'] :
-						if Ep in self.ListOfDevices[MsgSrcAddr]['Ep'] :
-							for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
-								# CLD CLD ===> cluster != "Type"
-								if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] and cluster != "Type" :
-									self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
-							# Ceinture et bretelles .... (normalement inutile)
-							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[Modeltmp]['Ep'][Ep]['Type']
-						else :
-							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}
-							for cluster in self.DeviceConf[Modeltmp]['Ep'][Ep] :
-								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}
-					self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[Modeltmp]['Type']
+				self.ListOfDevices[MsgSrcAddr]['Model']=MType                                                   # Set the model name in database
+
+				if MType in self.DeviceConf :                                                                   # If the model exist in DeviceConf.txt
+					for Ep in self.DeviceConf[MType]['Ep'] :                                                # For each Ep in DeviceConf.txt
+						if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep'] :                             # If this EP doesn't exist in database
+							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                             # create it.
+						for cluster in self.DeviceConf[MType]['Ep'][Ep] :                               # For each cluster discribe in DeviceConf.txt
+							if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :            # If this cluster doesn't exist in database
+								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}            # create it.
+						if 'Type' in self.DeviceConf[MType]['Ep'][Ep] :                                 # If type exist at EP level : copy it
+							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[MType]['Ep'][Ep]['Type']
+					if 'Type' in self.DeviceConf[MType] :                                                   # If type exist at top level : copy it
+						self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[MType]['Type']
 			except:
 				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Model info Xiaomi : " +  MsgSrcAddr)
 				return
