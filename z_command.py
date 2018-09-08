@@ -87,7 +87,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
 		Hue_List = json.loads(Color)
 		
-		#Color {
+		#Color 
 		#	ColorMode m;
 		#	uint8_t t;     // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
 		#	uint8_t r;     // Range:0..255, Red level
@@ -95,7 +95,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		#	uint8_t b;     // Range:0..255, Blue level
 		#	uint8_t cw;    // Range:0..255, Cold white level
 		#	uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
-		#}
+		#
 
 		def rgb_to_xy(rgb):
 			''' convert rgb tuple to xy tuple '''
