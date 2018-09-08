@@ -12,11 +12,16 @@
 'lumi.sensor_86sw1':{'Ep':{'01':{'0006'}},'Type':'Button'},
 'lumi.sensor_motion.aq2':{'Ep':{'01':{'0406','0400'}},'Type':'Motion/Lux'},
 'lumi.sensor_cube':{'Ep':{'01':{'0012','000c'}},'Type':'XCube'},
+'lumi.sensor_cube.aqgl01':{'Ep':{'01':{'0012','000c'}},'Type':'Aqara'},
 'lumi.plug':{'Ep':{'01':{'0006','000c'}},'Type':'Plug/PowerMeter'},
 'Ampoule.LED1545G12.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
 'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug'},
 'plug.Salus':{'Ep':{'09':{'0006'}},'Type':'Plug'},
-'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl'}
+'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl'},
+'Ampoule.LED1624G9.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
+'Command.30338849.Tradfri':{'Ep':{'01':{'0000','0001','0009','0b05','1000'}},'Type':'Command'},
+'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':'Motion/Door/Switch/Lux/Temp'},
+'plug.Celiane.Legrand':{'Ep': {'01':{'0000','0003','0004','0006','0005','fc01'}},'Type':'Switch/PowerMeter'},
 }
