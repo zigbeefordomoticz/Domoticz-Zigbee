@@ -511,20 +511,15 @@ def GetType(self, Addr, Ep) :
 	Type =""
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		# CLD CLD
-		try:
-			DconfType=eval(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep])
-		except:
-			Domoticz.Log("GetType seems not EP associated = " + str(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']) + " for Device = " + str(self.ListOfDevices[Addr]['Model']) )
-
+		DconfType=eval(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep])
+		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
+			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
+				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+				Type = str(Type)
 		else :
-			if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
-				if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
-					Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
-					Type = str(Type)
-			else :
-				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+			Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
 
-			Domoticz.Debug("GetType - Type was set to : " + str(Type) )
+		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
 		Domoticz.Log("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
 		Type=""
