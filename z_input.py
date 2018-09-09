@@ -696,7 +696,7 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Tag1 : " + str(Tag1) )
 				if  Tag1 == "0121" :  # Battery
 					BatteryLvl = '%s%s' % (str(MsgClusterData[6:8]),str(MsgClusterData[4:6])) 
-					ValueBattery=round(int(ValueBattery,16)/10/3.3)
+					ValueBattery=round(int(BatteryLvl,16)/10/3.3)
 					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(BatteryLvl) )
 				if Tag1 == "6410" : # On/Off state
 					OnOff = MsgClusterData[4:6]
