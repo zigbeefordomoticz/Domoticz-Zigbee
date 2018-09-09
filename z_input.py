@@ -8,6 +8,11 @@
 """
 
 import Domoticz
+import binascii
+import time
+import struct
+import json
+
 import z_domoticz
 import z_var
 import z_tools
@@ -283,7 +288,6 @@ def Decode004d(self, MsgData) : # Reception Device announce
 		z_tools.initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
-		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
 	else :
 		Domoticz.Debug("Decode004d - Existing device")
 		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
@@ -746,6 +750,7 @@ def ReadCluster(self, Devices, MsgData):
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
 				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')                                        # Convert the model name to ASCII
+				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType                                                   # Set the model name in database
 
