@@ -5,7 +5,10 @@
 
 	Description: Zigate toolbox
 """
-
+import binascii
+import time
+import struct
+import json
 
 def returnlen(taille , value) :
 	while len(value)<taille:
@@ -40,16 +43,17 @@ def DeviceExist(self, Addr , IEE = ''):
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
 	#if gived, test IEE
-	if IEE:
-		for i in self.ListOfDevices:
-			d = self.ListOfDevices[i]
-			Domoticz.Debug("######" + str(d))
-			if d.get('IEEE','wrong iee') == IEE:
-				Domoticz.Debug("New adress but same IEE")
-				#update adress
-				self.ListOfDevices[Addr] = d
-				del i
-				return True
+	#if IEE:
+#		for i in self.ListOfDevices:
+#			d = self.ListOfDevices[i]
+#			Domoticz.Debug(DeviceExist + str(d))
+#			if d.get('IEEE','wrong iee') == IEE:
+#				Domoticz.Log("DeviceExist - Addr = " + Addr + " IEEE = " + IEE + " already assigned on " + str(d) )
+#				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " + d )
+#				#update adress
+#				self.ListOfDevices[Addr] = d
+#				del i
+#				return True
 	#unknow device
 	return False
 

@@ -9,6 +9,11 @@
 """
 
 import Domoticz
+import binascii
+import time
+import struct
+import json
+
 import z_var
 import z_tools
 

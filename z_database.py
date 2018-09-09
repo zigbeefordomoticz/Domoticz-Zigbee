@@ -8,6 +8,10 @@
 """
 
 import Domoticz
+import binascii
+import time
+import struct
+import json
 
 def WriteDeviceList(self, Folder, count):
 	if self.HBcount>=count :

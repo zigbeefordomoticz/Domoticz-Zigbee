@@ -8,6 +8,10 @@
 """
 
 import Domoticz
+import binascii
+import time
+import struct
+import json
 
 def CreateDomoDevice(self, Devices, DeviceID) :
 	def FreeUnit(self, Devices) :
@@ -31,7 +35,7 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 				dType = self.ListOfDevices[DeviceID]['Ep'][Ep]['Type']
 				aType = str(dType)
 				Type = aType.split("/")
-				Domoticz.Log("CreateDomoDevice -  Type via GetType at EndPoint level: " + str(Type) + " Ep : " + str(Ep) )
+				Domoticz.Log("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep) )
 		else :
 
 			if self.ListOfDevices[DeviceID]['Type']== {} :
@@ -498,16 +502,23 @@ def UpdateDevice(Unit, nValue, sValue, Options):
 
 
 def GetType(self, Addr, Ep) :
+	Type =""
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		# CLD CLD
-		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
-			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
-				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
-				Type = str(Type)
-		else :
-			Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+		try:
+			DconfType=eval(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep])
+		except:
+			Domoticz.Log("GetType seems not EP associated = " + str(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']) + " for Device = " + str(self.ListOfDevices[Addr]['Model']) )
 
-		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
+		else :
+			if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
+				if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
+					Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+					Type = str(Type)
+			else :
+				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+
+			Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
 		Domoticz.Log("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
 		Type=""
