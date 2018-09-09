@@ -123,6 +123,16 @@ def ReadAttributeRequest_0008(self, key) :
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
 	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )
 
+def ReadAttributeRequest_Xiaomi_PowerMeterPlug(self, key) :
+	# Cluster 0x000C with attribute 0x0055
+	# frame to be send is :
+	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
+	EPin = "01"
+	EPout= "02"
+
+	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
+	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "000C" + "00" + "00" + "0000" + "01" + "0055" )
+
 
 def removeZigateDevice( self, key ) :
 	# remove a device in Zigate
