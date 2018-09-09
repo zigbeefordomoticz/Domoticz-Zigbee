@@ -370,11 +370,9 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 				# UpdateDevice dans le if
 				if value == "01" :
 					state="On"
-					#UpdateDevice(x,int(value),str(state),DOptions)
 					UpdateDevice_v2(Devices, x,int(value),str(state),DOptions, SignalLevel)
 				elif value == "00" :
 					state="Off"
-					#UpdateDevice(x,int(value),str(state),DOptions)
 					UpdateDevice_v2(Devices, x,int(value),str(state),DOptions, SignalLevel)
 				#Fin de correction
 
@@ -406,26 +404,24 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
 					UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,DOptions, SignalLevel, Color_)
 
-			#Modif Meter
-			if clusterID=="000c" and Type != "XCube":
-				Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
-				UpdateDevice(x,0,str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])),DOptions)
+			#Modif Meter PP 09/09/2018 Je pense que c'est inutile car on a le test sur Dtypename==PowerMeter qui est plus pertinant
+			#if clusterID=="000c" and Type != "XCube":
+			#	Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
+			#	UpdateDevice_v2(Devices, x, 0, str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])) ,DOptions, SignalLevel)
 
 def ResetDevice(Devices, Type,HbCount) :
 	x=0
 	for x in Devices: 
 		try :
 			LUpdate=Devices[x].LastUpdate
+			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
 			LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
 			current = time.time()
 			DOptions = Devices[x].Options
 			Dtypename=DOptions['TypeName']
 			if (current-LUpdate)> 30 :
 				if Dtypename=="Motion":
-					value = "00"
-					state="Off"
-					#Devices[x].Update(nValue = int(value),sValue = str(state))
-					UpdateDevice(x,int(value),str(state),DOptions)	
+					UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 		except :
 			return
 			
@@ -492,19 +488,20 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 			Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return
 
-def UpdateDevice(Unit, nValue, sValue, Options):
-	Dzigate=eval(Options['Zigate'])
-	BatteryLvl=str(Dzigate['Battery'])
-	if BatteryLvl == '{}' :
-		BatteryLvl=255
-	Domoticz.Debug("BatteryLvl = " + str(BatteryLvl))
-	Domoticz.Debug("Options = " + str(Options))
-	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
-	if (Unit in Devices):
-		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
-			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), BatteryLevel=int(BatteryLvl))
-			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
-	return	
+# PP 09/09/2018 - A supprimer
+#def UpdateDevice(Unit, nValue, sValue, Options):
+#	Dzigate=eval(Options['Zigate'])
+#	BatteryLvl=str(Dzigate['Battery'])
+#	if BatteryLvl == '{}' :
+#		BatteryLvl=255
+#	Domoticz.Debug("BatteryLvl = " + str(BatteryLvl))
+#	Domoticz.Debug("Options = " + str(Options))
+#	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
+#	if (Unit in Devices):
+#		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
+#			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), BatteryLevel=int(BatteryLvl))
+#			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+#	return	
 
 
 def GetType(self, Addr, Ep) :
