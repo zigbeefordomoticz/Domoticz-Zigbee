@@ -257,7 +257,7 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8401":  # Reception Zone status change notification
 		Domoticz.Debug("ZigateRead - MsgType 8401 - Reception Zone status change notification : " + Data)
-		Decode8401(self, MsgData)
+		Decode8401(self, Devices, MsgData)
 		return
 
 	elif str(MsgType)=="8701":  # 
@@ -595,7 +595,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 		Domoticz.Debug("Decode 8702 - " +  z_status.DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
 		return
 
-def Decode8401(self, MsgData) : # Reception Zone status change notification
+def Decode8401(self, Devices, MsgData) : # Reception Zone status change notification
 	Domoticz.Debug("Decode8401 - Reception Zone status change notification : " + MsgData)
 	MsgSQN=MsgData[0:2]			# sequence number: uint8_t
 	MsgEp=MsgData[2:4]			# endpoint : uint8_t
