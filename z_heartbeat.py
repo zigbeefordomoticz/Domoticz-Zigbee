@@ -24,12 +24,13 @@ def processKnownDevices( self, key ) :
 		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
 			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
 			z_output.ReadAttributeRequest_0008(self, key)
+			self.ListOfDevices[key]['Heartbeat']="0"
 
 		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
 			Domoticz.Debug("Request a Read attribute for the Power Plug " + str(key) )
 			z_output.ReadAttributeRequest_Xiaomi_PowerMeterPlug( self, key)
+			self.ListOfDevices[key]['Heartbeat']="0"
 
-		self.ListOfDevices[key]['Heartbeat']="0"
 
 def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	# Request EP list
