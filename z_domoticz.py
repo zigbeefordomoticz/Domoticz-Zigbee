@@ -181,7 +181,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 			if Dtypename=="PowerMeter" :
 				nValue=float(value)
 				sValue=value
-				Domoticz.Log("MajDomoDevice temp NewSvalue : " + sValue)
+				Domoticz.Log("MajDomoDevice PowerMeter : " + sValue)
 				UpdateDevice_v2(Devices, x,nValue,str(sValue),DOptions, SignalLevel)								
 	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
