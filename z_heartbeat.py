@@ -20,10 +20,16 @@ import z_domoticz
 
 def processKnownDevices( self, key ) :
 	# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
-	if self.ListOfDevices[key]['Model'] == "shutter.Profalux" and self.ListOfDevices[key]['Heartbeat']>="30" :
-		Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
+	if self.ListOfDevices[key]['Heartbeat']>="30" :
+		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
+			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) )
+			z_output.ReadAttributeRequest_0008(self, key)
+
+		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
+			Domoticz.Debug("Request a Read attribute for the Power Plug " + str(key) )
+			z_output.ReadAttributeRequest_Xiaomi_PowerMeterPlug( self, key)
+
 		self.ListOfDevices[key]['Heartbeat']="0"
-		z_output.ReadAttributeRequest_0008(self, key)
 
 def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	# Request EP list

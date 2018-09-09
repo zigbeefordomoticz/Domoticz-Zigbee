@@ -178,6 +178,12 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 
 			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
+			if Dtypename=="PowerMeter" :
+				nValue=float(value)
+				sValue=value
+				Domoticz.Log("MajDomoDevice temp NewSvalue : " + sValue)
+				UpdateDevice_v2(Devices, x,nValue,str(sValue),DOptions, SignalLevel)								
+	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :

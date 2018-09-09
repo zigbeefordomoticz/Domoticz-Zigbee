@@ -50,7 +50,6 @@ def ZigateRead(self, Devices, Data):
 		
 	elif str(MsgType)=="8000":  # Status
 		Domoticz.Debug("ZigateRead - MsgType 8000 - reception status : " + Data)
-		#Decode8000(self, MsgData)
 		Decode8000_v2(self, MsgData)
 		return
 
@@ -325,43 +324,6 @@ def Decode8000_v2(self, MsgData) : # Status
 
 	return
 	
-def Decode8000(self, MsgData) : # Reception status
-	MsgLen=len(MsgData)
-	Domoticz.Debug("Decode8000 - MsgData lenght is : " + str(MsgLen) + " out of 8")
-
-	MsgDataLenght=MsgData[0:4]
-	MsgDataStatus=MsgData[4:6]
-	if MsgDataStatus=="00" :
-		MsgDataStatus="Success"
-	elif MsgDataStatus=="01" :
-		MsgDataStatus="Incorrect Parameters"
-	elif MsgDataStatus=="02" :
-		MsgDataStatus="Unhandled Command"
-	elif MsgDataStatus=="03" :
-		MsgDataStatus="Command Failed"
-	elif MsgDataStatus=="04" :
-		MsgDataStatus="Busy"
-	elif MsgDataStatus=="05" :
-		MsgDataStatus="Stack Already Started"
-	else :
-		MsgDataStatus="ZigBee Error Code "+ MsgDataStatus
-	MsgDataSQN=MsgData[6:8]
-	#Correction Thiklop : MsgDataLenght n'est pas toujours un entier
-	#Encapsulation des 4 lignes dans un try except pour sortir proprement en testant le type de MsgDataLenght
-	try :
-		int(MsgDataLenght,16)
-	except :
-		Domoticz.Error("Decode8000 - Fonction Decode 8000 probleme de MsgDataLenght, pas un int")
-		MsgDataMessage=""
-	else :
-		if int(MsgDataLenght,16) > 2 :
-			MsgDataMessage=MsgData[8:len(MsgData)]
-		else :
-			MsgDataMessage=""
-	#Fin de la correction
-	Domoticz.Debug("Decode8000 - Reception status : " + MsgDataStatus + ", SQN : " + MsgDataSQN + ", Message : " + MsgDataMessage)
-	return
-
 def Decode8001(self, MsgData) : # Reception log Level
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8001 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
@@ -777,8 +739,12 @@ def ReadCluster(self, Devices, MsgData):
 			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 			Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
+
+		elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004" :
+			Domoticz.Log("ReadCluster - Feedback from device ")
+			Domoticz.Log("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData )
 		else :
-			Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgAttrID + " / " + MsgData)
 			return
 
 	elif MsgClusterId=="0008" :  # (Cluster Level Control )
@@ -929,11 +895,11 @@ def ReadCluster(self, Devices, MsgData):
 		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
-		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+		Domoticz.Log("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
-			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])))
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
+			Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
+			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 
 		elif MsgAttrID=="ff05" and MsgSrcEp == '03' : # Rotation - horinzontal
 			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
