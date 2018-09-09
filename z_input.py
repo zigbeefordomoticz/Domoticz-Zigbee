@@ -689,6 +689,8 @@ def ReadCluster(self, Devices, MsgData):
 	if MsgClusterId=="0000" :  # (General: Basic)
 		if MsgAttrID=="ff01" :  # xiaomi battery lvl
 			Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
+			# Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
+
 			if  len(MsgClusterData) >= 8  :
 				Tag1=MsgClusterData[0:4]
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Tag1 : " + str(Tag1) )
@@ -696,6 +698,9 @@ def ReadCluster(self, Devices, MsgData):
 					BatteryLvl = '%s%s' % (str(MsgClusterData[6:8]),str(MsgClusterData[4:6])) 
 					ValueBattery=round(int(ValueBattery,16)/10/3.3)
 					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(BatteryLvl) )
+				if Tag1 == "6410" : # On/Off state
+					OnOff = MsgClusterData[4:6]
+					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(OnOff) )
 
 			if  len(MsgClusterData) >= 42  :
 				Tag2=MsgClusterData[38:42]
