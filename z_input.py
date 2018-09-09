@@ -688,31 +688,52 @@ def ReadCluster(self, Devices, MsgData):
 
 	if MsgClusterId=="0000" :  # (General: Basic)
 		if MsgAttrID=="ff01" :  # xiaomi battery lvl
-			Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
-			if ( len(MsgClusterData) >= 62 ) :
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery Tag : " + str(MsgClusterData[0:4]) )
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temp Tag : " + str(MsgClusterData[38:42]) )
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temp     : " + str(MsgClusterData[42:44]) )
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humi Tag : " + str(MsgClusterData[46:50]) )
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humid    : " + str(MsgClusterData[50:54]) )
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Pres Tag : " + str(MsgClusterData[54:58]) )
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Pressure : " + str(MsgClusterData[58:62]) )
+			Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
+			if  len(MsgClusterData) >= 8  :
+				Tag1=MsgClusterData[0:4]
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Tag1 : " + str(Tag1) )
+				if  Tag1 == "0121" :  # Battery
+					BatteryLvl = '%s%s' % (str(MsgClusterData[6:8]),str(MsgClusterData[4:6])) 
+					ValueBattery=round(int(ValueBattery,16)/10/3.3)
+					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(BatteryLvl) )
 
-			MsgBattery=MsgClusterData[4:8]
-			try :
-				ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
-				ValueBattery=round(int(ValueBattery,16)/10/3.3)
-				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
-				#if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
-				#	UpdateBattery(MsgSrcAddr,ValueBattery)
-				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
-			except :
-				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
-				return
+			if  len(MsgClusterData) >= 42  :
+				Tag2=MsgClusterData[38:42]
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Tag2 : " + str(Tag2) )
+				if Tag2 == "6429" : # Temperature
+					Temp = '%s%s' % (str(MsgClusterData[44:46],MsgClusterData[42:44]))
+					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(Temp) )
+
+			if  len(MsgClusterData) >= 54  :
+				Tag3=MsgClusterData[46:50]
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Tag3 : " + str(Tag3) )
+				if Tag3 == "6521" : # Humidity
+					Hum = '%s%s' % (str(MsgClusterData[52:54],MsgClusterData[50:52]) )
+					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(Hum) )
+
+			if  len(MsgClusterData) >= 62  :
+				Tag4=MsgClusterData[54:58]
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Tag4 : " + str(Tag4) )
+				if Tag4 == "662b" : # Atmospheric pressure
+					Atmo = '%s%s' % (str(MsgClusterData[60:62],MsgClusterData[58:60]) )
+					Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmo Pressure : " + str(Atmo) )
+
+			if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
+				MsgBattery=MsgClusterData[4:8]
+				try :
+					ValueBattery='%s%s' % (str(MsgBattery[2:4]),str(MsgBattery[0:2]))
+					ValueBattery=round(int(ValueBattery,16)/10/3.3)
+					Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
+					#if self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":
+					#	UpdateBattery(MsgSrcAddr,ValueBattery)
+					self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
+				except :
+					Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : erreur de lecture pour le device addr : " +  MsgSrcAddr)
+					return
+
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
 				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')                                        # Convert the model name to ASCII
-				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType                                                   # Set the model name in database
 
@@ -895,7 +916,7 @@ def ReadCluster(self, Devices, MsgData):
 		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
-		Domoticz.Log("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
+		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
 			Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
