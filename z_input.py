@@ -702,8 +702,8 @@ def ReadCluster(self, Devices, MsgData):
 			sHumid      = retreiveTag( "6521", MsgClusterData )
 			sPress      = retreiveTag( "662b", MsgClusterData )
 			sOnOff      = retreiveTag( "6410", MsgClusterData )
-		#	if sTemp == ''  : sTemp  = retreiveTag( "0328", MsgClusterData )
-		#	if sHumid == '' : sHumid = retreiveTag( "6529", MsgClusterData )
+			sTemp2      = retreiveTag( "0328", MsgClusterData )
+			sHumid2     = retreiveTag( "6529", MsgClusterData )
 
 			if sBatteryLvl != '' :
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
@@ -713,10 +713,18 @@ def ReadCluster(self, Devices, MsgData):
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
 				ValueTemp=round(int(Temp,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
+			if sTemp2 != '' :
+				Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
+				ValueTemp2=round(int(Tempé,16)/100,1)
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature2 : " + str(ValueTemp2) )
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
 				ValueHumid=round(int(Humid,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
+			if sHumid2 != '' :
+				Humid2 = '%s%s' % (str(sHumid2[2:4]),str(sHumid2[0:2])) 
+				ValueHumid2=round(int(Humid2,16)/100,1)
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) )
 			if sPress != '' :
 				Press = '%s%s' % (str(sPress[2:4]),str(sPress[0:2])) 
 				ValuePress=round(int(Press,16)/100,1)
