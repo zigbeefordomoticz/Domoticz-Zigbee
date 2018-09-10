@@ -34,7 +34,7 @@ def ZigateConf( channel, discover ):
 
 	################### ZiGate - Request Device List #############
 	# answer is expected on message 8015. Only available since firmware 03.0b
-	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion == "030b") :
+	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion) == "030b" :
 		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
 		sendZigateCmd("0015","")
 	else :
