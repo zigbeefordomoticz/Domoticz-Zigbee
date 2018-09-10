@@ -767,8 +767,7 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
 
 		elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004" :
-			Domoticz.Log("ReadCluster - Feedback from device ")
-			Domoticz.Log("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData )
+			Domoticz.Debug("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData )
 		else :
 			Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgAttrID + " / " + MsgData)
 			return
@@ -923,7 +922,7 @@ def ReadCluster(self, Devices, MsgData):
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
 		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
-			Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
+			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
 			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 

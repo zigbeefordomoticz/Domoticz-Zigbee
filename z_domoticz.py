@@ -181,7 +181,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 			if Dtypename=="PowerMeter" :
 				nValue=float(value)
 				sValue=value
-				Domoticz.Log("MajDomoDevice PowerMeter : " + sValue)
+				Domoticz.Debug("MajDomoDevice PowerMeter : " + sValue)
 				UpdateDevice_v2(Devices, x,nValue,str(sValue),DOptions, SignalLevel)								
 	
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
@@ -423,6 +423,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 			if (current-LUpdate)> 30 and Dtypename=="Motion":
 				UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 		except :
+			Domoticz.Log("Reset Device - Error")
 	return
 			
 def UpdateSignalLevel( DeviceID, SignalLvl) :
@@ -484,8 +485,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
 			else:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
-
-			Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+				Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return
 
 # PP 09/09/2018 - A supprimer
@@ -518,7 +518,7 @@ def GetType(self, Addr, Ep) :
 
 		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
-		Domoticz.Log("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
+		Domoticz.Debug("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
 		Type=""
 		for cluster in self.ListOfDevices[Addr]['Ep'][Ep] :
 			Domoticz.Debug("GetType - Type will be set to : " + str(Type) )

@@ -65,7 +65,7 @@ class BasePlugin:
 		return
 
 	def onStart(self):
-		Domoticz.Log("onStart called")
+		Domoticz.Status("onStart called")
 
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
@@ -124,10 +124,10 @@ class BasePlugin:
 	def onStop(self):
 		z_var.ZigateConn.Disconnect()
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
-		Domoticz.Log("onStop called")
+		Domoticz.Status("onStop called")
 
 	def onConnect(self, Connection, Status, Description):
-		Domoticz.Log("onConnect called")
+		Domoticz.Status("onConnect called")
 		global isConnected
 
 		if (Status == 0):
@@ -195,7 +195,7 @@ class BasePlugin:
 			Domoticz.Debug("onMessage Frame length : " + str(ComputedLength) + " " + str(ReceveidLength) ) # For testing purpose
 			if ComputedLength != ReceveidLength :
 				FrameIsKo = 1
-				Domoticz.Log("onMessage : Frame size is bad, computed = " + str(ComputedLength) + " received = " + str(ReceveidLength) )
+				Domoticz.Error("onMessage : Frame size is bad, computed = " + str(ComputedLength) + " received = " + str(ReceveidLength) )
 
 			# Compute checksum
 			ComputedChecksum = 0
@@ -205,7 +205,7 @@ class BasePlugin:
 			Domoticz.Debug("onMessage Frame : ComputedChekcum=" + str(ComputedChecksum) + " ReceivedChecksum=" + str(ReceivedChecksum) ) # For testing purpose
 			if ComputedChecksum != ReceivedChecksum and z_var.CrcCheck == 1 :
 				FrameIsKo = 1
-				Domoticz.Log("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + " received = " + str(ReceivedChecksum) )
+				Domoticz.Error("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + " received = " + str(ReceivedChecksum) )
 
 			AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
 			# ZigateDecode(self, AsciiMsg) 		# decode this Frame
@@ -221,7 +221,7 @@ class BasePlugin:
 
 
 	def onDisconnect(self, Connection):
-		Domoticz.Log("onDisconnect called")
+		Domoticz.Status("onDisconnect called")
 
 	def onHeartbeat(self):
 
