@@ -692,18 +692,19 @@ def ReadCluster(self, Devices, MsgData):
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
 	if MsgClusterId=="0000" :  # (General: Basic)
+		# It might be good to make sure that we are on a Xiaomi device - A priori : 0x115f
 		if MsgAttrID=="ff01" and self.ListOfDevices[MsgSrcAddr]['Status']=="inDB" :  # xiaomi battery lvl
 			Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
 			# Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
 			# 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
 			sBatteryLvl = retreiveTag( "0121", MsgClusterData )
+			sTemp2      = retreiveTag( "0328", MsgClusterData )   # Device Temperature
 			sTemp       = retreiveTag( "6429", MsgClusterData )
-			sHumid      = retreiveTag( "6521", MsgClusterData )
-			sPress      = retreiveTag( "662b", MsgClusterData )
 			sOnOff      = retreiveTag( "6410", MsgClusterData )
-			sTemp2      = retreiveTag( "0328", MsgClusterData )
+			sHumid      = retreiveTag( "6521", MsgClusterData )
 			sHumid2     = retreiveTag( "6529", MsgClusterData )
+			sPress      = retreiveTag( "662b", MsgClusterData )
 
 			if sBatteryLvl != '' :
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
@@ -715,8 +716,8 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
 			if sTemp2 != '' :
 				Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
-				ValueTemp2=round(int(Tempé,16)/100,1)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature2 : " + str(ValueTemp2) )
+				ValueTemp2=round(int(Temp2,16)/100,1)
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Device Temperature : " + str(ValueTemp2) )
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
 				ValueHumid=round(int(Humid,16)/100,1)
