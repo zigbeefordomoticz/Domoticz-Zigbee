@@ -409,21 +409,21 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 			#	Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 			#	UpdateDevice_v2(Devices, x, 0, str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])) ,DOptions, SignalLevel)
 
-def ResetDevice(Devices, Type,HbCount) :
+def ResetDevice(self, Devices, Type,HbCount) :
 	x=0
-	for x in Devices: 
+	for x in Devices:
 		try :
 			LUpdate=Devices[x].LastUpdate
-			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
+			_tmpDeviceID = Devices[x].DeviceID
+			SignalLevel = self.ListOfDevices[_tmpDeviceID]['RSSI']
 			LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
 			current = time.time()
 			DOptions = Devices[x].Options
 			Dtypename=DOptions['TypeName']
-			if (current-LUpdate)> 30 :
-				if Dtypename=="Motion":
-					UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
+			if (current-LUpdate)> 30 and Dtypename=="Motion":
+				UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 		except :
-			return
+	return
 			
 def UpdateSignalLevel( DeviceID, SignalLvl) :
 	x=0

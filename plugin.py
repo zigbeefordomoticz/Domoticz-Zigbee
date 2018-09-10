@@ -239,7 +239,7 @@ class BasePlugin:
 
 		z_heartbeat.processListOfDevices( self , Devices )
 
-		z_domoticz.ResetDevice( Devices, "Motion",5)
+		z_domoticz.ResetDevice( self, Devices, "Motion",5)
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)
 
 		if (z_var.ZigateConn.Connected() != True):
