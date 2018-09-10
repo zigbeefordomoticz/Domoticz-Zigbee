@@ -711,17 +711,18 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
-				ValueTemp=round(int(Temp,16)/10/3.3)
+				ValueTemp=round(int(Temp,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
-				ValueHumid=round(int(Humid,16)/10/3.3)
+				ValueHumid=round(int(Humid,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
 			if sPress != '' :
 				Press = '%s%s' % (str(sPress[2:4]),str(sPress[0:2])) 
-				ValuePress=round(int(Press,16)/10/3.3)
+				ValuePress=round(int(Press,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
 			if sOnOff != '' :
+				sOnOff = sOnOff[0:2]  # Boolean
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
 			if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
