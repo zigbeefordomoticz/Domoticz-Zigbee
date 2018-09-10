@@ -730,7 +730,7 @@ def ReadCluster(self, Devices, MsgData):
 		Domoticz.Debug("MsgAttSize: " + MsgAttSize )
 		Domoticz.Debug("MsgClusterData: " + MsgClusterData )
 	else:
-		Domoticz.Debug("ReadCluster - ClusterId=" + MsgAttrID + " - Attribut=" + MsgAttrID + " ClusterData : " + MsgClusterData)
+		Domoticz.Debug("ReadCluster - ClusterId=" + MsgClusterId + " - Attribut=" + MsgAttrID + " ClusterData : " + MsgClusterData)
 
 	if MsgClusterId=="0000" :  # General: Basic
 		
