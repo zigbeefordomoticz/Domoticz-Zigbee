@@ -702,8 +702,8 @@ def ReadCluster(self, Devices, MsgData):
 			sHumid      = retreiveTag( "6521", MsgClusterData )
 			sPress      = retreiveTag( "662b", MsgClusterData )
 			sOnOff      = retreiveTag( "6410", MsgClusterData )
-			if sTemp == ''  : sTemp  = retreiveTag( "0328", MsgClusterData )
-			if sHumid == '' : sHumid = retreiveTag( "6529", MsgClusterData )
+		#	if sTemp == ''  : sTemp  = retreiveTag( "0328", MsgClusterData )
+		#	if sHumid == '' : sHumid = retreiveTag( "6529", MsgClusterData )
 
 			if sBatteryLvl != '' :
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
