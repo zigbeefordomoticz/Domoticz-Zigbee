@@ -652,10 +652,14 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
 	return
 
 def ReadCluster(self, Devices, MsgData):
-	def retreiveTag(tag,chain):
+	def retreive4Tag(tag,chain):
 		c = str.find(chain,tag) + 4
 		if c == 3: return ''
 		return chain[c:(c+4)]
+	def retreive8Tag(tag,chain):
+		c = str.find(chain,tag) + 4
+		if c == 3: return ''
+		return chain[c:(c+8)]
 
 	MsgLen=len(MsgData)
 	Domoticz.Debug("ReadCluster - MsgData lenght is : " + str(MsgLen) + " out of 24+")
@@ -698,13 +702,13 @@ def ReadCluster(self, Devices, MsgData):
 			# Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
 			# 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
-			sBatteryLvl = retreiveTag( "0121", MsgClusterData )
-			sTemp2      = retreiveTag( "0328", MsgClusterData )   # Device Temperature
-			sTemp       = retreiveTag( "6429", MsgClusterData )
-			sOnOff      = retreiveTag( "6410", MsgClusterData )
-			sHumid      = retreiveTag( "6521", MsgClusterData )
-			sHumid2     = retreiveTag( "6529", MsgClusterData )
-			sPress      = retreiveTag( "662b", MsgClusterData )
+			sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
+			sTemp2      = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
+			sTemp       = retreive4Tag( "6429", MsgClusterData )
+			sOnOff      = retreive4Tag( "6410", MsgClusterData )
+			sHumid      = retreive4Tag( "6521", MsgClusterData )
+			sHumid2     = retreive4Tag( "6529", MsgClusterData )
+			sPress      = retreive8Tag( "662b", MsgClusterData )
 
 			if sBatteryLvl != '' :
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
@@ -727,9 +731,9 @@ def ReadCluster(self, Devices, MsgData):
 				ValueHumid2=round(int(Humid2,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) )
 			if sPress != '' :
-				Press = '%s%s' % (str(sPress[2:4]),str(sPress[0:2])) 
-				ValuePress=round(int(Press,16)/100,1)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
+				#Press = '%s%s' % (str(sPress[4:8]),str(sPress[0:4])) 
+				#ValuePress=round(int(Press,16)/100,1)
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : 0x" + str(sPress) )
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  # Boolean
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
