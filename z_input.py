@@ -702,8 +702,8 @@ def ReadCluster(self, Devices, MsgData):
 			sHumid      = retreiveTag( "6521", MsgClusterData )
 			sPress      = retreiveTag( "662b", MsgClusterData )
 			sOnOff      = retreiveTag( "6410", MsgClusterData )
-			if sTemp == ''  : sTemp      = retreiveTag( "0328", MsgClusterData )
-			if sHumid == '' : sHumid     = retreiveTag( "6529", MsgClusterData )
+			if sTemp == ''  : sTemp  = retreiveTag( "0328", MsgClusterData )
+			if sHumid == '' : sHumid = retreiveTag( "6529", MsgClusterData )
 
 			if sBatteryLvl != '' :
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
@@ -712,17 +712,17 @@ def ReadCluster(self, Devices, MsgData):
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
 				ValueTemp=round(int(Temp,16)/10/3.3)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueTemp) )
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
 				ValueHumid=round(int(Humid,16)/10/3.3)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueHumid) )
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
 			if sPress != '' :
 				Press = '%s%s' % (str(sPress[2:4]),str(sPress[0:2])) 
 				ValuePress=round(int(Press,16)/10/3.3)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValuePress) )
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
 			if sOnOff != '' :
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(sOnOff) )
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
 			if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
