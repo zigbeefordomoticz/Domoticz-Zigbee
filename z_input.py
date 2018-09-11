@@ -743,8 +743,8 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  # Boolean
-				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0012']=sOnOff
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
 
