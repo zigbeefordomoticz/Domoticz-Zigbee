@@ -6,7 +6,7 @@
 	Description: All global variables
 
 """
-FirmwareVersion = ''
+FirmwareVersion = '030d'
 HeartbeatCount = 0
 transport = 'unknow'
 ReqRcv = ''

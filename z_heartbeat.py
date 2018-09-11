@@ -23,14 +23,14 @@ def processKnownDevices( self, key ) :
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 30 ) == 0 :
 		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
 			Domoticz.Log("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
-			z_output.ReadAttributeRequest_0008(self, key)
+			z_output.ReadAttributeRequest(self, key,'0000','0008')
 #			self.ListOfDevices[key]['Heartbeat']="0"
 
 	# device id type Xiaomi Plug, let check the shutter status every 15' ( 90 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 90 ) == 0 :
 		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
 			Domoticz.Log("Request a Read attribute for the Power Plug " + str(key) )
-			z_output.ReadAttributeRequest_Xiaomi_PowerMeterPlug( self, key)
+			z_output.ReadAttributeRequest(self, key,'000C','0055')
 #			self.ListOfDevices[key]['Heartbeat']="0"
 
 
@@ -60,6 +60,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		for cle in self.ListOfDevices[key]['Ep']:
 			Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
 			z_output.sendZigateCmd("0043", str(key)+str(cle))
+			
 		self.ListOfDevices[key]['Status']="0043"
 		self.ListOfDevices[key]['Heartbeat']="0"
 

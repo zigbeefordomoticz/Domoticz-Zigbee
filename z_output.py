@@ -109,29 +109,31 @@ def sendZigateCmd(cmd,datas) :
 	if str(z_var.transport) == "Wifi":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 
-
-def ReadAttributeRequest_0008(self, key) :
-	# Cluster 0x0008 with attribute 0x0000
+	
+def ReadAttributeRequest(self, key , cluster, attribute) :
 	# frame to be send is :
 	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
 	EPin = "01"
 	EPout= "01"
-	for tmpEp in self.ListOfDevices[key]['Ep'] :
-	        if "0008" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
-	                EPout=tmpEp
+	
+	if not isinstance(attribute, list):
+		#switch destination endpoint, only work for single attribute for the moment
+		try:
+			for tmpEp in self.ListOfDevices[key]['Ep'] :
+				if attribute in self.ListOfDevices[key]['Ep'][tmpEp] :
+					EPout=tmpEp
+		except:
+			pass
+				
+		#Convert to list	
+		attribute = [attribute]
+		
+	nbreAttribute = z_tools.Hex_Format(2,len(attribute))
+	
+	Manufacture = '000000' # off + random number
 
-	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )
-
-def ReadAttributeRequest_Xiaomi_PowerMeterPlug(self, key) :
-	# Cluster 0x000C with attribute 0x0055
-	# frame to be send is :
-	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
-	EPin = "01"
-	EPout= "02"
-
-	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "000C" + "00" + "00" + "0000" + "01" + "0055" )
+	Domoticz.Debug("Request Read Attribute request : " + key + " EPout = " + EPout + " Cluster=" + cluster + " Attribute=" + str(attribute))
+	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + cluster + "00" + Manufacture + nbreAttribute + ''.join(attribute))
 
 
 def removeZigateDevice( self, key ) :

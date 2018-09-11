@@ -410,6 +410,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 			#	UpdateDevice_v2(Devices, x, 0, str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])) ,DOptions, SignalLevel)
 
 def ResetDevice(self, Devices, Type,HbCount) :
+	
 	x=0
 	for x in Devices:
 		try :
@@ -424,6 +425,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 				UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 		except :
 			Domoticz.Log("Reset Device - Error")
+			Domoticz.Log("Device " + Devices[x].DeviceID + " in Domoticz but not in zigate plugin")
 	return
 			
 def UpdateSignalLevel( DeviceID, SignalLvl) :
@@ -508,7 +510,9 @@ def GetType(self, Addr, Ep) :
 	Type =""
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		# CLD CLD
-		DconfType=eval(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep])
+		
+		#Crash here is enable
+		#DconfType=eval(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep])
 		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
 			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
 				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
