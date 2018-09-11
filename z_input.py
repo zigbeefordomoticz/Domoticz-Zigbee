@@ -736,8 +736,10 @@ def ReadCluster(self, Devices, MsgData):
 				ValueHumid2=round(int(Humid2,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) )
 			if sPress != '' :
-				Press = '%s%s' % (str(sPress[4:8]),str(sPress[0:4])) 
+				Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
 				ValuePress=round(struct.unpack('i',struct.pack('i',int(Press,16)))[0])
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",round(int(sPress,16)/100,1))
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]["0403"]=round(int(sPress,16)/100,1)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : 0x" + str(ValuePress) )
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  # Boolean
