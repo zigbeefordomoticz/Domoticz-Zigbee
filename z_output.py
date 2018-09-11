@@ -34,11 +34,11 @@ def ZigateConf( channel, discover ):
 
 	################### ZiGate - Request Device List #############
 	# answer is expected on message 8015. Only available since firmware 03.0b
-	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion) == "030b" :
-		Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
-		sendZigateCmd("0015","")
-	else :
-		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(z_var.FirmwareVersion) )
+#	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion) == "030b" :
+	Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
+	sendZigateCmd("0015","")
+#	else :
+#		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(z_var.FirmwareVersion) )
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0                  #####
