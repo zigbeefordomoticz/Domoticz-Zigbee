@@ -936,7 +936,7 @@ def ReadCluster(self, Devices, MsgData):
 		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
 			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
-			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
+			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0],1)))
 
 		elif MsgAttrID=="ff05" and MsgSrcEp == '03' : # Rotation - horinzontal
 			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
