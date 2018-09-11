@@ -710,21 +710,26 @@ def ReadCluster(self, Devices, MsgData):
 			sHumid2     = retreive4Tag( "6529", MsgClusterData )
 			sPress      = retreive8Tag( "662b", MsgClusterData )
 
-			if sBatteryLvl != '' :
+			if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 				ValueBattery=round(int(BatteryLvl,16)/10/3.3)
+				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
 				ValueTemp=round(int(Temp,16)/100,1)
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']=ValueTemp
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", str(ValueTemp))
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
-			if sTemp2 != '' :
-				Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
-				ValueTemp2=round(int(Temp2,16)/100,1)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Device Temperature : " + str(ValueTemp2) )
+#			if sTemp2 != '' :
+#				Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
+#				ValueTemp2=round(int(Temp2,16)/100,1)
+#				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Device Temperature : " + str(ValueTemp2) )
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
 				ValueHumid=round(int(Humid,16)/100,1)
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']=str(ValueHumid)
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",str(ValueHumid))
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
 			if sHumid2 != '' :
 				Humid2 = '%s%s' % (str(sHumid2[2:4]),str(sHumid2[0:2])) 
@@ -736,11 +741,10 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : 0x" + str(sPress) )
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  # Boolean
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0012']=sOnOff
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0500",sOnOff)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
-			if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
-				Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=ff01 - reception batteryLVL : " + str(ValueBattery) + " pour le device addr : " +  MsgSrcAddr)
-				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
