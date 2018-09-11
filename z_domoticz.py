@@ -412,18 +412,19 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 def ResetDevice(self, Devices, Type,HbCount) :
 	x=0
 	for x in Devices:
+		LUpdate=Devices[x].LastUpdate
+		_tmpDeviceID = Devices[x].DeviceID
+		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
+		current = time.time()
+		DOptions = Devices[x].Options
+		Dtypename=DOptions['TypeName']
 		try :
-			LUpdate=Devices[x].LastUpdate
-			_tmpDeviceID = Devices[x].DeviceID
 			SignalLevel = self.ListOfDevices[_tmpDeviceID]['RSSI']
-			LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
-			current = time.time()
-			DOptions = Devices[x].Options
-			Dtypename=DOptions['TypeName']
-			if (current-LUpdate)> 30 and Dtypename=="Motion":
-				UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
-		except :
-			Domoticz.Log("Reset Device - Error")
+		except:
+			SignalLevel = 15
+
+		if (current-LUpdate)> 30 and Dtypename=="Motion":
+			UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 	return
 			
 def UpdateSignalLevel( DeviceID, SignalLvl) :
