@@ -168,7 +168,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 	x=0
 	Type=TypeFromCluster(clusterID)
-	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
+	Domoticz.Log("MajDomoDevice - Type = " + str(Type) )
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
@@ -176,7 +176,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
 
-			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
+			Domoticz.Log("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
 			if Dtypename=="PowerMeter" :
 				nValue=float(value)
