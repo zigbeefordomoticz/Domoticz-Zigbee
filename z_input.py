@@ -719,7 +719,7 @@ def ReadCluster(self, Devices, MsgData):
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
 				ValueTemp=round(int(Temp,16)/100,1)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']=ValueTemp
-				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", str(ValueTemp))
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
 #			if sTemp2 != '' :
 #				Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
@@ -728,8 +728,8 @@ def ReadCluster(self, Devices, MsgData):
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
 				ValueHumid=round(int(Humid,16)/100,1)
-				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']=str(ValueHumid)
-				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",str(ValueHumid))
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']=ValueHumid
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",ValueHumid)
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
 			if sHumid2 != '' :
 				Humid2 = '%s%s' % (str(sHumid2[2:4]),str(sHumid2[0:2])) 
