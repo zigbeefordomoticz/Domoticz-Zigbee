@@ -355,7 +355,6 @@ def Decode8010(self,MsgData) : # Reception Version list
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8010 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
-
 	MajorVersNum=MsgData[0:4]
 	InstaVersNum=MsgData[4:8]
 	try :
@@ -742,7 +741,7 @@ def ReadCluster(self, Devices, MsgData):
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]["0403"]=ValuePress
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
 			if sOnOff != '' :
-				sOnOff = sOnOff[0:2]  # Boolean
+				sOnOff = sOnOff[0:2]  
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
