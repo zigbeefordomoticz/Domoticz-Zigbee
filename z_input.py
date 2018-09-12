@@ -707,7 +707,18 @@ def ReadCluster(self, Devices, MsgData):
 	except :
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
-		
+	
+	#MsgAttType = 42 : String
+	#MsgAttType = 20 : UINT8
+	#MsgAttType = 21 : UINT16
+	#MsgAttType = 23 : UINT32
+	#MsgAttType = 28 : INT8
+	#MsgAttType = 29 : INT16
+	#MsgAttType = 31 : INT32
+	#MsgAttType = e1 : Date
+	#MsgAttType = f0 : 64 Bit IEEE Address
+	#MsgAttType = f1 : 128 Bit security key
+	
 	#Convert data if it's string
 	if MsgAttType == '42':
 		try:
@@ -807,6 +818,32 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0004 - Manufacture : " + MsgClusterData)
 
 		elif MsgAttrID=="0005" : #Type device
+			
+			# Don't know if it can be usefull
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_INCANDESCENT       = 0x00,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_SPOTLIGHT_HALOGEN,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_HALOGEN_BULB,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_CFL,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_LINEAR_FLUORESCENT,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_LED_BULB,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_SPOTLIGHT_LED,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_LED_STRIP,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_LED_TUBE,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_INDOOR_LUMINAIRE,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_OUTDOOR_LUMINAIRE,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_PENDANT_LUMINAIRE,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_FLOOR_STANDING_LUMINAIRE,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_CONTROLLER        = 0xE0,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_WALL_SWITCH,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_PORTABLE_REMOTE_CONTROLLER,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_MOTION_OR_LIGHT_SENSOR,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_ACTUATOR         = 0xF0,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_WALL_SOCKET,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_GATEWAY_OR_BRIDGE,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_PLUG_IN_UNIT,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_RETROFIT_ACTUATOR,
+			#E_CLD_BAS_GENERIC_DEVICE_TYPE_UNSPECIFIED     = 0xFF
+			
 			try : 
 				MType = MsgClusterData.replace(' ','_') #Remove spaces
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
@@ -827,6 +864,25 @@ def ReadCluster(self, Devices, MsgData):
 			except:
 				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Device type")
 				return
+				
+		elif MsgAttrID=="0007" : # Power source
+			Domoticz.Debug("ReadCluster - ClusterId=0000 - reception Power source")
+
+			#E_CLD_BAS_PS_UNKNOWN = 0x00,
+			#E_CLD_BAS_PS_SINGLE_PHASE_MAINS,
+			#E_CLD_BAS_PS_THREE_PHASE_MAINS,
+			#E_CLD_BAS_PS_BATTERY,
+			#E_CLD_BAS_PS_DC_SOURCE,
+			#E_CLD_BAS_PS_EMERGENCY_MAINS_CONSTANTLY_POWERED,
+			#E_CLD_BAS_PS_EMERGENCY_MAINS_AND_TRANSFER_SWITCH,
+			#E_CLD_BAS_PS_UNKNOWN_BATTERY_BACKED = 0x80,
+			#E_CLD_BAS_PS_SINGLE_PHASE_MAINS_BATTERY_BACKED,
+			#E_CLD_BAS_PS_THREE_PHASE_MAINS_BATTERY_BACKED,
+			#E_CLD_BAS_PS_BATTERY_BATTERY_BACKED,
+			#E_CLD_BAS_PS_DC_SOURCE_BATTERY_BACKED,
+			#E_CLD_BAS_PS_EMERGENCY_MAINS_CONSTANTLY_POWERED_BATTERY_BACKED,     
+			#E_CLD_BAS_PS_EMERGENCY_MAINS_AND_TRANSFER_SWITCH_BATTERY_BACKED,
+
 		else :
 			Domoticz.Debug("ReadCluster - ClusterId=0000 - Message attribut inconnu : " + MsgData)
 			return
@@ -916,6 +972,7 @@ def ReadCluster(self, Devices, MsgData):
 
 		# 0000 : Pressure 1
 		# 0001 : Pressure 2
+		# 0010: ???
 
 		if MsgAttType=="0028":
 			#z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
@@ -1051,3 +1108,4 @@ def ReadCluster(self, Devices, MsgData):
 		Domoticz.Error("MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
 		Domoticz.Error("MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
+
