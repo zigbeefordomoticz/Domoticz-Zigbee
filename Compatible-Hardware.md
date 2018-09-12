@@ -8,11 +8,12 @@ Either the information is coming from one of the plugin user (through direct com
 | Profalux | shutter | Blind percentage inverted switch | can command the shutter from the domoticz switch, but also you can pull shutter status and update the Domoticz device. | Fully operationnal | 2.3.5 | 
 | Xiaomi | Aqara Cube | Switch Selector | The following events are reported to the Domoticz Switch selectors : Shake, Wakepup, Drop, 90° and 180° rotation, Push, Tab and horizontal Rotation . | Fully operationnal | 2.4.0 |
 | Xiaomi | Temperature Humidity Sensor | Temp + Humidity | | Fully operationnal | 2.3.5 |
-| Xiaomi Aqara | Temperature Humidity Pressure Sensor | Temp + Humidity + Barometer | | Fully operationnal | 2.3.5 |
-| Xiaomi Aqara | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.3.5 |
-| Xiaomi Aqara | Human Motion Sensor | Human Motion Sensor | Switch turns on when a movement is detected | Lux sensor included doesn't work on master - report false values - To be tested in developement branch | 2.3.5 |
+| Xiaomi Aqara | Temperature Humidity Pressure Sensor | Temp + Humidity + Barometer | | Fully operationnal | 2.4.0 |
+| Xiaomi Aqara | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.4.0 |
+| Xiaomi Aqara | Human Motion Sensor | Human Motion Sensor | Switch turns on when a movement is detected | Lux sensor included doesn't work on master - report false values - To be tested in developement branch | 2.4.0 |
+| Xiaomi Aqara | Water sensor | Water sensor | Sensor turns on when it is under water | Fully operationnal | 2.4.0 |
 | IKEA/Tradfri | LED 1622G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 2.3.5 |
-| Philio Technology Corporation | Slim Multisensor PST03-A/B/C |  | under developement | 2.4.0 |
+| Philio Technology Corporation | Slim Multisensor PST03-A/B/C | | | under developement | 2.4.0 |
 | IKEA/Tradfri | LED 1624G9  | Switch Light, Level Control, Color Control | You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
 | IKEA/Tradfri | LED 1545G12  | Switch Light, Level Control, Color Control | You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
 | IKEA/Tradfri | LED 1622G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 2.3.5 |
