@@ -87,7 +87,6 @@ def ZigateRead(self, Devices, Data):
 		Decode8009( self, MsgData)
 		return
 
-
 	elif str(MsgType)=="8010":  # Version
 		Domoticz.Debug("ZigateRead - MsgType 8010 - Reception Version list : " + Data)
 		Decode8010(self, MsgData)
@@ -102,7 +101,6 @@ def ZigateRead(self, Devices, Data):
 		Domoticz.Debug("ZigateRead - MsgType 8015 - Get devices list : " + Data)
 		Decode8015(self, MsgData)
 		return
-		
 		
 	elif str(MsgType)=="8024":  #
 		Domoticz.Debug("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
@@ -355,6 +353,7 @@ def Decode8010(self,MsgData) : # Reception Version list
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8010 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
+
 	MajorVersNum=MsgData[0:4]
 	InstaVersNum=MsgData[4:8]
 	try :
@@ -564,6 +563,19 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	else :
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
 	return
+	
+def Decode8140(self, MsgData): # Discover Attrib Response
+	MsgComplete=MsgData[0:2]
+	MsgDataType=MsgData[8:10]
+	MsgAttribute=MsgData[10:14]
+	
+	if MsgDataType == '42':
+		MsgDataType = '(42)String'
+	elif MsgDataType == '20':
+		MsgDataType = '(20)UINT8'
+		
+	Domoticz.Debug("Decode8140 - Discover Attrib Response : Data Type : " + MsgDataType + ", Attribute : " + MsgAttribute)
+	return
 
 def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 	MsgLen=len(MsgData)
@@ -670,31 +682,75 @@ def ReadCluster(self, Devices, MsgData):
 
 	MsgSQN=MsgData[0:2]
 	MsgSrcAddr=MsgData[2:6]
-	MsgSrcEp=MsgData[6:8]
-	MsgClusterId=MsgData[8:12]
-	MsgAttrID=MsgData[12:16]
-	MsgAttType=MsgData[16:20]
-	MsgAttSize=MsgData[20:24]
+	MsgSrcEp=MsgData[6:8] # Endpoint
+	MsgClusterId=MsgData[8:12] # Cluster
+	MsgAttrID=MsgData[12:16]  # Attribute
+	MsgAttType=MsgData[16:18] # Attribute status
+	MsgAttType=MsgData[18:20] # Type of data
+	MsgAttSize=MsgData[20:24] # Data
 	MsgClusterData=MsgData[24:len(MsgData)]
 	tmpEp=""
 	tmpClusterid=""
+	
 	if z_tools.DeviceExist(self, MsgSrcAddr) == False :
 		#Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
 		Domoticz.Error("ReadCluster - KeyError : MsgData = " + MsgData)
 		return
-	else :
-		self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
-		try : 
-			tmpEp=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]
-			try :
-				tmpClusterid=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]
-			except : 
-				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
-		except :
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-	if MsgClusterId=="0000" :  # (General: Basic)
+	self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
+	try : 
+		tmpEp=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]
+		try :
+			tmpClusterid=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]
+		except : 
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
+	except :
+		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
+		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
+		
+	#Convert data if it's string
+	if MsgAttType == '42':
+		try:
+			#MsgClusterData = bytearray.fromhex(MsgClusterData).decode()
+			MsgClusterData = binascii.unhexlify(MsgClusterData).decode('utf-8')
+		except:
+			#Prb with some unicode char
+			pass
+		
+
+	#too much debug line
+	if (False):	
+		Domoticz.Debug("MsgSQN: " + MsgSQN )
+		Domoticz.Debug("MsgSrcAddr: " + MsgSrcAddr )
+		Domoticz.Debug("MsgSrcEp: " + MsgSrcEp )
+		Domoticz.Debug("MsgAttrId: " + MsgAttrID )
+		Domoticz.Debug("MsgAttType: " + MsgAttType )
+		Domoticz.Debug("MsgAttSize: " + MsgAttSize )
+		Domoticz.Debug("MsgClusterData: " + MsgClusterData )
+	else:
+		Domoticz.Debug("ReadCluster - ClusterId=" + MsgClusterId + " - Attribut=" + MsgAttrID + " ClusterData : " + MsgClusterData)
+
+	if MsgClusterId=="0000" :  # General: Basic
+		
+		# 0000 : zcl version
+		# 0001 : application version
+		# 0002 : stack version
+		# 0003 : hardware version
+		# 0004 : manufacturer
+		# 0005 : type
+		# 0006 : datecode
+		# 0007 : power source
+		# 000c : Xiaomi cube
+		# 0010 : description
+		# 0012 : Xiaomi cube
+		# ff01 : batterie
+		# 0400 : Lux mesurement
+		# 0402 : Temperature measurement
+		# 0403 : Presion mesurement
+		# 0405 : Humidity mesurement
+		# 0406 : Occupancy mesurement
+		# 0b04 : Electrical mesurement
+		
 		# It might be good to make sure that we are on a Xiaomi device - A priori : 0x115f
 		if MsgAttrID=="ff01" and self.ListOfDevices[MsgSrcAddr]['Status']=="inDB" :  # xiaomi battery lvl
 			Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
@@ -741,41 +797,49 @@ def ReadCluster(self, Devices, MsgData):
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]["0403"]=ValuePress
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
 			if sOnOff != '' :
-				sOnOff = sOnOff[0:2]  
+				sOnOff = sOnOff[0:2]
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
+		elif MsgAttrID=="0004" : #Manufacture code
+			Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0004 - Manufacture : " + MsgClusterData)
 
-		elif MsgAttrID=="0005" :  # Model info Xiaomi
+		elif MsgAttrID=="0005" : #Type device
 			try : 
-				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')                                        # Convert the model name to ASCII
+				MType= MsgClusterData.replace(' ','_') #Remove spaces
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
-				self.ListOfDevices[MsgSrcAddr]['Model']=MType                                                   # Set the model name in database
+				
+				self.ListOfDevices[MsgSrcAddr]['Model']=MType # Set the model name in database
 
-				if MType in self.DeviceConf :                                                                   # If the model exist in DeviceConf.txt
-					for Ep in self.DeviceConf[MType]['Ep'] :                                                # For each Ep in DeviceConf.txt
-						if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep'] :                             # If this EP doesn't exist in database
+				if MType in self.DeviceConf :                                                       # If the model exist in DeviceConf.txt
+					for Ep in self.DeviceConf[MType]['Ep'] :                                        # For each Ep in DeviceConf.txt
+						if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep'] :                         # If this EP doesn't exist in database
 							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                             # create it.
-						for cluster in self.DeviceConf[MType]['Ep'][Ep] :                               # For each cluster discribe in DeviceConf.txt
+						for cluster in self.DeviceConf[MType]['Ep'][Ep] :                           # For each cluster discribe in DeviceConf.txt
 							if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :            # If this cluster doesn't exist in database
-								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}            # create it.
-						if 'Type' in self.DeviceConf[MType]['Ep'][Ep] :                                 # If type exist at EP level : copy it
+								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}                # create it.
+						if 'Type' in self.DeviceConf[MType]['Ep'][Ep] :                             # If type exist at EP level : copy it
 							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[MType]['Ep'][Ep]['Type']
 					if 'Type' in self.DeviceConf[MType] :                                                   # If type exist at top level : copy it
 						self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[MType]['Type']
 			except:
-				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Model info Xiaomi : " +  MsgSrcAddr)
+				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Device type")
 				return
 		else :
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			Domoticz.Debug("ReadCluster - ClusterId=0000 - Message attribut inconnu : " + MsgData)
 			return
 	
-	elif MsgClusterId=="0006" :  # (General: On/Off) xiaomi
+	elif MsgClusterId=="0006" :  # General: On/Off
+		
+		# 0000 : on/off
+		# 8000 : multiclic
+		
+		Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
+		
 		if MsgAttrID=="0000" or MsgAttrID=="8000":
 			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-			Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off : " + str(MsgClusterData) )
 
 		elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004" :
 			Domoticz.Debug("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData )
@@ -783,19 +847,48 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu : " + MsgAttrID + " / " + MsgData)
 			return
 
-	elif MsgClusterId=="0008" :  # (Cluster Level Control )
+	elif MsgClusterId=="0008" :  # Cluster Level Control
+		
+		# 0000 : Current level
+		
 		Domoticz.Debug("ReadCluster - ClusterId=0008 - Level Control : " + str(MsgClusterData) )
-		Domoticz.Debug("MsgSQN: " + MsgSQN )
-		Domoticz.Debug("MsgSrcAddr: " + MsgSrcAddr )
-		Domoticz.Debug("MsgSrcEp: " + MsgSrcEp )
-		Domoticz.Debug("MsgAttrId: " + MsgAttrID )
-		Domoticz.Debug("MsgAttType: " + MsgAttType )
-		Domoticz.Debug("MsgAttSize: " + MsgAttSize )
-		Domoticz.Debug("MsgClusterData: " + MsgClusterData )
-		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
-		return
+		
+		if MsgAttrID=="0000":
+			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+		else:
+			Domoticz.Error("ReadCluster - ClusterId=0006 - Message attribut inconnu : " + MsgAttrID + " Data : " + MsgData)
+			return
+			
+	elif MsgClusterId=="0300" :  # Cluster Color Control
+		
+		# 0000 : Current Hue
+		# ....
+		# 400c : Temperature max
+		
+		Domoticz.Debug("ReadCluster - ClusterId=0008 - reception Color Control : " + str(MsgClusterData) )
+		
+	elif MsgClusterId=="0400" :  # Measurement: LUX
+		
+		# 0000 : Luminosiry
+		# 0001 : min
+		# 0002 : max
+		
+		#Correction Thiklop : le MsgClusterData n'est pas un entier hexa (message vide dans certains cas ?)
+		#Encapsulation dans un try except pour une sortie propre
+		try :
+			int(MsgClusterData,16)
+		except :
+			Domoticz.Error("readCluster - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
+		else :
+			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
+			Domoticz.Debug("ReadCluster - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
+		#Fin de la correction
 
 	elif MsgClusterId=="0402" :  # (Measurement: Temperature) xiaomi
+		
+		# 0000 : Temperature
+		
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		#Correction Thiklop : onMessage' failed 'IndexError':'string index out of range'.
 		if MsgClusterData != "":
@@ -819,6 +912,10 @@ def ReadCluster(self, Devices, MsgData):
 		#Fin de la correction
 
 	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
+
+		# 0000 : Pressure 1
+		# 0001 : Pressure 2
+
 		if MsgAttType=="0028":
 			#z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
@@ -837,6 +934,9 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16)/10,1)))
 
 	elif MsgClusterId=="0405" :  # (Measurement: Humidity) xiaomi
+		
+		# 0000 : Humidity value
+		
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		#Correction Thiklop : le MsgClusterData n'est pas toujours un entier et est vide ?!
 		#Encapsulation dans un try except pour gérer proprement le problème
@@ -851,22 +951,13 @@ def ReadCluster(self, Devices, MsgData):
 		#Fin de correction
 
 	elif MsgClusterId=="0406" :  # (Measurement: Occupancy Sensing) xiaomi
+		
+		# 0000 : Presence
+		
 		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 		Domoticz.Debug("ReadCluster - ClusterId=0406 - reception Occupancy Sensor : " + str(MsgClusterData) )
 
-	elif MsgClusterId=="0400" :  # (Measurement: LUX) xiaomi
-		#Correction Thiklop : le MsgClusterData n'est pas un entier hexa (message vide dans certains cas ?)
-		#Encapsulation dans un try except pour une sortie propre
-		try :
-			int(MsgClusterData,16)
-		except :
-			Domoticz.Error("readCluster - Problème de conversion int du capteur LUX xiaomi. MsgClusterData = " + MsgClusterData)
-		else :
-			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
-			Domoticz.Debug("ReadCluster - ClusterId=0400 - reception LUX Sensor : " + str(int(MsgClusterData,16)) )
-		#Fin de la correction
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
 		# Thanks to : https://github.com/dresden-elektronik/deconz-rest-plugin/issues/138#issuecomment-325101635
@@ -931,6 +1022,10 @@ def ReadCluster(self, Devices, MsgData):
 		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
+		
+		# 0055 : Xiaomi cube Rotation Angle
+		# ff05 : Xiaomi cube Rotation
+		
 		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 		if  MsgAttrID=="0055" and MsgSrcEp == '02' : # Consomation Electrique
 			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
@@ -945,11 +1040,14 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
 	elif MsgClusterId=="0b04" or MsgClusterId=="0702":  # 0b04 is Electrical Measurement Cluster
+		
+		# 0000 : 
+		
 		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
 		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
-		Domoticz.Error("                           MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
-		Domoticz.Error("                           MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
+		Domoticz.Error("MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
+		Domoticz.Error("MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
 
