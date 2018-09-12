@@ -527,7 +527,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
 		except : 
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
-		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+		Domoticz.Debug("Decode8100 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		ReadCluster(self, Devices, MsgData) 
 	return
 
@@ -803,11 +803,12 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
 		elif MsgAttrID=="0004" : #Manufacture code
+			self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = MsgClusterData
 			Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0004 - Manufacture : " + MsgClusterData)
 
 		elif MsgAttrID=="0005" : #Type device
 			try : 
-				MType= MsgClusterData.replace(' ','_') #Remove spaces
+				MType = MsgClusterData.replace(' ','_') #Remove spaces
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType # Set the model name in database
@@ -1050,4 +1051,3 @@ def ReadCluster(self, Devices, MsgData):
 		Domoticz.Error("MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
 		Domoticz.Error("MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
-
