@@ -509,7 +509,6 @@ def GetType(self, Addr, Ep) :
 	Type =""
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		# CLD CLD
-		DconfType=eval(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep])
 		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
 			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
 				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
