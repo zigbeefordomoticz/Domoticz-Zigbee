@@ -1,4 +1,11 @@
 # Release Notes 
+## 12 September 2018 - 3.0.0
+Mainly a technical version in order to split the code in pieces.
+
+- Code split
+- Bug fixing
+
+
 ## 8 September 2018 - 2.4.0
 We are keen to release this version off the Zigate Plugin, which include a set of update, enhacement and bugfixing.
 
