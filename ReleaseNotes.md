@@ -1,5 +1,5 @@
 # Release Notes 
-## 12 September 2018 - 3.0.0
+## 12 September 2018 - 3.0.0 
 Mainly a technical version in order to split the code in pieces.
 
 - Code split
