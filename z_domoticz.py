@@ -178,7 +178,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 
 			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
-			if Dtypename=="PowerMeter" :
+			if Dtypename=="PowerMeter" and clusterID == "000c" :
 				nValue=float(value)
 				sValue=value
 				Domoticz.Debug("MajDomoDevice PowerMeter : " + sValue)
