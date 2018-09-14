@@ -238,6 +238,12 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 				valueBaro='%s;%s' % (value,SplitData[0])
 				UpdateDevice_v2(Devices, x,0,str(valueBaro),DOptions, SignalLevel)
 			# CLD CLD
+			if Dtypename=="Plug" and Type=="Switch" :
+				if value == "01" :
+					UpdateDevice_v2(Devices, x,1 ,"On",DOptions, SignalLevel)
+				elif value == "00" :
+					UpdateDevice_v2(Devices, x,0 ,"Off",DOptions, SignalLevel)
+
 			if Type=="Door" and Dtypename=="Door" :  # Door / Window
 				if value == "01" :
 					state="Open"
@@ -256,6 +262,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 					#Correction Thiklop : idem
 					UpdateDevice_v2(Devices, x,int(value),str(state),DOptions, SignalLevel)
 					#Fin de la correction
+
 			if Type==Dtypename=="Switch" : # switch simple
 				if value == "01" :
 					state="On"
