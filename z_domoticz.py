@@ -440,37 +440,6 @@ def ResetDevice(self, Devices, Type,HbCount) :
 			UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 	return
 			
-def UpdateSignalLevel( DeviceID, SignalLvl) :
-	x=0
-	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID):
-			Domoticz.Debug("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) )
-			CurrentnValue=Devices[x].nValue
-			CurrentsValue=Devices[x].sValue
-			CurrentsOptions=Devices[x].Options
-			rssi= round( (SignalLvl * 12 ) / 200) # Should be 255, but there is no chance to have 255 !
-			Domoticz.Debug("Update Signal Level for Devices Unit=" + str(x) + " DeviceID = " + str(DeviceID) + " with level = " + str(SignalLvl) + " RSSI = " + str(rssi) )
-			Devices[x].Update(nValue=int(CurrentnValue), sValue=str(CurrentsValue), Options=str(CurrentsOptions), SignalLevel=int(rssi) )
-	return
-
-def UpdateBattery(DeviceID,BatteryLvl):
-	x=0
-	found=False
-	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID):
-			found==True
-			Domoticz.Log("Devices exist in DB. Unit=" + str(x))
-			CurrentnValue=Devices[x].nValue
-			Domoticz.Log("CurrentnValue = " + str(CurrentnValue))
-			CurrentsValue=Devices[x].sValue
-			Domoticz.Log("CurrentsValue = " + str(CurrentsValue))
-			Domoticz.Log("BatteryLvl = " + str(BatteryLvl))
-			Devices[x].Update(nValue = int(CurrentnValue),sValue = str(CurrentsValue), BatteryLevel = BatteryLvl )
-	if found==False :
-		self.ListOfDevices[DeviceID]['Status']="004d"
-		self.ListOfDevices[DeviceID]['Battery']=BatteryLvl
-
-
 
 def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = ''):
 	# V2 update Domoticz with SignaleLevel/RSSI
@@ -501,21 +470,6 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
 				Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return
-
-# PP 09/09/2018 - A supprimer
-#def UpdateDevice(Unit, nValue, sValue, Options):
-#	Dzigate=eval(Options['Zigate'])
-#	BatteryLvl=str(Dzigate['Battery'])
-#	if BatteryLvl == '{}' :
-#		BatteryLvl=255
-#	Domoticz.Debug("BatteryLvl = " + str(BatteryLvl))
-#	Domoticz.Debug("Options = " + str(Options))
-#	# Make sure that the Domoticz device still exists (they can be deleted) before updating it 
-#	if (Unit in Devices):
-#		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue):
-#			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), BatteryLevel=int(BatteryLvl))
-#			Domoticz.Log("Update "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
-#	return	
 
 
 def GetType(self, Addr, Ep) :
