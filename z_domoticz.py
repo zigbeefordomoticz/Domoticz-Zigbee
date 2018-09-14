@@ -195,6 +195,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 				sValue=str(round(float(value)*1000,0))
 				Domoticz.Debug("MajDomoDevice Power : " + sValue)
 				UpdateDevice_v2(Devices, x,0, str(nValue)+";"+sValue, DOptions, SignalLevel)								
+
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :
@@ -272,11 +273,6 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 					state="On"
 				elif value == "00" :
 					state="Off"
-				UpdateDevice_v2(Devices, x,int(value),str(state),DOptions, SignalLevel)
-				if value == "01" :
-					state="Open"
-				elif value == "00" :
-					state="Closed"
 				UpdateDevice_v2(Devices, x,int(value),str(state),DOptions, SignalLevel)
 			if Type=="Switch" and Dtypename=="Button": # boutton simple
 				if value == "01" :
