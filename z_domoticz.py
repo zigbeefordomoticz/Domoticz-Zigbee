@@ -257,6 +257,12 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 				elif value == "00" :
 					state="Closed"
 					UpdateDevice_v2(Devices, x,int(value),str(state),DOptions, SignalLevel)
+			if Dtypename=="Plug" and Type=="Switch" :
+				if value == "01" :
+					UpdateDevice_v2(Devices, x,1,"On",DOptions, SignalLevel)
+				elif value == "00" :
+					state="Off"
+					UpdateDevice_v2(Devices, x,0,"Off",DOptions, SignalLevel)
 
 			if Type=="Switch" and Dtypename=="Door" :  # porte / fenetre
 				if value == "01" :
