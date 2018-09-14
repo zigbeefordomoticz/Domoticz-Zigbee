@@ -35,7 +35,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Dtypename=DOptions['TypeName']
 	Domoticz.Debug("Dtypename : " + Dtypename)
 	Dzigate=eval(DOptions['Zigate'])
-	SignalLevel = self.ListOfDevices[Devices[Unit].DeviceID]['RSSI']
+	try:
+		SignalLevel = self.ListOfDevices[Devices[Unit].DeviceID]['RSSI']
+	except:
+		SignaLevel = 15
 
 	EPin="01"
 	EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
