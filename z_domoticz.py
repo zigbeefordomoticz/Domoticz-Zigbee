@@ -158,10 +158,14 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=241, Subtype=Subtype_ , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 				#Ajout meter
-				if t=="PowerMeter" :  # Power Prise Xiaomi
-					Domoticz.Debug("Ajout Meter")
+				if t=="Power" : # Will display Watt real time
+					Domoticz.Log("Create Watts Usage")
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=len(Devices)+1, TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+				if t=="Meter" : # Will display kWh
+					self.ListOfDevices[DeviceID]['Status']="inDB"
+					Domoticz.Log("Create kW/h Meter")
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="kWh", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
 
 
 def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
@@ -178,12 +182,19 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 
 			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
-			if Dtypename=="PowerMeter" :
+			# Instant Watts. 
+			# PowerMeter is for Compatibility , as it was created as a PowerMeter device.
+			if ( Dtypename=="Power" or Dtypename=="PowerMeter") and clusterID == "000c": 
 				nValue=float(value)
 				sValue=value
-				Domoticz.Debug("MajDomoDevice PowerMeter : " + sValue)
+				Domoticz.Debug("MajDomoDevice Power : " + sValue)
 				UpdateDevice_v2(Devices, x,nValue,str(sValue),DOptions, SignalLevel)								
-	
+
+			if Dtypename=="Meter" and clusterID == "000c": # kWh
+				nValue=float(value)
+				sValue=str(round(float(value)*1000,0))
+				Domoticz.Debug("MajDomoDevice Power : " + sValue)
+				UpdateDevice_v2(Devices, x,0, str(nValue)+";"+sValue, DOptions, SignalLevel)								
 			if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
 				Bar_forecast = '0' # Set barometer forecast to 0 (No info)
 				if Type=="Temp" :
