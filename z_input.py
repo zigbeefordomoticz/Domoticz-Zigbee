@@ -771,7 +771,7 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
 			return
 	
-	elif MsgClusterId=="0006" :  # (General: On/Off) xiaomi
+	elif MsgClusterId=="0006" :  # (General: On/Off) 
 		if MsgAttrID=="0000" or MsgAttrID=="8000":
 			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
@@ -795,7 +795,7 @@ def ReadCluster(self, Devices, MsgData):
 		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 		return
 
-	elif MsgClusterId=="0402" :  # (Measurement: Temperature) xiaomi
+	elif MsgClusterId=="0402" :  # (Measurement )
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		#Correction Thiklop : onMessage' failed 'IndexError':'string index out of range'.
 		if MsgClusterData != "":
@@ -818,7 +818,7 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Error("ReadCluster - ClusterId=0402 - MsgClusterData vide")
 		#Fin de la correction
 
-	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) xiaomi   ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
+	elif MsgClusterId=="0403" :  # (Measurement: Pression atmospherique) ### a corriger/modifier http://zigate.fr/xiaomi-capteur-temperature-humidite-et-pression-atmospherique-clusters/
 		if MsgAttType=="0028":
 			#z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
@@ -836,7 +836,7 @@ def ReadCluster(self, Devices, MsgData):
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/10,1)
 			Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm : " + str(round(int(MsgClusterData,16)/10,1)))
 
-	elif MsgClusterId=="0405" :  # (Measurement: Humidity) xiaomi
+	elif MsgClusterId=="0405" :  # (Measurement: Humidity) 
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
 		#Correction Thiklop : le MsgClusterData n'est pas toujours un entier et est vide ?!
 		#Encapsulation dans un try except pour gérer proprement le problème
