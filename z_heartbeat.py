@@ -227,27 +227,29 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
 			#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
 			IsCreated=False
-			#IEEEexist=False
+			IEEEexist=False
 			x=0
 			nbrdevices=0
 			for x in Devices:
 				if Devices[x].DeviceID == str(key) :
 					IsCreated = True
-					Domoticz.Debug("onHeartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
-				#DOptions = Devices[x].Options
-				#Dzigate=eval(DOptions['Zigate'])
-				#Domoticz.Debug("HearBeat - Devices[x].Options['Zigate']['IEEE']=" + str(Dzigate['IEEE']))
-				#Domoticz.Debug("HearBeat - self.ListOfDevices[key]['IEEE']=" + str(self.ListOfDevices[key]['IEEE']))
-				#if Dzigate['IEEE']!='' and self.ListOfDevices[key]['IEEE']!='' :
-				#	if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
-				#		IEEEexist = True
-				#		Domoticz.Debug("HearBeat - Devices IEEE already exist. Unit=" + str(x))
-			if IsCreated == False : #and IEEEexist == False:
-				Domoticz.Debug("onHeartbeat - creating device id : " + str(key) + " with : " + str(self.ListOfDevices[key]) )
+					Domoticz.Log("Heartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
+
+				DOptions = Devices[x].Options
+				Dzigate=eval(DOptions['Zigate'])
+				if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
+					Domoticz.Log("Heartbeat - Devices already exist based on IEEE. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
+					Domoticz.Log("Heartbeat - Devices[x].Options['Zigate']['IEEE']=" + str(Dzigate['IEEE']))
+					Domoticz.Log("Heartbeat - self.ListOfDevices[key]['IEEE']=" + str(self.ListOfDevices[key]['IEEE']))
+					IEEEexist = True
+					# To be implemented :
+					# Replace the Devices[x].DeviceID by str(key)
+					# Update Device[x]._____ with all existing self.ListOfDevice[key] ... May be some arbtration to be done.
+					# Remove the Old Self.ListOfDevices[Devices[x].DeviceID]
+
+			if IsCreated == False and IEEEexist == False:
+				Domoticz.Log("onHeartbeat - creating device id : " + str(key) + " with : " + str(self.ListOfDevices[key]) )
 				z_domoticz.CreateDomoDevice(self, Devices, key)
-			#if IsCreated == False and IEEEexist == True :
-			#	Domoticz.Debug("HearBeat - updating device id : " + str(key))
-			#	UpdateDomoDevice(self, key)
 
 		#end (RIA>=10 or self.ListOfDevices[key]['Model']!= {})
 	#end status != "UNKNOW"	
