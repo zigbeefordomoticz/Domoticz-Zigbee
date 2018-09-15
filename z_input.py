@@ -45,7 +45,7 @@ def ZigateRead(self, Devices, Data):
 		return
 		
 	elif str(MsgType)=="00d1":  #
-		Domoticz.Debug("ZigateRead - MsgType 00d1 - Reception Touchlink status : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 00d1 - Reception Touchlink status : " + Data)
 		return
 		
 	elif str(MsgType)=="8000":  # Status
@@ -59,27 +59,27 @@ def ZigateRead(self, Devices, Data):
 		return
 
 	elif str(MsgType)=="8002":  #
-		Domoticz.Debug("ZigateRead - MsgType 8002 - Reception Data indication : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8002 - Reception Data indication : " + Data)
 		return
 
 	elif str(MsgType)=="8003":  #
-		Domoticz.Debug("ZigateRead - MsgType 8003 - Reception Liste des cluster de l'objet : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8003 - Reception Liste des cluster de l'objet : " + Data)
 		return
 
 	elif str(MsgType)=="8004":  #
-		Domoticz.Debug("ZigateRead - MsgType 8004 - Reception Liste des attributs de l'objet : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8004 - Reception Liste des attributs de l'objet : " + Data)
 		return
 		
 	elif str(MsgType)=="8005":  #
-		Domoticz.Debug("ZigateRead - MsgType 8005 - Reception Liste des commandes de l'objet : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8005 - Reception Liste des commandes de l'objet : " + Data)
 		return
 
 	elif str(MsgType)=="8006":  #
-		Domoticz.Debug("ZigateRead - MsgType 8006 - Reception Non factory new restart : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8006 - Reception Non factory new restart : " + Data)
 		return
 
 	elif str(MsgType)=="8007":  #
-		Domoticz.Debug("ZigateRead - MsgType 8007 - Reception Factory new restart : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8007 - Reception Factory new restart : " + Data)
 		return
 
 	elif str(MsgType)=="8009":  #
@@ -105,43 +105,43 @@ def ZigateRead(self, Devices, Data):
 		
 		
 	elif str(MsgType)=="8024":  #
-		Domoticz.Debug("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
 		return
 
 	elif str(MsgType)=="8028":  #
-		Domoticz.Debug("ZigateRead - MsgType 8028 - Reception Authenticate response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8028 - Reception Authenticate response : " + Data)
 		return
 
 	elif str(MsgType)=="8029":  #
-		Domoticz.Debug("ZigateRead - MsgType 8029 - Reception Out of band commissioning data response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8029 - Reception Out of band commissioning data response : " + Data)
 		return
 
 	elif str(MsgType)=="802b":  #
-		Domoticz.Debug("ZigateRead - MsgType 802b - Reception User descriptor notify : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 802b - Reception User descriptor notify : " + Data)
 		return
 
 	elif str(MsgType)=="802c":  #
-		Domoticz.Debug("ZigateRead - MsgType 802c - Reception User descriptor response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 802c - Reception User descriptor response : " + Data)
 		return
 
 	elif str(MsgType)=="8030":  #
-		Domoticz.Debug("ZigateRead - MsgType 8030 - Reception Bind response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8030 - Reception Bind response : " + Data)
 		return
 
 	elif str(MsgType)=="8031":  #
-		Domoticz.Debug("ZigateRead - MsgType 8031 - Reception Unbind response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8031 - Reception Unbind response : " + Data)
 		return
 
 	elif str(MsgType)=="8034":  #
-		Domoticz.Debug("ZigateRead - MsgType 8034 - Reception Coplex Descriptor response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8034 - Reception Coplex Descriptor response : " + Data)
 		return
 
 	elif str(MsgType)=="8040":  #
-		Domoticz.Debug("ZigateRead - MsgType 8040 - Reception Network address response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8040 - Reception Network address response : " + Data)
 		return
 
 	elif str(MsgType)=="8041":  #
-		Domoticz.Debug("ZigateRead - MsgType 8041 - Reception IEEE address response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8041 - Reception IEEE address response : " + Data)
 		return
 
 	elif str(MsgType)=="8042":  #
@@ -165,67 +165,67 @@ def ZigateRead(self, Devices, Data):
 		return
 
 	elif str(MsgType)=="8046":  #
-		Domoticz.Debug("ZigateRead - MsgType 8046 - Reception Match descriptor response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8046 - Reception Match descriptor response : " + Data)
 		return
 
 	elif str(MsgType)=="8047":  #
-		Domoticz.Debug("ZigateRead - MsgType 8047 - Reception Management leave response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8047 - Reception Management leave response : " + Data)
 		return
 
 	elif str(MsgType)=="8048":  #
-		Domoticz.Debug("ZigateRead - MsgType 8048 - Reception Leave indication : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8048 - Reception Leave indication : " + Data)
 		return
 
 	elif str(MsgType)=="804a":  #
-		Domoticz.Debug("ZigateRead - MsgType 804a - Reception Management Network Update response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 804a - Reception Management Network Update response : " + Data)
 		return
 
 	elif str(MsgType)=="804b":  #
-		Domoticz.Debug("ZigateRead - MsgType 804b - Reception System server discovery response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 804b - Reception System server discovery response : " + Data)
 		return
 
 	elif str(MsgType)=="804e":  #
-		Domoticz.Debug("ZigateRead - MsgType 804e - Reception Management LQI response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 804e - Reception Management LQI response : " + Data)
 		return
 
 	elif str(MsgType)=="8060":  #
-		Domoticz.Debug("ZigateRead - MsgType 8060 - Reception Add group response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8060 - Reception Add group response : " + Data)
 		return
 
 	elif str(MsgType)=="8061":  #
-		Domoticz.Debug("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
 		return
 
 	elif str(MsgType)=="8062":  #
-		Domoticz.Debug("ZigateRead - MsgType 8062 - Reception Get group Membership response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8062 - Reception Get group Membership response : " + Data)
 		return
 
 	elif str(MsgType)=="8063":  #
-		Domoticz.Debug("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
 		return
 
 	elif str(MsgType)=="80a0":  #
-		Domoticz.Debug("ZigateRead - MsgType 80a0 - Reception View scene response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 80a0 - Reception View scene response : " + Data)
 		return
 
 	elif str(MsgType)=="80a1":  #
-		Domoticz.Debug("ZigateRead - MsgType 80a1 - Reception Add scene response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 80a1 - Reception Add scene response : " + Data)
 		return
 
 	elif str(MsgType)=="80a2":  #
-		Domoticz.Debug("ZigateRead - MsgType 80a2 - Reception Remove scene response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 80a2 - Reception Remove scene response : " + Data)
 		return
 
 	elif str(MsgType)=="80a3":  #
-		Domoticz.Debug("ZigateRead - MsgType 80a3 - Reception Remove all scene response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 80a3 - Reception Remove all scene response : " + Data)
 		return
 
 	elif str(MsgType)=="80a4":  #
-		Domoticz.Debug("ZigateRead - MsgType 80a4 - Reception Store scene response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 80a4 - Reception Store scene response : " + Data)
 		return
 
 	elif str(MsgType)=="80a6":  #
-		Domoticz.Debug("ZigateRead - MsgType 80a6 - Reception Scene membership response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 80a6 - Reception Scene membership response : " + Data)
 		return
 
 	elif str(MsgType)=="8100":  #
@@ -244,15 +244,15 @@ def ZigateRead(self, Devices, Data):
 		return
 		
 	elif str(MsgType)=="8110":  #
-		Domoticz.Debug("ZigateRead - MsgType 8110 - Reception Write attribute response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8110 - Reception Write attribute response : " + Data)
 		return
 
 	elif str(MsgType)=="8120":  #
-		Domoticz.Debug("ZigateRead - MsgType 8120 - Reception Configure reporting response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8120 - Reception Configure reporting response : " + Data)
 		return
 
 	elif str(MsgType)=="8140":  #
-		Domoticz.Debug("ZigateRead - MsgType 8140 - Reception Attribute discovery response : " + Data)
+		Domoticz.Log("ZigateRead - MsgType 8140 - Reception Attribute discovery response : " + Data)
 		return
 
 	elif str(MsgType)=="8401":  # Reception Zone status change notification
@@ -271,7 +271,7 @@ def ZigateRead(self, Devices, Data):
 		return
 
 	else: # unknow or not dev function
-		Domoticz.Debug("ZigateRead - Unknow Message Type for : " + Data)
+		Domoticz.Log("ZigateRead - Unknow Message Type for : " + Data)
 		return
 	
 	return
@@ -794,6 +794,32 @@ def ReadCluster(self, Devices, MsgData):
 		Domoticz.Debug("MsgClusterData: " + MsgClusterData )
 		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 		return
+
+	elif MsgClusterId=="0101" :  # (Door Lock )
+		def decode_vibr(value): 		#Decoding XIAOMI Vibration sensor 
+			if value == '' or value is None:
+				return value
+			if   value == "0001" : return 'Take'
+			elif value == "0002" : return 'Tilt'
+			elif value == "0003" : return 'Drop'
+			return ''
+
+		Domoticz.Error("ReadCluster 0101 not fully implemented, please contact us on https://github.com/sasu-drooz/Domoticz-Zigate" )
+		Domoticz.Log("ReadCluster 0101 - Dev : " +MsgSrcAddr + " Ep : " + MsgSrcEp + " Attribute : " + MsgAttrID )
+
+		if MsgAttrID == "0000" :  		# Lockstate
+			Domoticz.Log("ReadCluster 0101 - Dev : Lock state " +str(MsgClusterData) )
+		elif MsgAttrID == "0001" : 		# Locktype
+			Domoticz.Log("ReadCluster 0101 - Dev : Lock type "  + str(MsgClusterData))
+		elif MsgAttrID == "0002" : 		# Enabled
+			Domoticz.Log("ReadCluster 0101 - Dev : Enabled "  + str(MsgClusterData))
+		elif MsgAttrID == "0055" : 		# Movement
+			Domoticz.Log("ReadCluster 0101 - Dev : Movement " + decode_vibr( MsgClusterData ) )
+		elif MsgAttrID == "0503" : 		# Rotation
+			Domoticz.Log("ReadCluster 0101 - Dev : Rotation "  + str(MsgClusterData))
+		elif MsgAttrID == "0505" : 		# Unknown
+			Domoticz.Log("ReadCluster 0101 - Dev : Unknown "  + str(MsgClusterData))
+
 
 	elif MsgClusterId=="0402" :  # (Measurement )
 		#MsgValue=Data[len(Data)-8:len(Data)-4]
