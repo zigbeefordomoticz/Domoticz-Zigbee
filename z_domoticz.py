@@ -192,7 +192,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 
 			if Dtypename=="Meter" and clusterID == "000c": # kWh
 				nValue=float(value)
-				sValue=str(round(float(value)*1000,0))
+				sValue=str(float(value)/1000)
 				Domoticz.Debug("MajDomoDevice Power : " + sValue)
 				UpdateDevice_v2(Devices, x,0, str(nValue)+";"+sValue, DOptions, SignalLevel)								
 
