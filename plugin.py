@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="3.0.2" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="3.0.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
 	<params>
 		<param field="Mode1" label="Model" width="75px">
 			<options>
@@ -65,7 +65,7 @@ class BasePlugin:
 		return
 
 	def onStart(self):
-		Domoticz.Status("onStart called - Zigate plugin V 3.0.2")
+		Domoticz.Status("onStart called - Zigate plugin V 3.0.3")
 
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
@@ -95,12 +95,12 @@ class BasePlugin:
 
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			ID = Devices[x].DeviceID
+			self.ListOfDevices[ID]={}
 			try:
 				self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
 			except: 
 				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
 			else :
-				self.ListOfDevices[ID]={}
 				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + Devices[x].Options['Zigate'] + " loaded into self.ListOfDevices")
 
 		#Import DeviceConf.txt
