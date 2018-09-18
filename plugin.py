@@ -95,13 +95,13 @@ class BasePlugin:
 
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			ID = Devices[x].DeviceID
+			self.ListOfDevices[ID]={}
 			try:
 				self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
 			except: 
 				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
 			else :
-				self.ListOfDevices[ID]={}
-				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + Devices[x].Options['Zigate'] + " loaded into self.ListOfDevices")
+				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + str(self.ListOfDevices[ID]) + " loaded into self.ListOfDevices")
 
 		#Import DeviceConf.txt
 		tmpread=""
