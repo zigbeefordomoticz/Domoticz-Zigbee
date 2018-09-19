@@ -971,6 +971,9 @@ def ReadCluster(self, Devices, MsgData):
 
 		elif MsgSrcEp == '03' and MsgAttrID=="0055" : # Angle 
 			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
+			# will need to investigate to see if this should trigger an update or not.
+			# Probably the right think would be to detect clock and anti-clock rotation. 
+			# Add a Selector anti-clock on the Switch seector
 
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
