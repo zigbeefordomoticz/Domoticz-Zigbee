@@ -531,6 +531,28 @@ def Decode802C(self, MsgData) : # User Descriptor Response
 	Domoticz.Status("ZigateRead - MsgType 802C - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Network address of interest : " + MsgNetworkAddressInterest + " Lenght : " + MsgLenght + " Data : " + MsgMData)
 	return
 
+
+def Decode8030(self, MsgData) : # Bind response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8030 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	
+	Domoticz.Status("ZigateRead - MsgType 8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
+	return
+
+def Decode8031(self, MsgData) : # Unbind response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8031 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	
+	Domoticz.Status("ZigateRead - MsgType 8031 - Unbind response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
+	return
+
+
 def Decode8042(self, MsgData) : # Node Descriptor response
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
