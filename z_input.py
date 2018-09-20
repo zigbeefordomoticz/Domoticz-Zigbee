@@ -566,6 +566,36 @@ def Decode8034(self, MsgData) : # Complex Descriptor response
 	Domoticz.Status("ZigateRead - MsgType 8034 - Complex Descriptor response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Network address of interest : " + MsgNetworkAddressInterest + " Lenght : " + MsgLenght + " XML Tag : " + MsgXMLTag + " Count Field : " + MsgCountField + " Field Values : " + MsgFieldValues)
 	return
 
+def Decode8040(self, MsgData) : # Network Address response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8040 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	MsgIEEE=MsgData[4:20]
+	MsgShortAddress=MsgData[20:24]
+	MsgNumAssocDevices=MsgData[24:26]
+	MsgStartIndex=MsgData[26:28]
+	MsgDeviceList=MsgData[28:len(MsgData)]
+	
+	Domoticz.Status("ZigateRead - MsgType 8040 - Network Address response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
+	return
+	
+def Decode8041(self, MsgData) : # IEEE Address response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8041 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	MsgIEEE=MsgData[4:20]
+	MsgShortAddress=MsgData[20:24]
+	MsgNumAssocDevices=MsgData[24:26]
+	MsgStartIndex=MsgData[26:28]
+	MsgDeviceList=MsgData[28:len(MsgData)]
+	
+	Domoticz.Status("ZigateRead - MsgType 8041 - IEEE Address response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
+	return
+
 def Decode8042(self, MsgData) : # Node Descriptor response
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
