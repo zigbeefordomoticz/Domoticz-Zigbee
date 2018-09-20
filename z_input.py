@@ -674,7 +674,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataSQN=MsgData[0:2]
 	MsgDataStatus=MsgData[2:4]
 	MsgDataShAddr=MsgData[4:8]
-	MsgDataEpCount=MsgData[8:10]
+	MsgDataList=MsgData[8:10]
 	MsgDataEPlist=MsgData[10:len(MsgData)]
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
@@ -696,6 +696,41 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	#Fin de correction
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
+
+def Decode8046(self, MsgData) : # Match Descriptor response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8046 - MsgData lenght is : " + str(MsgLen) )
+
+	MsgDataSQN=MsgData[0:2]
+	MsgDataStatus=MsgData[2:4]
+	MsgDataShAddr=MsgData[4:8]
+	MsgDataLenList=MsgData[8:10]
+	MsgDataMatchList=MsgData[10:len(MsgData)]
+	Domoticz.Status("Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
+	return
+
+
+def Decode8047(self, MsgData) : # Management Leave response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8047 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	
+	Domoticz.Status("ZigateRead - MsgType 8047 - Management Leave response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
+	return
+
+
+def Decode8048(self, MsgData) : # Leave indication
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8048 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:16]
+	MsgStatus=MsgData[16:18]
+	
+	Domoticz.Status("ZigateRead - MsgType 8048 - Leave indication, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
+	return
+
 
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
