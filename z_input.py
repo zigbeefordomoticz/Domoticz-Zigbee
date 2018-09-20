@@ -333,6 +333,52 @@ def Decode8001(self, MsgData) : # Reception log Level
 	Domoticz.Debug("ZigateRead - MsgType 8001 - Reception log Level 0x: " + MsgLogLvl + "Message : " + MsgDataMessage)
 	return
 
+def Decode8002(self, MsgData) : # Data indication
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8002 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgLogLvl=MsgData[0:2]
+	MsgProfilID=MsgData[2:6]
+	MsgClusterID=MsgData[6:10]
+	MsgSourcePoint=MsgData[10:12]
+	MsgEndPoint=MsgData[12:14]
+	MsgSourceAddressMode=MsgData[16:18]
+	if int(MsgSourceAddressMode)==0 :
+		MsgSourceAddress=MsgData[18:26]  # uint16_t
+		MsgDestinationAddressMode=MsgData[26:28]
+		if int(MsgDestinationAddressMode)=0 : # uint16_t
+			MsgDestinationAddress=MsgData[28:36]
+			MsgPayloadSize=MsgData[36:38]
+			MsgPayload=MsgData[38:len(MsgData)]
+		else : # uint32_t
+			MsgDestinationAddress=MsgData[28:60]
+			MsgPayloadSize=MsgData[60:62]
+			MsgPayload=MsgData[62:len(MsgData)]
+	else : # uint32_t
+		MsgSourceAddress=MsgData[18:50]
+		MsgDestinationAddressMode=MsgData[50:52]
+		if int(MsgDestinationAddressMode)=0 : # uint16_t
+			MsgDestinationAddress=MsgData[52:60]
+			MsgPayloadSize=MsgData[60:62]
+			MsgPayload=MsgData[62:len(MsgData)]
+		else : # uint32_t
+			MsgDestinationAddress=MsgData[52:84]
+			MsgPayloadSize=MsgData[84:86]
+			MsgPayload=MsgData[86:len(MsgData)]
+	
+	Domoticz.Debug("ZigateRead - MsgType 8002 - Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Payload size : " + MsgPayloadSize + " Message Payload : " + MsgPayload)
+	return
+
+def Decode8003(self, MsgData) : # Device attribute list
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8003 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSourceEP=MsgData[0:2]
+	MsgProfileID=MsgData[2:6]
+	MsgClusterList=MsgData[6:len(MsgData)]
+	Domoticz.Debug("ZigateRead - MsgType 8003 - Reception Cluster List, EP source : " + MsgSourceEP + " ProfileID : " + MsgProfileID + " Cluster List : " + MsgClusterList)
+	return
+
 def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
