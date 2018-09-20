@@ -450,35 +450,6 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
 	else : Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
 	return
 
-def Decode8024(self, MsgData) : # Network joined / formed
-	MsgLen=len(MsgData)
-	Domoticz.Debug("Decode8024 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
-
-	MsgStatus=MsgData[0:2]
-	MsgShortAddress=MsgData[2:6]
-	MsgExtendedAddress=MsgData[6:22]
-	MsgChannel=MsgData[22:24]
-	
-	Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + MsgStatus + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
-	return
-
-def Decode8025(self, MsgData) : # Authenticate response
-	MsgLen=len(MsgData)
-	Domoticz.Debug("Decode8025 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
-
-	MsgGatewayIEEE=MsgData[0:16]
-	MsgEncryptKey=MsgData[16:32]
-	MsgMic=MsgData[32:40]
-	MsgNodeIEEE=MsgData[40:56]
-	MsgActiveKeySequenceNumber=MsgData[56:58]
-	MsgChannel=MsgData[58:60]
-	MsgShortPANid=MsgData[60:64]
-	MsgExtPANid=MsgData[64:80]
-	
-	Domoticz.Status("ZigateRead - MsgType 8025 - Authenticate response, Gateway IEEE : " + MsgGatewayIEEE + " Encrypt Key : " + MsgEncryptKey + " Mic : " + MsgMic + " Node IEEE : " + MsgNodeIEEE + " Active Key Sequence number : " + MsgActiveKeySequenceNumber + " Channel : " + MsgChannel + " Short PAN id : " + MsgShortPANid + "Extended PAN id : " + MsgExtPANid )
-	return
-
-
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )
 	# id: 2bytes
 	# addr: 4bytes
@@ -506,6 +477,34 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
 
+	return
+	
+def Decode8024(self, MsgData) : # Network joined / formed
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8024 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgStatus=MsgData[0:2]
+	MsgShortAddress=MsgData[2:6]
+	MsgExtendedAddress=MsgData[6:22]
+	MsgChannel=MsgData[22:24]
+	
+	Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + MsgStatus + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
+	return
+
+def Decode8028(self, MsgData) : # Authenticate response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8028 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgGatewayIEEE=MsgData[0:16]
+	MsgEncryptKey=MsgData[16:32]
+	MsgMic=MsgData[32:40]
+	MsgNodeIEEE=MsgData[40:56]
+	MsgActiveKeySequenceNumber=MsgData[56:58]
+	MsgChannel=MsgData[58:60]
+	MsgShortPANid=MsgData[60:64]
+	MsgExtPANid=MsgData[64:80]
+	
+	Domoticz.Status("ZigateRead - MsgType 8028 - Authenticate response, Gateway IEEE : " + MsgGatewayIEEE + " Encrypt Key : " + MsgEncryptKey + " Mic : " + MsgMic + " Node IEEE : " + MsgNodeIEEE + " Active Key Sequence number : " + MsgActiveKeySequenceNumber + " Channel : " + MsgChannel + " Short PAN id : " + MsgShortPANid + "Extended PAN id : " + MsgExtPANid )
 	return
 
 def Decode8042(self, MsgData) : # Node Descriptor response
