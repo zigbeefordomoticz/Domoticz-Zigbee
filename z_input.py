@@ -507,6 +507,30 @@ def Decode8028(self, MsgData) : # Authenticate response
 	Domoticz.Status("ZigateRead - MsgType 8028 - Authenticate response, Gateway IEEE : " + MsgGatewayIEEE + " Encrypt Key : " + MsgEncryptKey + " Mic : " + MsgMic + " Node IEEE : " + MsgNodeIEEE + " Active Key Sequence number : " + MsgActiveKeySequenceNumber + " Channel : " + MsgChannel + " Short PAN id : " + MsgShortPANid + "Extended PAN id : " + MsgExtPANid )
 	return
 
+def Decode802B(self, MsgData) : # User Descriptor Notify
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode802B - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	MsgNetworkAddressInterest=MsgData[4:8]
+	
+	Domoticz.Status("ZigateRead - MsgType 802B - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Network address of interest : " + MsgNetworkAddressInterest)
+	return
+
+def Decode802C(self, MsgData) : # User Descriptor Response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode802C - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	MsgNetworkAddressInterest=MsgData[4:8]
+	MsgLenght=MsgData[8:10]
+	MsgMData=MsgData[10:len(MsgData)]
+	
+	Domoticz.Status("ZigateRead - MsgType 802C - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Network address of interest : " + MsgNetworkAddressInterest + " Lenght : " + MsgLenght + " Data : " + MsgMData)
+	return
+
 def Decode8042(self, MsgData) : # Node Descriptor response
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
