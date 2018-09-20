@@ -346,7 +346,7 @@ def Decode8002(self, MsgData) : # Data indication
 	if int(MsgSourceAddressMode)==0 :
 		MsgSourceAddress=MsgData[18:26]  # uint16_t
 		MsgDestinationAddressMode=MsgData[26:28]
-		if int(MsgDestinationAddressMode)=0 : # uint16_t
+		if int(MsgDestinationAddressMode)==0 : # uint16_t
 			MsgDestinationAddress=MsgData[28:36]
 			MsgPayloadSize=MsgData[36:38]
 			MsgPayload=MsgData[38:len(MsgData)]
@@ -357,7 +357,7 @@ def Decode8002(self, MsgData) : # Data indication
 	else : # uint32_t
 		MsgSourceAddress=MsgData[18:50]
 		MsgDestinationAddressMode=MsgData[50:52]
-		if int(MsgDestinationAddressMode)=0 : # uint16_t
+		if int(MsgDestinationAddressMode)==0 : # uint16_t
 			MsgDestinationAddress=MsgData[52:60]
 			MsgPayloadSize=MsgData[60:62]
 			MsgPayload=MsgData[62:len(MsgData)]
