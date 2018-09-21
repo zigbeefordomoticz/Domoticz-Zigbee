@@ -738,6 +738,20 @@ def Decode8048(self, MsgData) : # Leave indication
 	Domoticz.Status("ZigateRead - MsgType 8048 - Leave indication, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
 	return
 
+def Decode804A(self, MsgData) : # Management Network Update response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode804A - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgStatus=MsgData[2:4]
+	MsgTotalTransmission=MsgData[4:8]
+	MsgTransmissionFailures=MsgData[8:12]
+	MsgScannedChannel=MsgData[12:20]
+	MsgScannedChannelListCount=MsgData[20:22]
+	MsgChannelList=MsgData[22:len(MsgData)]
+	Domoticz.Status("ZigateRead - MsgType 804A - Management Network Update response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus+ " Total Transmission : " + MsgTotalTransmission+ " Transmission Failures : " + MsgTransmissionFailures+ " Scanned Channel : " + MsgScannedChannel + " Scanned Channel List Count : " + MsgScannedChannelListCount + " Channel List : " + MsgChannelList)
+	return
+
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
 		MsgSQN=MsgData[0:2]
