@@ -299,7 +299,7 @@ def ZigateRead(self, Devices, Data):
 	
 	return
 
-#Response
+#Responses
 def Decode004d(self, MsgData) : # Reception Device announce
 	MsgSrcAddr=MsgData[0:4]
 	MsgIEEE=MsgData[4:20]
@@ -449,7 +449,7 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
 	Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + Channel )
 	# from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
 	if str(PanID) == "0" : 
-		Domoticz.Error("Decode8009: Network state DOWN ! " )
+		Domoticz.Status("Decode8009: Network state DOWN ! " )
 	else :
 		Domoticz.Status("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + Channel )
 
@@ -852,8 +852,10 @@ def Decode8063(self, MsgData) : # Remove Group response
 	Domoticz.Status("ZigateRead - MsgType 8063 - Remove Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + MsgStatus + " Group ID : " + MsgGroupID)
 	return
 
+#Reponses SCENE
 
 
+#Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
 		MsgSQN=MsgData[0:2]

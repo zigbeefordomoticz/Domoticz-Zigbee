@@ -81,7 +81,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		self.ListOfDevices[key]['Heartbeat']="0"
 		self.ListOfDevices[key]['Status']="8045"
 
-	# What RIA stand for ???????
+	# What RIA stand for ??????? (see line 228)
 	if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="9" and self.ListOfDevices[key]['RIA']>="10":
 		self.ListOfDevices[key]['Heartbeat']="0"
 		self.ListOfDevices[key]['Status']="UNKNOW"
@@ -225,7 +225,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
 
 		if (RIA>=10 or self.ListOfDevices[key]['Model']!= {}) :
-			#creer le device ds domoticz en se basant sur les clusterID ou le Model si il est connu
+			#creer le device ds domoticz en se basant sur les clusterID (case RIA>=10, see z_input.py in readcluster ) ou le Model si il est connu
 			IsCreated=False
 			IEEEexist=False
 			x=0
