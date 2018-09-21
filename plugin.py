@@ -120,13 +120,17 @@ class BasePlugin:
 				(key, val) = line.split(":",1)
 				key = key.replace(" ","")
 				key = key.replace("'","")
-				# To be implemented
-				# When importing we need to complete the existing DeviceList which was loaded from Domoticz. 
-				# So fields which were not loaded should be added to the existing ListOfDevices ...
+
+				if key in self.ListOfDevices:
+					DeviceListVal=eval(val)
+					for dlKey, dlVal in DeviceListVal.items() :
+						if not self.ListOfDevices[key].get(dlKey) and dlVal != {} :
+							Domoticz.Log("self.ListOfDevices["+key+"]["+str(dlKey) + "] needs to be updated with " +str(dlVal) )
+							self.ListOfDevices[key][dlKey] = dlVal
+
+				# CheckDevceList will create an entry in ListOfDevices. This will occure for Devices not known by Domoticz
 				z_tools.CheckDeviceList(self, key, val)
-
 		return
-
 
 	def onStop(self):
 		z_var.ZigateConn.Disconnect()
