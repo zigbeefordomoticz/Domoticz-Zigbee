@@ -12,6 +12,7 @@ import binascii
 import time
 import struct
 import json
+import queue
 
 import z_domoticz
 import z_var
@@ -304,21 +305,29 @@ def Decode8000_v2(self, MsgData) : # Status
 	SEQ=MsgData[2:4]
 	PacketType=MsgData[4:8]
 
-	if Status=="00" : Status="Success"
-	elif Status=="01" : Status="Incorrect Parameters"
-	elif Status=="02" : Status="Unhandled Command"
-	elif Status=="03" : Status="Command Failed"
-	elif Status=="04" : Status="Busy"
-	elif Status=="05" : Status="Stack Already Started"
-	elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
+	Domoticz.Debug("Decode8000 - Command in progress : " + str (z_var.cmdInProgress.qsize() ) )
+	if not z_var.cmdInProgress.empty() :     # Should not happen
+		mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
+		Domoticz.Debug("Decode8000 - expected command status for : " + str(mycmd['cmd']) + "/" + str(mycmd['datas']) )
+		if mycmd['cmd'] == PacketType :
+			if   Status=="00" : Status="Success"
+			elif Status=="01" : Status="Incorrect Parameters"
+			elif Status=="02" : Status="Unhandled Command"
+			elif Status=="03" : Status="Command Failed"
+			elif Status=="04" : Status="Busy"
+			elif Status=="05" : Status="Stack Already Started"
+			elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
 
-	Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+			Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
-	if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
-	elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
-	elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
-	elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
-	elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
+			if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
+			elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
+			elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
+			elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
+			elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
+
+		else :
+			Domoticz.Log("Decode8000 - Out of sequence : Queue: Command " + str(mycmd) + " vs. " + str(PacketType) )
 
 	if str(MsgData[0:2]) != "00" : Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 

@@ -45,6 +45,7 @@ import binascii
 import time
 import struct
 import json
+import queue
 
 import z_var          # Global variables
 import z_tools
@@ -62,6 +63,7 @@ class BasePlugin:
 	def __init__(self):
 		self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
 		self.HBcount=0
+		z_var.cmdInProgress = queue.Queue()
 		return
 
 	def onStart(self):

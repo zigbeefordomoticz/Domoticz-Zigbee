@@ -12,3 +12,4 @@ transport = 'unknow'
 ReqRcv = ''
 ZigateConn = ''
 CrcCheck = 1
+cmdInProgress = ''

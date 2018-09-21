@@ -13,6 +13,7 @@ import binascii
 import time
 import struct
 import json
+import queue
 
 import z_var
 import z_tools
@@ -84,6 +85,10 @@ def sendZigateCmd(cmd,datas) :
 		return chk[2:4]
 
 
+	command = {}
+	command['cmd'] = cmd
+	command['datas'] = datas
+
 	if datas == "" :
 		length="0000"
 	else :
@@ -103,7 +108,10 @@ def sendZigateCmd(cmd,datas) :
 		else :
 			strchecksum=checksumCmd
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
-	Domoticz.Debug("sendZigateCmd - Comand send : " + str(lineinput))
+	Domoticz.Debug("sendZigateCmd - Command send : " + str(lineinput))
+	z_var.cmdInProgress.put( command )
+	Domoticz.Log("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
+
 	if str(z_var.transport) == "USB":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
 	if str(z_var.transport) == "Wifi":
