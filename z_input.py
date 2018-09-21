@@ -299,6 +299,7 @@ def ZigateRead(self, Devices, Data):
 	
 	return
 
+#Response
 def Decode004d(self, MsgData) : # Reception Device announce
 	MsgSrcAddr=MsgData[0:4]
 	MsgIEEE=MsgData[4:20]
@@ -797,6 +798,61 @@ def Decode804C(self, MsgData) : # Management LQI response
 	MsgListOfEntries=MsgData[10:len(MsgData)]
 	Domoticz.Status("ZigateRead - MsgType 804C - Management LQI response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Neighbour Table Entrie : " + MsgNeighbourTableEntrie + " Neighbour Table List Count : " + MsgNeighbourTableListCount + " Start Index : " + MsgStartIndex + " List of Entries : " + MsgListOfEntries)
 	return
+
+#Group response
+def Decode8060(self, MsgData) : # Add Group response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8060 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgEP=MsgData[2:4]
+	MsgClusterID=MsgData[4:8]
+	
+	Domoticz.Status("ZigateRead - MsgType 8060 - Add Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID)
+	return
+
+def Decode8061(self, MsgData) : # View Group response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8061 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgEP=MsgData[2:4]
+	MsgClusterID=MsgData[4:8]
+	MsgStatus=MsgData[8:10]
+	MsgGroupID=MsgData[10:14]
+	
+	Domoticz.Status("ZigateRead - MsgType 8061 - View Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + MsgStatus + " Group ID : " + MsgGroupID)
+	return
+
+def Decode8062(self, MsgData) : # Get Group Membership response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8062 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgEP=MsgData[2:4]
+	MsgClusterID=MsgData[4:8]
+	MsgSourceAddress=MsgData[8:12]
+	MsgCapacity=MsgData[12:14]
+	MsgGroupCount=MsgData[14:16]
+	MsgListOfGroup=MsgData[16:len(MsgData)]
+	
+	Domoticz.Status("ZigateRead - MsgType 8062 - Get Group Membership response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Source Address : " + MsgSourceAddress + " Capacity : " + MsgCapacity + " Group Count : " + MsgGroupCount + " List Of Group : " + MsgListOfGroup)
+	return
+
+def Decode8063(self, MsgData) : # Remove Group response
+	MsgLen=len(MsgData)
+	Domoticz.Debug("Decode8063 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+
+	MsgSequenceNumber=MsgData[0:2]
+	MsgEP=MsgData[2:4]
+	MsgClusterID=MsgData[4:8]
+	MsgStatus=MsgData[8:10]
+	MsgGroupID=MsgData[10:14]
+	
+	Domoticz.Status("ZigateRead - MsgType 8063 - Remove Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + MsgStatus + " Group ID : " + MsgGroupID)
+	return
+
+
 
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
