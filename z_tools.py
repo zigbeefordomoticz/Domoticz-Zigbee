@@ -110,3 +110,16 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['SQN']=DeviceListVal['SQN']
 		if 'DomoID' in DeviceListVal :
 			self.ListOfDevices[key]['DomoID']=DeviceListVal['DomoID']
+
+
+def updSQN( self, key, newSQN) :
+	import Domoticz
+
+	# For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
+	if self.ListOfDevices[key].get('SQN') :
+		oldSQN = self.ListOfDevices[key]['SQN']
+	else :
+		oldSQN='00'
+	if oldSQN != newSQN :
+		Domoticz.Log("updating SQN from " +str(oldSQN) + " to " + str(newSQN) )
+		self.ListOfDevices[key]['SQN'] = newSQN
