@@ -61,8 +61,10 @@ def DeviceExist(self, Addr , IEE = ''):
 def initDeviceInList(self, Addr) :
 	if Addr != '' :
 		self.ListOfDevices[Addr]={}
-		self.ListOfDevices[Addr]['Ep']={}
 		self.ListOfDevices[Addr]['Status']="004d"
+		self.ListOfDevices[Addr]['SQN']={}
+		self.ListOfDevices[Addr]['DomoID']={}
+		self.ListOfDevices[Addr]['Ep']={}
 		self.ListOfDevices[Addr]['Heartbeat']="0"
 		self.ListOfDevices[Addr]['RIA']="0"
 		self.ListOfDevices[Addr]['RSSI']={}
@@ -83,7 +85,7 @@ def CheckDeviceList(self, key, val) :
 
 	DeviceListVal=eval(val)
 	if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-		Domoticz.Debug("CheckDeviceList - Address will be add : " + str(key))
+		Domoticz.Log("CheckDeviceList - Address will be add : " + str(key))
 		initDeviceInList(self, key)
 		self.ListOfDevices[key]['RIA']="10"
 		if 'Ep' in DeviceListVal :
@@ -104,3 +106,7 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['Status']=DeviceListVal['Status']
 		if 'RSSI' in DeviceListVal :
 			self.ListOfDevices[key]['RSSI']=DeviceListVal['RSSI']
+		if 'SQN' in DeviceListVal :
+			self.ListOfDevices[key]['SQN']=DeviceListVal['SQN']
+		if 'DomoID' in DeviceListVal :
+			self.ListOfDevices[key]['DomoID']=DeviceListVal['DomoID']
