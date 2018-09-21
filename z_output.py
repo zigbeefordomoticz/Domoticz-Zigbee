@@ -113,7 +113,10 @@ def sendZigateCmd(cmd,datas) :
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
 
 	if str(z_var.transport) == "USB":
-		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
+		if z_var.sendDelay == 0 : 
+			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
+		else : 
+			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), z_var.sendDelay )
 	if str(z_var.transport) == "Wifi":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
 

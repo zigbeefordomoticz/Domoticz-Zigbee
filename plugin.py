@@ -90,8 +90,12 @@ class BasePlugin:
 		Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
 		self.PluginConf=eval(tmpPluginConf)
 		z_var.CrcCheck = 1
+		z_var.sendDelay = 0
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
 			z_var.CrcCheck = 0
+		if  self.PluginConf.get('sendDelay') :
+			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
+		
 		
 		z_var.ReqRcv=bytearray()
 

@@ -1,3 +1,4 @@
 {
-'CrcCheck':'On'
+'CrcCheck':'On',
+'sendDelay':'1'
 }
