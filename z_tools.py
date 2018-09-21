@@ -121,5 +121,5 @@ def updSQN( self, key, newSQN) :
 	else :
 		oldSQN='00'
 	if oldSQN != newSQN :
-		Domoticz.Log("updating SQN from " +str(oldSQN) + " to " + str(newSQN) )
+		Domoticz.Log("Device : " + key + " updating SQN from " +str(oldSQN) + " to " + str(newSQN) )
 		self.ListOfDevices[key]['SQN'] = newSQN
