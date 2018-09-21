@@ -446,12 +446,12 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
 	PanID=MsgData[20:24]
 	extPanID=MsgData[24:40]
 	Channel=MsgData[40:42]
-	Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + Channel )
+	Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + str(int(Channel,16)) )
 	# from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
 	if str(PanID) == "0" : 
 		Domoticz.Status("Decode8009: Network state DOWN ! " )
 	else :
-		Domoticz.Status("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + Channel )
+		Domoticz.Status("Decode8009: Network state UP - PAN Id = " + str(PanID) + " on Channel = " + str(int(Channel,16)) )
 
 	return
 
