@@ -332,7 +332,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	if not z_var.cmdInProgress.empty() :     # Should not happen
 		mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
 		Domoticz.Debug("Decode8000 - expected command status for : " + str(mycmd['cmd']) + "/" + str(mycmd['datas']) )
-		if mycmd['cmd'] == PacketType :
+		if int(mycmd['cmd'],16) == int(PacketType,16) :
 			if   Status=="00" : Status="Success"
 			elif Status=="01" : Status="Incorrect Parameters"
 			elif Status=="02" : Status="Unhandled Command"
