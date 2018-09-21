@@ -112,6 +112,7 @@ class BasePlugin:
 		myfile.close()
 		Domoticz.Debug("DeviceConf.txt = " + str(tmpread))
 		self.DeviceConf=eval(tmpread)
+
 		#Import DeviceList.txt
 		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
 			Domoticz.Debug("DeviceList.txt open ")
@@ -119,7 +120,11 @@ class BasePlugin:
 				(key, val) = line.split(":",1)
 				key = key.replace(" ","")
 				key = key.replace("'","")
+				# To be implemented
+				# When importing we need to complete the existing DeviceList which was loaded from Domoticz. 
+				# So fields which were not loaded should be added to the existing ListOfDevices ...
 				z_tools.CheckDeviceList(self, key, val)
+
 		return
 
 
