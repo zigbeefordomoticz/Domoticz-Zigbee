@@ -110,7 +110,7 @@ def sendZigateCmd(cmd,datas) :
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Command send : " + str(lineinput))
 	z_var.cmdInProgress.put( command )
-	Domoticz.Log("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
+	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
 
 	if str(z_var.transport) == "USB":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
