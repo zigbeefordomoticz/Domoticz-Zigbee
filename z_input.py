@@ -674,9 +674,9 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataSQN=MsgData[0:2]
 	MsgDataStatus=MsgData[2:4]
 	MsgDataShAddr=MsgData[4:8]
-	MsgDataList=MsgData[8:10]
+	MsgDataEpCount=MsgData[8:10]
 	MsgDataEPlist=MsgData[10:len(MsgData)]
-	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", EP count " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
 	
 	if z_tools.DeviceExist(self, MsgDataShAddr) == False:
@@ -709,7 +709,6 @@ def Decode8046(self, MsgData) : # Match Descriptor response
 	Domoticz.Status("Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
 	return
 
-
 def Decode8047(self, MsgData) : # Management Leave response
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8047 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
@@ -720,7 +719,6 @@ def Decode8047(self, MsgData) : # Management Leave response
 	Domoticz.Status("ZigateRead - MsgType 8047 - Management Leave response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
 	return
 
-
 def Decode8048(self, MsgData) : # Leave indication
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8048 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
@@ -730,7 +728,6 @@ def Decode8048(self, MsgData) : # Leave indication
 	
 	Domoticz.Status("ZigateRead - MsgType 8048 - Leave indication, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
 	return
-
 
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
 	try:
@@ -754,7 +751,6 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		ReadCluster(self, Devices, MsgData) 
 	return
-
 
 def Decode8101(self, MsgData) :  # Default Response
 	MsgDataSQN=MsgData[0:2]
