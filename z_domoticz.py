@@ -437,7 +437,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 			SignalLevel = 15
 
 		if (current-LUpdate)> 30 and Dtypename=="Motion":
-			Domoticz.Debug("Last update of the devices " + str(_tmpDeviceID) + " was : " + str(LUpdate)  + " current is : " + str(current) )
+			Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) )
 			UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 	return
 			
