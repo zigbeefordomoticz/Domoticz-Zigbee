@@ -13,10 +13,10 @@ Either the information is coming from one of the plugin user (through direct com
 | Xiaomi Aqara | Human Motion Sensor | Human Motion Sensor | Switch turns on when a movement is detected | Lux sensor included doesn't work on master - report false values - To be tested in developement branch | 2.4.0 |
 | Xiaomi Aqara | Water sensor | Water sensor | Sensor turns on when it is under water | Fully operationnal | 2.4.0 |
 | IKEA/Tradfri | LED 1622G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 2.3.5 |
-| Philio Technology Corporation | Slim Multisensor PST03-A/B/C | | | under developement | 2.4.0 |
 | IKEA/Tradfri | LED 1624G9  | Switch Light, Level Control, Color Control | You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
 | IKEA/Tradfri | LED 1545G12  | Switch Light, Level Control, Color Control | You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
-| IKEA/Tradfri | LED 1622G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 2.3.5 |
+| IKEA/Tradfri | LED 1623G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 2.3.5 |
+| Philio Technology Corporation | Slim Multisensor PST03-A/B/C | | | under developement | 2.4.0 |
 | Philio Technology Corporation | Slim Multisensor PST03-A/B/C | | | Operationnal | 2.4.0 |
 | Legrand | Celiane with Netatmo Plug | Switch and Power Meter | It might happend the Power Meter doesn't work. In that case it is because the device requirers firmware update. To do so you need to have at your disposal the Legrand gateway | Tested | 2.4.0 |
 | Legrand | Celiane with Netatmo switch/Dimmer W/O neutre | Switch, Dimmmer | Dimmer not working, need update firmware ? | Tested | 2.4.0 |
