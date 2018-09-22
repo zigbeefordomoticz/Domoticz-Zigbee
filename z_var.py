@@ -13,3 +13,4 @@ ReqRcv = ''
 ZigateConn = ''
 CrcCheck = 1
 cmdInProgress = ''
+sendDelay = 0

@@ -333,6 +333,11 @@ def Decode8000_v2(self, MsgData) : # Status
 		mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
 		Domoticz.Debug("Decode8000 - expected command status for : " + str(mycmd['cmd']) + "/" + str(mycmd['datas']) )
 		if int(mycmd['cmd'],16) == int(PacketType,16) :
+			if ( len(mycmd['datas']) > 10 ) :			# As we have the datas from the sendZigateCmd() call, we have the Saddr.
+				CmdSrcAddr = mycmd['datas'][2:6]
+				Domoticz.Debug("Decode8000 - Command for sAddr : " +str( CmdSrcAddr ) )
+				z_tools.updSQN( self, CmdSrcAddr, SEQ )
+
 			if   Status=="00" : Status="Success"
 			elif Status=="01" : Status="Incorrect Parameters"
 			elif Status=="02" : Status="Unhandled Command"
@@ -497,16 +502,16 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		ieee=MsgData[idx+6:idx+22]
 		power=MsgData[idx+22:idx+24]
 		rssi=MsgData[idx+24:idx+26]
-		Domoticz.Status("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
+		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
 		if z_tools.DeviceExist(self, saddr, ieee):
-			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
+			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
 			if rssi !="00" :
 				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
 			else  :
 				self.ListOfDevices[saddr]['RSSI']= 12
 			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
 		else: 
-			Domoticz.Log("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
+			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
 
 	return
@@ -655,6 +660,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataLenght=MsgData[8:10]
 	Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + MsgDataStatus + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
+	z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
 	if int(MsgDataLenght,16)>0 :
@@ -708,6 +714,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataEpCount=MsgData[8:10]
 	MsgDataEPlist=MsgData[10:len(MsgData)]
+	z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
 	
@@ -738,6 +745,7 @@ def Decode8046(self, MsgData) : # Match Descriptor response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataLenList=MsgData[8:10]
 	MsgDataMatchList=MsgData[10:len(MsgData)]
+	z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	Domoticz.Status("Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
 	return
 
@@ -857,26 +865,24 @@ def Decode8063(self, MsgData) : # Remove Group response
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
-	try:
-		MsgSQN=MsgData[0:2]
-		MsgSrcAddr=MsgData[2:6]
-		MsgSrcEp=MsgData[6:8]
-		MsgClusterId=MsgData[8:12]
-		MsgAttrID=MsgData[12:16]
-		MsgAttType=MsgData[16:20]
-		MsgAttSize=MsgData[20:24]
-		MsgClusterData=MsgData[24:len(MsgData)]
-	except:
-		Domoticz.Error("Decode8100 - MsgData = " + MsgData)
+	MsgSQN=MsgData[0:2]
+	MsgSrcAddr=MsgData[2:6]
+	MsgSrcEp=MsgData[6:8]
+	MsgClusterId=MsgData[8:12]
+	MsgAttrID=MsgData[12:16]
+	MsgAttType=MsgData[16:20]
+	MsgAttSize=MsgData[20:24]
+	MsgClusterData=MsgData[24:len(MsgData)]
 
-	else:
-		Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
-		try :
-			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
-		except : 
-			self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
-		Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
-		ReadCluster(self, Devices, MsgData) 
+	Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+	try :
+		self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
+	except : 
+		self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+	Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+	z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
+	ReadCluster(self, Devices, MsgData) 
+
 	return
 
 def Decode8101(self, MsgData) :  # Default Response
@@ -897,6 +903,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	MsgAttType=MsgData[16:20]
 	MsgAttSize=MsgData[20:24]
 	MsgClusterData=MsgData[24:len(MsgData)]
+
 	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
 	if MsgSrcAddr  in self.ListOfDevices:
 		try:
@@ -906,6 +913,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
 		Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
+		z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 		ReadCluster(self, Devices, MsgData) 
 	else :
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
@@ -937,6 +945,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 		MsgDataDestMode=MsgData[6:8]
 		MsgDataDestAddr=MsgData[8:12]
 		MsgDataSQN=MsgData[12:14]
+		z_tools.updSQN( self, MsgDataDestAddr, MsgDataSQN)
 		Domoticz.Debug("Decode 8702 - " +  z_status.DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
 		return
 
@@ -957,6 +966,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
 	# 5a 02 0500 02 0ffd 0010 00 ff 0001
 	# 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+	z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 
 	## CLD CLD
 	Model =  self.ListOfDevices[MsgSrcAddr]['Model']

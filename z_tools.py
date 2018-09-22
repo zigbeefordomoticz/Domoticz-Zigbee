@@ -116,13 +116,14 @@ def updSQN( self, key, newSQN) :
 	import Domoticz
 
 	# For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
+	Domoticz.Debug("Device : " + key + " updating SQN to " + str(newSQN) )
 	if self.ListOfDevices[key].get('SQN') :
 		oldSQN = self.ListOfDevices[key]['SQN']
 	else :
 		oldSQN='00'
 
-	if oldSQN != newSQN :
-		Domoticz.Log("Device : " + key + " updating SQN from " +str(oldSQN) + " to " + str(newSQN) )
+	if int(oldSQN,16) != int(newSQN,16) :
+		Domoticz.Log("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
 		self.ListOfDevices[key]['SQN'] = newSQN
 #		if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
 #			Domoticz.Log("updSQN - Out of sequence for Device: " + key + " from " +str(oldSQN) + " to " + str(newSQN) )
