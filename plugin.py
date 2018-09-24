@@ -144,7 +144,7 @@ class BasePlugin:
 		return
 
 	def onStop(self):
-		z_var.ZigateConn.Disconnect()
+		#z_var.ZigateConn.Disconnect()
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
 		Domoticz.Status("onStop called")
 

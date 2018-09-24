@@ -213,18 +213,22 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8060":  #
 		Domoticz.Log("ZigateRead - MsgType 8060 - Reception Add group response : " + Data)
+		Decode8060(self, MsgData)
 		return
 
 	elif str(MsgType)=="8061":  #
 		Domoticz.Log("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
+		Decode8061(self, MsgData)
 		return
 
 	elif str(MsgType)=="8062":  #
 		Domoticz.Log("ZigateRead - MsgType 8062 - Reception Get group Membership response : " + Data)
+		Decode8062(self, MsgData)
 		return
 
 	elif str(MsgType)=="8063":  #
 		Domoticz.Log("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
+		Decode8063(self, MsgData)
 		return
 
 	elif str(MsgType)=="80a0":  #
