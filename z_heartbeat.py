@@ -22,15 +22,22 @@ def processKnownDevices( self, key ) :
 	# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ):
 		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
+			if self.ListOfDevices[key].get('DomoID') :
+				Domoticz.Log("Overwrite key with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
+				key = self.ListOfDevices[key]['DomoID']
+			
 			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
-			z_output.ReadAttributeRequest_0008(self, key)
+			z_output.ReadAttributeRequest_0008(self, self.ListOfDevices[key]['DomoID'])
 #			self.ListOfDevices[key]['Heartbeat']="0"
 
 	# device id type Xiaomi Plug, let check the shutter status every 15' ( 90 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ) :
 		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
+			if self.ListOfDevices[key].get('DomoID') :
+				Domoticz.Log("Overwrite key with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
+				key = self.ListOfDevices[key]['DomoID']
 			Domoticz.Debug("Request a Read attribute for the Power Plug " + str(key) )
-			z_output.ReadAttributeRequest_000C(self, key)
+			z_output.ReadAttributeRequest_000C(self, self.ListOfDevices[key]['DomoID'])
 #			self.ListOfDevices[key]['Heartbeat']="0"
 
 
@@ -41,7 +48,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		# We should check if the device has not been already created via IEEE
 		if z_tools.IEEEExist( self, self.ListOfDevices[key]['IEEE'] ) == False :
 			Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
-			z_output.sendZigateCmd("0045", str(key))
+			z_output.sendZigateCmd("0045", str(key))    # We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
 			self.ListOfDevices[key]['Status']="0045"
 			self.ListOfDevices[key]['Heartbeat']="0"
 		else :
@@ -51,7 +58,6 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 					self.ListOfDevices[key]['Status']="DUP"
 					self.ListOfDevices[key]['Heartbeat']="0"
 					self.ListOfDevices[key]['RIA']="99"
-					oktocreate=True
 					break
 
 	# Request Simple Descriptor for each EP	
@@ -59,7 +65,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
 		for cle in self.ListOfDevices[key]['Ep']:
 			Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
-			z_output.sendZigateCmd("0043", str(key)+str(cle))
+			z_output.sendZigateCmd("0043", str(key)+str(cle))    # We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
 		self.ListOfDevices[key]['Status']="0043"
 		self.ListOfDevices[key]['Heartbeat']="0"
 
