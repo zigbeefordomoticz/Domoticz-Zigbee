@@ -134,6 +134,13 @@ class BasePlugin:
 
 				# CheckDevceList will create an entry in ListOfDevices. This will occure for Devices not known by Domoticz
 				z_tools.CheckDeviceList(self, key, val)
+
+		# In case DomoID is not yet initialized ( First time use , as next time it will be stored in DeviceList )
+		for key in self.ListOfDevices:
+			if not self.ListOfDevices[key].get('DomoID') :
+				Domoticz.Log("Initialize self.ListOfDevices[" + key + "]['DomoID'] to : " + key )
+				self.ListOfDevices[key]['DomoID'] = key
+
 		return
 
 	def onStop(self):
