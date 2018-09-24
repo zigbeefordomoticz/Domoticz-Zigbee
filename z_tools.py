@@ -129,7 +129,7 @@ def updSQN( self, key, newSQN) :
 			if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
 				Domoticz.Log("updSQN - Out of sequence for Device: " + key + " from " +str(oldSQN) + " to " + str(newSQN) )
 	else :
-		Domoticz.Debug("updSQN - Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " SQN " + str(newSQN) )
+		Domoticz.Log("updSQN - Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " SQN " + str(newSQN) )
 		self.ListOfDevices[key]['SQN'] = {}
 
 			
