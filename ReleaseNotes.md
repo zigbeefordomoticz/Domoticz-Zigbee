@@ -5,6 +5,9 @@
 - [Technical] control of SQN on messages from battery powered devices. In case of out of sequence a message is logged
 - [Technical] improving loading of Domoticz devices into self.ListOfDevices
 - [Technical] implementing DomoID to track the deviceID at creation time (which is the reference in Domoticz DB. This is in planning of managing devices coming with a new saddr
+- [issue] fix problem created during #78
+- [hardware] enable plug-switch update when receiving 0x000/ff01 cluster
+
 
 
 ## 12 September 2018 - 3.0.0 
