@@ -177,7 +177,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 	# Let's overwrite DeviceID
 	
 	if self.ListOfDevices[DeviceID].get('DomoID') :
-		Domoticz.Log("Overwrite DeviceID with the one used a CreateDomoDevice : " + str(self.ListOfDevices[DeviceID]['DomoID'] ) )
+		Domoticz.Debug("Overwrite DeviceID with the one used a CreateDomoDevice : " + str(self.ListOfDevices[DeviceID]['DomoID'] ) )
 		DeviceID = self.ListOfDevices[DeviceID]['DomoID']
 	
 	for x in Devices:

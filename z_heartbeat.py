@@ -23,7 +23,7 @@ def processKnownDevices( self, key ) :
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ):
 		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
 			if self.ListOfDevices[key].get('DomoID') :
-				Domoticz.Log("Overwrite key with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
+				Domoticz.Debug("Overwrite key with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
 				key = self.ListOfDevices[key]['DomoID']
 			
 			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
@@ -34,7 +34,7 @@ def processKnownDevices( self, key ) :
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ) :
 		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
 			if self.ListOfDevices[key].get('DomoID') :
-				Domoticz.Log("Overwrite key with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
+				Domoticz.Debug("Overwrite key with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
 				key = self.ListOfDevices[key]['DomoID']
 			Domoticz.Debug("Request a Read attribute for the Power Plug " + str(key) )
 			z_output.ReadAttributeRequest_000C(self, self.ListOfDevices[key]['DomoID'])

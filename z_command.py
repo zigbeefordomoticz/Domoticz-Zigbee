@@ -27,7 +27,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	for newSaddr in self.ListOfDevices :
 		if self.ListOfDevices[newSaddr]['DomoID'] == Devices[Unit].DeviceID :
 			DeviceID = newSaddr
-			Domoticz.Log("Overwrite DeviceID by : " + str(newSaddr) + " instead of " + Devices[Unit].DeviceID )
+			Domoticz.Debug("Overwrite DeviceID by : " + str(newSaddr) + " instead of " + Devices[Unit].DeviceID )
 
 	DSwitchtype= str(Devices[Unit].SwitchType)
 	Domoticz.Debug("DSwitchtype : " + DSwitchtype)
