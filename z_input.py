@@ -664,9 +664,10 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataLenght=MsgData[8:10]
 	Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + MsgDataStatus + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
-	z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
+	else :
+		z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	if int(MsgDataLenght,16)>0 :
 		MsgDataEp=MsgData[10:12]
 		MsgDataProfile=MsgData[12:16]
@@ -718,7 +719,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataEpCount=MsgData[8:10]
 	MsgDataEPlist=MsgData[10:len(MsgData)]
-	z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
+
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 	OutEPlist=""
 	
@@ -728,6 +729,8 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	else :
 		if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 			self.ListOfDevices[MsgDataShAddr]['Status']="8045"
+		else :
+			z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 		# PP: Does that mean that if we Device is already in the Database, we might overwrite 'EP' ?
 		for i in MsgDataEPlist :
 			OutEPlist+=i
@@ -749,6 +752,7 @@ def Decode8046(self, MsgData) : # Match Descriptor response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataLenList=MsgData[8:10]
 	MsgDataMatchList=MsgData[10:len(MsgData)]
+
 	z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	Domoticz.Status("Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + MsgDataStatus + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
 	return
@@ -884,6 +888,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	except : 
 		self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 	Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
+
 	z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 	ReadCluster(self, Devices, MsgData) 
 
@@ -917,6 +922,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
 		Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 		Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
+
 		z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 		ReadCluster(self, Devices, MsgData) 
 	else :
@@ -949,6 +955,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 		MsgDataDestMode=MsgData[6:8]
 		MsgDataDestAddr=MsgData[8:12]
 		MsgDataSQN=MsgData[12:14]
+
 		z_tools.updSQN( self, MsgDataDestAddr, MsgDataSQN)
 		Domoticz.Debug("Decode 8702 - " +  z_status.DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
 		return
