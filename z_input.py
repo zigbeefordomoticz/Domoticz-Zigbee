@@ -802,9 +802,9 @@ def Decode804B(self, MsgData) : # System Server Discovery response
 	Domoticz.Status("ZigateRead - MsgType 804B - System Server Discovery response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Server Mask : " + MsgServerMask)
 	return
 
-def Decode804C(self, MsgData) : # Management LQI response
+def Decode804E(self, MsgData) : # Management LQI response
 	MsgLen=len(MsgData)
-	Domoticz.Debug("Decode804C - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+	Domoticz.Debug("Decode804E - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
 	MsgSequenceNumber=MsgData[0:2]
 	MsgStatus=MsgData[2:4]
@@ -812,7 +812,7 @@ def Decode804C(self, MsgData) : # Management LQI response
 	MsgNeighbourTableListCount=MsgData[6:8]
 	MsgStartIndex=MsgData[8:10]
 	MsgListOfEntries=MsgData[10:len(MsgData)]
-	Domoticz.Status("ZigateRead - MsgType 804C - Management LQI response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Neighbour Table Entrie : " + MsgNeighbourTableEntrie + " Neighbour Table List Count : " + MsgNeighbourTableListCount + " Start Index : " + MsgStartIndex + " List of Entries : " + MsgListOfEntries)
+	Domoticz.Status("ZigateRead - MsgType 804E - Management LQI response, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus + " Neighbour Table Entrie : " + MsgNeighbourTableEntrie + " Neighbour Table List Count : " + MsgNeighbourTableListCount + " Start Index : " + MsgStartIndex + " List of Entries : " + MsgListOfEntries)
 	return
 
 #Group response
