@@ -47,7 +47,7 @@ def DeviceExist(self, Addr , IEE = ''):
 	if IEE:
 		for existingKey in self.ListOfDevices:
 			existingDevice = self.ListOfDevices[existingKey]
-			if existingDevice.get('IEEE','wrong iee') == IEE:
+			if existingDevice.get('DomoID') and existingDevice.get('IEEE','wrong iee') == IEE:
 				Domoticz.Log("DeviceExist - given Addr/IEEE = " + Addr + "/" + IEE + " found as " + str(existingDevice) )
 				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " )
 				Domoticz.Log("DeviceExist - " + str(existingDevice) )
