@@ -42,7 +42,7 @@ def ZigateConf( channel, discover ):
 #		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(z_var.FirmwareVersion) )
 
 	################### ZiGate - discover mode 255 sec Max ##################
-	#### Set discover mode only if requested - so != 0                  #####
+	#### Set discover mode only if requested - so != 0				  #####
 	if str(discover) != "0":
 		if str(discover)=="255": 
 			Domoticz.Status("Zigate enter in discover mode for ever")
@@ -128,8 +128,8 @@ def ReadAttributeRequest_0008(self, key) :
 	EPin = "01"
 	EPout= "01"
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
-	        if "0008" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
-	                EPout=tmpEp
+			if "0008" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+					EPout=tmpEp
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
 	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )

@@ -21,7 +21,7 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 			if x not in Devices :
 				Domoticz.Debug("FreeUnit - device " + str(x) + " not exist")
 				FreeUnit=x
-				return FreeUnit			
+				return FreeUnit
 		if FreeUnit =="" :
 			FreeUnit=len(Devices)+1
 		Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(x))
@@ -135,16 +135,16 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 
 				if t=="ColorControl" :  # variateur de couleur/luminosite/on-off
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					# Type 0xF1    pTypeColorSwitch
+					# Type 0xF1	pTypeColorSwitch
 
-					#SubType sTypeColor_RGB_W                0x01 // RGB + white, either RGB or white can be lit
-					#SubType sTypeColor_RGB                  0x02 // RGB
-					#SubType sTypeColor_White                0x03 // Monochrome white
-					#SubType sTypeColor_RGB_CW_WW            0x04 // RGB + cold white + warm white, either RGB or white can be lit
-					#SubType sTypeColor_LivCol               0x05
-					#SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
-					#SubType sTypeColor_RGB_CW_WW_Z          0x07 // Like RGBWW, but allows combining RGB and white
-					#SubType sTypeColor_CW_WW                0x08 // Cold white + Warm white
+					#SubType sTypeColor_RGB_W				0x01 // RGB + white, either RGB or white can be lit
+					#SubType sTypeColor_RGB				  0x02 // RGB
+					#SubType sTypeColor_White				0x03 // Monochrome white
+					#SubType sTypeColor_RGB_CW_WW			0x04 // RGB + cold white + warm white, either RGB or white can be lit
+					#SubType sTypeColor_LivCol			   0x05
+					#SubType sTypeColor_RGB_W_Z			  0x06 // Like RGBW, but allows combining RGB and white
+					#SubType sTypeColor_RGB_CW_WW_Z		  0x07 // Like RGBWW, but allows combining RGB and white
+					#SubType sTypeColor_CW_WW				0x08 // Cold white + Warm white
 
 					# Switchtype 7 STYPE_Dimmer
 

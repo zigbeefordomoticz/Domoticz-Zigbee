@@ -47,7 +47,7 @@ import struct
 import json
 import queue
 
-import z_var          # Global variables
+import z_var		  # Global variables
 import z_tools
 import z_output
 import z_input
@@ -207,9 +207,9 @@ class BasePlugin:
 					iByte = next(iterReqRcv) ^ 16	# then uncode the next value
 				BinMsg.append(iByte)			# copy
 
-			z_var.ReqRcv = z_var.ReqRcv[Zero3:]                 # What is after 0x03 has to be reworked.
+			z_var.ReqRcv = z_var.ReqRcv[Zero3:]				 # What is after 0x03 has to be reworked.
 
-                        # Check length
+						# Check length
 			Zero1, MsgType, Length, ReceivedChecksum = struct.unpack ('>BHHB', BinMsg[0:6])
 			### Domoticz.Debug("onMessage Frame CLD : " + str(Zero1) + " " + str(MsgType) + " " + str(Length) )
 			ComputedLength = Length + 7

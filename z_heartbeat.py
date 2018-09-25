@@ -48,7 +48,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		# We should check if the device has not been already created via IEEE
 		if z_tools.IEEEExist( self, self.ListOfDevices[key]['IEEE'] ) == False :
 			Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
-			z_output.sendZigateCmd("0045", str(key))    # We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
+			z_output.sendZigateCmd("0045", str(key))	# We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
 			self.ListOfDevices[key]['Status']="0045"
 			self.ListOfDevices[key]['Heartbeat']="0"
 		else :
@@ -65,7 +65,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
 		for cle in self.ListOfDevices[key]['Ep']:
 			Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
-			z_output.sendZigateCmd("0043", str(key)+str(cle))    # We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
+			z_output.sendZigateCmd("0043", str(key)+str(cle))	# We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
 		self.ListOfDevices[key]['Status']="0043"
 		self.ListOfDevices[key]['Heartbeat']="0"
 
@@ -158,7 +158,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	# ProfileID = c05e >> ZLL: ZigBee Light Link
 	# ProfileID = 0104 >> ZHA : ZigBee Home Automation
 	# ProfileID = a1e0 >> Philips Hue ???
-	# ProfileID =      >> SEP: Smart Energy Profile
+	# ProfileID =	  >> SEP: Smart Energy Profile
 	# There is too ZBA, ZTS, ZRS, ZHC but I haven't find information for them
 	
 	#ZigBee HA contains (nearly?) everything in ZigBee Light Link

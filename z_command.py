@@ -13,7 +13,7 @@ import time
 import struct
 import json
 
-import z_var          # Global variables
+import z_var		  # Global variables
 import z_tools
 import z_output
 import z_domoticz
@@ -105,12 +105,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		
 		#Color 
 		#	ColorMode m;
-		#	uint8_t t;     // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
-		#	uint8_t r;     // Range:0..255, Red level
-		#	uint8_t g;     // Range:0..255, Green level
-		#	uint8_t b;     // Range:0..255, Blue level
-		#	uint8_t cw;    // Range:0..255, Cold white level
-		#	uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
+		#	uint8_t t;	 // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
+		#	uint8_t r;	 // Range:0..255, Red level
+		#	uint8_t g;	 // Range:0..255, Green level
+		#	uint8_t b;	 // Range:0..255, Blue level
+		#	uint8_t cw;	// Range:0..255, Cold white level
+		#	uint8_t ww;	// Range:0..255, Warm white level (also used as level for monochrome white)
 		#
 
 		def rgb_to_xy(rgb):
@@ -178,12 +178,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 			TempMired = 1000000 // TempKelvin
 			#z_output.sendZigateCmd("00C0","02" + Devices[Unit].DeviceID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
 			z_output.sendZigateCmd("00C0","02" + DeviceID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
-		#ColorModeRGB = 3    // Color. Valid fields: r, g, b.
+		#ColorModeRGB = 3	// Color. Valid fields: r, g, b.
 		elif Hue_List['m'] == 3:
 			x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
 			#Convert 0>1 to 0>FFFF
 			x = int(x*65536)
-			y = int(y*65536)																   
+			y = int(y*65536)
 			strxy = z_tools.Hex_Format(4,x) + z_tools.Hex_Format(4,y)
 			#z_output.sendZigateCmd("00B7","02" + Devices[Unit].DeviceID + EPin + EPout + strxy + "0000")
 			z_output.sendZigateCmd("00B7","02" + DeviceID + EPin + EPout + strxy + "0000")
@@ -198,7 +198,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		elif Hue_List['m'] == 9998:
 			h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
 			saturation = s * 100   #0 > 100
-			hue = h *360	       #0 > 360
+			hue = h *360		   #0 > 360
 			hue = int(hue*254//360)
 			saturation = int(saturation*254//100)
 			value = int(l * 254//100)

@@ -114,7 +114,7 @@ def DisplayStatusCode( StatusCode ) :
 	elif str(StatusCode)=="8a": StatusMsg="No routing table entries free"
 	elif str(StatusCode)=="8b": StatusMsg="No Broadcast transaction table entries free"
 
-	else:                       StatusMsg="Unknown code : " + StatusCode
+	else:					   StatusMsg="Unknown code : " + StatusCode
 
 
 	return StatusMsg

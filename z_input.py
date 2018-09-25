@@ -316,8 +316,8 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
 	MsgZoneID=MsgData[20:22]		# zone id : uint8_t
 	MsgDelay=MsgData[22:24]			# delay: data each element uint16_t
 
-	# 0  0  0    0  1    1    1  2  2
-	# 0  2  4    8  0    4    8  0  2
+	# 0  0  0	0  1	1	1  2  2
+	# 0  2  4	8  0	4	8  0  2
 	# 5a 02 0500 02 0ffd 0010 00 ff 0001
 	# 5d 02 0500 02 0ffd 0011 00 ff 0001
 
@@ -333,7 +333,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
 		else :
 			self.ListOfDevices[MsgSrcAddr]['Battery']="0"
 		if MsgEp == "02" :					
-			iData = int(MsgZoneStatus,16) & 1      #  For EP 2, bit 0 = "door/window status"
+			iData = int(MsgZoneStatus,16) & 1	  #  For EP 2, bit 0 = "door/window status"
 			# bit 0 = 1 (door is opened) ou bit 0 = 0 (door is closed)
 			value = "%02d" % iData
 			Domoticz.Debug("Decode8401 - PST03A-v2.2.5 door/windows status : " + value)
@@ -375,7 +375,7 @@ def Decode8000_v2(self, MsgData) : # Status
 	PacketType=MsgData[4:8]
 
 	Domoticz.Debug("Decode8000 - Command in progress : " + str (z_var.cmdInProgress.qsize() ) )
-	if not z_var.cmdInProgress.empty() :     # Should not happen
+	if not z_var.cmdInProgress.empty() :	 # Should not happen
 		mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
 		Domoticz.Debug("Decode8000 - expected command status for : " + str(mycmd['cmd']) + "/" + str(mycmd['datas']) )
 		if int(mycmd['cmd'],16) == int(PacketType,16) :
@@ -1196,12 +1196,12 @@ def ReadCluster(self, Devices, MsgData):
 			# 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
 			sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-			sTemp2      = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
-			sTemp       = retreive4Tag( "6429", MsgClusterData )
-			sOnOff      = retreive4Tag( "6410", MsgClusterData )
-			sHumid      = retreive4Tag( "6521", MsgClusterData )
-			sHumid2     = retreive4Tag( "6529", MsgClusterData )
-			sPress      = retreive8Tag( "662b", MsgClusterData )
+			sTemp2	  = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
+			sTemp	   = retreive4Tag( "6429", MsgClusterData )
+			sOnOff	  = retreive4Tag( "6410", MsgClusterData )
+			sHumid	  = retreive4Tag( "6521", MsgClusterData )
+			sHumid2	 = retreive4Tag( "6529", MsgClusterData )
+			sPress	  = retreive8Tag( "662b", MsgClusterData )
 
 			if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
@@ -1243,20 +1243,20 @@ def ReadCluster(self, Devices, MsgData):
 
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
 			try : 
-				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')                                        # Convert the model name to ASCII
+				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')										# Convert the model name to ASCII
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
-				self.ListOfDevices[MsgSrcAddr]['Model']=MType                                                   # Set the model name in database
+				self.ListOfDevices[MsgSrcAddr]['Model']=MType												   # Set the model name in database
 
-				if MType in self.DeviceConf :                                                                   # If the model exist in DeviceConf.txt
-					for Ep in self.DeviceConf[MType]['Ep'] :                                                # For each Ep in DeviceConf.txt
-						if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep'] :                             # If this EP doesn't exist in database
-							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                             # create it.
-						for cluster in self.DeviceConf[MType]['Ep'][Ep] :                               # For each cluster discribe in DeviceConf.txt
-							if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :            # If this cluster doesn't exist in database
-								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}            # create it.
-						if 'Type' in self.DeviceConf[MType]['Ep'][Ep] :                                 # If type exist at EP level : copy it
+				if MType in self.DeviceConf :																   # If the model exist in DeviceConf.txt
+					for Ep in self.DeviceConf[MType]['Ep'] :												# For each Ep in DeviceConf.txt
+						if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep'] :							 # If this EP doesn't exist in database
+							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}							 # create it.
+						for cluster in self.DeviceConf[MType]['Ep'][Ep] :							   # For each cluster discribe in DeviceConf.txt
+							if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep] :			# If this cluster doesn't exist in database
+								self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}			# create it.
+						if 'Type' in self.DeviceConf[MType]['Ep'][Ep] :								 # If type exist at EP level : copy it
 							self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[MType]['Ep'][Ep]['Type']
-					if 'Type' in self.DeviceConf[MType] :                                                   # If type exist at top level : copy it
+					if 'Type' in self.DeviceConf[MType] :												   # If type exist at top level : copy it
 						self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[MType]['Type']
 			except:
 				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Model info Xiaomi : " +  MsgSrcAddr)
@@ -1390,24 +1390,24 @@ def ReadCluster(self, Devices, MsgData):
 		
 	elif MsgClusterId=="0012" :  # Magic Cube Xiaomi
 		# Thanks to : https://github.com/dresden-elektronik/deconz-rest-plugin/issues/138#issuecomment-325101635
-		#         +---+
-		#         | 2 |
-		#     +---+---+---+
-		#     | 4 | 0 | 1 |
-		#     +---+---+---+
-		#         | 5 |
-		#         +---+
-		#         | 3 |
-		#         +---+
-		#     Side 5 is with the MI logo; side 3 contains the battery door.
+		#		 +---+
+		#		 | 2 |
+		#	 +---+---+---+
+		#	 | 4 | 0 | 1 |
+		#	 +---+---+---+
+		#		 | 5 |
+		#		 +---+
+		#		 | 3 |
+		#		 +---+
+		#	 Side 5 is with the MI logo; side 3 contains the battery door.
 		#
-		#     Shake: 0x0000 (side on top doesn't matter)
-		#     90º Flip from side x on top to side y on top: 0x0040 + (x << 3) + y
-		#     180º Flip to side x on top: 0x0080 + x
-		#     Push while side x is on top: 0x0100 + x
-		#     Double Tap while side x is on top: 0x0200 + x
-		#     Push works in any direction.
-		#     For Double Tap you really need to lift the cube and tap it on the table twice.
+		#	 Shake: 0x0000 (side on top doesn't matter)
+		#	 90º Flip from side x on top to side y on top: 0x0040 + (x << 3) + y
+		#	 180º Flip to side x on top: 0x0080 + x
+		#	 Push while side x is on top: 0x0100 + x
+		#	 Double Tap while side x is on top: 0x0200 + x
+		#	 Push works in any direction.
+		#	 For Double Tap you really need to lift the cube and tap it on the table twice.
 		def cube_decode(value):
 			value=int(value,16)
 			if value == '' or value is None:
@@ -1477,7 +1477,7 @@ def ReadCluster(self, Devices, MsgData):
 		
 	else :
 		Domoticz.Error("ReadCluster - Error/unknow Cluster Message : " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
-		Domoticz.Error("                           MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
-		Domoticz.Error("                           MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
+		Domoticz.Error("						   MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
+		Domoticz.Error("						   MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
 
