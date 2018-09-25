@@ -771,10 +771,10 @@ def Decode8048(self, MsgData) : # Leave indication
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8048 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
-	MsgSequenceNumber=MsgData[0:16]
+	MsgExtAddress=MsgData[0:16]
 	MsgStatus=MsgData[16:18]
 	
-	Domoticz.Status("ZigateRead - MsgType 8048 - Leave indication, Sequence number : " + MsgSequenceNumber + " Status : " + MsgStatus)
+	Domoticz.Status("ZigateRead - MsgType 8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + MsgStatus)
 	return
 
 def Decode804A(self, MsgData) : # Management Network Update response
