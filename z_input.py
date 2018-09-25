@@ -914,6 +914,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	MsgClusterData=MsgData[24:len(MsgData)]
 
 	Domoticz.Debug("Decode8102 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
+	# Shouldn't we use DeviceExist( self, MsgSrcAddr ) .  This should be more consistent , no ?
 	if MsgSrcAddr  in self.ListOfDevices:
 		try:
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
