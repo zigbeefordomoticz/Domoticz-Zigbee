@@ -42,19 +42,25 @@ def DeviceExist(self, Addr , IEE = ''):
 	if Addr in self.ListOfDevices:
 		if 'Status' in self.ListOfDevices[Addr] :
 			return True
-	#if gived, test IEE
-	#if IEE:
-#		for i in self.ListOfDevices:
-#			d = self.ListOfDevices[i]
-#			Domoticz.Debug(DeviceExist + str(d))
-#			if d.get('IEEE','wrong iee') == IEE:
-#				Domoticz.Log("DeviceExist - Addr = " + Addr + " IEEE = " + IEE + " already assigned on " + str(d) )
-#				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " + d )
-#				#update adress
-#				self.ListOfDevices[Addr] = d
-#				del i
-#				return True
-	#unknow device
+
+	#If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
+	if IEE:
+		for existingKey in self.ListOfDevices:
+			existingDevice = self.ListOfDevices[existingKey]
+			if existingDevice.get('IEEE','wrong iee') == IEE:
+				Domoticz.Log("DeviceExist - given Addr/IEEE = " + Addr + "/" + IEE + " found as " + str(existingDevice) )
+				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " )
+				Domoticz.Log("DeviceExist - " + str(existingDevice) )
+
+				# Updating process by :
+				# - mapping the information to the new Addr
+				#update adress
+				self.ListOfDevices[Addr] = existingDevice
+
+				Domoticz.Log("DeviceExist - new device pointing still to old one " + str(Addr) + " -> " + str(self.ListOfDevices[Addr]['DomoID']) )
+				Domoticz.Log("DeviceExist - old device still active  " + str(existingDevice) + " -> " + str(self.ListOfDevices[existingDevice]['DomoID']) )
+				#del i
+				return True
 	return False
 
 
