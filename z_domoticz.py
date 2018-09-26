@@ -203,9 +203,12 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
 			DOptions = Devices[x].Options
-			Dtypename=DOptions['TypeName']
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
+			Dtypename=DOptions['TypeName']
+
+			Domoticz.Debug("MajDomoDevices - DOptions = " + str(DOptions) )
+			Domoticz.Debug("MajDomoDevices - ListOfDevices["+str(DeviceID)+"] = "+str(self.ListOfDevices[DeviceID]) )
 
 			Domoticz.Debug("MajDomoDevice - Dtypename = " + str(Dtypename) )
 	
@@ -471,7 +474,11 @@ def ResetDevice(self, Devices, Type,HbCount) :
 
 def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = ''):
 	# V2 update Domoticz with SignaleLevel/RSSI
-	Domoticz.Debug("UpdateDevice_v2 - Options = " + str(Options))
+	Zigate=Options['Zigate']
+	t=Options['TypeName']
+
+	Domoticz.Debug("UpdateDevice_v2 - Typename = " + str(t))
+	Domoticz.Debug("UpdateDevice_v2 - Zigate = " + str(Zigate))
 	Dzigate=eval(Options['Zigate'])
 
 	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Signal Level = " + str(SignalLvl) )
@@ -491,11 +498,14 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
 
+
 			if Color_:
-				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), TypeName=t, Options={"Zigate":str(Zigate), "TypeName":t}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
 				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
 			else:
-				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), TypeName=t, Options={"Zigate":str(Zigate), "TypeName":t}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
 				Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return
 
