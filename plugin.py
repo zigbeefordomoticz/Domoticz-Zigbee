@@ -100,14 +100,14 @@ class BasePlugin:
 		z_var.ReqRcv=bytearray()
 
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
+			Domoticz.Debug("Devices["+str(x)+"].Options = "+str(Devices[x].Options) )
 			ID = Devices[x].DeviceID
 			self.ListOfDevices[ID]={}
-			try:
+			if Devices[x].Options.get('Zigate') :
 				self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
-			except: 
-				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
-			else :
 				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + str(self.ListOfDevices[ID]) + " loaded into self.ListOfDevices")
+			else :
+				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
 
 		#Import DeviceConf.txt
 		tmpread=""
