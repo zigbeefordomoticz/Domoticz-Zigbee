@@ -401,7 +401,7 @@ def Decode8000_v2(self, MsgData) : # Status
 			elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
 		else :
-			Domoticz.Log("Decode8000 - Out of sequence : Queue: Command " + str(mycmd) + " vs. " + str(PacketType) + " remaining queue items : " + z_var.cmdInProgress.qsize())
+			Domoticz.Log("Decode8000 - Out of sequence : Queue: Command " + str(mycmd) + " vs. " + str(PacketType) + " remaining queue items : " + str(z_var.cmdInProgress.qsize()) )
 
 	if str(MsgData[0:2]) != "00" : Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
