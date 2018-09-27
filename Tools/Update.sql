@@ -1,0 +1,1 @@
+UPDATE `DeviceStatus` SET `Options`=REPLACE(`Options`, 'TypeName', 'ClusterType') WHERE `Options` LIKE '%zigate%';
