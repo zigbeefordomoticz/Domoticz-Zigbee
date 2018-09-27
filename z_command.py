@@ -38,7 +38,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	DType= str(Devices[Unit].Type)
 	DOptions = Devices[Unit].Options
 
-	Dtypename=DOptions['TypeName']
+	Dtypename=DOptions['ClusterType']
 	Domoticz.Debug("Dtypename : " + Dtypename)
 	Dzigate=eval(DOptions['Zigate'])
 	try:

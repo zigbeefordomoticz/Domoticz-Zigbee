@@ -48,10 +48,10 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 		if Type !="" :
 			if "Humi" in Type and "Temp" in Type and "Baro" in Type:
 				t="Temp+Hum+Baro" # Detecteur temp + Hum + Baro
-				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 			if "Humi" in Type and "Temp" in Type :
 				t="Temp+Hum"
-				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+				Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName=t, Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 			#For color Bulb
 			if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
@@ -64,91 +64,91 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 				if t=="Temp" : # Detecteur temp
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Temperature", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Temperature", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Humi" : # Detecteur hum
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Humidity", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Humidity", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Baro" : # Detecteur Baro
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Barometer", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Barometer", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Door": # capteur ouverture/fermeture xiaomi
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=2 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=2 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Motion" :  # detecteur de presence
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=8 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=8 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="MSwitch"  :  # interrupteur multi lvl 86sw2 xiaomi
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="DSwitch"  :  # interrupteur double sur EP different
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="DButton"  :  # interrupteur double sur EP different
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="Smoke" :  # detecteur de fumee
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=5 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=5 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Lux" :  # Lux sensors
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=246, Subtype=1 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=246, Subtype=1 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Switch":  # inter sans fils 1 touche 86sw1 xiaomi
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=0 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Button":  # inter sans fils 1 touche 86sw1 xiaomi
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=9 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=9 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Aqara" or t=="XCube" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}
+					Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
 					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
 
 				if t=="Water" :  # detecteur d'eau 
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=0 , Image=11 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=0 , Image=11 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="Plug" :  # prise pilote
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=0 , Image=1 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73 , Switchtype=0 , Image=1 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']=="shutter.Profalux" :  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73, Switchtype=16 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73, Switchtype=16 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="LvlControl" and self.ListOfDevices[DeviceID]['Model']!="shutter.Profalux" :  # variateur de luminosite + On/off
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=73, Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="ColorControl" :  # variateur de couleur/luminosite/on-off
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
@@ -173,19 +173,19 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 					else:
 						Subtype_ = 7
 
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=241, Subtype=Subtype_ , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=241, Subtype=Subtype_ , Switchtype=7 , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				#Ajout meter
 				if t=="Power" : # Will display Watt real time
 					Domoticz.Log("Create Watts Usage")
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="Usage" , Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 				if t=="Meter" : # Will display kWh
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
 					Domoticz.Log("Create kW/h Meter")
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="kWh", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "TypeName":t}).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), TypeName="kWh", Options={"Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 
 def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
@@ -205,7 +205,7 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 			DOptions = Devices[x].Options
 			DOptions['Zigate']=str(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
-			Dtypename=DOptions['TypeName']
+			Dtypename=DOptions['ClusterType']
 
 			Domoticz.Debug("MajDomoDevices - DOptions = " + str(DOptions) )
 			Domoticz.Debug("MajDomoDevices - ListOfDevices["+str(DeviceID)+"] = "+str(self.ListOfDevices[DeviceID]) )
@@ -460,7 +460,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
 		current = time.time()
 		DOptions = Devices[x].Options
-		Dtypename=DOptions['TypeName']
+		Dtypename=DOptions['ClusterType']
 		try :
 			SignalLevel = self.ListOfDevices[_tmpDeviceID]['RSSI']
 		except:
@@ -475,7 +475,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = ''):
 	# V2 update Domoticz with SignaleLevel/RSSI
 	Zigate=Options['Zigate']
-	t=Options['TypeName']
+	t=Options['ClusterType']
 
 	Domoticz.Debug("UpdateDevice_v2 - Typename = " + str(t))
 	Domoticz.Debug("UpdateDevice_v2 - Zigate = " + str(Zigate))
@@ -501,11 +501,11 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 
 			if Color_:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
-				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), TypeName=t, Options={"Zigate":str(Zigate), "TypeName":t}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), TypeName=t, Options={"Zigate":str(Zigate), "ClusterType":t}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
 				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
 			else:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=str(Options), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
-				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), TypeName=t, Options={"Zigate":str(Zigate), "TypeName":t}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), TypeName=t, Options={"Zigate":str(Zigate), "ClusterType":t}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
 				Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
 	return
 
