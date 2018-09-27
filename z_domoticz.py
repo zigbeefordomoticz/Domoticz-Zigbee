@@ -477,7 +477,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 	Zigate=Options['Zigate']
 	t=Options['ClusterType']
 
-	Domoticz.Debug("UpdateDevice_v2 - Typename = " + str(t))
+	Domoticz.Debug("UpdateDevice_v2 - ClusterType = " + str(t))
 	Domoticz.Debug("UpdateDevice_v2 - Zigate = " + str(Zigate))
 	Dzigate=eval(Options['Zigate'])
 
