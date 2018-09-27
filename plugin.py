@@ -68,6 +68,13 @@ class BasePlugin:
 
 	def onStart(self):
 		Domoticz.Status("onStart called - Zigate plugin V 3.9.999 (dev branch)")
+		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
+			if Devices[x].Options.get('TypeName') :
+				Domoticz.Error("You need to upgrade the Domoticz database in order to run this version of the plugin")
+				Domoticz.Error("Please stop domoticz and run the sql script available under Tools folder")
+				return 
+			elif Devices[x].Options.get('ClusterType') :
+				break
 
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
@@ -239,6 +246,11 @@ class BasePlugin:
 		return
 
 	def onCommand(self, Unit, Command, Level, Color):
+		if Devices[Unit].Options.get('TypeName') :
+			Domoticz.Error("You need to upgrade the Domoticz database in order to run this version of the plugin")
+			Domoticz.Error("Please stop domoticz and run the sql script available under Tools folder")
+			return
+
 		z_command.mgtCommand( self, Devices, Unit, Command, Level, Color )
 
 
