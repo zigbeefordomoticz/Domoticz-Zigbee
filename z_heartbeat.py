@@ -286,3 +286,21 @@ def processListOfDevices( self , Devices ) :
 	#end for key in ListOfDevices
 
 	return True
+
+
+def UpdateDomoDevices( self , Devices ) :
+	for key in list(self.ListOfDevices) :
+		#ok buged device , need to avoid it, just delete it after the making for the moment
+		if len(self.ListOfDevices[key]) == 0:
+			Domoticz.Debug("Bad devices detected (empty one), remove it, adr :" + str(key))
+			del self.ListOfDevices[key]
+			continue
+		ZigateOptions=self.ListOfDevices[key]
+		for Unit in Devices:
+			if Devices[Unit].DeviceID == self.ListOfDevices[key]['DomoID'] :
+				DevicesOptions=Devices[Unit].Options
+				Domoticz.Debug("UpdateDomoDevices Update device : " + str(key) + " - Old Options : " + str(DevicesOptions) + " -- New Options : " + str(ZigateOptions))
+				DevicesOptions['Zigate']=ZigateOptions
+				Devices[Unit].Update(nValue=int(Devices[Unit].nValue), sValue=str(Devices[Unit].sValue), Options=str(DevicesOptions), SignalLevel=int(Devices[Unit].SignalLevel), BatteryLevel=int(Devices[Unit].BatteryLevel) , Color = Devices[Unit].Color , SuppressTriggers=True)
+
+
