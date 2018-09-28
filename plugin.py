@@ -273,7 +273,7 @@ class BasePlugin:
 
 		z_heartbeat.processListOfDevices( self , Devices )
 		
-		z_heartbeat.UpdateDomoDevices( self , Devices )
+		#z_heartbeat.UpdateDomoDevices( self , Devices )
 		
 		z_domoticz.ResetDevice( self, Devices, "Motion",5)
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)

@@ -301,6 +301,6 @@ def UpdateDomoDevices( self , Devices ) :
 				DevicesOptions=Devices[Unit].Options
 				Domoticz.Debug("UpdateDomoDevices Update device : " + str(key) + " - Old Options : " + str(DevicesOptions) + " -- New Options : " + str(ZigateOptions))
 				DevicesOptions['Zigate']=ZigateOptions
-				Devices[Unit].Update(nValue=int(Devices[Unit].nValue), sValue=str(Devices[Unit].sValue), Options="{"+str(DevicesOptions)+"}", SignalLevel=int(Devices[Unit].SignalLevel), BatteryLevel=int(Devices[Unit].BatteryLevel) , Color = Devices[Unit].Color , SuppressTriggers=True)
+				Devices[Unit].Update(nValue=int(Devices[Unit].nValue), sValue=str(Devices[Unit].sValue), Options=str(DevicesOptions), SignalLevel=int(Devices[Unit].SignalLevel), BatteryLevel=int(Devices[Unit].BatteryLevel) , Color = Devices[Unit].Color , SuppressTriggers=True)
 
 
