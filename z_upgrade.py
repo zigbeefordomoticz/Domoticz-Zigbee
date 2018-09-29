@@ -29,4 +29,6 @@ def upgrade_v2( self, Devices ) :
 
 	if upgradedone :
 		Domoticz.Status("Upgrade of Zigate structure to V2 completed. " + str(nbdev) + " devices updated")
+	else:
+		Domoticz.Status("Zigate Structure V2")
 			
