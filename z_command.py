@@ -36,7 +36,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Domoticz.Debug("DSubType : " + DSubType)
 
 	DType= str(Devices[Unit].Type)
-	DOptions = Devices[Unit].Options
+	DOptions = dict(Devices[Unit].Options)
 
 	Dtypename=DOptions['ClusterType']
 	Domoticz.Debug("Dtypename : " + Dtypename)

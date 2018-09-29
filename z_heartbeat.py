@@ -241,7 +241,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 					IsCreated = True
 					Domoticz.Log("Heartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
 
-				DOptions = Devices[x].Options
+				DOptions = dict(Devices[x].Options)
 				Dzigate=eval(DOptions['Zigate'])
 				if Dzigate['IEEE']==self.ListOfDevices[key]['IEEE'] :
 					Domoticz.Log("Heartbeat - Devices already exist based on IEEE. Unit=" + str(x) + " versus " + str(self.ListOfDevices[key]) )
