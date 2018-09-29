@@ -9,19 +9,24 @@ import z_var		  # Global variables
 
 def upgrade_v2( self, Devices ) :
 
+	nbdev = 0
+	upgradedone = False
 	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 		if Devices[x].Options.get('TypeName') :
-			Domoticz.Status("You need to upgrade the Domoticz database in order to run this version of the plugin")
-
+			nbdev = nbdev + 1
+			upgradedone = True
 			oldDevicesOptions = dict(Devices[x].Options)
 			oldTypeName = oldDevicesOptions['TypeName']
-			ZigateV2 = dict(oldDevicesOptions['Zigate'])
-			ZigateV2['Version'] = '2'
+			ZigateV2 = eval(oldDevicesOptions['Zigate'])
+			ZigateV2['Version'] = "2"
 			nValue = Devices[x].nValue
 			sValue = Devices[x].sValue
 
 			Domoticz.Status("Upgrading " +str(Devices[x].Name) + " to version 2" )
-			Domoticz.Log("Upgrading " +str(Devices[x].Name) + " to version 2 with Options['Zigate']= " +str(OptionsV2) )
+			Domoticz.Debug("Upgrading " +str(Devices[x].Name) + " to version 2 with Options['Zigate']= " +str(ZigateV2) )
 
-			#Devices[x].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(ZigateV2),"ClusterType":oldTypeName}, SuppressTriggers=True )
+			Devices[x].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(ZigateV2),"ClusterType":oldTypeName}, SuppressTriggers=True )
+
+	if upgradedone :
+		Domoticz.Status("Upgrade of Zigate structure to V2 completed. " + str(nbdev) + " devices updated")
 			
