@@ -55,6 +55,7 @@ import z_heartbeat
 import z_database
 import z_domoticz
 import z_command
+import z_upgrade
 
 
 class BasePlugin:
@@ -68,13 +69,7 @@ class BasePlugin:
 
 	def onStart(self):
 		Domoticz.Status("onStart called - Zigate plugin V 3.9.999 (dev branch)")
-		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
-			if Devices[x].Options.get('TypeName') :
-				Domoticz.Error("You need to upgrade the Domoticz database in order to run this version of the plugin")
-				Domoticz.Error("Please stop domoticz and run the sql script available under Tools folder")
-				return 
-			elif Devices[x].Options.get('ClusterType') :
-				break
+		z_upgrade.upgrade_v2( self, Devices )       # Will upgrade to Zigate structure V2 if needed
 
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
@@ -88,7 +83,6 @@ class BasePlugin:
 			z_var.ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
 			z_var.ZigateConn.Connect()
 		
-		# CLD CLD
 		# Import PluginConf.txt
 		tmpPluginConf=""
 		with open(Parameters["HomeFolder"]+"PluginConf.txt", 'r') as myPluginConfFile:
@@ -173,7 +167,6 @@ class BasePlugin:
 
 	def onMessage(self, Connection, Data):
 		Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
-		### CLD
 
 		FrameIsKo = 0					
 
@@ -201,7 +194,6 @@ class BasePlugin:
 
 			Domoticz.Debug("onMessage Frame : Zero1=" + str(Zero1) + " Zero3=" + str(Zero3) )
 
-			# CLD CLD
 			if Zero1 != 0 :
 				Domoticz.Log("onMessage : we have probably lost some datas, zero1 = " + str(Zero1) )
 
@@ -218,7 +210,6 @@ class BasePlugin:
 
 						# Check length
 			Zero1, MsgType, Length, ReceivedChecksum = struct.unpack ('>BHHB', BinMsg[0:6])
-			### Domoticz.Debug("onMessage Frame CLD : " + str(Zero1) + " " + str(MsgType) + " " + str(Length) )
 			ComputedLength = Length + 7
 			ReceveidLength = len(BinMsg)
 			Domoticz.Debug("onMessage Frame length : " + str(ComputedLength) + " " + str(ReceveidLength) ) # For testing purpose
@@ -246,11 +237,6 @@ class BasePlugin:
 		return
 
 	def onCommand(self, Unit, Command, Level, Color):
-		if Devices[Unit].Options.get('TypeName') :
-			Domoticz.Error("You need to upgrade the Domoticz database in order to run this version of the plugin")
-			Domoticz.Error("Please stop domoticz and run the sql script available under Tools folder")
-			return
-
 		z_command.mgtCommand( self, Devices, Unit, Command, Level, Color )
 
 
@@ -272,9 +258,7 @@ class BasePlugin:
 				z_var.HeartbeatCount = z_var.HeartbeatCount + 1
 
 		z_heartbeat.processListOfDevices( self , Devices )
-		
-		#z_heartbeat.UpdateDomoDevices( self , Devices )
-		
+
 		z_domoticz.ResetDevice( self, Devices, "Motion",5)
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)
 

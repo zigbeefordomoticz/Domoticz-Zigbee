@@ -471,7 +471,6 @@ def ResetDevice(self, Devices, Type,HbCount) :
 			UpdateDevice_v2(Devices, x, 0, "Off" ,DOptions, SignalLevel)
 	return
 			
-
 def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = ''):
 	# V2 update Domoticz with SignaleLevel/RSSI
 	Zigate=Options['Zigate']
