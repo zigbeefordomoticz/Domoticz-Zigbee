@@ -111,14 +111,14 @@ def sendZigateCmd(cmd,datas) :
 	Domoticz.Debug("sendZigateCmd - Command send : " + str(lineinput))
 	z_var.cmdInProgress.put( command )
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
+	if z_var.cmdInProgress.qsize() > 10 :
+		Domoticz.Debug("sendZigateCmd - Command in queue : > 10 " + str( z_var.cmdInProgress.qsize() ) )
 
-	if str(z_var.transport) == "USB":
+	if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
 		if z_var.sendDelay == 0 : 
 			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
 		else : 
-			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), z_var.sendDelay )
-	if str(z_var.transport) == "Wifi":
-		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput))+bytes("\r\n",'utf-8'),1)
+			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), Delay=z_var.cmdInProgress.qsize() )
 
 
 def ReadAttributeRequest_0008(self, key) :
