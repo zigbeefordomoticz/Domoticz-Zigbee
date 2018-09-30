@@ -67,6 +67,7 @@ def DeviceExist(self, Addr , IEE = ''):
 def initDeviceInList(self, Addr) :
 	if Addr != '' :
 		self.ListOfDevices[Addr]={}
+		self.ListOfDevices[Addr]['Version']="2"
 		self.ListOfDevices[Addr]['Status']="004d"
 		self.ListOfDevices[Addr]['SQN']={}
 		self.ListOfDevices[Addr]['DomoID']={}
@@ -116,6 +117,8 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['SQN']=DeviceListVal['SQN']
 		if 'DomoID' in DeviceListVal :
 			self.ListOfDevices[key]['DomoID']=DeviceListVal['DomoID']
+		if 'Version' in DeviceListVal :
+			self.ListOfDevices[key]['Version']=DeviceListVal['Version']
 
 
 def updSQN( self, key, newSQN) :
