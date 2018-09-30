@@ -24,22 +24,10 @@ def ZigateConf( channel, discover ):
 	# answer is expected on message 8010
 	sendZigateCmd("0010","")
 
-	################### ZiGate - set channel ##################
-	sendZigateCmd("0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00")
-
-	################### ZiGate - Set Type COORDINATOR #################
-	sendZigateCmd("0023","00")
-	
-	################### ZiGate - start network ##################
-	sendZigateCmd("0024","")
-
 	################### ZiGate - Request Device List #############
 	# answer is expected on message 8015. Only available since firmware 03.0b
-#	if str(z_var.FirmwareVersion) == "030d" or str(z_var.FirmwareVersion) == "030c" or str(z_var.FirmwareVersion) == "030b" :
 	Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
 	sendZigateCmd("0015","")
-#	else :
-#		Domoticz.Error("Cannot request Get List of Device due to low firmware level" + str(z_var.FirmwareVersion) )
 
 	################### ZiGate - discover mode 255 sec Max ##################
 	#### Set discover mode only if requested - so != 0				  #####
@@ -49,6 +37,15 @@ def ZigateConf( channel, discover ):
 		else : 
 			Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
 		sendZigateCmd("0049","FFFC" + hex(int(discover))[2:4] + "00")
+
+	################### ZiGate - set channel ##################
+	sendZigateCmd("0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00")
+
+	################### ZiGate - Set Type COORDINATOR #################
+	sendZigateCmd("0023","00")
+	
+	################### ZiGate - start network ##################
+	sendZigateCmd("0024","")
 		
 def sendZigateCmd(cmd,datas) :
 	def ZigateEncode(Data):  # ajoute le transcodage
@@ -114,11 +111,13 @@ def sendZigateCmd(cmd,datas) :
 	if z_var.cmdInProgress.qsize() > 10 :
 		Domoticz.Debug("sendZigateCmd - Command in queue : > 10 " + str( z_var.cmdInProgress.qsize() ) )
 
-	if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
+	if str(z_var.transport) == "USB" : 
 		if z_var.sendDelay == 0 : 
 			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
 		else : 
 			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), Delay=z_var.cmdInProgress.qsize() )
+	if str(z_var.transport) == "Wifi":
+		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), Delay=( 2 * (z_var.cmdInProgress.qsize() - 1)) )
 
 
 def ReadAttributeRequest_0008(self, key) :
