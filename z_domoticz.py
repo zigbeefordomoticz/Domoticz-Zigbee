@@ -28,7 +28,6 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 		return FreeUnit
 
 	for Ep in self.ListOfDevices[DeviceID]['Ep'] :
-		# CLD CLD
 		# Use 'type' at level EndPoint if existe
 		if 'Type' in  self.ListOfDevices[DeviceID]['Ep'][Ep] :
 			if self.ListOfDevices[DeviceID]['Ep'][Ep]['Type'] != "" :
@@ -279,7 +278,6 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 				SplitData=CurrentsValue.split(";")
 				valueBaro='%s;%s' % (value,SplitData[0])
 				UpdateDevice_v2(Devices, x,0,str(valueBaro),DOptions, SignalLevel)
-			# CLD CLD
 			if Type=="Door" and Dtypename=="Door" :  # Door / Window
 				if value == "01" :
 					state="Open"
@@ -495,25 +493,30 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it
 	if (Unit in Devices):
-		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
-
+		if ( Devices[Unit].BatteryLevel != BatteryLvl ) or ( Devices[Unit].SignalLevel != rssi ) :    # In that case we do update, but do not trigger any notification.
 			tmpZigate={}
 			tmpZigate=Options['Zigate']
 			tmpClusterType=Options['ClusterType']
-
+			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
+			Domoticz.Log("Update v2 SignalLevel: "+str(rssi)+":' BatteryLevel: "+str(BatteryLvl)+"' ("+Devices[Unit].Name+")")
+		elif (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
+			tmpZigate={}
+			tmpZigate=Options['Zigate']
+			tmpClusterType=Options['ClusterType']
 			if Color_:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
 				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
 			else:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
 				Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
+
+
 	return
 
 
 def GetType(self, Addr, Ep) :
 	Type =""
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-		# CLD CLD
 		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
 			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
 				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
