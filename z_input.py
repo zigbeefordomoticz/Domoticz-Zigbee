@@ -401,7 +401,11 @@ def Decode8000_v2(self, MsgData) : # Status
 			elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
 		else :
-			Domoticz.Log("Decode8000 - Out of sequence : Queue: Command " + str(mycmd) + " vs. " + str(PacketType) + " remaining queue items : " + str(z_var.cmdInProgress.qsize()) )
+			Domoticz.Debug("Decode8000 - Out of sequence : Queue: Command " + str(mycmd) + " vs. " + str(PacketType) + " remaining queue items : " + str(z_var.cmdInProgress.qsize()) )
+			# As we are out-of-sequence , this is most-likely because we have lost 1 message.
+			# If I still have a message in the queue, let's dequeue one.
+			if  z_var.cmdInProgress.qsize() >= 1 :
+				mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
 
 	if str(MsgData[0:2]) != "00" : Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
