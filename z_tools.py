@@ -58,7 +58,7 @@ def DeviceExist(self, Addr , IEE = ''):
 				self.ListOfDevices[Addr] = existingDevice
 
 				Domoticz.Log("DeviceExist - new device pointing still to old one " + str(Addr) + " -> " + str(self.ListOfDevices[Addr]['DomoID']) )
-				Domoticz.Log("DeviceExist - old device still active  " + str(existingDevice) + " -> " + str(self.ListOfDevices[existingDevice]['DomoID']) )
+				Domoticz.Log("DeviceExist - old device still active  " + str(existingDevice) )
 				#del i
 				return True
 	return False
@@ -141,3 +141,4 @@ def updSQN( self, key, newSQN) :
 	else :
 		Domoticz.Debug("updSQN - Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " SQN " + str(newSQN) )
 		self.ListOfDevices[key]['SQN'] = {}
+
