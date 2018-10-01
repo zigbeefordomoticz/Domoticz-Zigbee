@@ -88,20 +88,17 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 				if t=="MSwitch"  :  # interrupteur multi lvl 86sw2 xiaomi
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="DSwitch"  :  # interrupteur double sur EP different
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}).Create()
 
 				if t=="DButton"  :  # interrupteur double sur EP different
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t} ).Create()
 
 				if t=="Smoke" :  # detecteur de fumee
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
@@ -126,8 +123,9 @@ def CreateDomoDevice(self, Devices, DeviceID) :
 				if t=="Aqara" or t=="XCube" :  # Xiaomi Magic Cube
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
 					self.ListOfDevices[DeviceID]['Status']="inDB"
-					Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t}
-					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+					Domoticz.Log("Device to be created : " +str(self.ListOfDevices[DeviceID]) )
+					Domoticz.Log("Device ClusterType to be created : " +str( t ) )
+					Domoticz.Device(DeviceID=str(DeviceID),Name=str(t) + "-" + str(DeviceID) + "-" + str(Ep), Unit=FreeUnit(self, Devices), Type=244, Subtype=62 , Switchtype=18, Options= {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0","Zigate":str(self.ListOfDevices[DeviceID]), "ClusterType":t} ).Create()
 
 				if t=="Water" :  # detecteur d'eau 
 					self.ListOfDevices[DeviceID]['DomoID']=str(DeviceID)
@@ -498,19 +496,21 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 			tmpZigate=Options['Zigate']
 			tmpClusterType=Options['ClusterType']
 			if Color_:
-				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color = Color_)
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) , Color = Color_)
 				Domoticz.Log("Update v2 Color "+ str(Color_) +"' ("+Devices[Unit].Name+")")
 			else:
-				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) )
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl))
 				Domoticz.Log("Update v2 "+str(nValue)+":'"+str(sValue)+"' ("+Devices[Unit].Name+")")
-		elif ( Devices[Unit].BatteryLevel != BatteryLvl ) or ( Devices[Unit].SignalLevel != rssi and BatteryLvl != 255 ) :    # In that case we do update, but do not trigger any notification.
+
+		if ( Devices[Unit].BatteryLevel != BatteryLvl ) or ( Devices[Unit].SignalLevel != rssi and BatteryLvl != 255 ) :    # In that case we do update, but do not trigger any notification.
 			tmpZigate={}
 			tmpZigate=Options['Zigate']
 			tmpClusterType=Options['ClusterType']
-			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
+			Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
+			#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options={"Zigate":str(tmpZigate),"ClusterType":tmpClusterType}, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
 			Domoticz.Log("Update v2 SignalLevel: "+str(rssi)+":' BatteryLevel: "+str(BatteryLvl)+"' ("+Devices[Unit].Name+")")
-
-
 	return
 
 
