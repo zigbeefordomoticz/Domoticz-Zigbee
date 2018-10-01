@@ -108,7 +108,7 @@ class BasePlugin:
 				self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
 				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + str(self.ListOfDevices[ID]) + " loaded into self.ListOfDevices")
 			else :
-				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded int Zigate Plugin!" )
+				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
 
 		#Import DeviceConf.txt
 		tmpread=""
@@ -132,6 +132,7 @@ class BasePlugin:
 						if not self.ListOfDevices[key].get(dlKey) and dlVal != {} :
 							Domoticz.Log("self.ListOfDevices["+key+"]["+str(dlKey) + "] needs to be updated with " +str(dlVal) )
 							self.ListOfDevices[key][dlKey] = dlVal
+					self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
 
 				# CheckDevceList will create an entry in ListOfDevices. This will occure for Devices not known by Domoticz
 				z_tools.CheckDeviceList(self, key, val)
