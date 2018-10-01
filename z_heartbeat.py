@@ -22,13 +22,13 @@ def processKnownDevices( self, key ) :
 	# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ):
 		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
-			Domoticz.Log("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
+			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
 			z_output.ReadAttributeRequest_0008(self, key)
 
 	# device id type Xiaomi Plug, let check the shutter status every 15' ( 90 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ) :
 		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
-			Domoticz.Log("Request a Read attribute for the Power Plug " + str(key) )
+			Domoticz.Debug("Request a Read attribute for the Power Plug " + str(key) )
 			z_output.ReadAttributeRequest_000C(self, key)
 
 
