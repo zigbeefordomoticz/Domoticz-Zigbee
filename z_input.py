@@ -1187,7 +1187,7 @@ def Decode004d(self, MsgData) : # Reception Device announce
 
 		self.DiscoveryDevices[MsgSrcAddr]['004d'] = str(MsgData)
 		self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = str(MsgIEEE)
-		self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MacCapa)
+		self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MsgMacCapa)
 	
 	Domoticz.Status("ZigateRead - MsgType 004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	return
