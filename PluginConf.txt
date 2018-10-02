@@ -1,4 +1,5 @@
 {
 'CrcCheck':'On',
-'sendDelay':'1'
+'sendDelay':'1',
+'enableDeviceList':'1'
 }

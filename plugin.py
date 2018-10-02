@@ -96,6 +96,8 @@ class BasePlugin:
 			z_var.CrcCheck = 0
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
+		if self.PluginConf.get('enableDeviceList') :
+			z_var.enableDeviceList = int( self.PluginConf.get('enableDeviceList') )
 		
 		
 		z_var.ReqRcv=bytearray()
@@ -118,24 +120,25 @@ class BasePlugin:
 		Domoticz.Debug("DeviceConf.txt = " + str(tmpread))
 		self.DeviceConf=eval(tmpread)
 
-		#Import DeviceList.txt
-		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
-			Domoticz.Debug("DeviceList.txt open ")
-			for line in myfile2:
-				(key, val) = line.split(":",1)
-				key = key.replace(" ","")
-				key = key.replace("'","")
-
-				if key in self.ListOfDevices:
-					DeviceListVal=eval(val)
-					for dlKey, dlVal in DeviceListVal.items() :
-						if not self.ListOfDevices[key].get(dlKey) and dlVal != {} :
-							Domoticz.Log("self.ListOfDevices["+key+"]["+str(dlKey) + "] needs to be updated with " +str(dlVal) )
-							self.ListOfDevices[key][dlKey] = dlVal
-					self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
-
-				# CheckDevceList will create an entry in ListOfDevices. This will occure for Devices not known by Domoticz
-				z_tools.CheckDeviceList(self, key, val)
+		#Import DeviceList.txt if enable
+		if z_var.enableDeviceList == 1 :
+			with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
+				Domoticz.Debug("DeviceList.txt open ")
+				for line in myfile2:
+					(key, val) = line.split(":",1)
+					key = key.replace(" ","")
+					key = key.replace("'","")
+	
+					if key in self.ListOfDevices:
+						DeviceListVal=eval(val)
+						for dlKey, dlVal in DeviceListVal.items() :
+							if not self.ListOfDevices[key].get(dlKey) and dlVal != {} :
+								Domoticz.Log("self.ListOfDevices["+key+"]["+str(dlKey) + "] needs to be updated with " +str(dlVal) )
+								self.ListOfDevices[key][dlKey] = dlVal
+						self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
+	
+					# CheckDevceList will create an entry in ListOfDevices. This will occure for Devices not known by Domoticz
+					z_tools.CheckDeviceList(self, key, val)
 
 		# In case DomoID is not yet initialized ( First time use , as next time it will be stored in DeviceList )
 		for key in self.ListOfDevices:
