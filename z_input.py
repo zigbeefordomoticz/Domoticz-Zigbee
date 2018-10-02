@@ -710,10 +710,6 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataLenght=MsgData[8:10]
 	Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
-	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
-		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
-	else :
-		z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 	if int(MsgDataLenght,16)>0 :
 		MsgDataEp=MsgData[10:12]
 		MsgDataProfile=MsgData[12:16]
@@ -724,7 +720,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 		MsgDataDeviceId=MsgData[16:20]
 		self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
 		if z_var.storeDiscoveryFrames == 1 :
-			self.DiscoveryDevices[MsgDataShAddr][MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+			self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
 
 		MsgDataBField=MsgData[20:22]
 		MsgDataInClusterCount=MsgData[22:24]
@@ -736,8 +732,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
 				if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
 					self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
-					if z_var.storeDiscoveryFrames == 1 :
-						self.DiscoveryDevices[MsgSrcAddr]['InEp'][MsgDataEp][MsgDataCluster]={}
+					Domoticz.Debug("self.ListOfDevices[MsgDataShAddr] = " +str(self.ListOfDevices[MsgDataShAddr]) )
 
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
 				MsgDataCluster=""
@@ -751,17 +746,22 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
 				if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
 					self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
-					if z_var.storeDiscoveryFrames == 1 :
-						self.DiscoveryDevices[MsgSrcAddr]['OutEp'][MsgDataEp][MsgDataCluster]={}
 
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
 
 	if z_var.storeDiscoveryFrames == 1 :
-		self.DiscoveryDevices[MsgSrcAddr]['8043'] = str(MsgData)
-		with open( DiscoveryDevice-"+.txt", 'wt') as file:
-			file.write(key + " : " + str(self.DiscoveryDevices[DeviceKey]) + "\n")
+		self.DiscoveryDevices[MsgDataShAddr]['8043'] = str(MsgData)
+		self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
+
+		with open( z_var.homedirectory+"DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
+			file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
+
+	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
+		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
+	else :
+		z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 
 	Domoticz.Debug("Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
 	return
@@ -782,9 +782,11 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 	MsgDataStatus=MsgData[2:4]
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataEpCount=MsgData[8:10]
+
 	MsgDataEPlist=MsgData[10:len(MsgData)]
 
 	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+
 	OutEPlist=""
 	
 	if z_tools.DeviceExist(self, MsgDataShAddr) == False:
@@ -807,12 +809,6 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 
 	if z_var.storeDiscoveryFrames == 1 :
 		self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
-		for i in MsgDataEPlist :
-			OutEPlist+=i
-			if len(OutEPlist)==2 :
-				if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
-					self.self.DiscoveryDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
-					OutEPlist=""
 
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
@@ -1169,6 +1165,7 @@ def Decode004d(self, MsgData) : # Reception Device announce
 		z_tools.initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
+		Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 	else :
 		Domoticz.Debug("Decode004d - Existing device")
 		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
@@ -1178,8 +1175,7 @@ def Decode004d(self, MsgData) : # Reception Device announce
 		self.DiscoveryDevices[MsgSrcAddr]['004d']={}
 		self.DiscoveryDevices[MsgSrcAddr]['8043']={}
 		self.DiscoveryDevices[MsgSrcAddr]['8045']={}
-		self.DiscoveryDevices[MsgSrcAddr]['InEp']={}
-		self.DiscoveryDevices[MsgSrcAddr]['OutEp']={}
+		self.DiscoveryDevices[MsgSrcAddr]['Ep']={}
 		self.DiscoveryDevices[MsgSrcAddr]['MacCapa']={}
 		self.DiscoveryDevices[MsgSrcAddr]['IEEE']={}
 		self.DiscoveryDevices[MsgSrcAddr]['ProfileID']={}

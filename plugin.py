@@ -84,6 +84,8 @@ class BasePlugin:
 			z_var.ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
 			z_var.ZigateConn.Connect()
 		
+		z_var.homedirectory = Parameters["HomeFolder"]
+
 		# Import PluginConf.txt
 		tmpPluginConf=""
 		with open(Parameters["HomeFolder"]+"PluginConf.txt", 'r') as myPluginConfFile:
