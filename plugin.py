@@ -98,7 +98,7 @@ class BasePlugin:
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
 		if self.PluginConf.get('enableDeviceList') :
-			if Parameters["Mode6"] != "0" or Parameters["Mode6"] != "None" :
+			if Parameters["Mode6"] != "0" :
 				z_var.enableDeviceList = 1
 			else:
 				z_var.enableDeviceList = int( self.PluginConf.get('enableDeviceList') )
