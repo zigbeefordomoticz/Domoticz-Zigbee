@@ -92,12 +92,16 @@ class BasePlugin:
 		self.PluginConf=eval(tmpPluginConf)
 		z_var.CrcCheck = 1
 		z_var.sendDelay = 0
+		
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
 			z_var.CrcCheck = 0
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
 		if self.PluginConf.get('enableDeviceList') :
-			z_var.enableDeviceList = int( self.PluginConf.get('enableDeviceList') )
+			if Parameters["Mode6"] != "0" or Parameters["Mode6"] != "None" :
+				z_var.enableDeviceList = 1
+			else:
+				z_var.enableDeviceList = int( self.PluginConf.get('enableDeviceList') )
 		
 		
 		z_var.ReqRcv=bytearray()
