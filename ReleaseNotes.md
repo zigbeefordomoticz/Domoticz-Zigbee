@@ -7,6 +7,11 @@
 - [Technical] implementing DomoID to track the deviceID at creation time (which is the reference in Domoticz DB. This is in planning of managing devices coming with a new saddr
 - [issue] fix problem created during #78
 - [hardware] enable plug-switch update when receiving 0x000/ff01 cluster
+- [Technical] Upgrade to Zigate V2 data structure and store in domoticz.db ( would required latest Domoticz Beta version to work )
+- [Technical] Change TypeName to ClusterType in the Zigate structure.
+- [Technical] Serialisation of zigate cmd based on sendDelay paramater available on PluinConf.txt - set by default to 1s
+- [Technical] Remove unecessary charaters sent in case of Wifi transport
+- [Technical] Enable/Disable the usage of DeviceList.txt. 
 
 
 
