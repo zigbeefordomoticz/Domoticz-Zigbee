@@ -718,8 +718,14 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 		MsgDataEp=MsgData[10:12]
 		MsgDataProfile=MsgData[12:16]
 		self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
+		if z_var.storeDiscoveryFrames == 1 :
+			self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
+
 		MsgDataDeviceId=MsgData[16:20]
 		self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+		if z_var.storeDiscoveryFrames == 1 :
+			self.DiscoveryDevices[MsgDataShAddr][MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+
 		MsgDataBField=MsgData[20:22]
 		MsgDataInClusterCount=MsgData[22:24]
 		Domoticz.Debug("Decode8043 - Reception Simple descriptor response : EP : " + MsgDataEp + ", Profile : " + MsgDataProfile + ", Device Id : " + MsgDataDeviceId + ", Bit Field : " + MsgDataBField)
@@ -730,6 +736,9 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
 				if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
 					self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+					if z_var.storeDiscoveryFrames == 1 :
+						self.DiscoveryDevices[MsgSrcAddr]['InEp'][MsgDataEp][MsgDataCluster]={}
+
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
@@ -742,9 +751,18 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
 				if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
 					self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+					if z_var.storeDiscoveryFrames == 1 :
+						self.DiscoveryDevices[MsgSrcAddr]['OutEp'][MsgDataEp][MsgDataCluster]={}
+
 				Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
 				MsgDataCluster=""
 				i=i+1
+
+	if z_var.storeDiscoveryFrames == 1 :
+		self.DiscoveryDevices[MsgSrcAddr]['8043'] = str(MsgData)
+		with open( DiscoveryDevice-"+.txt", 'wt') as file:
+			file.write(key + " : " + str(self.DiscoveryDevices[DeviceKey]) + "\n")
+
 	Domoticz.Debug("Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
 	return
 
@@ -786,6 +804,16 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 					OutEPlist=""
 					
 	#Fin de correction
+
+	if z_var.storeDiscoveryFrames == 1 :
+		self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
+		for i in MsgDataEPlist :
+			OutEPlist+=i
+			if len(OutEPlist)==2 :
+				if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
+					self.self.DiscoveryDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
+					OutEPlist=""
+
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
 
@@ -1144,6 +1172,22 @@ def Decode004d(self, MsgData) : # Reception Device announce
 	else :
 		Domoticz.Debug("Decode004d - Existing device")
 		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
+
+	if z_var.storeDiscoveryFrames == 1 :
+		self.DiscoveryDevices[MsgSrcAddr] = {}
+		self.DiscoveryDevices[MsgSrcAddr]['004d']={}
+		self.DiscoveryDevices[MsgSrcAddr]['8043']={}
+		self.DiscoveryDevices[MsgSrcAddr]['8045']={}
+		self.DiscoveryDevices[MsgSrcAddr]['InEp']={}
+		self.DiscoveryDevices[MsgSrcAddr]['OutEp']={}
+		self.DiscoveryDevices[MsgSrcAddr]['MacCapa']={}
+		self.DiscoveryDevices[MsgSrcAddr]['IEEE']={}
+		self.DiscoveryDevices[MsgSrcAddr]['ProfileID']={}
+		self.DiscoveryDevices[MsgSrcAddr]['ZDeviceID']={}
+
+		self.DiscoveryDevices[MsgSrcAddr]['004d'] = str(MsgData)
+		self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = str(MsgIEEE)
+		self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MacCapa)
 	
 	Domoticz.Status("ZigateRead - MsgType 004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	return

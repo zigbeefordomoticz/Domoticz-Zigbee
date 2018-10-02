@@ -63,6 +63,7 @@ class BasePlugin:
 
 	def __init__(self):
 		self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
+		self.DiscoveryDevices = {}
 		self.HBcount=0
 		z_var.cmdInProgress = queue.Queue()
 		return
@@ -97,6 +98,8 @@ class BasePlugin:
 			z_var.CrcCheck = 0
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
+		if  self.PluginConf.get('storeDiscoveryFrames') :
+			z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
 		if self.PluginConf.get('enableDeviceList') :
 			if Parameters["Mode6"] != "0" :
 				z_var.enableDeviceList = 1
@@ -105,6 +108,9 @@ class BasePlugin:
 		
 		
 		z_var.ReqRcv=bytearray()
+
+		if  z_var.storeDiscoveryFrames == 1 :
+			self.DiscoveryDevices = {}
 
 		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 			Domoticz.Debug("Devices["+str(x)+"].Options = "+str(Devices[x].Options) )
