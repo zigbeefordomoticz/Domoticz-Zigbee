@@ -12,6 +12,7 @@
 - [Technical] Serialisation of zigate cmd based on sendDelay paramater available on PluinConf.txt - set by default to 1s
 - [Technical] Remove unecessary charaters sent in case of Wifi transport
 - [Technical] Enable/Disable the usage of DeviceList.txt. 
+- [Technical] Enable/Disable login Discovery Process information. The purpose is to keep in a dedicated file all informations captures during the discovery phase. This will allow us to work on new -un certified - devices.
 
 
 
