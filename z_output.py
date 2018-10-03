@@ -18,8 +18,7 @@ import queue
 import z_var
 import z_tools
 
-def ZigateConf( channel, discover ):
-
+def ZigateConf_light( channel, discover ):
 	################### ZiGate - get Firmware version #############
 	# answer is expected on message 8010
 	sendZigateCmd("0010","")
@@ -38,16 +37,36 @@ def ZigateConf( channel, discover ):
 			Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
 		sendZigateCmd("0049","FFFC" + hex(int(discover))[2:4] + "00")
 
+def ZigateConf( channel, discover ):
+
+	################### ZiGate - get Firmware version #############
+	# answer is expected on message 8010
+	sendZigateCmd("0010","",2)
+
+	################### ZiGate - Request Device List #############
+	# answer is expected on message 8015. Only available since firmware 03.0b
+	Domoticz.Log("ZigateConf -  Request : Get List of Device " + str(z_var.FirmwareVersion) )
+	sendZigateCmd("0015","",2)
+
+	################### ZiGate - discover mode 255 sec Max ##################
+	#### Set discover mode only if requested - so != 0				  #####
+	if str(discover) != "0":
+		if str(discover)=="255": 
+			Domoticz.Status("Zigate enter in discover mode for ever")
+		else : 
+			Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
+		sendZigateCmd("0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
+
 	################### ZiGate - set channel ##################
-	sendZigateCmd("0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00")
+	sendZigateCmd("0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
 
 	################### ZiGate - Set Type COORDINATOR #################
-	sendZigateCmd("0023","00")
+	sendZigateCmd("0023","00", 2)
 	
 	################### ZiGate - start network ##################
-	sendZigateCmd("0024","")
+	sendZigateCmd("0024","", 2)
 		
-def sendZigateCmd(cmd,datas) :
+def sendZigateCmd(cmd,datas, _weight=1 ) :
 	def ZigateEncode(Data):  # ajoute le transcodage
 		Domoticz.Debug("ZigateEncode - Encodind data : " + Data)
 		Out=""
@@ -106,16 +125,31 @@ def sendZigateCmd(cmd,datas) :
 			strchecksum=checksumCmd
 		lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
 	Domoticz.Debug("sendZigateCmd - Command send : " + str(lineinput))
+
+	# Compute the Delay based on the weight of the command and the current queue
+	# For instance if queue is empty , you can engage the command immediatly
+	# _weight
+
+	if z_var.cmdInProgress.qsize() == 0 : 	# reset Delay to 0 as we don't have any more request in the pipe
+		delay = 0			# Allow immediate execution, and reset to default the liveSendDelay
+		z_var.liveSendDelay = z_var.sendDelay 
+	else :					# Compute delay with _weight 
+		delay = ( z_var.sendDelay * _weight) * ( z_var.cmdInProgress.qsize() )
+		if delay < z_var.liveSendDelay:	# If the computed Delay is lower than previous, we must stay on the last one until queue is empty
+			delay =  z_var.liveSendDelay
+		else :
+			z_var.liveSendDelay = delay
+
 	z_var.cmdInProgress.put( command )
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
 	if z_var.cmdInProgress.qsize() > 10 :
-		Domoticz.Debug("sendZigateCmd - Command in queue : > 10 " + str( z_var.cmdInProgress.qsize() ) )
+		Domoticz.Log("sendZigateCmd - Command in queue : > 10 " + str( z_var.cmdInProgress.qsize() ) )
+		Domoticz.Log("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
+
+	Domoticz.Log("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
 	if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
-		if z_var.sendDelay == 0 : 
-			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)))	
-		else : 
-			z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), Delay=( z_var.sendDelay * ( z_var.cmdInProgress.qsize() -1 )) )
+		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
 
 
 def ReadAttributeRequest_0008(self, key) :

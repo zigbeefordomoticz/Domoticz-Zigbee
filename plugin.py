@@ -174,8 +174,10 @@ class BasePlugin:
 			Domoticz.Log("Connected successfully")
 			if Parameters["Mode3"] == "True":
 			################### ZiGate - ErasePD ##################
-				z_output.sendZigateCmd("0012", "")
-			z_output.ZigateConf(Parameters["Mode5"], Parameters["Mode2"])
+				z_output.sendZigateCmd("0012", "", 5)
+				z_output.ZigateConf(Parameters["Mode5"], Parameters["Mode2"])
+			else :
+				z_output.ZigateConf_light(Parameters["Mode5"], Parameters["Mode2"])
 		else:
 			Domoticz.Error("Failed to connect ("+str(Status)+")")
 			Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
