@@ -755,7 +755,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 		self.DiscoveryDevices[MsgDataShAddr]['8043'] = str(MsgData)
 		self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
 
-		with open( z_var.homedirectory+"DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
+		with open( z_var.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
 			file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
 
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
