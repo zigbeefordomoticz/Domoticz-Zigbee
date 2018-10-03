@@ -153,7 +153,8 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	# There is too ZBA, ZTS, ZRS, ZHC but I haven't find information for them
 	
 	#ZigBee HA contains (nearly?) everything in ZigBee Light Link
-	if status != "UNKNOW" and status != "DUP":
+
+	if ( z_var.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  z_var.storeDiscoveryFrames == 1 and status == "8043" ) :
 		if self.ListOfDevices[key]['MacCapa']=="8e" :  # Device sur secteur
 			if self.ListOfDevices[key]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
 				# telecommande Tradfi 30338849.Tradfri
