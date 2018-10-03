@@ -1256,33 +1256,33 @@ def ReadCluster(self, Devices, MsgData):
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
 				ValueTemp=round(int(Temp,16)/100,1)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']=ValueTemp
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
 #			if sTemp2 != '' :
 #				Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
 #				ValueTemp2=round(int(Temp2,16)/100,1)
-#				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Device Temperature : " + str(ValueTemp2) )
+#				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Device Temperature : " + str(ValueTemp2) )
 			if sHumid != '' :
 				Humid = '%s%s' % (str(sHumid[2:4]),str(sHumid[0:2])) 
 				ValueHumid=round(int(Humid,16)/100,1)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']=ValueHumid
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) )
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",ValueHumid)
 			if sHumid2 != '' :
 				Humid2 = '%s%s' % (str(sHumid2[2:4]),str(sHumid2[0:2])) 
 				ValueHumid2=round(int(Humid2,16)/100,1)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) )
 			if sPress != '' :
 				Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
 				ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]["0403"]=ValuePress
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
 
 		elif MsgAttrID=="0005" :  # Model info Xiaomi
