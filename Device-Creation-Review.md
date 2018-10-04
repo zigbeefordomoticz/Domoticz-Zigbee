@@ -41,3 +41,17 @@ Node -> Hosts : Reception d'un message Cluster 0x0000/0x0005 - Model Information
 
 * Pour les autres, il nous faut un système qui dans le cas ou le devices n'est pas certifié, génère un dictionnaire des information recoltées le long du process et en fasse un fichier, qui peut nous etre envoyé ou deposé dans github pour traitement
 
+
+## Process de discovery
+
+| Plugin receive | Plugin send | Purpose | Status | Comments |
+|----------------|-------------|---------|--------|----------|
+| 0x004d | | Device annoucenement | Implemented | |
+| | 0x0045 | Request EndPoint List | Implemented | |
+| | 0x0042 | Request Node Descriptor | not implemented | |
+| 0x8045 | | List of EndPoint | Implemented | |
+| | 0x0043 | Request Active Point for each Ep | Implemented | |
+| | 0x8043 | Active Point descriptor by Ep | Implemented | I wonder if we move to 8043 to early as we might not received all EP descriptor |
+| | 0x8042 | Node Descriptor | not implemented | |
+| 0x0100 | | Read Attribute Request for each In Cluster | not implemented | |
+
