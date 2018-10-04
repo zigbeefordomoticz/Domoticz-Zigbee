@@ -22,14 +22,24 @@ def processKnownDevices( self, key ) :
 	# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ):
 		if self.ListOfDevices[key]['Model'] == "shutter.Profalux" :
+			if self.ListOfDevices[key].get('DomoID') :
+				Domoticz.Debug("Overwrite key " +str(key) + " with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
+				key = self.ListOfDevices[key]['DomoID']
+			
 			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
-			z_output.ReadAttributeRequest_0008(self, key)
+			z_output.ReadAttributeRequest_0008(self, self.ListOfDevices[key]['DomoID'])
+#			self.ListOfDevices[key]['Heartbeat']="0"
 
 	# device id type Xiaomi Plug, let check the shutter status every 15' ( 90 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[key]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "2" ) :
 		if self.ListOfDevices[key]['Model'] == "lumi.plug" :
-			Domoticz.Debug("Request a Read attribute for the Power Plug " + str(key) )
-			z_output.ReadAttributeRequest_000C(self, key)
+			if self.ListOfDevices[key].get('DomoID') :
+				Domoticz.Debug("Overwrite key " +str(key) + " with the one used a CreateDomoDevice : " + str(self.ListOfDevices[key]['DomoID'] ) )
+				key = self.ListOfDevices[key]['DomoID']
+			
+			Domoticz.Debug("Request a Read attribute for the shutter " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
+			z_output.ReadAttributeRequest_0008(self, self.ListOfDevices[key]['DomoID'])
+#			self.ListOfDevices[key]['Heartbeat']="0"
 
 
 def processNotinDBDevices( self, Devices, key , status , RIA ) :
