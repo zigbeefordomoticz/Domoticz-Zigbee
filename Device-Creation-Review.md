@@ -52,6 +52,6 @@ Node -> Hosts : Reception d'un message Cluster 0x0000/0x0005 - Model Information
 | 0x8045 | | List of EndPoint | Implemented | |
 | | 0x0043 | Request Active Point for each Ep | Implemented | |
 | 0x8043 | | Active Point descriptor by Ep | Implemented | I wonder if we move to 8043 to early as we might not received all EP descriptor |
-| | | Node Descriptor | not implemented | |
+| 0x8042 | | Node Descriptor | not implemented | |
 | 0x0100 | 0x0100 | Read Attribute Request for each In Cluster | not implemented | |
 
