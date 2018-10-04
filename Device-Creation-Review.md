@@ -107,6 +107,7 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 ## Considération Implémentation
 
 * z_database.py
+
 | Fonction | Description |
 |----------|-------------|
 | getTypebyModel( Model )                    | search Model in DeviceConf and return a Type. If nothing found return '' |
@@ -121,4 +122,3 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 * z_heartbeat.py
   * En remplacement du hardcoding des Device sur secteur
 
-	
