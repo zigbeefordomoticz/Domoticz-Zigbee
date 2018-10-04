@@ -142,3 +142,75 @@ def updSQN( self, key, newSQN) :
 		Domoticz.Debug("updSQN - Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " SQN " + str(newSQN) )
 		self.ListOfDevices[key]['SQN'] = {}
 
+
+
+def getTypebyCluster( self, Cluster ) :
+	clustersType = { '0405' : 'Humi',
+       			 '0406' : 'Motion',
+       			 '0400' : 'Lux',
+       			 '0403' : 'Baro',
+       			 '0402' : 'Temp',
+       			 '0006' : 'Switch',
+       			 '0500' : 'Door',
+       			 '0012' : 'XCube',
+       			 '000c' : 'XCube',
+       			 '0008' : 'LvlControl',
+       			 '0300' : 'ColorControl'
+			}
+
+	if Cluster == '' or Cluster is None :
+		return ''
+	if Cluster in clustersType :
+		return clustersType[Cluster]
+	else :
+		return ''
+
+def getListofClusterbyModel( self, Model , InOut ) :
+	"""
+	Provide the list of clusters attached to Ep In
+	"""
+	listofCluster = list()
+	if Model in self.DeviceConf :
+		if self.DeviceConf[Model].get(InOut):
+			for ep in self.DeviceConf[Model][InOut] :
+				seen = ''
+				for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
+					if cluster == 'Type' :
+						continue
+					if cluster == seen :
+						continue
+					listofCluster.append( cluster )
+					seen = cluster
+	return listofCluster
+
+def getListofInClusterbyModel( self, Model ) :
+	return getListofClusterbyModel( self, Model, 'Epin' )
+
+def getListofOutClusterbyModel( self, Model ) :
+	return getListofClusterbyModel( self, Model, 'Epout' )
+
+	
+def getTypebyModel( self, Model ) :
+	"""
+	Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
+	"""
+	EpType = list()
+	if Model in self.DeviceConf :
+		for ep in self.DeviceConf[Model]['Epin'] :
+			if self.DeviceConf[Model]['Epin'][ep].get('Type') :
+				EpinType = ( ep, self.DeviceConf[Model]['Epin'][ep]['Type'])
+				EpType.append(EpinType)
+	return EpType
+	
+	def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
+		"""
+		Provide a Model for a given ZdeviceID, ProfileID
+		"""
+		for model in self.DeviceConf :
+			if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
+				return model
+		return ''
+
+
+
+

@@ -8,10 +8,7 @@
 """
 
 import Domoticz
-import binascii
-import time
-import struct
-import json
+import z_var
 
 def WriteDeviceList(self, Folder, count):
 	if self.HBcount>=count :
@@ -23,3 +20,13 @@ def WriteDeviceList(self, Folder, count):
 	else :
 		Domoticz.Debug("HB count = " + str(self.HBcount))
 		self.HBcount=self.HBcount+1
+
+
+def importDeviceConf( self ) :
+	#Import DeviceConf.txt
+	tmpread=""
+	with open( z_var.homedirectory + "DeviceConf.txt", 'r') as myfile:
+		tmpread+=myfile.read().replace('\n', '')
+	myfile.close()
+	self.DeviceConf=eval(tmpread)
+
