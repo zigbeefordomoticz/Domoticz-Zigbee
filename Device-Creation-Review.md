@@ -97,10 +97,10 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 * Les clusters sont donnés en réponse à 0x0043 lors de la reception de 0x8043.
 * Les clusters sont connus dans DeviceConf.txt comme défini
 * Le Type est donné pour les Clusters entrant
-* Le Type global tel que défini aujourd'hui n'existe plus. Il est associé au EP
+* Le Type global tel que défini aujourd'hui n'existe plus. Il est associé au EP à chaque EP si necessaire
 
 ### Avantages :
-* Distingués les clusters In et Out, ce qui permet de faire un ReadAttribute Request sur tout les clusters In lors de la découverte du Device après 0x8043
+* Distinguer les clusters In et Out, cela donne la possibilité de faire un ReadAttribute Request sur tout les clusters In lors de la découverte du Device après 0x8043
 * ProfileID , ZDeviceID et MacCapa permettent de donner un autre moyen d'acces 
 
 
