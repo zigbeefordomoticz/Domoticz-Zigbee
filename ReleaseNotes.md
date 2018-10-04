@@ -1,12 +1,13 @@
 # Release Notes 
 ## xx mmmmmmmm  2018 - 3.1.0
 
+- [Hardware] Xiaomi Plug - enabling power and meter reporting
 - [Technical] control of Command versus status response
 - [Technical] control of SQN on messages from battery powered devices. In case of out of sequence a message is logged
 - [Technical] improving loading of Domoticz devices into self.ListOfDevices
 - [Technical] implementing DomoID to track the deviceID at creation time (which is the reference in Domoticz DB. This is in planning of managing devices coming with a new saddr
-- [issue] fix problem created during #78
-- [hardware] enable plug-switch update when receiving 0x000/ff01 cluster
+- [Issue] fix problem created during #78
+- [Hardware] enable plug-switch update when receiving 0x000/ff01 cluster
 - [Technical] Upgrade to Zigate V2 data structure and store in domoticz.db ( would required latest Domoticz Beta version to work )
 - [Technical] Change TypeName to ClusterType in the Zigate structure.
 - [Technical] Serialisation of zigate cmd based on sendDelay paramater available on PluinConf.txt - set by default to 1s
