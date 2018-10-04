@@ -93,12 +93,32 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 ```
 
 
-Du coup :
+### Du coup :
 * Les clusters sont donnés en réponse à 0x0043 lors de la reception de 0x8043.
 * Les clusters sont connus dans DeviceConf.txt comme défini
 * Le Type est donné pour les Clusters entrant
 * Le Type global tel que défini aujourd'hui n'existe plus. Il est associé au EP
 
-Avantages :
+### Avantages :
 * Distingués les clusters In et Out, ce qui permet de faire un ReadAttribute Request sur tout les clusters In lors de la découverte du Device après 0x8043
 * ProfileID , ZDeviceID et MacCapa permettent de donner un autre moyen d'acces 
+
+
+## Considération Implémentation
+
+* z_database.py
+| Fonction | Description |
+|----------|-------------|
+| getTypebyModel( Model )                    | search Model in DeviceConf and return a Type. If nothing found return '' |
+| getTypebyCluster( ClusterIN )              | Return a list of Type based on the Cluster provided | 
+| getModelbyZDeviceID( ZDeviceID, ProfileID) | Search for an entry matching ZDeviceID, if several found de-duplicate with ProfileID. Rreturn entry or '' if still several entries. |
+| getEPinbyModel( Model )                    | Return the EPin list for a given Model
+| getEPoutbyModel( Model )                   | Return the EPout list for a given Model
+
+* z_domoticz.py
+  * in CreateDomoDevice
+
+* z_heartbeat.py
+  * En remplacement du hardcoding des Device sur secteur
+
+	
