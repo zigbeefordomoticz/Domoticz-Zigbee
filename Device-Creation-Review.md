@@ -55,3 +55,50 @@ Node -> Hosts : Reception d'un message Cluster 0x0000/0x0005 - Model Information
 | 0x8042 | | Node Descriptor | not implemented | |
 | 0x0100 | 0x0100 | Read Attribute Request for each In Cluster | not implemented | |
 
+
+## Structure du fichier DeviceConf.txt
+
+```
+'lumi.plug':{
+	'Ep':{
+		'01':{'0000','000c','0006','0004','0003','0010','0005','000a','0001','0002','Type':'Plug'}, 
+		'02': {'000c','0200','Type':'Power/Meter'}, 
+		'03': {'000c'}, 
+		'64': {'000f','0200'}
+	     }, 
+	'Type':Plug/Power/Meter',
+	'ProfileID':'0104',
+	'ZDeviceID':'0107'} ,
+```
+
+Je serais également partisant de differencier Ep In et Out du coup la structutre pourrait etre :
+
+```
+'lumi.plug':{
+	'Epin':{
+		'01': {'0000','000c','0006','0004','0003','0010','0005','000a','0001','0002', 'Type':'Plug'},
+		'02': {'000c', 'Type':'Power/Meter'}, 
+		'03': {'000c'}, 
+		'64': {'000f'}
+	     }, 
+	'Epout':{
+		'01': {'0000','0004'}, 
+		'02': {'000c','0200'}, 
+		'03': {'000c'}, 
+		'64': {'000f','0200'}
+	     }, 
+	'MacCap';'80',
+	'ProfileID':'0104',
+	'ZDeviceID':'0107'} ,
+```
+
+
+Du coup :
+* Les clusters sont donnés en réponse à 0x0043 lors de la reception de 0x8043.
+* Les clusters sont connus dans DeviceConf.txt comme défini
+* Le Type est donné pour les Clusters entrant
+* Le Type global tel que défini aujourd'hui n'existe plus. Il est associé au EP
+
+Avantages :
+* Distingués les clusters In et Out, ce qui permet de faire un ReadAttribute Request sur tout les clusters In lors de la découverte du Device après 0x8043
+* ProfileID , ZDeviceID et MacCapa permettent de donner un autre moyen d'acces 
