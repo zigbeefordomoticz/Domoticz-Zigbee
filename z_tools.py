@@ -202,14 +202,14 @@ def getTypebyModel( self, Model ) :
 				EpType.append(EpinType)
 	return EpType
 	
-	def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
-		"""
-		Provide a Model for a given ZdeviceID, ProfileID
-		"""
-		for model in self.DeviceConf :
-			if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
-				return model
-		return ''
+def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
+	"""
+	Provide a Model for a given ZdeviceID, ProfileID
+	"""
+	for model in self.DeviceConf :
+		if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
+			return model
+	return ''
 
 
 
