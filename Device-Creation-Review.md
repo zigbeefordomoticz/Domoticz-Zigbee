@@ -74,12 +74,25 @@ Node -> Hosts : Reception d'un message Cluster 0x0000/0x0005 - Model Information
 Je serais également partisant de differencier Ep In et Out du coup la structutre pourrait etre :
 
 ```
+
+{
+'tata.plug':{
+	'Epin':{ '01': {'0000':'','Type':'Plug/Power/Alarm'}},
+	'Epout':{ '01': {'0000':'','0006':'','Type':'Plug/Power/Alarm'}},
+	'MacCap':'80',
+	'ProfileID':'0114',
+	'ZDeviceID':'0117'},
+'toto.plug':{
+	'Epin':{ '01': {'0000':'','Type':'Plug/Power/Alarm'}},
+	'MacCap':'80',
+	'ProfileID':'0114',
+	'ZDeviceID':'0117'},
 'lumi.plug':{
 	'Epin':{
 		'01': {'0000':'','000c':'','0006':'','0004':'','0003':'','0010':'','0005':'','000a':'','0001':'','0002':'', 'Type':'Plug'},
 		'02': {'000c':'', 'Type':'Power/Meter'}, 
 		'03': {'000c':''}, 
-		'64': {'000f'}
+		'64': {'000f':''}
 	     }, 
 	'Epout':{
 		'01': {'0000':'','0004':''}, 
@@ -90,6 +103,7 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 	'MacCap':'80',
 	'ProfileID':'0104',
 	'ZDeviceID':'0107'} ,
+}
 ```
 
 
@@ -110,8 +124,8 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 
 | Fonction | Description |
 |----------|-------------|
-| getTypebyModel( Model )                    | search Model in DeviceConf and return a Type. If nothing found return '' |
-| getTypebyCluster( ClusterIN )              | Return a list of Type based on the Cluster provided | 
+| getTypesbyModel( Model )                    | search Model in DeviceConf and return a tuple of ( Epin , Type ). If nothing found return '' |
+| getTypebyCluster( ClusterIN )              | Return a list of tuples ( epin, Type)  based on the Cluster provided | 
 | getModelbyZDeviceID( ZDeviceID, ProfileID) | Search for an entry matching ZDeviceID, if several found de-duplicate with ProfileID. Rreturn entry or '' if still several entries. |
 | getEPinbyModel( Model )                    | Return the EPin list for a given Model
 | getEPoutbyModel( Model )                   | Return the EPout list for a given Model
@@ -122,3 +136,5 @@ Je serais également partisant de differencier Ep In et Out du coup la structutr
 * z_heartbeat.py
   * En remplacement du hardcoding des Device sur secteur
 
+* Mecanique opérationnelle du plugin
+  * Avec la séeparation Ep In et Out il sera éégalement necessaire de modifier le code existant pour géerer dans ListOfDevice ces 2 informations. L'idéee etant depouvoir utiliser la liste des Cluster In pour faire des Read Attributes
