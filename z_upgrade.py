@@ -54,3 +54,76 @@ def upgrade_v2( self, Devices ) :
 	else:
 		Domoticz.Status("Zigate Structure V2")
 			
+
+
+def upgrade_v3(self, Devices ):
+	nbdev = 0
+	upgradedone = False
+	for x in Devices : 
+		if Devices[x].Options.get('Zigate') is None :
+			Domoticz.Error("upgrade_v3 aborted. Zigate structutre not found : " +str(Zigate['Version']) + " for " +str(x) )
+			return
+		
+		# Copy the old Structure in order to Create+Update the new Device
+		Zaddr        = Devices[x].DeviceID
+		Name         = Devices[x].Name
+		Type         = Devices[x].Type
+		Subtype      = Devices[x].Subtype
+		Switchtype   = Devices[x].Switchtype
+		Image        = Devices[x].Image
+		Used         = Devices[x].Used
+		Color        = Devices[x].Color
+		Description  = Devices[x].Description
+		BatteryLevel = Devices[x].BatteryLevel
+		SignalLevel  = Devices[x].SignalLevel
+		TypeName     = Devices[x].TypeName
+		nValue       = Devices[x].nValue
+		sValue       = Devices[x].sValue
+
+		Options = dict(Devices[x].Options)
+		Zigate  = eval(Options['Zigate'])
+
+		if Zigate.get('IEEE') is None :
+			Domoticz.Error("upgrade_v3 No IEEE for Device["+str(x)+"] - "+str(Device[x].Name ) + " " +str( Options ) )
+			return
+		if Zigate['Version'] != "2" :
+			Domoticz.Error("upgrade_v3 aborted. found a non V2 version : " +str(Zigate['Version']) )
+			return
+
+		IEEE   = Zigate['IEEE']
+		DomoID = Zigate['DomoID']
+
+		if Zaddr != DomoID :
+			# Mostlikely we had a device coming with a new sAddr, so we should use the latest one.
+			Domoticz.Log("upgrade_v3 Zaddr " +Zaddr + " overwritted by " +DomoID )
+			Zaddr = DomoID
+
+		# Construct V3 as per construction Zigate is pointing to a Copy of Options
+		DeviceID          = IEEE
+		Zigate['Version'] = '3'
+		Zigate['Zaddr']   = Zaddr
+		del Zigate['DomoID']
+
+		Domoticz.Status("Upgrading " +str(Devices[x].Name) + " to version 3" )
+		Domoticz.Log("upgrade_v3  " +str(Devices[x].Name) + " to version 3 with DeviceID from '" +str(Zaddr) + "' to '" +str(DeviceID) + "'")
+
+		# Change the Name of the old device
+		Domoticz.Log("upgrade_v3 renaming old device into " +'V2 '+Name )
+#		#Devices[x].Update(nValue=int(nValue), sValue=str(sValue), Name="V2 "+Name, SuppressTriggers=True )
+
+		# Create a new device
+		Domoticz.Log("upgradeèv3 creating new device DeviceID = " + str(DeviceID) + " Options = " +str(Options) )
+#		#Domoticz.Device(DeviceID=str(DeviceID),Name=str(Name), Unit=FreeUnit(self, Devices), Type=Type, Subtype=Subtype, Switchtype=Switchtype, Options=Options ).Create()
+		# Update the other parameters like Image, battery and Signal level , nValue, sValue ....
+		for y in Devices : 
+			if Devices[y].DeviceID == IEEE : # Look for the fresh created entry
+				Domoticz.Log("upgrade_v3 Updaging new created device ")	
+				#Devices[y].Update(nValue=int(nValue), sValue=str(sValue), Image=Image, Used=Used, Color=Color, Description=Description, BatterLevel=BatteryLevel, SignalLevel=SignalLevel, SuppressTriggers=True )
+
+		nbdev = nbdev + 1
+		upgradedone = True
+
+	if upgradedone :
+		Domoticz.Status("Upgrade of Zigate structure to V3 completed. " + str(nbdev) + " devices updated")
+		
+
