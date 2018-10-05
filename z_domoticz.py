@@ -511,7 +511,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 		# Update Options
 		#Domoticz.Log("UpdateDevice_v2 - Devices[" +str(Unit) + "].Options = " +str(Devices[Unit].Name) + " Options = "  + str(Devices[Unit].Options) )
 		#Domoticz.Log("UpdateDevice_v2 - Options = " +str(Devices[Unit].Name) + " Options = "  + str(Options) )
-		# Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=Options)
+		Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=Options)
 
 	return
 
