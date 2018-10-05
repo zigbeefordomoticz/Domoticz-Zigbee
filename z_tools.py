@@ -170,18 +170,23 @@ def getListofClusterbyModel( self, Model , InOut ) :
 	Provide the list of clusters attached to Ep In
 	"""
 	listofCluster = list()
+	if InOut == '' or InOut is None :
+		return listofCluster
+	if InOut != 'Epin' and InOut != 'Epout' :
+		Domoticz.Error( "getListofClusterbyModel - Argument error : " +Model + " " +InOut )
+		return ''
+
 	if Model in self.DeviceConf :
 		if self.DeviceConf[Model].get(InOut):
 			for ep in self.DeviceConf[Model][InOut] :
 				seen = ''
 				for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
-					if cluster == 'Type' :
-						continue
-					if cluster == seen :
+					if cluster == 'Type' or  cluster == seen :
 						continue
 					listofCluster.append( cluster )
 					seen = cluster
 	return listofCluster
+
 
 def getListofInClusterbyModel( self, Model ) :
 	return getListofClusterbyModel( self, Model, 'Epin' )
@@ -190,15 +195,16 @@ def getListofOutClusterbyModel( self, Model ) :
 	return getListofClusterbyModel( self, Model, 'Epout' )
 
 	
-def getTypebyModel( self, Model ) :
+def getListofTypebyModel( self, Model ) :
 	"""
 	Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
+		Type is provided as a list of Type already.
 	"""
 	EpType = list()
 	if Model in self.DeviceConf :
 		for ep in self.DeviceConf[Model]['Epin'] :
 			if self.DeviceConf[Model]['Epin'][ep].get('Type') :
-				EpinType = ( ep, self.DeviceConf[Model]['Epin'][ep]['Type'])
+				EpinType = ( ep, getListofType( self.DeviceConf[Model]['Epin'][ep]['Type']) )
 				EpType.append(EpinType)
 	return EpType
 	
@@ -211,6 +217,19 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
 			return model
 	return ''
 
+
+
+
+def getListofType( self, Type ) :
+	"""
+	For a given DeviceConf Type "Plug/Power/Meters" return a list of Type [ 'Plug', 'Power', 'Meters' ]
+	"""
+
+	if Type == '' or Type is None :
+		return ''
+	retList = list()
+	retList= Type.split("/")
+	return retList
 
 
 
