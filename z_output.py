@@ -151,11 +151,24 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 	if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
 
+def ReadAttributeReq( self, addr, Ep, Cluster , ListOfAttributes ) :
+	# frame to be send is :
+	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
+
+	if not isinstance(ListOfAttributes, list):
+		ListOfAttributes = [ListOfAttributes]
+	lenAttr = len(ListOfAttributes)
+
+	Attr =''
+	for x in ListOfAttributes :
+		Attr += "{:04n}".format(ListOfAttributes[x])
+
+	datas = "{:02n}".format(2) + addr + "01" + Ep + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
+	sendZigateCmd("0100", datas )
+
 
 def ReadAttributeRequest_0008(self, key) :
 	# Cluster 0x0008 with attribute 0x0000
-	# frame to be send is :
-	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
 	EPin = "01"
 	EPout= "01"
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
@@ -163,17 +176,15 @@ def ReadAttributeRequest_0008(self, key) :
 					EPout=tmpEp
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "0008" + "00" + "00" + "0000" + "01" + "0000" )
+	ReadAttributeReq( self, key, EPout, "0008", 0 )
 
 def ReadAttributeRequest_000C(self, key) :
 	# Cluster 0x000C with attribute 0x0055
-	# frame to be send is :
-	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
 	EPin = "01"
 	EPout= "02"
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	sendZigateCmd("0100", "02" + str(key) + EPin + EPout + "000C" + "00" + "00" + "0000" + "01" + "0055" )
+	ReadAttributeReq( self, key, EPout, "000C", 55 )
 
 
 def removeZigateDevice( self, key ) :
@@ -189,3 +200,4 @@ def removeZigateDevice( self, key ) :
 		Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
 
 	return
+
