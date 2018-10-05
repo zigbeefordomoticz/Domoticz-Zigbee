@@ -39,6 +39,7 @@ def loadListOfDevices( self, Devices ) :
 		if Devices[x].Options.get('Zigate') :
 			self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
 			Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + str(self.ListOfDevices[ID]) + " loaded into self.ListOfDevices")
+			self.ListOfDevices[ID]['Heartbeat'] = 0
 		else :
 			Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
 
@@ -49,7 +50,7 @@ def loadListOfDevices_v3( self, Devices ) :
 		if Devices[x].Options.get('Zigate') :
 			Zigate = Devices[x].Options['Zigate']
 			Zaddr = Zigate['Zaddr']
-
+	
 			Domoticz.Log("loadListOfDevices_v3 - IEEE = " + Devices[x].DeviceID + " Zaddr = " +Zaddr )
 
 			self.ListOfDevices[Zaddr]={}
@@ -58,3 +59,4 @@ def loadListOfDevices_v3( self, Devices ) :
 			Domoticz.Log("Device : [" + str(x) + "] Zaddr = " + Zaddr + " Options['Zigate'] = " + str(self.ListOfDevices[Zaddr]) + " loaded into ListOfDevices")
 		else :
 			Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
+	
