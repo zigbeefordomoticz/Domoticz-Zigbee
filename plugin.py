@@ -114,15 +114,8 @@ class BasePlugin:
 		if  z_var.storeDiscoveryFrames == 1 :
 			self.DiscoveryDevices = {}
 
-		for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
-			Domoticz.Debug("Devices["+str(x)+"].Options = "+str(Devices[x].Options) )
-			ID = Devices[x].DeviceID
-			self.ListOfDevices[ID]={}
-			if Devices[x].Options.get('Zigate') :
-				self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
-				Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + str(self.ListOfDevices[ID]) + " loaded into self.ListOfDevices")
-			else :
-				Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
+		#Load the Domoticz Devices into ListOfDevices
+		z_database.loadListOfDevices( self, Devices )
 
 		#Import DeviceConf.txt
 		tmpread=""
