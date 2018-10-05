@@ -43,3 +43,18 @@ def loadListOfDevices( self, Devices ) :
 			Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
 
 
+def loadListOfDevices_v3( self, Devices ) :
+
+	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
+		if Devices[x].Options.get('Zigate') :
+			Zigate = Devices[x].Options['Zigate']
+			Zaddr = Zigate['Zaddr']
+
+			Domoticz.Log("loadListOfDevices_v3 - IEEE = " + Devices[x].DeviceID + " Zaddr = " +Zaddr )
+
+			self.ListOfDevices[Zaddr]={}
+			self.ListOfDevices[Zaddr]=eval(Devices[x].Options['Zigate'])
+
+			Domoticz.Log("Device : [" + str(x) + "] Zaddr = " + Zaddr + " Options['Zigate'] = " + str(self.ListOfDevices[Zaddr]) + " loaded into ListOfDevices")
+		else :
+			Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
