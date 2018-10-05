@@ -117,6 +117,25 @@ Par contre à minima, nous pouvous reprendre la version précédente et la mettr
 | getEPoutbyModel( Model )                   | Return the EPout list for a given Model
 | getTypefromList ( Type )		     | En entré c'est un Type au format DeviceConf.txt ( Plug/Power/Meter ), en sortie on retourne une liste de Type ( Plug, Power, Meter )
 
+* z_output.py
+
+
+| Fonction | Description |
+|----------|-------------|
+| reqEndPointList ( sAddr ) | Request the EndPoint list. send 0x0045 and put status to 0x0045 |
+| reqNodeDescriptor ( sAddr ) | Request the Node Descriptor. send 0x0042 and put status to 0x0042 |
+| reqActivePoint (sAddr, EP ) | Request ActivePoint for the particular end-point. send 0x0043 and put status to 0x0043 |
+| reqReadAttribute ( sAddr, EP, ListofCluster ) | Request read attribute for each Cluster in the list
+
+* z_input.py
+
+| Fonction | Description |
+|----------|-------------|
+| Decode8042 | Decode 0x8042 message and update ListOfDevice accordingly |
+| Decode8043 | This needs to be adapted in such to set Status to 0x8043 only when ALL EndPoint Descriptor have been received. |
+
+
+
 * z_domoticz.py
   * in CreateDomoDevice
 
