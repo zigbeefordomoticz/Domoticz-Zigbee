@@ -200,7 +200,9 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 	
 	if self.ListOfDevices[DeviceID].get('DomoID') :
 		Domoticz.Debug("Overwrite DeviceID with the one used a CreateDomoDevice : " + str(self.ListOfDevices[DeviceID]['DomoID'] ) )
-		DeviceID = self.ListOfDevices[DeviceID]['DomoID']
+		if DeviceID != self.ListOfDevices[DeviceID]['DomoID'] :
+			Domoticz.Log("MajDomoDevice receive an update from " +str(DeviceID) + " for " +str(self.ListOfDevices[DeviceID]['DomoID']) )
+			DeviceID = self.ListOfDevices[DeviceID]['DomoID']
 	
 	for x in Devices:
 		if Devices[x].DeviceID == str(DeviceID) :
