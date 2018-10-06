@@ -1,3 +1,10 @@
+THIS VERSION WORKS ONLY WITH DOMOTICZ BETA version
+--------------------------------------------------
+
+If you do use this version with Domoticz stable ( 4.9700 from June 23rd ), most likely the upgrade process is going to fail.
+and the plugin wont' work.
+
+
 Warning, if you are coming from release 3.x.x , an automatic database migration will be done.
 We kindly recommend you to do a backup of your Domoticz database prior to enabling the plugin.
 
