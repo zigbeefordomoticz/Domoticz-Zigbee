@@ -81,3 +81,23 @@ Push reset button while your device blink 3 times quickly, then your device will
 ### Other Zigbee device
  zigbee device should be add do domoticz after zigate will have receive a device announce.
 
+
+## Configuration file
+
+Under the Plugin folder, you will find a file `PluginConf.txt`
+This file allow some plugin configuration. We highy recommend you to use the default settings.
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| CrcCheck | On | Enable (On) or Disble (Off) the control of Checksum when receiveing Zigate messages. |
+| sendDelay | 1 | Serialize the Zigate command from the plugin, by sending one commande every 'sendDelay' second |
+| storeDiscoveryFrames | 0 | Disable (0) or Enable (1) the tracking and storage of Device Discovery Frames. This would be helpfull for new devices unknown to the Zigpate plugin by recording the details of such device and then allowing to see how to configure in the plugin . |
+
+```
+{
+'CrcCheck':'On',
+'sendDelay':'1',
+'enableDeviceList':'1',
+'storeDiscoveryFrames':'0'
+}
+```
