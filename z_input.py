@@ -561,7 +561,11 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 				self.ListOfDevices[saddr]['RSSI']= 12
 			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
 		else: 
-			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
+			# Let's check if the IEEE is not known !
+			if not z_tools.DeviceExist( self, saddr, ieee  ) :
+				Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
+			else:
+				Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " reconnected to ListOfDevice")
 		idx=idx+26
 
 	return
@@ -1087,6 +1091,8 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 		z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 		ReadCluster(self, Devices, MsgData) 
 	else :
+		# This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
+		# Implementing the 0x0041 command to request the IEEE address would be the right way to do
 		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
 	return
 
@@ -1185,7 +1191,7 @@ def Decode004d(self, MsgData) : # Reception Device announce
 		self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = str(MsgIEEE)
 		self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MsgMacCapa)
 	
-	Domoticz.Status("ZigateRead - MsgType 004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
+	Domoticz.Status("Decode0004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	return
 
 def ReadCluster(self, Devices, MsgData):
