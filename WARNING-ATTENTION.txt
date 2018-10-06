@@ -1,0 +1,11 @@
+Warning, if you are coming from release 3.x.x , an automatic database migration will be done.
+We kindly recommend you to do a backup of your Domoticz database prior to enabling the plugin.
+
+- domoticz.db    # Domotics database
+- DeviceList.txt # Plugin database
+
+Attention, le passage de la version 3.x.x à cette version Beta, va necessité une mise à jour de la base Domoticz.
+Nous vous recommendons de faire une sauvegarde de cette base avant le lancement du plugin
+
+- domoticz.db    # Base de données domoticz
+- DeviceList.txt # Base de données du plugin Zigate
