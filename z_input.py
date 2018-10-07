@@ -701,6 +701,30 @@ def Decode8041(self, MsgData) : # IEEE Address response
 	return
 
 def Decode8042(self, MsgData) : # Node Descriptor response
+
+	"""
+	MAC capability 	
+		Bit 0 – Alternate PAN Coordinator 	
+		Bit 1 – Device Type 	
+		Bit 2 – Power source 	
+		Bit 3 – Receiver On when Idle 	
+		Bit 4-5 – Reserved 	
+		Bit 6 – Security capability 	
+		Bit 7 – Allocate Address
+
+	Bitfields: 	
+		Logical type (bits 0-2 	
+		0 – Coordinator 	
+		1 – Router 	
+		2 – End Device) 	
+		Complex descriptor available (bit 3) 	
+		User descriptor available (bit 4) 	
+		Reserved (bit 5-7) 	
+		APS flags (bit 8-10 – currently 0) 	
+		Frequency band(11-15 set to 3 (2.4Ghz))
+	"""
+
+
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
 
@@ -719,6 +743,18 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	if self.ListOfDevices[addr]['Status']!="inDB" :
 		self.ListOfDevices[addr]['Status']="8042"
+		#self.ListOfDevices[addr]['LogType']=
+		#self.ListOfDevices[addr]['DeviceType']=
+		#self.ListOfDevices[addr]['LogicalType']=
+		#self.ListOfDevices[addr]['PowerSource']=
+		#self.ListOfDevices[addr]['ReceiveOnIdle']=
+
+		#if z_var.storeDiscoveryFrames == 1 :
+			#self.DiscoveryDevices[addr]['LogType']=
+			#self.DiscoveryDevices[addr]['DeviceType']=
+			#self.DiscoveryDevices[addr]['LogicalType']=
+			#self.DiscoveryDevices[addr]['PowerSource']=
+			#self.DiscoveryDevices[addr]['ReceiveOnIdle']=
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
