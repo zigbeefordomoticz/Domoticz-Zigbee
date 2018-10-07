@@ -198,14 +198,16 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 	# As the DeviceID (Short Address) could be a new one (in comparaison to the one use at creation of the Domoticz device ), let's find the initial one.
 	# Let's overwrite DeviceID
 	
+	DomoDeviceID = DeviceID			# This is needed in case we don't have the ListOfDevice[DeviceID] , because the device is talking with a new sAddr
 	if self.ListOfDevices[DeviceID].get('DomoID') :
 		Domoticz.Debug("Overwrite DeviceID with the one used a CreateDomoDevice : " + str(self.ListOfDevices[DeviceID]['DomoID'] ) )
 		if DeviceID != self.ListOfDevices[DeviceID]['DomoID'] :
 			Domoticz.Log("MajDomoDevice receive an update from " +str(DeviceID) + " for " +str(self.ListOfDevices[DeviceID]['DomoID']) )
-			DeviceID = self.ListOfDevices[DeviceID]['DomoID']
+			DomoDeviceID = self.ListOfDevices[DeviceID]['DomoID']
+		
 	
 	for x in Devices:
-		if Devices[x].DeviceID == str(DeviceID) :
+		if Devices[x].DeviceID == str(DomoDeviceID) :
 			DOptions = dict(Devices[x].Options)
 			DOptions['Zigate']=dict(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
