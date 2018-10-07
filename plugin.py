@@ -24,16 +24,15 @@
 				<option label="False" value="False" default="true" />
 			</options>
 		</param>
-		<param field="Mode6" label="Debug" width="150px">
+		<param field="Mode6" label="Verbors and Debuging" width="150px">
 			<options>
-				<option label="None" value="0"  default="true" />
-				<option label="Python Only" value="2"/>
-				<option label="Basic Debugging" value="62"/>
-				<option label="Basic+Messages" value="126"/>
-				<option label="Connections Only" value="16"/>
-				<option label="Connections+Python" value="18"/>
-				<option label="Connections+Queue" value="144"/>
-				<option label="All" value="-1"/>
+                		<option label="None" value="0"  default="true"/>
+                		<option label="Verbose" value="2"/>
+                		<option label="Domoticz Framework - Basic" value="62"/>
+                		<option label="Domoticz Framework - Basic+Messages" value="126"/>
+                		<option label="Domoticz Framework - Connections Only" value="16"/>
+                		<option label="Domoticz Framework - Connections+Queue" value="144"/>
+                		<option label="Domoticz Framework - All" value="-1"/>
 			</options>
 		</param>
 	</params>
