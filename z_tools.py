@@ -64,6 +64,10 @@ def DeviceExist(self, Addr , IEEE = ''):
 				Domoticz.Debug("DeviceExist - given Addr/IEEE = " + Addr + "/" + IEEE + " found as " + str(existingDevice) )
 				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " + str(existingKey) )
 
+				# Make sure this device is valid
+				if existingDevice['Status'] == 'inDB' :
+					continue
+
 				# Updating process by :
 				# - mapping the information to the new Addr
 				self.ListOfDevices[Addr] = existingDevice
@@ -82,8 +86,15 @@ def DeviceExist(self, Addr , IEEE = ''):
 	return False
 
 def removeDeviceInList( self, Addr) :
-	Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(Addr)+"] : "+str(self.ListOfDevices[Addr]) )
-	del self.ListOfDevices[Addr]
+
+	# It could be that the Unit device is refered by a a non-existing Short Address due to the fact that the device came with a new one.
+	# Addr is the Short Adress registered at Device creation
+	for key in self.ListOfDevices :
+		if self.ListOfDevices[key]['DomoID'] == Addr and self.ListOfDevices[key]['Status'] == 'inDB' :
+			break
+
+	Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
+	del self.ListOfDevices[key]
 
 def initDeviceInList(self, Addr) :
 	if Addr != '' :
