@@ -208,9 +208,18 @@ def MajDomoDevice(self, Devices, DeviceID,Ep,clusterID,value,Color_='') :
 	
 	for x in Devices:
 		if Devices[x].DeviceID == str(DomoDeviceID) :
-			DOptions = dict(Devices[x].Options)
-			DOptions['Zigate']=dict(self.ListOfDevices[DeviceID])
 			SignalLevel = self.ListOfDevices[DeviceID]['RSSI']
+			DOptions = dict(Devices[x].Options)
+			if not  DOptions.get('Zigate') :
+				Domoticz.Error("MajDomoDevice failed due to not existing Zigate information for device : " +str(x) + " - " +str(Devices[x].Name ))
+				Domoticz.Error("MajDomoDevice Options = : " +str(DOptions))
+				return
+			DOptions['Zigate']=dict(self.ListOfDevices[DeviceID])
+
+			if not  DOptions.get('ClusterType') :
+				Domoticz.Error("MajDomoDevice failed due to not existing ClusterType information for device : " +str(x) + " - " +str(Devices[x].Name ))
+				Domoticz.Error("MajDomoDevice Options = : " +str(DOptions))
+				return
 			Dtypename=DOptions['ClusterType']
 
 			Domoticz.Debug("MajDomoDevices - DOptions = " + str(DOptions) )
