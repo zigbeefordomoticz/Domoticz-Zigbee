@@ -474,6 +474,9 @@ def ResetDevice(self, Devices, Type,HbCount) :
 		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
 		current = time.time()
 		DOptions = dict(Devices[x].Options)
+		if not DOptions.get('ClusterType') :
+			Domoticz.Error("ResetDevice found an Device : Devices["+str(x)+"] " +str(Devices[x].name) )
+			continue
 		Dtypename=DOptions['ClusterType']
 		try :
 			SignalLevel = self.ListOfDevices[_tmpDeviceID]['RSSI']
