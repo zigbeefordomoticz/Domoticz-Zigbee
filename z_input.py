@@ -715,7 +715,10 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	mac_capability=MsgData[26:28]
 	max_buffer=MsgData[28:30]
 	bit_field=MsgData[30:34]
-	Domoticz.Debug("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status )
+	Domoticz.Log("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status )
+
+	if self.ListOfDevices[addr]['Status']!="inDB" :
+		self.ListOfDevices[addr]['Status']="8042"
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
