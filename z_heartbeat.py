@@ -37,9 +37,9 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		Domoticz.Log("Creation process for " + str(key) + " Info: " + str(self.ListOfDevices[key]) )
 		# We should check if the device has not been already created via IEEE
 		if z_tools.IEEEExist( self, self.ListOfDevices[key]['IEEE'] ) == False :
-			Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
-			z_output.sendZigateCmd("0045", str(key))	# We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
-			self.ListOfDevices[key]['Status']="0045"
+			Domoticz.Log("onHeartbeat - new device discovered request Node Descriptor for : " +str(key) )
+			z_output.sendZigateCmd("0042", str(key))	# Request a Node Descriptor
+			self.ListOfDevices[key]['Status']="0042"
 			self.ListOfDevices[key]['Heartbeat']="0"
 		else :
 			for dup in self.ListOfDevices :
@@ -51,8 +51,13 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 					self.ListOfDevices[key]['RIA']="99"
 					break
 
-	# Request Simple Descriptor for each EP	
-	if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":
+	if status=="8042" and self.ListOfDevices[key]['Heartbeat']=="1":	# Status is set by Decode8042
+			Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + key)
+			z_output.sendZigateCmd("0045", str(key))	# We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
+			self.ListOfDevices[key]['Status']="0045"
+			self.ListOfDevices[key]['Heartbeat']="0"
+
+	if status=="8045" and self.ListOfDevices[key]['Heartbeat']=="1":	# Status is set by Decode8045
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
 		for cle in self.ListOfDevices[key]['Ep']:
 			Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
@@ -61,7 +66,7 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		self.ListOfDevices[key]['Status']="0043"
 		self.ListOfDevices[key]['Heartbeat']="0"
 
-	if status=="0041" and self.ListOfDevices[key]['Heartbeat']=="1":
+	if status=="0041" and self.ListOfDevices[key]['Heartbeat']=="1":	# It has been requested tto issue a 0x0041 request 
 		Domoticz.Log("processNotinDBDevices - request IEEE for " +str(str(key)) )
 		z_output.sendZigateCmd("0041", str(key)+str(key)+"00" )   	
 		self.ListOfDevices[key]['Status']="8041"
@@ -72,6 +77,16 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="9":
 		Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + key)
 		self.ListOfDevices[key]['Heartbeat']="0"
+
+	if status=="0042" and self.ListOfDevices[key]['Heartbeat']>="9":
+		Domoticz.Debug("onHeartbeat - new device discovered 0x0042 not received in time: " + key)
+		self.ListOfDevices[key]['Heartbeat']="0"
+		self.ListOfDevices[key]['Status']="0045"		# Let's continue in 0x0045 , those informations are not a must
+
+	if status=="8042" and self.ListOfDevices[key]['Heartbeat']>="9":
+		Domoticz.Debug("onHeartbeat - new device discovered 0x8042 not received in time: " + key)
+		self.ListOfDevices[key]['Heartbeat']="0"
+		self.ListOfDevices[key]['Status']="0045"		# Let's continue in 0x0045 , those informations are not a must
 
 	if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="9":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
