@@ -1,0 +1,8 @@
+include LICENSE.txt
+include ReleaseNotes.md
+include readme.md
+include *.py
+include PluginConf.txt
+include DeviceConf.txt
+include Zdatas/
+include Compatible-Hardware.md
