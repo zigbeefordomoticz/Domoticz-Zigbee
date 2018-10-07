@@ -34,8 +34,19 @@ def IEEEExist(self, IEEE) :
 		else:
 			return False
 
-def DeviceExist(self, Addr , IEE = ''):
-	import Domoticz
+def getSaddrfromIEEE(self, IEEE) :
+	# Return Short Address if IEEE found.
+
+	if IEEE != '' :
+		for sAddr in self.ListOfDevices :
+			if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
+				return sAddr
+
+	Domoticz.Log("getSaddrfromIEEE no IEEE found " )
+
+	return ''
+
+def DeviceExist(self, Addr , IEEE = ''):
 
 	#Validity check
 	if Addr == '':
@@ -46,22 +57,27 @@ def DeviceExist(self, Addr , IEE = ''):
 			return True
 
 	#If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
-	if IEE:
+	if IEEE:
 		for existingKey in self.ListOfDevices:
 			existingDevice = self.ListOfDevices[existingKey]
-			if existingDevice.get('DomoID') and existingDevice.get('IEEE','wrong iee') == IEE:
-				Domoticz.Log("DeviceExist - given Addr/IEEE = " + Addr + "/" + IEE + " found as " + str(existingDevice) )
-				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " )
-				Domoticz.Log("DeviceExist - " + str(existingDevice) )
+			if existingDevice.get('DomoID') and existingDevice.get('IEEE','wrong ieee') == IEEE:
+				Domoticz.Debug("DeviceExist - given Addr/IEEE = " + Addr + "/" + IEEE + " found as " + str(existingDevice) )
+				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " + str(existingKey) )
 
 				# Updating process by :
 				# - mapping the information to the new Addr
-				#update adress
 				self.ListOfDevices[Addr] = existingDevice
+				Domoticz.Debug("DeviceExist - new device " +str(Addr) +" : " + str(self.ListOfDevices[Addr]) )
+				Domoticz.Debug("DeviceExist - old device " +str(existingKey) +" : " + str(self.ListOfDevices[existingKey]) )
 
-				Domoticz.Log("DeviceExist - new device pointing still to old one " + str(Addr) + " -> " + str(self.ListOfDevices[Addr]['DomoID']) )
-				Domoticz.Log("DeviceExist - old device still active  " + str(existingDevice) )
-				#del i
+				# MostLikely exitsingKey is not needed any more
+				removeDeviceInList( self, existingKey )	
+
+				if self.ListOfDevices[Addr]['Status'] == 'Left' :
+					Domoticz.Log("DeviceExist - Update Status from Left to inDB " )
+					self.ListOfDevices[Addr]['Status'] = 'inDB'
+					self.ListOfDevices[Addr]['Hearbeat'] = 0
+
 				return True
 	return False
 
@@ -90,7 +106,6 @@ def initDeviceInList(self, Addr) :
 
 
 def CheckDeviceList(self, key, val) :
-	import Domoticz
 
 	Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
 	Domoticz.Debug("CheckDeviceList - with value : " + str(val))
@@ -127,7 +142,10 @@ def CheckDeviceList(self, key, val) :
 
 
 def updSQN( self, key, newSQN) :
-	import Domoticz
+
+	if not self.ListOfDevices[key] :
+		# Seems that the structutre is not yet initialized
+		return
 
 	# For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
 	Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
@@ -142,7 +160,8 @@ def updSQN( self, key, newSQN) :
 			Domoticz.Log("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
 			self.ListOfDevices[key]['SQN'] = newSQN
 			if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-				Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
+				Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
+								+ str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
 	else :
 		Domoticz.Debug("updSQN - Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " SQN " + str(newSQN) )
 		self.ListOfDevices[key]['SQN'] = {}

@@ -861,7 +861,17 @@ def Decode8048(self, MsgData) : # Leave indication
 	MsgExtAddress=MsgData[0:16]
 	MsgDataStatus=MsgData[16:18]
 	
-	Domoticz.Status("ZigateRead - MsgType 8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+	Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+
+	sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
+	if sAddr == '' :
+		Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
+	else :
+		Domoticz.Log("Decode8048 - device " +str(sAddr) + " annouced to leave" )
+		Domoticz.Log("Decode8048 - most likely a 0x004d will come" )
+		self.ListOfDevices[sAddr]['Status'] = 'Left'
+		self.ListOfDevices[sAddr]['Hearbeat'] = 0
+
 	return
 
 def Decode804A(self, MsgData) : # Management Network Update response

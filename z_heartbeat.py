@@ -286,8 +286,13 @@ def processListOfDevices( self , Devices ) :
 		if status == "inDB" : 
 			processKnownDevices( self , key )
 
-		########## UnKnown Devices  - Creation process
-		if status != "inDB" :
+		if status == "Left" :
+			# Device has sent a 0x8048 message annoucing its departure (Leave)
+			# Most likely we should receive a 0x004d, where the device come back with a new short address
+			Domoticz.Log("processListOfDevices - Device : " +str(key) + " is in Status = 'Left' for " +str(self.ListOfDevices[key]['Heartbeat']) + "HB" )
+
+		elif status != "inDB" :
+			# Creation process
 			processNotinDBDevices( self , Devices, key, status , RIA )
 
 	#end for key in ListOfDevices
