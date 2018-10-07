@@ -10,6 +10,8 @@ import time
 import struct
 import json
 
+import Domoticz
+
 def returnlen(taille , value) :
 	while len(value)<taille:
 		value="0"+value
@@ -63,6 +65,9 @@ def DeviceExist(self, Addr , IEE = ''):
 				return True
 	return False
 
+def removeDeviceInList( self, Addr) :
+	Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(Addr)+"] : "+str(self.ListOfDevices[Addr]) )
+	del self.ListOfDevices[Addr]
 
 def initDeviceInList(self, Addr) :
 	if Addr != '' :

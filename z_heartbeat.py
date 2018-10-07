@@ -44,7 +44,8 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		else :
 			for dup in self.ListOfDevices :
 				if self.ListOfDevices[key]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":
-					Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) + " Duplicate of " + str(dup) )
+					Domoticz.Error("onHearbeat - Device : " + str(key) + "already known under IEEE: " +str(self.ListOfDevices[key]['IEEE'] ) 
+										+ " Duplicate of " + str(dup) )
 					self.ListOfDevices[key]['Status']="DUP"
 					self.ListOfDevices[key]['Heartbeat']="0"
 					self.ListOfDevices[key]['RIA']="99"
@@ -55,8 +56,15 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + key)
 		for cle in self.ListOfDevices[key]['Ep']:
 			Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + key)
-			z_output.sendZigateCmd("0043", str(key)+str(cle))	# We use key as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
+			z_output.sendZigateCmd("0043", str(key)+str(cle))	# We use key as we are in the discovery process (no reason to use 
+																# DomoID at that time / Device not yet created
 		self.ListOfDevices[key]['Status']="0043"
+		self.ListOfDevices[key]['Heartbeat']="0"
+
+	if status=="0041" and self.ListOfDevices[key]['Heartbeat']=="1":
+		Domoticz.Log("processNotinDBDevices - request IEEE for " +str(str(key)) )
+		z_output.sendZigateCmd("0041", str(key)+str(key)+"00" )   	
+		self.ListOfDevices[key]['Status']="8041"
 		self.ListOfDevices[key]['Heartbeat']="0"
 
 	# Timeout Management
@@ -64,23 +72,32 @@ def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	if status=="004d" and self.ListOfDevices[key]['Heartbeat']>="9":
 		Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + key)
 		self.ListOfDevices[key]['Heartbeat']="0"
+
 	if status=="0045" and self.ListOfDevices[key]['Heartbeat']>="9":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
 		self.ListOfDevices[key]['Heartbeat']="0"
 		self.ListOfDevices[key]['Status']="004d"
+
 	if status=="8045" and self.ListOfDevices[key]['Heartbeat']>="9":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + key)
 		self.ListOfDevices[key]['Heartbeat']="0"
 		self.ListOfDevices[key]['Status']="004d"
+
 	if status=="0043" and self.ListOfDevices[key]['Heartbeat']>="9":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + key)
 		self.ListOfDevices[key]['Heartbeat']="0"
 		self.ListOfDevices[key]['Status']="8045"
 
+	if status=="8041" and self.ListOfDevices[key]['Heartbeat']>="9":
+		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + key)
+		self.ListOfDevices[key]['Heartbeat']="0"
+		self.ListOfDevices[key]['Status']="0041"
+
 	# What RIA stand for ??????? (see line 228)
-	if status=="8043" and self.ListOfDevices[key]['Heartbeat']>="9" and self.ListOfDevices[key]['RIA']>="10":
+	if ( status=="8043" or status=="8041" ) and self.ListOfDevices[key]['Heartbeat']>="9" and self.ListOfDevices[key]['RIA']>="10":
 		self.ListOfDevices[key]['Heartbeat']="0"
 		self.ListOfDevices[key]['Status']="UNKNOW"
+		Domoticz.Log("processNotinDB - not able to find response from " +str(key) + " stop process at " +str(status) )
 
 	#ZLL
 	#Lightning devices

@@ -158,6 +158,13 @@ class BasePlugin:
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
 		Domoticz.Status("onStop called")
 
+	def onDeviceRemoved( self, Unit ) :
+		Domoticz.Status("onDeviceRemoved called" )
+		z_tools.removeDeviceInList( self, Devices[Unit].DeviceID )
+		Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+		# We might evaluate teh removal of the physical device from Zigate.
+		# Could be done if a Flag is enabled in the PluginConf.txt.
+		
 	def onConnect(self, Connection, Status, Description):
 		Domoticz.Status("onConnect called")
 		global isConnected
@@ -291,6 +298,10 @@ def onStart():
 def onStop():
 	global _plugin
 	_plugin.onStop()
+
+def onDeviceRemoved( Unit ):
+	global _plugin
+	_plugin.onDeviceRemoved( Unit )
 
 def onConnect(Connection, Status, Description):
 	global _plugin
