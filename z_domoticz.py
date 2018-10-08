@@ -475,7 +475,8 @@ def ResetDevice(self, Devices, Type,HbCount) :
 		current = time.time()
 		DOptions = dict(Devices[x].Options)
 		if not DOptions.get('ClusterType') :
-			Domoticz.Error("ResetDevice found an Device : Devices["+str(x)+"] " +str(Devices[x].name) )
+			Domoticz.Log("ResetDevice DOptions = " +str(DOptions) )
+			Domoticz.Error("ResetDevice found an Device : Devices["+str(x)+"] " +str(Devices[x].Name) )
 			continue
 		Dtypename=DOptions['ClusterType']
 		try :
@@ -527,7 +528,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 		# Update Options
 		#Domoticz.Log("UpdateDevice_v2 - Devices[" +str(Unit) + "].Options = " +str(Devices[Unit].Name) + " Options = "  + str(Devices[Unit].Options) )
 		#Domoticz.Log("UpdateDevice_v2 - Options = " +str(Devices[Unit].Name) + " Options = "  + str(Options) )
-		Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=Options)
+		Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Options=Options, SuppressTriggers=True)
 
 	return
 
