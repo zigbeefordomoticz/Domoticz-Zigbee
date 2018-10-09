@@ -14,7 +14,6 @@
 - [Technical] Change TypeName to ClusterType in the Zigate structure.
 - [Technical] Serialisation of zigate cmd based on sendDelay paramater available on PluinConf.txt - set by default to 1s
 - [Technical] Remove unecessary charaters sent in case of Wifi transport
-- [Technical] Enable/Disable the usage of DeviceList.txt.  (Ligh mode )
 - [Technical] Enable/Disable login Discovery Process information. The purpose is to keep in a dedicated file all informations captures during the discovery phase. This will allow us to work on new -un certified - devices.
 - [Issue] - Handle Leave message
 - [Issue] - When you remove a device in Domoticz, we remove the entry in the Plugin, but we don't remove the device in Zigate, yet.

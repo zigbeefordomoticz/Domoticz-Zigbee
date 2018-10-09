@@ -97,7 +97,6 @@ This file allow some plugin configuration. We highy recommend you to use the def
 {
 'CrcCheck':'On',
 'sendDelay':'1',
-'enableDeviceList':'1',
 'storeDiscoveryFrames':'0'
 }
 ```
