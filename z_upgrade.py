@@ -67,10 +67,17 @@ def upgrade_v2( self, Devices ) :
 def upgrade_v3(self, Devices ):
 	nbdev = 0
 	upgradeflag = False
+
+	# Load DevicesList.txt
+
 	for x in Devices : 
-		if Devices[x].Options.get('Zigate') is None :
-			Domoticz.Error("upgrade_v3 aborted. Zigate structutre not found : " +str(Zigate['Version']) + " for " +str(x) )
-			return
+		# Create a new device without any ClusterType and Zigate information in Zigate
+		# Renanme the old dveice in order to allow the user to use the Domoticz Replace function (in Edit menu )
+		# we also need to Update DeviceList.txt as ClusterType was stored only in Devices.Options
+		# We assumed consistency between Options.Zigate and deviceList.txt 
+
+		Domoticz.Status("Upgrading " +str(Devices[x].Name) + " to version 3" )
+
 		
 		# Copy the old Structure in order to Create+Update the new Device
 		Zaddr        = Devices[x].DeviceID
@@ -88,14 +95,38 @@ def upgrade_v3(self, Devices ):
 		nValue       = Devices[x].nValue
 		sValue       = Devices[x].sValue
 
+		Domoticz.Log("Devices["+str(x)+"] = "+str( Devices[x]) )
+		Domoticz.Log("    - Zaddr         = " +str(Zaddr) )
+		Domoticz.Log("    - Name          = " +str(Name) )
+		Domoticz.Log("    - Type          = " +str(Type) )
+		Domoticz.Log("    - Subtype       = " +str(Subtype) )
+		Domoticz.Log("    - Switchtype    = " +str(Switchtype) )
+		Domoticz.Log("    - Image         = " +str(Image) )
+		Domoticz.Log("    - Used          = " +str(Used) )
+		Domoticz.Log("    - Color         = " +str(Color) )
+		Domoticz.Log("    - Description   = " +str(Description) )
+		Domoticz.Log("    - BatteryLevel  = " +str(BatteryLevel) )
+		Domoticz.Log("    - SignalLevel   = " +str(SignalLevel) )
+		Domoticz.Log("    - TypeName      = " +str(TypeName) )
+		Domoticz.Log("    - nValue        = " +str(nValue) )
+		Domoticz.Log("    - sValue        = " +str(sValue) )
+
 		Options = dict(Devices[x].Options)
+
+		if Devices[x].Options.get('Zigate') is None :
+			Domoticz.Error("upgrade_v3 aborted. Zigate structutre not found : " +str(Zigate['Version']) + " for " +str(x) )
+			return
+
 		Zigate  = eval(Options['Zigate'])
 
+		if Options.get('ClusterType') is None :
+			Domoticz.Error("upgrade_v3 No ClusterType for Device["+str(x)+"] - "+str(Device[x].Name ) + " " +str( Options ) )
+			return
 		if Zigate.get('IEEE') is None :
-			Domoticz.Error("upgrade_v3 No IEEE for Device["+str(x)+"] - "+str(Device[x].Name ) + " " +str( Options ) )
+			Domoticz.Error("upgrade_v3 No IEEE for Device["+str(x)+"] - "+str(Device[x].Name ) + " " +str( Zigate ) )
 			return
 		if Zigate['Version'] != "2" :
-			Domoticz.Error("upgrade_v3 aborted. found a non V2 version : " +str(Zigate['Version']) )
+			Domoticz.Error("upgrade_v3 aborted. found a non V2 version : " +str(Zigate) )
 			return
 
 		IEEE   = Zigate['IEEE']
@@ -110,23 +141,28 @@ def upgrade_v3(self, Devices ):
 		DeviceID          = IEEE
 		Zigate['Version'] = '3'
 		Zigate['Zaddr']   = Zaddr
-		del Zigate['DomoID']
+		
+		del Options.Zigate		# remove Zigate field
+		del Options.ClusterType		# remove ClusterType field
 
-		Domoticz.Status("Upgrading " +str(Devices[x].Name) + " to version 3" )
 		Domoticz.Log("upgrade_v3  " +str(Devices[x].Name) + " to version 3 with DeviceID from '" +str(Zaddr) + "' to '" +str(DeviceID) + "'")
 
+		###### Operate Changes in Domoticz #####
 		# Change the Name of the old device
 		Domoticz.Log("upgrade_v3 renaming old device into " +'V2 '+Name )
 #		#Devices[x].Update(nValue=int(nValue), sValue=str(sValue), Name="V2 "+Name, SuppressTriggers=True )
 
 		# Create a new device
 		Domoticz.Log("upgradeèv3 creating new device DeviceID = " + str(DeviceID) + " Options = " +str(Options) )
-#		#Domoticz.Device(DeviceID=str(DeviceID),Name=str(Name), Unit=FreeUnit(self, Devices), Type=Type, Subtype=Subtype, Switchtype=Switchtype, Options=Options ).Create()
+#		#Domoticz.Device(DeviceID=str(DeviceID),Name=str(Name), Unit=len(Devices)+1, Type=Type, Subtype=Subtype, Switchtype=Switchtype, Options=Options ).Create()
 		# Update the other parameters like Image, battery and Signal level , nValue, sValue ....
 		for y in Devices : 
 			if Devices[y].DeviceID == IEEE : # Look for the fresh created entry
 				Domoticz.Log("upgrade_v3 Updaging new created device ")	
 				#Devices[y].Update(nValue=int(nValue), sValue=str(sValue), Image=Image, Used=Used, Color=Color, Description=Description, BatterLevel=BatteryLevel, SignalLevel=SignalLevel, SuppressTriggers=True )
+
+		####### Operate Changes in DeviceList.txt ####
+		# Include ClusterType
 
 		nbdev = nbdev + 1
 		upgradeflag = True
@@ -134,4 +170,7 @@ def upgrade_v3(self, Devices ):
 	if upgradeflag :
 		Domoticz.Status("Upgrade of Zigate structure to V3 completed. " + str(nbdev) + " devices updated")
 		
+	# As DeviceList.txt has been Loaded for the upgrade process,
+	# Writeit down to the disk
+	# remove the strutcutre from Memory as, it will be loaded as part of the standard Plugin process
 
