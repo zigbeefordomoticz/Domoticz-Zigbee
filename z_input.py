@@ -42,7 +42,7 @@ def ZigateRead(self, Devices, Data):
 
 	if str(MsgType)=="004d":  # Device announce
 		Domoticz.Debug("ZigateRead - MsgType 004d - Reception Device announce : " + Data)
-		Decode004d(self, MsgData)
+		Decode004d(self, MsgData, MsgRSSI)
 		return
 		
 	elif str(MsgType)=="00d1":  #
@@ -193,7 +193,7 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8048":  #
 		Domoticz.Log("ZigateRead - MsgType 8048 - Reception Leave indication : " + Data)
-		Decode8048(self, MsgData)
+		Decode8048(self, MsgData, MsgRSSI)
 		return
 
 	elif str(MsgType)=="804a":  #
@@ -895,7 +895,7 @@ def Decode8047(self, MsgData) : # Management Leave response
 	Domoticz.Status("ZigateRead - MsgType 8047 - Management Leave response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
 	return
 
-def Decode8048(self, MsgData) : # Leave indication
+def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8048 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
@@ -903,6 +903,9 @@ def Decode8048(self, MsgData) : # Leave indication
 	MsgDataStatus=MsgData[16:18]
 	
 	Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+
+	if ( z_var.logRSSI == 1 ) :
+		Domoticz.Log("Zigate activity for | unknown | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
 	sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
 	if sAddr == '' :
@@ -1241,10 +1244,14 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 		return
 
 #Device Announce
-def Decode004d(self, MsgData) : # Reception Device announce
+def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 	MsgSrcAddr=MsgData[0:4]
 	MsgIEEE=MsgData[4:20]
 	MsgMacCapa=MsgData[20:22]
+
+	if ( z_var.logRSSI == 1 ) :
+		Domoticz.Log("Zigate activity for | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
+
 	# tester si le device existe deja dans la base domoticz
 	if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
 		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
