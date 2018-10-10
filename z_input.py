@@ -392,7 +392,7 @@ def Decode8000_v2(self, MsgData) : # Status
 			elif Status=="05" : Status="Stack Already Started"
 			elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
 
-			Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+			Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
 			if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
 			elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
