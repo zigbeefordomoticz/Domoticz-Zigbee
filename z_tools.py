@@ -154,8 +154,11 @@ def CheckDeviceList(self, key, val) :
 
 def updSQN( self, key, newSQN) :
 
-	if not self.ListOfDevices[key] :
-		# Seems that the structutre is not yet initialized
+	try:
+		if not self.ListOfDevices[key] :
+			# Seems that the structutre is not yet initialized
+			return
+	except:
 		return
 
 	# For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence

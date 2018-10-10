@@ -142,8 +142,8 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 
 	z_var.cmdInProgress.put( command )
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
-	if z_var.cmdInProgress.qsize() > 10 :
-		Domoticz.Log("sendZigateCmd - Command in queue : > 10 " + str( z_var.cmdInProgress.qsize() ) )
+	if z_var.cmdInProgress.qsize() > 15 :
+		Domoticz.Log("sendZigateCmd - Command in queue : > 15 - queue is : " + str( z_var.cmdInProgress.qsize() ) )
 		Domoticz.Log("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
 	Domoticz.Debug("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
@@ -152,19 +152,55 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
 
 def ReadAttributeReq( self, addr, Ep, Cluster , ListOfAttributes ) :
+	
 	# frame to be send is :
 	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
 
-	if not isinstance(ListOfAttributes, list):
-		ListOfAttributes = [ListOfAttributes]
-	lenAttr = len(ListOfAttributes)
+	Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
 
-	Attr =''
-	for x in ListOfAttributes :
-		Attr += "{:04n}".format(ListOfAttributes[x])
+	if not isinstance(ListOfAttributes, list):
+		# We received only 1 attribute
+		Attr = "{:04n}".format(ListOfAttributes) 
+		lenAttr = 1
+		weight = 1
+	else :
+		lenAttr = len(ListOfAttributes)
+		weight = int ((lenAttr ) / 2) + 1
+		Attr =''
+		Domoticz.Debug("attributes : " +str(ListOfAttributes) +" len =" +str(lenAttr) )
+		for x in ListOfAttributes :
+			Attr += "{:04n}".format(x)
 
 	datas = "{:02n}".format(2) + addr + "01" + Ep + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
-	sendZigateCmd("0100", datas )
+	Domoticz.Debug("ReadAttributeReq : " +str(datas) +" with a weight of : " +str(weight) )
+	sendZigateCmd("0100", datas , weight )
+
+
+def ReadAttributeRequest_0000(self, key) :
+	# Cluster 0x0000 with attribute 0x0000
+	EPin = "01"
+	EPout= "01"
+
+	Domoticz.Debug("Request for cluster 0x0000 via Read Attribute request : " + key + " EPout = " + EPout )
+	
+	# General
+	listAttributes = []
+	listAttributes.append(0x0000) 		# ZCL Version
+	listAttributes.append(0x0001)		# Application Version
+	listAttributes.append(0x0002)		# Stack version
+	listAttributes.append(0x0003)		# Hardware version
+	listAttributes.append(0x0004)		# Manufacturer
+	listAttributes.append(0x0007)		# Power Source
+	listAttributes.append(0x0010)		# Battery
+	ReadAttributeReq( self, key, EPout, "0000", listAttributes )
+
+	Domoticz.Debug("Request for cluster 0x0001 via Read Attribute request : " + key + " EPout = " + EPout )
+	listAttributes = []
+	listAttributes.append(0x0000)		# Voltage
+	listAttributes.append(0x0010)		# Battery Voltage
+	listAttributes.append(0x0020)		# Battery %
+	# Power Config
+	ReadAttributeReq( self, key, EPout, "0001", listAttributes )
 
 
 def ReadAttributeRequest_0008(self, key) :
@@ -176,7 +212,7 @@ def ReadAttributeRequest_0008(self, key) :
 					EPout=tmpEp
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	ReadAttributeReq( self, key, EPout, "0008", 0 )
+	ReadAttributeReq( self, key, EPout, "0008", 0)
 
 def ReadAttributeRequest_000C(self, key) :
 	# Cluster 0x000C with attribute 0x0055
