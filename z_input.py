@@ -158,7 +158,7 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8041":  #
 		Domoticz.Log("ZigateRead - MsgType 8041 - Reception IEEE address response : " + Data)
-		Decode8041(self, MsgData)
+		Decode8041(self, MsgData, MsgRSSI)
 		return
 
 	elif str(MsgType)=="8042":  #
@@ -676,7 +676,7 @@ def Decode8040(self, MsgData) : # Network Address response
 						+ " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 	return
 
-def Decode8041(self, MsgData) : # IEEE Address response
+def Decode8041(self, MsgData, MsgRSSI) : # IEEE Address response
 	MsgLen=len(MsgData)
 
 	MsgSequenceNumber=MsgData[0:2]
@@ -690,6 +690,9 @@ def Decode8041(self, MsgData) : # IEEE Address response
 	Domoticz.Log("Decode8041 - IEEE Address response, Sequence number : " + MsgSequenceNumber + " Status : " 
 					+ z_status.DisplayStatusCode( MsgDataStatus ) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress 
 					+ " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
+
+	if ( z_var.logRSSI == 1 ) :
+		Domoticz.Log("Zigate activity for | " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
 
 	if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :		# We have requested a IEEE address for a Short Address, 
 																		# hoping that we can reconnect to an existing Device
