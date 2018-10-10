@@ -392,7 +392,7 @@ def Decode8000_v2(self, MsgData) : # Status
 			elif Status=="05" : Status="Stack Already Started"
 			elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
 
-			Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+			Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType + " Queue = " +str(z_var.cmdInProgress.qsize()) )
 
 			if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
 			elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
@@ -407,7 +407,8 @@ def Decode8000_v2(self, MsgData) : # Status
 			if  z_var.cmdInProgress.qsize() >= 1 :
 				mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
 
-	if str(MsgData[0:2]) != "00" : Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+	if str(MsgData[0:2]) != "00" :
+			Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType + " Queue = " +str(z_var.cmdInProgress.qsize()) )
 
 	return
 
