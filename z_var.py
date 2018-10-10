@@ -19,3 +19,4 @@ enableDeviceList = 1		# Enable or Disable the backup of ListOfDevices in DeviceL
 storeDiscoveryFrames = 1	# Enable tracking of Discovery process, and finaly store the outcome in DeviceDiscovery-[IEEE].txt file
 homedirectory =''			# Home directory where file would be created/store ( DeviceList.txt , DeviceDiscovery-xxx.txt
 logRSSI = 0					# Log RSSI for further investigation and reports
+refreshXiaomi = 0			# Time until you have to send a request to a Xiaomi battery powered device. Time in seconds. Please consider this could be draining the battery of such device.

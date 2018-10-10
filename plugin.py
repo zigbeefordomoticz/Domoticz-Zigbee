@@ -96,9 +96,12 @@ class BasePlugin:
 		z_var.CrcCheck = 1
 		z_var.sendDelay = 0
 		z_var.logRSSI = 0
+		z_var.refreshXiaomi = 0
 		
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
 			z_var.CrcCheck = 0
+		if  self.PluginConf.get('refreshXiaomi') :
+			z_var.refreshXiaomi = int(self.PluginConf['refreshXiaomi'],10)
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
 		if  self.PluginConf.get('logRSSI') :
