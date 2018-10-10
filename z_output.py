@@ -142,8 +142,8 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 
 	z_var.cmdInProgress.put( command )
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
-	if z_var.cmdInProgress.qsize() > 10 :
-		Domoticz.Log("sendZigateCmd - Command in queue : > 10 " + str( z_var.cmdInProgress.qsize() ) )
+	if z_var.cmdInProgress.qsize() > 15 :
+		Domoticz.Log("sendZigateCmd - Command in queue : > 15 - queue is : " + str( z_var.cmdInProgress.qsize() ) )
 		Domoticz.Log("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
 	Domoticz.Debug("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
