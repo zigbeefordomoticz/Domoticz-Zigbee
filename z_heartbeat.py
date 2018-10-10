@@ -34,9 +34,10 @@ def processKnownDevices( self, key ) :
 	# device id type Xiaomi 
 	if z_var.refreshXiaomi > 0 :
 		if ( int( self.ListOfDevices[key]['Heartbeat']) % z_var.refreshXiaomi ) == 0 or ( self.ListOfDevices[key]['Heartbeat'] == "6" ) :
-			if self.ListOfDevices[key]['Model'].find("lumi", 5) :
-				Domoticz.Log("Request a Read attribute 0x0000 and 0x0001 for the Xiaomi " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
-				z_output.ReadAttributeRequest_0000(self, key )
+			if self.ListOfDevices[key].get('Model') :
+				if self.ListOfDevices[key]['Model'].find("lumi") == 0 :
+					Domoticz.Log("Request a Read attribute 0x0000 and 0x0001 for the Xiaomi " + str(key) + " heartbeat = " + str( self.ListOfDevices[key]['Heartbeat']) )
+					z_output.ReadAttributeRequest_0000(self, key )
 
 def processNotinDBDevices( self, Devices, key , status , RIA ) :
 	# Request EP list
