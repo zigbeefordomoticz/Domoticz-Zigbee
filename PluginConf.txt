@@ -2,5 +2,6 @@
 'CrcCheck':'On',
 'sendDelay':'1',
 'enableDeviceList':'1',
-'storeDiscoveryFrames':'0'
+'storeDiscoveryFrames':'0',
+'logRSSI':'0'
 }

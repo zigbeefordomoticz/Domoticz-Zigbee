@@ -18,3 +18,4 @@ liveSendDelay = 0
 enableDeviceList = 1		# Enable or Disable the backup of ListOfDevices in DeviceLIst.txt
 storeDiscoveryFrames = 1	# Enable tracking of Discovery process, and finaly store the outcome in DeviceDiscovery-[IEEE].txt file
 homedirectory =''			# Home directory where file would be created/store ( DeviceList.txt , DeviceDiscovery-xxx.txt
+logRSSI = 0					# Log RSSI for further investigation and reports

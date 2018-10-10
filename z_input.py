@@ -552,6 +552,8 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		ieee=MsgData[idx+6:idx+22]
 		power=MsgData[idx+22:idx+24]
 		rssi=MsgData[idx+24:idx+26]
+		if ( z_var.logRSSI == 1 ) :
+			Domoticz.Log("Zigate activity for | " +str(saddr) +" | " +str(ieee) + " | " + str(int(rssi,16)) + " |  | ")
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
 		if z_tools.DeviceExist(self, saddr, ieee):
 			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
@@ -1110,6 +1112,8 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
 	Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " 
 						+ MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+	if ( z_var.logRSSI == 1 ) :
+		Domoticz.Log("Zigate activity for | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 	try :
 		self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
 	except : 
@@ -1144,6 +1148,9 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
 	Domoticz.Debug("Decode8102 - Report Individual Attribute response - reception data : " + MsgClusterData + " ClusterID : " 
 					+ MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
+	if ( z_var.logRSSI == 1 ) :
+		Domoticz.Log("Zigate activity for | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+
 	if z_tools.DeviceExist(self, MsgSrcAddr) == True :
 		try:
 			self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
