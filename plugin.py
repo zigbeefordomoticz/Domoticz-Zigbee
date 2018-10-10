@@ -91,14 +91,18 @@ class BasePlugin:
 			tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
 		myPluginConfFile.close()
 		Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
+
 		self.PluginConf=eval(tmpPluginConf)
 		z_var.CrcCheck = 1
 		z_var.sendDelay = 0
+		z_var.logRSSI = 0
 		
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
 			z_var.CrcCheck = 0
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
+		if  self.PluginConf.get('logRSSI') :
+			z_var.logRSSI = int(self.PluginConf['logRSSI'],10)
 		if  self.PluginConf.get('storeDiscoveryFrames') :
 			z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
 		if self.PluginConf.get('enableDeviceList') :
