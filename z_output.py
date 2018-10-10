@@ -155,16 +155,38 @@ def ReadAttributeReq( self, addr, Ep, Cluster , ListOfAttributes ) :
 	# frame to be send is :
 	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
 
-	if not isinstance(ListOfAttributes, list):
-		ListOfAttributes = [ListOfAttributes]
-	lenAttr = len(ListOfAttributes)
+	Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
 
-	Attr =''
-	for x in ListOfAttributes :
-		Attr += "{:04n}".format(ListOfAttributes[x])
+	if not isinstance(ListOfAttributes, list):
+		# We received only 1 attribute
+		Attr = "{:04n}".format(ListOfAttributes) 
+		lenAttr = 1
+	else :
+		lenAttr = len(ListOfAttributes)
+		Attr =''
+		Domoticz.Debug("attributes : " +str(ListOfAttributes) +" len =" +str(lenAttr) )
+		for x in ListOfAttributes :
+			Attr += "{:04n}".format(x)
 
 	datas = "{:02n}".format(2) + addr + "01" + Ep + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
+	Domoticz.Debug("ReadAttributeReq : " +str(datas) )
 	sendZigateCmd("0100", datas )
+
+
+def ReadAttributeRequest_0000(self, key) :
+	# Cluster 0x0000 with attribute 0x0000
+	EPin = "01"
+	EPout= "01"
+
+	Domoticz.Debug("Request 0x0000 and 0x0001 via Read Attribute request : " + key + " EPout = " + EPout )
+	
+	ReadAttributeReq( self, key, EPout, "0000", 0 )
+	listAttributes = []
+	listAttributes.append(0x0000)
+	listAttributes.append(0x0010)
+	listAttributes.append(0x0020)
+	listAttributes.append(0x0030)
+	ReadAttributeReq( self, key, EPout, "0001", listAttributes )
 
 
 def ReadAttributeRequest_0008(self, key) :
@@ -176,7 +198,7 @@ def ReadAttributeRequest_0008(self, key) :
 					EPout=tmpEp
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	ReadAttributeReq( self, key, EPout, "0008", 0 )
+	ReadAttributeReq( self, key, EPout, "0008", 0)
 
 def ReadAttributeRequest_000C(self, key) :
 	# Cluster 0x000C with attribute 0x0055
