@@ -935,7 +935,7 @@ def Decode804A(self, MsgData) : # Management Network Update response
 	MsgScannedChannel=MsgData[12:20]
 	MsgScannedChannelListCount=MsgData[20:22]
 	MsgChannelList=MsgData[22:len(MsgData)]
-	Domoticz.Status("ZigateRead - MsgType 804A - Management Network Update response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Total Transmission : " + str(int(MsgTotalTransmission,16)) + " Transmission Failures : " + str(int(MsgTransmissionFailures)) + " Scanned Channel : " + MsgScannedChannel + " Scanned Channel List Count : " + MsgScannedChannelListCount + " Channel List : " + MsgChannelList)
+	Domoticz.Status("ZigateRead - MsgType 804A - Management Network Update response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Total Transmission : " + str(int(MsgTotalTransmission,16)) + " Transmission Failures : " + str(int(MsgTransmissionFailures,16)) + " Scanned Channel : " + MsgScannedChannel + " Scanned Channel List Count : " + MsgScannedChannelListCount + " Channel List : " + MsgChannelList)
 	return
 
 def Decode804B(self, MsgData) : # System Server Discovery response
