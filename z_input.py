@@ -383,6 +383,8 @@ def Decode8000_v2(self, MsgData) : # Status
 				CmdSrcAddr = mycmd['datas'][2:6]
 				Domoticz.Debug("Decode8000 - Command for sAddr : " +str( CmdSrcAddr ) )
 				z_tools.updSQN( self, CmdSrcAddr, SEQ )
+				if ( z_var.logRSSI == 1 ) :
+					Domoticz.Log("Zigate activity for | " +str(CmdSrcAddr) +" | " + " | " + " | " +str(SEQ) + " | ")
 
 			if   Status=="00" : Status="Success"
 			elif Status=="01" : Status="Incorrect Parameters"
