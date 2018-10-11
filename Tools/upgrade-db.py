@@ -10,7 +10,6 @@ import base64
 global ClusterType
 global DomoID
 global IEEE
-global Zigate
 
 
 def extract_fields( partOptions ) :
@@ -22,21 +21,16 @@ def extract_fields( partOptions ) :
 	global s1
 
 	kField, vField = partOptions.split(':', 2)
-
 	if kField == "ClusterType" or kField == "TypeName" :
 		vClusterType = vField
 		ClusterType = str( base64.b64decode(vClusterType) )
 	elif kField == "Zigate" :
 		vZigate = vField
 		Zigate = eval (base64.b64decode(vZigate))
-		if Zigate.get('IEEE') :
-			IEEE = str(Zigate['IEEE'])
-		else :
-			IEEE =''
-		if Zigate.get('DomoID') :
-			DomoID = str(Zigate['DomoID'])
-		else :
-			DomoID = ''
+		if Zigate.get('IEEE') : IEEE = str(Zigate['IEEE'])
+		else : IEEE =''
+		if Zigate.get('DomoID') : DomoID = str(Zigate['DomoID'])
+		else : DomoID = ''
 	else :
 		newOptions += kField
 		newOptions += ":" 
@@ -78,18 +72,14 @@ for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Wher
 		if f.find(";") >0 :
 			f2 = f.split(';', 2)
 			for x in f2 :
-				if s1 > 0 and newOptions[len(newOptions)-1] == ';' :
-					newOptions+=";"
+				if s1 > 0 and newOptions[len(newOptions)-1] == ';' : newOptions+=";"
 				if x.find(";") >0 :
 					y = x.split(';', 2)
 					for z in y :
-						if s1 > 0 and not newOptions[len(newOptions)-1] == ';' :
-							newOptions+=";"
+						if s1 > 0 and not newOptions[len(newOptions)-1] == ';' : newOptions+=";"
 						extract_fields( z )
-				else :
-					extract_fields( x )
-		else :
-			extract_fields( f )
+				else : extract_fields( x )
+		else : extract_fields( f )
 
 	
 	if s1 > 0 : 
@@ -100,19 +90,41 @@ for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Wher
 
 	#print("|" +str(ID) + "|" +str(deviceID) +" | " + str(ClusterType) + " | " + str(IEEE) + " | " +str(DomoID) +" |" +str(newOptions) + " | ")
 
-	list = [ str(ID), str(deviceID) , str(IEEE), str(newOptions) ]
+	list = [ str(ID), str(deviceID) , str(IEEE), str(newOptions) , str(ClusterType) ]
 	tobeupdate.append( list )
 
 
-for ID, deviceID, IEEE, Options in tobeupdate :
+for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 	print("|" +str(ID) + "|" +str(deviceID) +" | " + str(ClusterType) + " | " + str(IEEE) + " | " +str(DomoID) +" |" +str(Options) + " | ")
-
 	cursor.execute('''UPDATE DeviceStatus SET DeviceID = ?, Options = ?  WHERE ID = ? and HardwareID=? ''', (IEEE, Options, ID, HardwareID))
 
+
+
+# Now we need to Load DeviceList and add the ClusterType Information for each NWK@
+
+
+# Load DevceList in memory
+DeviceListName="DeviceList-test.txt"
+ListOfDevices = {}
+with open( DeviceListName , 'r') as myfile2:
+	print( DeviceListName + " open ")
+	for line in myfile2:
+		(key, val) = line.split(":",1)
+		key = key.replace(" ","")
+		key = key.replace("'","")
+
+		print("key = " +key + " ==> " + str(val) )
+		ListOfDevices[key] = eval(val)
+
+		for  ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
+			if key == deviceID :
+				ListOfDevices[key]['ClusterType'] = ClusterType
+				print("Adding ClustertType " +ClusterType + "for " +str(key) )
+				print(" ==> " +str(ListOfDevices[key] ) )
+
+with open( DeviceListName , 'wt') as file:
+	for key in ListOfDevices :
+		file.write(key + " : " + str(ListOfDevices[key]) + "\n")
+
 conn.commit()
-
-
-for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Where  HardwareID=? """, (HardwareID,) ) :
-	print(row )
-
 conn.close()
