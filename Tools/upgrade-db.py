@@ -57,7 +57,6 @@ for row in cursor.execute("""SELECT ID from hardware Where Extra="Zigate" """) :
 	HardwareID = row[0]
 
 cursor = conn.cursor()
-print("| DeviceID | CusterType | IEEE | DomoID |")
 for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Where  HardwareID=? """, (HardwareID,) ) :
 
 	ID = row[0]
@@ -86,17 +85,17 @@ for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Wher
 		if newOptions[len(newOptions)-1] == ';' : newOptions = newOptions[0:len(newOptions)-2]
 		newOptions.replace(';;',';')
 
-	print("ID = " + str(ID) + "DeviceID = " +str(deviceID) + " newOptions = " + newOptions)
-
-	#print("|" +str(ID) + "|" +str(deviceID) +" | " + str(ClusterType) + " | " + str(IEEE) + " | " +str(DomoID) +" |" +str(newOptions) + " | ")
-
 	list = [ str(ID), str(deviceID) , str(IEEE), str(newOptions) , str(ClusterType) ]
 	tobeupdate.append( list )
 
 
+print("Domoticz Database migration")
 for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
-	print("|" +str(ID) + "|" +str(deviceID) +" | " + str(ClusterType) + " | " + str(IEEE) + " | " +str(DomoID) +" |" +str(Options) + " | ")
-	cursor.execute('''UPDATE DeviceStatus SET DeviceID = ?, Options = ?  WHERE ID = ? and HardwareID=? ''', (IEEE, Options, ID, HardwareID))
+	if IEEE != '' :
+		print("---> Migrating Unit : " +str(ID) + " NWK_ID = " +str(deviceID) + " IEEE = " +str(IEEE) )
+		cursor.execute('''UPDATE DeviceStatus SET DeviceID = ?, Options = ?  WHERE ID = ? and HardwareID=? ''', (IEEE, Options, ID, HardwareID))
+	else :
+		print("----===>Cannot migrate this device, you'll have to remove from Domotciz : " +str(ID) + " - DeviceID : "+str(deviceID) + " no IEEE found " )
 
 
 
@@ -107,21 +106,33 @@ for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 DeviceListName="DeviceList-test.txt"
 ListOfDevices = {}
 with open( DeviceListName , 'r') as myfile2:
-	print( DeviceListName + " open ")
+	print("DeviceList migration" +DeviceListName)
 	for line in myfile2:
 		(key, val) = line.split(":",1)
 		key = key.replace(" ","")
 		key = key.replace("'","")
 
-		print("key = " +key + " ==> " + str(val) )
 		ListOfDevices[key] = eval(val)
 
 		for  ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 			if key == deviceID :
+				print("---> Migrating Unit : " +str(ID) + " NWK_ID = " +str(deviceID) + " IEEE = " +str(IEEE) )
+				if not ListOfDevices[key].get('IEEE') or IEEE == '' :
+					print("---===> This entry doesn't have an IEEE " + str(key) + " " +str(IEEE) )
+					del ListOfDevices[key]
+					continue
+				if IEEE != ListOfDevices[key]['IEEE'] :
+					print("---===> This entry doesn't match IEEE" +str(key) +"/" +str(IEEE) + " versus " +str(ListOfDevices[key]['IEEE']) )
+					del ListOfDevices[key]
+					continue
 				ListOfDevices[key]['ClusterType'] = ClusterType
-				print("Adding ClustertType " +ClusterType + "for " +str(key) )
-				print(" ==> " +str(ListOfDevices[key] ) )
+				if ListOfDevices[key].get('DomoID') :
+					del ListOfDevices[key]['DomoID']
+				ListOfDevices[key]['NWK_ID'] = deviceID
+				ListOfDevices[key]['Version'] = '3'
+			
 
+# write the file down
 with open( DeviceListName , 'wt') as file:
 	for key in ListOfDevices :
 		file.write(key + " : " + str(ListOfDevices[key]) + "\n")
