@@ -63,12 +63,17 @@ class BasePlugin:
 	def __init__(self):
 		self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
 		self.DiscoveryDevices = {}
+		self.IEEE2NWK = {}
+		self.DeviceListName = ''
+		self.homedirectory = ''
+		self.HardwareID = ''
 		self.HBcount=0
 		z_var.cmdInProgress = queue.Queue()
 		return
 
 	def onStart(self):
 		Domoticz.Status("onStart called - Zigate plugin V 3.9.999 (dev branch)")
+
 		z_upgrade.upgrade_v2( self, Devices )       # Will upgrade to Zigate structure V2 if needed
 
 		#z_upgrade_v3( self, Devices )				# Will upgrade to V3 ( no more information in Domoticz, all in ListOfDevices )
@@ -77,14 +82,13 @@ class BasePlugin:
 			Domoticz.Debugging(int(Parameters["Mode6"]))
 			DumpConfigToLog()
 		
-		self.DeviceListName = Parameters["HomeFolder"]+"DeviceList"+Parameters[HardwareID]+".txt"
+		self.DeviceListName = Parameters["HomeFolder"]+"DeviceList-"+str(Parameters['HardwareID'])+".txt"
 		self.homedirectory = Parameters["HomeFolder"]
-		self.HardwareID = Parameters["HardwareID"]
+		self.HardwareID = (Parameters["HardwareID"])
 		z_var.transport = Parameters["Mode1"]
 
 		# Import PluginConf.txt
 		z_database.importPluginConf( self )
-
 
 		# Init of Custom Variables
 		z_var.CrcCheck = 1		# Enable or not Checksum check when receiving messages
@@ -106,11 +110,11 @@ class BasePlugin:
 			self.DiscoveryDevices = {}
 
 		#Import DeviceConf.txt
- 		z_database.importDeviceConf( self ) 
+		z_database.importDeviceConf( self ) 
 
 		#Import DeviceList.txt Filename is : DeviceListName
 		Domoticz.Log("load ListOfDevice" )
-		if	z_database.loadDeviceList( self ) == 'Failed' :
+		if z_database.LoadDeviceList( self ) == 'Failed' :
 			return			
 		
 		# Check proper match against Domoticz Devices

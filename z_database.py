@@ -12,27 +12,43 @@ import z_var
 import z_tools
 
 
-def LoadDeviceList(self ):
+def LoadDeviceList( self ):
 	# Load DeviceList.txt into ListOfDevices
 	#
-	Domoticz.Log("DeviceList filename : " +self.DeviceListName )
-	status = 'Success'
-	with open( DeviceListName , 'r') as myfile2:
-		Domoticz.Log( DeviceListName + " open ")
+	Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
+	res = "Success"
+	nb = 0
+	with open( self.DeviceListName , 'r') as myfile2:
+		Domoticz.Debug( "Open : " + self.DeviceListName )
 		for line in myfile2:
 			(key, val) = line.split(":",1)
 			key = key.replace(" ","")
 			key = key.replace("'","")
 
-			if self.ListOfDevices[key]['Version'] != '3' :
+			DListVal=eval(val)
+			Domoticz.Debug("LoadDeviceList - " +str(key) + " => DListVal " +str(DListVal) )
+
+			if not DListVal.get('Version') :
 				Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
-				status = 'Failed'
-			else :
-				# CheckDevceList will create an entry in ListOfDevices. 
-				z_tools.CheckDeviceList(self, key, val)
-				self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
+				res = "Failed"
+
+			if DListVal['Version'] != '3' :
+				Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+				res = "Failed"
+			else:
+				nb = nb +1
+				z_tools.CheckDeviceList( self, key, val )
+
+#			else :
+#				# CheckDevceList will create an entry in ListOfDevices. 
+#				nb = nb + 1
+#				z_tools.CheckDeviceList(self, key, val)
+#				self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
+
+	Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
+
 	myfile2.close()
-	return status
+	return res
 
 
 def WriteDeviceList(self, Folder, count):
@@ -51,7 +67,7 @@ def WriteDeviceList(self, Folder, count):
 def importDeviceConf( self ) :
 	#Import DeviceConf.txt
 	tmpread=""
-	with open( z_var.homedirectory + "DeviceConf.txt", 'r') as myfile:
+	with open( self.homedirectory + "DeviceConf.txt", 'r') as myfile:
 		tmpread+=myfile.read().replace('\n', '')
 	self.DeviceConf=eval(tmpread)
 	myfile.close()
@@ -60,7 +76,7 @@ def importDeviceConf( self ) :
 def importPluginConf( self ) :
 	# Import PluginConf.txt
 	tmpPluginConf=""
-	with open(Parameters["HomeFolder"]+"PluginConf.txt", 'r') as myPluginConfFile:
+	with open(self.homedirectory+"PluginConf.txt", 'r') as myPluginConfFile:
 		tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
 	myPluginConfFile.close()
 	Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
@@ -71,14 +87,18 @@ def checkListOfDevice2Devices( self, Devices ) :
 	# As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
 	# It is also expected that the ListOfDevices is already loaded.
 
+	found = False
 	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 		ID = Devices[x].DeviceID
-		found = False
-		for key in self.ListOfDevices :
-			if self.ListOfDevices[key]['IEEE'] ==  ID :
-				Domoticz.Debug("loadListOfDevices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(key) )
-				found = True
+		if ID not in self.IEEE2NWK :
+			continue
 
-		if not found :
-			Domoticz.Error(""loadListOfDevices - didn't find a match n DeviceList for Domoticz device : " +str(x) +" and IEEE = " +str(ID) )
+		IEEE = self.IEEE2NWK[ID]
+		found = False
+		if IEEE ==  ID :
+			Domoticz.Log("loadListOfDevices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(key) )
+			found = True
+
+	if not found :
+		Domoticz.Error("loadListOfDevices - didn't find a match n DeviceList for Domoticz device : " +str(x) +" and IEEE = " +str(ID) )
 

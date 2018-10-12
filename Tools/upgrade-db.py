@@ -23,7 +23,7 @@ def extract_fields( partOptions ) :
 	kField, vField = partOptions.split(':', 2)
 	if kField == "ClusterType" or kField == "TypeName" :
 		vClusterType = vField
-		ClusterType = str( base64.b64decode(vClusterType) )
+		ClusterType = base64.b64decode(vClusterType)
 	elif kField == "Zigate" :
 		vZigate = vField
 		Zigate = eval (base64.b64decode(vZigate))
@@ -125,10 +125,9 @@ with open( DeviceListName , 'r') as myfile2:
 					print("---===> This entry doesn't match IEEE" +str(key) +"/" +str(IEEE) + " versus " +str(ListOfDevices[key]['IEEE']) )
 					del ListOfDevices[key]
 					continue
-				ListOfDevices[key]['ClusterType'] = ClusterType
+				ListOfDevices[key]['ClusterType'] = str(ClusterType)
 				if ListOfDevices[key].get('DomoID') :
 					del ListOfDevices[key]['DomoID']
-				ListOfDevices[key]['NWK_ID'] = deviceID
 				ListOfDevices[key]['Version'] = '3'
 			
 

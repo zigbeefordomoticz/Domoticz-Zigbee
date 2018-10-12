@@ -699,8 +699,6 @@ def Decode8041(self, MsgData, MsgRSSI) : # IEEE Address response
 	if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :		# We have requested a IEEE address for a Short Address, 
 																		# hoping that we can reconnect to an existing Device
 		if z_tools.DeviceExist(self, MsgShortAddress, MsgIEEE ) == True :
-			Domoticz.Status("Decode 8041 - Device : " +str(MsgShortAddress) + " reconnected with " 
-					+str(self.ListOfDevices[MsgShortAddress]['DomoID'] ) )
 			Domoticz.Log("Decode 8041 - Device details : " +str(self.ListOfDevices[MsgShortAddress]) )
 		else :
 			Domoticz.Error("Decode 8041 - Unknown device : " +str(MsgShortAddress) + " IEEE : " +str(MsgIEEE) )
@@ -1260,6 +1258,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 	# tester si le device existe deja dans la base domoticz
 	if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
 		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
+		self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
 		z_tools.initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE

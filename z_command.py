@@ -24,7 +24,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
 
 	# As we can have a new Short address, we need to retreive it from self.ListOfDevices
-	NWK_ID = self.IEEE2NWK[Devices[Unit].DeviceID]['NWK_ID']
+	NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
+	Domoticz.Debug("mgtCommand - NWKID = " +str(NWKID) )
 
 	DSwitchtype= str(Devices[Unit].SwitchType)
 	Domoticz.Debug("DSwitchtype : " + DSwitchtype)
@@ -33,12 +34,19 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Domoticz.Debug("DSubType : " + DSubType)
 
 	DType= str(Devices[Unit].Type)
-	DOptions = dict(Devices[Unit].Options)
 
-	Dtypename=self.ListOfDevices[NWK_ID]['ClusterType']
+	if not self.ListOfDevices[NWKID].get('ClusterType') :
+		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
+		return
+
+	Dtypename=self.ListOfDevices[NWKID]['ClusterType']
 	Domoticz.Debug("Dtypename : " + Dtypename)
-	SignalLevel = self.ListOfDevices[NWK_ID]['RSSI']
-	BatteryLevel = self.ListOfDevices[NWK_ID]['Battery']
+	if self.ListOfDevices[NWKID]['RSSI'] != '' :
+		SignalLevel = self.ListOfDevices[NWKID]['RSSI']
+	else : SignalLevel = 15
+	if self.ListOfDevices[NWKID]['Battery'] != '' :
+		BatteryLevel = self.ListOfDevices[NWKID]['Battery']
+	else : BatteryLevel = 255
 
 	EPin="01"
 	EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
@@ -50,8 +58,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	if Dtypename=="ColorControl" :
 		ClusterSearch="0300"
 	
-	for tmpEp in self.ListOfDevices[NWK_ID]['Ep'] :
-		if ClusterSearch in self.ListOfDevices[NWK_ID]['Ep'][tmpEp] : #switch cluster
+	for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+		if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
 			EPout=tmpEp
 
 	# 00 -> OFF
@@ -61,15 +69,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	#z_output.sendZigateCmd("0093","02" + Devices[Unit].DeviceID + EPin + EPout + on/off + on_time + off_time)
 	
 	if Command == "Off" :
-		self.ListOfDevices[NWK_ID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-		z_output.sendZigateCmd("0092","02" + NWK_ID + EPin + EPout + "00")
+		self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+		z_output.sendZigateCmd("0092","02" + NWKID + EPin + EPout + "00")
 		if DSwitchtype == "16" :
 			z_domoticz.UpdateDevice_v2(Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
 		else :
 			z_domoticz.UpdateDevice_v2(Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
 	if Command == "On" :
-		self.ListOfDevices[NWK_ID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-		z_output.sendZigateCmd("0092","02" + NWK_ID + EPin + EPout + "01")
+		self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+		z_output.sendZigateCmd("0092","02" + NWKID + EPin + EPout + "01")
 		if DSwitchtype == "16" :
 			z_domoticz.UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
 		else:
@@ -79,10 +87,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		#Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
 		#There is too, move max level, mode = 00/01 for 0%/100%
 		
-		self.ListOfDevices[NWK_ID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+		self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 		OnOff = '01' # 00 = off, 01 = on
 		value=z_tools.Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
-		z_output.sendZigateCmd("0081","02" + NWK_ID + EPin + EPout + OnOff + value + "0010")
+		z_output.sendZigateCmd("0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
 		if DSwitchtype == "16" :
 			z_domoticz.UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
 		else:
@@ -143,12 +151,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 			return h, s, l
 
-		self.ListOfDevices[NWK_ID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
+		self.ListOfDevices[NWKID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
 
 		#First manage level
 		OnOff = '01' # 00 = off, 01 = on
 		value=z_tools.Hex_Format(2,round(1+Level*254/100)) #To prevent off state
-		z_output.sendZigateCmd("0081","02" + NWK_ID + EPin + EPout + OnOff + value + "0000")
+		z_output.sendZigateCmd("0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
 
 		#Now color
 		#ColorModeNone = 0   // Illegal
@@ -164,7 +172,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 			# t is 0 > 255
 			TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
 			TempMired = 1000000 // TempKelvin
-			z_output.sendZigateCmd("00C0","02" + NWK_ID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
+			z_output.sendZigateCmd("00C0","02" + NWKID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
 		#ColorModeRGB = 3	// Color. Valid fields: r, g, b.
 		elif Hue_List['m'] == 3:
 			x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -172,7 +180,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 			x = int(x*65536)
 			y = int(y*65536)
 			strxy = z_tools.Hex_Format(4,x) + z_tools.Hex_Format(4,y)
-			z_output.sendZigateCmd("00B7","02" + NWK_ID + EPin + EPout + strxy + "0000")
+			z_output.sendZigateCmd("00B7","02" + NWKID + EPin + EPout + strxy + "0000")
 		#ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
 		elif Hue_List['m'] == 4:
 			ww = int(Hue_List['ww'])
@@ -189,8 +197,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 			saturation = int(saturation*254//100)
 			value = int(l * 254//100)
 			OnOff = '01'
-			z_output.sendZigateCmd("00B6","02" + NWK_ID + EPin + EPout + z_tools.Hex_Format(2,hue) + z_tools.Hex_Format(2,saturation) + "0000")
-			z_output.sendZigateCmd("0081","02" + DNWK_IDeviceID + EPin + EPout + OnOff + z_tools.Hex_Format(2,value) + "0010")
+			z_output.sendZigateCmd("00B6","02" + NWKID + EPin + EPout + z_tools.Hex_Format(2,hue) + z_tools.Hex_Format(2,saturation) + "0000")
+			z_output.sendZigateCmd("0081","02" + NWKID + EPin + EPout + OnOff + z_tools.Hex_Format(2,value) + "0010")
 
 		#Update Device
 		z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
