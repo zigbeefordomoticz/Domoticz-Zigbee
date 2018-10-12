@@ -384,7 +384,7 @@ def Decode8000_v2(self, MsgData) : # Status
 				Domoticz.Debug("Decode8000 - Command for sAddr : " +str( CmdSrcAddr ) )
 				z_tools.updSQN( self, CmdSrcAddr, SEQ )
 				if ( z_var.logRSSI == 1 ) :
-					Domoticz.Log("Zigate activity for | " +str(CmdSrcAddr) +" | " + " | " + " | " +str(SEQ) + " | ")
+					Domoticz.Log("Zigate activity for | 8000 | " +str(CmdSrcAddr) +" | " + " | " + " | " +str(SEQ) + " | ")
 
 			if   Status=="00" : Status="Success"
 			elif Status=="01" : Status="Incorrect Parameters"
@@ -556,7 +556,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		power=MsgData[idx+22:idx+24]
 		rssi=MsgData[idx+24:idx+26]
 		if ( z_var.logRSSI == 1 ) :
-			Domoticz.Log("Zigate activity for | " +str(saddr) +" | " +str(ieee) + " | " + str(int(rssi,16)) + " |  | ")
+			Domoticz.Log("Zigate activity for | 8015 | " +str(saddr) +" | " +str(ieee) + " | " + str(int(rssi,16)) + " |  | ")
 		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
 		if z_tools.DeviceExist(self, saddr, ieee):
 			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
@@ -695,7 +695,7 @@ def Decode8041(self, MsgData, MsgRSSI) : # IEEE Address response
 					+ " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 
 	if ( z_var.logRSSI == 1 ) :
-		Domoticz.Log("Zigate activity for | " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
+		Domoticz.Log("Zigate activity for | 8041 | " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
 
 	if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :		# We have requested a IEEE address for a Short Address, 
 																		# hoping that we can reconnect to an existing Device
@@ -911,7 +911,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
 	Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
 
 	if ( z_var.logRSSI == 1 ) :
-		Domoticz.Log("Zigate activity for | unknown | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
+		Domoticz.Log("Zigate activity for | 8048 | uknw | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
 	sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
 	if sAddr == '' :
@@ -1122,7 +1122,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " 
 						+ MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
 	if ( z_var.logRSSI == 1 ) :
-		Domoticz.Log("Zigate activity for | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+		Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 	try :
 		self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
 	except : 
@@ -1158,7 +1158,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	Domoticz.Debug("Decode8102 - Report Individual Attribute response - reception data : " + MsgClusterData + " ClusterID : " 
 					+ MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
 	if ( z_var.logRSSI == 1 ) :
-		Domoticz.Log("Zigate activity for | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+		Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 
 	if z_tools.DeviceExist(self, MsgSrcAddr) == True :
 		try:
@@ -1256,7 +1256,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 	MsgMacCapa=MsgData[20:22]
 
 	if ( z_var.logRSSI == 1 ) :
-		Domoticz.Log("Zigate activity for | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
+		Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
 	# tester si le device existe deja dans la base domoticz
 	if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
