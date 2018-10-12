@@ -15,35 +15,30 @@ import z_tools
 def LoadDeviceList( self ):
 	# Load DeviceList.txt into ListOfDevices
 	#
-	Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
+	Domoticz.Log("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 	res = "Success"
 	nb = 0
 	with open( self.DeviceListName , 'r') as myfile2:
-		Domoticz.Debug( "Open : " + self.DeviceListName )
+		Domoticz.Log( "Open : " + self.DeviceListName )
 		for line in myfile2:
 			(key, val) = line.split(":",1)
 			key = key.replace(" ","")
 			key = key.replace("'","")
 
-			DListVal=eval(val)
-			Domoticz.Debug("LoadDeviceList - " +str(key) + " => DListVal " +str(DListVal) )
+			dlVal=eval(val)
+			Domoticz.Debug("LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) )
 
-			if not DListVal.get('Version') :
+			if not dlVal.get('Version') :
 				Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
 				res = "Failed"
 
-			if DListVal['Version'] != '3' :
+			if dlVal['Version'] != '3' :
 				Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
 				res = "Failed"
 			else:
 				nb = nb +1
 				z_tools.CheckDeviceList( self, key, val )
-
-#			else :
-#				# CheckDevceList will create an entry in ListOfDevices. 
-#				nb = nb + 1
-#				z_tools.CheckDeviceList(self, key, val)
-#				self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
+				self.ListOfDevices[key]['Heartbeat']=0
 
 	Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
 
@@ -100,5 +95,5 @@ def checkListOfDevice2Devices( self, Devices ) :
 			found = True
 
 	if not found :
-		Domoticz.Error("loadListOfDevices - didn't find a match n DeviceList for Domoticz device : " +str(x) +" and IEEE = " +str(ID) )
+		Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found !" )
 

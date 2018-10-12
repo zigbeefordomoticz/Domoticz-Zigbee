@@ -21,7 +21,7 @@ import z_domoticz
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Domoticz.Debug("#########################")
-	Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
+	Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
 
 	# As we can have a new Short address, we need to retreive it from self.ListOfDevices
 	NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]

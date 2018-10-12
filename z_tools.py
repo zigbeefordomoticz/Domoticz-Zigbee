@@ -68,7 +68,7 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 				if self.ListOfDevices[existingNWKkey]['Status'] == 'inDB' :
 					continue
 
-				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
+				Domoticz.Log("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
 
 				# Updating process by :
 				# - mapping the information to the new newNWKID
@@ -79,9 +79,9 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 				Domoticz.Log("DeviceExist - update self.IEEE2NWK[" + IEEE + "] from " +str(existingIEEEkey) + " to " + str(newNWKID) )
 				self.IEEE2NWK[IEEE] = newNWKID
 
-				Domoticz.Debug("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
-				Domoticz.Debug("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
-				Domoticz.Debug("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
+				Domoticz.Log("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
+				Domoticz.Log("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
+				Domoticz.Log("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
 
 				# MostLikely exitsingKey is not needed any more
 				removeNwkInList( self, existingNWKkey )	
@@ -139,7 +139,7 @@ def CheckDeviceList(self, key, val) :
 
 	DeviceListVal=eval(val)
 	if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-		Domoticz.Debug("CheckDeviceList - Address will be add : " + str(key))
+		Domoticz.Log("CheckDeviceList - Address will be add : " + str(key))
 		initDeviceInList(self, key)
 		self.ListOfDevices[key]['RIA']="10"
 		if 'Ep' in DeviceListVal :
@@ -168,6 +168,11 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['ClusterType']=DeviceListVal['ClusterType']
 		if 'Version' in DeviceListVal :
 			self.ListOfDevices[key]['Version']=DeviceListVal['Version']
+		if 'Heartbeat' in DeviceListVal :
+			self.ListOfDevices[key]['Heartbeat']=DeviceListVal['Heartbeat']
+		else :
+			self.ListOfDevices[key]['Heartbeat']=0
+
 		
 
 def updSQN( self, key, newSQN) :
