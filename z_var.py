@@ -8,7 +8,6 @@
 """
 FirmwareVersion = ''		# Firmware version , initialized at start by requesting the firmware version of Ziate
 HeartbeatCount = 0		
-transport = 'unknow'
 ReqRcv = ''
 ZigateConn = ''
 CrcCheck = 1				# Enable of not the CrcCheck when receiving messages
@@ -17,6 +16,5 @@ sendDelay = 0				# Enable or not a delay in send command 0- no delay -1 a delay 
 liveSendDelay = 0
 enableDeviceList = 1		# Enable or Disable the backup of ListOfDevices in DeviceLIst.txt
 storeDiscoveryFrames = 1	# Enable tracking of Discovery process, and finaly store the outcome in DeviceDiscovery-[IEEE].txt file
-homedirectory =''			# Home directory where file would be created/store ( DeviceList.txt , DeviceDiscovery-xxx.txt
-logRSSI = 0					# Log RSSI for further investigation and reports
-refreshXiaomi = 0			# Time until you have to send a request to a Xiaomi battery powered device. Time in seconds. Please consider this could be draining the battery of such device.
+logFORMAT = 0					# Log RSSI for further investigation and reports
+transport = ''

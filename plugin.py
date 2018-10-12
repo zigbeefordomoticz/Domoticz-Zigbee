@@ -71,31 +71,25 @@ class BasePlugin:
 		Domoticz.Status("onStart called - Zigate plugin V 3.9.999 (dev branch)")
 		z_upgrade.upgrade_v2( self, Devices )       # Will upgrade to Zigate structure V2 if needed
 
+		#z_upgrade_v3( self, Devices )				# Will upgrade to V3 ( no more information in Domoticz, all in ListOfDevices )
+
 		if Parameters["Mode6"] != "0":
 			Domoticz.Debugging(int(Parameters["Mode6"]))
 			DumpConfigToLog()
-		if Parameters["Mode1"] == "USB":
-			z_var.transport = "USB"
-			z_var.ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
-			z_var.ZigateConn.Connect()
-		if Parameters["Mode1"] == "Wifi":
-			z_var.transport = "Wifi"
-			z_var.ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
-			z_var.ZigateConn.Connect()
 		
-		z_var.homedirectory = Parameters["HomeFolder"]
+		self.DeviceListName = Parameters["HomeFolder"]+"DeviceList"+Parameters[HardwareID]+".txt"
+		self.homedirectory = Parameters["HomeFolder"]
+		self.HardwareID = Parameters["HardwareID"]
+		z_var.transport = Parameters["Mode1"]
 
 		# Import PluginConf.txt
-		tmpPluginConf=""
-		with open(Parameters["HomeFolder"]+"PluginConf.txt", 'r') as myPluginConfFile:
-			tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
-		myPluginConfFile.close()
-		Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
-		self.PluginConf=eval(tmpPluginConf)
-		z_var.CrcCheck = 1
-		z_var.sendDelay = 0
-		z_var.logRSSI = 0
- 		z_var.refreshXiaomi = 0
+		z_database.importPluginConf( self )
+
+
+		# Init of Custom Variables
+		z_var.CrcCheck = 1		# Enable or not Checksum check when receiving messages
+		z_var.sendDelay = 0		# secs of delay per send message
+		z_var.logFORMAT = 0		# enable a formated log of incoming messages with RSSI and SEQ number 
 		
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
 			z_var.CrcCheck = 0
@@ -104,51 +98,34 @@ class BasePlugin:
 		if  self.PluginConf.get('storeDiscoveryFrames') :
 			z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
 		if  self.PluginConf.get('logRSSI') :
-			z_var.logRSSI = int(self.PluginConf['logRSSI'],10)
- 		if  self.PluginConf.get('refreshXiaomi') :
- 			z_var.refreshXiaomi = int(self.PluginConf['refreshXiaomi'],10)
-		
+			z_var.logFORMAT = int(self.PluginConf['logFORMAT'],10)
 		
 		z_var.ReqRcv=bytearray()
 
 		if  z_var.storeDiscoveryFrames == 1 :
 			self.DiscoveryDevices = {}
 
-		#Load the Domoticz Devices into ListOfDevices
-		z_database.loadListOfDevices( self, Devices )
-
 		#Import DeviceConf.txt
-		tmpread=""
-		with open(Parameters["HomeFolder"]+"DeviceConf.txt", 'r') as myfile:
-			tmpread+=myfile.read().replace('\n', '')
-		myfile.close()
-		Domoticz.Debug("DeviceConf.txt = " + str(tmpread))
-		self.DeviceConf=eval(tmpread)
+ 		z_database.importDeviceConf( self ) 
 
-		#Import DeviceList.txt if enable
-		with open(Parameters["HomeFolder"]+"DeviceList.txt", 'r') as myfile2:
-			Domoticz.Debug("DeviceList.txt open ")
-			for line in myfile2:
-				(key, val) = line.split(":",1)
-				key = key.replace(" ","")
-				key = key.replace("'","")
-	
-				if key in self.ListOfDevices:
-					DeviceListVal=eval(val)
-					for dlKey, dlVal in DeviceListVal.items() :
-						if not self.ListOfDevices[key].get(dlKey) and dlVal != {} :
-							Domoticz.Log("self.ListOfDevices["+key+"]["+str(dlKey) + "] needs to be updated with " +str(dlVal) )
-							self.ListOfDevices[key][dlKey] = dlVal
-					self.ListOfDevices[key]['Heartbeat'] = 0			# Reset heartbeat counter to 0
+		#Import DeviceList.txt Filename is : DeviceListName
+		Domoticz.Log("load ListOfDevice" )
+		if	z_database.loadDeviceList( self ) == 'Failed' :
+			return			
+		
+		# Check proper match against Domoticz Devices
+		z_database.checkListOfDevice2Devices( self, Devices )
 
-				# CheckDevceList will create an entry in ListOfDevices. This will occure for Devices not known by Domoticz
-				z_tools.CheckDeviceList(self, key, val)
+		# Connect to Zigate only when all initialisation are properly done.
+		if  z_var.transport == "USB":
+			z_var.ZigateConn = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=Parameters["SerialPort"], Baud=115200)
+		elif  z_var.transport == "Wifi":
+			z_var.ZigateConn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=Parameters["Address"], Port=Parameters["Port"])
+		else :
+			Domoticz.Error("Unknown Transport comunication protocol : "+str(z_var.transport) )
+			return
 
-		# In case DomoID is not yet initialized ( First time use , as next time it will be stored in DeviceList )
-		for key in self.ListOfDevices:
-			if not self.ListOfDevices[key].get('DomoID') :
-				Domoticz.Log("Initialize self.ListOfDevices[" + key + "]['DomoID'] to : " + key )
-				self.ListOfDevices[key]['DomoID'] = key
+		z_var.ZigateConn.Connect()
 
 		return
 
