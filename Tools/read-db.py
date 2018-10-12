@@ -41,13 +41,18 @@ def extract_fields( partOptions ) :
 	
 
 
-HardwareID = 3
+HardwareID = 0
 DomoID = ''
 IEEE = ''
 ClusterType =''
 Zigate =''
 
 conn = sqlite3.connect('/var/lib/domoticz/domoticz.db')
+
+cursor = conn.cursor()
+
+for row in cursor.execute("""SELECT ID from hardware Where Extra="Zigate" """) :
+	HardwareID = row[0]
 
 cursor = conn.cursor()
 print("| DeviceID | CusterType | IEEE | DomoID |")
