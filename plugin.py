@@ -117,8 +117,14 @@ class BasePlugin:
 		if z_database.LoadDeviceList( self ) == 'Failed' :
 			return			
 		
+		Domoticz.Log("ListOfDevices : " +str(self.ListOfDevices) )
+		Domoticz.Log("IEEE2NWK      : " +str(self.IEEE2NWK) )
+
 		# Check proper match against Domoticz Devices
 		z_database.checkListOfDevice2Devices( self, Devices )
+
+		Domoticz.Log("ListOfDevices : " +str(self.ListOfDevices) )
+		Domoticz.Log("IEEE2NWK      : " +str(self.IEEE2NWK) )
 
 		# Connect to Zigate only when all initialisation are properly done.
 		if  z_var.transport == "USB":
@@ -129,6 +135,7 @@ class BasePlugin:
 			Domoticz.Error("Unknown Transport comunication protocol : "+str(z_var.transport) )
 			return
 
+		Domoticz.Log("Establish Zigate connection" )
 		z_var.ZigateConn.Connect()
 
 		return

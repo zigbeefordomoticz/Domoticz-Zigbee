@@ -556,7 +556,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		if ( z_var.logFORMAT == 1 ) :
 			Domoticz.Log("Zigate activity for | 8015 | " +str(saddr) +" | " +str(ieee) + " | " + str(int(rssi,16)) + " |  | ")
 
-		Domoticz.Debug("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
+		Domoticz.Log("Decode8015 : Dev ID = " + DevID + " addr = " + saddr + " ieee = " + ieee + " power = " + power + " RSSI = " + str(int(rssi,16)) )
 		if z_tools.DeviceExist(self, saddr, ieee):
 			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
 			if rssi !="00" :
@@ -565,13 +565,10 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 				self.ListOfDevices[saddr]['RSSI']= 12
 			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
 		else: 
-			# Let's check if the IEEE is not known !
-			if not z_tools.DeviceExist( self, saddr, ieee  ) :
-				Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
-			else:
-				Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " reconnected to ListOfDevice")
+			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
 
+	Domoticz.Log("IEEE2NWK      : " +str(self.IEEE2NWK) )
 	return
 
 def Decode8024(self, MsgData) : # Network joined / formed
@@ -1258,13 +1255,15 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 	# tester si le device existe deja dans la base domoticz
 	if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
 		Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
-		self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
 		z_tools.initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
+		if self.IEEE2NWK[MsgIEEE] :
+			Domoticz.Log("Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
+		self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
 		Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 	else :
-		Domoticz.Debug("Decode004d - Existing device")
+		Domoticz.Log("Decode004d - Existing device")
 		# Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
 
 	if z_var.storeDiscoveryFrames == 1 :

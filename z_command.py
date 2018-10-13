@@ -25,13 +25,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 	# As we can have a new Short address, we need to retreive it from self.ListOfDevices
 	NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
-	Domoticz.Debug("mgtCommand - NWKID = " +str(NWKID) )
+	Domoticz.Log("mgtCommand - NWKID = " +str(NWKID) )
 
 	DSwitchtype= str(Devices[Unit].SwitchType)
-	Domoticz.Debug("DSwitchtype : " + DSwitchtype)
+	Domoticz.Log("DSwitchtype : " + DSwitchtype)
 
 	DSubType= str(Devices[Unit].SubType)
-	Domoticz.Debug("DSubType : " + DSubType)
+	Domoticz.Log("DSubType : " + DSubType)
 
 	DType= str(Devices[Unit].Type)
 
@@ -40,7 +40,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		return
 
 	Dtypename=self.ListOfDevices[NWKID]['ClusterType']
-	Domoticz.Debug("Dtypename : " + Dtypename)
+	Domoticz.Log("Dtypename : " + Dtypename)
 	if self.ListOfDevices[NWKID]['RSSI'] != '' :
 		SignalLevel = self.ListOfDevices[NWKID]['RSSI']
 	else : SignalLevel = 15

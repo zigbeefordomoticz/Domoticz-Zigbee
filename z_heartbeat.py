@@ -253,15 +253,17 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	
 		# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
 
-		if (RIA>=10 or self.ListOfDevices[NWKID]['Model']!= {}) :
+		if (RIA>=10 or self.ListOfDevices[NWKID]['Model']!= {} ) :
+			Domoticz.Log("processNotinDBDevices - final step for creation of : " +str(NWKID) + " => " +str(self.ListOfDevices[NWKID]) )
 			#creer le device ds domoticz en se basant sur les clusterID (case RIA>=10, see z_input.py in readcluster ) ou le Model si il est connu
 			IsCreated=False
 			x=0
 			nbrdevices=0
 			for x in Devices:
-				if Devices[x].DeviceID == str(self.ListOfDevice[NWKID]['IEEE']) :
-					IsCreated = True
-					Domoticz.Log("Heartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[NWKID]) )
+				if self.ListOfDevices[NWKID].get('IEEE') :
+					if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']) :
+						IsCreated = True
+						Domoticz.Log("Heartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[NWKID]) )
 
 			if IsCreated == False:
 				Domoticz.Log("onHeartbeat - creating device id : " + str(NWKID) + " with : " + str(self.ListOfDevices[NWKID]) )

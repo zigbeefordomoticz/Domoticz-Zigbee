@@ -27,6 +27,15 @@ def CreateDomoDevice(self, Devices, DeviceID_IEEE) :
 		Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(x))
 		return FreeUnit
 
+	
+	if DeviceID_IEEE == '' :
+		Domoticz.Error("CreateDomoDevice - Cannot create a Device without an IEEE ." )
+		return
+
+	if DeviceID_IEEE not in self.IEEE2NWK :
+		Domoticz.Error("CreateDomoDevice - Cannot find a NWK id  for this  IEEE " +str(DeviceID_IEEE) )
+		return
+
 	NWKID = self.IEEE2NWK[DeviceID_IEEE]
 
 	for Ep in self.ListOfDevices[NWKID]['Ep'] :
@@ -188,7 +197,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 	x=0
 	for x in Devices:
 		if Devices[x].DeviceID == DeviceID_IEEE :
-			Domoticz.Log("MajDomoDevice - NWKID = " +str(NWKID) + " IEEE = " +str(DeviceID_IEEE) )
+			Domoticz.Debug("MajDomoDevice - NWKID = " +str(NWKID) + " IEEE = " +str(DeviceID_IEEE) )
 			if  not self.ListOfDevices[NWKID].get('ClusterType'):
 				Domoticz.Error("MajDomoDevice - missing at least ClusterType in the ListOfDevices["+str(NWKID)+"] : "+str(self.ListOfDevices[NWKID] ) )
 				continue

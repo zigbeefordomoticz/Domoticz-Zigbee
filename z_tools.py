@@ -59,16 +59,19 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 
 	#If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
 	if IEEE:
+		Domoticz.Log("DeviceExist - Looking for an IEEE match" +str(IEEE) )
 		for existingIEEEkey in self.IEEE2NWK :
 			if existingIEEEkey == IEEE :
 				# This device is already in Domoticz 
 				existingNWKkey = self.IEEE2NWK[IEEE]
 
+				Domoticz.Log("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
+
 				# Make sure this device is valid 
 				if self.ListOfDevices[existingNWKkey]['Status'] == 'inDB' :
 					continue
 
-				Domoticz.Log("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
+				Domoticz.Log("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " and Status = inDB ")
 
 				# Updating process by :
 				# - mapping the information to the new newNWKID
@@ -115,7 +118,7 @@ def removeDeviceInList( self, IEEE) :
 def initDeviceInList(self, Nwkid) :
 	if Nwkid != '' :
 		self.ListOfDevices[Nwkid]={}
-		self.ListOfDevices[Nwkid]['Version']="2"
+		self.ListOfDevices[Nwkid]['Version']="3"
 		self.ListOfDevices[Nwkid]['Status']="004d"
 		self.ListOfDevices[Nwkid]['SQN']={}
 		self.ListOfDevices[Nwkid]['Ep']={}
@@ -139,7 +142,6 @@ def CheckDeviceList(self, key, val) :
 
 	DeviceListVal=eval(val)
 	if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-		Domoticz.Log("CheckDeviceList - Address will be add : " + str(key))
 		initDeviceInList(self, key)
 		self.ListOfDevices[key]['RIA']="10"
 		if 'Ep' in DeviceListVal :
@@ -152,8 +154,12 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['MacCapa']=DeviceListVal['MacCapa']
 		if 'IEEE' in DeviceListVal :
 			self.ListOfDevices[key]['IEEE']=DeviceListVal['IEEE']
-			IEEE = DeviceListVal['IEEE']
-			self.IEEE2NWK[IEEE] = key
+			Domoticz.Log("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
+			if  DeviceListVal['IEEE'] :
+				IEEE = DeviceListVal['IEEE']
+				self.IEEE2NWK[IEEE] = key
+			else :
+				Domoticz.Log("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
 		if 'ProfileID' in DeviceListVal :
 			self.ListOfDevices[key]['ProfileID']=DeviceListVal['ProfileID']
 		if 'ZDeviceID' in DeviceListVal :
