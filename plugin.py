@@ -101,7 +101,7 @@ class BasePlugin:
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
 		if  self.PluginConf.get('storeDiscoveryFrames') :
 			z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
-		if  self.PluginConf.get('logRSSI') :
+		if  self.PluginConf.get('logFORMAT') :
 			z_var.logFORMAT = int(self.PluginConf['logFORMAT'],10)
 		
 		z_var.ReqRcv=bytearray()
