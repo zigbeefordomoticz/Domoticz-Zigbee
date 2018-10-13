@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-
-
+# You need to change the path of Domoticz DB and DeviceList.txt 
+# At the end of the migration, the DomoticzDB will be updated and the DeviceList.txt will be renamed into DeviceList-<hardrwareid>.txt
+# Search for DomoDB and ZigateDB and update accordingly to your setup.
+# Do a proper backup before starting
 
 import sqlite3
 import base64
@@ -24,6 +26,8 @@ def extract_fields( partOptions ) :
 	if kField == "ClusterType" or kField == "TypeName" :
 		vClusterType = vField
 		ClusterType = base64.b64decode(vClusterType)
+		ClusterType = ClusterType.decode("utf-8")
+		ClusterType = '{ClusterType}'.format(ClusterType=ClusterType)
 	elif kField == "Zigate" :
 		vZigate = vField
 		Zigate = eval (base64.b64decode(vZigate))
@@ -49,10 +53,18 @@ ClusterType =''
 Zigate =''
 tobeupdate = []
 
-conn = sqlite3.connect('base.db')
+
+
+### VARIABLES TO BE EDITED
+DomoDB = "/var/lib/domoticz/domoticz.db"
+ZigateDB = "/var/lib/domoticz/plugin/Domoticz-Zigate/DeviceList.txt"
+
+#########################
+conn = sqlite3.connect( DomoDB )
 
 cursor = conn.cursor()
 
+print("Retreive the HardwareID from Domoticz ".
 for row in cursor.execute("""SELECT ID from hardware Where Extra="Zigate" """) :
 	HardwareID = row[0]
 
@@ -85,7 +97,7 @@ for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Wher
 		if newOptions[len(newOptions)-1] == ';' : newOptions = newOptions[0:len(newOptions)-2]
 		newOptions.replace(';;',';')
 
-	list = [ str(ID), str(deviceID) , str(IEEE), str(newOptions) , str(ClusterType) ]
+	list = [ str(ID), str(deviceID) , str(IEEE), str(newOptions) , ClusterType ]
 	tobeupdate.append( list )
 
 
@@ -98,12 +110,10 @@ for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 		print("----===>Cannot migrate this device, you'll have to remove from Domotciz : " +str(ID) + " - DeviceID : "+str(deviceID) + " no IEEE found " )
 
 
-
 # Now we need to Load DeviceList and add the ClusterType Information for each NWK@
 
-
 # Load DevceList in memory
-DeviceListName="DeviceList-test.txt"
+DeviceListName=ZigateDB
 ListOfDevices = {}
 with open( DeviceListName , 'r') as myfile2:
 	print("DeviceList migration" +DeviceListName)

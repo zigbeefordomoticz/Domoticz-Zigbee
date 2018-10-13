@@ -1249,6 +1249,8 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 	MsgIEEE=MsgData[4:20]
 	MsgMacCapa=MsgData[20:22]
 
+	Domoticz.Status("Decode0004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
+
 	if ( z_var.logFORMAT == 1 ) :
 		Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
@@ -1281,7 +1283,6 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 		self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = str(MsgIEEE)
 		self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MsgMacCapa)
 	
-	Domoticz.Status("Decode0004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 	return
 
 def ReadCluster(self, Devices, MsgData):

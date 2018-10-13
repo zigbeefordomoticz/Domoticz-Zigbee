@@ -74,7 +74,7 @@ class BasePlugin:
 	def onStart(self):
 		Domoticz.Status("onStart called - Zigate plugin V 3.9.999 (dev branch)")
 
-		z_upgrade.upgrade_v2( self, Devices )       # Will upgrade to Zigate structure V2 if needed
+		#z_upgrade.upgrade_v2( self, Devices )       # Will upgrade to Zigate structure V2 if needed
 
 		#z_upgrade_v3( self, Devices )				# Will upgrade to V3 ( no more information in Domoticz, all in ListOfDevices )
 
