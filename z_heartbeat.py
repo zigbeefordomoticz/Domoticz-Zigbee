@@ -29,7 +29,7 @@ def processKnownDevices( self, NWKID ) :
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
 		if self.ListOfDevices[NWKID]['Model'] == "lumi.plug" :
 			Domoticz.Debug("Request a Read attribute for the Xiaomi Plu " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-			z_output.ReadAttributeRequest_0008(self, NWKID )
+			z_output.ReadAttributeRequest_000C(self, NWKID)
 
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	# Request EP list

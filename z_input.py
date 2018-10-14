@@ -1340,18 +1340,18 @@ def ReadCluster(self, Devices, MsgData):
 			# 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
 			sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-			sTemp2	  = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
-			sTemp	   = retreive4Tag( "6429", MsgClusterData )
-			sOnOff	  = retreive4Tag( "6410", MsgClusterData )
-			sHumid	  = retreive4Tag( "6521", MsgClusterData )
-			sHumid2	 = retreive4Tag( "6529", MsgClusterData )
-			sPress	  = retreive8Tag( "662b", MsgClusterData )
+			sTemp2	    = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
+			sTemp	    = retreive4Tag( "6429", MsgClusterData )
+			sOnOff	    = retreive4Tag( "6410", MsgClusterData )
+			sHumid	    = retreive4Tag( "6521", MsgClusterData )
+			sHumid2	    = retreive4Tag( "6529", MsgClusterData )
+			sPress	    = retreive8Tag( "662b", MsgClusterData )
 
 			if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 				ValueBattery=round(int(BatteryLvl,16)/10/3.3)
-				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
+				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
 				ValueTemp=round(int(Temp,16)/100,1)
@@ -1380,9 +1380,9 @@ def ReadCluster(self, Devices, MsgData):
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 
 
 		elif MsgAttrID=="0005" :  # Model info Xiaomi

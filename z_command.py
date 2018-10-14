@@ -41,7 +41,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
 		return
 
-	Dtypename=self.ListOfDevices[NWKID]['ClusterType']
+	Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]
 	Domoticz.Debug("Dtypename : " + Dtypename)
 
 	if self.ListOfDevices[NWKID]['RSSI'] != '' :

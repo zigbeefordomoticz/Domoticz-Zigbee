@@ -219,9 +219,10 @@ def ReadAttributeRequest_000C(self, key) :
 	EPin = "01"
 	EPout= "02"
 
-	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Log("Request OnOff status for Xiaomi plug via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPout, "000C", 55 )
 
+	ReadAttributeReq( self, key, "01", "0000", 0xff01 )
 
 def removeZigateDevice( self, key ) :
 	# remove a device in Zigate
