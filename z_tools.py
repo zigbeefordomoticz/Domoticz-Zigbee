@@ -108,12 +108,13 @@ def removeNwkInList( self, NWKID) :
 def removeDeviceInList( self, IEEE) :
 	# Most likely call when a Device is removed from Domoticz
 
-	key = self.IEEE2NWK[IEEE]
-	Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
-	del self.ListOfDevices[key]
+	if IEEE in self.IEEE2NWK :
+		key = self.IEEE2NWK[IEEE]
+		Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
+		del self.ListOfDevices[key]
 
-	Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
-	del self.IEEE2NWK[ieee]
+		Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
+		del self.IEEE2NWK[ieee]
 
 
 def initDeviceInList(self, Nwkid) :
