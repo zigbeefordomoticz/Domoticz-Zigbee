@@ -42,7 +42,7 @@ def extract_fields( partOptions ) :
 		s1 = 1
 
 	return
-	
+DomoDB	
 
 
 newOptions = ''
@@ -165,5 +165,5 @@ with open( DeviceListName , 'wt') as file:
 	for key in ListOfDevices :
 		file.write(key + " : " + str(ListOfDevices[key]) + "\n")
 
-#conn.commit()
+conn.commit()
 conn.close()
