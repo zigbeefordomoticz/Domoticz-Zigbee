@@ -567,7 +567,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
 		idx=idx+26
 
-	Domoticz.Log("IEEE2NWK      : " +str(self.IEEE2NWK) )
+	Domoticz.Debug("Decode8015 - IEEE2NWK      : " +str(self.IEEE2NWK) )
 	return
 
 def Decode8024(self, MsgData) : # Network joined / formed

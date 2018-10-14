@@ -83,6 +83,7 @@ class BasePlugin:
 		z_var.transport = Parameters["Mode1"]
 
 		# Import PluginConf.txt
+		Domoticz.Status("load PluginConf" )
 		z_database.importPluginConf( self )
 
 		# Init of Custom Variables
@@ -108,7 +109,7 @@ class BasePlugin:
 		z_database.importDeviceConf( self ) 
 
 		#Import DeviceList.txt Filename is : DeviceListName
-		Domoticz.Log("load ListOfDevice" )
+		Domoticz.Status("load ListOfDevice" )
 		if z_database.LoadDeviceList( self ) == 'Failed' :
 			Domoticz.Error("Something wennt wrong during the import of Load of Devices ...")
 			Domoticz.Error("Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
@@ -120,8 +121,8 @@ class BasePlugin:
 		# Check proper match against Domoticz Devices
 		z_database.checkListOfDevice2Devices( self, Devices )
 
-		Domoticz.Log("ListOfDevices : " +str(self.ListOfDevices) )
-		Domoticz.Log("IEEE2NWK      : " +str(self.IEEE2NWK) )
+		Domoticz.Debug("ListOfDevices after checkListOfDevice2Devices: " +str(self.ListOfDevices) )
+		Domoticz.Debug("IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
 
 		# Connect to Zigate only when all initialisation are properly done.
 		if  z_var.transport == "USB":

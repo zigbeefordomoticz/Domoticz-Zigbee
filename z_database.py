@@ -83,20 +83,16 @@ def checkListOfDevice2Devices( self, Devices ) :
 	# It is also expected that the ListOfDevices is already loaded.
 
 	# At that stage the ListOfDevices has beene initialized.
-	found = False
 	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 		ID = Devices[x].DeviceID
 		if ID not in self.IEEE2NWK :
-			Domoticz.Error("loadListOfDevices - " +str(ID) + " not found in Plugin Database" )
-			Domoticz.Log("loadListOfDevices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
+			Domoticz.Error("checkListOfDevice2Devices - " +str(ID) + " not found in Plugin Database" )
+			Domoticz.Log("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
 			continue
 
-		IEEE = self.IEEE2NWK[ID]
-		if IEEE ==  ID :
-			Domoticz.Log("loadListOfDevices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(key) )
-			found = True
-			break
-
-	if not found :
-		Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found !" )
+		NWKID = self.IEEE2NWK[ID]
+		if NWKID in self.ListOfDevices :
+			Domoticz.Debug("checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) )
+		else :
+			Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found !" )
 
