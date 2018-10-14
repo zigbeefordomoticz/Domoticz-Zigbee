@@ -56,15 +56,26 @@ tobeupdate = []
 
 
 ### VARIABLES TO BE EDITED
-DomoDB = "/var/lib/domoticz/domoticz.db"
-ZigateDB = "/var/lib/domoticz/plugin/Domoticz-Zigate/DeviceList.txt"
+
+DomoDB              = "/var/lib/domoticz/domoticz.db"
+PluginHomeDirectory = "/var/lib/domoticz/plugin/Domoticz-Zigate"
 
 #########################
-conn = sqlite3.connect( DomoDB )
 
+print("This script is going to upgrade the Domoticz Databse and the Zigate plugin database to the next version ")
+print("Make sure that you have done a proper backup of Domoticz database called "+str(DomoDB) )
+print("Make sure that you have done a proper backup of the Zigate Database called "+str(PluginHomeDirectory)+"/DeviceList.txt")
+print(" ")
+ready=input("Are you ready to start ? YES/No ")
+
+if str(ready) != 'YES' :
+	print("Exist on your request")
+	quit()
+
+conn = sqlite3.connect( DomoDB )
 cursor = conn.cursor()
 
-print("Retreive the HardwareID from Domoticz ".
+print("Retreive the HardwareID from Domoticz ")
 for row in cursor.execute("""SELECT ID from hardware Where Extra="Zigate" """) :
 	HardwareID = row[0]
 
@@ -101,7 +112,7 @@ for row in cursor.execute("""SELECT ID, DeviceID, Options From DeviceStatus Wher
 	tobeupdate.append( list )
 
 
-print("Domoticz Database migration")
+print("Upgrading the database - Domoticz Database migration")
 for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 	if IEEE != '' :
 		print("---> Migrating Unit : " +str(ID) + " NWK_ID = " +str(deviceID) + " IEEE = " +str(IEEE) )
@@ -112,11 +123,11 @@ for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 
 # Now we need to Load DeviceList and add the ClusterType Information for each NWK@
 
-# Load DevceList in memory
-DeviceListName=ZigateDB
+# Load DeviceList.txt in memory
+DeviceListName=PluginHomeDirectory+"/DeviceList.txt"
 ListOfDevices = {}
 with open( DeviceListName , 'r') as myfile2:
-	print("DeviceList migration" +DeviceListName)
+	print("Upgrading : " +str(DeviceListName) + ".")
 	for line in myfile2:
 		(key, val) = line.split(":",1)
 		key = key.replace(" ","")
@@ -126,7 +137,7 @@ with open( DeviceListName , 'r') as myfile2:
 
 		for  ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 			if key == deviceID :
-				print("---> Migrating Unit : " +str(ID) + " NWK_ID = " +str(deviceID) + " IEEE = " +str(IEEE) )
+				#print("---> Migrating Unit : " +str(ID) + " NWK_ID = " +str(deviceID) + " IEEE = " +str(IEEE) )
 				if not ListOfDevices[key].get('IEEE') or IEEE == '' :
 					print("---===> This entry doesn't have an IEEE " + str(key) + " " +str(IEEE) )
 					del ListOfDevices[key]
@@ -142,9 +153,11 @@ with open( DeviceListName , 'r') as myfile2:
 			
 
 # write the file down
+DeviceListName=PluginHomeDirectory+"/DeviceList-"+str(HardwareID)+".txt"
+print("Writing done the new DeviceList into " +str(DeviceListName) )
 with open( DeviceListName , 'wt') as file:
 	for key in ListOfDevices :
 		file.write(key + " : " + str(ListOfDevices[key]) + "\n")
 
-conn.commit()
-conn.close()
+#conn.commit()
+#conn.close()
