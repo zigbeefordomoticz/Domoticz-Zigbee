@@ -54,7 +54,6 @@ import z_heartbeat
 import z_database
 import z_domoticz
 import z_command
-import z_upgrade
 
 
 class BasePlugin:
@@ -111,7 +110,7 @@ class BasePlugin:
 		#Import DeviceList.txt Filename is : DeviceListName
 		Domoticz.Log("load ListOfDevice" )
 		if z_database.LoadDeviceList( self ) == 'Failed' :
-			Domoticz.Error("Something wennt wrong during the import of Load of Devices ..."
+			Domoticz.Error("Something wennt wrong during the import of Load of Devices ...")
 			Domoticz.Error("Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
 			return			
 		

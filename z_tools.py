@@ -156,7 +156,7 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['MacCapa']=DeviceListVal['MacCapa']
 		if 'IEEE' in DeviceListVal :
 			self.ListOfDevices[key]['IEEE']=DeviceListVal['IEEE']
-			Domoticz.Log("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
+			Domoticz.Log("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
 			if  DeviceListVal['IEEE'] :
 				IEEE = DeviceListVal['IEEE']
 				self.IEEE2NWK[IEEE] = key

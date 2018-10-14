@@ -92,10 +92,10 @@ def checkListOfDevice2Devices( self, Devices ) :
 			continue
 
 		IEEE = self.IEEE2NWK[ID]
-		found = False
 		if IEEE ==  ID :
 			Domoticz.Log("loadListOfDevices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(key) )
 			found = True
+			break
 
 	if not found :
 		Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found !" )

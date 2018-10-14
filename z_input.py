@@ -556,6 +556,8 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 
 		if z_tools.DeviceExist(self, saddr, ieee):
 			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " found in ListOfDevice")
+			#self.ListOfDevices[saddr]['Power'] = str(power)
+
 			if rssi !="00" :
 				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
 			else  :
@@ -738,22 +740,26 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	mac_capability=MsgData[26:28]
 	max_buffer=MsgData[28:30]
 	bit_field=MsgData[30:34]
-	Domoticz.Log("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status )
+
+
+	Domoticz.Log("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
 	if self.ListOfDevices[addr]['Status']!="inDB" :
 		self.ListOfDevices[addr]['Status']="8042"
-		#self.ListOfDevices[addr]['LogType']=
-		#self.ListOfDevices[addr]['DeviceType']=
-		#self.ListOfDevices[addr]['LogicalType']=
-		#self.ListOfDevices[addr]['PowerSource']=
-		#self.ListOfDevices[addr]['ReceiveOnIdle']=
+		self.ListOfDevices[addr]['Manufacturer']=manufacturer
+		self.ListOfDevices[addr]['LogType']=''
+		self.ListOfDevices[addr]['DeviceType']=''
+		self.ListOfDevices[addr]['LogicalType']=''
+		self.ListOfDevices[addr]['PowerSource']=''
+		self.ListOfDevices[addr]['ReceiveOnIdle']=''
 
-		#if z_var.storeDiscoveryFrames == 1 :
-			#self.DiscoveryDevices[addr]['LogType']=
-			#self.DiscoveryDevices[addr]['DeviceType']=
-			#self.DiscoveryDevices[addr]['LogicalType']=
-			#self.DiscoveryDevices[addr]['PowerSource']=
-			#self.DiscoveryDevices[addr]['ReceiveOnIdle']=
+		if z_var.storeDiscoveryFrames == 1 :
+			self.DiscoveryDevices[addr]['Manufacturer']=Manufacturer
+			self.DiscoveryDevices[addr]['LogType']=''
+			self.DiscoveryDevices[addr]['DeviceType']=''
+			self.DiscoveryDevices[addr]['LogicalType']=''
+			self.DiscoveryDevices[addr]['PowerSource']=''
+			self.DiscoveryDevices[addr]['ReceiveOnIdle']=''
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
