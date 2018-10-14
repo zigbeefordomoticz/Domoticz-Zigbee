@@ -57,8 +57,10 @@ tobeupdate = []
 
 ### VARIABLES TO BE EDITED
 
-DomoDB              = "/var/lib/domoticz/domoticz.db"
-PluginHomeDirectory = "/var/lib/domoticz/plugins/Domoticz-Zigate/"
+#DomoDB              = "/var/lib/domoticz/domoticz.db"
+DomoDB              = "base.db"
+#PluginHomeDirectory = "/var/lib/domoticz/plugins/Domoticz-Zigate/"
+PluginHomeDirectory = "./"
 
 #########################
 
@@ -125,6 +127,7 @@ for ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 
 # Load DeviceList.txt in memory
 DeviceListName=PluginHomeDirectory+"/DeviceList.txt"
+
 ListOfDevices = {}
 with open( DeviceListName , 'r') as myfile2:
 	print("Upgrading : " +str(DeviceListName) + ".")
@@ -135,6 +138,7 @@ with open( DeviceListName , 'r') as myfile2:
 
 		ListOfDevices[key] = eval(val)
 
+		LODClusterType = {}
 		for  ID, deviceID, IEEE, Options , ClusterType in tobeupdate :
 			if key == deviceID :
 				#print("---> Migrating Unit : " +str(ID) + " NWK_ID = " +str(deviceID) + " IEEE = " +str(IEEE) )
@@ -146,7 +150,9 @@ with open( DeviceListName , 'r') as myfile2:
 					print("---===> This entry doesn't match IEEE" +str(key) +"/" +str(IEEE) + " versus " +str(ListOfDevices[key]['IEEE']) )
 					del ListOfDevices[key]
 					continue
-				ListOfDevices[key]['ClusterType'] = str(ClusterType)
+				LODClusterType[ID] = str(ClusterType)
+				print( str(LODClusterType) )
+				ListOfDevices[key]['ClusterType'] =  LODClusterType
 				if ListOfDevices[key].get('DomoID') :
 					del ListOfDevices[key]['DomoID']
 				ListOfDevices[key]['Version'] = '3'
@@ -159,5 +165,5 @@ with open( DeviceListName , 'wt') as file:
 	for key in ListOfDevices :
 		file.write(key + " : " + str(ListOfDevices[key]) + "\n")
 
-conn.commit()
+#conn.commit()
 conn.close()
