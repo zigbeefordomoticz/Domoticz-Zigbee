@@ -1350,7 +1350,7 @@ def ReadCluster(self, Devices, MsgData):
 			if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 				ValueBattery=round(int(BatteryLvl,16)/10/3.3)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
@@ -1380,7 +1380,7 @@ def ReadCluster(self, Devices, MsgData):
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
 			if sOnOff != '' :
 				sOnOff = sOnOff[0:2]  
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
 				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
 
