@@ -58,7 +58,7 @@ tobeupdate = []
 ### VARIABLES TO BE EDITED
 
 DomoDB              = "/var/lib/domoticz/domoticz.db"
-PluginHomeDirectory = "/var/lib/domoticz/plugin/Domoticz-Zigate"
+PluginHomeDirectory = "/var/lib/domoticz/plugins/Domoticz-Zigate/"
 
 #########################
 
@@ -159,5 +159,5 @@ with open( DeviceListName , 'wt') as file:
 	for key in ListOfDevices :
 		file.write(key + " : " + str(ListOfDevices[key]) + "\n")
 
-#conn.commit()
-#conn.close()
+conn.commit()
+conn.close()

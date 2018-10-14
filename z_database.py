@@ -15,11 +15,11 @@ import z_tools
 def LoadDeviceList( self ):
 	# Load DeviceList.txt into ListOfDevices
 	#
-	Domoticz.Log("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
+	Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 	res = "Success"
 	nb = 0
 	with open( self.DeviceListName , 'r') as myfile2:
-		Domoticz.Log( "Open : " + self.DeviceListName )
+		Domoticz.Debug( "Open : " + self.DeviceListName )
 		for line in myfile2:
 			(key, val) = line.split(":",1)
 			key = key.replace(" ","")
@@ -48,7 +48,7 @@ def LoadDeviceList( self ):
 
 def WriteDeviceList(self, Folder, count):
 	if self.HBcount>=count :
-		Domoticz.Log("Write " + self.DeviceListName + " = " + str(self.ListOfDevices))
+		Domoticz.Debug("Write " + self.DeviceListName + " = " + str(self.ListOfDevices))
 		with open( self.DeviceListName , 'wt') as file:
 			for key in self.ListOfDevices :
 				file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
@@ -82,10 +82,13 @@ def checkListOfDevice2Devices( self, Devices ) :
 	# As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
 	# It is also expected that the ListOfDevices is already loaded.
 
+	# At that stage the ListOfDevices has beene initialized.
 	found = False
 	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
 		ID = Devices[x].DeviceID
 		if ID not in self.IEEE2NWK :
+			Domoticz.Error("loadListOfDevices - " +str(ID) + " not found in Plugin Database" )
+			Domoticz.Log("loadListOfDevices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
 			continue
 
 		IEEE = self.IEEE2NWK[ID]

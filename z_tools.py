@@ -59,38 +59,39 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 
 	#If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
 	if IEEE:
-		Domoticz.Log("DeviceExist - Looking for an IEEE match" +str(IEEE) )
 		for existingIEEEkey in self.IEEE2NWK :
 			if existingIEEEkey == IEEE :
 				# This device is already in Domoticz 
 				existingNWKkey = self.IEEE2NWK[IEEE]
 
-				Domoticz.Log("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
+				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
 
 				# Make sure this device is valid 
-				if self.ListOfDevices[existingNWKkey]['Status'] == 'inDB' :
+				if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' :
 					continue
 
-				Domoticz.Log("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " and Status = inDB ")
+				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " and Status = inDB ")
 
 				# Updating process by :
 				# - mapping the information to the new newNWKID
 
-				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + newNWKID + "] with " + str(existingIEEEkey) )
+				Domoticz.Debug("DeviceExist - update self.ListOfDevices[" + newNWKID + "] with " + str(existingIEEEkey) )
 				self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[existingNWKkey])
 
-				Domoticz.Log("DeviceExist - update self.IEEE2NWK[" + IEEE + "] from " +str(existingIEEEkey) + " to " + str(newNWKID) )
+				Domoticz.Debug("DeviceExist - update self.IEEE2NWK[" + IEEE + "] from " +str(existingIEEEkey) + " to " + str(newNWKID) )
 				self.IEEE2NWK[IEEE] = newNWKID
 
-				Domoticz.Log("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
-				Domoticz.Log("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
-				Domoticz.Log("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
+				Domoticz.Debug("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
+				Domoticz.Debug("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
+				Domoticz.Debug("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
+
+				Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
 
 				# MostLikely exitsingKey is not needed any more
 				removeNwkInList( self, existingNWKkey )	
 
 				if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
-					Domoticz.Log("DeviceExist - Update Status from Left to inDB " )
+					Domoticz.Log("DeviceExist - Update Status from 'inDB' to 'Left' for NetworkID : " +str(newNWKID) )
 					self.ListOfDevices[newNWKID]['Status'] = 'inDB'
 					self.ListOfDevices[newNWKID]['Hearbeat'] = 0
 
@@ -210,6 +211,7 @@ def updSQN( self, key, newSQN) :
 		self.ListOfDevices[key]['SQN'] = {}
 
 
+#### Those functions will be use with the new DeviceConf structutre
 
 def getTypebyCluster( self, Cluster ) :
 	clustersType = { '0405' : 'Humi',

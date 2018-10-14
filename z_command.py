@@ -21,17 +21,19 @@ import z_domoticz
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Domoticz.Debug("#########################")
-	Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
+	Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
+
+	Domoticz.Debug("DeviceID = " +str(Devices[Unit].DeviceID))
 
 	# As we can have a new Short address, we need to retreive it from self.ListOfDevices
 	NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
-	Domoticz.Log("mgtCommand - NWKID = " +str(NWKID) )
+	Domoticz.Debug("mgtCommand - NWKID = " +str(NWKID) )
 
 	DSwitchtype= str(Devices[Unit].SwitchType)
-	Domoticz.Log("DSwitchtype : " + DSwitchtype)
+	Domoticz.Debug("DSwitchtype : " + DSwitchtype)
 
 	DSubType= str(Devices[Unit].SubType)
-	Domoticz.Log("DSubType : " + DSubType)
+	Domoticz.Debug("DSubType : " + DSubType)
 
 	DType= str(Devices[Unit].Type)
 
@@ -40,7 +42,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		return
 
 	Dtypename=self.ListOfDevices[NWKID]['ClusterType']
-	Domoticz.Log("Dtypename : " + Dtypename)
+	Domoticz.Debug("Dtypename : " + Dtypename)
+
 	if self.ListOfDevices[NWKID]['RSSI'] != '' :
 		SignalLevel = self.ListOfDevices[NWKID]['RSSI']
 	else : SignalLevel = 15
