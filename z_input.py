@@ -755,6 +755,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 		if z_var.storeDiscoveryFrames == 1 :
 			self.DiscoveryDevices[addr]['Manufacturer']=Manufacturer
+			self.DiscoveryDevices[addr]['8042']=MsgData
 			self.DiscoveryDevices[addr]['LogType']=''
 			self.DiscoveryDevices[addr]['DeviceType']=''
 			self.DiscoveryDevices[addr]['LogicalType']=''
