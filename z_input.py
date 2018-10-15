@@ -785,7 +785,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 		self.ListOfDevices[addr]['PowerSource']=str(PowerSource)
 		self.ListOfDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
 
-		if z_var.storeDiscoveryFrames == 1 :
+		if z_var.storeDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
 			self.DiscoveryDevices[addr]['Manufacturer']=Manufacturer
 			self.DiscoveryDevices[addr]['8042']=MsgData
 			self.DiscoveryDevices[addr]['DeviceType']=str(DeviceType)
@@ -811,8 +811,9 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 			self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
 		MsgDataDeviceId=MsgData[16:20]
+
 		self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
-		if z_var.storeDiscoveryFrames == 1 :
+		if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 			self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
 
 		MsgDataBField=MsgData[20:22]
@@ -844,7 +845,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 				MsgDataCluster=""
 				i=i+1
 
-	if z_var.storeDiscoveryFrames == 1 :
+	if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 		self.DiscoveryDevices[MsgDataShAddr]['8043'] = str(MsgData)
 		self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
 
@@ -908,7 +909,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 					
 	#Fin de correction
 
-	if z_var.storeDiscoveryFrames == 1 :
+	if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 		self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
 
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
@@ -1430,7 +1431,7 @@ def ReadCluster(self, Devices, MsgData):
 				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')					# Convert the model name to ASCII
 				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType							   # Set the model name in database
-				if z_var.storeDiscoveryFrames == 1 :
+				if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices :
 					self.DiscoveryDevices[MsgSrcAddr]['Model']=MType
 
 				if MType in self.DeviceConf :												# If the model exist in DeviceConf.txt
