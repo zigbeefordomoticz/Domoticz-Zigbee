@@ -514,9 +514,15 @@ def ResetDevice(self, Devices, Type,HbCount) :
 			Unit = Devices[x].ID
 		
 			if self.ListOfDevices[NWKID].get('ClusterType') : 
-				if NWKID in self.ListOfDevices[NWKID]['ClusterType'] :
+				if str(Unit) in self.ListOfDevices[NWKID]['ClusterType'] :
 					Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Unit)]
-			else : continue
+				else :
+					Domoticz.Log("ResetDevice - NWKID = " +NWKID + " not found in " +str(self.ListOfDevices[NWKID]['ClusterType']) )
+					continue
+			else : 
+				Domoticz.Log("ResetDevice - No ClusterType for  " +NWKID + " not found in " +str(self.ListOfDevices[NWKID]) )
+				continue
+
 			if self.ListOfDevices[NWKID].get('RSSI') : SignalLevel = self.ListOfDevices[NWKID]['RSSI']
 			else : continue
 			if self.ListOfDevices[NWKID].get('Battery') : BatteryLevel = self.ListOfDevices[NWKID]['Battery']
