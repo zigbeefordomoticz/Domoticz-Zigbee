@@ -66,6 +66,7 @@ class BasePlugin:
 		self.DeviceListName = ''
 		self.homedirectory = ''
 		self.HardwareID = ''
+		self.Key = ''
 		self.HBcount=0
 		z_var.cmdInProgress = queue.Queue()
 		return
@@ -80,6 +81,7 @@ class BasePlugin:
 		self.DeviceListName = Parameters["HomeFolder"]+"DeviceList-"+str(Parameters['HardwareID'])+".txt"
 		self.homedirectory = Parameters["HomeFolder"]
 		self.HardwareID = (Parameters["HardwareID"])
+		self.Key = (Parameters["Key"])
 		z_var.transport = Parameters["Mode1"]
 
 		# Import PluginConf.txt
