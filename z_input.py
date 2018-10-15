@@ -564,7 +564,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 				self.ListOfDevices[saddr]['RSSI']= 12
 			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
 		else: 
-			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " not found in ListOfDevice")
+			Domoticz.Status("Decode8015 : [ " + str(round(idx/26)) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = " + str(int(rssi,16)) + " Power = " + power + " not found in ListOfDevice")
 		idx=idx+26
 
 	Domoticz.Debug("Decode8015 - IEEE2NWK      : " +str(self.IEEE2NWK) )
@@ -705,24 +705,24 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	"""
 	MAC capability 	
-		Bit 0 – Alternate PAN Coordinator 	
-		Bit 1 – Device Type 	
-		Bit 2 – Power source 	
-		Bit 3 – Receiver On when Idle 	
-		Bit 4-5 – Reserved 	
-		Bit 6 – Security capability 	
-		Bit 7 – Allocate Address
+		Bit 0 – Alternate PAN Coordinator 	: 0x00000001
+		Bit 1 – Device Type 			: 0x00000010
+		Bit 2 – Power source 			: 0x00000100
+		Bit 3 – Receiver On when Idle 		: 0x00001000
+		Bit 4-5 – Reserved 			: 0x00110000
+		Bit 6 – Security capability 		: 0x01000000
+		Bit 7 – Allocate Address		: 0x10000000
 
 	Bitfields: 	
-		Logical type (bits 0-2 	
+		Logical type (bits 0-2 			: 0x00000111
 		0 – Coordinator 	
 		1 – Router 	
 		2 – End Device) 	
-		Complex descriptor available (bit 3) 	
-		User descriptor available (bit 4) 	
-		Reserved (bit 5-7) 	
-		APS flags (bit 8-10 – currently 0) 	
-		Frequency band(11-15 set to 3 (2.4Ghz))
+		Complex descriptor available (bit 3) 	: 0x0000000000001000
+		User descriptor available (bit 4) 	: 0x0000000000010000	
+		Reserved (bit 5-7) 			: 0x0000000011100000
+		APS flags (bit 8-10 – currently 0) 	: 0x0000011100000000
+		Frequency band(11-15 set to 3 (2.4Ghz))	: 0x1111100000000000
 	"""
 
 
@@ -741,26 +741,57 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	max_buffer=MsgData[28:30]
 	bit_field=MsgData[30:34]
 
-
 	Domoticz.Log("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
+
+	bit_field   = int(bit_field,16)
+	mac_capability = int(bit_field, 16)
+
+	Domoticz.Log("Decode8042 - mac_capability = " +str(mac_capability) )
+	Domoticz.Log("Decode8042 - bit_field = " +str(bit_field) )
+
+	AltPAN      =   mac_capability & 1 
+	DeviceType  =   mac_capability >> 1 & 1 
+	PowerSource =   mac_capability >> 2 & 1 
+	ReceiveonIdle = mac_capability >> 3 & 1 
+	LogicalType =   bit_field & 0x11
+
+	Domoticz.Log("Decode8042 - Alternate PAN Coordinator = " +str(AltPAN) )
+	Domoticz.Log("Decode8042 - Device Type      = " +str(DeviceType) )
+	Domoticz.Log("Decode8042 - Power Source     = " +str(PowerSource) )
+	Domoticz.Log("Decode8042 - Receiver on Idle = " +str(ReceiveonIdle) )
+	Domoticz.Log("Decode8042 - Logical Type     = " +str(LogicalType) )
+
+	if AltPAN        == 1 : AltPAN = "yes"
+	else :  AltPAN = "No"
+	if LogicalType   == 0 : LogicalType = "Coordinator"
+	elif LogicalType == 1 : LogicalType = "Router"
+	elif LogicalType == 2 : LogicalType = "End Device"
+
+	if PowerSource   == 0 : PowerSource = "Battery"
+	else : PowerSource = "Main Power"
+	
+	if ReceiveonIdle == 1 : ReceiveonIdle = "Yes"
+	else : ReceiveonIdle = "No"
+
+	Domoticz.Log("Decode8042 - Power Source = " +str(PowerSource) )
+	Domoticz.Log("Decode8042 - Device type  = " +str(DeviceType) )
+	Domoticz.Log("Decode8042 - Logical Type = " +str(LogicalType) )
 
 	if self.ListOfDevices[addr]['Status']!="inDB" :
 		self.ListOfDevices[addr]['Status']="8042"
 		self.ListOfDevices[addr]['Manufacturer']=manufacturer
-		self.ListOfDevices[addr]['LogType']=''
-		self.ListOfDevices[addr]['DeviceType']=''
-		self.ListOfDevices[addr]['LogicalType']=''
-		self.ListOfDevices[addr]['PowerSource']=''
-		self.ListOfDevices[addr]['ReceiveOnIdle']=''
+		self.ListOfDevices[addr]['DeviceType']=str(DeviceType)
+		self.ListOfDevices[addr]['LogicalType']=str(LogicalType)
+		self.ListOfDevices[addr]['PowerSource']=str(PowerSource)
+		self.ListOfDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
 
 		if z_var.storeDiscoveryFrames == 1 :
 			self.DiscoveryDevices[addr]['Manufacturer']=Manufacturer
 			self.DiscoveryDevices[addr]['8042']=MsgData
-			self.DiscoveryDevices[addr]['LogType']=''
-			self.DiscoveryDevices[addr]['DeviceType']=''
-			self.DiscoveryDevices[addr]['LogicalType']=''
-			self.DiscoveryDevices[addr]['PowerSource']=''
-			self.DiscoveryDevices[addr]['ReceiveOnIdle']=''
+			self.DiscoveryDevices[addr]['DeviceType']=str(DeviceType)
+			self.DiscoveryDevices[addr]['LogicalType']==str(LogicalType)
+			self.DiscoveryDevices[addr]['PowerSource']=str(PowerSource)
+			self.DiscoveryDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
@@ -771,12 +802,12 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	MsgDataStatus=MsgData[2:4]
 	MsgDataShAddr=MsgData[4:8]
 	MsgDataLenght=MsgData[8:10]
-	Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
+	Domoticz.Log("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
 	if int(MsgDataLenght,16)>0 :
 		MsgDataEp=MsgData[10:12]
 		MsgDataProfile=MsgData[12:16]
 		self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
-		if z_var.storeDiscoveryFrames == 1 :
+		if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 			self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
 		MsgDataDeviceId=MsgData[16:20]
@@ -832,8 +863,16 @@ def Decode8044(self, MsgData): # Power Descriptior response
 	MsgLen=len(MsgData)
 	SQNum=MsgData[0:2]
 	Status=MsgData[2:4]
-	PowerCode=MsgData[4:8]
-	Domoticz.Debug("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power Code = " + PowerCode )
+	bit_fields=MsgData[4:8]
+
+	# Not Short address, nor IEEE. Hard to relate to a device !
+
+	power_mode = bit_fields[0]
+	power_source = bit_fields[1]
+	current_power_source = bit_fields[2]
+	current_power_level = bit_fields[3]
+
+	Domoticz.Log("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power mode = " + power_mode + " power_source = " + power_source + " current_power_source = " + current_power_source + " current_power_level = " + current_power_level )
 	return
 
 def Decode8045(self, MsgData) : # Reception Active endpoint response
@@ -847,7 +886,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 
 	MsgDataEPlist=MsgData[10:len(MsgData)]
 
-	Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+	Domoticz.Log("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
 	OutEPlist=""
 	
