@@ -15,7 +15,6 @@ import json
 
 def CreateDomoDevice(self, Devices, NWKID) :
 	def getCreatedID( self, Devices, DeviceID, Name ) :
-		Domoticz.Log("getCreatedID - looking for " +DeviceID + " /  " +Name + " / " )
 		for x in Devices :
 			Domoticz.Log( Devices[x].DeviceID + " / " + DeviceID + " ----- " + Devices[x].Name + " / " +self.Key+" - "+Name )
 			if Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0 :
