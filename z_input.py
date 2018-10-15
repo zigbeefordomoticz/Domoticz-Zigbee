@@ -741,10 +741,10 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	max_buffer=MsgData[28:30]
 	bit_field=MsgData[30:34]
 
-	Domoticz.Log("Decode8042 - Reception Node Descriptor : SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
+	Domoticz.Log("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
 	bit_field   = int(bit_field,16)
-	mac_capability = int(bit_field, 16)
+	mac_capability = int(mac_capability, 16)
 
 	Domoticz.Log("Decode8042 - mac_capability = " +str(mac_capability) )
 	Domoticz.Log("Decode8042 - bit_field = " +str(bit_field) )
@@ -763,7 +763,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	if AltPAN        == 1 : AltPAN = "yes"
 	else :  AltPAN = "No"
-	if LogicalType   == 0 : LogicalType = "Coordinator"
+	if   LogicalType == 0 : LogicalType = "Coordinator"
 	elif LogicalType == 1 : LogicalType = "Router"
 	elif LogicalType == 2 : LogicalType = "End Device"
 
@@ -786,10 +786,10 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 		self.ListOfDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
 
 		if z_var.storeDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
-			self.DiscoveryDevices[addr]['Manufacturer']=Manufacturer
+			self.DiscoveryDevices[addr]['Manufacturer']=manufacturer
 			self.DiscoveryDevices[addr]['8042']=MsgData
 			self.DiscoveryDevices[addr]['DeviceType']=str(DeviceType)
-			self.DiscoveryDevices[addr]['LogicalType']==str(LogicalType)
+			self.DiscoveryDevices[addr]['LogicalType']=str(LogicalType)
 			self.DiscoveryDevices[addr]['PowerSource']=str(PowerSource)
 			self.DiscoveryDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
 	return
@@ -849,7 +849,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 		self.DiscoveryDevices[MsgDataShAddr]['8043'] = str(MsgData)
 		self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
 
-		with open( z_var.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
+		with open( self.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
 			file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
 
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
@@ -1214,13 +1214,12 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 	else :
 		# This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
 		# Will request in the next hearbeat to for a IEEE request
-		Domoticz.Error("Decode8102 - Receiving a message from unknown device , request a 0x0041 : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
-		Domoticz.Status("Decode8102 - Will try to reconnect device : " + str(MsgSrcAddr) )
-		Domoticz.Status("Decode8102 - but will most likely fail if it is battery powered device.")
-		z_tools.initDeviceInList(self, MsgSrcAddr)
-		self.ListOfDevices[MsgSrcAddr]['Status']="0041"
-		self.ListOfDevices[MsgSrcAddr]['MacCapa']= "0"
-		Domoticz.Debug("Decode8102 - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
+		Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
+		#Domoticz.Status("Decode8102 - Will try to reconnect device : " + str(MsgSrcAddr) )
+		#Domoticz.Status("Decode8102 - but will most likely fail if it is battery powered device.")
+		#z_tools.initDeviceInList(self, MsgSrcAddr)
+		#self.ListOfDevices[MsgSrcAddr]['Status']="0041"
+		#self.ListOfDevices[MsgSrcAddr]['MacCapa']= "0"
 	return
 
 def Decode8110(self, MsgData) :  # Write Attribute response
@@ -1304,8 +1303,9 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 		z_tools.initDeviceInList(self, MsgSrcAddr)
 		self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
 		self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
-		if self.IEEE2NWK[MsgIEEE] :
-			Domoticz.Log("Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
+		if MsgIEEE in self.IEEE2NWK :
+			if self.IEEE2NWK[MsgIEEE] :
+				Domoticz.Log("Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
 		self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
 		Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 	else :

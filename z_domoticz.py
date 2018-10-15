@@ -13,7 +13,7 @@ import time
 import struct
 import json
 
-def CreateDomoDevice(self, Devices, DeviceID_IEEE) :
+def CreateDomoDevice(self, Devices, NWKID) :
 	def FreeUnit(self, Devices) :
 		FreeUnit=""
 		for x in range(1,256):
@@ -28,15 +28,15 @@ def CreateDomoDevice(self, Devices, DeviceID_IEEE) :
 		return FreeUnit
 
 	
-	if DeviceID_IEEE == '' :
+	if NWKID == '' :
 		Domoticz.Error("CreateDomoDevice - Cannot create a Device without an IEEE ." )
 		return
 
-	if DeviceID_IEEE not in self.IEEE2NWK :
-		Domoticz.Error("CreateDomoDevice - Cannot find a NWK id  for this  IEEE " +str(DeviceID_IEEE) )
+	if NWKID not in self.ListOfDevices :
+		Domoticz.Error("CreateDomoDevice - Cannot find a IEEE for this NWKID " +str(NWKID) )
 		return
 
-	NWKID = self.IEEE2NWK[DeviceID_IEEE]
+	DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
 
 	for Ep in self.ListOfDevices[NWKID]['Ep'] :
 		# Use 'type' at level EndPoint if existe
@@ -54,6 +54,9 @@ def CreateDomoDevice(self, Devices, DeviceID_IEEE) :
 			else :
 				Type=self.ListOfDevices[NWKID]['Type'].split("/")
 				Domoticz.Log("CreateDomoDevice - Type : '" + str(Type) + "'")
+	
+		if not self.ListOfDevices[NWKID].get('ClusterType') :
+			self.ListOfDevices[NWKID]['ClusterType'] = {}
 
 		if Type !="" :
 			if "Humi" in Type and "Temp" in Type and "Baro" in Type:
@@ -510,7 +513,9 @@ def ResetDevice(self, Devices, Type,HbCount) :
 
 			Unit = Devices[x].ID
 		
-			if self.ListOfDevices[NWKID].get('ClusterType') : Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Unit)]
+			if self.ListOfDevices[NWKID].get('ClusterType') : 
+				if NWKID in self.ListOfDevices[NWKID]['ClusterType'] :
+					Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Unit)]
 			else : continue
 			if self.ListOfDevices[NWKID].get('RSSI') : SignalLevel = self.ListOfDevices[NWKID]['RSSI']
 			else : continue
