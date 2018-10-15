@@ -114,7 +114,7 @@ def removeDeviceInList( self, IEEE) :
 		del self.ListOfDevices[key]
 
 		Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
-		del self.IEEE2NWK[ieee]
+		del self.IEEE2NWK[IEEE]
 
 
 def initDeviceInList(self, Nwkid) :
