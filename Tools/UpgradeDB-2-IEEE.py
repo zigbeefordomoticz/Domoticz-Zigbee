@@ -42,7 +42,6 @@ def extract_fields( partOptions ) :
 		s1 = 1
 
 	return
-DomoDB	
 
 
 newOptions = ''
