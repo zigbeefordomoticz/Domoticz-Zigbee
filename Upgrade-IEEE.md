@@ -1,4 +1,4 @@
-# Upgrade IEEE ( upgrade de la base Domoticz et de la base Plugin Zigate 
+# Upgrade IEEE ( upgrade de la base Domoticz et de la base Plugin Zigate  )
 
 ## Introduction
 The purpose of this upgrade is to comply with the Domoticz database and to get all Zigate plugin related information inside the plugin Database ( DeviceList.txt )
