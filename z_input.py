@@ -745,17 +745,18 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	bit_fieldL   = int(bit_field[2:4],16)
 	bit_fieldH   = int(bit_field[0:2],16)
+	LogicalType =   bit_field & 0x00F
+
 	mac_capability = int(mac_capability, 16)
+	mac_capability = str(struct.unpack('i',struct.pack('I',int(mac_capability,16)))[0])
+	mac_capability = int(mac_capability,16)
+	AltPAN      =   ( mac_capability & 0x00000001 )
+	DeviceType  =   ( mac_capability >> 1 ) & 1
+	PowerSource =   ( mac_capability >> 2 ) & 1
+	ReceiveonIdle = ( mac_capability >> 3 ) & 1
 
 	Domoticz.Log("Decode8042 - mac_capability = " +str(mac_capability) )
 	Domoticz.Log("Decode8042 - bit_field = " +str(bit_fieldL) +" : "+str(bit_fieldH) )
-
-	AltPAN      =   ( mac_capability & 0x000F )
-	DeviceType  =   ( mac_capability & 0x00F0 ) >> 1
-	PowerSource =   ( mac_capability & 0x0F00 ) >> 2
-	ReceiveonIdle = ( mac_capability & 0xFFFF ) >> 3
-
-	LogicalType =   bit_fieldL & 0x00F
 
 	Domoticz.Log("Decode8042 - Alternate PAN Coordinator = " +str(AltPAN) )
 	Domoticz.Log("Decode8042 - Device Type      = " +str(DeviceType) )
