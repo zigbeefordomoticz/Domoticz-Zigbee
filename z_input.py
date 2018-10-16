@@ -1656,6 +1656,8 @@ def ReadCluster(self, Devices, MsgData):
 
 	elif MsgClusterId=="0702":  # Smart Energy Metering
 		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttType = " +str(MsgAttType) )
+		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttSize = " +str(MsgAttSize) )
 
 	elif MsgClusterId=="0b04" : # 0b04 is Electrical Measurement Cluster
 		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )

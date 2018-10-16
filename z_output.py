@@ -151,7 +151,7 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 	if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
 		z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
 
-def ReadAttributeReq( self, addr, Ep, Cluster , ListOfAttributes ) :
+def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ) :
 	
 	# frame to be send is :
 	# DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
@@ -171,7 +171,7 @@ def ReadAttributeReq( self, addr, Ep, Cluster , ListOfAttributes ) :
 		for x in ListOfAttributes :
 			Attr += "{:04n}".format(x)
 
-	datas = "{:02n}".format(2) + addr + "01" + Ep + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
+	datas = "{:02n}".format(2) + addr + EpIn + EpOut + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
 	Domoticz.Debug("ReadAttributeReq : " +str(datas) +" with a weight of : " +str(weight) )
 	sendZigateCmd("0100", datas , weight )
 
@@ -200,7 +200,7 @@ def ReadAttributeRequest_0000(self, key) :
 	listAttributes.append(0x0010)		# Battery Voltage
 	listAttributes.append(0x0020)		# Battery %
 	# Power Config
-	ReadAttributeReq( self, key, EPout, "0001", listAttributes )
+	ReadAttributeReq( self, key, "01", EPout, "0001", listAttributes )
 
 
 def ReadAttributeRequest_0008(self, key) :
@@ -212,7 +212,7 @@ def ReadAttributeRequest_0008(self, key) :
 					EPout=tmpEp
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-	ReadAttributeReq( self, key, EPout, "0008", 0)
+	ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
 def ReadAttributeRequest_000C(self, key) :
 	# Cluster 0x000C with attribute 0x0055
@@ -220,9 +220,19 @@ def ReadAttributeRequest_000C(self, key) :
 	EPout= "02"
 
 	Domoticz.Log("Request OnOff status for Xiaomi plug via Read Attribute request : " + key + " EPout = " + EPout )
-	ReadAttributeReq( self, key, EPout, "000C", 55 )
+	ReadAttributeReq( self, key, "01", EPout, "000C", 55 )
+	ReadAttributeReq( self, key, "01", "01", "0000", 0xff01 )
 
-	ReadAttributeReq( self, key, "01", "0000", 0xff01 )
+def ReadAttributeRequest_0702(self, key) :
+
+	Domoticz.Debug("Request Metering infor for Salus plug via Read Attribute request : " + key + " EPout = " + "0A" )
+
+	listAttributes = []
+	listAttributes.append(0x0000)		
+	listAttributes.append(0x0400)
+	ReadAttributeReq( self, key, "09", "O9", "0702", listAttributes)
+
+
 
 def removeZigateDevice( self, key ) :
 	# remove a device in Zigate
