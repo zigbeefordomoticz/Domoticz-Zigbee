@@ -745,7 +745,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	bit_fieldL   = int(bit_field[2:4],16)
 	bit_fieldH   = int(bit_field[0:2],16)
-	LogicalType =   bit_field & 0x00F
+	LogicalType =   bit_fieldL & 0x00F
 
 	mac_capability = int(mac_capability, 16)
 	mac_capability = str(struct.unpack('i',struct.pack('I',int(mac_capability,16)))[0])
