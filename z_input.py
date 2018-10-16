@@ -705,24 +705,24 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	"""
 	MAC capability 	
-		Bit 0 – Alternate PAN Coordinator 	: 0x00000001
-		Bit 1 – Device Type 			: 0x00000010
-		Bit 2 – Power source 			: 0x00000100
-		Bit 3 – Receiver On when Idle 		: 0x00001000
-		Bit 4-5 – Reserved 			: 0x00110000
-		Bit 6 – Security capability 		: 0x01000000
-		Bit 7 – Allocate Address		: 0x10000000
+		Bit 0 – Alternate PAN Coordinator
+		Bit 1 – Device Type 		
+		Bit 2 – Power source 	
+		Bit 3 – Receiver On when Idle
+		Bit 4-5 – Reserved 		
+		Bit 6 – Security capability 
+		Bit 7 – Allocate Address
 
 	Bitfields: 	
-		Logical type (bits 0-2 			: 0x00000111
+		Logical type (bits 0-2 			
 		0 – Coordinator 	
 		1 – Router 	
 		2 – End Device) 	
-		Complex descriptor available (bit 3) 	: 0x0000000000001000
-		User descriptor available (bit 4) 	: 0x0000000000010000	
-		Reserved (bit 5-7) 			: 0x0000000011100000
-		APS flags (bit 8-10 – currently 0) 	: 0x0000011100000000
-		Frequency band(11-15 set to 3 (2.4Ghz))	: 0x1111100000000000
+		Complex descriptor available (bit 3) 
+		User descriptor available (bit 4) 
+		Reserved (bit 5-7) 		
+		APS flags (bit 8-10 – currently 0) 
+		Frequency band(11-15 set to 3 (2.4Ghz))	
 	"""
 
 
@@ -768,11 +768,6 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	if self.ListOfDevices[addr]['Status']!="inDB" :
 		self.ListOfDevices[addr]['Status']="8042"
-		self.ListOfDevices[addr]['Manufacturer']=manufacturer
-		self.ListOfDevices[addr]['DeviceType']=str(DeviceType)
-		self.ListOfDevices[addr]['LogicalType']=str(LogicalType)
-		self.ListOfDevices[addr]['PowerSource']=str(PowerSource)
-		self.ListOfDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
 
 		if z_var.storeDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
 			self.DiscoveryDevices[addr]['Manufacturer']=manufacturer
@@ -781,6 +776,13 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 			self.DiscoveryDevices[addr]['LogicalType']=str(LogicalType)
 			self.DiscoveryDevices[addr]['PowerSource']=str(PowerSource)
 			self.DiscoveryDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
+
+	self.ListOfDevices[addr]['Manufacturer']=manufacturer
+	self.ListOfDevices[addr]['DeviceType']=str(DeviceType)
+	self.ListOfDevices[addr]['LogicalType']=str(LogicalType)
+	self.ListOfDevices[addr]['PowerSource']=str(PowerSource)
+	self.ListOfDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
+
 	return
 
 def Decode8043(self, MsgData) : # Reception Simple descriptor response
