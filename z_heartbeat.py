@@ -19,6 +19,10 @@ import z_tools
 import z_domoticz
 
 def processKnownDevices( self, NWKID ) :
+
+	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 12 )  :
+		z_output.sendZigateCmd("0042", str(NWKID), 2 )	# Request a Node Descriptor
+
 	# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
 		if self.ListOfDevices[NWKID]['Model'] == "shutter.Profalux" :
