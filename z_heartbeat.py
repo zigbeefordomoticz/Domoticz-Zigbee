@@ -56,17 +56,17 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 					break
 
 	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat']=="1":	# Status is set by Decode8042
-			Domoticz.Debug("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + NWKID)
+			Domoticz.Log("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + NWKID)
 			z_output.sendZigateCmd("0045", str(NWKID))	# We use NWKID as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
 			self.ListOfDevices[NWKID]['Status']="0045"
 			self.ListOfDevices[NWKID]['Heartbeat']="0"
 
 	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat']=="1":	# Status is set by Decode8045
-		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 received " + NWKID)
+		Domoticz.Log("onHeartbeat - new device discovered 0x8045 received " + NWKID)
 		for cle in self.ListOfDevices[NWKID]['Ep']:
-			Domoticz.Debug("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + NWKID)
-			z_output.sendZigateCmd("0043", str(NWKID)+str(cle))	# We use NWKID as we are in the discovery process (no reason to use 
-																# DomoID at that time / Device not yet created
+			Domoticz.Log("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + NWKID)
+			z_output.sendZigateCmd("0043", str(NWKID)+str(cle), 2 )	# We use NWKID 
+													
 		self.ListOfDevices[NWKID]['Status']="0043"
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 
