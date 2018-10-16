@@ -1386,7 +1386,7 @@ def ReadCluster(self, Devices, MsgData):
 			if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 				ValueBattery=round(int(BatteryLvl,16)/10/3.3)
-				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
+				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
@@ -1654,7 +1654,10 @@ def ReadCluster(self, Devices, MsgData):
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
-	elif MsgClusterId=="0b04" or MsgClusterId=="0702":  # 0b04 is Electrical Measurement Cluster
+	elif MsgClusterId=="0702":  # Smart Energy Metering
+		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+
+	elif MsgClusterId=="0b04" : # 0b04 is Electrical Measurement Cluster
 		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		
 	else :
@@ -1662,4 +1665,3 @@ def ReadCluster(self, Devices, MsgData):
 		Domoticz.Error("						   MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
 		Domoticz.Error("						   MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
 		return
-
