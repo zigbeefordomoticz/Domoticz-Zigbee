@@ -10,13 +10,28 @@ The purpose of this upgrade is to comply with the Domoticz database and to get a
 
 1. Make sure that you are on the latest plugin version
 ``` git checkout dev-IEEE ```
-1. Edit the file Tools/UprageDB-2-IEEE.py in order to reference the right DB and file
+1. Edit the file ```Tools/UprageDB-2-IEEE.py``` in order to reference the right DB and file
    * Update DomoDB parameter => put the Full path to the sqlite domoticz database
    * Update PluginHomeDirectory => put the full path to the plugin ( .../plugin/Domoticz-Zigate/
 
 1. You are ready to start the upgrade
 
-```  python3 Tools/UpgradeDB-2-IEEE.py ```
+```python3 Tools/UpgradeDB-2-IEEE.py ```
+
+1. Take attention to any error messages during that stage.
+   * Here are the potential error messages : 
+   1. ```----===>Cannot migrate this Domoticz DB device, you'll have to remove from Domotciz ```
+      * This entry doesn't have an IEEE address ( a physical address) . This is somehow suspcious
+   1. ```---===> This DeviceList entry doesn't have an IEEE  ```
+      * This entry doesn't have an IEEE address ( a physical address) . This is somehow suspcious
+   1. ```---===> This DeviceList entry doesn't match IEEE ```
+      * We didn't find any matching Devices in the Domoticz Database. In such there is adisconnect between DeviceList.txt and Domoticz Devices. 
+
+
+1. You can now restart Domoticz
+```sudo service domoticz restart```
+
+1. Please cross check Domoticz Logs in order to validate that every is running fine.
 
 ## Starting now :
 * There is no more Zigate information in the Domoticz database. The file DeviceList is becoming curcial to your system.
