@@ -564,7 +564,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 			
 def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_ = ''):
 
-	Domoticz.Log("UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(SignalLvl) )
+	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(SignalLvl) )
 	if isinstance(SignalLvl,int) :
 		rssi= round( (SignalLvl * 12 ) / 255)
 		Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " RSSI = " + str(rssi) )
