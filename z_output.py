@@ -227,6 +227,9 @@ def ReadAttributeRequest_0702(self, key) :
 
 	listAttributes = []
 	listAttributes.append(0x0000)		
+	listAttributes.append(0x0100)		
+	listAttributes.append(0x0200)		
+	listAttributes.append(0x0300)		
 	listAttributes.append(0x0400)
 
 	EPin = "01"
