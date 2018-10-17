@@ -229,7 +229,7 @@ def ReadAttributeRequest_0702(self, key) :
 	listAttributes.append(0x0000)		
 	listAttributes.append(0x0400)
 
-	EPin = "09"
+	EPin = "01"
 	EPout= "09"
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0702" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
