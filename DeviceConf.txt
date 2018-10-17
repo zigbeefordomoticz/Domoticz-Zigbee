@@ -18,7 +18,7 @@
 'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug'},
-'plug.Salus':{'Ep':{'09':{'0006'}},'Type':'Plug'},
+'plug.Salus':{'Ep':{'09':{'0000':'','0402':'','0702':'','0006':'','Type':'Plug/Power/Meter'}},'Type':'Plug/Power/Meter'},
 'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl'},
 'Ampoule.LED1624G9.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
 'Command.30338849.Tradfri':{'Ep':{'01':{'0000','0001','0009','0b05','1000'}},'Type':'Command'},
