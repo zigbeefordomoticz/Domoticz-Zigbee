@@ -166,8 +166,20 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['ProfileID']=DeviceListVal['ProfileID']
 		if 'ZDeviceID' in DeviceListVal :
 			self.ListOfDevices[key]['ZDeviceID']=DeviceListVal['ZDeviceID']
+		if 'Manufacturer' in DeviceListVal :
+			self.ListOfDevices[key]['Manufacturer']=DeviceListVal['Manufacturer']
+		if 'DeviceType' in DeviceListVal :
+			self.ListOfDevices[key]['DeviceType']=DeviceListVal['DeviceType']
+		if 'LogicalType' in DeviceListVal :
+			self.ListOfDevices[key]['LogicalType']=DeviceListVal['LogicalType']
+		if 'PowerSource' in DeviceListVal :
+			self.ListOfDevices[key]['PowerSource']=DeviceListVal['PowerSource']
+		if 'ReceiveOnIdle' in DeviceListVal :
+			self.ListOfDevices[key]['ReceiveOnIdle']=DeviceListVal['ReceiveOnIdle']
 		if 'Status' in DeviceListVal :
 			self.ListOfDevices[key]['Status']=DeviceListVal['Status']
+		if 'Battery' in DeviceListVal :
+			self.ListOfDevices[key]['Battery']=DeviceListVal['Battery']
 		if 'RSSI' in DeviceListVal :
 			self.ListOfDevices[key]['RSSI']=DeviceListVal['RSSI']
 		if 'SQN' in DeviceListVal :
