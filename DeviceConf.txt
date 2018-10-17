@@ -13,7 +13,7 @@
 'lumi.sensor_motion.aq2':{'Ep':{'01':{'0406','0400'}},'Type':'Motion/Lux'},
 'lumi.sensor_cube':{'Ep':{'01':{'0012','000c'}},'Type':'XCube'},
 'lumi.sensor_cube.aqgl01':{'Ep':{'01':{'0012','000c'}},'Type':'Aqara'},
-'lumi.plug':{'Ep':{'01':{'0006':'','000c':'','0000':'','Type':'Plug'},'02':{'000c':'','Type':'Power/Meter'}},'Type':'Plug/PowerMeter'},
+'lumi.plug':{'Ep':{'01':{'0006':'','000c':'','0000':'','Type':'Plug'},'02':{'000c':'','Type':'Power/Meter'}},'Type':'Plug/Power/Meter'},
 'Ampoule.LED1545G12.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
 'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
