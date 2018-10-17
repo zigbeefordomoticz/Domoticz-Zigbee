@@ -29,17 +29,17 @@ def processKnownDevices( self, NWKID ) :
 	if  self.ListOfDevices[NWKID].get('PowerSource') :		# Let's check first that the field exist, if not it will be requested at Heartbeat == 12 (see above)
 		if self.ListOfDevices[NWKID]['PowerSource'] == 'Main' :	#  Only for device receiving req on idle
 
-			# Let's request an update of LvlControl for all Devices which are ClusterType LvlControl ( 30 * onHearbeat period ( 10s ) )
+			# Let's request an update of LvlControl for all Devices which are ClusterType LvlControl Every 5' ( 30 * onHearbeat period ( 10s ) )
 			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
 				if 'LvlControl' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
-					Domoticz.Log("Request a Read attribute for LvlControl " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+					Domoticz.Domoticz("Request a Read attribute for LvlControl " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 					z_output.ReadAttributeRequest_0008(self, NWKID )
 		
 			# Let's request Power and Meter information for 0x000c Cluster and 0702 for Salus status every 15' ( 90 * onHearbeat period ( 10s ) )
 			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
 				#for key in self.ListOfDevices[NWKID]['ClusterType'] :
 				if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
-					Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+					Domoticz.Domoticz("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 					z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
 					z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
 
