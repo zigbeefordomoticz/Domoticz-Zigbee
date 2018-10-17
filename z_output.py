@@ -237,11 +237,16 @@ def ReadAttributeRequest_0702(self, key) :
 	# Cluster 0x0702 Metering
 
 	listAttributes = []
-	listAttributes.append(0x00)		
-	listAttributes.append(0x0100)		
-	listAttributes.append(0x0200)		
-	listAttributes.append(0x0300)		
+	listAttributes.append(0x00)
+	listAttributes.append(0x01)
+	listAttributes.append(0x0100)
+	listAttributes.append(0x0200)
+	listAttributes.append(0x0300)
 	listAttributes.append(0x400)
+	listAttributes.append(0xE000) # http://www.netvox.com.tw/usermanual/Z803_UserManual_ENG_WEB.pdf
+	listAttributes.append(0xE001)
+	listAttributes.append(0xE002)
+	listAttributes.append(0xE003)
 
 	EPin = "01"
 	EPout= "09"
