@@ -45,6 +45,12 @@ def processKnownDevices( self, NWKID ) :
 						Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 						z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
 
+			# Request On/Off status
+			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
+				if 'Plug' in (self.ListOfDevices[NWKID]['ClusterType']).values() or 'Switch' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
+					Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+					z_output.ReadAttributeRequest_0006(self, NWKID)   
+
 
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	# Request EP list

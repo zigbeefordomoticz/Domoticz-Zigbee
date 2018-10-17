@@ -201,6 +201,18 @@ def ReadAttributeRequest_0000(self, key) :
 
 	ReadAttributeReq( self, key, "01", EPout, "0001", listAttributes )
 
+def ReadAttributeRequest_0006(self, key) :
+	# Cluster 0x0006 with attribute 0x0000
+	EPin = "01"
+	EPout= "01"
+	for tmpEp in self.ListOfDevices[key]['Ep'] :
+			if "0006" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+					EPout=tmpEp
+
+	Domoticz.Debug("Request OnOff status via Read Attribute request : " + key + " EPout = " + EPout )
+	ReadAttributeReq( self, key, "01", EPout, "0006", 0)
+
+
 def ReadAttributeRequest_0008(self, key) :
 	# Cluster 0x0008 with attribute 0x0000
 	EPin = "01"
@@ -210,7 +222,6 @@ def ReadAttributeRequest_0008(self, key) :
 					EPout=tmpEp
 
 	Domoticz.Debug("Request Control level of shutter via Read Attribute request : " + key + " EPout = " + EPout )
-
 	ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
 def ReadAttributeRequest_000C(self, key) :
