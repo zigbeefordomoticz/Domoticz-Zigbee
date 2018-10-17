@@ -37,8 +37,7 @@ def processKnownDevices( self, NWKID ) :
 		
 			# Let's request Power and Meter information for 0x000c Cluster and 0702 for Salus status every 15' ( 90 * onHearbeat period ( 10s ) )
 			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
-				#for key in self.ListOfDevices[NWKID]['ClusterType'] :
-				if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
+				if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values() or 'Meter' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
 					if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
 						Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 						z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
