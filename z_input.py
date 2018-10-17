@@ -383,6 +383,8 @@ def Decode8000_v2(self, MsgData) : # Status
 				CmdSrcAddr = mycmd['datas'][2:6]
 				Domoticz.Debug("Decode8000 - Command for sAddr : " +str( CmdSrcAddr ) )
 				z_tools.updSQN( self, CmdSrcAddr, SEQ )
+				if ( z_var.logRSSI == 1 ) :
+					Domoticz.Log("Zigate activity for | 8000 | " +str(CmdSrcAddr) +" | " + " | " + " | " +str(SEQ) + " | ")
 
 			if   Status=="00" : Status="Success"
 			elif Status=="01" : Status="Incorrect Parameters"
@@ -689,6 +691,7 @@ def Decode8041(self, MsgData, MsgRSSI) : # IEEE Address response
 					+ z_status.DisplayStatusCode( MsgDataStatus ) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress 
 					+ " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 
+
 	if ( z_var.logFORMAT == 1 ) :
 		Domoticz.Log("Zigate activity for | 8041 " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
 
@@ -929,6 +932,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
 	
 	Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
 
+
 	if ( z_var.logFORMAT == 1 ) :
 		Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
@@ -1140,6 +1144,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
 	Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " 
 						+ MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+
 	if ( z_var.logFORMAT == 1 ) :
 		Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 	try :
@@ -1176,6 +1181,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
 	Domoticz.Debug("Decode8102 - Report Individual Attribute response - reception data : " + MsgClusterData + " ClusterID : " 
 					+ MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
+
 	if ( z_var.logFORMAT == 1 ) :
 		Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 
@@ -1272,6 +1278,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 	MsgSrcAddr=MsgData[0:4]
 	MsgIEEE=MsgData[4:20]
 	MsgMacCapa=MsgData[20:22]
+
 
 	Domoticz.Status("Decode0004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 

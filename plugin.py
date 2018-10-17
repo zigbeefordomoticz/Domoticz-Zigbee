@@ -95,8 +95,12 @@ class BasePlugin:
 		
 		if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
 			z_var.CrcCheck = 0
+		if  self.PluginConf.get('refreshXiaomi') :
+			z_var.refreshXiaomi = int(self.PluginConf['refreshXiaomi'],10)
 		if  self.PluginConf.get('sendDelay') :
 			z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
+		if  self.PluginConf.get('logRSSI') :
+			z_var.logRSSI = int(self.PluginConf['logRSSI'],10)
 		if  self.PluginConf.get('storeDiscoveryFrames') :
 			z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
 		if  self.PluginConf.get('logFORMAT') :
