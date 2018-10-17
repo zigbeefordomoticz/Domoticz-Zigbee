@@ -726,11 +726,6 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	PowerSource =   ( mac_capability >> 2 ) & 1
 	ReceiveonIdle = ( mac_capability >> 3 ) & 1
 
-	print("AltPAN :" +str(AltPAN) )
-	print("DeviceType = " +str(DeviceType) )
-	print("PowerSource = " +str(PowerSource) )
-	print("ReceiveonIdle = " +str(ReceiveonIdle) )
-
 	Domoticz.Log("Decode8042 - mac_capability = " +str(mac_capability) )
 
 	if DeviceType == 1 : 
