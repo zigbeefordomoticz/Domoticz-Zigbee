@@ -703,29 +703,6 @@ def Decode8041(self, MsgData, MsgRSSI) : # IEEE Address response
 
 def Decode8042(self, MsgData) : # Node Descriptor response
 
-	"""
-	MAC capability 	
-		Bit 0 – Alternate PAN Coordinator
-		Bit 1 – Device Type 		
-		Bit 2 – Power source 	
-		Bit 3 – Receiver On when Idle
-		Bit 4-5 – Reserved 		
-		Bit 6 – Security capability 
-		Bit 7 – Allocate Address
-
-	Bitfields: 	
-		Logical type (bits 0-2 			
-		0 – Coordinator 	
-		1 – Router 	
-		2 – End Device) 	
-		Complex descriptor available (bit 3) 
-		User descriptor available (bit 4) 
-		Reserved (bit 5-7) 		
-		APS flags (bit 8-10 – currently 0) 
-		Frequency band(11-15 set to 3 (2.4Ghz))	
-	"""
-
-
 	MsgLen=len(MsgData)
 	Domoticz.Debug("Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
 
@@ -743,19 +720,37 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	Domoticz.Log("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
-
-	mac_capability = str(struct.unpack('i',struct.pack('I',int(mac_capability,16)))[0])
 	mac_capability = int(mac_capability,16)
 	AltPAN      =   ( mac_capability & 0x00000001 )
 	DeviceType  =   ( mac_capability >> 1 ) & 1
 	PowerSource =   ( mac_capability >> 2 ) & 1
 	ReceiveonIdle = ( mac_capability >> 3 ) & 1
 
+	print("AltPAN :" +str(AltPAN) )
+	print("DeviceType = " +str(DeviceType) )
+	print("PowerSource = " +str(PowerSource) )
+	print("ReceiveonIdle = " +str(ReceiveonIdle) )
+
 	Domoticz.Log("Decode8042 - mac_capability = " +str(mac_capability) )
-	Domoticz.Log("Decode8042 - Alternate PAN Coordinator = " +str(AltPAN) )
-	Domoticz.Log("Decode8042 - Receiver on Idle = " +str(ReceiveonIdle) )
-	Domoticz.Log("Decode8042 - Power Source = " +str(PowerSource) )
-	Domoticz.Log("Decode8042 - Device type  = " +str(DeviceType) )
+
+	if DeviceType == 1 : 
+		DeviceType = "FFD"
+	else : 
+		DeviceType = "RFD"
+	if ReceiveonIdle == 1 : 
+		ReceiveonIdle = "On"
+	else : 
+		ReceiveonIdle = "Off"
+	if PowerSource == 1 :
+		PowerSource = "Main"
+	else :
+		PowerSource = "Battery"
+
+	Domoticz.Log("Decode8042 - Alternate PAN Coordinator = " +str(AltPAN ))	# 1 if node is capable of becoming a PAN coordinator
+	Domoticz.Log("Decode8042 - Receiver on Idle = " +str(ReceiveonIdle)) 	# 1 if the device does not disable its receiver to 
+																			# conserve power during idle periods.
+	Domoticz.Log("Decode8042 - Power Source = " +str(PowerSource))			# 1 if the current power source is mains power. 
+	Domoticz.Log("Decode8042 - Device type  = " +str(DeviceType))			# 1 if this node is a full function device (FFD). 
 
 	bit_fieldL   = int(bit_field[2:4],16)
 	bit_fieldH   = int(bit_field[0:2],16)
