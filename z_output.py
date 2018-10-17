@@ -172,7 +172,6 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ) :
 			Attr += "{:04n}".format(x)
 
 	datas = "{:02n}".format(2) + addr + EpIn + EpOut + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
-	Domoticz.Debug("ReadAttributeReq : " +str(datas) +" with a weight of : " +str(weight) )
 	sendZigateCmd("0100", datas , weight )
 
 def ReadAttributeRequest_0000(self, key) :
@@ -225,12 +224,18 @@ def ReadAttributeRequest_000C(self, key) :
 
 def ReadAttributeRequest_0702(self, key) :
 	# Cluster 0x0702 Metering
-	Domoticz.Debug("Request Metering infor for Salus plug via Read Attribute request : " + key + " EPout = " + "0A" )
 
 	listAttributes = []
 	listAttributes.append(0x0000)		
 	listAttributes.append(0x0400)
-	ReadAttributeReq( self, key, "09", "O9", "0702", listAttributes)
+
+	EPin = "09"
+	EPout= "09"
+	for tmpEp in self.ListOfDevices[key]['Ep'] :
+			if "0702" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+					EPout=tmpEp
+	Domoticz.Log("Request Metering infor for Salus plug via Read Attribute request : " + key + " EPout = " + EPout )
+	ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
 
 
