@@ -9,14 +9,51 @@
 
 import Domoticz
 import z_var
+import z_tools
+
+
+def LoadDeviceList( self ):
+	# Load DeviceList.txt into ListOfDevices
+	#
+	Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
+	res = "Success"
+	nb = 0
+	with open( self.DeviceListName , 'r') as myfile2:
+		Domoticz.Debug( "Open : " + self.DeviceListName )
+		for line in myfile2:
+			(key, val) = line.split(":",1)
+			key = key.replace(" ","")
+			key = key.replace("'","")
+
+			dlVal=eval(val)
+			Domoticz.Debug("LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) )
+
+			if not dlVal.get('Version') :
+				Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+				res = "Failed"
+
+			if dlVal['Version'] != '3' :
+				Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+				res = "Failed"
+			else:
+				nb = nb +1
+				z_tools.CheckDeviceList( self, key, val )
+				self.ListOfDevices[key]['Heartbeat']=0
+
+	Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
+
+	myfile2.close()
+	return res
+
 
 def WriteDeviceList(self, Folder, count):
 	if self.HBcount>=count :
-		with open( Folder+"DeviceList.txt", 'wt') as file:
+		Domoticz.Debug("Write " + self.DeviceListName + " = " + str(self.ListOfDevices))
+		with open( self.DeviceListName , 'wt') as file:
 			for key in self.ListOfDevices :
 				file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
-		Domoticz.Debug("Write DeviceList.txt = " + str(self.ListOfDevices))
 		self.HBcount=0
+		file.close()
 	else :
 		Domoticz.Debug("HB count = " + str(self.HBcount))
 		self.HBcount=self.HBcount+1
@@ -25,38 +62,37 @@ def WriteDeviceList(self, Folder, count):
 def importDeviceConf( self ) :
 	#Import DeviceConf.txt
 	tmpread=""
-	with open( z_var.homedirectory + "DeviceConf.txt", 'r') as myfile:
+	with open( self.homedirectory + "DeviceConf.txt", 'r') as myfile:
 		tmpread+=myfile.read().replace('\n', '')
-	myfile.close()
 	self.DeviceConf=eval(tmpread)
+	myfile.close()
 
-def loadListOfDevices( self, Devices ) :
 
+def importPluginConf( self ) :
+	# Import PluginConf.txt
+	tmpPluginConf=""
+	with open(self.homedirectory+"PluginConf.txt", 'r') as myPluginConfFile:
+		tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
+	myPluginConfFile.close()
+	Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
+	self.PluginConf=eval(tmpPluginConf)
+
+def checkListOfDevice2Devices( self, Devices ) :
+
+	# As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
+	# It is also expected that the ListOfDevices is already loaded.
+
+	# At that stage the ListOfDevices has beene initialized.
 	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
-		Domoticz.Debug("Devices["+str(x)+"].Options = "+str(Devices[x].Options) )
 		ID = Devices[x].DeviceID
-		self.ListOfDevices[ID]={}
-		if Devices[x].Options.get('Zigate') :
-			self.ListOfDevices[ID]=eval(Devices[x].Options['Zigate'])
-			Domoticz.Log("Device : [" + str(x) + "] ID = " + ID + " Options['Zigate'] = " + str(self.ListOfDevices[ID]) + " loaded into self.ListOfDevices")
-			self.ListOfDevices[ID]['Heartbeat'] = 0
+		if ID not in self.IEEE2NWK :
+			Domoticz.Error("checkListOfDevice2Devices - " +str(ID) + " not found in Plugin Database" )
+			Domoticz.Log("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
+			continue
+
+		NWKID = self.IEEE2NWK[ID]
+		if NWKID in self.ListOfDevices :
+			Domoticz.Debug("checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) )
 		else :
-			Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
+			Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found !" )
 
-
-def loadListOfDevices_v3( self, Devices ) :
-
-	for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
-		if Devices[x].Options.get('Zigate') :
-			Zigate = Devices[x].Options['Zigate']
-			Zaddr = Zigate['Zaddr']
-	
-			Domoticz.Log("loadListOfDevices_v3 - IEEE = " + Devices[x].DeviceID + " Zaddr = " +Zaddr )
-
-			self.ListOfDevices[Zaddr]={}
-			self.ListOfDevices[Zaddr]=eval(Devices[x].Options['Zigate'])
-
-			Domoticz.Log("Device : [" + str(x) + "] Zaddr = " + Zaddr + " Options['Zigate'] = " + str(self.ListOfDevices[Zaddr]) + " loaded into ListOfDevices")
-		else :
-			Domoticz.Error("Error loading Device " +str(Devices[x]) + " not loaded in Zigate Plugin!" )
-	

@@ -1,8 +1,6 @@
 {
 'CrcCheck':'On',
 'sendDelay':'1',
-'enableDeviceList':'1',
 'storeDiscoveryFrames':'0',
-'refreshXiaomi':'0',
-'logRSSI':'0'
+'logFORMAT':'0'
 }

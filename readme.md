@@ -92,12 +92,15 @@ This file allow some plugin configuration. We highy recommend you to use the def
 | CrcCheck | On | Enable (On) or Disble (Off) the control of Checksum when receiveing Zigate messages. |
 | sendDelay | 1 | Serialize the Zigate command from the plugin, by sending one commande every 'sendDelay' second |
 | storeDiscoveryFrames | 0 | Disable (0) or Enable (1) the tracking and storage of Device Discovery Frames. This would be helpfull for new devices unknown to the Zigpate plugin by recording the details of such device and then allowing to see how to configure in the plugin . |
+| refreshXiaomi | 0 | if > 0 send every n seconds a request to any Xiaomi "lumi" device. Be aware that sending message to a battery powered device, might have an impact on the battery life |
+| logRSSI | 0 | if 1, all messages received by the plugin will be log on a format which can be easily filtered . Search for 'Zigate activity for' in the log file, and for each message we will log NWK address, IEEE, RSSI and SQN |
 
 ```
 {
 'CrcCheck':'On',
 'sendDelay':'1',
-'enableDeviceList':'1',
 'storeDiscoveryFrames':'0'
+'refreshXiaomi':'0',
+'logRSSI':'0'
 }
 ```

@@ -46,74 +46,95 @@ def getSaddrfromIEEE(self, IEEE) :
 
 	return ''
 
-def DeviceExist(self, Addr , IEEE = ''):
+def DeviceExist(self, newNWKID , IEEE = ''):
 
 	#Validity check
-	if Addr == '':
+	if newNWKID == '':
 		return False
+
 	#check in ListOfDevices
-	if Addr in self.ListOfDevices:
-		if 'Status' in self.ListOfDevices[Addr] :
+	if newNWKID in self.ListOfDevices:
+		if 'Status' in self.ListOfDevices[newNWKID] :
 			return True
 
 	#If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
 	if IEEE:
-		for existingKey in self.ListOfDevices:
-			existingDevice = self.ListOfDevices[existingKey]
-			if existingDevice.get('DomoID') and existingDevice.get('IEEE','wrong ieee') == IEEE:
-				Domoticz.Debug("DeviceExist - given Addr/IEEE = " + Addr + "/" + IEEE + " found as " + str(existingDevice) )
-				Domoticz.Log("DeviceExist - update self.ListOfDevices[" + Addr + "] with " + str(existingKey) )
+		for existingIEEEkey in self.IEEE2NWK :
+			if existingIEEEkey == IEEE :
+				# This device is already in Domoticz 
+				existingNWKkey = self.IEEE2NWK[IEEE]
 
-				# Make sure this device is valid
-				if existingDevice['Status'] == 'inDB' :
+				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
+
+				# Make sure this device is valid 
+				if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' :
 					continue
 
+				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " and Status = inDB ")
+
 				# Updating process by :
-				# - mapping the information to the new Addr
-				self.ListOfDevices[Addr] = existingDevice
-				Domoticz.Debug("DeviceExist - new device " +str(Addr) +" : " + str(self.ListOfDevices[Addr]) )
-				Domoticz.Debug("DeviceExist - old device " +str(existingKey) +" : " + str(self.ListOfDevices[existingKey]) )
+				# - mapping the information to the new newNWKID
+
+				Domoticz.Debug("DeviceExist - update self.ListOfDevices[" + newNWKID + "] with " + str(existingIEEEkey) )
+				self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[existingNWKkey])
+
+				Domoticz.Debug("DeviceExist - update self.IEEE2NWK[" + IEEE + "] from " +str(existingIEEEkey) + " to " + str(newNWKID) )
+				self.IEEE2NWK[IEEE] = newNWKID
+
+				Domoticz.Debug("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
+				Domoticz.Debug("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
+				Domoticz.Debug("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
+
+				Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
 
 				# MostLikely exitsingKey is not needed any more
-				removeDeviceInList( self, existingKey )	
+				removeNwkInList( self, existingNWKkey )	
 
-				if self.ListOfDevices[Addr]['Status'] == 'Left' :
-					Domoticz.Log("DeviceExist - Update Status from Left to inDB " )
-					self.ListOfDevices[Addr]['Status'] = 'inDB'
-					self.ListOfDevices[Addr]['Hearbeat'] = 0
+				if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
+					Domoticz.Log("DeviceExist - Update Status from 'inDB' to 'Left' for NetworkID : " +str(newNWKID) )
+					self.ListOfDevices[newNWKID]['Status'] = 'inDB'
+					self.ListOfDevices[newNWKID]['Hearbeat'] = 0
 
 				return True
 	return False
 
-def removeDeviceInList( self, Addr) :
+def removeNwkInList( self, NWKID) :
 
-	# It could be that the Unit device is refered by a a non-existing Short Address due to the fact that the device came with a new one.
-	# Addr is the Short Adress registered at Device creation
-	for key in self.ListOfDevices :
-		if self.ListOfDevices[key]['DomoID'] == Addr and self.ListOfDevices[key]['Status'] == 'inDB' :
-			break
+	Domoticz.Debug("removeNwkInList - remove " +str(NWKID) + " => " +str( self.ListOfDevices[NWKID] ) ) 
+	del self.ListOfDevices[NWKID]
 
-	Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
-	del self.ListOfDevices[key]
 
-def initDeviceInList(self, Addr) :
-	if Addr != '' :
-		self.ListOfDevices[Addr]={}
-		self.ListOfDevices[Addr]['Version']="2"
-		self.ListOfDevices[Addr]['Status']="004d"
-		self.ListOfDevices[Addr]['SQN']={}
-		self.ListOfDevices[Addr]['DomoID']={}
-		self.ListOfDevices[Addr]['Ep']={}
-		self.ListOfDevices[Addr]['Heartbeat']="0"
-		self.ListOfDevices[Addr]['RIA']="0"
-		self.ListOfDevices[Addr]['RSSI']={}
-		self.ListOfDevices[Addr]['Battery']={}
-		self.ListOfDevices[Addr]['Model']={}
-		self.ListOfDevices[Addr]['MacCapa']={}
-		self.ListOfDevices[Addr]['IEEE']={}
-		self.ListOfDevices[Addr]['Type']={}
-		self.ListOfDevices[Addr]['ProfileID']={}
-		self.ListOfDevices[Addr]['ZDeviceID']={}
+
+def removeDeviceInList( self, IEEE) :
+	# Most likely call when a Device is removed from Domoticz
+
+	if IEEE in self.IEEE2NWK :
+		key = self.IEEE2NWK[IEEE]
+		Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
+		del self.ListOfDevices[key]
+
+		Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
+		del self.IEEE2NWK[IEEE]
+
+
+def initDeviceInList(self, Nwkid) :
+	if Nwkid != '' :
+		self.ListOfDevices[Nwkid]={}
+		self.ListOfDevices[Nwkid]['Version']="3"
+		self.ListOfDevices[Nwkid]['Status']="004d"
+		self.ListOfDevices[Nwkid]['SQN']={}
+		self.ListOfDevices[Nwkid]['Ep']={}
+		self.ListOfDevices[Nwkid]['Heartbeat']="0"
+		self.ListOfDevices[Nwkid]['RIA']="0"
+		self.ListOfDevices[Nwkid]['RSSI']={}
+		self.ListOfDevices[Nwkid]['Battery']={}
+		self.ListOfDevices[Nwkid]['Model']={}
+		self.ListOfDevices[Nwkid]['MacCapa']={}
+		self.ListOfDevices[Nwkid]['IEEE']={}
+		self.ListOfDevices[Nwkid]['Type']={}
+		self.ListOfDevices[Nwkid]['ProfileID']={}
+		self.ListOfDevices[Nwkid]['ZDeviceID']={}
+		
 
 
 def CheckDeviceList(self, key, val) :
@@ -123,7 +144,6 @@ def CheckDeviceList(self, key, val) :
 
 	DeviceListVal=eval(val)
 	if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-		Domoticz.Log("CheckDeviceList - Address will be add : " + str(key))
 		initDeviceInList(self, key)
 		self.ListOfDevices[key]['RIA']="10"
 		if 'Ep' in DeviceListVal :
@@ -136,6 +156,12 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['MacCapa']=DeviceListVal['MacCapa']
 		if 'IEEE' in DeviceListVal :
 			self.ListOfDevices[key]['IEEE']=DeviceListVal['IEEE']
+			Domoticz.Log("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
+			if  DeviceListVal['IEEE'] :
+				IEEE = DeviceListVal['IEEE']
+				self.IEEE2NWK[IEEE] = key
+			else :
+				Domoticz.Log("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
 		if 'ProfileID' in DeviceListVal :
 			self.ListOfDevices[key]['ProfileID']=DeviceListVal['ProfileID']
 		if 'ZDeviceID' in DeviceListVal :
@@ -146,11 +172,16 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['RSSI']=DeviceListVal['RSSI']
 		if 'SQN' in DeviceListVal :
 			self.ListOfDevices[key]['SQN']=DeviceListVal['SQN']
-		if 'DomoID' in DeviceListVal :
-			self.ListOfDevices[key]['DomoID']=DeviceListVal['DomoID']
+		if 'ClusterType' in DeviceListVal :
+			self.ListOfDevices[key]['ClusterType']=DeviceListVal['ClusterType']
 		if 'Version' in DeviceListVal :
 			self.ListOfDevices[key]['Version']=DeviceListVal['Version']
+		if 'Heartbeat' in DeviceListVal :
+			self.ListOfDevices[key]['Heartbeat']=DeviceListVal['Heartbeat']
+		else :
+			self.ListOfDevices[key]['Heartbeat']=0
 
+		
 
 def updSQN( self, key, newSQN) :
 
@@ -181,6 +212,7 @@ def updSQN( self, key, newSQN) :
 		self.ListOfDevices[key]['SQN'] = {}
 
 
+#### Those functions will be use with the new DeviceConf structutre
 
 def getTypebyCluster( self, Cluster ) :
 	clustersType = { '0405' : 'Humi',
@@ -254,8 +286,6 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
 		if self.DeviceConf[model]['ProfileID'] == ProfileID and self.DeviceConf[model]['ZDeviceID'] == ZDeviceID :
 			return model
 	return ''
-
-
 
 
 def getListofType( self, Type ) :
