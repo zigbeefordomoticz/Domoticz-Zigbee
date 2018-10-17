@@ -1,5 +1,12 @@
 # Release Notes 
 ## xx mmmmmmmm  2018 - dev-x.x.x
+- [Enhancement] Get async status of switches and plug 
+- [Enhancement] Get async Level of Level Control devices
+- [Technical] Use IEEE instead of Network addresses in Domoticz
+- [Technical] Don't store any plugin informations in Domoticz. All plugin infos are now in DeviceList
+- [Issues] Able to manage 2 Zigates on the same Domoticz instance. The DeviceList file will be identified by the HardwareID (plugin instance in Domoticz)
+- [Technical] Decode Device node descriptors information like Manufacturer, Power Source, Response When Idle ....
+- [Technical] Manage Leave message from device
 
 ## xx mmmmmmmm  2018 - beta-3.1.0
 
