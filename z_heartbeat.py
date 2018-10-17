@@ -39,9 +39,12 @@ def processKnownDevices( self, NWKID ) :
 			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
 				#for key in self.ListOfDevices[NWKID]['ClusterType'] :
 				if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
-					Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-					z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
-					z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
+					if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
+						Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+						z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
+					elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
+						Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+						z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
 
 
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
