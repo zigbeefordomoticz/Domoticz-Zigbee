@@ -20,20 +20,30 @@ import z_domoticz
 
 def processKnownDevices( self, NWKID ) :
 
+	# Check if Node Descriptor was run ( this could not be the case on early version)
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 12 )  :
-		z_output.sendZigateCmd("0042", str(NWKID), 2 )	# Request a Node Descriptor
+		if not self.ListOfDevices[NWKID].get('PowerSource') :	# Looks like PowerSource is not available, let's request a Node Descriptor
+			z_output.sendZigateCmd("0042", str(NWKID), 2 )	# Request a Node Descriptor
 
-	# device id type shutter, let check the shutter status every 5' ( 30 * onHearbeat period ( 10s ) )
-	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
-		if self.ListOfDevices[NWKID]['Model'] == "shutter.Profalux" :
-			Domoticz.Debug("Request a Read attribute for the shutter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-			z_output.ReadAttributeRequest_0008(self, NWKID )
 
-	# device id type Xiaomi Plug, let check the shutter status every 15' ( 90 * onHearbeat period ( 10s ) )
-	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
-		if self.ListOfDevices[NWKID]['Model'] == "lumi.plug" :
-			Domoticz.Debug("Request a Read attribute for the Xiaomi Plu " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-			z_output.ReadAttributeRequest_000C(self, NWKID)
+
+	if  self.ListOfDevices[NWKID].get('ReceiveonIdle') :		# Only for device receiving req on idle	
+		if self.ListOfDevices[NWKID]['ReceiveonIdle'] == 'On' :
+
+			# Let's request an update of LvlControl for all Devices which are ClusterType LvlControl ( 30 * onHearbeat period ( 10s ) )
+			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
+				if 'LvlControl' in self.ListOfDevices[NWKID]['ClusterType'] :
+					Domoticz.Debug("Request a Read attribute for LvlControl " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+					z_output.ReadAttributeRequest_0008(self, NWKID )
+		
+			# Let's request Power and Meter information for 0x000c Cluster and 0702 for Salus status every 15' ( 90 * onHearbeat period ( 10s ) )
+			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
+				if 'Power' in self.ListOfDevices[NWKID]['ClusterType'] or 'Meter' in self.ListOfDevices[NWKID]['ClusterType'] :
+					Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+					z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
+					z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
+
+
 
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	# Request EP list

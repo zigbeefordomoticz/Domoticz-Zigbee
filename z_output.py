@@ -215,7 +215,7 @@ def ReadAttributeRequest_0008(self, key) :
 	ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
 def ReadAttributeRequest_000C(self, key) :
-	# Cluster 0x000C with attribute 0x0055
+	# Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
 	EPin = "01"
 	EPout= "02"
 
@@ -224,7 +224,7 @@ def ReadAttributeRequest_000C(self, key) :
 	ReadAttributeReq( self, key, "01", "01", "0000", 0xff01 )
 
 def ReadAttributeRequest_0702(self, key) :
-
+	# Cluster 0x0702 Metering
 	Domoticz.Debug("Request Metering infor for Salus plug via Read Attribute request : " + key + " EPout = " + "0A" )
 
 	listAttributes = []
