@@ -1660,23 +1660,27 @@ def ReadCluster(self, Devices, MsgData):
 	elif MsgClusterId=="0702":  # Smart Energy Metering
 		if MsgAttrID == "0000" : # Summation
 			bytelen = len(MsgClusterData)
-			frames = bytelen/3
-			triads = struct.Struct('3s' * frames)
-			int4byte = struct.Struct('<i')
-			result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(input_data)]
-			Domoticz.Log("ReadCluster - 0x0702 - Computed value = " + str(result) )
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(result)
-			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(result))
+			Domoticz.Log(ReadCluster 0702 - MsgClusterData len = " +str(bytelen) )
+			if bytelen > 0 :
+				frames = bytelen/3
+				triads = struct.Struct('3s' * frames)
+				int4byte = struct.Struct('<i')
+				result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(input_data)]
+				Domoticz.Log("ReadCluster - 0x0702 - Computed value = " + str(result) )
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(result)
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(result))
 
-		elif MsgAttrID == "0400" : # Instant Measurement
+		elif MsgAttrID == "1024" : # Instant Measurement 0x0400
 			bytelen = len(MsgClusterData)
-			frames = bytelen/3
-			triads = struct.Struct('3s' * frames)
-			int4byte = struct.Struct('<i')
-			result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(input_data)]
-			Domoticz.Log("ReadCluster - 0x0702 - Computed value = " + str(result) )
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(result)
-			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(result) )
+			Domoticz.Log(ReadCluster 0702 - MsgClusterData len = " +str(bytelen) )
+			if bytelen > 0 :
+				frames = bytelen/3
+				triads = struct.Struct('3s' * frames)
+				int4byte = struct.Struct('<i')
+				result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(input_data)]
+				Domoticz.Log("ReadCluster - 0x0702 - Computed value = " + str(result) )
+				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(result)
+				z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(result) )
 		else :
 			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttType = " +str(MsgAttType) )
