@@ -37,13 +37,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 	DType= str(Devices[Unit].Type)
 
-	if not self.ListOfDevices[NWKID].get('ClusterType') :
-		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
-		return
-
-	Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]
-	Domoticz.Debug("Dtypename : " + Dtypename)
-
 	if self.ListOfDevices[NWKID]['RSSI'] != '' :
 		SignalLevel = self.ListOfDevices[NWKID]['RSSI']
 	else : SignalLevel = 15
@@ -54,17 +47,29 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	EPin="01"
 	EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
 	ClusterSearch = ""
+	
+	for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+		if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
+			EPout=tmpEp
+
+	if not self.ListOfDevices[NWKID].get('ClusterType') :
+		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
+		return
+
+	# If we find a ClusterType at the EP level we take it , otherwise we will take at the Global Level
+	if  self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :
+ 		Dtypename = self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][str(Devices[Unit].ID)]
+	else :
+		Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]
+
+	Domoticz.Debug("Dtypename : " + Dtypename)
+
 	if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch" or Dtypename=="Smoke" or Dtypename=="DSwitch" or Dtypename=="Button" or Dtypename=="DButton":
 		ClusterSearch="0006"
 	if Dtypename=="LvlControl" :
 		ClusterSearch="0008"
 	if Dtypename=="ColorControl" :
 		ClusterSearch="0300"
-	
-	for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-		if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-			EPout=tmpEp
-
 	# 00 -> OFF
 	# 01 -> ON
 	# 02 -> Toggle

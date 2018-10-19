@@ -29,29 +29,65 @@ def processKnownDevices( self, NWKID ) :
 	if  self.ListOfDevices[NWKID].get('PowerSource') :		# Let's check first that the field exist, if not it will be requested at Heartbeat == 12 (see above)
 		if self.ListOfDevices[NWKID]['PowerSource'] == 'Main' :	#  Only for device receiving req on idle
 
-			# Let's request an update of LvlControl for all Devices which are ClusterType LvlControl Every 5' ( 30 * onHearbeat period ( 10s ) )
-			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
-				if 'LvlControl' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
-					Domoticz.Debug("Request a Read attribute for LvlControl " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-					z_output.ReadAttributeRequest_0008(self, NWKID )
-		
-			# Let's request Power and Meter information for 0x000c Cluster and 0702 for Salus status every 15' ( 90 * onHearbeat period ( 10s ) )
-			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
-				if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values() or 'Meter' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
-					if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
-						Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-						z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
-					elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
-						Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-						z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
+			for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+				# Let's request an update of LvlControl for all Devices which are ClusterType LvlControl Every 5' ( 30 * onHearbeat period ( 10s ) )
+				if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
+					if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+						if 'LvlControl' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values():
+							Domoticz.Debug("Request a Read attribute for LvlControl " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+							z_output.ReadAttributeRequest_0008(self, NWKID )
+							break	# We break as we are sending only once!
+					else : 
+						if 'LvlControl' in (self.ListOfDevices[NWKID]['ClusterType']).values():
+							Domoticz.Debug("Request a Read attribute for LvlControl " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+							z_output.ReadAttributeRequest_0008(self, NWKID )
+							break	# We break as we are sending only once!
 
-			# Request On/Off status
-			if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
-				if 'Plug' in (self.ListOfDevices[NWKID]['ClusterType']).values() or 'Switch' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
-					Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
-					z_output.ReadAttributeRequest_0006(self, NWKID)   
+				# Let's request Power and Meter information for 0x000c Cluster and 0702 for Salus status every 15' ( 90 * onHearbeat period ( 10s ) )
+				if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 90 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
+					if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+						if 'PowerMeter' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values() or  'Meter' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values():
+							if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
+								Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
+								break	# We break as we are sending only once!
+							elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
+								Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
+								break	# We break as we are sending only once!
+							
+					else : 
+						if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values()  or 'Meter' in (self.ListOfDevices[NWKID]['ClusterType']).values():
+							if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
+								Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
+								break	# We break as we are sending only once!
+							elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
+								Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
+								break	# We break as we are sending only once!
+
+				# Request On/Off status
+				if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ) :
+					if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+						if 'Plug' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values() or  'Switch' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values():
+							if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
+								Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								z_output.ReadAttributeRequest_0006(self, NWKID)   
+								break	# We break as we are sending only once!
+							elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
+								Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								z_output.ReadAttributeRequest_0006(self, NWKID)   
+								break	# We break as we are sending only once!
+							
+					else : 
+						if 'Plug' in (self.ListOfDevices[NWKID]['ClusterType']).values() or 'Switch' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
+							Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+							z_output.ReadAttributeRequest_0006(self, NWKID)   
 
 
+
+	
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	# Request EP list
 	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat']=="1":
