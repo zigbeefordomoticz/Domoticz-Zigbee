@@ -263,7 +263,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 
 	DeviceID_IEEE= self.ListOfDevices[NWKID]['IEEE']
 
-	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
+	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 
 	Type=TypeFromCluster(clusterID)
 	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
@@ -271,15 +271,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 	x=0
 	for x in Devices:
 		if Devices[x].DeviceID == DeviceID_IEEE :
-			Domoticz.Debug("MajDomoDevice - NWKID = " +str(NWKID) + " IEEE = " +str(DeviceID_IEEE) )
-
+			Domoticz.Debug("MajDomoDevice - NWKID = " +str(NWKID) + " IEEE = " +str(DeviceID_IEEE) + " Unit = " +str(Devices[x].ID) )
+	
 			Unit = Devices[x].ID
-
-			# Either the Cluster type is available at the EP level, or we take it at the global Level
+			Dtypename = ""
 			if self.ListOfDevices[NWKID]['Ep'][Ep].get('ClusterType') :
-				Dtypename=self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(Unit)]
+				for key  in self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] :
+					if str(Unit) == str(key) :
+						Dtypename=str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][key])
 			else :	
 				Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Unit)]
+			if Dtypename == "" :	# No match with ClusterType
+				continue
 
 			Domoticz.Debug("MajDomoDevice - Dtypename    = " + str(Dtypename) )
 
