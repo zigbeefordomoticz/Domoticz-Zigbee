@@ -55,7 +55,6 @@ def processKnownDevices( self, NWKID ) :
 								Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 								z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
 								break	# We break as we are sending only once!
-							
 					else : 
 						if 'PowerMeter' in (self.ListOfDevices[NWKID]['ClusterType']).values()  or 'Meter' in (self.ListOfDevices[NWKID]['ClusterType']).values():
 							if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
@@ -72,14 +71,13 @@ def processKnownDevices( self, NWKID ) :
 					if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 						if 'Plug' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values() or  'Switch' in (self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']).values():
 							if self.ListOfDevices[NWKID]['Model']  == 'lumi.plug' :
-								Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
+								Domoticz.Debug("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 								z_output.ReadAttributeRequest_0006(self, NWKID)   
 								break	# We break as we are sending only once!
 							elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
 								Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 								z_output.ReadAttributeRequest_0006(self, NWKID)   
 								break	# We break as we are sending only once!
-							
 					else : 
 						if 'Plug' in (self.ListOfDevices[NWKID]['ClusterType']).values() or 'Switch' in (self.ListOfDevices[NWKID]['ClusterType']).values() :
 							Domoticz.Log("Request a Read attribute for OnOff status " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
@@ -98,6 +96,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 			z_output.sendZigateCmd("0042", str(NWKID))	# Request a Node Descriptor
 			self.ListOfDevices[NWKID]['Status']="0042"
 			self.ListOfDevices[NWKID]['Heartbeat']="0"
+			z_output.ReadAttributeRequest_0000(self, NWKID ) # Basic Cluster readAttribute Request
 		else :
 			for dup in self.ListOfDevices :
 				if self.ListOfDevices[NWKID]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":

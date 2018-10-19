@@ -175,31 +175,39 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ) :
 	sendZigateCmd("0100", datas , weight )
 
 def ReadAttributeRequest_0000(self, key) :
-	# Cluster 0x0000 with attribute 0x0000
+	# Basic Cluster
 	EPin = "01"
 	EPout= "01"
 
-	Domoticz.Debug("Request for cluster 0x0000 via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Log("Request for cluster 0x0000 via Read Attribute request : " + key + " EPout = " + EPout )
 	
 	# General
 	listAttributes = []
 	listAttributes.append(0x0000) 		# ZCL Version
-	listAttributes.append(0x0001)		# Application Version
-	listAttributes.append(0x0002)		# Stack version
 	listAttributes.append(0x0003)		# Hardware version
 	listAttributes.append(0x0004)		# Manufacturer
+	listAttributes.append(0x0005)		# Model Identifier
 	listAttributes.append(0x0007)		# Power Source
 	listAttributes.append(0x0010)		# Battery
-	ReadAttributeReq( self, key, EPout, "0000", listAttributes )
+	for tmpEp in self.ListOfDevices[key]['Ep'] :
+			if "0000" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+					EPout=tmpEp
+	ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
-	Domoticz.Debug("Request for cluster 0x0001 via Read Attribute request : " + key + " EPout = " + EPout )
+def ReadAttributeRequest_0001(self, key) :
+	# Power Config
+	EPin = "01"
+	EPout= "01"
+	Domoticz.Log("Request for cluster 0x0001 via Read Attribute request : " + key + " EPout = " + EPout )
 	listAttributes = []
 	listAttributes.append(0x0000)		# Voltage
 	listAttributes.append(0x0010)		# Battery Voltage
 	listAttributes.append(0x0020)		# Battery %
-	# Power Config
 
-	ReadAttributeReq( self, key, "01", EPout, "0001", listAttributes )
+	for tmpEp in self.ListOfDevices[key]['Ep'] :
+			if "0001" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+					EPout=tmpEp
+	ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0006(self, key) :
 	# Cluster 0x0006 with attribute 0x0000
@@ -237,12 +245,13 @@ def ReadAttributeRequest_0702(self, key) :
 	# Cluster 0x0702 Metering
 
 	listAttributes = []
-	listAttributes.append(0x00)
+	listAttributes.append(0x0000) # Current Summation Delivered
 	listAttributes.append(0x01)
 	listAttributes.append(0x0100)
 	listAttributes.append(0x0200)
 	listAttributes.append(0x0300)
-	listAttributes.append(0x400)
+	listAttributes.append(0x0400) # Instantaneous Demand
+
 	listAttributes.append(0xE000) # http://www.netvox.com.tw/usermanual/Z803_UserManual_ENG_WEB.pdf
 	listAttributes.append(0xE001)
 	listAttributes.append(0xE002)

@@ -1359,6 +1359,7 @@ def ReadCluster(self, Devices, MsgData):
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
+	Domoticz.Log("ReadCluster - " +MsgClusterId +"  Saddr : " + str(MsgSrcAddr) + " MsgSrcEp : " + MsgSrcEp + " MsgAttrID : " + MsgAttrID + " MsgAttType : " + MsgAttType + " ClusterData : " + str(MsgClusterData) )
 	if MsgClusterId=="0000" :  # (General: Basic)
 		# It might be good to make sure that we are on a Xiaomi device - A priori : 0x115f
 		if MsgAttrID=="ff01" and self.ListOfDevices[MsgSrcAddr]['Status']=="inDB" :  # xiaomi battery lvl
@@ -1412,10 +1413,10 @@ def ReadCluster(self, Devices, MsgData):
 				self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
 
 
-		elif MsgAttrID=="0005" :  # Model info Xiaomi
+		elif MsgAttrID=="0005" :  # Model info
 			try : 
 				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')					# Convert the model name to ASCII
-				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
+				Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType							   # Set the model name in database
 				if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices :
 					self.DiscoveryDevices[MsgSrcAddr]['Model']=MType
@@ -1434,8 +1435,19 @@ def ReadCluster(self, Devices, MsgData):
 			except:
 				Domoticz.Error("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - Model info Xiaomi : " +  MsgSrcAddr)
 				return
+		elif MsgAttrID == "0000" : # ZCL Version
+			Domoticz.Debug("ReadCluster - 0x0000 - ZCL Version : " +str(MsgClusterData) )
+		elif MsgAttrID == "0003" : # Hardware version
+			Domoticz.Debug("ReadCluster - 0x0000 - Hardware version : " +str(MsgClusterData) )
+		elif MsgAttrID == "0004" : # Manufacturer
+			Domoticz.Debug("ReadCluster - 0x0000 - Manufacturer : " +str(MsgClusterData) )
+		elif MsgAttrID == "0007" : # Power Source
+			Domoticz.Debug("ReadCluster - 0x0000 - Power Source : " +str(MsgClusterData) )
+		elif MsgAttrID == "0016" : # Battery
+			Domoticz.Debug("ReadCluster - 0x0000 - Battery : " +str(MsgClusterData) )
+
 		else :
-			Domoticz.Debug("ReadCluster (8102) - ClusterId=0000 - reception heartbeat - Message attribut inconnu : " + MsgData)
+			Domoticz.Debug("ReadCluster 0x0000 - Message attribut inconnu : " + MsgData)
 			return
 	
 	elif MsgClusterId=="0006" :  # (General: On/Off) 
@@ -1646,9 +1658,29 @@ def ReadCluster(self, Devices, MsgData):
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
 	elif MsgClusterId=="0702":  # Smart Energy Metering
-		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
-		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttType = " +str(MsgAttType) )
-		Domoticz.Log("ReadCluster - ClusterID=0702 - NOT IMPLEMENTED YET - MsgAttSize = " +str(MsgAttSize) )
+		if MsgAttrID == "0000" : # Summation
+			bytelen = len(MsgClusterData)
+			frames = bytelen/3
+			triads = struct.Struct('3s' * frames)
+			int4byte = struct.Struct('<i')
+			result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(input_data)]
+			Domoticz.Log("ReadCluster - 0x0702 - Computed value = " + str(result) )
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(result)
+			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(result))
+
+		elif MsgAttrID == "0400" : # Instant Measurement
+			bytelen = len(MsgClusterData)
+			frames = bytelen/3
+			triads = struct.Struct('3s' * frames)
+			int4byte = struct.Struct('<i')
+			result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(input_data)]
+			Domoticz.Log("ReadCluster - 0x0702 - Computed value = " + str(result) )
+			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(result)
+			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(result) )
+		else :
+			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttType = " +str(MsgAttType) )
+			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttSize = " +str(MsgAttSize) )
 
 	elif MsgClusterId=="0b04" : # 0b04 is Electrical Measurement Cluster
 		Domoticz.Log("ReadCluster - ClusterID=0b04 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
