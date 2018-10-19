@@ -888,12 +888,13 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 		Domoticz.Log("Decode8045 - MsgDataEpCount = " + str(MsgDataEpCount) )
 		Domoticz.Log("Decode8045 - MsgDataEPlist = " + str(MsgDataEPlist) )
 
-		while i < int(MsgDataEpCount) :
-			Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] = {} ")
-			if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(OutEPlist[i:i+2]) :
-				Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] to be initialzed ")
-				#self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist[i:i+2]] = {}
-			i = i + 2
+#		i=0
+#		while i < 2 * int(MsgDataEpCount) :
+#			Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] = {} ")
+#			if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(OutEPlist[i:i+2]) :
+#				Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] to be initialzed ")
+#				#self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist[i:i+2]] = {}
+#			i = i + 2
 			
 		for i in MsgDataEPlist :
 			OutEPlist+=i
