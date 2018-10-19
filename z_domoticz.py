@@ -45,6 +45,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
 
 	DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
 
+	EpTypeenabled = False
 	for Ep in self.ListOfDevices[NWKID]['Ep'] :
 		# Use 'type' at level EndPoint if existe
 		if 'Type' in  self.ListOfDevices[NWKID]['Ep'][Ep] :
@@ -53,8 +54,8 @@ def CreateDomoDevice(self, Devices, NWKID) :
 				aType = str(dType)
 				Type = aType.split("/")
 				Domoticz.Log("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep) )
+				EpTypeenabled = True		# We have found at least one Type at Ep level, so we will never go at Global for other Eps
 		else :
-
 			if self.ListOfDevices[NWKID]['Type']== {} :
 				Type=GetType(self, NWKID, Ep).split("/")
 				Domoticz.Log("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )

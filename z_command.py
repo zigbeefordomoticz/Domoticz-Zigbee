@@ -52,9 +52,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
 			EPout=tmpEp
 
-	if not self.ListOfDevices[NWKID].get('ClusterType') :
-		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
-		return
+	#if not self.ListOfDevices[NWKID].get('ClusterType') :
+#		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
+#		return
 
 	# If we find a ClusterType at the EP level we take it , otherwise we will take at the Global Level
 	if  self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :

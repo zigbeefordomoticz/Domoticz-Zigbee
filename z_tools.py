@@ -148,6 +148,8 @@ def CheckDeviceList(self, key, val) :
 		self.ListOfDevices[key]['RIA']="10"
 		if 'Ep' in DeviceListVal :
 			self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
+		if 'NbEp' in DeviceListVal :
+			self.ListOfDevices[key]['NbEp']=DeviceListVal['NbEp']
 		if 'Type' in DeviceListVal :
 			self.ListOfDevices[key]['Type']=DeviceListVal['Type']
 		if 'Model' in DeviceListVal :

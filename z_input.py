@@ -831,9 +831,11 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 		self.DiscoveryDevices[MsgDataShAddr]['8043'] = str(MsgData)
 		self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
 		
-		if self.DiscoveryDevices[MsgDataShAddr]['NbEP'] == len(self.DiscoveryDevices[MsgDataShAddr]['Ep']) :
+		if int(self.DiscoveryDevices[MsgDataShAddr]['NbEP']) == int(len(self.DiscoveryDevices[MsgDataShAddr]['Ep'])) :
 			with open( self.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
 				file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
+		else :
+			Domoticz.Log("Decode8043 - EPs : "+str(len(self.DiscoveryDevices[MsgDataShAddr]['Ep'])) +" out of " +str(self.DiscoveryDevices[MsgDataShAddr]['NbEP'])  )
 
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
@@ -884,30 +886,17 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 			z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 		# PP: Does that mean that if we Device is already in the Database, we might overwrite 'EP' ?
 
-		# Je ne comprends pas cette boucle. Pourquoi ne pas simplement parcourir la liste EPlist en fonction du nombre d'EP (MsgDataEpCount
-		Domoticz.Log("Decode8045 - MsgDataEpCount = " + str(MsgDataEpCount) )
-		Domoticz.Log("Decode8045 - MsgDataEPlist = " + str(MsgDataEPlist) )
-
-#		i=0
-#		while i < 2 * int(MsgDataEpCount) :
-#			Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] = {} ")
-#			if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(OutEPlist[i:i+2]) :
-#				Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] to be initialzed ")
-#				#self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist[i:i+2]] = {}
-#			i = i + 2
-			
-		for i in MsgDataEPlist :
-			OutEPlist+=i
-			if len(OutEPlist)==2 :
-				if OutEPlist not in self.ListOfDevices[MsgDataShAddr]['Ep'] :
-					self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist]={}
-					OutEPlist=""
-					
-	#Fin de correction
+		i=0
+		while i < 2 * int(MsgDataEpCount,16) :
+			tmpEp = MsgDataEPlist[i:i+2]
+			if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(tmpEp) :
+				self.ListOfDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
+			i = i + 2
+		self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16)) 	# Store the number of EPs
 
 	if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 		self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
-		self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(MsgDataEpCount)
+		self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
 
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
