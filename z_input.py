@@ -830,9 +830,10 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 	if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 		self.DiscoveryDevices[MsgDataShAddr]['8043'] = str(MsgData)
 		self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
-
-		with open( self.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
-			file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
+		
+		if self.DiscoveryDevices[MsgDataShAddr]['NbEP'] == len(self.DiscoveryDevices[MsgDataShAddr]['Ep']) :
+			with open( self.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
+				file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
 
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
@@ -882,6 +883,18 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 		else :
 			z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 		# PP: Does that mean that if we Device is already in the Database, we might overwrite 'EP' ?
+
+		# Je ne comprends pas cette boucle. Pourquoi ne pas simplement parcourir la liste EPlist en fonction du nombre d'EP (MsgDataEpCount
+		Domoticz.Log("Decode8045 - MsgDataEpCount = " + str(MsgDataEpCount) )
+		Domoticz.Log("Decode8045 - MsgDataEPlist = " + str(MsgDataEPlist) )
+
+		while i < int(MsgDataEpCount) :
+			Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] = {} ")
+			if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(OutEPlist[i:i+2]) :
+				Domoticz.Log("Decode8045 - self.ListOfDevices[MsgDataShAddr]['Ep'][[OutEPlist[" +str(i)+":"+str(i+2)+"]] to be initialzed ")
+				#self.ListOfDevices[MsgDataShAddr]['Ep'][OutEPlist[i:i+2]] = {}
+			i = i + 2
+			
 		for i in MsgDataEPlist :
 			OutEPlist+=i
 			if len(OutEPlist)==2 :
@@ -893,6 +906,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 
 	if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
 		self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
+		self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(MsgDataEpCount)
 
 	Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 	return
@@ -1660,7 +1674,7 @@ def ReadCluster(self, Devices, MsgData):
 	elif MsgClusterId=="0702":  # Smart Energy Metering
 		if MsgAttrID == "0000" : # Summation
 			bytelen = len(MsgClusterData)
-			Domoticz.Log(ReadCluster 0702 - MsgClusterData len = " +str(bytelen) )
+			Domoticz.Log("ReadCluster 0702 - MsgClusterData len = " +str(bytelen) )
 			if bytelen > 0 :
 				frames = bytelen/3
 				triads = struct.Struct('3s' * frames)
@@ -1672,7 +1686,7 @@ def ReadCluster(self, Devices, MsgData):
 
 		elif MsgAttrID == "1024" : # Instant Measurement 0x0400
 			bytelen = len(MsgClusterData)
-			Domoticz.Log(ReadCluster 0702 - MsgClusterData len = " +str(bytelen) )
+			Domoticz.Log("ReadCluster 0702 - MsgClusterData len = " +str(bytelen) )
 			if bytelen > 0 :
 				frames = bytelen/3
 				triads = struct.Struct('3s' * frames)
