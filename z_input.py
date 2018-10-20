@@ -1648,18 +1648,20 @@ def ReadCluster(self, Devices, MsgData):
 			EPforPower = z_tools.getEPforClusterType( self, MsgSrcAddr, "Power" ) 
 			EPforMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
 			if len(EPforPower) == len(EPforMeter) == 0 :
-				if MsgAttrID=="0055" : # Angle 
-					Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
-					# will need to investigate to see if this should trigger an update or not.
-					# Probably the right think would be to detect clock and anti-clock rotation. 
-					# Add a Selector anti-clock on the Switch seector
+				Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
+				# will need to investigate to see if this should trigger an update or not.
+				# Probably the right think would be to detect clock and anti-clock rotation. 
+				# Add a Selector anti-clock on the Switch seector
 
-			else :
-				for ep in EPforPower :
+			else : # We have several EPs in Power/Meter
+				Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
+				Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) )
+				for ep in EPforPower + EPforMeter:
 					if ep == MsgSrcEp :
 						Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 						self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
 						z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0],1)))
+						break      # We just need to send once
 
 		elif MsgAttrID=="ff05" : # Rotation - horinzontal
 			Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )

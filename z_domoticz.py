@@ -270,7 +270,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 
 	DeviceID_IEEE= self.ListOfDevices[NWKID]['IEEE']
 
-	Domoticz.Log("MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
+	Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 
 	Type=TypeFromCluster(clusterID)
 	Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
@@ -296,7 +296,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 						nbClusterType = nbClusterType + 1
 						ptEP = tmpEp
 
-				Domoticz.Log("MajDomoDevice - We have " +str(nbClusterType) + " EPs with ClusterType" )
+				Domoticz.Debug("MajDomoDevice - We have " +str(nbClusterType) + " EPs with ClusterType" )
 				
 				if nbClusterType == 1 :		# All Updates are redirected to the same EP
 					# We must redirect all to the EP where there is a ClusterType
@@ -306,7 +306,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
 				
 				else :
-					Domoticz.Log("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType']) + " for : " +str(ID) )
+					Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType']) + " for : " +str(ID) )
 					for key  in self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] :
 						if str(ID) == str(key) :
 							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][key])
@@ -593,7 +593,7 @@ def ResetDevice(self, Devices, Type,HbCount) :
 					if str(ID) in self.ListOfDevices[NWKID]['ClusterType'].values() :
 						Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
 			else :
-				Domoticz.Log("ResetDevice - No ClusterType for  " +NWKID + " not found in " +str(self.ListOfDevices[NWKID]) )
+				Domoticz.Debug("ResetDevice - No ClusterType for  " +NWKID + " not found in " +str(self.ListOfDevices[NWKID]) )
 				continue
 
 
