@@ -45,23 +45,29 @@ def CreateDomoDevice(self, Devices, NWKID) :
 
 	DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
 
-	EpTypeenabled = False
+	# When Type is at Global level, then we create all Type against the 1st EP
+	# If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
+	GlobalEP = False
 	for Ep in self.ListOfDevices[NWKID]['Ep'] :
 		# Use 'type' at level EndPoint if existe
-		if 'Type' in  self.ListOfDevices[NWKID]['Ep'][Ep] :
-			if self.ListOfDevices[NWKID]['Ep'][Ep]['Type'] != "" :
-				dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
-				aType = str(dType)
-				Type = aType.split("/")
-				Domoticz.Log("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep) )
-				EpTypeenabled = True		# We have found at least one Type at Ep level, so we will never go at Global for other Eps
-		else :
-			if self.ListOfDevices[NWKID]['Type']== {} :
-				Type=GetType(self, NWKID, Ep).split("/")
-				Domoticz.Log("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )
+		Domoticz.Log("CreatDomoDevice - Process EP : " +str(Ep) )
+		if not GlobalEP :								# First time, or we dont't GlobalType
+			if 'Type' in  self.ListOfDevices[NWKID]['Ep'][Ep] :
+				if self.ListOfDevices[NWKID]['Ep'][Ep]['Type'] != "" :
+					dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
+					aType = str(dType)
+					Type = aType.split("/")
+					Domoticz.Log("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep) )
 			else :
-				Type=self.ListOfDevices[NWKID]['Type'].split("/")
-				Domoticz.Log("CreateDomoDevice - Type : '" + str(Type) + "'")
+				if self.ListOfDevices[NWKID]['Type']== {} :
+					Type=GetType(self, NWKID, Ep).split("/")
+					Domoticz.Log("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )
+				else :
+					GlobalEP = True
+					Type=self.ListOfDevices[NWKID]['Type'].split("/")
+					Domoticz.Log("CreateDomoDevice - Type : '" + str(Type) + "'")
+		else :
+			break									# We have created already the Devices (as GlobalEP is set)
 	
 		if not self.ListOfDevices[NWKID]['Ep'][Ep].get('ClusterType') :
 			self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] = {}
@@ -274,14 +280,37 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 		if Devices[x].DeviceID == DeviceID_IEEE :
 			Domoticz.Debug("MajDomoDevice - NWKID = " +str(NWKID) + " IEEE = " +str(DeviceID_IEEE) + " Unit = " +str(Devices[x].ID) )
 	
-			Unit = Devices[x].ID
+			ID = Devices[x].ID
 			Dtypename = ""
-			if self.ListOfDevices[NWKID]['Ep'][Ep].get('ClusterType') :
-				for key  in self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] :
-					if str(Unit) == str(key) :
-						Dtypename=str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][key])
-			else :	
-				Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Unit)]
+			Domoticz.Debug("MajDomoDevice - " +str(self.ListOfDevices[NWKID]['Ep'][Ep]) )
+		
+			if self.ListOfDevices[NWKID].get('ClusterType') :		# We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
+				Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['ClusterType']) + " for : " +str(ID) )
+				Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
+			else :
+				# Are we in a situation with one Devices whatever Eps are ?
+				# To do that, check there is only 1 ClusterType even if several EPs
+				nbClusterType = 0
+				for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+					if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+						nbClusterType = nbClusterType + 1
+						ptEP = tmpEp
+
+				Domoticz.Log("MajDomoDevice - We have " +str(nbClusterType) + " EPs with ClusterType" )
+				
+				if nbClusterType == 1 :		# All Updates are redirected to the same EP
+					# We must redirect all to the EP where there is a ClusterType
+					# ptEP is be the Only  EP where we have found ClusterType
+					for key  in self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'] :
+						if str(ID) == str(key) :
+							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
+				
+				else :
+					Domoticz.Log("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType']) + " for : " +str(ID) )
+					for key  in self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] :
+						if str(ID) == str(key) :
+							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][key])
+
 			if Dtypename == "" :	# No match with ClusterType
 				continue
 
@@ -550,19 +579,19 @@ def ResetDevice(self, Devices, Type,HbCount) :
 				Domoticz.Error("ResetDevice " +str(NWKID) + " not found in " +str(self.ListOfDevices) )
 				continue
 
-			Unit = Devices[x].ID
+			ID = Devices[x].ID
 		
 			Dtypename=''
 			for tmpEp in  self.ListOfDevices[NWKID]['Ep'] :
 				if  self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
-					if  str(Unit) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'].values() :
-						Dtypename=self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(Unit)]
+					if  str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'].values() :
+						Dtypename=self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
 						break 
 
 			if Dtypename == '' :
 				if self.ListOfDevices[NWKID].get('ClusterType') : 
-					if str(Unit) in self.ListOfDevices[NWKID]['ClusterType'].values() :
-						Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Unit)]
+					if str(ID) in self.ListOfDevices[NWKID]['ClusterType'].values() :
+						Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
 			else :
 				Domoticz.Log("ResetDevice - No ClusterType for  " +NWKID + " not found in " +str(self.ListOfDevices[NWKID]) )
 				continue

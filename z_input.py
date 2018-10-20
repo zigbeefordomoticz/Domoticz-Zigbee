@@ -1633,30 +1633,38 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Debug("cube action : Not expected value" + value )
 			return value
 
-		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
 		self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
+		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
 		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(MsgClusterData) )
 		Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value : " + str(cube_decode(MsgClusterData)) )
 		
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
-		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 
-		if  MsgSrcEp == '02' and MsgAttrID=="0055" : # Consomation Electrique
-			Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
-			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
-			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0],1)))
+		Domoticz.Log("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 
-		elif MsgSrcEp == '03' and MsgAttrID=="ff05" : # Rotation - horinzontal
-			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
+		if MsgAttrID=="0055" :
+			# Are we receiving Power
+			EPforPower = z_tools.getEPforClusterType( self, MsgSrcAddr, "Power" ) 
+			EPforMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
+			if len(EPforPower) == len(EPforMeter) == 0 :
+				if MsgAttrID=="0055" : # Angle 
+					Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
+					# will need to investigate to see if this should trigger an update or not.
+					# Probably the right think would be to detect clock and anti-clock rotation. 
+					# Add a Selector anti-clock on the Switch seector
+
+			else :
+				for ep in EPforPower :
+					if ep == MsgSrcEp :
+						Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
+						self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
+						z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0],1)))
+
+		elif MsgAttrID=="ff05" : # Rotation - horinzontal
+			Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
 			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
-
-		elif MsgSrcEp == '03' and MsgAttrID=="0055" : # Angle 
-			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
-			# will need to investigate to see if this should trigger an update or not.
-			# Probably the right think would be to detect clock and anti-clock rotation. 
-			# Add a Selector anti-clock on the Switch seector
 
 		else :
 			Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " + str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )

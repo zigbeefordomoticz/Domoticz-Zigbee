@@ -46,6 +46,20 @@ def getSaddrfromIEEE(self, IEEE) :
 
 	return ''
 
+def getEPforClusterType( self, NWKID, ClusterType ) :
+
+	EPlist = []
+	for EPout in self.ListOfDevices[NWKID]['Ep'] :
+		if self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :
+			for key in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
+				if self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key].find(ClusterType) :
+					EPlist.append(str(EPout))
+					break
+	return EPlist
+
+
+
+
 def DeviceExist(self, newNWKID , IEEE = ''):
 
 	#Validity check
