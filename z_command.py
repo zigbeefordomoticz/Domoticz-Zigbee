@@ -56,13 +56,19 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 #		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
 #		return
 
-	# If we find a ClusterType at the EP level we take it , otherwise we will take at the Global Level
-	if  self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :
- 		Dtypename = self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][str(Devices[Unit].ID)]
-	else :
-		Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]
 
-	Domoticz.Debug("Dtypename : " + Dtypename)
+	Dtypename = ""
+	if self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :
+		for key  in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
+			if str(Devices[Unit].ID) == str(key) :
+				Dtypename=str(self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key])
+	else :	
+		Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]
+	if Dtypename == "" :	# No match with ClusterType
+		Domoticz.Error("mgtCommand - no ClusterType found ! for Ep " +str(EPout) +" in " +str(self.ListOfDevices[NWKID]) )
+		return
+
+	Domoticz.Log("Dtypename : " + Dtypename)
 
 	if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch" or Dtypename=="Smoke" or Dtypename=="DSwitch" or Dtypename=="Button" or Dtypename=="DButton":
 		ClusterSearch="0006"
