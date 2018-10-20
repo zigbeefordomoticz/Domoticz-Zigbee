@@ -44,44 +44,50 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 	else : BatteryLevel = 255
 
+
+	# Determine the possible ClusterType for that Device
+	DtypenameList = []
+	if self.ListOfDevices[NWKID].get('ClusterType') :
+		DtypenameList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
+	else :
+		for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+			if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+				for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
+					if str(Devices[Unit].ID) == str(key) :
+						DtypenameList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
+	
+	if len(DtypenameList) == 0 :	# No match with ClusterType
+		Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
+		return
+
+	Domoticz.Log("mgtCommand - List of TypeName : " +str(DtypenameList) )
+	# We have list of Dtypename, let's see which one are matching Command style
+	# We also assume that there is only ONE command type per Ep and so per Devices
+
+	for tmpDtypename in DtypenameList :
+		if tmpDtypename =="Switch" or tmpDtypename =="Plug" or tmpDtypename =="MSwitch" or tmpDtypename =="Smoke" or tmpDtypename =="DSwitch" or tmpDtypename =="Button" or tmpDtypename =="DButton":
+			ClusterSearch="0006"
+			Dtypename = tmpDtypename
+		if tmpDtypename =="LvlControl" :
+			ClusterSearch="0008"
+			Dtypename = tmpDtypename
+		if tmpDtypename =="ColorControl" :
+			ClusterSearch="0300"
+			Dtypename = tmpDtypename
+
+	Domoticz.Log("mgtCommand - Dtypename : " +str(Dtypename) )
+
+	# We have now the Dtypename, let's look for the corresponding EP
 	EPin="01"
 	EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
 	ClusterSearch = ""
-	
 	for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
 		if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
 			EPout=tmpEp
-
-	#if not self.ListOfDevices[NWKID].get('ClusterType') :
-#		Domoticz.Error("mgtCommand - didn't find ClusterType in " +str(Unit) + " WKID = " +str(NWKID) + " ==> " +str(self.ListOfDevices[NWKID] ))
-#		return
+	Domoticz.Log("EPout = " +str(EPout) )
 
 
-	Dtypename = ""
-	if self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :
-		for key  in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
-			if str(Devices[Unit].ID) == str(key) :
-				Dtypename=str(self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key])
-	else :	
-		Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]
-	if Dtypename == "" :	# No match with ClusterType
-		Domoticz.Error("mgtCommand - no ClusterType found ! for Ep " +str(EPout) +" in " +str(self.ListOfDevices[NWKID]) )
-		return
 
-	Domoticz.Log("Dtypename : " + Dtypename)
-
-	if Dtypename=="Switch" or Dtypename=="Plug" or Dtypename=="MSwitch" or Dtypename=="Smoke" or Dtypename=="DSwitch" or Dtypename=="Button" or Dtypename=="DButton":
-		ClusterSearch="0006"
-	if Dtypename=="LvlControl" :
-		ClusterSearch="0008"
-	if Dtypename=="ColorControl" :
-		ClusterSearch="0300"
-	# 00 -> OFF
-	# 01 -> ON
-	# 02 -> Toggle
-	#Can use timed on/off
-	#z_output.sendZigateCmd("0093","02" + Devices[Unit].DeviceID + EPin + EPout + on/off + on_time + off_time)
-	
 	if Command == "Off" :
 		self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 		z_output.sendZigateCmd("0092","02" + NWKID + EPin + EPout + "00")
