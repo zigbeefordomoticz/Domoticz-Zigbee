@@ -54,7 +54,7 @@ def getEPforClusterType( self, NWKID, ClusterType ) :
 			for key in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
 				if self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key].find(ClusterType) >= 0 :
 					EPlist.append(str(EPout))
-					Domoticz.Log("We found " + ClusterType +  " in " + str(self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType']) )	
+					Domoticz.Debug("We found " + ClusterType +  " in " + str(self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType']) )	
 					break
 	return EPlist
 

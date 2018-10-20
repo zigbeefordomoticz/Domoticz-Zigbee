@@ -281,3 +281,44 @@ def removeZigateDevice( self, key ) :
 
 	return
 
+
+def enableReportingonDevice( self, key, ep, cluster, attribute, attrType ) :
+        '''
+        Configure reporting request
+        for now support only one attribute
+        '''
+        addr = self.__addr(addr)
+        direction = 0
+        manufacturer_specific = 0
+        manufacturer_id = 0
+#         if not isinstance(attributes, list):
+#             attributes = [attributes]
+#         length = len(attributes)
+        length = 1
+        attribute_direction = 0
+#         attribute_type = 0
+        attribute_id = attribute
+        min_interval = 0
+        max_interval = 0
+        timeout = 0
+        change = 0
+        data = struct.pack('!BHBBHBBHBBBHHHHB', 2, addr, 1, endpoint, cluster,
+                           direction, manufacturer_specific,
+                           manufacturer_id, length, attribute_direction,
+                           attribute_type, attribute_id, min_interval,
+                           max_interval, timeout, change)
+        self.send_data(0x0120, data, 0x8120)
+
+
+ ef attribute_discovery_request(self, addr, endpoint, cluster):
+        '''
+        Attribute discovery request
+        '''
+        addr = self.__addr(addr)
+        direction = 0
+        manufacturer_specific = 0
+        manufacturer_id = 0
+        data = struct.pack('!BHBBHBBBHB', 2, addr, 1, endpoint, cluster,
+                           0, direction, manufacturer_specific,
+                           manufacturer_id, 255)
+        self.send_data(0x0140, data)

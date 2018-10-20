@@ -1363,7 +1363,7 @@ def ReadCluster(self, Devices, MsgData):
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-	Domoticz.Log("ReadCluster - " +MsgClusterId +"  Saddr : " + str(MsgSrcAddr) + " MsgSrcEp : " + MsgSrcEp + " MsgAttrID : " + MsgAttrID + " MsgAttType : " + MsgAttType + " ClusterData : " + str(MsgClusterData) )
+	Domoticz.Debug("ReadCluster - " +MsgClusterId +"  Saddr : " + str(MsgSrcAddr) + " MsgSrcEp : " + MsgSrcEp + " MsgAttrID : " + MsgAttrID + " MsgAttType : " + MsgAttType + " ClusterData : " + str(MsgClusterData) )
 	if MsgClusterId=="0000" :  # (General: Basic)
 		# It might be good to make sure that we are on a Xiaomi device - A priori : 0x115f
 		if MsgAttrID=="ff01" and self.ListOfDevices[MsgSrcAddr]['Status']=="inDB" :  # xiaomi battery lvl
@@ -1382,7 +1382,7 @@ def ReadCluster(self, Devices, MsgData):
 			if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' :	# Battery Level makes sense for non main powered devices
 				BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 				ValueBattery=round(int(BatteryLvl,16)/10/3.3)
-				Domoticz.Log("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
+				Domoticz.Debug("ReadCluster - 0000/ff01 Saddr : " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
 				self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 			if sTemp != '' :
 				Temp = '%s%s' % (str(sTemp[2:4]),str(sTemp[0:2])) 
@@ -1420,7 +1420,7 @@ def ReadCluster(self, Devices, MsgData):
 		elif MsgAttrID=="0005" :  # Model info
 			try : 
 				MType=binascii.unhexlify(MsgClusterData).decode('utf-8')					# Convert the model name to ASCII
-				Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
+				Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device : " + MType)
 				self.ListOfDevices[MsgSrcAddr]['Model']=MType							   # Set the model name in database
 				if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices :
 					self.DiscoveryDevices[MsgSrcAddr]['Model']=MType
@@ -1641,7 +1641,7 @@ def ReadCluster(self, Devices, MsgData):
 		
 	elif MsgClusterId=="000c" :  # Magic Cube Xiaomi rotation and Power Meter
 
-		Domoticz.Log("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
+		Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
 
 		if MsgAttrID=="0055" :
 			# Are we receiving Power
@@ -1658,13 +1658,13 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) )
 				for ep in EPforPower + EPforMeter:
 					if ep == MsgSrcEp :
-						Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
+						Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0]))
 						self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0])
 						z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(round(struct.unpack('f',struct.pack('i',int(MsgClusterData,16)))[0],1)))
 						break      # We just need to send once
 
 		elif MsgAttrID=="ff05" : # Rotation - horinzontal
-			Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
 			z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
