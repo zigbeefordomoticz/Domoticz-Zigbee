@@ -556,7 +556,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 		rssi=MsgData[idx+24:idx+26]
 
 		if z_tools.DeviceExist(self, saddr, ieee):
-			Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format((int(rssi,16))) + " Power = " + power + " found in ListOfDevice")
+			Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format((int(rssi,16))) + " Power = " + power + " found in ListOfDevice")
 			#self.ListOfDevices[saddr]['Power'] = str(power)
 
 			if rssi !="00" :
@@ -565,7 +565,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 				self.ListOfDevices[saddr]['RSSI']= 12
 			Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
 		else: 
-			Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format(int(rssi,16)) + " Power = " + power + " not found in ListOfDevice")
+			Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format(int(rssi,16)) + " Power = " + power + " not found in ListOfDevice")
 		idx=idx+26
 
 	Domoticz.Debug("Decode8015 - IEEE2NWK      : " +str(self.IEEE2NWK) )
@@ -1338,13 +1338,31 @@ def ReadCluster(self, Devices, MsgData):
 		'''
 			decode Attribute based on their Type and Size
 		'''
-		if AttType == "0010" :
-			return Attribute							# State
-		elif AttType == "0020" : 						# Value from 0x00 - 0xff 
+		'''
+		https://www.dresden-elektronik.de/fileadmin/Downloads/Dokumente/Produkte/6_Software/deconz-cpp-doc/da/d4d/namespacedeCONZ.html
+		ZclNoData = 0x00, Zcl8BitData = 0x08, Zcl16BitData = 0x09, Zcl24BitData = 0x0a,
+  		Zcl32BitData = 0x0b, Zcl40BitData = 0x0c, Zcl48BitData = 0x0d, Zcl56BitData = 0x0e,
+  		Zcl64BitData = 0x0f, ZclBoolean = 0x10, Zcl8BitBitMap = 0x18, Zcl16BitBitMap = 0x19,
+  		Zcl24BitBitMap = 0x1a, Zcl32BitBitMap = 0x1b, Zcl40BitBitMap = 0x1c, Zcl48BitBitMap = 0x1d,
+  		Zcl56BitBitMap = 0x1e, Zcl64BitBitMap = 0x1f, Zcl8BitUint = 0x20, Zcl16BitUint = 0x21,
+  		Zcl24BitUint = 0x22, Zcl32BitUint = 0x23, Zcl40BitUint = 0x24, Zcl48BitUint = 0x25,
+  		Zcl56BitUint = 0x26, Zcl64BitUint = 0x27, Zcl8BitInt = 0x28, Zcl16BitInt = 0x29,
+  		Zcl24BitInt = 0x2a, Zcl32BitInt = 0x2b, Zcl40BitInt = 0x2c, Zcl48BitInt = 0x2d,
+  		Zcl56BitInt = 0x2e, Zcl64BitInt = 0x2f, Zcl8BitEnum = 0x30, Zcl16BitEnum = 0x31,
+  		ZclOctedString = 0x41, ZclCharacterString = 0x42, ZclLongOctedString = 0x43, ZclLongCharacterString = 0x44,
+  		ZclTimeOfDay = 0xe0, ZclDate = 0xe1, ZclUtcTime = 0xe2, ZclClusterId = 0xe8,
+  		ZclAttributeId = 0xe9, ZclBACNetOId = 0xea, ZclIeeeAddress = 0xf0, Zcl128BitSecurityKey = 0xf1 
+
+		'''
+		if AttType == "0010" : 		# Boolean
 			return Attribute
-#		elif AttType == "0023" :
-		elif AttType == "0039" and AttSize == "0004" :	# Float
+		elif AttType == "0020" : 	# Uint8
+			return Attribute
+#		elif AttType == "0023" :	# 32BitUint
+		elif AttType == "0039" : 	# Xiaomi Float
 			return str(struct.unpack('f',struct.pack('i',int(Attribute,16)))[0])
+		elif AttType == "0042" : 	# CharacterString
+			return Attribute
 
 		Domoticz.Log("ReadCluster - decodeAttribute Type = " + AttType + " not yet decoded" )
 

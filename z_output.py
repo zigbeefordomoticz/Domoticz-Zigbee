@@ -142,8 +142,8 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 
 	z_var.cmdInProgress.put( command )
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
-	if z_var.cmdInProgress.qsize() > 15 :
-		Domoticz.Log("sendZigateCmd - Command in queue : > 15 - queue is : " + str( z_var.cmdInProgress.qsize() ) )
+	if z_var.cmdInProgress.qsize() > 30 :
+		Domoticz.Log("sendZigateCmd - Command in queue : > 30 - queue is : " + str( z_var.cmdInProgress.qsize() ) )
 		Domoticz.Log("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
 	Domoticz.Debug("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
@@ -282,39 +282,51 @@ def removeZigateDevice( self, key ) :
 	return
 
 
-def enableReporting( self, nwkid, cluster, AttrId  ) :
+def enableReporting( self, nwkid, cluster ) :
 
 	AttributeType = { 
-			'0006' : { '0000': '0010' },
-			'0008' : { '0000': '0020' },
-			'000c' : { '0055': '0039' },
-			'0702' : { '0000': '0025', '0400' : '86FF' }
-			} 
+	'0006' : { '0000': '0010' }, 				# On/Off Cluster ( 0000:On/Off ) 
+	'0008' : { '0000': '0020' },  				# Level Control Cluster ( 0000:Current Level ) 
+	'0300' : { '0007': '0021', '0003':'0021', '0004':'0021', '0008':'0030' }, # Color Cluster ( ColorTemp, ColorX, ColorY, Color Mode
+	'0400' : { '0000': '0021' }, 				# Illuminance Cluster ( 0000:Measured value )
+	'0702' : { '0000': '0025', '0400': '002a' },# Metering Cluster ( 0000:Current summation, 0400:Instantaneous)
+	'0b04' : { '050b': '0029', '0505':'0021', '0508':'0021' }, 			# Electrical Cluster ( 0505:RMS Voltage, 0508:RMS Curent)
+	'0402' : { '0000': '0029' },  				#Temperature Measurement Cluster
+	'0405' : { '0000': '0021' }, 				# Humidity Cluster
+	'0403' : { '0000': '0021' }, 				# Pressure measurement Cluster
+	'0001' : { '0021': '0020' }, 				# Power Config Cluster ( 0021:Battery %
+	'000c' : { '0055': '0039' }
+	} 
 
 	if cluster == '' or cluster is None :
-		Domoticz.Log("enableReporting - No cluster found : " +str(cluster) )
 		return 
 
+	
+	Attr     = []
 	AttrType = ''
-	if cluster in AttributeType :
-		if AttrId in AttributeType[cluster] :
-			AttrType = AttributeType[cluster][AttrId]
 
-	if AttrType == '' or AttrType is None :
-		Domoticz.Log("enableReporting - AttrType no found : " +str(cluster) )
+	if str(cluster) in AttributeType :
+		for attribute in AttributeType[cluster] :
+			newAttrType = AttributeType[cluster][attribute]
+			if AttrType == '' :
+				AttrType = newAttrType
+			if AttrType == newAttrType :
+				Attr.append(attribute)
+			if newAttrType != AttrType :
+				continue
+	if len(Attr) == 0 :
 		return
 
-	if not isinstance(AttrId, list):
+	if not isinstance(Attr, list):
 		# We received only 1 attribute
-		Attr = AttrId
 		lenAttr = 1
 		weight = 1
 	else :
-		lenAttr = len(AttrId)
+		lenAttr = len(Attr)
 		weight = int ((lenAttr ) / 2) + 1
 		Attr =''
-		Domoticz.Debug("attributes : " +str(ListOfAttributes) +" len =" +str(lenAttr) )
-		for x in AttrId :
+		Domoticz.Debug("attributes : " +str(Attr) +" len =" +str(lenAttr) )
+		for x in Attr :
        			Attr += x
 
 	MinInter = "0005"	# 5 Seconds

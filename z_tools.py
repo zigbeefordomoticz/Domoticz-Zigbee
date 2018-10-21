@@ -58,7 +58,14 @@ def getEPforClusterType( self, NWKID, ClusterType ) :
 					break
 	return EPlist
 
+def getClusterListforEP( self, NWKID, Ep ) :
 
+	ClusterList = []
+	if self.ListOfDevices[NWKID]['Ep'][Ep] :
+		for cluster in self.ListOfDevices[NWKID]['Ep'][Ep] :
+			if cluster != "ClusterType" :
+				ClusterList.append(cluster)
+	return ClusterList
 
 
 def DeviceExist(self, newNWKID , IEEE = ''):
