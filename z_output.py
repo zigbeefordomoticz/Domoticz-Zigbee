@@ -285,19 +285,31 @@ def removeZigateDevice( self, key ) :
 def enableReporting( self, nwkid, cluster ) :
 
 	AttributeType = { 
-	'0006' : { '0000': '0010' }, 				# On/Off Cluster ( 0000:On/Off ) 
-	'0008' : { '0000': '0020' },  				# Level Control Cluster ( 0000:Current Level ) 
-	'0300' : { '0007': '0021', '0003':'0021', '0004':'0021', '0008':'0030' }, # Color Cluster ( ColorTemp, ColorX, ColorY, Color Mode
-	'0400' : { '0000': '0021' }, 				# Illuminance Cluster ( 0000:Measured value )
-	'0702' : { '0000': '0025', '0400': '002a' },# Metering Cluster ( 0000:Current summation, 0400:Instantaneous)
-	'0b04' : { '050b': '0029', '0505':'0021', '0508':'0021' }, 			# Electrical Cluster ( 0505:RMS Voltage, 0508:RMS Curent)
-	'0402' : { '0000': '0029' },  				#Temperature Measurement Cluster
-	'0405' : { '0000': '0021' }, 				# Humidity Cluster
-	'0403' : { '0000': '0021' }, 				# Pressure measurement Cluster
-	'0001' : { '0021': '0020' }, 				# Power Config Cluster ( 0021:Battery %
-	'000c' : { '0055': '0039' }
-	} 
+	# On/Off Cluster ( 0000:On/Off ) 
+	'0006': {'Attribute': {'0000': '0010'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
+	# Level Control Cluster ( 0000:Current Level ) 
+	'0008': {'Attribute': {'0000': '0020'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
+	# Illuminance Cluster ( 0000:Measured value )
+	'0300': {'Attribute': {'0007': '0021', '0003': '0021', '0004': '0021', '0008': '0030'}, 'minInterval': '5', 'maxInterval': '300', 'change': '2000'}, 
+	# Color Cluster ( ColorTemp, ColorX, ColorY, Color Mode
+	'0400': {'Attribute': {'0000': '0021'},'minInterval': '5', 'maxInterval': '300', 'change': '2000'},
+	# Metering Cluster ( 0000:Current summation, 0400:Instantaneous)
+	'0702': {'Attribute': {'0000': '0025', '0400': '002a'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
+	# Electrical Cluster ( 0505:RMS Voltage, 0508:RMS Curent)
+	'0b04': {'Attribute': {'050b': '0029', '0505':'0021', '0508':'0021'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
+	#Temperature Measurement Cluster
+	'0402': {'Attribute': {'0000': '0029'},'minInterval': '10', 'maxInterval': '300', 'change': '20'},
+	# Humidity Cluster
+	'0405': {'Attribute': {'0000': '0021'},'minInterval': '10', 'maxInterval': '300', 'change': '100'},
+	# Pressure measurement Cluster
+	'0403': {'Attribute': {'0000': '0021'},'minInterval': '1', 'maxInterval': '300', 'change': '20'},
+	# Power Config Cluster ( 0021:Battery %
+	'0001': {'Attribute': {'0000': '0021'},'minInterval': '300', 'maxInterval': '300', 'change': '0'},
+	# Xiaomi 
+	'000c': {'Attribute': {'0055': '0039'},'minInterval': '1', 'maxInterval': '300', 'change': '1'}
+	}
 
+	Domoticz.Log("enableReporting : " +str(nwkid) + " for cluster : " +str(cluster) )
 	if cluster == '' or cluster is None :
 		return 
 
@@ -306,12 +318,12 @@ def enableReporting( self, nwkid, cluster ) :
 	AttrType = ''
 
 	if str(cluster) in AttributeType :
-		for attribute in AttributeType[cluster] :
-			newAttrType = AttributeType[cluster][attribute]
+		for attribute in AttributeType[cluster]['Attribute'] :
+			newAttrType = str(AttributeType[cluster]['Attribute'][attribute])
 			if AttrType == '' :
-				AttrType = newAttrType
+				AttrType = str(newAttrType)
 			if AttrType == newAttrType :
-				Attr.append(attribute)
+				Attr.append(str(attribute))
 			if newAttrType != AttrType :
 				continue
 	if len(Attr) == 0 :
@@ -329,10 +341,11 @@ def enableReporting( self, nwkid, cluster ) :
 		for x in Attr :
        			Attr += x
 
-	MinInter = "0005"	# 5 Seconds
-	MaxInter = "0300"	# 5 minutes
+	Domoticz.Log(" ==> Attribute : " +str(AttributeType[cluster]) )
+	MinInter = str(AttributeType[cluster]['minInterval'])
+	MaxInter = str(AttributeType[cluster]['maxInterval'])
+	ChgFlag  = str(AttributeType[cluster]['change'])
 	TimeOut =  "0000"
-	ChgFlag =  "01"		# Minimum change 1	
 
 	EPout = "01"
 	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
