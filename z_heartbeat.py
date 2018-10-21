@@ -21,7 +21,7 @@ import z_domoticz
 def processKnownDevices( self, NWKID ) :
 
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 3 )  :
-#		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
+		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
 		for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
 			for cluster in z_tools.getClusterListforEP( self, NWKID, tmpEp ) :
 				z_output.enableReporting( self, NWKID, cluster )
