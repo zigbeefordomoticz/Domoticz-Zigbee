@@ -282,43 +282,80 @@ def removeZigateDevice( self, key ) :
 	return
 
 
-def enableReportingonDevice( self, key, ep, cluster, attribute, attrType ) :
-        '''
-        Configure reporting request
-        for now support only one attribute
-        '''
-        addr = self.__addr(addr)
-        direction = 0
-        manufacturer_specific = 0
-        manufacturer_id = 0
-#         if not isinstance(attributes, list):
-#             attributes = [attributes]
-#         length = len(attributes)
-        length = 1
-        attribute_direction = 0
-#         attribute_type = 0
-        attribute_id = attribute
-        min_interval = 0
-        max_interval = 0
-        timeout = 0
-        change = 0
-        data = struct.pack('!BHBBHBBHBBBHHHHB', 2, addr, 1, endpoint, cluster,
-                           direction, manufacturer_specific,
-                           manufacturer_id, length, attribute_direction,
-                           attribute_type, attribute_id, min_interval,
-                           max_interval, timeout, change)
-        self.send_data(0x0120, data, 0x8120)
+def enableReporting( self, nwkid, cluster, AttrId  ) :
+
+	AttributeType = { 
+			'0006' : { '0000': '0010' },
+			'0008' : { '0000': '0020' },
+			'000c' : { '0055': '0039' },
+			'0702' : { '0000': '0025', '0400' : '86FF' }
+			} 
+
+	if cluster == '' or cluster is None :
+		Domoticz.Log("enableReporting - No cluster found : " +str(cluster) )
+		return 
+
+	AttrType = ''
+	if cluster in AttributeType :
+		if AttrId in AttributeType[cluster] :
+			AttrType = AttributeType[cluster][AttrId]
+
+	if AttrType == '' or AttrType is None :
+		Domoticz.Log("enableReporting - AttrType no found : " +str(cluster) )
+		return
+
+	if not isinstance(AttrId, list):
+		# We received only 1 attribute
+		Attr = AttrId
+		lenAttr = 1
+		weight = 1
+	else :
+		lenAttr = len(AttrId)
+		weight = int ((lenAttr ) / 2) + 1
+		Attr =''
+		Domoticz.Debug("attributes : " +str(ListOfAttributes) +" len =" +str(lenAttr) )
+		for x in AttrId :
+       			Attr += x
+
+	MinInter = "0005" # 5 Seconds
+	MaxInter = "0300" # 5 minutes
+	TimeOut =  "0000"
+	ChgFlag =  "00"
+
+	EPout = "01"
+	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
+		if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
+			EPout=tmpEp
+			
+	'''
+	Address Mode    : u8
+	Network Address : u16
+	Source EP       : u8
+	Dest   EP       : u8
+        ClusterId       : u16
+        Direction       : u8
+	Manufacturer spe: u8
+	Manufacturer Id : u16
+	Nb attributes   : u8
+	Attribute list  : u16 each
+	Attribute direc : u8
+	Attribute Type  : u8
+	Min Interval    : u16
+	Max Interval    : u16
+	TimeOut         : u16
+	Change		: u8
+	'''
+	
+	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
+	Domoticz.Log("enableReporting - " +str(datas) )
+	sendZigateCmd("0120", datas , weight )
 
 
- ef attribute_discovery_request(self, addr, endpoint, cluster):
-        '''
-        Attribute discovery request
-        '''
-        addr = self.__addr(addr)
-        direction = 0
-        manufacturer_specific = 0
-        manufacturer_id = 0
-        data = struct.pack('!BHBBHBBBHB', 2, addr, 1, endpoint, cluster,
-                           0, direction, manufacturer_specific,
-                           manufacturer_id, 255)
-        self.send_data(0x0140, data)
+def attribute_discovery_request(self, addr, endpoint, cluster):
+
+	EPout = "01"
+	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
+		if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
+			EPout=tmpEp
+	datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
+	sendZigateCmd("0120", datas , weight )

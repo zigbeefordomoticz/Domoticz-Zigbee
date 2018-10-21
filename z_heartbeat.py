@@ -20,6 +20,12 @@ import z_domoticz
 
 def processKnownDevices( self, NWKID ) :
 
+	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 3 )  :
+		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
+			z_output.enableReporting( self, NWKID, "0006", "0000" )
+			z_output.enableReporting( self, NWKID, "0702", "0000" )
+			z_output.enableReporting( self, NWKID, "0702", "0400" )
+
 	# Check if Node Descriptor was run ( this could not be the case on early version)
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 12 )  :
 		if not self.ListOfDevices[NWKID].get('PowerSource') :	# Looks like PowerSource is not available, let's request a Node Descriptor
@@ -51,7 +57,7 @@ def processKnownDevices( self, NWKID ) :
 								Domoticz.Debug("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 								z_output.ReadAttributeRequest_000C(self, NWKID)   # Xiaomi
 								break	# We break as we are sending only once!
-							elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' :
+							elif self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo' :
 								Domoticz.Log("Request a Read attribute for Power and Meter " + str(NWKID) + " heartbeat = " + str( self.ListOfDevices[NWKID]['Heartbeat']) )
 								z_output.ReadAttributeRequest_0702(self, NWKID)   # Salus ; for now , but we should avoid making in all cases.
 								break	# We break as we are sending only once!
