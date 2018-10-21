@@ -281,6 +281,7 @@ def ZigateRead(self, Devices, Data):
 
 	elif str(MsgType)=="8140":  #
 		Domoticz.Log("ZigateRead - MsgType 8140 - Reception Attribute discovery response : " + Data)
+		Decode8140( self, MsgData)
 		return
 
 	elif str(MsgType)=="8401":  # Reception Zone status change notification
@@ -1243,6 +1244,9 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
 	MsgComplete=MsgData[0:2]
 	MsgAttType=MsgData[2:4]
 	MsgAttID=MsgData[4:8]
+	
+	# We need to identify to which NetworkId and which ClusterId this is coming from. This is in response to 0x0140
+	# When MsgComplete == 01, we have received all Attribute/AttributeType
 
 	Domoticz.Log("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttrID)
 	return
