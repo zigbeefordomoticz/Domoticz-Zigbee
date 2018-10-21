@@ -22,6 +22,7 @@ def processKnownDevices( self, NWKID ) :
 
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 3 )  :
 		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
+			# A faire de façon plus ellegante en recupérant les Clusters disponibles
 			z_output.enableReporting( self, NWKID, "0006", "0000" )
 			z_output.enableReporting( self, NWKID, "0702", "0000" )
 			z_output.enableReporting( self, NWKID, "0702", "0400" )

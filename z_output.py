@@ -317,10 +317,10 @@ def enableReporting( self, nwkid, cluster, AttrId  ) :
 		for x in AttrId :
        			Attr += x
 
-	MinInter = "0005" # 5 Seconds
-	MaxInter = "0300" # 5 minutes
+	MinInter = "0005"	# 5 Seconds
+	MaxInter = "0300"	# 5 minutes
 	TimeOut =  "0000"
-	ChgFlag =  "00"
+	ChgFlag =  "01"		# Minimum change 1	
 
 	EPout = "01"
 	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
@@ -332,8 +332,8 @@ def enableReporting( self, nwkid, cluster, AttrId  ) :
 	Network Address : u16
 	Source EP       : u8
 	Dest   EP       : u8
-        ClusterId       : u16
-        Direction       : u8
+    ClusterId       : u16
+    Direction       : u8
 	Manufacturer spe: u8
 	Manufacturer Id : u16
 	Nb attributes   : u8
@@ -343,7 +343,7 @@ def enableReporting( self, nwkid, cluster, AttrId  ) :
 	Min Interval    : u16
 	Max Interval    : u16
 	TimeOut         : u16
-	Change		: u8
+	Change			: u8
 	'''
 	
 	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
