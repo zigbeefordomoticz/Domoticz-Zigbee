@@ -124,11 +124,11 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 	# Smart Energy Metering
 	if MsgAttrID == "0000" : # Summation
 		bytelen = len(MsgClusterData)
-		Domoticz.Log("ReadCluster 0702 - Attribute 0x0000 -MsgClusterData = " + str(MsgClusterData) + MsgClusterData len = " +str(bytelen) )
+		Domoticz.Log("ReadCluster 0702 - Attribute 0x0000 -MsgClusterData = " + str(MsgClusterData) + " MsgClusterData len = " +str(bytelen) )
 
 	elif MsgAttrID == "1024" : # Instant Measurement 0x0400
 		bytelen = len(MsgClusterData)
-		Domoticz.Log("ReadCluster 0702 - Attribute 0x0400 - MsgClusterData = " + str(MsgClusterData) + MsgClusterData len = " +str(bytelen) )
+		Domoticz.Log("ReadCluster 0702 - Attribute 0x0400 - MsgClusterData = " + str(MsgClusterData) + " MsgClusterData len = " +str(bytelen) )
 	else :
 		Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 		Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttType = " +str(MsgAttType) )
