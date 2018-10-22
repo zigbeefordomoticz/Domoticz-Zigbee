@@ -836,13 +836,11 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 			self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
 		else :
 			self.DiscoveryDevices[MsgDataShAddr]['8043'] = {}
-
+			self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
+			self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
 		
-		if int(self.DiscoveryDevices[MsgDataShAddr]['NbEP']) == int(len(self.DiscoveryDevices[MsgDataShAddr]['Ep'])) :
-			with open( self.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
-				file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
-		else :
-			Domoticz.Log("Decode8043 - EPs : "+str(len(self.DiscoveryDevices[MsgDataShAddr]['Ep'])) +" out of " +str(self.DiscoveryDevices[MsgDataShAddr]['NbEP'])  )
+		with open( self.homedirectory+"/Zdatas/DiscoveryDevice-"+str(MsgDataShAddr)+".txt", 'w') as file:
+			file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
 
 	if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
 		self.ListOfDevices[MsgDataShAddr]['Status']="8043"
