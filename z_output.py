@@ -284,6 +284,17 @@ def removeZigateDevice( self, key ) :
 
 def configureReporting( self, nwkid, cluster ) :
 
+
+	'''
+	Attribute pour Cluster 0x0702 SmartPlug Salus
+	Attribute ID: 0x0000
+ 	Attribute ID: 0x0300
+ 	Attribute ID: 0x0301
+ 	Attribute ID: 0x0302
+ 	Attribute ID: 0x0306
+ 	Attribute ID: 0x0400
+ 	Attribute ID: 0x001C
+	'''
 	AttributeType = { 
 	# On/Off Cluster ( 0000:On/Off ) 
 	'0006': {'Attribute': {'0000': '0010'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
@@ -294,7 +305,7 @@ def configureReporting( self, nwkid, cluster ) :
 	# Color Cluster ( ColorTemp, ColorX, ColorY, Color Mode
 	'0400': {'Attribute': {'0000': '0021'},'minInterval': '5', 'maxInterval': '300', 'change': '2000'},
 	# Metering Cluster ( 0000:Current summation, 0400:Instantaneous)
-	'0702': {'Attribute': {'0000': '0025', '0400': '002a'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
+	'0702': {'Attribute': {'0400':'002a','0000': '0025'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
 	# Electrical Cluster ( 0505:RMS Voltage, 0508:RMS Curent)
 	'0b04': {'Attribute': {'050b': '0029', '0505':'0021', '0508':'0021'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
 	#Temperature Measurement Cluster
