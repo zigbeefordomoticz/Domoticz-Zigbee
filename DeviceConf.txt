@@ -14,6 +14,7 @@
 'lumi.sensor_cube':{'Ep':{'01':{'0012':'','000c':''}},'Type':'Aqara'},
 'lumi.sensor_cube.aqgl01':{'Ep':{'01':{'0012':'','000c':''}},'Type':'Aqara'},
 'lumi.plug':{'Ep':{'01':{'0006':'','000c':'','0000':'','Type':'Plug'},'02':{'000c':'','Type':'Power/Meter'}},'Type':''},
+'lumi.ctrl_ln2':{'Ep':{'01':{'0006':'','Type':'Switch'},'02':{'0006':'','Type':'Switch' },'03':{'000c': '','Type':'Power/Meter'},'04':{'000c':'','Type':'Power/Meter'}},'Type':''},
 'Ampoule.LED1545G12.Tradfri':{'Ep':{'01':{'0006','0008','0300'}},'Type':'Switch/LvlControl/ColorControl'},
 'Ampoule.LED1622G12.Tradfri':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl'},
@@ -24,5 +25,5 @@
 'Command.30338849.Tradfri':{'Ep':{'01':{'0000','0001','0009','0b05','1000'}},'Type':'Command'},
 'TRADFRI remote control':{'Ep':{'01':{'0000','0001','0003','0009','0b05','1000'}},'Type':'Command'},
 'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':''},
-'plug.Celiane.Legrand':{'Ep': {'01':{'0000','0003','0004','0006','0005','fc01'}},'Type':'Switch/PowerMeter'},
+'plug.Celiane.Legrand':{'Ep': {'01':{'0000','0003','0004','0006','0005','fc01'}},'Type':'Switch/PowerMeter'}
 }
