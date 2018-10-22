@@ -21,3 +21,4 @@ Either the information is coming from one of the plugin user (through direct com
 | Legrand | Celiane with Netatmo Plug | Switch and Power Meter | It might happend the Power Meter doesn't work. In that case it is because the device requirers firmware update. To do so you need to have at your disposal the Legrand gateway | Tested | 2.4.0 |
 | Legrand | Celiane with Netatmo switch/Dimmer W/O neutre | Switch, Dimmmer | Dimmer not working, need update firmware ? | Tested | 2.4.0 |
 | Xiaomi | Plug | Plug, Power meter | Can switch on/off the plug and you get Watts consuption | Fully operationnal |  |
+| Xiaomi | Wall Double Switch | Switch, Power meter | 2 switches with Power meter n each line | Fully operationnal |  |
