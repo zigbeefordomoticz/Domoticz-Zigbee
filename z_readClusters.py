@@ -53,22 +53,22 @@ def decodeAttribute( AttrID, AttType, AttSize, Attribute ):
 	elif AttType == "0020" : 	# Uint8
 		return Attribute
 	elif int(AttType,16) == 0x23:	# 32BitUint
-		return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0]
+		return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
 	elif AttType == "0039" : 	# Xiaomi Float
 		return str(struct.unpack('f',struct.pack('i',int(Attribute,16)))[0])
 	elif AttType == "0042" : 	# CharacterString
 		return Attribute
 	elif int(AttType,16) == 0x25:	# Zcl48BitUint
-		return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0]
+		return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
 	elif int(AttType,16) == 0x2a:	# Zcl24BitInt
 					# https://stackoverflow.com/questions/3783677/how-to-read-integers-from-a-file-that-are-24bit-and-little-endian-using-python
-   		bytelen = len(Attribute)
-    		frames = bytelen/3
-    		triads = struct.Struct('3s' * frames)
-    		int4byte = struct.Struct('<i')
-    		result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(Attribute)]
+		bytelen = len(Attribute)
+		frames = bytelen/3
+		triads = struct.Struct('3s' * frames)
+		int4byte = struct.Struct('<i')
+		result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(Attribute)]
 	else :
-	Domoticz.Log("ReadCluster - decodeAttribute Type = " + AttType + " not yet decoded" )
+		Domoticz.Log("ReadCluster - decodeAttribute Type = " + AttType + " not yet decoded" )
 
 
 def ReadCluster(self, Devices, MsgData):
