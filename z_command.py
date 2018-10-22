@@ -51,9 +51,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		DtypenameList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
 	else :
 		for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+			Domoticz.Log("mgtCommand : search in EP : " +str(tmpEp) +" Device = " +str(Devices[Unit].ID) )
 			if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 				for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
 					if str(Devices[Unit].ID) == str(key) :
+						Domoticz.Log("mgtCommand : found Device : " +str(key) )
 						DtypenameList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
 	
 	if len(DtypenameList) == 0 :	# No match with ClusterType
