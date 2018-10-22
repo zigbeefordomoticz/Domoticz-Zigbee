@@ -52,12 +52,22 @@ def decodeAttribute( AttrID, AttType, AttSize, Attribute ):
 		return Attribute
 	elif AttType == "0020" : 	# Uint8
 		return Attribute
-#	elif AttType == "0023" :	# 32BitUint
+	elif int(AttType,16) == 0x23:	# 32BitUint
+		return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0]
 	elif AttType == "0039" : 	# Xiaomi Float
 		return str(struct.unpack('f',struct.pack('i',int(Attribute,16)))[0])
 	elif AttType == "0042" : 	# CharacterString
 		return Attribute
-
+	elif int(AttType,16) == 0x25:	# Zcl48BitUint
+		return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0]
+	elif int(AttType,16) == 0x2a:	# Zcl24BitInt
+					# https://stackoverflow.com/questions/3783677/how-to-read-integers-from-a-file-that-are-24bit-and-little-endian-using-python
+   		bytelen = len(Attribute)
+    		frames = bytelen/3
+    		triads = struct.Struct('3s' * frames)
+    		int4byte = struct.Struct('<i')
+    		result = [int4byte.unpack('\0' + i)[0] >> 8 for i in triads.unpack(Attribute)]
+	else :
 	Domoticz.Log("ReadCluster - decodeAttribute Type = " + AttType + " not yet decoded" )
 
 
@@ -104,7 +114,7 @@ def ReadCluster(self, Devices, MsgData):
 	if   MsgClusterId=="0000" : Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 	elif MsgClusterId=="0006" : Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 	elif MsgClusterId=="0008" : Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
-	elif MsgClusterId=="0012" : Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
+	elif MsgClusterId=="0012" : Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 	elif MsgClusterId=="000c" : Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 	elif MsgClusterId=="0101" : Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 	elif MsgClusterId=="0400" : Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
