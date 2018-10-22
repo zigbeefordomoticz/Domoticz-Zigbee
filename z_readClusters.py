@@ -437,5 +437,5 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 	elif MsgAttrID == "0016" : # Battery
 		Domoticz.Debug("ReadCluster - 0x0000 - Battery : " +str(MsgClusterData) )
 	else :
-		Domoticz.Debug("ReadCluster 0x0000 - Message attribut inconnu : " + MsgData)
+		Domoticz.Debug("ReadCluster 0x0000 - Message attribut inconnu : " + str(MsgClusterData) )
 	
