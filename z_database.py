@@ -10,12 +10,29 @@
 import Domoticz
 import z_var
 import z_tools
+import os.path
+import shutil
+import datetime
+
 
 
 def LoadDeviceList( self ):
 	# Load DeviceList.txt into ListOfDevices
 	#
 	Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
+
+	# Check if the DeviceList file exist.
+	if not os.path.isfile( self.DeviceListName ) :
+		self.ListOfDevices = {}
+		return True	
+
+	_backup =  self.DeviceListName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+	shutil.copyfile( str(self.DeviceListName) , str(_backup) )
+
+	# Keep the Size of the DeviceList in order to check changes
+	self.DeviceListSize = os.path.getsize( self.DeviceListName )
+
+	# File exists, let's go one
 	res = "Success"
 	nb = 0
 	with open( self.DeviceListName , 'r') as myfile2:
