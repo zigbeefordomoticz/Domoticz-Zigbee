@@ -51,11 +51,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		DtypenameList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
 	else :
 		for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-			Domoticz.Log("mgtCommand : search in EP : " +str(tmpEp) +" Device = " +str(Devices[Unit].ID) )
 			if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 				for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
 					if str(Devices[Unit].ID) == str(key) :
-						Domoticz.Log("mgtCommand : found Device : " +str(key) )
+						Domoticz.Log("mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  )
 						DtypenameList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
 	
 	if len(DtypenameList) == 0 :	# No match with ClusterType
@@ -64,8 +63,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 	Domoticz.Log("mgtCommand - List of TypeName : " +str(DtypenameList) )
 	# We have list of Dtypename, let's see which one are matching Command style
-	# We also assume that there is only ONE command type per Ep and so per Devices
 
+	ClusterSearch = ""
 	for tmpDtypename in DtypenameList :
 		if tmpDtypename =="Switch" or tmpDtypename =="Plug" or tmpDtypename =="MSwitch" or tmpDtypename =="Smoke" or tmpDtypename =="DSwitch" or tmpDtypename =="Button" or tmpDtypename =="DButton":
 			ClusterSearch="0006"
@@ -79,13 +78,26 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 	Domoticz.Log("mgtCommand - Dtypename : " +str(Dtypename) )
 
-	# We have now the Dtypename, let's look for the corresponding EP
+
+	# A ce stade ClusterSearch est connu
+	####  ASSEZ MOCHE .... MAIS l'IDEE ET D'AVOIR UN TRUC QUI MARCHE #####
 	EPin="01"
 	EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
-	ClusterSearch = ""
-	for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-		if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-			EPout=tmpEp
+	# We have now the Dtypename, let's look for the corresponding EP
+	if self.ListOfDevices[NWKID].get('ClusterType') :
+		for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+			if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
+				EPout=tmpEp
+	else :
+		for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+			if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
+				if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+					for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
+						if str(Devices[Unit].ID) == str(key) :
+							Domoticz.Log("mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) )
+							EPout = tmpEp
+
+
 	Domoticz.Log("EPout = " +str(EPout) )
 
 
