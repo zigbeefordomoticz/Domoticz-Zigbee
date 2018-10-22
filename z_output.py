@@ -282,7 +282,7 @@ def removeZigateDevice( self, key ) :
 	return
 
 
-def enableReporting( self, nwkid, cluster ) :
+def configureReporting( self, nwkid, cluster ) :
 
 	AttributeType = { 
 	# On/Off Cluster ( 0000:On/Off ) 
@@ -309,11 +309,10 @@ def enableReporting( self, nwkid, cluster ) :
 	'000c': {'Attribute': {'0055': '0039'},'minInterval': '1', 'maxInterval': '300', 'change': '1'}
 	}
 
-	Domoticz.Log("enableReporting : " +str(nwkid) + " for cluster : " +str(cluster) )
+	Domoticz.Debug("enableReporting : " +str(nwkid) + " for cluster : " +str(cluster) )
 	if cluster == '' or cluster is None :
 		return 
 
-	
 	Attr     = []
 	AttrType = ''
 
@@ -341,7 +340,7 @@ def enableReporting( self, nwkid, cluster ) :
 		for x in Attr :
        			Attr += x
 
-	Domoticz.Log(" ==> Attribute : " +str(AttributeType[cluster]) )
+	Domoticz.Log("configureReporting ==> Attribute : " +str(AttributeType[cluster]) )
 	MinInter = str(AttributeType[cluster]['minInterval'])
 	MaxInter = str(AttributeType[cluster]['maxInterval'])
 	ChgFlag  = str(AttributeType[cluster]['change'])
@@ -372,7 +371,7 @@ def enableReporting( self, nwkid, cluster ) :
 	'''
 	
 	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
-	Domoticz.Log("enableReporting - " +str(datas) )
+	Domoticz.Log("configureReporting - " +str(datas) )
 	sendZigateCmd("0120", datas , weight )
 
 

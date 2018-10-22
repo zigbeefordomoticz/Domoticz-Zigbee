@@ -24,7 +24,7 @@ def processKnownDevices( self, NWKID ) :
 		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
 			for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
 				for cluster in z_tools.getClusterListforEP( self, NWKID, tmpEp ) :
-					z_output.enableReporting( self, NWKID, cluster )
+					z_output.configureReporting( self, NWKID, cluster )
 
 	# Check if Node Descriptor was run ( this could not be the case on early version)
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 12 )  :
