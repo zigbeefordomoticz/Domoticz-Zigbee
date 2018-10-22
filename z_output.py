@@ -375,11 +375,8 @@ def configureReporting( self, nwkid, cluster ) :
 	sendZigateCmd("0120", datas , weight )
 
 
-def attribute_discovery_request(self, addr, endpoint, cluster):
+def attribute_discovery_request(self, nwkid, EpOut, cluster):
 
-	EPout = "01"
-	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
-		if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
-			EPout=tmpEp
 	datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
-	sendZigateCmd("0140", datas , weight )
+	Domoticz.Log("attribute_discovery_request - " +str(datas) )
+	sendZigateCmd("0140", datas , 2 )
