@@ -7,6 +7,7 @@
 - [Issues] Able to manage 2 Zigates on the same Domoticz instance. The DeviceList file will be identified by the HardwareID (plugin instance in Domoticz)
 - [Technical] Decode Device node descriptors information like Manufacturer, Power Source, Response When Idle ....
 - [Technical] Manage Leave message from device
+- [Hardware| Aqara Wall Switch LN (Double) Aqara 230 double switch, double fire switch (QBKG12LM))
 
 ## xx mmmmmmmm  2018 - beta-3.1.0
 
