@@ -604,10 +604,14 @@ def ResetDevice(self, Devices, Type, HbCount) :
 			# Takes the opportunity to update RSSI and Battery
 			if self.ListOfDevices[NWKID].get('RSSI') : 
 				SignalLevel = self.ListOfDevices[NWKID]['RSSI']
+			else :
+				SignalLevel = 15
 			if self.ListOfDevices[NWKID].get('Battery') : 
 				BatteryLevel = self.ListOfDevices[NWKID]['Battery']
+			else :
+				BatteryLevel = 255
 
-			Domoticz.Debug("ResetDevice - Time delat since Last update : "+str( current - LUpdate) )
+			Domoticz.Debug("ResetDevice - Time delay since Last update : "+str( current - LUpdate) )
 		
 			if (current - LUpdate)> 30 and Dtypename=="Motion":
 				Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
