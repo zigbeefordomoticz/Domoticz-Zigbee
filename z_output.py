@@ -246,19 +246,16 @@ def ReadAttributeRequest_0702(self, key) :
 
 	listAttributes = []
 	listAttributes.append(0x0000) # Current Summation Delivered
-	listAttributes.append(0x01)
-	listAttributes.append(0x0100)
-	listAttributes.append(0x0200)
-	listAttributes.append(0x0300)
-	listAttributes.append(0x0400) # Instantaneous Demand
-
-	listAttributes.append(0xE000) # http://www.netvox.com.tw/usermanual/Z803_UserManual_ENG_WEB.pdf
-	listAttributes.append(0xE001)
-	listAttributes.append(0xE002)
-	listAttributes.append(0xE003)
+	listAttributes.append(0x0200) # Status
+	listAttributes.append(0x0300) # UNIT_OF_MEASURE
+ 	listAttributes.append(0x0301) # MULTIPLIER
+ 	listAttributes.append(0x0302) # SUMMATION_FORMATING
+ 	listAttributes.append(0x0306) # METERING_DEVICE_TYPE
+	listAttributes.append(0x0400) # Instantaneous Demand)
+ 	listAttributes.append(0x001C) # PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED
 
 	EPin = "01"
-	EPout= "09"
+	EPout= "01"
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0702" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
