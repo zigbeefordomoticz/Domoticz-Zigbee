@@ -682,28 +682,16 @@ def GetType(self, Addr, Ep) :
 	return Type
 
 def TypeFromCluster(cluster):
-	if cluster=="0405" :
-		TypeFromCluster="Humi"
-	elif cluster=="0406" :
-		TypeFromCluster="Motion"
-	elif cluster=="0400" :
-		TypeFromCluster="Lux"
-	elif cluster=="0403" :
-		TypeFromCluster="Baro"
-	elif cluster=="0402" :
-		TypeFromCluster="Temp"
-	elif cluster=="0006" :
-		TypeFromCluster="Switch"
-	elif cluster=="0500" :
-		TypeFromCluster="Door"
-	elif cluster=="0012" :
-		TypeFromCluster="XCube"
-	elif cluster=="000c" :
-		TypeFromCluster="XCube"
-	elif cluster=="0008" :
-		TypeFromCluster="LvlControl"
-	elif cluster=="0300" :
-		TypeFromCluster="ColorControl"
-	else :
-		TypeFromCluster=""
+
+	if   cluster=="0006" : TypeFromCluster="Switch"
+	elif cluster=="0008" : TypeFromCluster="LvlControl"
+	elif cluster=="0300" : TypeFromCluster="ColorControl"
+	elif cluster=="0400" : TypeFromCluster="Lux"
+	elif cluster=="0402" : TypeFromCluster="Temp"
+	elif cluster=="0403" : TypeFromCluster="Baro"
+	elif cluster=="0405" : TypeFromCluster="Humi"
+	elif cluster=="0406" : TypeFromCluster="Motion"
+	elif cluster=="0407" : TypeFromCluster="Power/Meter"
+	elif cluster=="0500" : TypeFromCluster="Door"
+	else : TypeFromCluster=""
 	return TypeFromCluster
