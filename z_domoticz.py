@@ -602,18 +602,17 @@ def ResetDevice(self, Devices, Type, HbCount) :
 
 			Domoticz.Debug("ResetDevice - ID = " +str(ID) + " ClusterType : " +str(Dtypename) ) 
 			# Takes the opportunity to update RSSI and Battery
+			SignalLevel = ''
+			BatteryLevel = ''
 			if self.ListOfDevices[NWKID].get('RSSI') : 
 				SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-			else :
-				SignalLevel = 15
 			if self.ListOfDevices[NWKID].get('Battery') : 
 				BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-			else :
-				BatteryLevel = 255
 
 			Domoticz.Debug("ResetDevice - Time delay since Last update : "+str( current - LUpdate) )
 		
-			if (current - LUpdate)> 30 and Dtypename=="Motion":
+			if (current - LUpdate)> 30 :
+#			if (current - LUpdate)> 30 and Dtypename=="Motion":
 				Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
 				UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel, SuppTrigger=True)
 	return
@@ -636,7 +635,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 			if Color_: Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color = Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 			else:      
 				if SuppTrigger :
-					Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTrigger=True )
+					Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=True )
 				else :
 					Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 			Domoticz.Log("Update v2 Values "+str(nValue)+":'"+str(sValue)+":"+ str(Color_)+"' ("+Devices[Unit].Name+")")
