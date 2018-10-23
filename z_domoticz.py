@@ -519,16 +519,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 			if Type==Dtypename=="Lux" :
 				UpdateDevice_v2(Devices, x,int(value),str(value),BatteryLevel, SignalLevel)
 			if Type==Dtypename=="Motion" :
-				#Correction Thiklop : value pas toujours un entier :
-				#'onMessage' failed 'ValueError':'invalid literal for int() with base 10: '00031bd000''.
-				# UpdateDevice dans le if
-				if value == "01" :
-					state="On"
-					UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
-				elif value == "00" :
-					state="Off"
-					UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
-				#Fin de correction
+				if value == "01" : UpdateDevice_v2(Devices, x,"1",str("On"),BatteryLevel, SignalLevel)
+				if value == "00" : UpdateDevice_v2(Devices, x,"0",str("Off"),BatteryLevel, SignalLevel)
 
 			if Type==Dtypename=="LvlControl" :
 				nValue = 2
