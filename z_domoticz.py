@@ -563,7 +563,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 			#	Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
 			#	UpdateDevice_v2(Devices, x, 0, str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])) ,BatteryLevel, SignalLevel)
 
-def ResetDevice(self, Devices, Type,HbCount) :
+def ResetDevice(self, Devices, Type, HbCount) :
+	'''
+		Reset all Devices from the ClusterType Motion after 30s
+	'''
+
+	Domoticz.Debug("ResetDevice : " +str(HbCount) )
 	x=0
 	for x in Devices:
 		LUpdate=Devices[x].LastUpdate
@@ -574,33 +579,37 @@ def ResetDevice(self, Devices, Type,HbCount) :
 		# Look for the corresponding ClusterType
 		if _tmpDeviceID_IEEE in  self.IEEE2NWK :
 			NWKID = self.IEEE2NWK[_tmpDeviceID_IEEE]
-
 			if NWKID not in self.ListOfDevices :
 				Domoticz.Error("ResetDevice " +str(NWKID) + " not found in " +str(self.ListOfDevices) )
 				continue
 
 			ID = Devices[x].ID
-		
+			Domoticz.Debug("ResetDevice - ID = " +str(ID) ) 
+
 			Dtypename=''
 			for tmpEp in  self.ListOfDevices[NWKID]['Ep'] :
 				if  self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
-					if  str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'].values() :
+					if  str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
 						Dtypename=self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
+						Domoticz.Debug("ResetDevice - Found ClusterType : " +str(Dtypename) + " for Device :" + str(ID) )
 						break 
-
 			if Dtypename == '' :
 				if self.ListOfDevices[NWKID].get('ClusterType') : 
-					if str(ID) in self.ListOfDevices[NWKID]['ClusterType'].values() :
+					if str(ID) in self.ListOfDevices[NWKID]['ClusterType'] :
 						Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
-			else :
-				Domoticz.Debug("ResetDevice - No ClusterType for  " +NWKID + " not found in " +str(self.ListOfDevices[NWKID]) )
+						Domoticz.Debug("ResetDevice - Found ClusterType : " +str(Dtypename) + " for Device : " + str(ID) )
+
+
+			Domoticz.Debug("ResetDevice - ID = " +str(ID) + " ClusterType : " +str(Dtypename) ) 
+			# Takes the opportunity to update RSSI and Battery
+			if self.ListOfDevices[NWKID].get('RSSI') : 
+				SignalLevel = self.ListOfDevices[NWKID]['RSSI']
+			else : 
 				continue
-
-
-			if self.ListOfDevices[NWKID].get('RSSI') : SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-			else : continue
-			if self.ListOfDevices[NWKID].get('Battery') : BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-			else : continue
+			if self.ListOfDevices[NWKID].get('Battery') : 
+				BatteryLevel = self.ListOfDevices[NWKID]['Battery']
+			else : 
+				continue
 
 			if (current-LUpdate)> 30 and Dtypename=="Motion":
 				Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
