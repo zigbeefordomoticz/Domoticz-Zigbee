@@ -575,7 +575,6 @@ def ResetDevice(self, Devices, Type, HbCount) :
 		_tmpDeviceID_IEEE = Devices[x].DeviceID
 		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
 		current = time.time()
-
 		# Look for the corresponding ClusterType
 		if _tmpDeviceID_IEEE in  self.IEEE2NWK :
 			NWKID = self.IEEE2NWK[_tmpDeviceID_IEEE]
@@ -584,39 +583,38 @@ def ResetDevice(self, Devices, Type, HbCount) :
 				continue
 
 			ID = Devices[x].ID
-			Domoticz.Debug("ResetDevice - ID = " +str(ID) ) 
+			Domoticz.Debug("ResetDevice - Processing ID = " +str(ID) ) 
 
 			Dtypename=''
 			for tmpEp in  self.ListOfDevices[NWKID]['Ep'] :
 				if  self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 					if  str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
 						Dtypename=self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
-						Domoticz.Debug("ResetDevice - Found ClusterType : " +str(Dtypename) + " for Device :" + str(ID) )
-						break 
+						Domoticz.Debug("ResetDevice - Found ClusterType in EP["+str(tmpEp)+"] : " +str(Dtypename) + " for Device :" + str(ID) )
 			if Dtypename == '' :
 				if self.ListOfDevices[NWKID].get('ClusterType') : 
 					if str(ID) in self.ListOfDevices[NWKID]['ClusterType'] :
 						Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
 						Domoticz.Debug("ResetDevice - Found ClusterType : " +str(Dtypename) + " for Device : " + str(ID) )
+			else :
+				Domoticz.Debug("ResetDevice - No ClusterType found for this device : " +str(ID) + " in " +str(self.ListOfDevices[NWKID]) )
 
 
 			Domoticz.Debug("ResetDevice - ID = " +str(ID) + " ClusterType : " +str(Dtypename) ) 
 			# Takes the opportunity to update RSSI and Battery
 			if self.ListOfDevices[NWKID].get('RSSI') : 
 				SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-			else : 
-				continue
 			if self.ListOfDevices[NWKID].get('Battery') : 
 				BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-			else : 
-				continue
 
-			if (current-LUpdate)> 30 and Dtypename=="Motion":
+			Domoticz.Debug("ResetDevice - Time delat since Last update : "+str( current - LUpdate) )
+		
+			if (current - LUpdate)> 30 and Dtypename=="Motion":
 				Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
-				UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel)
+				UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel, SuppTrigger=True)
 	return
 			
-def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_ = ''):
+def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_ = '', SuppTrigger=False ):
 
 	Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(SignalLvl) )
 	if isinstance(SignalLvl,int) :
@@ -632,7 +630,11 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
 			if Color_: Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color = Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
-			else:      Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
+			else:      
+				if SuppTrigger :
+					Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTrigger=True )
+				else :
+					Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 			Domoticz.Log("Update v2 Values "+str(nValue)+":'"+str(sValue)+":"+ str(Color_)+"' ("+Devices[Unit].Name+")")
 
 		elif ( Devices[Unit].BatteryLevel != BatteryLvl and BatteryLvl != 255) or ( Devices[Unit].SignalLevel != rssi ) :    # In that case we do update, but do not trigger any notification.
