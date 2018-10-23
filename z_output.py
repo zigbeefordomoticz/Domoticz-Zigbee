@@ -308,19 +308,19 @@ def reportCommand( self, nwkid, cluster, Attr ,AttrType, MinInter, MaxInter, Tim
 	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
 		if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
 			EPout=tmpEp
-	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(1) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
+	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(1) + Attr + "00" + AttrType + Attr + MinInter + MaxInter + TimeOut + ChgFlag
 	Domoticz.Log("configureReporting on cluster : " +str(cluster) + " with : " +str(datas) )
 	sendZigateCmd("0120", datas  )
 
 def configureReporting( self, nwkid, cluster ) :
 
 	if cluster == "000c" :
-		reportCommand( self, nwkid, cluster, "0055", "0039",  "0300", "0300", "00", "01" )
+		reportCommand( self, nwkid, cluster, "0055", "39",  "0300", "0300", "0000", "01" )
 
 	elif cluster == "0702" :
-		reportCommand( self, nwkid, cluster, "0000", "0039",  "0010", "0300", "00", "01" )
-		reportCommand( self, nwkid, cluster, "0200", "0039",  "0010", "0300", "00", "01" )
-		reportCommand( self, nwkid, cluster, "0400", "0039",  "0010", "0300", "00", "01" )
+		reportCommand( self, nwkid, cluster, "0000", "39",  "0010", "0300", "0000", "01" )
+		reportCommand( self, nwkid, cluster, "0200", "39",  "0010", "0300", "0000", "01" )
+		reportCommand( self, nwkid, cluster, "0400", "39",  "0010", "0300", "0000", "01" )
 
 	else :
 		return
