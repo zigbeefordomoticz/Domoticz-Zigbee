@@ -179,7 +179,6 @@ def ReadAttributeRequest_0000(self, key) :
 	EPin = "01"
 	EPout= "01"
 
-	Domoticz.Log("Request for cluster 0x0000 via Read Attribute request : " + key + " EPout = " + EPout )
 	
 	# General
 	listAttributes = []
@@ -192,13 +191,14 @@ def ReadAttributeRequest_0000(self, key) :
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0000" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
+
+	Domoticz.Log("Request Basic  via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_0001(self, key) :
 	# Power Config
 	EPin = "01"
 	EPout= "01"
-	Domoticz.Log("Request for cluster 0x0001 via Read Attribute request : " + key + " EPout = " + EPout )
 	listAttributes = []
 	listAttributes.append(0x0000)		# Voltage
 	listAttributes.append(0x0010)		# Battery Voltage
@@ -207,24 +207,48 @@ def ReadAttributeRequest_0001(self, key) :
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0001" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
+
+	Domoticz.Log("Request Power Config via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
-def ReadAttributeRequest_0006(self, key) :
-	# Cluster 0x0006 with attribute 0x0000
+def ReadAttributeRequest_0300(self, key) :
+
 	EPin = "01"
 	EPout= "01"
+
+	listAttributes = []
+	listAttributes.append(0x0007) 
+
+	for tmpEp in self.ListOfDevices[key]['Ep'] :
+			if "0300" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
+					EPout=tmpEp
+	Domoticz.Log("Request Color Temp infos via Read Attribute request : " + key + " EPout = " + EPout )
+	ReadAttributeReq( self, key, EPin, EPout, "0300", listAttributes)
+
+
+def ReadAttributeRequest_0006(self, key) :
+	# Cluster 0x0006
+	EPin = "01"
+	EPout= "01"
+
+	listAttributes = []
+	listAttributes.append(0x0000)
+
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0006" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
 
 	Domoticz.Debug("Request OnOff status via Read Attribute request : " + key + " EPout = " + EPout )
-	ReadAttributeReq( self, key, "01", EPout, "0006", 0)
+	ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
 
 def ReadAttributeRequest_0008(self, key) :
-	# Cluster 0x0008 with attribute 0x0000
+	# Cluster 0x0008 
 	EPin = "01"
 	EPout= "01"
+	listAttributes = []
+	listAttributes.append(0x0000)
+
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0008" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
@@ -259,7 +283,7 @@ def ReadAttributeRequest_0702(self, key) :
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0702" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
-	Domoticz.Log("Request Metering infor for Salus plug via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Log("Request Metering info via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
 
