@@ -302,8 +302,31 @@ def removeZigateDevice( self, key ) :
 
 	return
 
+def reportCommand( self, nwkid, cluster, Attr ,AttrType, MinInter, MaxInter, TimeOut, ChgFlag ) :
+
+	EPout = "01"
+	for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
+		if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
+			EPout=tmpEp
+	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(1) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
+	Domoticz.Log("configureReporting on cluster : " +str(cluster) + " with : " +str(datas) )
+	sendZigateCmd("0120", datas  )
 
 def configureReporting( self, nwkid, cluster ) :
+
+	if cluster == "000c" :
+		reportCommand( self, nwkid, cluster, "0055", "0039",  "0300", "0300", "00", "01" )
+
+	elif cluster == "0702" :
+		reportCommand( self, nwkid, cluster, "0000", "0039",  "0010", "0300", "00", "01" )
+		reportCommand( self, nwkid, cluster, "0200", "0039",  "0010", "0300", "00", "01" )
+		reportCommand( self, nwkid, cluster, "0400", "0039",  "0010", "0300", "00", "01" )
+
+	else :
+		return
+
+
+def configureReporting_v2( self, nwkid, cluster ) :
 
 
 	'''
@@ -317,8 +340,12 @@ def configureReporting( self, nwkid, cluster ) :
  	Attribute ID: 0x001C
 	'''
 	AttributeType = { 
+	# Power Config Cluster ( 0021:Battery % )
+	'0001': {'Attribute': {'0021': '0020'},'minInterval': '300', 'maxInterval': '300', 'change': '0'},
+
 	# On/Off Cluster ( 0000:On/Off ) 
 	'0006': {'Attribute': {'0000': '0010'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
+
 	# Level Control Cluster ( 0000:Current Level ) 
 	'0008': {'Attribute': {'0000': '0020'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
 	# Illuminance Cluster ( 0000:Measured value )
@@ -335,8 +362,6 @@ def configureReporting( self, nwkid, cluster ) :
 	'0405': {'Attribute': {'0000': '0021'},'minInterval': '10', 'maxInterval': '300', 'change': '100'},
 	# Pressure measurement Cluster
 	'0403': {'Attribute': {'0000': '0021'},'minInterval': '1', 'maxInterval': '300', 'change': '20'},
-	# Power Config Cluster ( 0021:Battery %
-	'0001': {'Attribute': {'0000': '0021'},'minInterval': '300', 'maxInterval': '300', 'change': '0'},
 	# Xiaomi 
 	'000c': {'Attribute': {'0055': '0039'},'minInterval': '1', 'maxInterval': '300', 'change': '1'}
 	}
