@@ -659,6 +659,8 @@ def TypeFromCluster(cluster):
 
 	if   cluster=="0006" : TypeFromCluster="Switch"
 	elif cluster=="0008" : TypeFromCluster="LvlControl"
+	elif cluster=="000c" : TypeFromCluster="XCube"
+	elif cluster=="0012" : TypeFromCluster="XCube"
 	elif cluster=="0300" : TypeFromCluster="ColorControl"
 	elif cluster=="0400" : TypeFromCluster="Lux"
 	elif cluster=="0402" : TypeFromCluster="Temp"
