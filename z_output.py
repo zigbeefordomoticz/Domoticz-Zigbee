@@ -248,11 +248,11 @@ def ReadAttributeRequest_0702(self, key) :
 	listAttributes.append(0x0000) # Current Summation Delivered
 	listAttributes.append(0x0200) # Status
 	listAttributes.append(0x0300) # UNIT_OF_MEASURE
- 	listAttributes.append(0x0301) # MULTIPLIER
- 	listAttributes.append(0x0302) # SUMMATION_FORMATING
- 	listAttributes.append(0x0306) # METERING_DEVICE_TYPE
-	listAttributes.append(0x0400) # Instantaneous Demand)
- 	listAttributes.append(0x001C) # PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED
+	listAttributes.append(0x0301) # MULTIPLIER
+	listAttributes.append(0x0302) # SUMMATION_FORMATING
+	listAttributes.append(0x0306) # METERING_DEVICE_TYPE
+	listAttributes.append(0x0400) # Instantaneous Demand
+	listAttributes.append(0x001C) # PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED
 
 	EPin = "01"
 	EPout= "01"
@@ -302,7 +302,7 @@ def configureReporting( self, nwkid, cluster ) :
 	# Color Cluster ( ColorTemp, ColorX, ColorY, Color Mode
 	'0400': {'Attribute': {'0000': '0021'},'minInterval': '5', 'maxInterval': '300', 'change': '2000'},
 	# Metering Cluster ( 0000:Current summation, 0400:Instantaneous)
-	'0702': {'Attribute': {'0400':'002a','0000': '0025'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
+	'0702': {'Attribute': {'0400':'0000','0000': '0000','0300':'0000', '0301':'0000', '0302':'0000', '0306':'0000', '001C':'0000'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
 	# Electrical Cluster ( 0505:RMS Voltage, 0508:RMS Curent)
 	'0b04': {'Attribute': {'050b': '0029', '0505':'0021', '0508':'0021'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
 	#Temperature Measurement Cluster
