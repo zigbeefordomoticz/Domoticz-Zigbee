@@ -531,37 +531,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 				#Fin de correction
 
 			if Type==Dtypename=="LvlControl" :
-				try:
-					sValue =  round((int(value,16)/255)*100)
-				except:
-					Domoticz.Error("MajDomoDevice - value is not an int = " + str(value) )
-				else:
-					Domoticz.Debug("MajDomoDevice LvlControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
-
-					nValue = 2
-					
-					if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) :
-						Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-						UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
+				nValue = 2
+				sValue =  round((int(value,16)/255)*100)
+				Domoticz.Debug("MajDomoDevice LvlControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
+				Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
+				UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
 			if Type==Dtypename=="ColorControl" :
-				try:
-					sValue =  round((int(value,16)/255)*100)
-				except:
-					Domoticz.Error("MajDomoDevice - value is not an int = " + str(value) )
-				else:
-					Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
-			
 				nValue = 2
-			
-				if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) or str(Color_) != str(Devices[x].Color):
-					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
-					UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel, Color_)
+				sValue =  round((int(value,16)/255)*100)
+				Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
+				Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
+				UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel, Color_)
 
-			#Modif Meter PP 09/09/2018 Je pense que c'est inutile car on a le test sur Dtypename==PowerMeter qui est plus pertinant
-			#if clusterID=="000c" and Type != "XCube":
-			#	Domoticz.Debug("Update Value Meter : "+str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])))
-			#	UpdateDevice_v2(Devices, x, 0, str(round(struct.unpack('f',struct.pack('i',int(value,16)))[0])) ,BatteryLevel, SignalLevel)
 
 def ResetDevice(self, Devices, Type, HbCount) :
 	'''
@@ -630,7 +612,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it
 	if (Unit in Devices):
-		if (Devices[Unit].nValue != nValue) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
+		if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_):
 			if Color_: Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color = Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 			else:      Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=SuppTrigger )
 			Domoticz.Log("Update v2 Values "+str(nValue)+":'"+str(sValue)+":"+ str(Color_)+"' ("+Devices[Unit].Name+")")
