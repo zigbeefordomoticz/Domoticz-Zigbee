@@ -132,17 +132,33 @@ def ReadCluster(self, Devices, MsgData):
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ) :
 	# Smart Energy Metering
-	if MsgAttrID == "0000" : # Summation
-		bytelen = len(MsgClusterData)
-		Domoticz.Log("ReadCluster 0702 - Attribute 0x0000 -MsgClusterData = " + str(MsgClusterData) + " MsgClusterData len = " +str(bytelen) )
+	if int(MsgAttSize,16) == 0 :
+		Domoticz.Log("Cluster0702 - empty message ")
+		return
 
-	elif MsgAttrID == "1024" : # Instant Measurement 0x0400
-		bytelen = len(MsgClusterData)
-		Domoticz.Log("ReadCluster 0702 - Attribute 0x0400 - MsgClusterData = " + str(MsgClusterData) + " MsgClusterData len = " +str(bytelen) )
-	else :
-		Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
-		Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttType = " +str(MsgAttType) )
-		Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttSize = " +str(MsgAttSize) )
+		if MsgAttrID == "0000" : 
+			Domoticz.Log("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
+		elif MsgAttrID == "0001": 
+			Domoticz.Log("Cluster0702 - 0x0001 CURRENT_SUMMATION_RECEIVED ")
+		elif MsgAttrID == "0028": 
+			Domoticz.Log("Cluster0702 - 0x001C PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED ")
+		elif MsgAttrID == "0256": 
+			Domoticz.Log("Cluster0702 - 0x0100 CURRENT_TIER_1_SUMMATION_DELIVERED")
+		elif MsgAttrID == "0512" : 
+			Domoticz.Log("Cluster0702 - 0x0200 STATUS")
+		elif MsgAttrID == "0768" : 
+			Domoticz.Log("Cluster0702 - 0x0300 UNIT_OF_MEASURE")
+		elif MsgAttrID == "0769" : 
+			Domoticz.Log("Cluster0702 - 0x0301 MULTIPLIER")
+		elif MsgAttrID == "0770" : 
+			Domoticz.Log("Cluster0702 - 0x0302 SUMMATION_FORMATING")
+		elif MsgAttrID == "0774" : 
+			Domoticz.Log("Cluster0702 - 0x0306 METERING_DEVICE_TYPE")
+		elif MsgAttrID == "1024" : 
+			Domoticz.Log("Cluster0702 - 0x0400 INSTANTANEOUS_DEMAND")
+		else :
+			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+	return
 
 
 def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ) :
