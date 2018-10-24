@@ -558,6 +558,10 @@ def ResetDevice(self, Devices, Type, HbCount) :
 	Domoticz.Debug("ResetDevice : " +str(HbCount) )
 	x=0
 	for x in Devices:
+		if Devices[x].nValue == 0 and Devices[x].sValue == "Off" :
+			# No need to spend time as it is already in the state we want, go to next device
+			continue
+
 		LUpdate=Devices[x].LastUpdate
 		_tmpDeviceID_IEEE = Devices[x].DeviceID
 		LUpdate=time.mktime(time.strptime(LUpdate,"%Y-%m-%d %H:%M:%S"))
@@ -599,7 +603,7 @@ def ResetDevice(self, Devices, Type, HbCount) :
 			Domoticz.Debug("ResetDevice - Time delay since Last update : "+str( current - LUpdate) )
 		
 			if (current - LUpdate)> 30 and Dtypename=="Motion":
-				Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
+				Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
 				UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel, SuppTrigger=True)
 	return
 			
