@@ -16,9 +16,9 @@ import json
 def CreateDomoDevice(self, Devices, NWKID) :
 	def getCreatedID( self, Devices, DeviceID, Name ) :
 		for x in Devices :
-			Domoticz.Log( Devices[x].DeviceID + " / " + DeviceID + " ----- " + Devices[x].Name + " / " +self.Key+" - "+Name )
+			Domoticz.Debug( Devices[x].DeviceID + " / " + DeviceID + " ----- " + Devices[x].Name + " / " +self.Key+" - "+Name )
 			if Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0 :
-				Domoticz.Log("getCreatedID - found " +str(Devices[x].ID) )
+				Domoticz.Debug("getCreatedID - found " +str(Devices[x].ID) )
 				return Devices[x].ID
 
 	def FreeUnit(self, Devices) :
@@ -50,22 +50,22 @@ def CreateDomoDevice(self, Devices, NWKID) :
 	GlobalEP = False
 	for Ep in self.ListOfDevices[NWKID]['Ep'] :
 		# Use 'type' at level EndPoint if existe
-		Domoticz.Log("CreatDomoDevice - Process EP : " +str(Ep) )
+		Domoticz.Debug("CreatDomoDevice - Process EP : " +str(Ep) )
 		if not GlobalEP :								# First time, or we dont't GlobalType
 			if 'Type' in  self.ListOfDevices[NWKID]['Ep'][Ep] :
 				if self.ListOfDevices[NWKID]['Ep'][Ep]['Type'] != "" :
 					dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
 					aType = str(dType)
 					Type = aType.split("/")
-					Domoticz.Log("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep) )
+					Domoticz.Debug("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep) )
 			else :
 				if self.ListOfDevices[NWKID]['Type']== {} :
 					Type=GetType(self, NWKID, Ep).split("/")
-					Domoticz.Log("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )
+					Domoticz.Debug("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep) )
 				else :
 					GlobalEP = True
 					Type=self.ListOfDevices[NWKID]['Type'].split("/")
-					Domoticz.Log("CreateDomoDevice - Type : '" + str(Type) + "'")
+					Domoticz.Debug("CreateDomoDevice - Type : '" + str(Type) + "'")
 		else :
 			break									# We have created already the Devices (as GlobalEP is set)
 	
@@ -88,7 +88,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
 				ID = Devices[unit].ID
 				self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
-			#For color Bulb
+			#For color Bulb , we create only one switch - instead of 1,2 or 3 devices per cluster
 			if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
 				Type = ['ColorControl']
 			elif ("Switch" in Type) and ("LvlControl" in Type):
@@ -234,6 +234,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
 
 					# Switchtype 7 STYPE_Dimmer
 
+					# The test should be done in an other way ( ProfileID for instance )
 					if self.ListOfDevices[NWKID]['Model'] == "Ampoule.LED1624G9.Tradfri":
 						Subtype_ = 2
 					elif self.ListOfDevices[NWKID]['Model'] == "Ampoule.LED1545G12.Tradfri":
@@ -519,23 +520,34 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 
 			if Type==Dtypename=="Lux" :
 				UpdateDevice_v2(Devices, x,int(value),str(value),BatteryLevel, SignalLevel)
+
 			if Type==Dtypename=="Motion" :
 				if value == "01" : UpdateDevice_v2(Devices, x,"1",str("On"),BatteryLevel, SignalLevel)
 				if value == "00" : UpdateDevice_v2(Devices, x,"0",str("Off"),BatteryLevel, SignalLevel)
 
 			if Type==Dtypename=="LvlControl" :
-				nValue = 2
-				sValue =  round((int(value,16)/255)*100)
-				Domoticz.Debug("MajDomoDevice LvlControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
-				Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-				UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
+				Domoticz.Debug("MajDomoDevice (LvlControl) - previous values : "+str(Devices[x].nValue) + "/" +str(Devices[x].sValue) )
+				if str(Devices[x].sValue) == "Off" :
+					# As we do ReadAttributeRequest (or via reporting) we might get an asynchronous information on the current dimmer level.
+					# If the Device is Off, then we keep it off
+					Domoticz.Log("MajDomoDevice (LvlControl) - " +str(Devices[x].ID) +" is switched off. No update of dimmer")
+				else :
+					nValue = 2
+					sValue =  round((int(value,16)/255)*100)
+					UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
+					if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) :
+						Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
+						UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,DOptions, SignalLevel)
+
 
 			if Type==Dtypename=="ColorControl" :
 				nValue = 2
 				sValue =  round((int(value,16)/255)*100)
 				Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
-				Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
-				UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel, Color_)
+				if str(nValue) != str(Devices[x].nValue) or str(sValue) != str(Devices[x].sValue) or str(Color_) != str(Devices[x].Color):
+					Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID) + " from " + str(Devices[x].nValue) + " to " + str(nValue))
+					UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,DOptions, SignalLevel, Color_)
+
 
 
 def ResetDevice(self, Devices, Type, HbCount) :
@@ -619,27 +631,27 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 
 def GetType(self, Addr, Ep) :
 	Type =""
-	Domoticz.Log("GetType - Model " +str(self.ListOfDevices[Addr]['Model']) )
+	Domoticz.Debug("GetType - Model " +str(self.ListOfDevices[Addr]['Model']) +" Profile ID : " +str(self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : "+str(self.ListOfDevices[Addr]['ZDeviceID']))
 
 	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
 			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
-				Domoticz.Log("GetType - Found Type  " +str(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']) )
+				Domoticz.Log("GetType - Found Type in DeviceConf : " +str(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']) )
 				Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
 				Type = str(Type)
 		else :
+			Domoticz.Log("GetType - Found Type in DeviceConf : " +str(self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']) )
 			Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
-
-		Domoticz.Debug("GetType - Type was set to : " + str(Type) )
 	else :
-		Domoticz.Debug("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) )
+		Domoticz.Debug("GetType - Model not found in DeviceConf : " + str(self.ListOfDevices[Addr]['Model']) + " Let's go for Cluster search" )
 		Type=""
 		for cluster in self.ListOfDevices[Addr]['Ep'][Ep] :
-			Domoticz.Debug("GetType - Type will be set to : " + str(Type) )
 			Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster) )
 			if Type != "" and Type[:1]!="/" :
 				Type+="/"
 			Type+=TypeFromCluster(cluster)
+			Domoticz.Debug("GetType - Type will be set to : " + str(Type) )
+
 		#Type+=Type
 		Type=Type.replace("/////","/")
 		Type=Type.replace("////","/")
@@ -652,8 +664,6 @@ def GetType(self, Addr, Ep) :
 		if Type != "" :
 			self.ListOfDevices[Addr]['Type']=Type
 			Domoticz.Debug("GetType - Type is now set to : " + str(Type) )
-		else :
-			Domoticz.Log("GetType - WARNING - Not able to find a Type for Addr : " + str(Addr) + " Ep : " + str(Ep) + " Device Info : " + str(self.ListOfDevices[Addr]) )
 	return Type
 
 def TypeFromCluster(cluster):

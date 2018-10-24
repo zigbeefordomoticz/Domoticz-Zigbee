@@ -54,14 +54,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 			if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 				for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
 					if str(Devices[Unit].ID) == str(key) :
-						Domoticz.Log("mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  )
+						Domoticz.Debug("mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  )
 						DtypenameList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
 	
 	if len(DtypenameList) == 0 :	# No match with ClusterType
 		Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
 		return
 
-	Domoticz.Log("mgtCommand - List of TypeName : " +str(DtypenameList) )
+	Domoticz.Debug("mgtCommand - List of TypeName : " +str(DtypenameList) )
 	# We have list of Dtypename, let's see which one are matching Command style
 
 	ClusterSearch = ""
@@ -76,7 +76,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 			ClusterSearch="0300"
 			Dtypename = tmpDtypename
 
-	Domoticz.Log("mgtCommand - Dtypename : " +str(Dtypename) )
+	Domoticz.Debug("mgtCommand - Dtypename : " +str(Dtypename) )
 
 
 	# A ce stade ClusterSearch est connu
@@ -94,11 +94,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 				if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 					for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
 						if str(Devices[Unit].ID) == str(key) :
-							Domoticz.Log("mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) )
+							Domoticz.Debug("mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) )
 							EPout = tmpEp
 
 
-	Domoticz.Log("EPout = " +str(EPout) )
+	Domoticz.Debug("EPout = " +str(EPout) )
 
 
 
@@ -126,12 +126,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		value=z_tools.Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
 		z_output.sendZigateCmd("0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
 		if DSwitchtype == "16" :
-			z_domoticz.UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
+			z_domoticz.UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
 		else:
-			z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) #Need to use 1 as nvalue else, it will set it to off
+			z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
 
 	if Command == "Set Color" :
 		Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
+		self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 		Hue_List = json.loads(Color)
 		
 		#Color 
