@@ -559,7 +559,6 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
 
 		if z_tools.DeviceExist(self, saddr, ieee):
 			Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format((int(rssi,16))) + " Power = " + power + " found in ListOfDevice")
-			#self.ListOfDevices[saddr]['Power'] = str(power)
 
 			if rssi !="00" :
 				self.ListOfDevices[saddr]['RSSI']= int(rssi,16)

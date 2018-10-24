@@ -151,7 +151,7 @@ class BasePlugin:
 
 	def onDeviceRemoved( self, Unit ) :
 		Domoticz.Status("onDeviceRemoved called" )
-		z_tools.removeDeviceInList( self, Devices[Unit].DeviceID )
+		z_tools.removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 		Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
 		# We might evaluate teh removal of the physical device from Zigate.
 		# Could be done if a Flag is enabled in the PluginConf.txt.

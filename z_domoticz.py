@@ -291,6 +291,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 				# Are we in a situation with one Devices whatever Eps are ?
 				# To do that, check there is only 1 ClusterType even if several EPs
 				nbClusterType = 0
+				ptEp = Ep
 				for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
 					if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
 						nbClusterType = nbClusterType + 1
@@ -306,10 +307,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
 				
 				else :
-					Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType']) + " for : " +str(ID) )
-					for key  in self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] :
+					Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']) + " for : " +str(ID) )
+					for key  in self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'] :
 						if str(ID) == str(key) :
-							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][key])
+							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'][key])
 
 			if Dtypename == "" :	# No match with ClusterType
 				continue

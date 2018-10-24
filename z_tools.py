@@ -74,10 +74,15 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 	if newNWKID == '':
 		return False
 
+	found = 0
+
 	#check in ListOfDevices
 	if newNWKID in self.ListOfDevices:
 		if 'Status' in self.ListOfDevices[newNWKID] :
-			return True
+			found = 1
+			Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
+			if not IEEE :
+				return True
 
 	#If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
 	if IEEE:
@@ -86,10 +91,12 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 				# This device is already in Domoticz 
 				existingNWKkey = self.IEEE2NWK[IEEE]
 
-				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) )
+				if existingNWKkey == newNWKID :		#Check that I'm not myself
+					continue
+				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " status " + str(self.ListOfDevices[existingNWKkey]['Status']) )
 
 				# Make sure this device is valid 
-				if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' :
+				if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' and self.ListOfDevices[existingNWKkey]['Status'] != "Left" :
 					continue
 
 				Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " and Status = inDB ")
@@ -116,9 +123,12 @@ def DeviceExist(self, newNWKID , IEEE = ''):
 					Domoticz.Log("DeviceExist - Update Status from 'inDB' to 'Left' for NetworkID : " +str(newNWKID) )
 					self.ListOfDevices[newNWKID]['Status'] = 'inDB'
 					self.ListOfDevices[newNWKID]['Hearbeat'] = 0
+				found = 1
 
-				return True
-	return False
+	if found == 1 :
+		return True
+	else :
+		return False
 
 def removeNwkInList( self, NWKID) :
 
@@ -127,16 +137,45 @@ def removeNwkInList( self, NWKID) :
 
 
 
-def removeDeviceInList( self, IEEE) :
+def removeDeviceInList( self, Devices, IEEE, Unit ) :
 	# Most likely call when a Device is removed from Domoticz
+	# This is a tricky one, as you might have several Domoticz devices attached to this IoT and so you must remove only the corredpoing part.
+	# Must seach in the NwkID dictionnary and remove only the corresponding device entry in the ClusterType.
+	# In case there is no more ClusterType , then the full entry can be removed
 
+	Domoticz.Log("removeDeviceInList - request to remove Device : " +str(Devices[Unit].ID ) )
 	if IEEE in self.IEEE2NWK :
 		key = self.IEEE2NWK[IEEE]
-		Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
-		del self.ListOfDevices[key]
+		ID = Devices[Unit].ID
 
-		Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
-		del self.IEEE2NWK[IEEE]
+		if self.ListOfDevices[key].get('ClusterType') :               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
+			if  ID in self.ListOfDevices[key]['ClusterType']  :
+				Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in "+str(self.ListOfDevices[key]['ClusterType']) )
+				del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
+		else :
+			for tmpEp in self.ListOfDevices[key]['Ep'] : 
+				Domoticz.Log("removeDeviceInList - searching Ep " +str(tmpEp) )
+				# Search this DeviceID in ClusterType
+				if self.ListOfDevices[key]['Ep'][tmpEp].get('ClusterType') :
+					Domoticz.Log("removeDeviceInList - searching ClusterType " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
+					if str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] :
+						Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
+						del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
+
+		# Finaly let's see if there is any Devices left in this .
+		emptyCT = 1
+		if self.ListOfDevices[key].get('ClusterType') : # Empty or Doesn't exist
+			emptyCT = 0
+		for tmpEp in self.ListOfDevices[key]['Ep'] : 
+			if self.ListOfDevices[key]['Ep'][tmpEp].get('ClusterType') :
+				emptyCT = 0
+		
+		if emptyCT == 1 : 	# There is still something in the ClusterType either Global or at Ep level
+			Domoticz.Log("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
+			del self.ListOfDevices[key]
+
+			Domoticz.Log("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
+			del self.IEEE2NWK[IEEE]
 
 
 def initDeviceInList(self, Nwkid) :
