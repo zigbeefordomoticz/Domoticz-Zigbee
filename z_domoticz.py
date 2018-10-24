@@ -605,7 +605,7 @@ def ResetDevice(self, Devices, Type, HbCount) :
 		
 			if (current - LUpdate)> 30 and Dtypename=="Motion":
 				Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
-				UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel, SuppTrigger=True)
+				UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel, SuppTrigger_=True)
 	return
 			
 def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_ = '', SuppTrigger_ =False, ForceUpdate_ = False ):
