@@ -149,7 +149,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
 		ID = Devices[Unit].ID
 
 		if self.ListOfDevices[key].get('ClusterType') :               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
-			if  ID in self.ListOfDevices[key]['ClusterType']  :
+			if  str(ID) in self.ListOfDevices[key]['ClusterType']  :
 				Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in "+str(self.ListOfDevices[key]['ClusterType']) )
 				del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
 		else :
