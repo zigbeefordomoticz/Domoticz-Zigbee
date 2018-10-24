@@ -199,6 +199,10 @@ def initDeviceInList(self, Nwkid) :
 
 
 def CheckDeviceList(self, key, val) :
+	'''
+		This function is call during DeviceList load
+	'''
+	import random
 
 	Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
 	Domoticz.Debug("CheckDeviceList - with value : " + str(val))
@@ -251,10 +255,11 @@ def CheckDeviceList(self, key, val) :
 			self.ListOfDevices[key]['ClusterType']=DeviceListVal['ClusterType']
 		if 'Version' in DeviceListVal :
 			self.ListOfDevices[key]['Version']=DeviceListVal['Version']
-		if 'Heartbeat' in DeviceListVal :
-			self.ListOfDevices[key]['Heartbeat']=DeviceListVal['Heartbeat']
-		else :
-			self.ListOfDevices[key]['Heartbeat']=0
+
+		# We will initialize Hearbeat with a random value between 0 to 12 in order to distribute the load when triggering action based on the Hearbeat value
+		# 12 is equivalent to 12 Heartbeat cycle ==> 2 minutes
+		self.ListOfDevices[key]['Heartbeat']=random.randint(0, 12)
+		Domoticz.Log("CheckDeviceList - Hearbeat initialized for  self.ListOfDevices["+str(key)+"] to = "+str(self.ListOfDevices[key]['Heartbeat']) )
 
 		
 
