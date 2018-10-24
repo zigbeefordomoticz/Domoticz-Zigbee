@@ -20,31 +20,31 @@ import z_domoticz
 
 def processKnownDevices( self, NWKID ) :
 
-	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 3 )  :
+	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 16 )  :	# Test purposes ... This must be done at start only once
 		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
 			for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
 				for cluster in z_tools.getClusterListforEP( self, NWKID, tmpEp ) :
 					z_output.configureReporting( self, NWKID, cluster )
 
 	# Check if Node Descriptor was run ( this could not be the case on early version)
-	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 12 )  :
+	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 14 )  :
 		if not self.ListOfDevices[NWKID].get('PowerSource') :	# Looks like PowerSource is not available, let's request a Node Descriptor
 			z_output.sendZigateCmd("0042", str(NWKID), 2 )	# Request a Node Descriptor
 
-	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "6" ):
+	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 30 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "12" ):
 		if  self.ListOfDevices[NWKID].get('PowerSource') :		# Let's check first that the field exist, if not it will be requested at Heartbeat == 12 (see above)
 			if self.ListOfDevices[NWKID]['PowerSource'] == 'Main' :	#  Only for device receiving req on idle
 				for tmpEp in self.ListOfDevices[NWKID]['Ep'] :	# Request ReadAttribute based on Cluster 
-					if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Cluster On/off
-						z_output.ReadAttributeRequest_0006(self, NWKID )
 					if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Cluster Metering
 						z_output.ReadAttributeRequest_0702(self, NWKID )
 					if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Cluster LvlControl
 						z_output.ReadAttributeRequest_0008(self, NWKID )
-					if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Color Temp
-						z_output.ReadAttributeRequest_0300(self, NWKID )
+					#if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Color Temp
+					#	z_output.ReadAttributeRequest_0300(self, NWKID )
 					if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Cluster Xiaomi
 						z_output.ReadAttributeRequest_000C(self, NWKID )
+					if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp] :	# Cluster On/off
+						z_output.ReadAttributeRequest_0006(self, NWKID )
 
 	
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
@@ -211,10 +211,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 					if self.ListOfDevices[NWKID]['Ep']=={} :
 						self.ListOfDevices[NWKID]['Ep']={'01':{'0000','0001','0009','0b05','1000'}}
 				# ampoule Tradfri LED1624G9
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0200" :
-					self.ListOfDevices[NWKID]['Model']="Ampoule.LED1624G9.Tradfri"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01':{'0006','0008','0300'}}
+#				if self.ListOfDevices[NWKID]['ZDeviceID']=="0200" :
+#					self.ListOfDevices[NWKID]['Model']="Ampoule.LED1624G9.Tradfri"
+#					if self.ListOfDevices[NWKID]['Ep']=={} :
+#						self.ListOfDevices[NWKID]['Ep']={'01':{'0006','0008','0300'}}
 				# ampoule Tradfi LED1545G12.Tradfri
 				if self.ListOfDevices[NWKID]['ZDeviceID']=="0220" :
 					self.ListOfDevices[NWKID]['Model']="Ampoule.LED1545G12.Tradfri"
