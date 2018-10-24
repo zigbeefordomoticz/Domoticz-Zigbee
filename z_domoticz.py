@@ -426,9 +426,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 			if Type=="Switch" and Dtypename=="Button": # boutton simple
 				if value == "01" :
 					state="On"
-					UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
-				else:
-					return
+					UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 			if Type=="Switch" and Dtypename=="Water" : # detecteur d eau
 				if value == "01" :
 					state="On"
