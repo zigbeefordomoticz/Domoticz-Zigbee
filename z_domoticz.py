@@ -131,9 +131,8 @@ def CreateDomoDevice(self, Devices, NWKID) :
 					ID = Devices[unit].ID
 					self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
-				if t=="MSwitch"  :  # interrupteur multi lvl lumi.sensor_switch.aq2
+				if t=="SwitchAQ2"  :  # interrupteur multi lvl lumi.sensor_switch.aq2
 					self.ListOfDevices[NWKID]['Status']="inDB"
-					#Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0"}
 					Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0"}
 					unit = FreeUnit(self, Devices)
 					Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
@@ -442,7 +441,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 				elif value == "00" :
 					state="Off"
 				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
-			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch 
+			if Type=="Switch" and Dtypename=="SwitchAQ2" : # multi lvl switch 
 				if value == "00" :
 					state="00"
 				elif value == "01" :

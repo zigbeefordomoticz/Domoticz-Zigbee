@@ -70,7 +70,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 	ClusterSearch = ""
 	for tmpDtypename in DtypenameList :
-		if tmpDtypename =="Switch" or tmpDtypename =="Plug" or tmpDtypename =="MSwitch" or tmpDtypename =="Smoke" or tmpDtypename =="DSwitch" or tmpDtypename =="Button" or tmpDtypename =="DButton":
+		if tmpDtypename =="Switch" or tmpDtypename =="Plug" or tmpDtypename =="SwitchAQ2" or tmpDtypename =="Smoke" or tmpDtypename =="DSwitch" or tmpDtypename =="Button" or tmpDtypename =="DButton":
 			ClusterSearch="0006"
 			Dtypename = tmpDtypename
 		if tmpDtypename =="LvlControl" :
