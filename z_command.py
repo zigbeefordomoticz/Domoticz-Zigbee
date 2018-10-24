@@ -26,7 +26,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 	Domoticz.Debug("DeviceID = " +str(Devices[Unit].DeviceID))
 
 	# As we can have a new Short address, we need to retreive it from self.ListOfDevices
-	NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
+	if Devices[Unit].DeviceID in self.IEEE2NWK:
+		NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
+	else :
+		Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
+		return
 	Domoticz.Debug("mgtCommand - NWKID = " +str(NWKID) )
 
 	DSwitchtype= str(Devices[Unit].SwitchType)
