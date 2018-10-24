@@ -2,9 +2,7 @@
 # coding: utf-8 -*-
 """
 	Module: z_domoticz.py
-
 	Description: All interactions with Domoticz 
-
 """
 
 import Domoticz
@@ -440,8 +438,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 					state="Off"
 				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 			if Type=="Switch" and Dtypename=="SwitchAQ2" : # multi lvl switch 
-				if value == "00" :
-					state="00"
+				if value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
+					#state="00"
 				elif value == "01" :
 					state="00"
 				elif value == "02" :
@@ -469,17 +467,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel) 
 			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different lumi.sensor_86sw2 ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
-					if value == "01" or value =="00" :
+					if value == "01" :
 						state="10"
 						data="01"
+					elif value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
 				elif Ep == "02" :
-					if value == "01" or value =="00":
+					if value == "01" :
 						state="20"
 						data="02"
+					elif value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
 				elif Ep == "03" :
-					if value == "01" or value =="00" :
+					if value == "01" :
 						state="30"
 						data="03"
+					elif value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
 				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 
 			if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
