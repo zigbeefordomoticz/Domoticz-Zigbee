@@ -131,7 +131,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
 					ID = Devices[unit].ID
 					self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
-				if t=="MSwitch"  :  # interrupteur multi lvl 86sw2 xiaomi
+				if t=="MSwitch"  :  # interrupteur multi lvl lumi.sensor_switch.aq2
 					self.ListOfDevices[NWKID]['Status']="inDB"
 					#Options = {"LevelActions": "||||", "LevelNames": "Push|1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0"}
 					Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click", "LevelOffHidden": "false", "SelectorStyle": "0"}
@@ -140,7 +140,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
 					ID = Devices[unit].ID
 					self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
-				if t=="DSwitch"  :  # interrupteur double sur EP different
+				if t=="DSwitch"  :  # interrupteur double sur EP different 
 					self.ListOfDevices[NWKID]['Status']="inDB"
 					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0"}
 					unit = FreeUnit(self, Devices)
@@ -148,7 +148,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
 					ID = Devices[unit].ID
 					self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
-				if t=="DButton"  :  # interrupteur double sur EP different
+				if t=="DButton"  :  # interrupteur double sur EP different lumi.sensor_86sw2
 					self.ListOfDevices[NWKID]['Status']="inDB"
 					Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click", "LevelOffHidden": "true", "SelectorStyle": "0"}
 					unit = FreeUnit(self, Devices)
@@ -442,20 +442,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 				elif value == "00" :
 					state="Off"
 				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
-			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch
+			if Type=="Switch" and Dtypename=="MSwitch" : # multi lvl switch 
 				if value == "00" :
 					state="00"
 				elif value == "01" :
-					state="10"
+					state="00"
 				elif value == "02" :
-					state="20"
+					state="10"
 				elif value == "03" :
-					state="30"
+					state="20"
 				elif value == "04" :
-					state="40"
-				else :
-					state="0"
-				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLeveli, ForceUpdate_=True)
+					state="30"
+				# else :
+					# state="0"
+				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
 				if Ep == "01" :
 					if value == "01" or value =="00" :
@@ -469,8 +469,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel)
-			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different   ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
+				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel) 
+			if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different lumi.sensor_86sw2 ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
 				if Ep == "01" :
 					if value == "01" or value =="00" :
 						state="10"
@@ -483,7 +483,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 					if value == "01" or value =="00" :
 						state="30"
 						data="03"
-				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel)
+				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 
 			if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
 					Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
