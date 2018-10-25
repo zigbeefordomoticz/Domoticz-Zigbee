@@ -1,31 +1,22 @@
 # Release Notes 
-## xx mmmmmmmm  2018 - dev-x.x.x
+## 25 Octobre 2018 - beta-3.1.0
 - [Enhancement] Get async status of switches and plug 
 - [Enhancement] Get async Level of Level Control devices
 - [Technical] Use IEEE instead of Network addresses in Domoticz
 - [Technical] Don't store any plugin informations in Domoticz. All plugin infos are now in DeviceList
 - [Issues] Able to manage 2 Zigates on the same Domoticz instance. The DeviceList file will be identified by the HardwareID (plugin instance in Domoticz)
 - [Technical] Decode Device node descriptors information like Manufacturer, Power Source, Response When Idle ....
-- [Technical] Manage Leave message from device
 - [Hardware| Aqara Wall Switch LN (Double) Aqara 230 double switch, double fire switch (QBKG12LM))
-
-## xx mmmmmmmm  2018 - beta-3.1.0
-
 - [Hardware] Xiaomi Plug - enabling power and meter reporting
 - [Technical] control of Command versus status response
 - [Technical] control of SQN on messages from battery powered devices. In case of out of sequence a message is logged
-- [Technical] improving loading of Domoticz devices into self.ListOfDevices
-- [Technical] implementing DomoID to track the deviceID at creation time (which is the reference in Domoticz DB. This is in planning of managing devices coming with a new saddr
 - [Issue] fix problem created during #78
 - [Hardware] enable plug-switch update when receiving 0x000/ff01 cluster
-- [Technical] Upgrade to Zigate V2 data structure and store in domoticz.db ( would required latest Domoticz Beta version to work )
-- [Technical] Change TypeName to ClusterType in the Zigate structure.
 - [Technical] Serialisation of zigate cmd based on sendDelay paramater available on PluinConf.txt - set by default to 1s
 - [Technical] Remove unecessary charaters sent in case of Wifi transport
 - [Technical] Enable/Disable login Discovery Process information. The purpose is to keep in a dedicated file all informations captures during the discovery phase. This will allow us to work on new -un certified - devices.
 - [Issue] - Handle Leave message
 - [Issue] - When you remove a device in Domoticz, we remove the entry in the Plugin, but we don't remove the device in Zigate, yet.
-
 
 
 ## 12 September 2018 - 3.0.0 
