@@ -20,11 +20,11 @@ import z_domoticz
 
 def processKnownDevices( self, NWKID ) :
 
-	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 16 )  :	# Test purposes ... This must be done at start only once
-		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
-			for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-				for cluster in z_tools.getClusterListforEP( self, NWKID, tmpEp ) :
-					z_output.configureReporting( self, NWKID, cluster )
+#	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 16 )  :	# Test purposes ... This must be done at start only once
+#		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
+#			for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+#				for cluster in z_tools.getClusterListforEP( self, NWKID, tmpEp ) :
+#					z_output.configureReporting( self, NWKID, cluster )
 
 	# Check if Node Descriptor was run ( this could not be the case on early version)
 	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 14 )  :
