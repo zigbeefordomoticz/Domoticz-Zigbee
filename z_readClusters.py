@@ -108,7 +108,7 @@ def ReadCluster(self, Devices, MsgData):
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
 			self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-	Domoticz.Log("ReadCluster - " +MsgClusterId +"  Saddr : " + str(MsgSrcAddr) + " SrcEp : " + MsgSrcEp + " AttrID : " + MsgAttrID + " AttType : " + MsgAttType + " AttSize : " +MsgAttSize +" Attribute : " + str(MsgClusterData) )
+	Domoticz.Debug("ReadCluster - " +MsgClusterId +"  Saddr : " + str(MsgSrcAddr) + " SrcEp : " + MsgSrcEp + " AttrID : " + MsgAttrID + " AttType : " + MsgAttType + " AttSize : " +MsgAttSize +" Attribute : " + str(MsgClusterData) )
 
 		
 	if   MsgClusterId=="0000" : Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
@@ -134,31 +134,31 @@ def ReadCluster(self, Devices, MsgData):
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ) :
 	# Smart Energy Metering
 	if int(MsgAttSize,16) == 0 :
-		Domoticz.Log("Cluster0702 - empty message ")
+		Domoticz.Debug("Cluster0702 - empty message ")
 		return
 
 		if MsgAttrID == "0000" : 
-			Domoticz.Log("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
+			Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
 		elif MsgAttrID == "0001": 
-			Domoticz.Log("Cluster0702 - 0x0001 CURRENT_SUMMATION_RECEIVED ")
+			Domoticz.Debug("Cluster0702 - 0x0001 CURRENT_SUMMATION_RECEIVED ")
 		elif MsgAttrID == "0028": 
-			Domoticz.Log("Cluster0702 - 0x001C PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED ")
+			Domoticz.Debug("Cluster0702 - 0x001C PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED ")
 		elif MsgAttrID == "0256": 
-			Domoticz.Log("Cluster0702 - 0x0100 CURRENT_TIER_1_SUMMATION_DELIVERED")
+			Domoticz.Debug("Cluster0702 - 0x0100 CURRENT_TIER_1_SUMMATION_DELIVERED")
 		elif MsgAttrID == "0512" : 
-			Domoticz.Log("Cluster0702 - 0x0200 STATUS")
+			Domoticz.Debug("Cluster0702 - 0x0200 STATUS")
 		elif MsgAttrID == "0768" : 
-			Domoticz.Log("Cluster0702 - 0x0300 UNIT_OF_MEASURE")
+			Domoticz.Debug("Cluster0702 - 0x0300 UNIT_OF_MEASURE")
 		elif MsgAttrID == "0769" : 
-			Domoticz.Log("Cluster0702 - 0x0301 MULTIPLIER")
+			Domoticz.Debug("Cluster0702 - 0x0301 MULTIPLIER")
 		elif MsgAttrID == "0770" : 
-			Domoticz.Log("Cluster0702 - 0x0302 SUMMATION_FORMATING")
+			Domoticz.Debug("Cluster0702 - 0x0302 SUMMATION_FORMATING")
 		elif MsgAttrID == "0774" : 
-			Domoticz.Log("Cluster0702 - 0x0306 METERING_DEVICE_TYPE")
+			Domoticz.Debug("Cluster0702 - 0x0306 METERING_DEVICE_TYPE")
 		elif MsgAttrID == "1024" : 
-			Domoticz.Log("Cluster0702 - 0x0400 INSTANTANEOUS_DEMAND")
+			Domoticz.Debug("Cluster0702 - 0x0400 INSTANTANEOUS_DEMAND")
 		else :
-			Domoticz.Log("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+			Domoticz.Debug("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
 	return
 
 
