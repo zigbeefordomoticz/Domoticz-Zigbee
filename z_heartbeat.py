@@ -320,7 +320,8 @@ def processListOfDevices( self , Devices ) :
 
 	#end for key in ListOfDevices
 
-	z_LQI.LQIcontinueScan( self )
+	if z_var.LQI != 0 :
+		z_LQI.LQIcontinueScan( self )
 	
 	return True
 

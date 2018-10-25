@@ -107,6 +107,8 @@ class BasePlugin:
 			z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
 		if  self.PluginConf.get('logFORMAT') :
 			z_var.logFORMAT = int(self.PluginConf['logFORMAT'],10)
+		if  self.PluginConf.get('LQI') :
+			z_var.LQI = int(self.PluginConf['LQI'],10)
 		
 		z_var.ReqRcv=bytearray()
 
@@ -176,7 +178,8 @@ class BasePlugin:
 			Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
 
 
-		z_LQI.LQIdiscovery( self ) 
+		if z_var.LQI != 0 :
+			z_LQI.LQIdiscovery( self ) 
 
 		return True
 

@@ -2,5 +2,6 @@
 'CrcCheck':'On',
 'sendDelay':'1',
 'storeDiscoveryFrames':'0',
+'LQI':'0',
 'logFORMAT':'0'
 }
