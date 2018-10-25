@@ -55,7 +55,6 @@ def LoadDeviceList( self ):
 			else:
 				nb = nb +1
 				z_tools.CheckDeviceList( self, key, val )
-				self.ListOfDevices[key]['Heartbeat']=0
 
 	Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
 
