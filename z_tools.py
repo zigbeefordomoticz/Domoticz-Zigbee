@@ -259,7 +259,7 @@ def CheckDeviceList(self, key, val) :
 		# We will initialize Hearbeat with a random value between 0 to 12 in order to distribute the load when triggering action based on the Hearbeat value
 		# 12 is equivalent to 12 Heartbeat cycle ==> 2 minutes
 		self.ListOfDevices[key]['Heartbeat']=random.randint(0, 12)
-		Domoticz.Log("CheckDeviceList - Hearbeat initialized for  self.ListOfDevices["+str(key)+"] to = "+str(self.ListOfDevices[key]['Heartbeat']) )
+		Domoticz.Debug("CheckDeviceList - Hearbeat initialized for  self.ListOfDevices["+str(key)+"] to = "+str(self.ListOfDevices[key]['Heartbeat']) )
 
 		
 
