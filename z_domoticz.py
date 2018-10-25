@@ -620,7 +620,10 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 			if Color_:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color = Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 			else:
-				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=SuppTrigger_ )
+				# SO far, SuppressTrigger is not enforced due to the fact that Domoticz doesn't behave correctly.
+				# Issue will be reported to Domoticz as if SuppressTriggers is set to True, then there is no update of the Database at all!
+				#Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=SuppTrigger_ )
+				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 
 		elif ( Devices[Unit].BatteryLevel != BatteryLvl and BatteryLvl != 255) or ( Devices[Unit].SignalLevel != rssi ) :    # In that case we do update, but do not trigger any notification.
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
