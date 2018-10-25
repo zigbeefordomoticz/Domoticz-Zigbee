@@ -438,18 +438,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 					state="Off"
 				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 			if Type=="Switch" and Dtypename=="SwitchAQ2" : # multi lvl switch 
-				if value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
-					#state="00"
-				elif value == "01" :
-					state="00"
-				elif value == "02" :
-					state="10"
-				elif value == "03" :
-					state="20"
-				elif value == "04" :
-					state="30"
-				# else :
-					# state="0"
+				if   value == "01" : state="00"
+				elif value == "02" : state="10"
+				elif value == "03" : state="20"
+				elif value == "04" : state="30"
+				else : 
+					return # Simply return and don't process any other values than the above
+
 				UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 			if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
 				if Ep == "01" :
@@ -470,17 +465,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 					if value == "01" :
 						state="10"
 						data="01"
-					elif value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
+					else : return # We just expect 01 , in case of other value nothing to do We just expect 01 , in case of other value nothing to do
 				elif Ep == "02" :
 					if value == "01" :
 						state="20"
 						data="02"
-					elif value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
+					else : return # We just expect 01 , in case of other value nothing to do We just expect 01 , in case of other value nothing to do
 				elif Ep == "03" :
 					if value == "01" :
 						state="30"
 						data="03"
-					elif value == "00" : return #ici on ignore la valeur 00 car elle engendre une maj
+					else : return # We just expect 01 , in case of other value nothing to do We just expect 01 , in case of other value nothing to do
 				UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 
 			if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
