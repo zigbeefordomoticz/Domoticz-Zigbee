@@ -17,3 +17,5 @@ liveSendDelay = 0
 storeDiscoveryFrames = 1	# Enable tracking of Discovery process, and finaly store the outcome in DeviceDiscovery-[IEEE].txt file
 logFORMAT = 0					# Log RSSI for further investigation and reports
 transport = ''
+LQISource = ''
+LQIIndex = ''

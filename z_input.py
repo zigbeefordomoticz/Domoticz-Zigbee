@@ -19,6 +19,7 @@ import z_var
 import z_tools
 import z_status
 import z_readClusters
+import z_LQI
 
 def ZigateRead(self, Devices, Data):
 	Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
@@ -208,8 +209,9 @@ def ZigateRead(self, Devices, Data):
 		return
 
 	elif str(MsgType)=="804e":  #
-		Domoticz.Log("ZigateRead - MsgType 804e - Reception Management LQI response : " + Data)
-		Decode804E(self, MsgData)
+		Domoticz.Debug("ZigateRead - MsgType 804e - Reception Management LQI response : " + Data)
+		z_LQI.mgtLQIresp( self, MsgData)	
+		#Decode804E(self, MsgData)
 		return
 
 	elif str(MsgType)=="8060":  #

@@ -17,8 +17,10 @@ import z_var
 import z_output
 import z_tools
 import z_domoticz
+import z_LQI
 
 def processKnownDevices( self, NWKID ) :
+
 
 #	if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 16 )  :	# Test purposes ... This must be done at start only once
 #		if self.ListOfDevices[NWKID]['Model'] == 'plug.Salus' or self.ListOfDevices[NWKID]['Model'] == 'plug.legrand.netamo':
@@ -318,5 +320,7 @@ def processListOfDevices( self , Devices ) :
 
 	#end for key in ListOfDevices
 
+	z_LQI.LQIcontinueScan( self )
+	
 	return True
 

@@ -54,6 +54,7 @@ import z_heartbeat
 import z_database
 import z_domoticz
 import z_command
+import z_LQI
 
 
 class BasePlugin:
@@ -63,6 +64,7 @@ class BasePlugin:
 		self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
 		self.DiscoveryDevices = {}
 		self.IEEE2NWK = {}
+		self.LQI = {}
 		self.DeviceListName = ''
 		self.homedirectory = ''
 		self.HardwareID = ''
@@ -172,6 +174,10 @@ class BasePlugin:
 		else:
 			Domoticz.Error("Failed to connect ("+str(Status)+")")
 			Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
+
+
+		z_LQI.LQIdiscovery( self ) 
+
 		return True
 
 	def onMessage(self, Connection, Data):
