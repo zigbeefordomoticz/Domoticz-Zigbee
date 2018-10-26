@@ -18,4 +18,4 @@ storeDiscoveryFrames = 1	# Enable tracking of Discovery process, and finaly stor
 logFORMAT = 0					# Log RSSI for further investigation and reports
 transport = ''
 LQISource = ''
-LQIIndex = ''
+LQI = 0
