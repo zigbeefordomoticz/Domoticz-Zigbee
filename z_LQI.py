@@ -8,6 +8,9 @@
 """
 
 
+import queue
+import datetime
+
 import Domoticz
 import z_output
 import z_var
@@ -19,32 +22,36 @@ def LQIdiscovery( self ):
 	the information in the LQI dictionary, will will trigger one new request on an non-scanned Network address
 	"""
 
+	z_var.LQISource = queue.Queue()
 	self.LQI = {}
 	mgtLQIreq( self )	# We start and by default, it will be on 0x0000 , Index 0
 
 def LQIcontinueScan( self ) :
 
-	if z_var.LQISource == "ffff" : return
-
-
 	LQIfound = False
 	LODfound = False
 
 	scn=0
+	trt=0
 	for src in self.LQI:
 		for child in self.LQI[src] :
+			trt +=1
 			if self.LQI[src][child]['Scanned'] : scn += 1
-			Domoticz.Log(" Source {:>4}".format(src) + " child {:>4}".format(child) + " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " deepth {:2n}".format((int(self.LQI[src][child]['_depth'],16))) + " scanned " +str(self.LQI[src][child]['Scanned']))
-	Domoticz.Log("LQIcontinueScan - Size = {:2n}".format(len(self.LQI)) + " True " +str(scn) )
-
-
+			Domoticz.Debug(" Source {:>4}".format(src) + " child {:>4}".format(child) + " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + " deepth {:2n}".format((int(self.LQI[src][child]['_depth'],16))) + " " +str(self.LQI[src][child]['Scanned']))
+	if scn >0 :
+		Domoticz.Log("LQIcontinueScan - Nodes = {:2n}".format(trt) + " True " +str(scn) + " {:2n}% completed ".format(round((scn/trt)*100)))
+	else :
+		Domoticz.Log("LQIcontinueScan - Nodes = {:2n}".format(trt) + " True " +str(scn) + " {:2n}% completed ".format(0))
+		
 	Domoticz.Debug("LQIcontinueScan - Scanning LOD " )
 	for key in self.ListOfDevices :
 		Domoticz.Debug("LQIcontinueScan - checking eligibility of " +str(key) )
-		if key not in self.LQI :
+		if str(key) not in self.LQI :
 			Domoticz.Debug("LQIcontinueScan - eligeable " +str( key ) )
 			LODfound = True
-			self.LQI[str(key)] = {}
+			if not self.LQI.get(str(key)) :
+				Domoticz.Debug("LQIcontinueScan - LOD set self.LQI["+str(key)+"] to {}")
+				self.LQI[str(key)] = {}
 			mgtLQIreq( self, key )
 			break										# We do only one !
 		else :
@@ -55,22 +62,39 @@ def LQIcontinueScan( self ) :
 	if not LODfound :
 		for src in self.LQI :
 			for key in self.LQI[src] :
+				if str(src) == str(key) :
+					self.LQI[src][key]['Scanned'] = True
+					continue				# This doesn't make sense to scan itself
 				# The destination node of this request must be a Router or the Co- ordinator.
 				Domoticz.Debug("LQIcontinueScan - Eligible ? " +str(src) + " / " +str(key) + " Scanned ? " +str(self.LQI[src][key]['Scanned']) )
 				if ( not self.LQI[src][key]['Scanned']) and (self.LQI[src][key]['_devicetype'] == 'Router' or self.LQI[src][key]['_devicetype'] == 'Coordinator') :
 					LQIfound = True
 					self.LQI[src][key]['Scanned'] = True
-					self.LQI[str(key)] = {}
+					if not self.LQI.get(str(key)) :
+						Domoticz.Debug("LQIcontinueScan - set self.LQI["+str(key)+"] to {}")
+						self.LQI[str(key)] = {}
 					mgtLQIreq( self, key )
 					break									# We do only one !
+				else :
+					self.LQI[src][key]['Scanned'] = True					# Most likely we will set to True End Node 
 			if LQIfound :
 				break									# We do only one !
 
 	if not LQIfound and not LODfound :					# We didn't find any more Network address. Game is over
 		Domoticz.Log("LQI Scan is over ....")
 		Domoticz.Log("LQI Results :")
-		Domoticz.Log(str(self.LQI) )
-		z_var.LQISource = "ffff"
+		for src in self.LQI:
+			for child in self.LQI[src] :
+				Domoticz.Log(" Node {:>4}".format(src) + " child {:>4}".format(child) + " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + " deepth {:2n}".format((int(self.LQI[src][child]['_depth'],16))) + " linkQty {:3n}".format((int(self.LQI[src][child]['_lnkqty'],16))) + " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl'])  ) 
+
+		# Write the report onto file
+		_filename =  self.homedirectory + "_LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+		Domoticz.Status("LQI report save on " +str(_filename) )
+		with open( _filename , 'wt') as file:
+			for key in self.LQI :
+				file.write(key + " : " + str(self.LQI[key]) + "\n")
+		file.close()
+		z_var.LQI = 0 
 
 def mgtLQIreq( self, nwkid='0000', index=0 ):
 	"""
@@ -82,7 +106,7 @@ def mgtLQIreq( self, nwkid='0000', index=0 ):
 	 <Start Index : uint8_t>
 	"""
 
-	z_var.LQISource= str(nwkid)		# We process only one Node at a time and we store NwkId in order to now whom the response is coming from
+	z_var.LQISource.put(str(nwkid))
 	datas = str(nwkid) + "{:02n}".format(index)
 	Domoticz.Debug("mgtLQIreq : from Nwkid : " +str(nwkid) + " index : "+str(index) )
 	z_output.sendZigateCmd("004E",datas, 2)	
@@ -130,11 +154,15 @@ def mgtLQIresp ( self , MsgData) :
 
 	if NeighbourTableListCount == 0 :
 		# No element in that list
-		Domoticz.Log("mgtLQIresp -  No element in that list ")
+		Domoticz.Debug("mgtLQIresp -  No element in that list ")
 		return
 
-	NwkIdSource = z_var.LQISource
-	self.LQI[NwkIdSource] = {}
+	NwkIdSource = z_var.LQISource.get()
+	# Let's not overwrite
+	if NwkIdSource in self.LQI : 				# Source record exists
+		Domoticz.Debug("mgtLQIresp - " +str(NwkIdSource) + " found LQI["+str(NwkIdSource)+"] " + str(self.LQI[NwkIdSource]) )
+	else :
+		self.LQI[NwkIdSource] = {}
 
 	n = 0
 	while n < ((NeighbourTableListCount * 42)):
@@ -171,6 +199,14 @@ def mgtLQIresp ( self , MsgData) :
 		n = n + 42
 		Domoticz.Debug("mgtLQIresp - Table["+str(NeighbourTableEntries) + "] - " + " _nwkid = " +str(_nwkid) + " _extPANID = " +str(_extPANID) + " _ieee = " +str(_ieee) + " _depth = " +str(_depth) + " _lnkqty = " +str(_lnkqty) + " _devicetype = " +str(_devicetype) + " _permitjnt = " +str(_permitjnt) + " _relationshp = " +str(_relationshp) + " _rxonwhenidl = " +str(_rxonwhenidl) )
 	
+
+		if str(_nwkid) in self.LQI[NwkIdSource] :	# Is the node also existing
+			Domoticz.Debug("mgtLQIresp - " +str(NwkIdSource) + "/" +str(_nwkid) + " found in LQI ")
+			if self.LQI[NwkIdSource][str(_nwkid)]['Scanned'] :
+				Domoticz.Debug("mgtLQIresp - already processed")
+				return
+
+
 		self.LQI[NwkIdSource][str(_nwkid)] = {}
 		self.LQI[NwkIdSource][str(_nwkid)]['_extPANID'] = _extPANID
 		self.LQI[NwkIdSource][str(_nwkid)]['_ieee'] = _ieee
@@ -182,5 +218,7 @@ def mgtLQIresp ( self , MsgData) :
 		self.LQI[NwkIdSource][str(_nwkid)]['_rxonwhenidl'] = _rxonwhenidl
 		self.LQI[NwkIdSource][str(_nwkid)]['Scanned'] = False
 
-		Domoticz.Log("mgtLQIresp - from " +str(NwkIdSource) + " a new node captured : " +str(_nwkid) ) 
+		Domoticz.Debug("mgtLQIresp - from " +str(NwkIdSource) + " a new node captured : " +str(_nwkid) )
+
+
 	return
