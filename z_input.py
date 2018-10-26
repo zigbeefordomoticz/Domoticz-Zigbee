@@ -761,6 +761,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
 	if self.ListOfDevices[addr]['Status']!="inDB" :
 		self.ListOfDevices[addr]['Status']="8042"
+		self.ListOfDevices[addr]['Heartbeat']="0"
 
 		if z_var.storeDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
 			self.DiscoveryDevices[addr]['Manufacturer']=manufacturer
