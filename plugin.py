@@ -270,7 +270,7 @@ class BasePlugin:
 		z_var.HeartbeatCount = z_var.HeartbeatCount + 1
 
 		if str(z_var.FirmwareVersion) == "030d" :
-			if z_var.HeartbeatCount % 90 :
+			if (z_var.HeartbeatCount % 90 ) == 0 :
 				Domoticz.Debug("request Network Status")
 				z_output.sendZigateCmd("0009","")
 		
