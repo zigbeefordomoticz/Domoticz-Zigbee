@@ -88,7 +88,7 @@ def LQIcontinueScan( self ) :
 				Domoticz.Log(" Node {:>4}".format(src) + " child {:>4}".format(child) + " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + " deepth {:2n}".format((int(self.LQI[src][child]['_depth'],16))) + " linkQty {:3n}".format((int(self.LQI[src][child]['_lnkqty'],16))) + " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl'])  ) 
 
 		# Write the report onto file
-		_filename =  self.homedirectory + "_LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+		_filename =  self.homedirectory + "LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
 		Domoticz.Status("LQI report save on " +str(_filename) )
 		with open( _filename , 'wt') as file:
 			for key in self.LQI :
