@@ -20,10 +20,10 @@ Either the information is coming from one of the plugin user (through direct com
 | Philio Technology Corporation | Slim Multisensor PST03-A/B/C | | | Operationnal | 2.4.0 |
 | Legrand | Celiane with Netatmo Plug | Switch and Power Meter | It might happend the Power Meter doesn't work. In that case it is because the device requirers firmware update. To do so you need to have at your disposal the Legrand gateway | Tested | 2.4.0 |
 | Legrand | Celiane with Netatmo switch/Dimmer W/O neutre | Switch, Dimmmer | Dimmer not working, need update firmware ? | Tested | 2.4.0 |
-| Xiaomi | Plug | Plug, Power meter | Can switch on/off the plug and you get Watts consuption | Fully operationnal |  |
-| Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter n each line | Fully operationnal |  |
-| Jiawen | JW-A04-RGBW Led Strip Controler | Switch Light, Level Control, Color Control |  You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
-| Xiaomi Aqara | WXKG11LM Square Device with round Button | Switch Selector | The following events are reported to the Domoticz Switch selectors : 1 Click, 2 Click, 3 Click, 4 CliCk | Fully operationnal | 2.4.0 |
-| Xiaomi Aqara | WXKG02LM (86sw2) | Switch Selector | The following events are reported to the Domoticz Switch selectors : Right Click, Left Click, Both Click | Fully operationnal | 2.4.0 |
-| Salus | SP600 |Plug, Power meter| Can switch on/off the plug | power meter need to be Dev | 2.4.0 |
-| Xiaomi Aqara | WXKG01LM (86sw1) | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | 2.4.0 |
+| Xiaomi | Plug | Plug, Power meter | Can switch on/off the plug and you get Watts consuption | Fully operationnal | 3.1.0 |
+| Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter n each line | Fully operationnal | 3.1.0  |
+| Jiawen | JW-A04-RGBW Led Strip Controler | Switch Light, Level Control, Color Control |  You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 3.1.0 |
+| Xiaomi Aqara | WXKG11LM Square Device with round Button | Switch Selector | The following events are reported to the Domoticz Switch selectors : 1 Click, 2 Click, 3 Click, 4 CliCk | Fully operationnal | 3.1.0 |
+| Xiaomi Aqara | WXKG02LM (86sw2) | Switch Selector | The following events are reported to the Domoticz Switch selectors : Right Click, Left Click, Both Click | Fully operationnal | 3.1.0 |
+| Salus | SP600 |Plug, Power meter| Can switch on/off the plug | power meter need to be Dev | 3.1.0 |
+| Xiaomi Aqara | WXKG01LM (86sw1) | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | 3.1.0 |
