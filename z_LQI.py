@@ -26,39 +26,45 @@ def LQIcontinueScan( self ) :
 
 	if z_var.LQISource == "ffff" : return
 
-	Domoticz.Log("LQIcontinueScan - Size = " +str(len(self.LQI) ) )
 
 	LQIfound = False
 	LODfound = False
-	for src in self.LQI :
-		for key in self.LQI[src] :
-			# The destination node of this request must be a Router or the Co- ordinator.
-			if str(key) == "0000" : continue	# We started with that one
-			Domoticz.Log("LQIcontinueScan - Eligible ? " +str(src) + " / " +str(key) + " Scanned ? " +str(self.LQI[src][key]['Scanned']) )
-			if ( not self.LQI[src][key]['Scanned']) and (self.LQI[src][key]['_devicetype'] == 'Router' or self.LQI[src][key]['_devicetype'] == 'Coordinator') :
-				LQIfound = True
-				self.LQI[src][key]['Scanned'] = True
-				self.LQI[str(key)] = {}
-				mgtLQIreq( self, key )
-				break									# We do only one !
-		if LQIfound :
-			break
 
-	if not LQIfound :									# We do not have any more node to discover, let's take one from the pool
-		Domoticz.Debug("LQIcontinueScan - nothing found in LQI")
-		for key in self.ListOfDevices :
-			Domoticz.Debug("LQIcontinueScan - checking eligibility of " +str(key) )
-			for src in self.LQI :
-				if str(key) in self.LQI[src] and str(key) != z_var.LQISource : 
-					Domoticz.Debug("LQIcontinueScan - not eligeable already in LQI " +str( self.LQI[src] ) )
-				else :
-					Domoticz.Debug("LQIcontinueScan - eligeable " +str( key ) )
-					LODfound = True
+	scn=0
+	for src in self.LQI:
+		for child in self.LQI[src] :
+			if self.LQI[src][child]['Scanned'] : scn += 1
+			Domoticz.Log(" Source {:>4}".format(src) + " child {:>4}".format(child) + " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " deepth {:2n}".format((int(self.LQI[src][child]['_depth'],16))) + " scanned " +str(self.LQI[src][child]['Scanned']))
+	Domoticz.Log("LQIcontinueScan - Size = {:2n}".format(len(self.LQI)) + " True " +str(scn) )
+
+
+	Domoticz.Debug("LQIcontinueScan - Scanning LOD " )
+	for key in self.ListOfDevices :
+		Domoticz.Debug("LQIcontinueScan - checking eligibility of " +str(key) )
+		if key not in self.LQI :
+			Domoticz.Debug("LQIcontinueScan - eligeable " +str( key ) )
+			LODfound = True
+			self.LQI[str(key)] = {}
+			mgtLQIreq( self, key )
+			break										# We do only one !
+		else :
+			Domoticz.Debug("LQIcontinueScan - not eligeable already in LQI " +str( self.LQI[key] ) )
+		if LODfound :
+			break										# We do only one !
+
+	if not LODfound :
+		for src in self.LQI :
+			for key in self.LQI[src] :
+				# The destination node of this request must be a Router or the Co- ordinator.
+				Domoticz.Debug("LQIcontinueScan - Eligible ? " +str(src) + " / " +str(key) + " Scanned ? " +str(self.LQI[src][key]['Scanned']) )
+				if ( not self.LQI[src][key]['Scanned']) and (self.LQI[src][key]['_devicetype'] == 'Router' or self.LQI[src][key]['_devicetype'] == 'Coordinator') :
+					LQIfound = True
+					self.LQI[src][key]['Scanned'] = True
 					self.LQI[str(key)] = {}
 					mgtLQIreq( self, key )
-					break										# We do only one !
-			if LODfound :
-				break
+					break									# We do only one !
+			if LQIfound :
+				break									# We do only one !
 
 	if not LQIfound and not LODfound :					# We didn't find any more Network address. Game is over
 		Domoticz.Log("LQI Scan is over ....")
@@ -148,10 +154,12 @@ def mgtLQIresp ( self , MsgData) :
 		if  _devicetype   == 0x00 : _devicetype = 'Coordinator'
 		elif  _devicetype == 0x01 : _devicetype = 'Router'
 		elif  _devicetype == 0x02 : _devicetype = 'End Device'
+		elif  _devicetype == 0x03 : _devicetype = '??'
 
-		if _relationshp   == 0x01 : _relationshp = 'Parent'
-		elif _relationshp == 0x02 : _relationshp = 'Child'
-		elif _relationshp == 0x03 : _relationshp = 'Sibling'
+		if _relationshp   == 0x00 : _relationshp = 'Parent'
+		elif _relationshp == 0x01 : _relationshp = 'Child'
+		elif _relationshp == 0x02 : _relationshp = 'Sibling'
+		elif _relationshp == 0x03 : _relationshp = 'None'
 
 		if _permitjnt   == 0x00 : _permitjnt = 'Off'
 		elif _permitjnt == 0x01  : _permitjnt = 'On'
@@ -159,6 +167,7 @@ def mgtLQIresp ( self , MsgData) :
 
 		if _rxonwhenidl   == 0x00 : _rxonwhenidl = 'Rx-Off'
 		elif _rxonwhenidl == 0x01 : _rxonwhenidl = 'Rx-On'
+		elif _rxonwhenidl == 0x02 : _rxonwhenidl = '??'
 		n = n + 42
 		Domoticz.Debug("mgtLQIresp - Table["+str(NeighbourTableEntries) + "] - " + " _nwkid = " +str(_nwkid) + " _extPANID = " +str(_extPANID) + " _ieee = " +str(_ieee) + " _depth = " +str(_depth) + " _lnkqty = " +str(_lnkqty) + " _devicetype = " +str(_devicetype) + " _permitjnt = " +str(_permitjnt) + " _relationshp = " +str(_relationshp) + " _rxonwhenidl = " +str(_rxonwhenidl) )
 	
