@@ -12,6 +12,7 @@ import binascii
 import time
 import struct
 import json
+import queue
 
 import z_var
 import z_output
@@ -321,7 +322,8 @@ def processListOfDevices( self , Devices ) :
 	#end for key in ListOfDevices
 
 	if z_var.LQI != 0 and z_var.HeartbeatCount > z_var.LQI :
-		z_LQI.LQIcontinueScan( self )
+		if z_var.cmdInProgress.qsize()  <= 1 : 	#  In order to avoid loading the system, we do one more scan only if there is not more than 1 command in progress
+			z_LQI.LQIcontinueScan( self )
 	
 	return True
 
