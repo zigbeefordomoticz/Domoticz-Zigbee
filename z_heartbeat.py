@@ -51,12 +51,15 @@ def processKnownDevices( self, NWKID ) :
 
 	
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
-	# Request EP list
-	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat']=="1":
-		Domoticz.Log("Creation process for " + str(NWKID) + " Info: " + str(self.ListOfDevices[NWKID]) )
+	"""
+	0x004d is a device annoucement.
+	Usally we get Network Address (short address) and IEEE
+	"""
+	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":
+		Domoticz.Log("processNotinDBDevices - Discovery process for " + str(NWKID) + " Info: " + str(self.ListOfDevices[NWKID]) )
 		# We should check if the device has not been already created via IEEE
 		if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False :
-			Domoticz.Log("onHeartbeat - new device discovered request Node Descriptor for : " +str(NWKID) )
+			Domoticz.Debug("processNotinDBDevices - new device discovered request Node Descriptor for : " +str(NWKID) )
 			z_output.sendZigateCmd("0042", str(NWKID))	# Request a Node Descriptor
 			self.ListOfDevices[NWKID]['Status']="0042"
 			self.ListOfDevices[NWKID]['Heartbeat']="0"
@@ -66,70 +69,82 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 				if self.ListOfDevices[NWKID]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":
 					Domoticz.Error("onHearbeat - Device : " + str(NWKID) + "already known under IEEE: " +str(self.ListOfDevices[NWKID]['IEEE'] ) 
 										+ " Duplicate of " + str(dup) )
+					Domoticz.Error("onHearbeat - Please check the consistency of the plugin database and domoticz database.")
 					self.ListOfDevices[NWKID]['Status']="DUP"
 					self.ListOfDevices[NWKID]['Heartbeat']="0"
 					self.ListOfDevices[NWKID]['RIA']="99"
 					break
 
-	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat']=="1":	# Status is set by Decode8042
+	"""
+	0x8042 is the response to Node Descriptor request
+	We get quiet an extensive list of information on the device
+
+	In parallel, we have requested in the previous step a ReadAttribute Request on cluster 0x0000 (Basic). Wher information like Model Name will be provided.
+	"""
+	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":	# Status is set by Decode8042
 			Domoticz.Log("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + NWKID)
 			z_output.sendZigateCmd("0045", str(NWKID))	# We use NWKID as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
 			self.ListOfDevices[NWKID]['Status']="0045"
 			self.ListOfDevices[NWKID]['Heartbeat']="0"
 
-	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat']=="1":	# Status is set by Decode8045
+	"""
+	0x8045 is providing the list of active EPs
+	we will so request EP descriptor for each of them
+	"""
+	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":	# Status is set by Decode8045
 		Domoticz.Log("onHeartbeat - new device discovered 0x8045 received " + NWKID)
 		for cle in self.ListOfDevices[NWKID]['Ep']:
 			Domoticz.Log("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + NWKID)
-			z_output.sendZigateCmd("0043", str(NWKID)+str(cle), 2 )	# We use NWKID 
-													
+			z_output.sendZigateCmd("0043", str(NWKID)+str(cle))	# We use NWKID 
 		self.ListOfDevices[NWKID]['Status']="0043"
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
-
-	if status=="0041" and self.ListOfDevices[NWKID]['Heartbeat']=="1":	# It has been requested tto issue a 0x0041 request 
+	"""
+	0x0041 is set to request an IEEE address for a given Network Address.
+	"""
+	if status=="0041" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":	# It has been requested tto issue a 0x0041 request 
 		Domoticz.Log("processNotinDBDevices - request IEEE for " +str(str(NWKID)) )
 		z_output.sendZigateCmd("0041", str(NWKID)+str(NWKID)+"00" )   	
 		self.ListOfDevices[NWKID]['Status']="8041"
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 
-	# Timeout Management
-	# We should wonder if we want to go in an infinite loop.
-	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	"""
+	Timeout management
+	"""
+	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 
-	if status=="0042" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	if status=="0042" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x0042 not received in time: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="0045"		# Let's continue in 0x0045 , those informations are not a must
 
-	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8042 not received in time: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="0045"		# Let's continue in 0x0045 , those informations are not a must
 
-	if status=="0045" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	if status=="0045" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="004d"
 
-	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="004d"
 
-	if status=="0043" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	if status=="0043" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="8045"
 
-	if status=="8041" and self.ListOfDevices[NWKID]['Heartbeat']>="9":
+	if status=="8041" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + NWKID)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="0041"
 
-	# What RIA stand for ??????? (see line 228)
-	if ( status=="8043" or status=="8041" ) and self.ListOfDevices[NWKID]['Heartbeat']>="9" and self.ListOfDevices[NWKID]['RIA']>="10":
+	if status!="UNKNOW" and self.ListOfDevices[NWKID]['Heartbeat'] > "12" :  # We are over 2 minutes
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="UNKNOW"
 		Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
@@ -205,98 +220,41 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	
 	#ZigBee HA contains (nearly?) everything in ZigBee Light Link
 
+	"""
+		If we are in status = 0x8043 we have received EPs descriptors
+		If we have Model we might be able to identify the device with it's model
+		In case where z_var.storeDiscoveryFrames is set (1) then we force the full process and so wait for 0x8043
+	"""
 	if ( z_var.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  z_var.storeDiscoveryFrames == 1 and status == "8043" ) :
-		if self.ListOfDevices[NWKID]['MacCapa']=="8e" :  # Device sur secteur
-			if self.ListOfDevices[NWKID]['ProfileID']=="c05e" : # ZLL: ZigBee Light Link
-				# telecommande Tradfi 30338849.Tradfri
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0830" :
-					self.ListOfDevices[NWKID]['Model']="Command.30338849.Tradfri"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01':{'0000','0001','0009','0b05','1000'}}
-				# ampoule Tradfri LED1624G9
-#				if self.ListOfDevices[NWKID]['ZDeviceID']=="0200" :
-#					self.ListOfDevices[NWKID]['Model']="Ampoule.LED1624G9.Tradfri"
-#					if self.ListOfDevices[NWKID]['Ep']=={} :
-#						self.ListOfDevices[NWKID]['Ep']={'01':{'0006','0008','0300'}}
-				# ampoule Tradfi LED1545G12.Tradfri
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0220" :
-					self.ListOfDevices[NWKID]['Model']="Ampoule.LED1545G12.Tradfri"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01': {'0006', '0008', '0300'}}
-				# ampoule Tradfri LED1622G12.Tradfri ou phillips hue white
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0100" :
-					self.ListOfDevices[NWKID]['Model']="Ampoule.LED1622G12.Tradfri"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01': {'0006', '0008'}}
-				# Not see yet
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0210" :
-					pass								
-				# plug osram
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0010" :  
-					self.ListOfDevices[NWKID]['Model']="plug.Osram"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'03': {'0006'}}
 
-			if self.ListOfDevices[NWKID]['ProfileID']=="0104" :  # profile home automation
-				# plug salus
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0051" :
-					self.ListOfDevices[NWKID]['Model']="plug.Salus"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'09': {'0006'}}
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0100" :
-					# ampoule Tradfi
-					if '1000' in self.ListOfDevices[NWKID]['Ep'].get('01',''): #1000 is ZLL: Commissioning, only for bulb
-						self.ListOfDevices[NWKID]['Model']="Ampoule.LED1622G12.Tradfri"
-						if self.ListOfDevices[NWKID]['Ep']=={} :
-							self.ListOfDevices[NWKID]['Ep']={'01': {'0006', '0008'}}
-					#Legrand-netamo switch
-					else:
-						self.ListOfDevices[NWKID]['Model']="switch.legrand.netamo"
-						if self.ListOfDevices[NWKID]['Ep']=={} :
-							self.ListOfDevices[NWKID]['Ep']={'01': {'0006', '0008'}}									 
-				# shutter profalux
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0200" :
-					self.ListOfDevices[NWKID]['Model']="shutter.Profalux"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01':{'0006','0008'}}
-				# Plug legrand-netamo
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="010a" :
-					self.ListOfDevices[NWKID]['Model']="plug.legrand.netamo"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01':{'0000','0003','0004','0006','0005','fc01'}}
+		if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ) :
 
-			if self.ListOfDevices[NWKID]['ProfileID']=="a1e0" :  # profile unknow : phillips hue
-				if self.ListOfDevices[NWKID]['ZDeviceID']=="0061" : 
-					self.ListOfDevices[NWKID]['Model']="Ampoule.phillips.hue"
-					if self.ListOfDevices[NWKID]['Ep']=={} :
-						self.ListOfDevices[NWKID]['Ep']={'01': {'0006', '0008'}}
-	
-		# At that stage , we should have all information to create the Device Status 8043 is set in Decode8043 when receiving
+			#We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
+			Domoticz.Log("processNotinDBDevices - Let's try to create the device with what we have : " +str(NWKID) + " => " +str(self.ListOfDevices[NWKID]) )
 
-		if (RIA>=10 or self.ListOfDevices[NWKID]['Model']!= {} ) :
-			Domoticz.Log("processNotinDBDevices - final step for creation of : " +str(NWKID) + " => " +str(self.ListOfDevices[NWKID]) )
-			#creer le device ds domoticz en se basant sur les clusterID (case RIA>=10, see z_input.py in readcluster ) ou le Model si il est connu
 			IsCreated=False
 			x=0
-			nbrdevices=0
+			# Let's check if the IEEE is not known in Domoticz
 			for x in Devices:
 				if self.ListOfDevices[NWKID].get('IEEE') :
 					if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']) :
 						IsCreated = True
-						Domoticz.Log("Heartbeat - Devices already exist. Unit=" + str(x) + " versus " + str(self.ListOfDevices[NWKID]) )
+						Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+						Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
+						break
 
 			if IsCreated == False:
-				Domoticz.Log("onHeartbeat - creating device id : " + str(NWKID) + " with : " + str(self.ListOfDevices[NWKID]) )
+				Domoticz.Log("onHeartbeat - Creating device in Domoticz: " + str(NWKID) + " with : " + str(self.ListOfDevices[NWKID]) )
 				z_domoticz.CreateDomoDevice(self, Devices, NWKID)
 
-		#end (RIA>=10 or self.ListOfDevices[NWKID]['Model']!= {})
-	#end status != "UNKNOW"	
+		#end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
+	#end ( z_var.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  z_var.storeDiscoveryFrames == 1 and status == "8043" )
 	
 
 def processListOfDevices( self , Devices ) :
 
 	for NWKID in list(self.ListOfDevices) :
-		#ok buged device , need to avoid it, just delete it after the making for the moment
+		# If this entry is empty, then let's remove it .
 		if len(self.ListOfDevices[NWKID]) == 0:
 			Domoticz.Debug("Bad devices detected (empty one), remove it, adr :" + str(NWKID))
 			del self.ListOfDevices[NWKID]
@@ -313,14 +271,34 @@ def processListOfDevices( self , Devices ) :
 		if status == "Left" :
 			# Device has sent a 0x8048 message annoucing its departure (Leave)
 			# Most likely we should receive a 0x004d, where the device come back with a new short address
-			Domoticz.Log("processListOfDevices - Device : " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
+			# For now we will display a message in the log every 1'
+			# We might have to remove this entry if the device get not reconnected.
+			if ( int(self.ListOfDevices[NWKID]['Heartbeat']) % 6 ) == 0 :
+				Domoticz.Log("processListOfDevices - Device : " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
+				# Let's check if the device still exist in Domoticz
+				fnd = False
+				if self.ListOfDevices[NWKID]['IEEE'] in Devices :
+					for Unit in Devices :
+						if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID :
+							Domoticz.Log("processListOfDevices - " +Devices[Unit].Name + " is not connected any more !")
+							fnd = True
+				if not fnd :
+					# Not devices found in Domoticz, so we are safe to remove it from Plugin
+					if self.ListOfDevices[NWKID]['IEEE'] in self.IEEE2NWK :
+						Domoticz.Log("processListOfDevices - Removing " +str(self.ListOfDevices[NWKID]['IEEE']) + " from IEEE2NWK.")
+						del self.IEEE2NWK[self.ListOfDevices[NWKID]['IEEE']]
+					Domoticz.Log("processListOfDevices - Removing the entry from ListOfDevice")
+					z_tools.removeNwkInList( self, NWKID)
 
-		elif status != "inDB" :
-			# Creation process
+		elif status != "inDB" and status != "UNKNOW" :
+			# Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
 			processNotinDBDevices( self , Devices, NWKID, status , RIA )
 
 	#end for key in ListOfDevices
 
+	# LQI Scanner
+	#	- LQI = 0 - no scanning at all otherwise delay the scan by n x 10s
+	
 	if z_var.LQI != 0 and z_var.HeartbeatCount > z_var.LQI :
 		if z_var.cmdInProgress.qsize()  <= 1 : 	#  In order to avoid loading the system, we do one more scan only if there is not more than 1 command in progress
 			z_LQI.LQIcontinueScan( self )
