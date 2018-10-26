@@ -267,20 +267,23 @@ class BasePlugin:
 		Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
 
 		## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
+		z_var.HeartbeatCount = z_var.HeartbeatCount + 1
+
 		if str(z_var.FirmwareVersion) == "030d" :
-			if z_var.HeartbeatCount >= 90 :
+			if z_var.HeartbeatCount % 90 :
 				Domoticz.Debug("request Network Status")
 				z_output.sendZigateCmd("0009","")
-				z_var.HeartbeatCount = 0
-			else :
-				z_var.HeartbeatCount = z_var.HeartbeatCount + 1
-
+		
+		# Manage all entries in  ListOfDevices (existing and up-coming devices)
 		z_heartbeat.processListOfDevices( self , Devices )
 
+		# Reset Motion sensors
 		z_domoticz.ResetDevice( self, Devices, "Motion",5)
 
+		# Write the ListOfDevice in HBcount % 200 ( 3' )
 		z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)
 
+		# Check if we still have connectivity. If not re-established the connectivity
 		if (z_var.ZigateConn.Connected() != True):
 			z_var.ZigateConn.Connect()
 

@@ -320,7 +320,7 @@ def processListOfDevices( self , Devices ) :
 
 	#end for key in ListOfDevices
 
-	if z_var.LQI != 0 :
+	if z_var.LQI != 0 and z_var.HeartbeatCount > z_var.LQI :
 		z_LQI.LQIcontinueScan( self )
 	
 	return True
