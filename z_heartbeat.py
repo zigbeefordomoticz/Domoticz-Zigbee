@@ -60,9 +60,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 		# We should check if the device has not been already created via IEEE
 		if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False :
 			Domoticz.Debug("processNotinDBDevices - new device discovered request Node Descriptor for : " +str(NWKID) )
+			z_output.sendZigateCmd("0045", str(NWKID), 2)	# Request list of EPs
 			z_output.ReadAttributeRequest_0000(self, NWKID ) # Basic Cluster readAttribute Request
-			z_output.sendZigateCmd("0042", str(NWKID))	# Request a Node Descriptor
-			z_output.sendZigateCmd("0045", str(NWKID))	# Request list of EPs
+			z_output.sendZigateCmd("0042", str(NWKID),2)	# Request a Node Descriptor
 			self.ListOfDevices[NWKID]['Status']="0045"
 			self.ListOfDevices[NWKID]['Heartbeat']="0"
 		else :
@@ -83,7 +83,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 		Domoticz.Log("onHeartbeat - new device discovered 0x8045 received " + NWKID)
 		for cle in self.ListOfDevices[NWKID]['Ep']:
 			Domoticz.Log("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of : " + NWKID)
-			z_output.sendZigateCmd("0043", str(NWKID)+str(cle))	# We use NWKID 
+			z_output.sendZigateCmd("0043", str(NWKID)+str(cle), 2)	
 		self.ListOfDevices[NWKID]['Status']="0043"
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 
@@ -92,24 +92,24 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 	"""
 	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + NWKID)
-		self.ListOfDevices[NWKID]['RIA'] += 1
+		self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 
 	if status=="0045" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + NWKID)
-		self.ListOfDevices[NWKID]['RIA'] += 1
+		self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="004d"
 
 	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + NWKID)
-		self.ListOfDevices[NWKID]['RIA'] += 1
+		self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="8045"
 
 	if status=="0043" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + NWKID)
-		self.ListOfDevices[NWKID]['RIA'] += 1
+		self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="8045"
 
@@ -195,10 +195,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 		If we have Model we might be able to identify the device with it's model
 		In case where z_var.storeDiscoveryFrames is set (1) then we force the full process and so wait for 0x8043
 	"""
-	if ( z_var.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  z_var.storeDiscoveryFrames == 1 and status == "8043" ) :
+	if ( z_var.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or ( z_var.storeDiscoveryFrames == 1 and status == "8043" ) :
 
 		if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ) :
-
 			#We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
 			Domoticz.Log("processNotinDBDevices - Let's try to create the device with what we have : " +str(NWKID) + " => " +str(self.ListOfDevices[NWKID]) )
 
