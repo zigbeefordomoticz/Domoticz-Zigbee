@@ -21,15 +21,14 @@ def CreateDomoDevice(self, Devices, NWKID) :
 
 	def FreeUnit(self, Devices) :
 		FreeUnit=""
-		for x in range(1,256):
+		for x in range(1,255):
 			Domoticz.Debug("FreeUnit - is device " + str(x) + " exist ?")
 			if x not in Devices :
 				Domoticz.Debug("FreeUnit - device " + str(x) + " not exist")
 				FreeUnit=x
-				return FreeUnit
-		if FreeUnit =="" :
+		if FreeUnit == "" :
 			FreeUnit=len(Devices)+1
-		Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(x))
+		Domoticz.Debug("FreeUnit - Free Device Unit find : " + str(FreeUnit))
 		return FreeUnit
 
 	
@@ -306,11 +305,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
 				
 				else :
-					Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']) + " for : " +str(ID) )
-					for key  in self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'] :
-						if str(ID) == str(key) :
-							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'][key])
-
+					Domoticz.Log("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]) + " for : " +str(ID) )
+					if self.ListOfDevices[NWKID]['Ep'][ptEp].get('ClusterType') :
+						Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']) + " for : " +str(ID) )
+						for key  in self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'] :
+							if str(ID) == str(key) :
+								Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'][key])
+					else :
+						Domoticz.Log("MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !")
+						Domoticz.Log("MajDomoDevice - Network Id : " +(NWKID) + " Ep : " +str(ptEp) + " Expected Cluster is " +str(clusterID) )
+						continue
 			if Dtypename == "" :	# No match with ClusterType
 				continue
 
