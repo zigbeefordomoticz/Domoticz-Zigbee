@@ -97,7 +97,6 @@ def ReadCluster(self, Devices, MsgData):
 		Domoticz.Error("ReadCluster - KeyError : MsgData = " + MsgData)
 		return
 	else :
-		self.ListOfDevices[MsgSrcAddr]['RIA']=str(int(self.ListOfDevices[MsgSrcAddr]['RIA'])+1)
 		try : 
 			tmpEp=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]
 			try :
