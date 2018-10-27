@@ -143,8 +143,8 @@ def sendZigateCmd(cmd,datas, _weight=1 ) :
 	z_var.cmdInProgress.put( command )
 	Domoticz.Debug("sendZigateCmd - Command in queue : " + str( z_var.cmdInProgress.qsize() ) )
 	if z_var.cmdInProgress.qsize() > 30 :
-		Domoticz.Log("sendZigateCmd - Command in queue : > 30 - queue is : " + str( z_var.cmdInProgress.qsize() ) )
-		Domoticz.Log("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
+		Domoticz.Debug("sendZigateCmd - Command in queue : > 30 - queue is : " + str( z_var.cmdInProgress.qsize() ) )
+		Domoticz.Debug("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
 	Domoticz.Debug("sendZigateCmd() - Computed delay is : " + str(delay) + " liveSendDelay : " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
@@ -182,9 +182,6 @@ def ReadAttributeRequest_0000(self, key) :
 	
 	# General
 	listAttributes = []
-	listAttributes.append(0x0000) 		# ZCL Version
-	listAttributes.append(0x0003)		# Hardware version
-	listAttributes.append(0x0004)		# Manufacturer
 	listAttributes.append(0x0005)		# Model Identifier
 	listAttributes.append(0x0007)		# Power Source
 	listAttributes.append(0x0010)		# Battery
@@ -192,7 +189,7 @@ def ReadAttributeRequest_0000(self, key) :
 			if "0000" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
 
-	Domoticz.Log("Request Basic  via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Debug("Request Basic  via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_0001(self, key) :
@@ -208,7 +205,7 @@ def ReadAttributeRequest_0001(self, key) :
 			if "0001" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
 
-	Domoticz.Log("Request Power Config via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Debug("Request Power Config via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0300(self, key) :
@@ -222,7 +219,7 @@ def ReadAttributeRequest_0300(self, key) :
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0300" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
-	Domoticz.Log("Request Color Temp infos via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Debug("Request Color Temp infos via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0300", listAttributes)
 
 
@@ -261,7 +258,7 @@ def ReadAttributeRequest_000C(self, key) :
 	EPin = "01"
 	EPout= "02"
 
-	Domoticz.Log("Request OnOff status for Xiaomi plug via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Debug("Request OnOff status for Xiaomi plug via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, "01", EPout, "000C", 55 )
 	ReadAttributeReq( self, key, "01", "01", "0000", 0xff01 )
 
@@ -283,7 +280,7 @@ def ReadAttributeRequest_0702(self, key) :
 	for tmpEp in self.ListOfDevices[key]['Ep'] :
 			if "0702" in self.ListOfDevices[key]['Ep'][tmpEp] : #switch cluster
 					EPout=tmpEp
-	Domoticz.Log("Request Metering info via Read Attribute request : " + key + " EPout = " + EPout )
+	Domoticz.Debug("Request Metering info via Read Attribute request : " + key + " EPout = " + EPout )
 	ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
 
@@ -309,7 +306,7 @@ def reportCommand( self, nwkid, cluster, Attr ,AttrType, MinInter, MaxInter, Tim
 		if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
 			EPout=tmpEp
 	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(1) + Attr + "00" + AttrType + Attr + MinInter + MaxInter + TimeOut + ChgFlag
-	Domoticz.Log("configureReporting on cluster : " +str(cluster) + " with : " +str(datas) )
+	Domoticz.Debug("configureReporting on cluster : " +str(cluster) + " with : " +str(datas) )
 	sendZigateCmd("0120", datas  )
 
 def configureReporting( self, nwkid, cluster ) :
@@ -397,7 +394,7 @@ def configureReporting_v2( self, nwkid, cluster ) :
 		for x in Attr :
        			Attr += x
 
-	Domoticz.Log("configureReporting ==> Attribute : " +str(AttributeType[cluster]) )
+	Domoticz.Debug("configureReporting ==> Attribute : " +str(AttributeType[cluster]) )
 	MinInter = str(AttributeType[cluster]['minInterval'])
 	MaxInter = str(AttributeType[cluster]['maxInterval'])
 	ChgFlag  = str(AttributeType[cluster]['change'])
@@ -428,12 +425,12 @@ def configureReporting_v2( self, nwkid, cluster ) :
 	'''
 	
 	datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
-	Domoticz.Log("configureReporting - " +str(datas) )
+	Domoticz.Debug("configureReporting - " +str(datas) )
 	sendZigateCmd("0120", datas , weight )
 
 
 def attribute_discovery_request(self, nwkid, EpOut, cluster):
 
 	datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
-	Domoticz.Log("attribute_discovery_request - " +str(datas) )
+	Domoticz.Debug("attribute_discovery_request - " +str(datas) )
 	sendZigateCmd("0140", datas , 2 )
