@@ -620,7 +620,8 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 	# Make sure that the Domoticz device still exists (they can be deleted) before updating it
 	if (Unit in Devices):
 		if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or (Devices[Unit].Color != Color_) or ForceUpdate_ :
-			Domoticz.Log("Update v2 Values "+str(nValue)+":'"+str(sValue)+":"+ str(Color_)+ " SuppTrigger_: "+str(SuppTrigger_) + " ForceUpdate_: " +str(ForceUpdate_) +"' ("+Devices[Unit].Name+")")
+			Domoticz.Debug("Update v2 Values "+str(nValue)+":'"+str(sValue)+":"+ str(Color_)+ " SuppTrigger_: "+str(SuppTrigger_) + " ForceUpdate_: " +str(ForceUpdate_) +"' ("+Devices[Unit].Name+")")
+			Domoticz.Log("Update v2 Values "+str(nValue)+":'"+str(sValue)+":"+ str(Color_)+ "' ("+Devices[Unit].Name+")")
 			if Color_:
 				Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color = Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl) )
 			else:
