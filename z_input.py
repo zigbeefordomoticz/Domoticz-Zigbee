@@ -762,9 +762,6 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 	Domoticz.Log("Decode8042 - Logical Type = " +str(LogicalType) )
 
 	if self.ListOfDevices[addr]['Status']!="inDB" :
-		self.ListOfDevices[addr]['Heartbeat']="0"
-		self.ListOfDevices[addr]['Status']="8042"
-
 		if z_var.storeDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
 			self.DiscoveryDevices[addr]['Manufacturer']=manufacturer
 			self.DiscoveryDevices[addr]['8042']=MsgData

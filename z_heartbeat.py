@@ -60,10 +60,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 		# We should check if the device has not been already created via IEEE
 		if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False :
 			Domoticz.Debug("processNotinDBDevices - new device discovered request Node Descriptor for : " +str(NWKID) )
-			z_output.sendZigateCmd("0042", str(NWKID))	# Request a Node Descriptor
-			self.ListOfDevices[NWKID]['Status']="0042"
-			self.ListOfDevices[NWKID]['Heartbeat']="0"
 			z_output.ReadAttributeRequest_0000(self, NWKID ) # Basic Cluster readAttribute Request
+			z_output.sendZigateCmd("0042", str(NWKID))	# Request a Node Descriptor
+			z_output.sendZigateCmd("0045", str(NWKID))	# Request list of EPs
+			self.ListOfDevices[NWKID]['Status']="0045"
+			self.ListOfDevices[NWKID]['Heartbeat']="0"
 		else :
 			for dup in self.ListOfDevices :
 				if self.ListOfDevices[NWKID]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":
@@ -74,19 +75,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 					self.ListOfDevices[NWKID]['Heartbeat']="0"
 					self.ListOfDevices[NWKID]['RIA']="99"
 					break
-
-	"""
-	0x8042 is the response to Node Descriptor request
-	We get quiet an extensive list of information on the device
-
-	In parallel, we have requested in the previous step a ReadAttribute Request on cluster 0x0000 (Basic). Wher information like Model Name will be provided.
-	"""
-	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":	# Status is set by Decode8042
-			Domoticz.Log("onHeartbeat - new device discovered request EP list with 0x0045 and lets wait for 0x8045: " + NWKID)
-			z_output.sendZigateCmd("0045", str(NWKID))	# We use NWKID as we are in the discovery process (no reason to use DomoID at that time / Device not yet created
-			self.ListOfDevices[NWKID]['Status']="0045"
-			self.ListOfDevices[NWKID]['Heartbeat']="0"
-
 	"""
 	0x8045 is providing the list of active EPs
 	we will so request EP descriptor for each of them
@@ -98,56 +86,38 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ) :
 			z_output.sendZigateCmd("0043", str(NWKID)+str(cle))	# We use NWKID 
 		self.ListOfDevices[NWKID]['Status']="0043"
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
-	"""
-	0x0041 is set to request an IEEE address for a given Network Address.
-	"""
-	if status=="0041" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":	# It has been requested tto issue a 0x0041 request 
-		Domoticz.Log("processNotinDBDevices - request IEEE for " +str(str(NWKID)) )
-		z_output.sendZigateCmd("0041", str(NWKID)+str(NWKID)+"00" )   	
-		self.ListOfDevices[NWKID]['Status']="8041"
-		self.ListOfDevices[NWKID]['Heartbeat']="0"
 
 	"""
 	Timeout management
 	"""
 	if status=="004d" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered but no processing done, let's Timeout: " + NWKID)
+		self.ListOfDevices[NWKID]['RIA'] += 1
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
-
-	if status=="0042" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
-		Domoticz.Debug("onHeartbeat - new device discovered 0x0042 not received in time: " + NWKID)
-		self.ListOfDevices[NWKID]['Heartbeat']="0"
-		self.ListOfDevices[NWKID]['Status']="0045"		# Let's continue in 0x0045 , those informations are not a must
-
-	if status=="8042" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
-		Domoticz.Debug("onHeartbeat - new device discovered 0x8042 not received in time: " + NWKID)
-		self.ListOfDevices[NWKID]['Heartbeat']="0"
-		self.ListOfDevices[NWKID]['Status']="0045"		# Let's continue in 0x0045 , those informations are not a must
 
 	if status=="0045" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + NWKID)
+		self.ListOfDevices[NWKID]['RIA'] += 1
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="004d"
 
 	if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8045 not received in time: " + NWKID)
-		self.ListOfDevices[NWKID]['Heartbeat']="0"
-		self.ListOfDevices[NWKID]['Status']="004d"
-
-	if status=="0043" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
-		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + NWKID)
+		self.ListOfDevices[NWKID]['RIA'] += 1
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="8045"
 
-	if status=="8041" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
+	if status=="0043" and self.ListOfDevices[NWKID]['Heartbeat']>="3":
 		Domoticz.Debug("onHeartbeat - new device discovered 0x8043 not received in time: " + NWKID)
+		self.ListOfDevices[NWKID]['RIA'] += 1
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
-		self.ListOfDevices[NWKID]['Status']="0041"
+		self.ListOfDevices[NWKID]['Status']="8045"
 
-	if status!="UNKNOW" and self.ListOfDevices[NWKID]['Heartbeat'] > "12" :  # We are over 2 minutes
+	if status!="UNKNOW" and self.ListOfDevices[NWKID]['RIA'] > "5" :  # We have done several retry
 		self.ListOfDevices[NWKID]['Heartbeat']="0"
 		self.ListOfDevices[NWKID]['Status']="UNKNOW"
-		Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
+		Domoticz.Error("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
+		Domoticz.Error("processNotinDB - we are not able to Create this Device " +str(NWKID) + " stop process at " +str(status) )
 
 	#ZLL
 	#Lightning devices
