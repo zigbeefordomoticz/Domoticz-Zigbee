@@ -305,7 +305,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 							Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
 				
 				else :
-					Domoticz.Log("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]) + " for : " +str(ID) )
+					Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]) + " for : " +str(ID) )
 					if self.ListOfDevices[NWKID]['Ep'][ptEp].get('ClusterType') :
 						Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']) + " for : " +str(ID) )
 						for key  in self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'] :
