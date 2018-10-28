@@ -258,9 +258,26 @@ def ReadAttributeRequest_000C(self, key) :
 	EPin = "01"
 	EPout= "02"
 
-	Domoticz.Debug("Request OnOff status for Xiaomi plug via Read Attribute request : " + key + " EPout = " + EPout )
-	ReadAttributeReq( self, key, "01", EPout, "000C", 55 )
-	ReadAttributeReq( self, key, "01", "01", "0000", 0xff01 )
+	"""
+ 	Attribute Type : 39 Attribut ID : 0041
+ 	Attribute Type : 10 Attribut ID : 0051
+ 	Attribute Type : 39 Attribut ID : 0055
+ 	Attribute Type : 18 Attribut ID : 006f
+ 	Attribute Type : 23 Attribut ID : 0100
+ 	Attribute Type : 39 Attribut ID : 0105
+ 	Attribute Type : 39 Attribut ID : 0106
+	"""
+
+	Domoticz.Log("Request OnOff status for Xiaomi plug via Read Attribute request : " + key + " EPout = " + EPout )
+	listAttributes = []
+	listAttributes.append(0x41)
+	listAttributes.append(0x51)
+	listAttributes.append(0x55)
+	listAttributes.append(0x6f)
+	listAttributes.append(0x100)
+	listAttributes.append(0x105)
+	listAttributes.append(0x106)
+	ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_0702(self, key) :
 	# Cluster 0x0702 Metering
@@ -432,5 +449,5 @@ def configureReporting_v2( self, nwkid, cluster ) :
 def attribute_discovery_request(self, nwkid, EpOut, cluster):
 
 	datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
-	Domoticz.Debug("attribute_discovery_request - " +str(datas) )
+	Domoticz.Log("attribute_discovery_request - " +str(datas) )
 	sendZigateCmd("0140", datas , 2 )
