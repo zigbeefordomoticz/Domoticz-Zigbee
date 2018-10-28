@@ -22,6 +22,10 @@ Either the information is coming from one of the plugin user (through direct com
 | Xiaomi Aqara | WXKG02LM (86sw2) | Switch Selector | The following events are reported to the Domoticz Switch selectors : Right Click, Left Click, Both Click | Fully operationnal | 3.1.0 |
 | Xiaomi Aqara | WXKG11LM Square Device with round Button | Switch Selector | The following events are reported to the Domoticz Switch selectors : 1 Click, 2 Click, 3 Click, 4 CliCk | Fully operationnal | 3.1.0 |
 | Xiaomi | Aqara Cube | Switch Selector | The following events are reported to the Domoticz Switch selectors : Shake, Wakepup, Drop, 90° and 180° rotation, Push, Tab and horizontal Rotation . | Fully operationnal | 2.4.0 |
+| Xiaomi | Human Motion Sensor | Human Motion Sensor | Switch turns on when a movement is detected | Fully operationnal | 2.4.0 |
 | Xiaomi | Plug | Plug, Power meter | Can switch on/off the plug and you get Watts consuption | Fully operationnal | 3.1.0 |
+| Xiaomi | Smoke Sensor | Smoke Sensor | Need 3 push on button to run synch| can't be reset from Domoticz | 2.3.5 |
 | Xiaomi | Temperature Humidity Sensor | Temp + Humidity | | Fully operationnal | 2.3.5 |
+| Xiaomi | Vibration Sensor | Switch Selector | | Not yet support | - |
 | Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter n each line | Fully operationnal | 3.1.0  |
+| Xiaomi | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.4.0 |
