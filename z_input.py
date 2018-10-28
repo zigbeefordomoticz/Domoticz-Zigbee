@@ -1246,7 +1246,7 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
 	# We need to identify to which NetworkId and which ClusterId this is coming from. This is in response to 0x0140
 	# When MsgComplete == 01, we have received all Attribute/AttributeType
 
-	Domoticz.Log("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttrID)
+	Domoticz.Log("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttID)
 	return
 
 #Router Discover
