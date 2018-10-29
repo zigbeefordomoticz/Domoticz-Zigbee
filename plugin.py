@@ -341,3 +341,4 @@ def DumpConfigToLog():
 		Domoticz.Debug("Device Options: " + str(Devices[x].Options))
 	return
 
+

@@ -451,3 +451,4 @@ def attribute_discovery_request(self, nwkid, EpOut, cluster):
 	datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
 	Domoticz.Log("attribute_discovery_request - " +str(datas) )
 	sendZigateCmd("0140", datas , 2 )
+

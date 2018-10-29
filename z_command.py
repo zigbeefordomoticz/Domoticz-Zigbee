@@ -242,3 +242,5 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 		#Update Device
 		z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
 
+
+

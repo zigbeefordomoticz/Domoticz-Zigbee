@@ -689,3 +689,5 @@ def TypeFromCluster(cluster):
 	elif cluster=="0500" : TypeFromCluster="Door"
 	else : TypeFromCluster=""
 	return TypeFromCluster
+
+

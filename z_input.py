@@ -1319,9 +1319,10 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 		self.DiscoveryDevices[MsgSrcAddr]['IEEE']={}
 		self.DiscoveryDevices[MsgSrcAddr]['ProfileID']={}
 		self.DiscoveryDevices[MsgSrcAddr]['ZDeviceID']={}
-
 		self.DiscoveryDevices[MsgSrcAddr]['004d'] = str(MsgData)
 		self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = str(MsgIEEE)
 		self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MsgMacCapa)
 	
 	return
+
+

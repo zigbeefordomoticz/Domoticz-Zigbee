@@ -378,6 +378,3 @@ def getListofType( self, Type ) :
 	retList = list()
 	retList= Type.split("/")
 	return retList
-
-
-

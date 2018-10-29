@@ -112,3 +112,4 @@ def checkListOfDevice2Devices( self, Devices ) :
 		else :
 			Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
+

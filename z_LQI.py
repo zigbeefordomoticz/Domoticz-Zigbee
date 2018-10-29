@@ -220,5 +220,4 @@ def mgtLQIresp ( self , MsgData) :
 
 		Domoticz.Debug("mgtLQIresp - from " +str(NwkIdSource) + " a new node captured : " +str(_nwkid) )
 
-
 	return
