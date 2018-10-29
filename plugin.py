@@ -162,10 +162,10 @@ class BasePlugin:
         Domoticz.Status("onStop called")
         Domoticz.Status("Statistics on message")
         Domoticz.Status("   Messages sent       : "+ str(self.stats['send']) )
-        Domoticz.Status("   Messages received   : "+ str(self.stats['received']) )
-        Domoticz.Status("   Messages clusters   : "+ str(self.stats['clusters']) )
         Domoticz.Status("   Messages Ack ok     : "+ str(self.stats['ok_status']) )
         Domoticz.Status("   Messages Ack failed : "+ str(self.stats['ko_status']) )
+        Domoticz.Status("   Messages received   : "+ str(self.stats['received']) )
+        Domoticz.Status("   Messages clusters   : "+ str(self.stats['clusters']) )
 
 
     def onDeviceRemoved( self, Unit ) :
