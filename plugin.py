@@ -78,6 +78,7 @@ class BasePlugin:
         self.stats['clusters'] = 0
         self.stats['ok_status'] = 0
         self.stats['ko_status'] = 0
+        self.stats['start_time'] = time.time()
 
         return
 
@@ -133,8 +134,10 @@ class BasePlugin:
             Domoticz.Error("Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
             return            
         
-        Domoticz.Log("ListOfDevices : " +str(self.ListOfDevices) )
-        Domoticz.Log("IEEE2NWK      : " +str(self.IEEE2NWK) )
+        Domoticz.Log("ListOfDevices : " )
+        for e in self.ListOfDevices.items(): Domoticz.Log(" "+str(e))
+        Domoticz.Log("IEEE2NWK      : " )
+        for e in self.IEEE2NWK.items(): Domoticz.Log("  "+str(e))
 
         # Check proper match against Domoticz Devices
         z_database.checkListOfDevice2Devices( self, Devices )
@@ -161,6 +164,7 @@ class BasePlugin:
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
         Domoticz.Status("onStop called")
         Domoticz.Status("Statistics on message")
+        Domoticz.Status("   Operating time      : "+ str(int(time.time() - self.stats['start_time'])) + " seconds" )
         Domoticz.Status("   Messages sent       : "+ str(self.stats['send']) )
         Domoticz.Status("   Messages Ack ok     : "+ str(self.stats['ok_status']) )
         Domoticz.Status("   Messages Ack failed : "+ str(self.stats['ko_status']) )
