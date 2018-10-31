@@ -660,6 +660,10 @@ def GetType(self, Addr, Ep) :
             Domoticz.Debug("GetType - Type will be set to : " + str(Type) )
 
         #Type+=Type
+        # Ne serait-il pas plus simple de faire un .split( '/' ), puis un join ('/')
+        # car j'ai un peu de problème sur cette serie de replace. 
+        # ensuite j'ai vu également des Type avec un / à la fin !!!!!
+        # Par exemple :  'Type': 'Switch/LvlControl/',
         Type=Type.replace("/////","/")
         Type=Type.replace("////","/")
         Type=Type.replace("///","/")
