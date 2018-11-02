@@ -285,13 +285,13 @@ def ReadAttributeRequest_0702(self, key) :
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
-    listAttributes.append(0x0200) # Status
-    listAttributes.append(0x0300) # UNIT_OF_MEASURE
-    listAttributes.append(0x0301) # MULTIPLIER
-    listAttributes.append(0x0302) # SUMMATION_FORMATING
-    listAttributes.append(0x0306) # METERING_DEVICE_TYPE
+    #listAttributes.append(0x0200) # Status
+    #listAttributes.append(0x0300) # UNIT_OF_MEASURE
+    #listAttributes.append(0x0301) # MULTIPLIER
+    #listAttributes.append(0x0302) # SUMMATION_FORMATING
+    #listAttributes.append(0x0306) # METERING_DEVICE_TYPE
     listAttributes.append(0x0400) # Instantaneous Demand
-    listAttributes.append(0x001C) # PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED
+    #listAttributes.append(0x001C) # PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED
 
     EPin = "01"
     EPout= "01"
@@ -300,7 +300,6 @@ def ReadAttributeRequest_0702(self, key) :
                     EPout=tmpEp
     Domoticz.Debug("Request Metering info via Read Attribute request : " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
-
 
 
 def removeZigateDevice( self, key ) :
@@ -317,139 +316,71 @@ def removeZigateDevice( self, key ) :
 
     return
 
-def reportCommand( self, nwkid, cluster, Attr ,AttrType, MinInter, MaxInter, TimeOut, ChgFlag ) :
-
-    EPout = "01"
-    for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
-        if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
-            EPout=tmpEp
-    datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(1) + Attr + "00" + AttrType + Attr + MinInter + MaxInter + TimeOut + ChgFlag
-    Domoticz.Debug("configureReporting on cluster : " +str(cluster) + " with : " +str(datas) )
-    sendZigateCmd(self, "0120", datas  )
-
-def configureReporting( self, nwkid, cluster ) :
-
-    if cluster == "000c" :
-        reportCommand( self, nwkid, cluster, "0055", "39",  "0300", "0300", "0000", "01" )
-
-    elif cluster == "0702" :
-        reportCommand( self, nwkid, cluster, "0000", "39",  "0010", "0300", "0000", "01" )
-        reportCommand( self, nwkid, cluster, "0200", "39",  "0010", "0300", "0000", "01" )
-        reportCommand( self, nwkid, cluster, "0400", "39",  "0010", "0300", "0000", "01" )
-
-    else :
-        return
-
-
-def configureReporting_v2( self, nwkid, cluster ) :
-
-
-    '''
-    Attribute pour Cluster 0x0702 SmartPlug Salus
-    Attribute ID: 0x0000
-     Attribute ID: 0x0300
-     Attribute ID: 0x0301
-     Attribute ID: 0x0302
-     Attribute ID: 0x0306
-     Attribute ID: 0x0400
-     Attribute ID: 0x001C
-    '''
-    AttributeType = { 
-    # Power Config Cluster ( 0021:Battery % )
-    '0001': {'Attribute': {'0021': '0020'},'minInterval': '300', 'maxInterval': '300', 'change': '0'},
-
-    # On/Off Cluster ( 0000:On/Off ) 
-    '0006': {'Attribute': {'0000': '0010'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
-
-    # Level Control Cluster ( 0000:Current Level ) 
-    '0008': {'Attribute': {'0000': '0020'}, 'minInterval': '1', 'maxInterval': '600', 'change': '1'}, 
-    # Illuminance Cluster ( 0000:Measured value )
-    '0300': {'Attribute': {'0007': '0021', '0003': '0021', '0004': '0021', '0008': '0030'}, 'minInterval': '5', 'maxInterval': '300', 'change': '2000'}, 
-    # Color Cluster ( ColorTemp, ColorX, ColorY, Color Mode
-    '0400': {'Attribute': {'0000': '0021'},'minInterval': '5', 'maxInterval': '300', 'change': '2000'},
-    # Metering Cluster ( 0000:Current summation, 0400:Instantaneous)
-    '0702': {'Attribute': {'0400':'0000','0000': '0000','0300':'0000', '0301':'0000', '0302':'0000', '0306':'0000', '001C':'0000'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
-    # Electrical Cluster ( 0505:RMS Voltage, 0508:RMS Curent)
-    '0b04': {'Attribute': {'050b': '0029', '0505':'0021', '0508':'0021'},'minInterval': '1', 'maxInterval': '300', 'change': '1'},
-    #Temperature Measurement Cluster
-    '0402': {'Attribute': {'0000': '0029'},'minInterval': '10', 'maxInterval': '300', 'change': '20'},
-    # Humidity Cluster
-    '0405': {'Attribute': {'0000': '0021'},'minInterval': '10', 'maxInterval': '300', 'change': '100'},
-    # Pressure measurement Cluster
-    '0403': {'Attribute': {'0000': '0021'},'minInterval': '1', 'maxInterval': '300', 'change': '20'},
-    # Xiaomi 
-    '000c': {'Attribute': {'0055': '0039'},'minInterval': '1', 'maxInterval': '300', 'change': '1'}
-    }
-
-    Domoticz.Debug("enableReporting : " +str(nwkid) + " for cluster : " +str(cluster) )
-    if cluster == '' or cluster is None :
-        return 
-
-    Attr     = []
-    AttrType = ''
-
-    if str(cluster) in AttributeType :
-        for attribute in AttributeType[cluster]['Attribute'] :
-            newAttrType = str(AttributeType[cluster]['Attribute'][attribute])
-            if AttrType == '' :
-                AttrType = str(newAttrType)
-            if AttrType == newAttrType :
-                Attr.append(str(attribute))
-            if newAttrType != AttrType :
-                continue
-    if len(Attr) == 0 :
-        return
-
-    if not isinstance(Attr, list):
-        # We received only 1 attribute
-        lenAttr = 1
-        weight = 1
-    else :
-        lenAttr = len(Attr)
-        weight = int ((lenAttr ) / 2) + 1
-        Attr =''
-        Domoticz.Debug("attributes : " +str(Attr) +" len =" +str(lenAttr) )
-        for x in Attr :
-                   Attr += x
-
-    Domoticz.Debug("configureReporting ==> Attribute : " +str(AttributeType[cluster]) )
-    MinInter = str(AttributeType[cluster]['minInterval'])
-    MaxInter = str(AttributeType[cluster]['maxInterval'])
-    ChgFlag  = str(AttributeType[cluster]['change'])
-    TimeOut =  "0000"
-
-    EPout = "01"
-    for tmpEp in self.ListOfDevices[nwkid]['Ep'] :
-        if cluster in self.ListOfDevices[nwkid]['Ep'][tmpEp] : #switch cluster
-            EPout=tmpEp
-            
-    '''
-    Address Mode    : u8
-    Network Address : u16
-    Source EP       : u8
-    Dest   EP       : u8
-    ClusterId       : u16
-    Direction       : u8
-    Manufacturer spe: u8
-    Manufacturer Id : u16
-    Nb attributes   : u8
-    Attribute list  : u16 each
-    Attribute direc : u8
-    Attribute Type  : u8
-    Min Interval    : u16
-    Max Interval    : u16
-    TimeOut         : u16
-    Change            : u8
-    '''
-    
-    datas = "{:02n}".format(2) + nwkid + "01" + EPout + cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr + "00" + AttrType + MinInter + MaxInter + TimeOut + ChgFlag
-    Domoticz.Debug("configureReporting - " +str(datas) )
-    sendZigateCmd(self, "0120", datas , weight )
-
-
 def attribute_discovery_request(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
     Domoticz.Log("attribute_discovery_request - " +str(datas) )
     sendZigateCmd(self, "0140", datas , 2 )
 
+
+
+def processConfigureReporting( self ):
+    '''
+    processConfigureReporting( self )
+    Called at start of the plugin to configure Reporting of all connected object, based on their corresponding cluster
+
+    Synopsis:
+    - for each Device
+        if they support Cluster we want to configure Reporting and if they have Manufacturer Id then configureReporting
+
+    Format configure Reporting Zigate command
+
+        Address Mode    : u8
+        Network Address : u16
+        Source EP       : u8
+        Dest   EP       : u8
+        ClusterId       : u16
+        Direction       : u8
+        Manufacturer spe: u8
+        Manufacturer Id : u16
+        Nb attributes   : u8
+        Attribute list  : u16 each
+        Attribute direc : u8
+        Attribute Type  : u8
+        Min Interval    : u16
+        Max Interval    : u16
+        TimeOut         : u16
+        Change            : u8
+
+    '''
+
+    ATTRIBUTESbyCLUSTERS = {
+        '0702' : {'Attributes' : { '0000' : {'DataType': '0037', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'},
+                                   '0200' : {'DataType': '0024', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'},
+                                   '0400' : {'DataType': '0024', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}
+                 }
+                            }
+
+    for key in self.ListOfDevices :
+            for Ep in self.ListOfDevices[key]['Ep'] :
+                    clusterList = z_tools.getClusterListforEP( self, key, Ep )
+                    for cluster in clusterList :
+                        if cluster in ATTRIBUTESbyCLUSTERS:
+                            if 'Manufacturer' in self.ListOfDevices[key]:
+                                direction = "00"
+                                manufacturer_spec = "00"
+                                manufacturer = self.ListOfDevices[key]['Manufacturer']
+                                for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes'] :
+                                    lenAttr = 1
+                                    attrdirection = "00"
+                                    attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
+                                    minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
+                                    maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
+                                    timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
+                                    chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
+                                    datas =   "{:02n}".format(2) + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                                    datas +=  "{:02n}".format(lenAttr) + attr + attrdirection + attrType + minInter + maxInter + timeOut + chgFlag
+                                    Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s " %(key, cluster, attr) )
+                                    sendZigateCmd(self, "0120", datas )
+        
+    

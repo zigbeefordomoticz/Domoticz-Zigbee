@@ -196,9 +196,11 @@ class BasePlugin:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
 
-
         if z_var.LQI != 0 :
             z_LQI.LQIdiscovery( self ) 
+
+        # Trigger Conifre Reporting to eligeable decices
+        z_output.processConfigureReporting( self )
 
         return True
 
