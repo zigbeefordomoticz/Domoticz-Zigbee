@@ -355,10 +355,12 @@ def processConfigureReporting( self ):
     '''
 
     ATTRIBUTESbyCLUSTERS = {
+        # Power Configuration
+        '0001': {'Attributes': { '0000': {'DataType': '0021', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        '000c': {'Attributes': { '0055': {'DataType': '0039', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
         '0702': {'Attributes': { '0000': {'DataType': '0037', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'},
                                  '0200': {'DataType': '0024', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'},
-                                 '0400': {'DataType': '0024', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '000c': {'Attributes': { '0055': {'DataType': '0039', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}}
+                                 '0400': {'DataType': '002a', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
