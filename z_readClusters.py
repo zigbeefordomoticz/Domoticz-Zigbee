@@ -353,13 +353,13 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
     if MsgAttrID == "0000": # Atmo in mb
-        value = round(value/100)
+        value = round((value/100),1)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=value
         Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: " + str(value ) )
 
     if MsgAttrID == "0010": # Atmo in 10xmb
-        value = round(value/10)
+        value = round((value/10),1)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=value
         Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: " + str(value ) )
