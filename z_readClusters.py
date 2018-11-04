@@ -192,7 +192,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-    Domoticz.log("Cluster0702 - MsgAttrID: %s MsgAttType: %s MsgAttType: %s decodedValue: %s" %s(MsgAttrID, MsgAttType, value))
+    Domoticz.Log("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %s(MsgAttrID, MsgAttType, value))
 
     if MsgAttrID == "0000": Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
     elif MsgAttrID == "0001": Domoticz.Debug("Cluster0702 - 0x0001 CURRENT_SUMMATION_RECEIVED ")
@@ -356,13 +356,13 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = round((value/100),1)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=value
-        Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: " + str(value ) )
+        Domoticz.Log("ReadCluster - ClusterId=0403 - reception atm: " + str(value ) )
 
     if MsgAttrID == "0010": # Atmo in 10xmb
         value = round((value/10),1)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=value
-        Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: " + str(value ) )
+        Domoticz.Log("ReadCluster - ClusterId=0403 - reception atm: " + str(value ) )
         #
 # OLD CODE
 #    if MsgAttType=="0028":
@@ -505,7 +505,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
             ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]["0403"]=ValuePress
-            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) )
             z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
         if sOnOff != '':
             sOnOff = sOnOff[0:2]  
