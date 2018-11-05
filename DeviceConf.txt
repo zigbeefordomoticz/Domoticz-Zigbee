@@ -18,7 +18,7 @@
 'switch.legrand.netamo':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl','ZDeviceID':'0100', 'ProfileID':'0104'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl','ProfileID':'a1e0','ZDeviceID':'0061'},
 'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug','ProfileID':'c05e', 'ZDeviceID':'0010'},
-'plug.Salus':{'Ep':{'09':{'0702':'','0006':'','Type':'Plug/Power/Meter'}},'Type':'','ProfileID':'0104','ZDeviceID':'0051'},
+'SPE600':{'Ep':{'09': {'0000': '', '0001': '', '0003': '', '0004': '', '0005': '', '0006': '', '0402': '', '0702': '', 'fc01': '', 'Type':'Plug/Power/Meter'}},'Type':'','ProfileID': '0104', 'ZDeviceID': '0051'},
 'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl','ProfileID':'0104','ZDeviceID':'0200'},
 'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':''},
 'plug.Celiane.Legrand':{'Ep': {'01':{'0004','0006','0005','fc01'}},'Type':'Switch', 'ProfileID':'0104', 'ZDeviceID':'010a'}
