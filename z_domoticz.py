@@ -399,7 +399,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     CurrentsValue=Devices[x].sValue
                     Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
                     SplitData=CurrentsValue.split(";")
-                    NewSvalue='%s;%s;%s'    % ((value, SplitData[1] , SplitData[2])
+                    NewSvalue='%s;%s;%s'    % (value, SplitData[1] , SplitData[2]) 
                     Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
                     UpdateDevice_v2(Devices, x,0,str(NewSvalue),BatteryLevel, SignalLevel)                                
                 if Type=="Humi" :
