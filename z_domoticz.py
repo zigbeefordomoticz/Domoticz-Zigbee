@@ -724,7 +724,7 @@ def TypeFromCluster(cluster):
     elif cluster=="0403" : TypeFromCluster="Baro"
     elif cluster=="0405" : TypeFromCluster="Humi"
     elif cluster=="0406" : TypeFromCluster="Motion"
-    elif cluster=="0407" : TypeFromCluster="Power/Meter"
+    elif cluster=="0702" : TypeFromCluster="Power/Meter"
     elif cluster=="0500" : TypeFromCluster="Door"
     else : TypeFromCluster=""
     return TypeFromCluster
