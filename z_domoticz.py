@@ -345,89 +345,77 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 sValue=value
                 Domoticz.Debug("MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,nValue,str(sValue),BatteryLevel, SignalLevel)                                
-
             if Dtypename=="Meter" and clusterID == "000c": # kWh
                 nValue=float(value)
                 sValue="%s;%s" %(nValue, nValue)
                 Domoticz.Debug( "MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,0, sValue, BatteryLevel, SignalLevel)                                
-
-            if Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
-                # Documentation found here : https://www.domoticz.com/wiki/Domoticz_API/JSON_URL%27s#Barometer
-                # 1: Temperature
-                # 2: Humidity
-                # 3: Humidity status
-                # 4: Baro
-                # 5: Baro forecast
-                if Type=="Temp" :
-                    CurrentnValue=Devices[x].nValue
-                    CurrentsValue=Devices[x].sValue
-                    Domoticz.Log("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
-                    SplitData=CurrentsValue.split(";")
-                    NewSvalue='%s;%s;%s;%s;%s'    % (value, SplitData[1] , SplitData[2] , SplitData[3], SplitData[4])
-                    Domoticz.Log("MajDomoDevice temp NewSvalue : " + NewSvalue)
-                    UpdateDevice_v2(Devices, x,0,str(NewSvalue),BatteryLevel, SignalLevel)                                
-                if Type=="Humi" :
-                    CurrentnValue=Devices[x].nValue
-                    CurrentsValue=Devices[x].sValue
-                    Domoticz.Log("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
-                    # Humidity Status 0=Normal 1=Comfortable 2=Dry 3=Wet
-                    if value < 40: humiStatus = 2
-                    elif value >= 40 and value < 70: humiStatus = 1
-                    else: humiStatus = 3
-                    SplitData=CurrentsValue.split(";")
-                    NewSvalue='%s;%s;%s;%s;%s'    % (SplitData[0], value ,  humiStatus , SplitData[3], SplitData[4])
-                    Domoticz.Log("MajDomoDevice hum NewSvalue : " + NewSvalue)
-                    UpdateDevice_v2(Devices, x,0,str(NewSvalue),BatteryLevel, SignalLevel)                                
-                if Type=="Baro" :  # barometer
-                    CurrentnValue=Devices[x].nValue
-                    CurrentsValue=Devices[x].sValue
-                    Domoticz.Log("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
-                    # Barometer forecast can be one of: 0 = No info 1 = Sunny 2 = Partly cloudy 3 = Cloudy 4 = Rain
-                    if value < 1000: Bar_forecast = 4
-                    elif value < 1020: Bar_forecast = 3
-                    elif value < 1030: Bar_forecast = 2
-                    else: Bar_forecast = 1
-                    SplitData=CurrentsValue.split(";")
-                    valueBaro='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], value , Bar_forecast)
-                    Domoticz.Log("MajDomoDevice hum NewSvalue : " + valueBaro)
-                    UpdateDevice_v2(Devices, x,0,str(valueBaro),BatteryLevel, SignalLevel)                                
-
-            if Dtypename=="Temp+Hum" : #temp+hum xiaomi
-                if Type=="Temp" :
-                    CurrentnValue=Devices[x].nValue
-                    CurrentsValue=Devices[x].sValue
-                    Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
-                    SplitData=CurrentsValue.split(";")
-                    NewSvalue='%s;%s;%s'    % (value, SplitData[1] , SplitData[2]) 
-                    Domoticz.Debug("MajDomoDevice temp NewSvalue : " + NewSvalue)
-                    UpdateDevice_v2(Devices, x,0,str(NewSvalue),BatteryLevel, SignalLevel)                                
-                if Type=="Humi" :
-                    CurrentnValue=Devices[x].nValue
-                    CurrentsValue=Devices[x].sValue
-                    Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
-                    # Humidity Status
-                    if value < 40: humiStatus = 2
-                    elif value >= 40 and value < 70: humiStatus = 1
-                    else: humiStatus = 3
-                    SplitData=CurrentsValue.split(";")
-                    NewSvalue='%s;%s;%s'    % (SplitData[0], value , humiStatus)
-                    Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-                    UpdateDevice_v2(Devices, x,0,str(NewSvalue),BatteryLevel, SignalLevel)                                
-
-            if Type==Dtypename=="Temp" :  # temperature
-                UpdateDevice_v2(Devices, x,0,str(value),BatteryLevel, SignalLevel)                                
-
-            if Type==Dtypename=="Humi" :   # humidite
-                UpdateDevice_v2(Devices, x,int(value),"0",BatteryLevel, SignalLevel)                                
-
-            if Type==Dtypename=="Baro" :  # barometre
+            if Type == "Temp" :  # temperature
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
-                Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
+                Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
                 SplitData=CurrentsValue.split(";")
-                valueBaro='%s;%s' % (value,SplitData[0])
-                UpdateDevice_v2(Devices, x,0,str(valueBaro),BatteryLevel, SignalLevel)
+                # Let's check if there is any adjustement set
+                #value = value + Devices[x].AddjValue2
+                #
+                NewNvalue = 0
+                NewSvalue = ''
+                if Dtypename=="Temp":
+                    NewNvalue = value
+                    NewSvalue = "0"
+                elif Dtypename=="Temp+Hum":
+                    NewNvalue = 0
+                    NewSvalue='%s;%s;%s'    % (value, SplitData[1] , SplitData[2])
+                elif Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
+                    NewNvalue = 0
+                    NewSvalue='%s;%s;%s;%s;%s' %(value, SplitData[1] , SplitData[2] , \
+                            SplitData[3], SplitData[4])
+                UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+
+            if Type == "Humi":   # humidite
+                CurrentnValue=Devices[x].nValue
+                CurrentsValue=Devices[x].sValue
+                Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+                SplitData=CurrentsValue.split(";")
+                NewNvalue = 0
+                NewSvalue = ''
+                # Humidity Status
+                if value < 40: humiStatus = 2
+                elif value >= 40 and value < 70: humiStatus = 1
+                else: humiStatus = 3
+
+                if Dtypename == "Humi":
+                    NewNvalue = value
+                    NewSvalue = "0"
+                elif Dtypename == "Temp+Hum" : #temp+hum xiaomi
+                    NewNvalue = 0
+                    NewSvalue='%s;%s;%s'    % (SplitData[0], value , humiStatus)
+                    Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
+                UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
+            if Type=="Baro" :  # barometre
+                # Let's check if there is any adjustement set
+                #value = value + Devices[x].AddjValue2
+                #
+                CurrentnValue=Devices[x].nValue
+                CurrentsValue=Devices[x].sValue
+                SplitData=CurrentsValue.split(";")
+                NewNvalue = 0
+                NewSvalue = ''
+
+                if value < 1000: Bar_forecast = 4
+                elif value < 1020: Bar_forecast = 3
+                elif value < 1030: Bar_forecast = 2
+                else: Bar_forecast = 1
+
+                if Dtypename == "Baro":
+                    Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
+                    NewSvalue='%s;%s' % (value,Bar_forecast)
+                elif Dtypename == "Temp+Hum+Baro":
+                    NewSvalue='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], \
+                            SplitData[2], value , Bar_forecast)
+
+                UpdateDevice_v2(Devices, x,newNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+
 
             if Type=="Door" and Dtypename=="Door" :  # Door / Window
                 if value == "01" :
