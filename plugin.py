@@ -70,6 +70,8 @@ class BasePlugin:
         self.HardwareID = ''
         self.Key = ''
         self.HBcount=0
+        self.ZigateIEEE = None       # Zigate IEEE
+        self.ZigateNWKID = None       # Zigate NWKID
         z_var.cmdInProgress = queue.Queue()
 
         self.stats = {}
