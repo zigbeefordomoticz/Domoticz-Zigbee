@@ -137,6 +137,15 @@ def ReadCluster(self, Devices, MsgData):
     MsgClusterData=MsgData[24:len(MsgData)]
     tmpEp=""
     tmpClusterid=""
+
+
+
+    if MsgAttrStatus != "00":
+        Domoticz.Log("ReadCluster - Status error : %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+        if MsgAttrStatus == "86":
+                Domoticz.Log("ReadCluster - the cluster is not activated on the device")
+        return
+
     if z_tools.DeviceExist(self, MsgSrcAddr) == False:
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
@@ -203,16 +212,14 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
     Domoticz.Log("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
 
-    if MsgAttrID == "0000": Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
-    elif MsgAttrID == "0001": Domoticz.Debug("Cluster0702 - 0x0001 CURRENT_SUMMATION_RECEIVED ")
-    elif MsgAttrID == "0028": Domoticz.Debug("Cluster0702 - 0x001C PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED ")
-    elif MsgAttrID == "0256": Domoticz.Debug("Cluster0702 - 0x0100 CURRENT_TIER_1_SUMMATION_DELIVERED")
-    elif MsgAttrID == "0512": Domoticz.Debug("Cluster0702 - 0x0200 STATUS")
-    elif MsgAttrID == "0768": Domoticz.Debug("Cluster0702 - 0x0300 UNIT_OF_MEASURE")
-    elif MsgAttrID == "0769": Domoticz.Debug("Cluster0702 - 0x0301 MULTIPLIER")
-    elif MsgAttrID == "0770": Domoticz.Debug("Cluster0702 - 0x0302 SUMMATION_FORMATING")
-    elif MsgAttrID == "0774": Domoticz.Debug("Cluster0702 - 0x0306 METERING_DEVICE_TYPE")
-    elif MsgAttrID == "1024": Domoticz.Debug("Cluster0702 - 0x0400 INSTANTANEOUS_DEMAND")
+    if MsgAttrID == "0000": 
+        Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
+    elif MsgAttrID == "0200": 
+        Domoticz.Debug("Cluster0702 - 0x0200 STATUS")
+    elif MsgAttrID == "0400": 
+        Domoticz.Debug("Cluster0702 - 0x0400 INSTANTANEOUS_DEMAND")
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
     else:
         Domoticz.Debug("ReadCluster - 0x0702 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
     return
@@ -283,7 +290,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
                 " decoded: " + str(value) )
     else:
-        Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu: " + MsgAttrID + " / " + MsgData)
+        Domoticz.Error("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu: " + MsgAttrID + " / " + MsgClusterData)
     return
 
 def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
