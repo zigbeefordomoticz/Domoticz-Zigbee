@@ -37,10 +37,10 @@ def processKnownDevices( self, NWKID ):
                         z_output.ReadAttributeRequest_0008(self, NWKID )
                     if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
                         z_output.ReadAttributeRequest_000C(self, NWKID )
-                    if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
-                        z_output.ReadAttributeRequest_0001(self, NWKID )
                     if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
                         z_output.ReadAttributeRequest_0006(self, NWKID )
+                    #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
+                    #    z_output.ReadAttributeRequest_0001(self, NWKID )
                     #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
                     #    z_output.ReadAttributeRequest_0300(self, NWKID )
 
@@ -55,8 +55,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # We should check if the device has not been already created via IEEE
         if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False:
             Domoticz.Debug("processNotinDBDevices - new device discovered request Node Descriptor for: " +str(NWKID) )
+            z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+            z_output.ReadAttributeRequest_0001(self, NWKID )      # Power Cluster readAttribute Request
             z_output.sendZigateCmd(self,"0045", str(NWKID), 2)    # Request list of EPs
-            z_output.ReadAttributeRequest_0000(self, NWKID ) # Basic Cluster readAttribute Request
             z_output.sendZigateCmd(self,"0042", str(NWKID),2)    # Request a Node Descriptor
             self.ListOfDevices[NWKID]['Status']="0045"
             self.ListOfDevices[NWKID]['Heartbeat']="0"
@@ -76,6 +77,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     """
     if status=="8045" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":    # Status is set by Decode8045
         Domoticz.Log("onHeartbeat - new device discovered 0x8045 received " + NWKID)
+        if self.ListOfDevices[NWKID]['Model'] == '':
+            z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
         for cle in self.ListOfDevices[NWKID]['Ep']:
             Domoticz.Log("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of: " + NWKID)
             z_output.sendZigateCmd(self,"0043", str(NWKID)+str(cle), 2)    
