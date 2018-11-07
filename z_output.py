@@ -19,6 +19,7 @@ import z_var
 import z_tools
 
 def ZigateConf_light(self,  channel, discover ):
+
     ################### ZiGate - get Firmware version #############
     # answer is expected on message 8010
     sendZigateCmd(self, "0010","")
@@ -161,7 +162,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
-        Attr = "{:04n}".format(ListOfAttributes) 
+        Attr = "%04x" %(ListOfAttributes)
         lenAttr = 1
         weight = 1
     else:
@@ -170,28 +171,44 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         Attr =''
         Domoticz.Debug("attributes: " +str(ListOfAttributes) +" len =" +str(lenAttr) )
         for x in ListOfAttributes:
-            Attr += "{:04n}".format(x)
+            Attr += "%04x" %(x)
 
-    datas = "{:02n}".format(2) + addr + EpIn + EpOut + Cluster + "00" + "00" + "0000" + "{:02n}".format(lenAttr) + Attr
-    sendZigateCmd(self, "0100", datas , weight )
+    direction = '00'
+    manufacturer_spec = '00'
+    manufacturer = '0000'
+    #if 'Manufacturer' in self.ListOfDevices[addr]:
+    #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
+
+    datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
+    Domoticz.Log("ReadAttributeReq - %s" %( datas) )
+    sendZigateCmd(self, "0100", datas )
 
 def ReadAttributeRequest_0000(self, key):
     # Basic Cluster
+    # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
+
     EPin = "01"
     EPout= "01"
 
-    
     # General
     listAttributes = []
     listAttributes.append(0x0005)        # Model Identifier
     listAttributes.append(0x0007)        # Power Source
     listAttributes.append(0x0010)        # Battery
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                    EPout=tmpEp
 
-    Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + EPout )
-    ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+    # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
+    if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
+        Domoticz.Log("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
+        ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
+        ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
+        ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
+
+    else:
+        for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                EPout= tmpEp 
+        Domoticz.Log("Request Basic  via Read Attribute request: " + key + " EPout = " + EPout )
+        ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_0001(self, key):
     # Power Config
@@ -278,6 +295,11 @@ def ReadAttributeRequest_000C(self, key):
     listAttributes.append(0x100)
     listAttributes.append(0x105)
     listAttributes.append(0x106)
+
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    Domoticz.Log("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_0702(self, key):
@@ -285,22 +307,17 @@ def ReadAttributeRequest_0702(self, key):
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
-    #listAttributes.append(0x0200) # Status
-    #listAttributes.append(0x0300) # UNIT_OF_MEASURE
-    #listAttributes.append(0x0301) # MULTIPLIER
-    #listAttributes.append(0x0302) # SUMMATION_FORMATING
-    #listAttributes.append(0x0306) # METERING_DEVICE_TYPE
+    listAttributes.append(0x0200) # Instantaneous Demand
     listAttributes.append(0x0400) # Instantaneous Demand
-    #listAttributes.append(0x001C) # PREVIOUS_BLOCK_PERIOD_CONSUMPTION_DELIVERED
 
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0702" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
-    Domoticz.Debug("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
-    ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
+    Domoticz.Log("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
 def removeZigateDevice( self, key ):
     # remove a device in Zigate
@@ -316,7 +333,7 @@ def removeZigateDevice( self, key ):
 
     return
 
-def attribute_discovery_request(self, nwkid, EpOut, cluster):
+def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
     Domoticz.Log("attribute_discovery_request - " +str(datas) )
@@ -356,38 +373,70 @@ def processConfigureReporting( self ):
 
     ATTRIBUTESbyCLUSTERS = {
         # Power Configuration
-        '0001': {'Attributes': { '0000': {'DataType': '0021', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '000c': {'Attributes': { '0055': {'DataType': '0039', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '0702': {'Attributes': { '0000': {'DataType': '0037', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'},
-                                 '0200': {'DataType': '0024', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'},
-                                 '0400': {'DataType': '002a', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}}
+        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFF', 'TimeOut':'0000','Change':'01'}}},
+        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0000', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        '000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        '8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        '0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}},
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'},
+                                 '0400': {'DataType': '2a', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
-            if 'PowerSource' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['PowerSource'] == 'Main':
-                    for Ep in self.ListOfDevices[key]['Ep']:
-                        clusterList = z_tools.getClusterListforEP( self, key, Ep )
-                        for cluster in clusterList:
-                            if cluster in ATTRIBUTESbyCLUSTERS:
-                                if 'Manufacturer' in self.ListOfDevices[key]:
-                                    manufacturer = self.ListOfDevices[key]['Manufacturer']
-                                    manufacturer_spec = "00"
-                                else:
-                                    manufacturer = "0000"
-                                    manufacturer_spec = "00"
-                                direction = "00"
-                                for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
-                                    lenAttr = 1
-                                    attrdirection = "00"
-                                    attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
-                                    minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
-                                    maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
-                                    timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
-                                    chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
-                                    datas =   "{:02n}".format(2) + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                                    datas +=  "{:02n}".format(lenAttr) + attr + attrdirection + attrType + minInter + maxInter + timeOut + chgFlag
-                                    Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s " %(key, cluster, attr) )
-                                    sendZigateCmd(self, "0120", datas )
-        
+        if key != 'e85f': continue
+        if 'PowerSource' in self.ListOfDevices[key]:
+            if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
+        else: continue
+
+        for Ep in self.ListOfDevices[key]['Ep']:
+            clusterList = z_tools.getClusterListforEP( self, key, Ep )
+            for cluster in clusterList:
+                if cluster in ATTRIBUTESbyCLUSTERS:
+                    bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    if 'Manufacturer' in self.ListOfDevices[key]:
+                        manufacturer = self.ListOfDevices[key]['Manufacturer']
+                        manufacturer_spec = "00"
+                    else:
+                        manufacturer = "0000"
+                        manufacturer_spec = "00"
+                    direction = "00"
+                    addr_mode = "02"
+                    for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
+                        lenAttr = 1
+                        attrdirection = "00"
+                        attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
+                        minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
+                        maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
+                        timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
+                        chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
+                        datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        datas +=  "%02x" %(lenAttr) + attr + attrdirection + attrType + minInter + maxInter + timeOut + chgFlag
+                        Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s / %s " %(key, cluster, attr, datas) )
+                        sendZigateCmd(self, "0120", datas )
     
+def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
+    '''
+    Binding a device/cluster with ....
+    if not destaddr and destep provided, we will assume that we bind this device with the Zigate coordinator
+    '''
+
+    mode = "03"     # IEEE
+    if not destaddr:
+        #destaddr = self.ieee # Let's grab the IEEE of Zigate
+        destaddr = "00158d0001edfac9"
+        destep = "01"
+
+    Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
+    sendZigateCmd(self, "0030", datas , 2)
+
+    return
+
+
+def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
+    '''
+    unbind
+    '''
+
+    return
