@@ -29,6 +29,7 @@ def ZigateConf_light(self,  channel, discover ):
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(z_var.FirmwareVersion) )
     sendZigateCmd(self, "0015","")
 
+    
     ################### ZiGate - discover mode 255 sec Max ##################
     #### Set discover mode only if requested - so != 0                  #####
     if str(discover) != "0":
@@ -37,6 +38,10 @@ def ZigateConf_light(self,  channel, discover ):
         else: 
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
+
+    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
+    sendZigateCmd(self, "0023", "00", 2)
+    sendZigateCmd(self, "0024", "", 2)
 
 def ZigateConf(self, channel, discover ):
 
@@ -307,7 +312,6 @@ def ReadAttributeRequest_0702(self, key):
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
-    listAttributes.append(0x0200) # Instantaneous Demand
     listAttributes.append(0x0400) # Instantaneous Demand
 
     EPin = "01"
