@@ -225,7 +225,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
             if t=="LvlControl" and self.ListOfDevices[NWKID]['Model']!="shutter.Profalux" :  # variateur de luminosite + On/off
                 self.ListOfDevices[NWKID]['Status']="inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=73, Switchtype=7 ).Create()
+                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=73, Switchtype=16 ).Create()
                 ID = Devices[unit].ID
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
@@ -345,37 +345,43 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 sValue=value
                 Domoticz.Debug("MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,nValue,str(sValue),BatteryLevel, SignalLevel)                                
+
             if Dtypename=="Meter" and clusterID == "000c": # kWh
                 nValue=float(value)
                 sValue="%s;%s" %(nValue, nValue)
                 Domoticz.Debug( "MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,0, sValue, BatteryLevel, SignalLevel)                                
+
             if Type == "Temp" :  # temperature
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
-                Domoticz.Debug("MajDomoDevice temp CurrentsValue : " + CurrentsValue)
+                if CurrentsValue == '':
+                    # First time after device creation
+                    CurrentsValue ="0;0;0;0;0"
                 SplitData=CurrentsValue.split(";")
-                # Let's check if there is any adjustement set
-                #value = value + Devices[x].AddjValue2
-                #
                 NewNvalue = 0
                 NewSvalue = ''
-                if Dtypename=="Temp":
+                if Dtypename == "Temp":
                     NewNvalue = value
-                    NewSvalue = "0"
-                elif Dtypename=="Temp+Hum":
+                    NewSvalue = str(value)
+                    UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+
+                elif Dtypename == "Temp+Hum":
                     NewNvalue = 0
                     NewSvalue='%s;%s;%s'    % (value, SplitData[1] , SplitData[2])
-                elif Dtypename=="Temp+Hum+Baro" : #temp+hum+Baro xiaomi
+                    UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+
+                elif Dtypename == "Temp+Hum+Baro" : #temp+hum+Baro xiaomi
                     NewNvalue = 0
-                    NewSvalue='%s;%s;%s;%s;%s' %(value, SplitData[1] , SplitData[2] , \
-                            SplitData[3], SplitData[4])
-                UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+                    NewSvalue='%s;%s;%s;%s;%s' %(value, SplitData[1] , SplitData[2] , SplitData[3], SplitData[4])
+                    UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
             if Type == "Humi":   # humidite
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
-                Domoticz.Debug("MajDomoDevice hum CurrentsValue : " + CurrentsValue)
+                if CurrentsValue == '':
+                    # First time after device creation
+                    CurrentsValue ="0;0;0;0;0"
                 SplitData=CurrentsValue.split(";")
                 NewNvalue = 0
                 NewSvalue = ''
@@ -387,17 +393,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 if Dtypename == "Humi":
                     NewNvalue = value
                     NewSvalue = "0"
+                    UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
+
                 elif Dtypename == "Temp+Hum" : #temp+hum xiaomi
                     NewNvalue = 0
                     NewSvalue='%s;%s;%s'    % (SplitData[0], value , humiStatus)
-                    Domoticz.Debug("MajDomoDevice hum NewSvalue : " + NewSvalue)
-                UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
+                    UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
+
             if Type=="Baro" :  # barometre
-                # Let's check if there is any adjustement set
-                #value = value + Devices[x].AddjValue2
-                #
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
+                if CurrentsValue == '':
+                    # First time after device creation
+                    CurrentsValue ="0;0;0;0;0"
                 SplitData=CurrentsValue.split(";")
                 NewNvalue = 0
                 NewSvalue = ''
@@ -408,14 +416,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 else: Bar_forecast = 1
 
                 if Dtypename == "Baro":
-                    Domoticz.Debug("MajDomoDevice baro CurrentsValue : " + CurrentsValue)
                     NewSvalue='%s;%s' % (value,Bar_forecast)
+                    UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+
                 elif Dtypename == "Temp+Hum+Baro":
-                    NewSvalue='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], \
-                            SplitData[2], value , Bar_forecast)
-
-                UpdateDevice_v2(Devices, x,newNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
-
+                    NewSvalue='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], value , Bar_forecast)
+                    UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
             if Type=="Door" and Dtypename=="Door" :  # Door / Window
                 if value == "01" :
