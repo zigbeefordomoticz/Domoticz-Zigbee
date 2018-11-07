@@ -269,6 +269,10 @@ def processListOfDevices( self , Devices ):
     if z_var.LQI != 0 and z_var.HeartbeatCount > z_var.LQI:
         if z_var.cmdInProgress.qsize()  <= 1:     #  In order to avoid loading the system, we do one more scan only if there is not more than 1 command in progress
             z_LQI.LQIcontinueScan( self )
+
+    if z_var.HeartbeatCount == 2:
+        # Trigger Conifre Reporting to eligeable decices
+        z_output.processConfigureReporting( self )
     
     return True
 

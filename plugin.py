@@ -201,9 +201,6 @@ class BasePlugin:
         if z_var.LQI != 0 :
             z_LQI.LQIdiscovery( self ) 
 
-        # Trigger Conifre Reporting to eligeable decices
-        z_output.processConfigureReporting( self )
-
         return True
 
     def onMessage(self, Connection, Data):

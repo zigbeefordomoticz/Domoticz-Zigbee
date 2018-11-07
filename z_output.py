@@ -20,18 +20,14 @@ import z_tools
 
 def ZigateConf_light(self,  channel, discover ):
 
-    ################### ZiGate - get Firmware version #############
-    # answer is expected on message 8010
-    sendZigateCmd(self, "0010","")
+    sendZigateCmd(self, "0010","") # Get Firmware version
 
-    ################### ZiGate - Request Device List #############
-    # answer is expected on message 8015. Only available since firmware 03.0b
+    sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
+
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(z_var.FirmwareVersion) )
     sendZigateCmd(self, "0015","")
 
     
-    ################### ZiGate - discover mode 255 sec Max ##################
-    #### Set discover mode only if requested - so != 0                  #####
     if str(discover) != "0":
         if str(discover)=="255": 
             Domoticz.Status("Zigate enter in discover mode for ever")
@@ -39,15 +35,17 @@ def ZigateConf_light(self,  channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
 
-    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
-    sendZigateCmd(self, "0023", "00", 2)
-    sendZigateCmd(self, "0024", "", 2)
+    #sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
+    #sendZigateCmd(self, "0023", "00", 2)
+    #sendZigateCmd(self, "0024", "", 2)
 
 def ZigateConf(self, channel, discover ):
 
     ################### ZiGate - get Firmware version #############
     # answer is expected on message 8010
     sendZigateCmd(self, "0010","",2)
+
+    sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
 
     ################### ZiGate - Request Device List #############
     # answer is expected on message 8015. Only available since firmware 03.0b
@@ -377,23 +375,24 @@ def processConfigureReporting( self ):
 
     ATTRIBUTESbyCLUSTERS = {
         # Power Configuration
-        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFF', 'TimeOut':'0000','Change':'01'}}},
-        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0000', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        '000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}},
+        #'0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFF', 'TimeOut':'0000','Change':'01'}}},
+        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        #'0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0000', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
+        #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}},
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'},
                                  '0400': {'DataType': '2a', 'MinInterval':'0010', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
-        if key != 'e85f': continue
+    #    if key != 'e85f': continue
         if 'PowerSource' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
         else: continue
 
         for Ep in self.ListOfDevices[key]['Ep']:
+            if Ep != '09': continue
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ATTRIBUTESbyCLUSTERS:
@@ -417,7 +416,7 @@ def processConfigureReporting( self ):
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(lenAttr) + attr + attrdirection + attrType + minInter + maxInter + timeOut + chgFlag
                         Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s / %s " %(key, cluster, attr, datas) )
-                        sendZigateCmd(self, "0120", datas )
+                        sendZigateCmd(self, "0120", datas , 2)
     
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -428,12 +427,16 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     mode = "03"     # IEEE
     if not destaddr:
         #destaddr = self.ieee # Let's grab the IEEE of Zigate
-        destaddr = "00158d0001edfac9"
-        destep = "01"
+        if self.ZigateIEEE != None and self.ZigateIEEE != '':
+            destaddr = self.ZigateIEEE
+            destep = "01"
+        else:
+            Domoticz.Log("bindDevice - self.ZigateIEEE not yet initialized")
+            return
 
     Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
     datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
-    sendZigateCmd(self, "0030", datas , 2)
+    sendZigateCmd(self, "0030", datas )
 
     return
 
