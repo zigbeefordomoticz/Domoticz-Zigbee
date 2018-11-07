@@ -50,7 +50,7 @@ def decodeAttribute(AttType, Attribute):
 
     if len(Attribute) == 0:
         return
-    Domoticz.Log("decodeAttribute( %s, %s) " %(AttType, Attribute) )
+    Domoticz.Debug("decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     # tested
     if int(AttType,16) == 0x10:    # Boolean
@@ -210,7 +210,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-    Domoticz.Log("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
+    Domoticz.Debug("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
 
     if MsgAttrID == "0000": 
         Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")

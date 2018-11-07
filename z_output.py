@@ -185,7 +185,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
 
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
-    Domoticz.Log("ReadAttributeReq - %s" %( datas) )
+    Domoticz.Debug("ReadAttributeReq - %s" %( datas) )
     sendZigateCmd(self, "0100", datas )
 
 def ReadAttributeRequest_0000(self, key):
