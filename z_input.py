@@ -18,6 +18,7 @@ import z_domoticz
 import z_var
 import z_tools
 import z_status
+import z_output
 import z_readClusters
 import z_LQI
 
@@ -69,17 +70,17 @@ def ZigateRead(self, Devices, Data):
         return
 
     elif str(MsgType)=="8003":  #
-        Domoticz.Log("ZigateRead - MsgType 8003 - Reception Liste des cluster de l'objet : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8003 - Reception Liste des cluster de l'objet : " + Data)
         Decode8003(self, MsgData)
         return
 
     elif str(MsgType)=="8004":  #
-        Domoticz.Log("ZigateRead - MsgType 8004 - Reception Liste des attributs de l'objet : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8004 - Reception Liste des attributs de l'objet : " + Data)
         Decode8004(self, MsgData)
         return
         
     elif str(MsgType)=="8005":  #
-        Domoticz.Log("ZigateRead - MsgType 8005 - Reception Liste des commandes de l'objet : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8005 - Reception Liste des commandes de l'objet : " + Data)
         Decode8005(self, MsgData)
         return
 
@@ -475,8 +476,15 @@ def Decode8003(self, MsgData) : # Device cluster list
     MsgSourceEP=MsgData[0:2]
     MsgProfileID=MsgData[2:6]
     MsgClusterID=MsgData[6:len(MsgData)]
+
+    idx = 0
+    clusterLst = []
+    while idx < len(MsgClusterID):
+        clusterLst.append(MsgClusterID[idx:idx+4] )
+        idx += 4
     
-    Domoticz.Status("ZigateRead - MsgType 8003 - Device Cluster list, EP source : " + MsgSourceEP + " ProfileID : " + MsgProfileID + " Cluster List : " + MsgClusterID)
+    Domoticz.Status("Decode8003 - Device Cluster list, EP source : " + MsgSourceEP + \
+            " ProfileID : " + MsgProfileID + " Cluster List : " + str(clusterLst) )
     return
 
 def Decode8004(self, MsgData) : # Device attribut list
@@ -488,7 +496,14 @@ def Decode8004(self, MsgData) : # Device attribut list
     MsgClusterID=MsgData[6:10]
     MsgAttributList=MsgData[10:len(MsgData)]
     
-    Domoticz.Status("ZigateRead - MsgType 8004 - Device Attribut list, EP source : " + MsgSourceEP + " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Attribut List : " + MsgAttributList)
+    idx = 0
+    attributeLst = []
+    while idx < len(MsgAttributList):
+        attributeLst.append(MsgAttributList[idx:idx+4] )
+        idx += 4
+
+    Domoticz.Status("Decode8004 - Device Attribut list, EP source : " + MsgSourceEP + \
+            " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Attribut List : " + str(attributeLst) )
     return
 
 def Decode8005(self, MsgData) : # Command list
@@ -500,19 +515,30 @@ def Decode8005(self, MsgData) : # Command list
     MsgClusterID=MsgData[6:10]
     MsgCommandList=MsgData[10:len(MsgData)]
     
-    Domoticz.Status("ZigateRead - MsgType 8005 - Command list, EP source : " + MsgSourceEP + " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Command List : " + MsgCommandList)
+    idx = 0
+    commandLst = []
+    while idx < len(MsgCommandList):
+        commandLst.append(MsgCommandList[idx:idx+4] )
+        idx += 4
+
+    Domoticz.Status("Decode8005 - Command list, EP source : " + MsgSourceEP + \
+            " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Command List : " + str( commandLst ))
     return
 
 def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
-
     addr=MsgData[0:4]
     extaddr=MsgData[4:20]
     PanID=MsgData[20:24]
     extPanID=MsgData[24:40]
     Channel=MsgData[40:42]
     Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + str(int(Channel,16)) )
+
+    self.ZigateIEEE = extaddr
+    self.ZigateNWKID = addr
+
+    Domoticz.Log("Decode8009 - Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0" : 
         Domoticz.Status("Decode8009: Network state DOWN ! " )
@@ -587,6 +613,9 @@ def Decode8024(self, MsgData) : # Network joined / formed
     MsgShortAddress=MsgData[2:6]
     MsgExtendedAddress=MsgData[6:22]
     MsgChannel=MsgData[22:24]
+
+    self.ZigateIEEE = MsgExtendedAddress
+    self.ZigateNWKID = MsgShortAddress
     
     Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
     return
@@ -792,47 +821,51 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
     Domoticz.Log("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
-    if int(MsgDataLenght,16)>0 :
-        MsgDataEp=MsgData[10:12]
-        MsgDataProfile=MsgData[12:16]
-        self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
-        if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
-            self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
-        MsgDataDeviceId=MsgData[16:20]
+    if int(MsgDataLenght,16) == 0 : return
 
-        self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
-        if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
-            self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+    MsgDataEp=MsgData[10:12]
+    MsgDataProfile=MsgData[12:16]
 
-        MsgDataBField=MsgData[20:22]
-        MsgDataInClusterCount=MsgData[22:24]
-        Domoticz.Debug("Decode8043 - Reception Simple descriptor response : EP : " + MsgDataEp + ", Profile : " + MsgDataProfile + ", Device Id : " + MsgDataDeviceId + ", Bit Field : " + MsgDataBField)
-        Domoticz.Debug("Decode8043 - Reception Simple descriptor response : In Cluster Count : " + MsgDataInClusterCount)
-        i=1
-        if int(MsgDataInClusterCount,16)>0 :
-            while i <= int(MsgDataInClusterCount,16) :
-                MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
-                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
-                    Domoticz.Debug("self.ListOfDevices[MsgDataShAddr] = " +str(self.ListOfDevices[MsgDataShAddr]) )
+    self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
-                Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
-                MsgDataCluster=""
-                i=i+1
-    
-        MsgDataOutClusterCount=MsgData[24+(int(MsgDataInClusterCount,16)*4):26+(int(MsgDataInClusterCount,16)*4)]
-        Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Out Cluster Count : " + MsgDataOutClusterCount)
-        i=1
-        if int(MsgDataOutClusterCount,16)>0 :
-            while i <= int(MsgDataOutClusterCount,16) :
-                MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
-                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+    if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+        self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
-                Domoticz.Debug("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
-                MsgDataCluster=""
-                i=i+1
+    MsgDataDeviceId=MsgData[16:20]
+
+    self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+    if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+        self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+
+    MsgDataBField=MsgData[20:22]
+    MsgDataInClusterCount=MsgData[22:24]
+    Domoticz.Log("Decode8043 - Reception Simple descriptor response : EP : " + MsgDataEp + ", Profile : " + MsgDataProfile + ", Device Id : " + MsgDataDeviceId + ", Bit Field : " + MsgDataBField)
+    Domoticz.Log("Decode8043 - Reception Simple descriptor response : In Cluster Count : " + MsgDataInClusterCount)
+    i=1
+    if int(MsgDataInClusterCount,16)>0 :
+        while i <= int(MsgDataInClusterCount,16) :
+            MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
+            if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
+                self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+
+            Domoticz.Log("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
+            z_output.getListofAttribute( self, MsgDataShAddr, MsgDataEp, MsgDataCluster) 
+            MsgDataCluster=""
+            i=i+1
+
+    MsgDataOutClusterCount=MsgData[24+(int(MsgDataInClusterCount,16)*4):26+(int(MsgDataInClusterCount,16)*4)]
+    Domoticz.Log("Decode8043 - Reception Simple descriptor response : Out Cluster Count : " + MsgDataOutClusterCount)
+    i=1
+    if int(MsgDataOutClusterCount,16)>0 :
+        while i <= int(MsgDataOutClusterCount,16) :
+            MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
+            if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
+                self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+
+            Domoticz.Log("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
+            MsgDataCluster=""
+            i=i+1
 
     if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
         if self.DiscoveryDevices[MsgDataShAddr].get('8043') :
@@ -1148,8 +1181,9 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
-    MsgAttrID=MsgData[12:16]
-    MsgAttType=MsgData[16:20]
+    MsgAttrID = MsgData[12:16]
+    MsgAttrStatus = MsgData[16:18]
+    MsgAttType=MsgData[18:20]
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
@@ -1186,7 +1220,8 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     MsgAttrID=MsgData[12:16]
-    MsgAttType=MsgData[16:20]
+    MsgAttStatus=MsgData[16:18]
+    MsgAttType=MsgData[18:20]
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
