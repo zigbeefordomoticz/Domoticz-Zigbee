@@ -23,34 +23,34 @@ def ZigateConf_light(self,  channel, discover ):
     It is called for normal startup
     '''
 
-    sendZigateCmd(self, "0010","") # Get Firmware version
+    sendZigateCmd(self, "0010", "") # Get Firmware version
 
-    sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
+    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
-    sendZigateCmd(self, "0015","")
+    sendZigateCmd(self, "0015", "")
 
     Domoticz.Status("Set Zigate to Channel %s " %( hex(int(channel))[2:4] ) )
-    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2) # Set Channel
+    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00") # Set Channel
 
     Domoticz.Status("Set Zigate to Coordinator mode")
-    sendZigateCmd(self, "0023", "00", 2) # Set Coordinator
+    sendZigateCmd(self, "0023", "00") # Set Coordinator
 
     Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "", 2)   # Start Network
+    sendZigateCmd(self, "0024", "" , 2 )   # Start Network
 
-    Domoticz.Status("Request Network Scan")
-    sendZigateCmd(self, "0025", "0000" ) # Scan
+    #Domoticz.Status("Request Network Scan")
+    #sendZigateCmd(self, "0025", "" ) # Scan
 
     if str(discover) != "0":
         if str(discover)=="255": 
             Domoticz.Status("Zigate enter in discover mode for ever")
         else: 
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
-        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
+        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
 
-    Domoticz.Log("Request network Status")
-    sendZigateCmd( self, "0014", "0000" ) # Request status
+    #Domoticz.Log("Request network Status")
+    #sendZigateCmd( self, "0014", "", 2 ) # Request status
 
 
 def ZigateConf(self, channel, discover ):
