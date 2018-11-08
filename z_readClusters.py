@@ -55,18 +55,44 @@ def decodeAttribute(AttType, Attribute):
     # tested
     if int(AttType,16) == 0x10:    # Boolean
         return Attribute
-    elif int(AttType,16) == 0x20:  # Uint8
+    elif int(AttType,16) == 0x16:  # 8Bit bitmap
         return int(Attribute, 16 )
-    elif int(AttType,16) == 0x30:  # 8BitEnum
-        return int(Attribute,16 )
-    elif int(AttType,16)  == 0x28: # int8
+    elif int(AttType,16) == 0x20:  # Uint8 / unsigned char
         return int(Attribute, 16 )
-    elif int(AttType,16)  == 0x31: # 16BitEnum 
-        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
-        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x21:   # 16BitUint
         return str(struct.unpack('H',struct.pack('H',int(Attribute,16)))[0])
+    elif int(AttType,16) == 0x22:   # ZigBee_24BitUint
+            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                    str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
+            return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
+    elif int(AttType,16) == 0x23:   # 32BitUint
+            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                    str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
+            return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
+    elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
+            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                    str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
+            return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
+    elif int(AttType,16)  == 0x28: # int8
+        return int(Attribute, 16 )
+    elif int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
+        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
+    elif int(AttType,16) == 0x2a:   # ZigBee_24BitInt
+            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                    str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
+            return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
+    elif int(AttType,16) == 0x2b:   # 32Bitint
+            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                    str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
+            return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
+    elif int(AttType,16) == 0x2d:   # ZigBee_48Bitint
+            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+                                    str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
+            return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
+    elif int(AttType,16) == 0x30:  # 8BitEnum
+        return int(Attribute,16 )
+    elif int(AttType,16)  == 0x31: # 16BitEnum 
+        return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x39:  # Xiaomi Float
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x42:  # CharacterString
@@ -75,40 +101,6 @@ def decodeAttribute(AttType, Attribute):
         except: 
             decoded = str(Attribute)
         return decoded
-
-    # Not tested yet
-
-    elif int(AttType,16) == 0x23:   # 32BitUint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
-            return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
-
-    elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
-            return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
-
-    elif int(AttType,16) == 0x2b:   # 32Bitint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
-            return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
-
-    elif int(AttType,16) == 0x2d:   # ZigBee_48Bitint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
-            return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
-
-    elif int(AttType,16) == 0x22:   # ZigBee_24BitUint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
-            return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
-
-    elif int(AttType,16) == 0x2a:   # ZigBee_24BitInt
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
-            return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
-
-
     else:
         Domoticz.Log("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
         return Attribute
@@ -300,7 +292,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if value == '' or value is None:
             return value
         if   value == "0001": return 'Take'
-        elif value == "0002": return 'Tilt'
+        elif value == "0002": return 'Tilt' # we will most-likely receive 0x0054 after
         elif value == "0003": return 'Drop'
         return ''
 
@@ -313,12 +305,16 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0101 - Dev: Lock type "  + str(MsgClusterData))
     elif MsgAttrID == "0002":         # Enabled
         Domoticz.Log("ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData))
-    elif MsgAttrID == "0055":         # Movement
-        Domoticz.Log("ReadCluster 0101 - Dev: Movement " + decode_vibr( MsgClusterData ) )
-    elif MsgAttrID == "0503":         # Rotation
-        Domoticz.Log("ReadCluster 0101 - Dev: Rotation "  + str(MsgClusterData))
-    elif MsgAttrID == "0505":         # Unknown
-        Domoticz.Log("ReadCluster 0101 - Dev: Unknown "  + str(MsgClusterData))
+
+    elif MsgAttrID == "0508" or MsgAttrID == "0055" or MsgAttrID == "0503":   # Aqara Vibration
+        Domoticz.Log("ReadCluster 0101 - Aqara Vibration - Attribute: %s" %(MsgAttrID) )
+        if MsgAttType == "21": # Uint16
+            value = decode_vibr( MsgAttrID )
+            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
+        else:
+            Domoticz.Debug("ReadCluster 0101 - Aqara Vibration receiveving unknown command: %s " %(MsgAttrID) )
+        
 
 
 def Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):

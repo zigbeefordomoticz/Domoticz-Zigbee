@@ -195,9 +195,20 @@ def CreateDomoDevice(self, Devices, NWKID) :
 
             if t=="Aqara" or t=="XCube" :  # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status']="inDB"
-                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", "LevelOffHidden": "true", "SelectorStyle": "0"}
+                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation", \
+                        "LevelOffHidden": "true", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                        Unit=unit, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
+                ID = Devices[unit].ID
+                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
+            if t=="Vibration": # Aqara Vibration Sensor v1
+                self.ListOfDevices[NWKID]['Status']="inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Off|Tilt|Vibrate|Free Fall", \
+                        "LevelOffHidden": "false", "SelectorStyle": "0"}
+                unit = FreeUnit(self, Devices)
+                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                        Unit=unit, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
                 ID = Devices[unit].ID
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
@@ -712,6 +723,7 @@ def TypeFromCluster(cluster):
     elif cluster=="0008" : TypeFromCluster="LvlControl"
     elif cluster=="000c" : TypeFromCluster="XCube"
     elif cluster=="0012" : TypeFromCluster="XCube"
+    elif cluster=="0101" : TypeFromCluster="Vibration"
     elif cluster=="0300" : TypeFromCluster="ColorControl"
     elif cluster=="0400" : TypeFromCluster="Lux"
     elif cluster=="0402" : TypeFromCluster="Temp"
