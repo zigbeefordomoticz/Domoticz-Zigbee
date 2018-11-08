@@ -19,6 +19,9 @@ import z_var
 import z_tools
 
 def ZigateConf_light(self,  channel, discover ):
+    '''
+    It is called for normal startup
+    '''
 
     sendZigateCmd(self, "0010","") # Get Firmware version
 
@@ -27,7 +30,18 @@ def ZigateConf_light(self,  channel, discover ):
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(z_var.FirmwareVersion) )
     sendZigateCmd(self, "0015","")
 
-    
+    Domoticz.Status("Set Zigate to Channel %s " %( hex(int(channel))[2:4] ) )
+    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2) # Set Channel
+
+    Domoticz.Status("Set Zigate to Coordinator mode")
+    sendZigateCmd(self, "0023", "00", 2) # Set Coordinator
+
+    Domoticz.Status("Start network")
+    sendZigateCmd(self, "0024", "", 2)   # Start Network
+
+    Domoticz.Status("Request Network Scan")
+    sendZigateCmd(self, "0025", "0000" ) # Scan
+
     if str(discover) != "0":
         if str(discover)=="255": 
             Domoticz.Status("Zigate enter in discover mode for ever")
@@ -35,11 +49,14 @@ def ZigateConf_light(self,  channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
 
-    #sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
-    #sendZigateCmd(self, "0023", "00", 2)
-    #sendZigateCmd(self, "0024", "", 2)
+    Domoticz.Log("Request network Status")
+    sendZigateCmd( self, "0014", "0000" ) # Request status
+
 
 def ZigateConf(self, channel, discover ):
+    '''
+    Called after Erase
+    '''
 
     ################### ZiGate - get Firmware version #############
     # answer is expected on message 8010
@@ -52,6 +69,15 @@ def ZigateConf(self, channel, discover ):
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(z_var.FirmwareVersion) )
     sendZigateCmd(self, "0015","",2)
 
+    ################### ZiGate - set channel ##################
+    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
+
+    ################### ZiGate - Set Type COORDINATOR #################
+    sendZigateCmd(self, "0023","00", 2)
+    
+    ################### ZiGate - start network ##################
+    sendZigateCmd(self, "0024","", 2)
+
     ################### ZiGate - discover mode 255 sec Max ##################
     #### Set discover mode only if requested - so != 0                  #####
     if str(discover) != "0":
@@ -61,14 +87,6 @@ def ZigateConf(self, channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
 
-    ################### ZiGate - set channel ##################
-    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
-
-    ################### ZiGate - Set Type COORDINATOR #################
-    sendZigateCmd(self, "0023","00", 2)
-    
-    ################### ZiGate - start network ##################
-    sendZigateCmd(self, "0024","", 2)
         
 def sendZigateCmd(self, cmd,datas, _weight=1 ):
     def ZigateEncode(Data):  # ajoute le transcodage
