@@ -7,7 +7,13 @@
 - [Issues] Able to manage 2 Zigates on the same Domoticz instance. The DeviceList file will be identified by the HardwareID (plugin instance in Domoticz)
 - [Technical] Decode Device node descriptors information like Manufacturer, Power Source, Response When Idle ....
 - [Technical] Manage Leave message from device
-- [Hardware| Aqara Wall Switch LN (Double) Aqara 230 double switch, double fire switch (QBKG12LM))
+- [Hardware] Aqara Wall Switch LN (Double) Aqara 230 double switch, double fire switch (QBKG12LM))
+- [Hardware] Aqara Motion sensor / Vibration sensor
+- [Technical] Network Topology report based on LQI request. 
+- [Technical] Better management of Temp/Hum/Baro sensor with very basic forcast and Air quality
+- [Technical] Randomize the time when Read Attribute Req will be sent. This will distribute the load of those recurring tasks.
+- [Technical] Implementation of Configure Reporting
+- [Technical] Implementation of bind and unbind commands ( needed for Configure reporting)
 
 ## xx mmmmmmmm  2018 - beta-3.1.0
 
