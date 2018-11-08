@@ -132,11 +132,11 @@ def ReadCluster(self, Devices, MsgData):
 
 
 
-    if MsgAttrStatus != "00":
-        Domoticz.Log("ReadCluster - Status error : %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
-        if MsgAttrStatus == "86":
-                Domoticz.Log("ReadCluster - the cluster is not activated on the device")
-        return
+    #if MsgAttrStatus != "00":
+    #    Domoticz.Log("ReadCluster - Status error : %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+    #    if MsgAttrStatus == "86":
+    #            Domoticz.Log("ReadCluster - the cluster is not activated on the device")
+    #    return
 
     if z_tools.DeviceExist(self, MsgSrcAddr) == False:
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
@@ -162,6 +162,8 @@ def ReadCluster(self, Devices, MsgData):
 
         
     if   MsgClusterId=="0000": Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
+            MsgAttType, MsgAttSize, MsgClusterData )
+    elif MsgClusterId=="0001": Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0006": Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
@@ -193,6 +195,19 @@ def ReadCluster(self, Devices, MsgData):
         Domoticz.Error("ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
         Domoticz.Error("                                 MsgAttrId = " + MsgAttrID + " MsgAttType = " + MsgAttType )
         Domoticz.Error("                                 MsgAttSize = " + MsgAttSize + " MsgClusterData = " + MsgClusterData )
+
+def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+
+    value = decodAttribute( MsgAttType, MsgClusterData)
+    if MsgAttrID == "0000": # Voltage
+        Domoticz.Log("readCluster 0001 - Voltage: %s " %(value) )
+
+    elif MsgAttrID == "0010": # Voltage
+        Domoticz.Log("readCluster 0001 - Battery Voltage: %s " %(value) )
+
+    elif MsgAttrID == "0020": # Battery %
+        Domoticz.Log("readCluster 0001 - Battery %: %s " %(value) )
 
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
