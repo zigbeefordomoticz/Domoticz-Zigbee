@@ -16,6 +16,7 @@ Either the information is coming from one of the plugin user (through direct com
 | Salus | SP600 |Plug, Power meter| Can switch on/off the plug | power meter need to be Dev | 3.1.0 |
 | Xiaomi Aqara | Human Motion Sensor | Human Motion Sensor | Switch turns on when a movement is detected | Lux sensor included doesn't work on master - report false values - To be tested in developement branch | 2.4.0 |
 | Xiaomi Aqara | Temperature Humidity Pressure Sensor | Temp + Humidity + Barometer | | Fully operationnal | 2.4.0 |
+| Xiaomi Aqara | Vibration sensor | Selector Switch Take, Tilt, Move, Drop | | Under developement | dev |
 | Xiaomi Aqara | Water sensor | Water sensor | Sensor turns on when it is under water | Fully operationnal | 2.4.0 |
 | Xiaomi Aqara | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.4.0 |
 | Xiaomi Aqara | WXKG01LM (86sw1) | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | 3.1.0 |
