@@ -6,7 +6,6 @@
     Description: All global variables
 
 """
-FirmwareVersion = ''        # Firmware version , initialized at start by requesting the firmware version of Ziate
 HeartbeatCount = 0        
 ReqRcv = ''
 ZigateConn = ''

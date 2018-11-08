@@ -27,7 +27,7 @@ def ZigateConf_light(self,  channel, discover ):
 
     sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
 
-    Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(z_var.FirmwareVersion) )
+    Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
     sendZigateCmd(self, "0015","")
 
     Domoticz.Status("Set Zigate to Channel %s " %( hex(int(channel))[2:4] ) )
@@ -66,7 +66,7 @@ def ZigateConf(self, channel, discover ):
 
     ################### ZiGate - Request Device List #############
     # answer is expected on message 8015. Only available since firmware 03.0b
-    Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(z_var.FirmwareVersion) )
+    Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
     sendZigateCmd(self, "0015","",2)
 
     ################### ZiGate - set channel ##################

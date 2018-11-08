@@ -72,6 +72,7 @@ class BasePlugin:
         self.HBcount=0
         self.ZigateIEEE = None       # Zigate IEEE
         self.ZigateNWKID = None       # Zigate NWKID
+        self.FirmwareVersion = None
         z_var.cmdInProgress = queue.Queue()
 
         self.stats = {}
@@ -289,7 +290,7 @@ class BasePlugin:
         ## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
         z_var.HeartbeatCount = z_var.HeartbeatCount + 1
 
-        if str(z_var.FirmwareVersion) == "030d" :
+        if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
             if (z_var.HeartbeatCount % 90 ) == 0 :
                 Domoticz.Debug("request Network Status")
                 z_output.sendZigateCmd(self, "0009","")

@@ -560,7 +560,7 @@ def Decode8010(self,MsgData) : # Reception Version list
     except :
         Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
     else :
-        z_var.FirmwareVersion = InstaVersNum
+         self.FirmwareVersion = str(InstaVersNum)
 
     return
 
