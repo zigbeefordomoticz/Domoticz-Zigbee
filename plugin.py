@@ -87,6 +87,8 @@ class BasePlugin:
         self.stats['clusters'] = 0
         self.stats['ok_status'] = 0
         self.stats['ko_status'] = 0
+        self.stats['crc_error'] = 0
+        self.stats['frame_error'] = 0
         self.stats['start_time'] = time.time()
 
         return
@@ -173,12 +175,14 @@ class BasePlugin:
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
         Domoticz.Status("onStop called")
         Domoticz.Status("Statistics on message")
-        Domoticz.Status("   Operating time      : "+ str(int(time.time() - self.stats['start_time'])) + " seconds" )
-        Domoticz.Status("   Messages sent       : "+ str(self.stats['send']) )
-        Domoticz.Status("   Messages Ack ok     : "+ str(self.stats['ok_status']) )
-        Domoticz.Status("   Messages Ack failed : "+ str(self.stats['ko_status']) )
-        Domoticz.Status("   Messages received   : "+ str(self.stats['received']) )
-        Domoticz.Status("   Messages clusters   : "+ str(self.stats['clusters']) )
+        Domoticz.Status("   Operating time      : %s seconds" %( int(time.time() - self.stats['start_time'])))
+        Domoticz.Status("   Messages sent       : %s" %( self.stats['send']))
+        Domoticz.Status("   Messages Ack ok     : %s" %( self.stats['ok_status']))
+        Domoticz.Status("   Messages Ack failed : %s" %( self.stats['ko_status']))
+        Domoticz.Status("   Messages received   : %s" %( self.stats['received']))
+        Domoticz.Status("   Messages clusters   : %s" %( self.stats['clusters']))
+        Domoticz.Status("   CRC errors          : %s" %( self.stats['clusters']))
+        Domoticz.Status("   Frame lentgh errors : %s" %( self.stats['clusters']))
 
 
     def onDeviceRemoved( self, Unit ) :
@@ -269,6 +273,7 @@ class BasePlugin:
             Domoticz.Debug("onMessage Frame length : " + str(ComputedLength) + " " + str(ReceveidLength) ) # For testing purpose
             if ComputedLength != ReceveidLength :
                 FrameIsKo = 1
+                self.stats['frame_error'] += 1
                 Domoticz.Error("onMessage : Frame size is bad, computed = " + str(ComputedLength) + " received = " + str(ReceveidLength) )
 
             # Compute checksum
@@ -279,6 +284,7 @@ class BasePlugin:
             Domoticz.Debug("onMessage Frame : ComputedChekcum=" + str(ComputedChecksum) + " ReceivedChecksum=" + str(ReceivedChecksum) ) # For testing purpose
             if ComputedChecksum != ReceivedChecksum and z_var.CrcCheck == 1 :
                 FrameIsKo = 1
+                self.stats['crc_error'] += 1
                 Domoticz.Error("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + " received = " + str(ReceivedChecksum) )
 
             AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
