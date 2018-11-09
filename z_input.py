@@ -119,7 +119,7 @@ def ZigateRead(self, Devices, Data):
         
         
     elif str(MsgType)=="8024":  #
-        Domoticz.Log("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8024 - Reception Network joined /formed : " + Data)
         Decode8024(self, MsgData)
         return
 
