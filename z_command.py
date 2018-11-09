@@ -51,11 +51,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     # Determine the possible ClusterType for that Device
     DtypenameList = []
-    if self.ListOfDevices[NWKID].get('ClusterType') :
+    if 'ClusterType' in self.ListOfDevices[NWKID]:
         DtypenameList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
     else :
         for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-            if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+            if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                 for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                     if str(Devices[Unit].ID) == str(key) :
                         Domoticz.Debug("mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  )
@@ -88,14 +88,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     EPin="01"
     EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
     # We have now the Dtypename, let's look for the corresponding EP
-    if self.ListOfDevices[NWKID].get('ClusterType') :
+    if 'ClusterType' in self.ListOfDevices[NWKID]:
         for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
             if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
                 EPout=tmpEp
     else :
         for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
             if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-                if self.ListOfDevices[NWKID]['Ep'][tmpEp].get('ClusterType') :
+                if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                         if str(Devices[Unit].ID) == str(key) :
                             Domoticz.Debug("mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) )

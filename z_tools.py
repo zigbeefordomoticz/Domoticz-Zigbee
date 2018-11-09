@@ -50,7 +50,7 @@ def getEPforClusterType( self, NWKID, ClusterType ) :
 
     EPlist = []
     for EPout in self.ListOfDevices[NWKID]['Ep'] :
-        if self.ListOfDevices[NWKID]['Ep'][EPout].get('ClusterType') :
+        if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][EPout]:
             for key in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
                 if self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key].find(ClusterType) >= 0 :
                     EPlist.append(str(EPout))
@@ -148,7 +148,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
         key = self.IEEE2NWK[IEEE]
         ID = Devices[Unit].ID
 
-        if self.ListOfDevices[key].get('ClusterType') :               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
+        if 'ClusterTye' in self.ListOfDevices[key]:               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
             if  str(ID) in self.ListOfDevices[key]['ClusterType']  :
                 Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in "+str(self.ListOfDevices[key]['ClusterType']) )
                 del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
@@ -156,7 +156,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             for tmpEp in self.ListOfDevices[key]['Ep'] : 
                 Domoticz.Log("removeDeviceInList - searching Ep " +str(tmpEp) )
                 # Search this DeviceID in ClusterType
-                if self.ListOfDevices[key]['Ep'][tmpEp].get('ClusterType') :
+                if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
                     Domoticz.Log("removeDeviceInList - searching ClusterType " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
                     if str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] :
                         Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
@@ -164,10 +164,10 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
 
         # Finaly let's see if there is any Devices left in this .
         emptyCT = 1
-        if self.ListOfDevices[key].get('ClusterType') : # Empty or Doesn't exist
+        if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
             emptyCT = 0
         for tmpEp in self.ListOfDevices[key]['Ep'] : 
-            if self.ListOfDevices[key]['Ep'][tmpEp].get('ClusterType') :
+            if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
                 emptyCT = 0
         
         if emptyCT == 1 :     # There is still something in the ClusterType either Global or at Ep level
@@ -276,7 +276,7 @@ def updSQN( self, key, newSQN) :
     Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
 
     if self.ListOfDevices[key]['MacCapa'] != '8e' :         # So far we have a good understanding on how SQN is managed for battery powered devices
-        if self.ListOfDevices[key].get('SQN') :
+        if 'SQN' in self.ListOfDevices[key]:
             oldSQN = self.ListOfDevices[key]['SQN']
         else :
             oldSQN='00'
@@ -327,7 +327,7 @@ def getListofClusterbyModel( self, Model , InOut ) :
         return ''
 
     if Model in self.DeviceConf :
-        if self.DeviceConf[Model].get(InOut):
+        if InOut in self.DeviceConf[Model]:
             for ep in self.DeviceConf[Model][InOut] :
                 seen = ''
                 for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
@@ -353,7 +353,7 @@ def getListofTypebyModel( self, Model ) :
     EpType = list()
     if Model in self.DeviceConf :
         for ep in self.DeviceConf[Model]['Epin'] :
-            if self.DeviceConf[Model]['Epin'][ep].get('Type') :
+            if 'Type' in self.DeviceConf[Model]['Epin'][ep]:
                 EpinType = ( ep, getListofType( self.DeviceConf[Model]['Epin'][ep]['Type']) )
                 EpType.append(EpinType)
     return EpType
