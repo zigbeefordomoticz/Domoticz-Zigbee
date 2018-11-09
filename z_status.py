@@ -11,7 +11,12 @@ def DisplayStatusCode( StatusCode ) :
     # As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
 
     StatusMsg=""
-    if str(StatusCode)=="00" :   StatusMsg="Success"
+    if str(StatusCode) =="00" :   StatusMsg="Success"
+    elif str(StatusCode) == "01" : StatusMsg ="Incorrect Parameters"
+    elif str(StatusCode) == "02" : StatusMsg ="Unhandled Command"
+    elif str(StatusCode) == "03" : StatusMsg ="Command Failed"
+    elif str(StatusCode) == "04" : StatusMsg ="Busy"
+    elif str(StatusCode) == "05" : StatusMsg ="Stack Already Started"
     
 #NWK CODES    
     elif str(StatusCode)=="c1" : StatusMsg="An invalid or out-of-range parameter has been passed"
