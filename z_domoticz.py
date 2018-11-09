@@ -339,7 +339,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
             if Dtypename == "" :    # No match with ClusterType
                 continue
 
-            Domoticz.Log("MajDomoDevice - Dtypename: %s , Type: %s" %(Dtypename, Type))
+            Domoticz.Debug("MajDomoDevice - Dtypename: %s , Type: %s" %(Dtypename, Type))
 
             if self.ListOfDevices[NWKID]['RSSI'] != 0 :
                 SignalLevel = self.ListOfDevices[NWKID]['RSSI']
