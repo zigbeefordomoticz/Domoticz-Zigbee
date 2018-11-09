@@ -31,18 +31,19 @@ def processKnownDevices( self, NWKID ):
         if  'PowerSource' in self.ListOfDevices[NWKID]:        # Let's check first that the field exist, if not it will be requested at Heartbeat == 12 (see above)
             if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':    #  Only for device receiving req on idle
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
-                    if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Metering
-                        z_output.ReadAttributeRequest_0702(self, NWKID )
-                    if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
-                        z_output.ReadAttributeRequest_0008(self, NWKID )
-                    if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
-                        z_output.ReadAttributeRequest_000C(self, NWKID )
-                    if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
-                        z_output.ReadAttributeRequest_0006(self, NWKID )
+                    #if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Metering
+                    #    z_output.ReadAttributeRequest_0702(self, NWKID )
+                    #if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
+                    #    z_output.ReadAttributeRequest_0008(self, NWKID )
+                    #if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
+                    #    z_output.ReadAttributeRequest_000C(self, NWKID )
+                    #if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
+                    #    z_output.ReadAttributeRequest_0006(self, NWKID )
                     #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
                     #    z_output.ReadAttributeRequest_0001(self, NWKID )
                     #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
                     #    z_output.ReadAttributeRequest_0300(self, NWKID )
+                    pass
 
     
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):

@@ -384,18 +384,22 @@ def processConfigureReporting( self ):
     '''
 
     ATTRIBUTESbyCLUSTERS = {
-            # 0xFFFF - 18 heurs
+            # 0xFFFF sable reporting-
             # 0x0E10 - 3600s A hour
             # 0x0384 - 15'
             # 0x012C - 5'
-        #'0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0001','Change':'01'}}},
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}}
+            # 0x003C - 1'
+        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0BB8', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
+                                 #'0200': {'DataType': '18', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
+                                 #'0301': {'DataType': '22', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
+                                 #'0302': {'DataType': '22', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
+                                 '0400': {'DataType': '2a', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}}
         }
 
     for key in self.ListOfDevices:
@@ -420,7 +424,7 @@ def processConfigureReporting( self ):
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ATTRIBUTESbyCLUSTERS:
-                    bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    # bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
                         lenAttr = 1
                         attrdirection = "00"
@@ -433,7 +437,7 @@ def processConfigureReporting( self ):
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(1) + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
 
-                        Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s / %s " %(key, cluster, attr, datas) )
+                        Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas , 2)
     
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
