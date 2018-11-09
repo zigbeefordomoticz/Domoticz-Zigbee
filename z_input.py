@@ -283,7 +283,7 @@ def ZigateRead(self, Devices, Data):
         return
 
     elif str(MsgType)=="8120":  #
-        Domoticz.Log("ZigateRead - MsgType 8120 - Reception Configure reporting response : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8120 - Reception Configure reporting response : " + Data)
         Decode8120( self, MsgData)
         return
 
@@ -696,7 +696,7 @@ def Decode8030(self, MsgData) : # Bind response
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
     
-    Domoticz.Log("ZigateRead - MsgType 8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Log("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, MsgData) : # Unbind response
