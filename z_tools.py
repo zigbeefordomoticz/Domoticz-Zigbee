@@ -272,6 +272,9 @@ def updSQN( self, key, newSQN) :
     except:
         return
 
+    if newSQN == '' or newSQN is None:
+            return
+
     # For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
     Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
 
@@ -280,6 +283,7 @@ def updSQN( self, key, newSQN) :
             oldSQN = self.ListOfDevices[key]['SQN']
         else :
             oldSQN='00'
+
 
         if int(oldSQN,16) != int(newSQN,16) :
             Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
