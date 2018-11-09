@@ -199,7 +199,7 @@ def ReadCluster(self, Devices, MsgData):
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
 
-    value = decodAttribute( MsgAttType, MsgClusterData)
+    value = decodeAttribute( MsgAttType, MsgClusterData)
     if MsgAttrID == "0000": # Voltage
         Domoticz.Log("readCluster 0001 - Voltage: %s " %(value) )
 
