@@ -25,7 +25,7 @@ def ZigateConf_light(self,  channel, discover ):
     '''
     sendZigateCmd(self, "0010", "") # Get Firmware version
 
-    Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
+    Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
     sendZigateCmd(self, "0015", "")
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
@@ -40,7 +40,7 @@ def ZigateConf_light(self,  channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
 
-    Domoticz.Log("Request network Status")
+    Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "", 2 ) # Request status
 
 
@@ -65,7 +65,7 @@ def ZigateConf(self, channel, discover ):
 
     ################### ZiGate - Request Device List #############
     # answer is expected on message 8015. Only available since firmware 03.0b
-    Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
+    Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
     sendZigateCmd(self, "0015","",2)
 
     ################### ZiGate - discover mode 255 sec Max ##################
@@ -77,7 +77,7 @@ def ZigateConf(self, channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
 
-    Domoticz.Log("Request network Status")
+    Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "", 2 ) # Request status
         
 def sendZigateCmd(self, cmd,datas, _weight=1 ):
@@ -160,7 +160,7 @@ def sendZigateCmd(self, cmd,datas, _weight=1 ):
         Domoticz.Debug("sendZigateCmd - Command in queue: > 30 - queue is: " + str( z_var.cmdInProgress.qsize() ) )
         Domoticz.Debug("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
-    Domoticz.Log("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
+    Domoticz.Debug("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
     if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
         z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
@@ -384,15 +384,14 @@ def processConfigureReporting( self ):
     '''
 
     ATTRIBUTESbyCLUSTERS = {
-        # Power Configuration
         #'0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFF', 'TimeOut':'0000','Change':'01'}}},
         #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'FF'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
         #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
         #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
         #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}},
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'FF'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'FF'}}}
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'},
+                                 '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
@@ -401,10 +400,12 @@ def processConfigureReporting( self ):
         else: continue
 
         # Checking if the Manufacturer accept Configure Reporting
-        if 'Manufacturer' in self.ListOfDevices[key]:   
-            if self.ListOfDevices[key]['Manufacturer'] == '115f' or self.ListOfDevices[key]['Manufacturer'] == '1037' or self.ListOfDevices[key]['Manufacturer'] == '1110':  
-                continue
-        else: continue
+        #if 'Manufacturer' in self.ListOfDevices[key]:   
+        #    if self.ListOfDevices[key]['Manufacturer'] == '115f' \
+        #            or self.ListOfDevices[key]['Manufacturer'] == '1037' \
+        #            or self.ListOfDevices[key]['Manufacturer'] == '1110':  
+        #        continue
+        #else: continue
         manufacturer = self.ListOfDevices[key]['Manufacturer']
         manufacturer = "0000"
         manufacturer_spec = "00"
@@ -427,6 +428,7 @@ def processConfigureReporting( self ):
 
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(0) + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+                        #datas +=  "%02x" %(lenAttr) + attr + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
 
                         Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s / %s " %(key, cluster, attr, datas) )
                         sendZigateCmd(self, "0120", datas , 2)
@@ -444,10 +446,10 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             destaddr = self.ZigateIEEE
             destep = "01"
         else:
-            Domoticz.Log("bindDevice - self.ZigateIEEE not yet initialized")
+            Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
             return
 
-    Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    Domoticz.Debug("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
     datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
     sendZigateCmd(self, "0030", datas )
 
