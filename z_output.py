@@ -389,14 +389,14 @@ def processConfigureReporting( self ):
             # 0x0384 - 15'
             # 0x012C - 5'
             # 0x003C - 1'
-        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0BB8', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'}}},
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}},
         '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
-                                 #'0200': {'DataType': '18', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
+                                 '0200': {'DataType': '18', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
                                  #'0301': {'DataType': '22', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
                                  #'0302': {'DataType': '22', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
                                  '0400': {'DataType': '2a', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}}
@@ -415,7 +415,7 @@ def processConfigureReporting( self ):
         #        continue
         #else: continue
         manufacturer = self.ListOfDevices[key]['Manufacturer']
-        manufacturer = "0000"
+        #manufacturer = "0000"
         manufacturer_spec = "00"
         direction = "00"
         addr_mode = "02"
