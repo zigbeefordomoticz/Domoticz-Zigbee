@@ -18,6 +18,7 @@ import queue
 import z_var
 import z_tools
 
+
 def ZigateConf_light(self,  channel, discover ):
     '''
     It is called for normal startup
@@ -39,8 +40,8 @@ def ZigateConf_light(self,  channel, discover ):
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" , 2 )   # Start Network
 
-    #Domoticz.Status("Request Network Scan")
-    #sendZigateCmd(self, "0025", "" ) # Scan
+    Domoticz.Status("Request Network Scan")
+    sendZigateCmd(self, "0025", "" ) # Scan
 
     if str(discover) != "0":
         if str(discover)=="255": 
@@ -49,8 +50,8 @@ def ZigateConf_light(self,  channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
 
-    #Domoticz.Log("Request network Status")
-    #sendZigateCmd( self, "0014", "", 2 ) # Request status
+    Domoticz.Log("Request network Status")
+    sendZigateCmd( self, "0014", "", 2 ) # Request status
 
 
 def ZigateConf(self, channel, discover ):
