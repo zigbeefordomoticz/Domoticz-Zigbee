@@ -198,14 +198,16 @@ class BasePlugin:
             if Parameters["Mode3"] == "True":
             ################### ZiGate - ErasePD ##################
                 z_output.sendZigateCmd(self, "0012", "", 5)
-                z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
                 Domoticz.Status("Sw reset")
                 sendZigateCmd(self, "0011", "",7 ) # Software Reset
+                z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
                     Domoticz.Status("Sw reset")
                     z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
-                z_output.ZigateConf_light(self, Parameters["Mode5"], Parameters["Mode2"])
+                    z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
+                else:
+                    z_output.ZigateConf_light(self, Parameters["Mode5"], Parameters["Mode2"])
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
