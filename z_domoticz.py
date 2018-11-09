@@ -236,7 +236,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
             if t=="LvlControl" and self.ListOfDevices[NWKID]['Model']!="shutter.Profalux" :  # variateur de luminosite + On/off
                 self.ListOfDevices[NWKID]['Status']="inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=73, Switchtype=16 ).Create()
+                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=73, Switchtype=7 ).Create()
                 ID = Devices[unit].ID
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
@@ -339,7 +339,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
             if Dtypename == "" :    # No match with ClusterType
                 continue
 
-            Domoticz.Debug("MajDomoDevice - Dtypename    = " + str(Dtypename) )
+            Domoticz.Log("MajDomoDevice - Dtypename: %s , Type: %s" %(Dtypename, Type))
 
             if self.ListOfDevices[NWKID]['RSSI'] != 0 :
                 SignalLevel = self.ListOfDevices[NWKID]['RSSI']
@@ -457,7 +457,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     state="Closed"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 
-            if Type==Dtypename=="Switch" : # switch simple
+            if Type==Dtypename=="Switch": # Switch 
                 if value == "01" :
                     state="On"
                 elif value == "00" :
@@ -582,9 +582,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
                     UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
-            if Type==Dtypename=="ColorControl" :
+
+            if Type==Dtypename=="ColorControl"  or \
+                    ( Type == 'Switch' and ( Dtypename == 'ColorControl' or Dtypename == 'LvlControl' ) and clusterID == "0006" ): # Combined 
                 nValue = 2
                 sValue =  round((int(value,16)/255)*100)
+                if clusterID == "0006":     # This is to handle the case where ColorControl is the ingle device 
+                    if int(value,16) == 0 :
+                        nValue = 0
+                        sValue = 0
+                    elif int(value,16) == 1:
+                        nValue = 1
+                        sValue = 100
+
                 Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel, Color_)
 
