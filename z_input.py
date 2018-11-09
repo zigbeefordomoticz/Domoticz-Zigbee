@@ -87,8 +87,8 @@ def ZigateRead(self, Devices, Data):
         return
 
     elif str(MsgType)=="8006":  #
-        Domoticz.Log("ZigateRead - MsgType 8006 - Reception Non factory new restart : " + Data)
-        #Decode8006(self, MsgData)
+        Domoticz.Debug("ZigateRead - MsgType 8006 - Reception Non factory new restart : " + Data)
+        Decode8006(self, MsgData)
         return
 
     elif str(MsgType)=="8007":  #
@@ -527,6 +527,20 @@ def Decode8005(self, MsgData) : # Command list
             " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Command List : " + str( commandLst ))
     return
 
+def Decode8006(self,MsgData) : # Non “Factory new” Restart
+
+    Domoticz.Debug("Decode8006 - MsgData: %s" %(MsgData))
+
+    Status = MsgData[0:2]
+    if MsgData[0:2] == "00":
+        Status = "STARTUP"
+    elif MsgData[0:2] == "02":
+        Status = "NFN_START"
+    elif MsgData[0:2] == "06":
+        Status = "RUNNING"
+
+    Domoticz.Status("Decode8006 - Non 'Factory new' Restart status: %s" %(Status) )
+
 def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
@@ -622,11 +636,18 @@ def Decode8024(self, MsgData) : # Network joined / formed
     if MsgExtendedAddress != '' and MsgShortAddress != '':
         self.ZigateIEEE = MsgExtendedAddress
         self.ZigateNWKID = MsgShortAddress
+
+    if MsgDataStatus == "00": 
+        Status = "Joined existing network"
+    elif MsgDataStatus == "01": 
+        Status = "Formed new network"
+    else: 
+        Status = z_status.DisplayStatusCode( MsgDataStatus )
     
     Domoticz.Status("Decode8024 - Network joined / formed - IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
-            %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus )) )
+            %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
+
     #Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
-    return
 
 def Decode8028(self, MsgData) : # Authenticate response
     MsgLen=len(MsgData)
