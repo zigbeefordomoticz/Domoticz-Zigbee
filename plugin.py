@@ -17,6 +17,12 @@
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
         <param field="Mode5" label="Channel " width="50px" required="true" default="11" />
+        <param field="Mode4" label="Software Reset" width="75px" required="true" default="False" >
+            <options>
+                <option label="True" value="True"/>
+                <option label="False" value="False" default="true" />
+            </options>
+        </param>
         <param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="254" />
         <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
             <options>
@@ -193,11 +199,18 @@ class BasePlugin:
             ################### ZiGate - ErasePD ##################
                 z_output.sendZigateCmd(self, "0012", "", 5)
                 z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
+                Domoticz.Status("Sw reset")
+                sendZigateCmd(self, "0011", "",7 ) # Software Reset
             else :
+                if Parameters["Mode4"] == "True":
+                    Domoticz.Status("Sw reset")
+                    z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
                 z_output.ZigateConf_light(self, Parameters["Mode5"], Parameters["Mode2"])
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
+
+
 
         if z_var.LQI != 0 :
             z_LQI.LQIdiscovery( self ) 
