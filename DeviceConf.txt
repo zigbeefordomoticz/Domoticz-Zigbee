@@ -19,6 +19,7 @@
 'switch.legrand.netamo':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl','ZDeviceID':'0100','ProfileID':'0104'},
 'Ampoule.phillips.hue':{'Ep':{'01':{'0006','0008'}},'Type':'Switch/LvlControl','ProfileID':'a1e0','ZDeviceID':'0061'},
 'plug.Osram':{'Ep':{'03':{'0006'}},'Type':'Plug','ProfileID':'c05e','ZDeviceID':'0010'},
+'TRADFRI bulb GU10 W 400lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0b05':'','1000':'','Type':'LvlControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0100'},
 'TRADFRI bulb E27 CWS opal 600lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0200'},
 'SPE600':{'Ep':{'09':{'0000':'','0001':'','0003':'','0004':'','0005':'','0006':'','0402':'','0702':'','fc01':'','Type':'Plug/Power/Meter'}},'Type':'','ProfileID':'0104','ZDeviceID':'0051'},
 'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl','ProfileID':'0104','ZDeviceID':'0200'},
