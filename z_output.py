@@ -23,25 +23,15 @@ def ZigateConf_light(self,  channel, discover ):
     '''
     It is called for normal startup
     '''
-
     sendZigateCmd(self, "0010", "") # Get Firmware version
-
-    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
     sendZigateCmd(self, "0015", "")
 
-    Domoticz.Status("Set Zigate to Channel %s " %( hex(int(channel))[2:4] ) )
-    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00") # Set Channel
-
-    Domoticz.Status("Set Zigate to Coordinator mode")
-    sendZigateCmd(self, "0023", "00") # Set Coordinator
+    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" , 2 )   # Start Network
-
-    Domoticz.Status("Request Network Scan")
-    sendZigateCmd(self, "0025", "" ) # Scan
 
     if str(discover) != "0":
         if str(discover)=="255": 
@@ -58,10 +48,18 @@ def ZigateConf(self, channel, discover ):
     '''
     Called after Erase
     '''
-
     ################### ZiGate - get Firmware version #############
     # answer is expected on message 8010
-    sendZigateCmd(self, "0010","",2)
+    sendZigateCmd(self, "0010","",1)
+
+    ################### ZiGate - Set Type COORDINATOR #################
+    sendZigateCmd(self, "0023","00", 1)
+
+    ################### ZiGate - set channel ##################
+    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
+
+    ################### ZiGate - start network ##################
+    sendZigateCmd(self, "0024","", 1)
 
     sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
 
@@ -69,15 +67,6 @@ def ZigateConf(self, channel, discover ):
     # answer is expected on message 8015. Only available since firmware 03.0b
     Domoticz.Log("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
     sendZigateCmd(self, "0015","",2)
-
-    ################### ZiGate - set channel ##################
-    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
-
-    ################### ZiGate - Set Type COORDINATOR #################
-    sendZigateCmd(self, "0023","00", 2)
-    
-    ################### ZiGate - start network ##################
-    sendZigateCmd(self, "0024","", 2)
 
     ################### ZiGate - discover mode 255 sec Max ##################
     #### Set discover mode only if requested - so != 0                  #####
@@ -88,6 +77,8 @@ def ZigateConf(self, channel, discover ):
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
         sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
 
+    Domoticz.Log("Request network Status")
+    sendZigateCmd( self, "0014", "", 2 ) # Request status
         
 def sendZigateCmd(self, cmd,datas, _weight=1 ):
     def ZigateEncode(Data):  # ajoute le transcodage
@@ -169,7 +160,7 @@ def sendZigateCmd(self, cmd,datas, _weight=1 ):
         Domoticz.Debug("sendZigateCmd - Command in queue: > 30 - queue is: " + str( z_var.cmdInProgress.qsize() ) )
         Domoticz.Debug("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
-    Domoticz.Debug("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
+    Domoticz.Log("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
 
     if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
         z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
@@ -433,8 +424,9 @@ def processConfigureReporting( self ):
                         maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
                         timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
+
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                        datas +=  "%02x" %(lenAttr) + attr + attrdirection + attrType + minInter + maxInter + timeOut + chgFlag
+                        datas +=  "%02x" %(0) + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
 
                         Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s / %s " %(key, cluster, attr, datas) )
                         sendZigateCmd(self, "0120", datas , 2)
