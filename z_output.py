@@ -384,14 +384,18 @@ def processConfigureReporting( self ):
     '''
 
     ATTRIBUTESbyCLUSTERS = {
-        #'0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFF', 'TimeOut':'0000','Change':'01'}}},
-        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
-        #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0000','Change':'01'}}},
-        #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0300', 'TimeOut':'0001','Change':'01'}}},
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}}
+            # 0xFFFF - 18 heurs
+            # 0x0E10 - 3600s A hour
+            # 0x0384 - 15'
+            # 0x012C - 5'
+        #'0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
+        #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0001','Change':'01'}}},
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'},
+                                 '0400': {'DataType': '2a', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
@@ -427,8 +431,7 @@ def processConfigureReporting( self ):
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
 
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                        datas +=  "%02x" %(0) + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-                        #datas +=  "%02x" %(lenAttr) + attr + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+                        datas +=  "%02x" %(1) + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
 
                         Domoticz.Log("configureReporting - for [%s] - cluster: %s Attribute: %s / %s " %(key, cluster, attr, datas) )
                         sendZigateCmd(self, "0120", datas , 2)
