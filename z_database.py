@@ -102,11 +102,13 @@ def checkListOfDevice2Devices( self, Devices ) :
     for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
         ID = Devices[x].DeviceID
         if str(ID) not in self.IEEE2NWK :
-            Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
-            Domoticz.Debug("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
             if self.FcLOD == 1 :
                 self.IEEE2NWK[str(ID)] = 'ffff'
-            continue
+                Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+                continue
+            else:
+                Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+                Domoticz.Debug("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
 
         NWKID = self.IEEE2NWK[ID]
         if str(NWKID) in self.ListOfDevices :
