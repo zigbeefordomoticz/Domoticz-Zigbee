@@ -351,16 +351,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 
             # Instant Watts. 
             # PowerMeter is for Compatibility , as it was created as a PowerMeter device.
-            if ( Dtypename=="Power" or Dtypename=="PowerMeter") and clusterID == "000c": 
+            #if ( Dtypename=="Power" or Dtypename=="PowerMeter") and clusterID == "000c": 
+            if ( Dtypename=="Power" or Dtypename=="PowerMeter"): 
                 nValue=float(value)
                 sValue=value
-                Domoticz.Debug("MajDomoDevice Power : " + sValue)
+                Domoticz.Log("MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,nValue,str(sValue),BatteryLevel, SignalLevel)                                
 
-            if Dtypename=="Meter" and clusterID == "000c": # kWh
+            #if Dtypename=="Meter" and clusterID == "000c": # kWh
+            if Dtypename=="Meter": # kWh
                 nValue=float(value)
                 sValue="%s;%s" %(nValue, nValue)
-                Domoticz.Debug( "MajDomoDevice Power : " + sValue)
+                Domoticz.Log( "MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,0, sValue, BatteryLevel, SignalLevel)                                
 
             if Type == "Temp" :  # temperature
