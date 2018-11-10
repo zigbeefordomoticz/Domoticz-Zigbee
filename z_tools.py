@@ -278,16 +278,16 @@ def updSQN( self, key, newSQN) :
     # For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
     Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
 
+    if newSQN == '' or newSQN is None or newSQN == {}:
+        return
+
     if self.ListOfDevices[key]['MacCapa'] != '8e' :         # So far we have a good understanding on how SQN is managed for battery powered devices
         if 'SQN' in self.ListOfDevices[key]:
             oldSQN = self.ListOfDevices[key]['SQN']
-            if oldSQN == '':
+            if oldSQN == '' or oldSQN is None or oldSQN == {} :
                 oldSQN='0'
         else :
             oldSQN='00'
-
-        if newSQN == '' or newSQN is None:
-            return
 
         try:
             if int(oldSQN,16) != int(newSQN,16) :

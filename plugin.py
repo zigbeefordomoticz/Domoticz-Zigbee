@@ -79,6 +79,7 @@ class BasePlugin:
         self.ZigateIEEE = None       # Zigate IEEE
         self.ZigateNWKID = None       # Zigate NWKID
         self.FirmwareVersion = None
+        self.FcLOD = None   # Allow to force devices even if they are not in the Plugin Database. Could be usefull after the Firmware update where you have your devices in domoticz
         z_var.cmdInProgress = queue.Queue()
 
         self.stats = {}
@@ -130,6 +131,8 @@ class BasePlugin:
             z_var.logFORMAT = int(self.PluginConf['logFORMAT'],10)
         if  self.PluginConf.get('LQI') :
             z_var.LQI = int(self.PluginConf['LQI'],10)
+        if  self.PluginConf.get('ForcecheckListOfDevice2Devices') :
+            self.FcLOD = int(self.PluginConf['ForcecheckListOfDevice2Devices'],10)
         
         z_var.ReqRcv=bytearray()
 
