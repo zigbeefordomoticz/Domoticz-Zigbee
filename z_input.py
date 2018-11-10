@@ -1314,7 +1314,8 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgClusterId=MsgData[8:12]
     MsgDataStatus=MsgData[12:14]
 
-    Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID : " + MsgClusterId + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
     return
 
 def Decode8140(self, MsgData) :  # Attribute Discovery response
