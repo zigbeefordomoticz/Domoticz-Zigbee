@@ -14,6 +14,9 @@
 - [Technical] Randomize the time when Read Attribute Req will be sent. This will distribute the load of those recurring tasks.
 - [Technical] Implementation of Configure Reporting
 - [Technical] Implementation of bind and unbind commands ( needed for Configure reporting)
+- [Enhacement] Configure Reporting enabled by default on Clsuter 0x0006 , 0x0008, 0x0702
+- [Technical] Implementation of Send Signal to get the Device visible. (if available)
+- [Enhacement] Implement Software Reset of Zigate - Called at startup if enable in the Plugin menu
 
 ## xx mmmmmmmm  2018 - beta-3.1.0
 
