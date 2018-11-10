@@ -425,7 +425,7 @@ def processConfigureReporting( self ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            identifySend( self, key, Ep, 30)
+            #identifySend( self, key, Ep, 30)
 
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
