@@ -411,6 +411,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     NewSvalue='%s;%s;%s'    % (SplitData[0], value , humiStatus)
                     UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
 
+                elif Dtypename == "Temp+Hum+Baro" : #temp+hum+Baro xiaomi
+                    NewNvalue = 0
+                    NewSvalue='%s;%s;%s;%s;%s' %(SplitData[0], value , humiStatus , SplitData[3], SplitData[4])
+                    UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
+
             if Type=="Baro" :  # barometre
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
@@ -580,8 +585,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     sValue =  round((int(value,16)/255)*100)
                     if sValue == 0: 
                         nValue = 0
+                        sValue = 'Off'
                     elif sValue == 100:
                         nValue = 1
+                        sValue = 'On'
                     else:
                         nValue = 2
                     Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
