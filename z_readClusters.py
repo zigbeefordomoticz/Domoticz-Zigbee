@@ -157,7 +157,7 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-    Domoticz.Log("ReadCluster - " +MsgClusterId +"  Saddr: " + str(MsgSrcAddr) + " SrcEp : " + MsgSrcEp +\
+    Domoticz.Debug("ReadCluster - " +MsgClusterId +"  Saddr: " + str(MsgSrcAddr) + " SrcEp : " + MsgSrcEp +\
             " AttrID: " + MsgAttrID + " AttType : " + MsgAttType + " AttSize : " +MsgAttSize +" Attribute : " + str(MsgClusterData) + " Status: " + MsgAttrStatus )
 
         
@@ -217,7 +217,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-    Domoticz.Log("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
+    Domoticz.Debug("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
 
     if MsgAttrID == "0000": 
         Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED")
