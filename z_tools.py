@@ -286,7 +286,7 @@ def updSQN( self, key, newSQN) :
         else :
             oldSQN='00'
 
-        if newSQN == '' or newSQN is Null:
+        if newSQN == '' or newSQN is None:
             return
 
         if int(oldSQN,16) != int(newSQN,16) :
