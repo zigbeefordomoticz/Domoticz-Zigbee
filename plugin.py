@@ -85,6 +85,7 @@ class BasePlugin:
         self.stats['send'] = 0
         self.stats['received'] = 0
         self.stats['clusters'] = 0
+        self.stats['clusters_error'] = 0
         self.stats['ok_status'] = 0
         self.stats['ko_status'] = 0
         self.stats['crc_error'] = 0
@@ -175,14 +176,17 @@ class BasePlugin:
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
         Domoticz.Status("onStop called")
         Domoticz.Status("Statistics on message")
-        Domoticz.Status("   Operating time      : %s seconds" %( int(time.time() - self.stats['start_time'])))
+        Domoticz.Status("Sent:")
         Domoticz.Status("   Messages sent       : %s" %( self.stats['send']))
         Domoticz.Status("   Messages Ack ok     : %s" %( self.stats['ok_status']))
         Domoticz.Status("   Messages Ack failed : %s" %( self.stats['ko_status']))
+        Domoticz.Status("Received:")
         Domoticz.Status("   Messages received   : %s" %( self.stats['received']))
+        Domoticz.Status("   CRC errors          : %s" %( self.stats['crc_error']))
+        Domoticz.Status("   Frame lentgh errors : %s" %( self.stats['frame_error']))
         Domoticz.Status("   Messages clusters   : %s" %( self.stats['clusters']))
-        Domoticz.Status("   CRC errors          : %s" %( self.stats['clusters']))
-        Domoticz.Status("   Frame lentgh errors : %s" %( self.stats['clusters']))
+        Domoticz.Status("   Messages clusters KO: %s" %( self.stats['clusters_error']))
+        Domoticz.Status("Operating time         : %s seconds" %( int(time.time() - self.stats['start_time'])))
 
 
     def onDeviceRemoved( self, Unit ) :
