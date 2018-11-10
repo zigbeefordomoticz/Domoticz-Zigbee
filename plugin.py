@@ -207,7 +207,7 @@ class BasePlugin:
             ################### ZiGate - ErasePD ##################
                 z_output.sendZigateCmd(self, "0012", "", 5)
                 Domoticz.Status("Sw reset")
-                sendZigateCmd(self, "0011", "",7 ) # Software Reset
+                z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
                 z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
