@@ -580,7 +580,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 if str(Devices[x].sValue) == "Off" :
                     # As we do ReadAttributeRequest (or via reporting) we might get an asynchronous information on the current dimmer level.
                     # If the Device is Off, then we keep it off
-                    Domoticz.Log("MajDomoDevice (LvlControl) - " +str(Devices[x].ID) +" is switched off. No update of dimmer")
+                    Domoticz.Debug("MajDomoDevice (LvlControl) - " +str(Devices[x].Name) +" is switched off. No update of dimmer")
                 else :
                     sValue =  round((int(value,16)/255)*100)
                     if sValue == 0: 
@@ -595,8 +595,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
 
-            if Type==Dtypename=="ColorControl"  or \
-                    ( Type == 'Switch' and ( Dtypename == 'ColorControl' or Dtypename == 'LvlControl' ) ): # Combined 
+            if Dtypename == "ColorControl" and \
+                    ( Type == "ColorControl" or Type == 'Switch' or Type == 'LvlControl' ):
                 nValue = 2
                 sValue =  round((int(value,16)/255)*100)
                 if Type == 'Switch':     # This is to handle the case where ColorControl is the ingle device 
