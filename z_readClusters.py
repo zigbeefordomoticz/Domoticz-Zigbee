@@ -116,7 +116,6 @@ def ReadCluster(self, Devices, MsgData):
         Domoticz.Error("ReadCluster - MsgData: '" +str(MsgData) + "'")
         return
 
-    self.stats['clusters'] += 1
 
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
@@ -130,13 +129,11 @@ def ReadCluster(self, Devices, MsgData):
     tmpEp=""
     tmpClusterid=""
 
-
-
-    #if MsgAttrStatus != "00":
-    #    Domoticz.Log("ReadCluster - Status error : %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
-    #    if MsgAttrStatus == "86":
-    #            Domoticz.Log("ReadCluster - the cluster is not activated on the device")
-    #    return
+    self.stats['clusters'] += 1
+    if MsgAttrStatus != "00":
+        Domoticz.Log("ReadCluster - Status error : %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+        self.stats['clusters_error'] += 1
+        return
 
     if z_tools.DeviceExist(self, MsgSrcAddr) == False:
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
@@ -198,16 +195,16 @@ def ReadCluster(self, Devices, MsgData):
 
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-
     value = decodeAttribute( MsgAttType, MsgClusterData)
     if MsgAttrID == "0000": # Voltage
-        Domoticz.Log("readCluster 0001 - Voltage: %s " %(value) )
+        value = round(int(value)/10, 1)
+        Domoticz.Log("readCluster 0001 - Voltage: %s V " %(value) )
 
     elif MsgAttrID == "0010": # Voltage
         Domoticz.Log("readCluster 0001 - Battery Voltage: %s " %(value) )
 
     elif MsgAttrID == "0020": # Battery %
-        Domoticz.Log("readCluster 0001 - Battery %: %s " %(value) )
+        Domoticz.Log("readCluster 0001 - Battery: %s " %(value) )
 
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -542,6 +539,22 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
 
+    elif MsgAttrID == "0000": # ZCL Version
+        Domoticz.Log("ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
+    elif MsgAttrID == "0001": # Application Version
+        Domoticz.Log("ReadCluster - Application version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['App Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "0002": # Stack Version
+        Domoticz.Log("ReadCluster - Stack version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['Stack Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "0003": # Hardware version
+        Domoticz.Log("ReadCluster - 0x0000 - Hardware version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
+    elif MsgAttrID == "0004": # Manufacturer
+        Domoticz.Log("ReadCluster - 0x0000 - Manufacturer: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
@@ -555,14 +568,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
                     self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
 
-    elif MsgAttrID == "0000": # ZCL Version
-        Domoticz.Debug("ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
-    elif MsgAttrID == "0003": # Hardware version
-        Domoticz.Debug("ReadCluster - 0x0000 - Hardware version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
-    elif MsgAttrID == "0004": # Manufacturer
-        Domoticz.Debug("ReadCluster - 0x0000 - Manufacturer: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
     elif MsgAttrID == "0007": # Power Source
-        Domoticz.Debug("ReadCluster - 0x0000 - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        Domoticz.Log("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
     elif MsgAttrID == "0016": # Battery
         Domoticz.Debug("ReadCluster - 0x0000 - Battery: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
     else:
