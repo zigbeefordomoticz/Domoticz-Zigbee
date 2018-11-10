@@ -696,7 +696,10 @@ def Decode8030(self, MsgData) : # Bind response
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
     
-    Domoticz.Log("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    if MsgDataStatus != '00':
+        Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, z_status.DisplayStatusCode(MsgDataStatus)) )
+
+    Domoticz.Debug("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, MsgData) : # Unbind response
@@ -786,7 +789,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     max_buffer=MsgData[28:30]
     bit_field=MsgData[30:34]
 
-    Domoticz.Log("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
+    Domoticz.Debug("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
     mac_capability = int(mac_capability,16)
     AltPAN      =   ( mac_capability & 0x00000001 )
@@ -794,7 +797,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     PowerSource =   ( mac_capability >> 2 ) & 1
     ReceiveonIdle = ( mac_capability >> 3 ) & 1
 
-    Domoticz.Log("Decode8042 - mac_capability = " +str(mac_capability) )
+    Domoticz.Debug("Decode8042 - mac_capability = " +str(mac_capability) )
 
     if DeviceType == 1 : 
         DeviceType = "FFD"
@@ -849,7 +852,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     MsgDataStatus=MsgData[2:4]
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
-    Domoticz.Log("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
+    Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
 
     if int(MsgDataLenght,16) == 0 : return
 
@@ -1226,8 +1229,8 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    Domoticz.Debug("Decode8100 - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " 
-                        + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI: " + MsgRSSI)
+    Domoticz.Debug("Decode8100 - Report Individual Attribute : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
     if ( z_var.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
@@ -1264,8 +1267,8 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    Domoticz.Debug("Decode8102 - Report Individual Attribute response - reception data : " + MsgClusterData + " ClusterID : " 
-                    + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp + " RSSI = " + MsgRSSI )
+    Domoticz.Debug("Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
     if ( z_var.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
@@ -1314,8 +1317,9 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgClusterId=MsgData[8:12]
     MsgDataStatus=MsgData[12:14]
 
-    Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
+    if MsgDataStatus != '00':
+        Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
+                %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
     return
 
 def Decode8140(self, MsgData) :  # Attribute Discovery response
