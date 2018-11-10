@@ -18,6 +18,7 @@ import queue
 import z_var
 import z_tools
 
+import time
 
 def ZigateConf_light(self,  channel, discover ):
     '''
@@ -27,6 +28,10 @@ def ZigateConf_light(self,  channel, discover ):
 
     Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
     sendZigateCmd(self, "0015", "")
+
+    utctime = int(time.time())
+    Domoticz.Log("ZigateConf - seting Time to : %s" %( utctime) )
+    sendZigateCmd(self, "0016", str(utctime) )
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
@@ -205,6 +210,9 @@ def ReadAttributeRequest_0000(self, key):
 
     # General
     listAttributes = []
+    listAttributes.append(0x0001)        # Application Version
+    listAttributes.append(0x0002)        # Stack Version
+    listAttributes.append(0x0003)        # HW Version
     listAttributes.append(0x0005)        # Model Identifier
     listAttributes.append(0x0007)        # Power Source
     listAttributes.append(0x0010)        # Battery
@@ -320,6 +328,9 @@ def ReadAttributeRequest_0702(self, key):
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
+    listAttributes.append(0x0200) # Status
+    listAttributes.append(0x0301) # 
+    listAttributes.append(0x0302) # 
     listAttributes.append(0x0400) # Instantaneous Demand
 
     EPin = "01"
@@ -390,16 +401,16 @@ def processConfigureReporting( self ):
             # 0x012C - 5'
             # 0x003C - 1'
         '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'}}},
-        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}},
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
-                                 '0200': {'DataType': '18', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
-                                 #'0301': {'DataType': '22', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
-                                 #'0302': {'DataType': '22', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}}
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0200': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0301': {'DataType': '22', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0302': {'DataType': '22', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
@@ -407,38 +418,46 @@ def processConfigureReporting( self ):
             if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
         else: continue
 
-        # Checking if the Manufacturer accept Configure Reporting
-        #if 'Manufacturer' in self.ListOfDevices[key]:   
-        #    if self.ListOfDevices[key]['Manufacturer'] == '115f' \
-        #            or self.ListOfDevices[key]['Manufacturer'] == '1037' \
-        #            or self.ListOfDevices[key]['Manufacturer'] == '1110':  
-        #        continue
-        #else: continue
-        manufacturer = self.ListOfDevices[key]['Manufacturer']
-        #manufacturer = "0000"
+        manufacturer = "0000"
+        if 'Manufacturer' in self.ListOfDevices[key]:
+            manufacturer = self.ListOfDevices[key]['Manufacturer']
         manufacturer_spec = "00"
         direction = "00"
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
+            identifySend( self, key, Ep)
+
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ATTRIBUTESbyCLUSTERS:
-                    # bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    #attrDisp = []   # Used only for printing purposes
+                    #attrList = ''
+                    attrLen = 0
                     for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
-                        lenAttr = 1
                         attrdirection = "00"
                         attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
                         minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
                         maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
                         timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
-
+                        attrList = attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+                        #attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+                        attrLen = 1
+                        #attrLen += 1
+                        #attrDisp.append(attr)
+                        #Domoticz.Log("configureReporting - %2d %s " %(attrLen, attrList) )
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                        datas +=  "%02x" %(1) + attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-
+                        datas +=  "%02x" %(attrLen) + attrList
                         Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas , 2)
+
+                    #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                    ##datas +=  "%02x" %(attrLen) + attrList
+                    #Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attrDisp) )
+                    #Domoticz.Log("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
+                    #sendZigateCmd(self, "0120", datas , 2)
     
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -469,3 +488,10 @@ def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
     '''
 
     return
+
+def identifySend( self, nwkid, ep, duration=0):
+
+    datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration) 
+    Domoticz.Log("identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration))
+    Domoticz.Log("identifySend - data sent >%s< " %(datas) )
+    sendZigateCmd(self, "0070", datas )
