@@ -282,7 +282,7 @@ def updSQN( self, key, newSQN) :
         if 'SQN' in self.ListOfDevices[key]:
             oldSQN = self.ListOfDevices[key]['SQN']
             if oldSQN = '' or oldSQN is None:
-                oldSQN='0''
+                oldSQN='0'
         else :
             oldSQN='00'
 
