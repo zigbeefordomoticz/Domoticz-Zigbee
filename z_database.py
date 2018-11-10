@@ -104,6 +104,7 @@ def checkListOfDevice2Devices( self, Devices ) :
         if str(ID) not in self.IEEE2NWK :
             Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
             Domoticz.Debug("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
+            self.IEEE2NWK[str(ID)] = 'ffff'
             continue
 
         NWKID = self.IEEE2NWK[ID]
