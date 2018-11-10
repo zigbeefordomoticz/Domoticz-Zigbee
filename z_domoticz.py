@@ -577,23 +577,28 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     # If the Device is Off, then we keep it off
                     Domoticz.Log("MajDomoDevice (LvlControl) - " +str(Devices[x].ID) +" is switched off. No update of dimmer")
                 else :
-                    nValue = 2
                     sValue =  round((int(value,16)/255)*100)
+                    if sValue == 0: 
+                        nValue = 0
+                    elif sValue == 100:
+                        nValue = 1
+                    else:
+                        nValue = 2
                     Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
                     UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
 
             if Type==Dtypename=="ColorControl"  or \
-                    ( Type == 'Switch' and ( Dtypename == 'ColorControl' or Dtypename == 'LvlControl' ) and clusterID == "0006" ): # Combined 
+                    ( Type == 'Switch' and ( Dtypename == 'ColorControl' or Dtypename == 'LvlControl' ) ): # Combined 
                 nValue = 2
                 sValue =  round((int(value,16)/255)*100)
-                if clusterID == "0006":     # This is to handle the case where ColorControl is the ingle device 
+                if Type == 'Switch':     # This is to handle the case where ColorControl is the ingle device 
                     if int(value,16) == 0 :
                         nValue = 0
-                        sValue = 0
+                        sValue = 'Off'
                     elif int(value,16) == 1:
                         nValue = 1
-                        sValue = 100
+                        sValue = 'On'
 
                 Domoticz.Debug("MajDomoDevice ColorControl - DvID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Value : " + str(sValue) + " sValue : " + str(Devices[x].sValue) )
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel, Color_)
