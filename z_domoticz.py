@@ -290,8 +290,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
     DeviceID_IEEE= self.ListOfDevices[NWKID]['IEEE']
     Domoticz.Debug("MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(clusterID)  + " - Value : " + str(value) + " - Hue : " + str(Color_))
 
-    Type=TypeFromCluster(clusterID)
-    Domoticz.Debug("MajDomoDevice - Type = " + str(Type) )
+    ClusterType=TypeFromCluster(clusterID)
+    Domoticz.Debug("MajDomoDevice - Type = " + str(ClusterType) )
 
     x=0
     for x in Devices:
@@ -299,13 +299,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
             Domoticz.Debug("MajDomoDevice - NWKID = " +str(NWKID) + " IEEE = " +str(DeviceID_IEEE) + " Unit = " +str(Devices[x].ID) )
     
             ID = Devices[x].ID
-            Dtypename = ""
+            DeviceType = ""
             Domoticz.Debug("MajDomoDevice - " +str(self.ListOfDevices[NWKID]['Ep'][Ep]) )
         
             if 'ClusterType' in self.ListOfDevices[NWKID]:
                 # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
                 Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['ClusterType']) + " for : " +str(ID) )
-                Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
+                DeviceType=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
             else :
                 # Are we in a situation with one Devices whatever Eps are ?
                 # To do that, check there is only 1 ClusterType even if several EPs
@@ -323,7 +323,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     # ptEP is be the Only  EP where we have found ClusterType
                     for key in self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'] :
                         if str(ID) == str(key) :
-                            Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
+                            DeviceType=str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
                 
                 else :
                     Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]) + " for : " +str(ID) )
@@ -331,15 +331,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                         Domoticz.Debug("MajDomoDevice - search ClusterType in : " +str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']) + " for : " +str(ID) )
                         for key in self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'] :
                             if str(ID) == str(key) :
-                                Dtypename=str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'][key])
+                                DeviceType=str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'][key])
                     else :
                         Domoticz.Log("MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !")
                         Domoticz.Log("MajDomoDevice - Network Id : " +(NWKID) + " Ep : " +str(ptEp) + " Expected Cluster is " +str(clusterID) )
                         continue
-            if Dtypename == "" :    # No match with ClusterType
+            if DeviceType == "" :    # No match with ClusterType
                 continue
 
-            Domoticz.Debug("MajDomoDevice - Dtypename: %s , Type: %s" %(Dtypename, Type))
+            Domoticz.Debug("MajDomoDevice - DeviceType: %s , ClusterType: %s" %(DeviceType, ClusterType))
 
             if self.ListOfDevices[NWKID]['RSSI'] != 0 :
                 SignalLevel = self.ListOfDevices[NWKID]['RSSI']
@@ -351,21 +351,21 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 
             # Instant Watts. 
             # PowerMeter is for Compatibility , as it was created as a PowerMeter device.
-            #if ( Dtypename=="Power" or Dtypename=="PowerMeter") and clusterID == "000c": 
-            if ( Dtypename=="Power" or Dtypename=="PowerMeter"): 
+            #if ( DeviceType=="Power" or DeviceType=="PowerMeter") and clusterID == "000c": 
+            if ( DeviceType=="Power" or DeviceType=="PowerMeter"): 
                 nValue=float(value)
                 sValue=value
                 Domoticz.Log("MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,nValue,str(sValue),BatteryLevel, SignalLevel)                                
 
-            #if Dtypename=="Meter" and clusterID == "000c": # kWh
-            if Dtypename=="Meter": # kWh
+            #if DeviceType=="Meter" and clusterID == "000c": # kWh
+            if DeviceType=="Meter": # kWh
                 nValue=float(value)
                 sValue="%s;%s" %(nValue, nValue)
                 Domoticz.Log( "MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,0, sValue, BatteryLevel, SignalLevel)                                
 
-            if Type == "Temp" :  # temperature
+            if ClusterType == "Temp" :  # temperature
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
                 if CurrentsValue == '':
@@ -374,22 +374,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 SplitData=CurrentsValue.split(";")
                 NewNvalue = 0
                 NewSvalue = ''
-                if Dtypename == "Temp":
+                if DeviceType == "Temp":
                     NewNvalue = value
                     NewSvalue = str(value)
                     UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
-                elif Dtypename == "Temp+Hum":
+                elif DeviceType == "Temp+Hum":
                     NewNvalue = 0
                     NewSvalue='%s;%s;%s'    % (value, SplitData[1] , SplitData[2])
                     UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
-                elif Dtypename == "Temp+Hum+Baro" : #temp+hum+Baro xiaomi
+                elif DeviceType == "Temp+Hum+Baro" : #temp+hum+Baro xiaomi
                     NewNvalue = 0
                     NewSvalue='%s;%s;%s;%s;%s' %(value, SplitData[1] , SplitData[2] , SplitData[3], SplitData[4])
                     UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
-            if Type == "Humi":   # humidite
+            if ClusterType == "Humi":   # humidite
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
                 if CurrentsValue == '':
@@ -403,22 +403,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 elif value >= 40 and value < 70: humiStatus = 1
                 else: humiStatus = 3
 
-                if Dtypename == "Humi":
+                if DeviceType == "Humi":
                     NewNvalue = value
                     NewSvalue = "0"
                     UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
 
-                elif Dtypename == "Temp+Hum" : #temp+hum xiaomi
+                elif DeviceType == "Temp+Hum" : #temp+hum xiaomi
                     NewNvalue = 0
                     NewSvalue='%s;%s;%s'    % (SplitData[0], value , humiStatus)
                     UpdateDevice_v2(Devices, x,NewNvalue ,str(NewSvalue),BatteryLevel, SignalLevel)                                
 
-                elif Dtypename == "Temp+Hum+Baro" : #temp+hum+Baro xiaomi
+                elif DeviceType == "Temp+Hum+Baro" : #temp+hum+Baro xiaomi
                     NewNvalue = 0
                     NewSvalue='%s;%s;%s;%s;%s' %(SplitData[0], value , humiStatus , SplitData[3], SplitData[4])
                     UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
-            if Type=="Baro" :  # barometre
+            if ClusterType=="Baro" :  # barometre
                 CurrentnValue=Devices[x].nValue
                 CurrentsValue=Devices[x].sValue
                 if CurrentsValue == '':
@@ -433,15 +433,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 elif value < 1030: Bar_forecast = 2
                 else: Bar_forecast = 1
 
-                if Dtypename == "Baro":
+                if DeviceType == "Baro":
                     NewSvalue='%s;%s' % (value,Bar_forecast)
                     UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
-                elif Dtypename == "Temp+Hum+Baro":
+                elif DeviceType == "Temp+Hum+Baro":
                     NewSvalue='%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], value , Bar_forecast)
                     UpdateDevice_v2(Devices, x,NewNvalue,str(NewSvalue),BatteryLevel, SignalLevel)
 
-            if Type=="Door" and Dtypename=="Door" :  # Door / Window
+            if ClusterType=="Door" and DeviceType=="Door" :  # Door / Window
                 if value == "01" :
                     state="Open"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
@@ -449,14 +449,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     state="Closed"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 
-            if Dtypename=="Plug" and Type=="Switch" :
+            if DeviceType=="Plug" and ClusterType=="Switch" :
                 if value == "01" :
                     UpdateDevice_v2(Devices, x,1,"On",BatteryLevel, SignalLevel)
                 elif value == "00" :
                     state="Off"
                     UpdateDevice_v2(Devices, x,0,"Off",BatteryLevel, SignalLevel)
 
-            if Type=="Switch" and Dtypename=="Door" :  # porte / fenetre
+            if ClusterType=="Switch" and DeviceType=="Door" :  # porte / fenetre
                 if value == "01" :
                     state="Open"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
@@ -464,18 +464,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     state="Closed"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 
-            if Type==Dtypename=="Switch": # Switch 
+            if ClusterType==DeviceType=="Switch": # Switch 
                 if value == "01" :
                     state="On"
                 elif value == "00" :
                     state="Off"
                 UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 
-            if Type=="Switch" and Dtypename=="Button": # boutton simple
+            if ClusterType=="Switch" and DeviceType=="Button": # boutton simple
                 if value == "01" :
                     state="On"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
-            if Type=="Switch" and Dtypename=="Water" : # detecteur d eau
+            if ClusterType=="Switch" and DeviceType=="Water" : # detecteur d eau
                 if value == "01" :
                     state="On"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
@@ -483,7 +483,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     state="Off"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 
-            if Type=="Switch" and Dtypename=="Smoke" : # detecteur de fume
+            if ClusterType=="Switch" and DeviceType=="Smoke" : # detecteur de fume
                 if value == "01" :
                     state="On"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
@@ -491,7 +491,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     state="Off"
                     UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel)
 
-            if Type=="Switch" and Dtypename=="SwitchAQ2" : # multi lvl switch 
+            if ClusterType=="Switch" and DeviceType=="SwitchAQ2" : # multi lvl switch 
                 if   value == "01" : state="00"
                 elif value == "02" : state="10"
                 elif value == "03" : state="20"
@@ -499,7 +499,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 else : return # Simply return and don't process any other values than the above
                 UpdateDevice_v2(Devices, x,int(value),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
 
-            if Type=="Switch" and Dtypename=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
+            if ClusterType=="Switch" and DeviceType=="DSwitch" : # double switch avec EP different   ====> a voir pour passer en deux switch simple ... a corriger/modifier
                 if Ep == "01" :
                     if value == "01" or value =="00" :
                         state="10"
@@ -516,7 +516,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                         data="03"
                         UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel) 
 
-            if Type=="Switch" and Dtypename=="DButton" : # double bouttons avec EP different lumi.sensor_86sw2 ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
+            if ClusterType=="Switch" and DeviceType=="DButton" : # double bouttons avec EP different lumi.sensor_86sw2 ====> a voir pour passer en deux bouttons simple ...  idem DSwitch ???
                 if Ep == "01" :
                     if value == "01" :
                         state="10"
@@ -536,15 +536,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                         UpdateDevice_v2(Devices, x,int(data),str(state),BatteryLevel, SignalLevel, ForceUpdate_=True)
                     else : return # We just expect 01 , in case of other value nothing to do We just expect 01 , in case of other value nothing to do
 
-            if Type=="XCube" and Dtypename=="Aqara" and Ep == "02": #Magic Cube Acara 
+            if ClusterType=="XCube" and DeviceType=="Aqara" and Ep == "02": #Magic Cube Acara 
                     Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
                     UpdateDevice_v2( Devices, x, int(value), str(value), BatteryLevel, SignalLevel )
 
-            if Type=="XCube" and Dtypename=="Aqara" and Ep == "03": #Magic Cube Acara Rotation
+            if ClusterType=="XCube" and DeviceType=="Aqara" and Ep == "03": #Magic Cube Acara Rotation
                     Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value) )
                     UpdateDevice_v2( Devices, x, int(value), str(value), BatteryLevel, SignalLevel )
 
-            if Type==Dtypename=="XCube" and Ep == "02":  # cube xiaomi
+            if ClusterType==DeviceType=="XCube" and Ep == "02":  # cube xiaomi
                 if value == "0000" : #shake
                     state="10"
                     data="01"
@@ -570,14 +570,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     data="09"
                     UpdateDevice_v2( Devices, x, int(data), str(state), BatteryLevel, SignalLevel )
 
-            if Type==Dtypename=="Lux" :
+            if ClusterType==DeviceType=="Lux" :
                 UpdateDevice_v2(Devices, x,int(value),str(value),BatteryLevel, SignalLevel)
 
-            if Type==Dtypename=="Motion" :
+            if ClusterType==DeviceType=="Motion" :
                 if value == "01" : UpdateDevice_v2(Devices, x,"1",str("On"),BatteryLevel, SignalLevel)
                 if value == "00" : UpdateDevice_v2(Devices, x,"0",str("Off"),BatteryLevel, SignalLevel)
 
-            if Type==Dtypename=="LvlControl" :
+            if ClusterType==DeviceType=="LvlControl" :
                 Domoticz.Debug("MajDomoDevice (LvlControl) - previous values : "+str(Devices[x].nValue) + "/" +str(Devices[x].sValue) )
                 if str(Devices[x].sValue) == "Off" :
                     # As we do ReadAttributeRequest (or via reporting) we might get an asynchronous information on the current dimmer level.
@@ -597,11 +597,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
 
-            if Dtypename == "ColorControl" and \
-                    ( Type == "ColorControl" or Type == 'Switch' or Type == 'LvlControl' ):
+            if DeviceType == "ColorControl" and \
+                    ( ClusterType == "ColorControl" or ClusterType == 'Switch' or ClusterType == 'LvlControl' ):
                 nValue = 1
                 sValue =  round((int(value,16)/255)*100)
-                if Type == 'Switch':     # This is to handle the case where ColorControl is the ingle device 
+                if ClusterType == 'Switch':     # This is to handle the case where ColorControl is the ingle device 
                     if int(value,16) == 0 :
                         nValue = 0
                         sValue = 'Off'
@@ -613,7 +613,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel, Color_)
 
 
-def ResetDevice(self, Devices, Type, HbCount) :
+def ResetDevice(self, Devices, ClusterType, HbCount) :
     '''
         Reset all Devices from the ClusterType Motion after 30s
     '''
@@ -639,21 +639,21 @@ def ResetDevice(self, Devices, Type, HbCount) :
             ID = Devices[x].ID
             Domoticz.Debug("ResetDevice - Processing ID = " +str(ID) ) 
 
-            Dtypename=''
+            DeviceType=''
             for tmpEp in  self.ListOfDevices[NWKID]['Ep'] :
                 if  'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     if  str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
-                        Dtypename=self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
-                        Domoticz.Debug("ResetDevice - Found ClusterType in EP["+str(tmpEp)+"] : " +str(Dtypename) + " for Device :" + str(ID) )
-            if Dtypename == '' :
+                        DeviceType=self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
+                        Domoticz.Debug("ResetDevice - Found ClusterType in EP["+str(tmpEp)+"] : " +str(DeviceType) + " for Device :" + str(ID) )
+            if DeviceType == '' :
                 if 'ClusterType' in self.ListOfDevices[NWKID]:
                     if str(ID) in self.ListOfDevices[NWKID]['ClusterType'] :
-                        Dtypename=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
-                        Domoticz.Debug("ResetDevice - Found ClusterType : " +str(Dtypename) + " for Device : " + str(ID) )
+                        DeviceType=self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
+                        Domoticz.Debug("ResetDevice - Found ClusterType : " +str(DeviceType) + " for Device : " + str(ID) )
             else :
                 Domoticz.Debug("ResetDevice - No ClusterType found for this device : " +str(ID) + " in " +str(self.ListOfDevices[NWKID]) )
 
-            Domoticz.Debug("ResetDevice - ID = " +str(ID) + " ClusterType : " +str(Dtypename) ) 
+            Domoticz.Debug("ResetDevice - ID = " +str(ID) + " ClusterType : " +str(DeviceType) ) 
             # Takes the opportunity to update RSSI and Battery
             SignalLevel = ''
             BatteryLevel = ''
@@ -664,7 +664,7 @@ def ResetDevice(self, Devices, Type, HbCount) :
 
             Domoticz.Debug("ResetDevice - Time delay since Last update : "+str( current - LUpdate) )
         
-            if (current - LUpdate)> 30 and Dtypename=="Motion":
+            if (current - LUpdate)> 30 and DeviceType=="Motion":
                 Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate)  + " current is : " + str(current) + " this was : " + str(current-LUpdate) + " secondes ago")
                 UpdateDevice_v2(Devices, x, 0, "Off" ,BatteryLevel, SignalLevel, SuppTrigger_=True)
     return
