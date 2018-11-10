@@ -328,8 +328,8 @@ def ReadAttributeRequest_0702(self, key):
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
     listAttributes.append(0x0200) # Status
-    listAttributes.append(0x0301) # 
-    listAttributes.append(0x0302) # 
+    listAttributes.append(0x0301) # Multiplier
+    listAttributes.append(0x0302) # Diviser
     listAttributes.append(0x0400) # Instantaneous Demand
 
     EPin = "01"
@@ -425,7 +425,7 @@ def processConfigureReporting( self ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            identifySend( self, key, Ep)
+            identifySend( self, key, Ep, 30)
 
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
@@ -449,7 +449,7 @@ def processConfigureReporting( self ):
                         #Domoticz.Log("configureReporting - %2d %s " %(attrLen, attrList) )
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
-                        Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
+                        #Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas , 2)
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
@@ -492,5 +492,5 @@ def identifySend( self, nwkid, ep, duration=0):
 
     datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration) 
     Domoticz.Log("identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration))
-    Domoticz.Log("identifySend - data sent >%s< " %(datas) )
+    Domoticz.Debug("identifySend - data sent >%s< " %(datas) )
     sendZigateCmd(self, "0070", datas )
