@@ -1036,6 +1036,7 @@ def Decode804A(self, MsgData) : # Management Network Update response
     MsgChannelList=MsgData[22:len(MsgData)]
 
     channelList = []
+    idx = 0
     while idx < len(MsgChannelList):
         channelList.append( MsgChannelList[idx:idx+4])
         idx += 4
