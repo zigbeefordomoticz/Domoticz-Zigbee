@@ -599,7 +599,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
 
             if Dtypename == "ColorControl" and \
                     ( Type == "ColorControl" or Type == 'Switch' or Type == 'LvlControl' ):
-                nValue = 2
+                nValue = 1
                 sValue =  round((int(value,16)/255)*100)
                 if Type == 'Switch':     # This is to handle the case where ColorControl is the ingle device 
                     if int(value,16) == 0 :
