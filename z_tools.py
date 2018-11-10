@@ -286,6 +286,9 @@ def updSQN( self, key, newSQN) :
         else :
             oldSQN='00'
 
+        if newSQN == '' or newSQN is Null:
+            return
+
         if int(oldSQN,16) != int(newSQN,16) :
             Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
             self.ListOfDevices[key]['SQN'] = newSQN
