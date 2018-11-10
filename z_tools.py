@@ -281,9 +281,10 @@ def updSQN( self, key, newSQN) :
     if self.ListOfDevices[key]['MacCapa'] != '8e' :         # So far we have a good understanding on how SQN is managed for battery powered devices
         if 'SQN' in self.ListOfDevices[key]:
             oldSQN = self.ListOfDevices[key]['SQN']
+            if oldSQN = '' or oldSQN is None:
+                oldSQN='0''
         else :
             oldSQN='00'
-
 
         if int(oldSQN,16) != int(newSQN,16) :
             Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
