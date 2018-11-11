@@ -280,6 +280,13 @@ def CreateDomoDevice(self, Devices, NWKID) :
                 ID = Devices[unit].ID
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
+            if t=="Voltage" : # Will display kWh
+                self.ListOfDevices[NWKID]['Status']="inDB"
+                unit = FreeUnit(self, Devices)
+                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, TypeName="Voltage").Create()
+                ID = Devices[unit].ID
+                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
+
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
     '''
@@ -352,14 +359,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
             # Instant Watts. 
             # PowerMeter is for Compatibility , as it was created as a PowerMeter device.
             #if ( DeviceType=="Power" or DeviceType=="PowerMeter") and clusterID == "000c": 
-            if ( DeviceType=="Power" or DeviceType=="PowerMeter"): 
+            if ('Power' in ClusterType and DeviceType=="Power") or \
+                    ( clusterID == "000c" and DeviceType == "Power"): # kWh
                 nValue=float(value)
                 sValue=value
                 Domoticz.Log("MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x,nValue,str(sValue),BatteryLevel, SignalLevel)                                
 
             #if DeviceType=="Meter" and clusterID == "000c": # kWh
-            if DeviceType=="Meter": # kWh
+            if ('Meter' in ClusterType and DeviceType=="Meter") or \
+                    ( clusterID == "000c" and DeviceType == "Power"): # kWh
+                nValue=float(value)
+                sValue="%s;%s" %(nValue, nValue)
+                Domoticz.Log( "MajDomoDevice Power : " + sValue)
+                UpdateDevice_v2(Devices, x,0, sValue, BatteryLevel, SignalLevel)                                
+
+            if ClusterType == DeviceType == "Voltage": #  Volts
                 nValue=float(value)
                 sValue="%s;%s" %(nValue, nValue)
                 Domoticz.Log( "MajDomoDevice Power : " + sValue)
@@ -757,6 +772,7 @@ def TypeFromCluster(cluster):
     elif cluster=="0406" : TypeFromCluster="Motion"
     elif cluster=="0702" : TypeFromCluster="Power/Meter"
     elif cluster=="0500" : TypeFromCluster="Door"
+    elif cluster=="0001" : TypeFromCluster="Voltage"
     else : TypeFromCluster=""
     return TypeFromCluster
 

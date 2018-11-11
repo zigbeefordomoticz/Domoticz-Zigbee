@@ -202,6 +202,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
         Domoticz.Log("readCluster 0001 - Voltage: %s V " %(value) )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0010": # Voltage
         Domoticz.Log("readCluster 0001 - Battery Voltage: %s " %(value) )
@@ -234,8 +236,8 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("Cluster0702 - 0x0200 STATUS")
 
     elif MsgAttrID == "0400": 
-        Domoticz.Debug("Cluster0702 - 0x0400 INSTANTANEOUS_DEMAND")
         value = round(value/1000, 3)
+        Domoticz.Debug("Cluster0702 - 0x0400 Instant demand %s" %(value))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 

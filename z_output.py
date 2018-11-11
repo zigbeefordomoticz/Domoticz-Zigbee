@@ -409,7 +409,7 @@ def processConfigureReporting( self ):
                                  '0200': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0301': {'DataType': '22', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0302': {'DataType': '22', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}}
+                                 '0400': {'DataType': '2a', 'MinInterval':'0005', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     for key in self.ListOfDevices:
@@ -425,7 +425,7 @@ def processConfigureReporting( self ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            #identifySend( self, key, Ep, 30)
+            identifySend( self, key, Ep, 0)
 
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
