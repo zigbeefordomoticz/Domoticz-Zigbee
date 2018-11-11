@@ -72,8 +72,6 @@ def decodeAttribute(AttType, Attribute):
                                     str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
             return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
     elif int(AttType,16)  == 0x28: # int8
         return int(Attribute, 16 )
@@ -227,9 +225,11 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0301":   # Multiplier
+        Domoticz.Log("Cluster0702 - Multiplier: %s" %(value))
         pass
 
     elif MsgAttrID == "0302":   # Divisor
+        Domoticz.Log("Cluster0702 - Divisor: %s" %(value))
         pass
 
     elif MsgAttrID == "0200": 
