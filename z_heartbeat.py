@@ -208,10 +208,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             for x in Devices:
                 if self.ListOfDevices[NWKID].get('IEEE'):
                     if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                        IsCreated = True
-                        Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-                        break
+                        if self.ForceCreationDevice == 1:
+                            Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+                            Domoticz.Error("processNotinDBDevices - ForceCreationDevice enable, we continue")
+                        else:
+                            IsCreated = True
+                            Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+                            Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
+                            break
 
             if IsCreated == False:
                 Domoticz.Log("onHeartbeat - Creating device in Domoticz: " + str(NWKID) + " with: " + str(self.ListOfDevices[NWKID]) )

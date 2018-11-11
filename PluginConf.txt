@@ -3,6 +3,6 @@
 'sendDelay':'1',
 'storeDiscoveryFrames':'0',
 'LQI':'0',
-'ForcecheckListOfDevice2Devices':'0',
+'ForceCreationDevice':'0',
 'logFORMAT':'0'
 }

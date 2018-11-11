@@ -632,9 +632,6 @@ def ResetDevice(self, Devices, ClusterType, HbCount) :
         # Look for the corresponding ClusterType
         if _tmpDeviceID_IEEE in  self.IEEE2NWK :
             NWKID = self.IEEE2NWK[_tmpDeviceID_IEEE]
-            #if NWKID == 'ffff' and self.FcLOD: #:wq
-            if NWKID == 'ffff':
-                continue
 
             if NWKID not in self.ListOfDevices :
                 Domoticz.Error("ResetDevice " +str(NWKID) + " not found in " +str(self.ListOfDevices) )
