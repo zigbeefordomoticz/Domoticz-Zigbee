@@ -225,19 +225,19 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0301":   # Multiplier
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         Domoticz.Log("Cluster0702 - Multiplier: %s" %(value))
-        pass
 
     elif MsgAttrID == "0302":   # Divisor
         Domoticz.Log("Cluster0702 - Divisor: %s" %(value))
-        pass
 
     elif MsgAttrID == "0200": 
-        Domoticz.Debug("Cluster0702 - 0x0200 STATUS")
+        Domoticz.Log("Cluster0702 - Status: %s" %(value))
+
 
     elif MsgAttrID == "0400": 
-        value = round(value/1000, 3)
-        Domoticz.Debug("Cluster0702 - 0x0400 Instant demand %s" %(value))
+        Domoticz.Log("Cluster0702 - 0x0400 Instant demand %s" %(value))
+        value = round(value/100, 3)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
