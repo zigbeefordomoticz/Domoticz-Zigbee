@@ -30,7 +30,7 @@ def ZigateConf_light(self,  channel, discover ):
     sendZigateCmd(self, "0015", "")
 
     utctime = int(time.time())
-    Domoticz.Log("ZigateConf - seting Time to : %s" %( utctime) )
+    Domoticz.Log("ZigateConf - Setting UTC Time to : %s" %( utctime) )
     sendZigateCmd(self, "0016", str(utctime) )
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
