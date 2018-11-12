@@ -155,7 +155,7 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-    Domoticz.Debug("ReadCluster - " +MsgClusterId +"  Saddr: " + str(MsgSrcAddr) + " SrcEp : " + MsgSrcEp +\
+    Domoticz.Log("ReadCluster - " +MsgClusterId +"  Saddr: " + str(MsgSrcAddr) + " SrcEp : " + MsgSrcEp +\
             " AttrID: " + MsgAttrID + " AttType : " + MsgAttType + " AttSize : " +MsgAttSize +" Attribute : " + str(MsgClusterData) + " Status: " + MsgAttrStatus )
 
         
@@ -326,7 +326,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return ''
 
     Domoticz.Error("ReadCluster 0101 not fully implemented, please contact us on https://github.com/sasu-drooz/Domoticz-Zigate" )
-    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp + " Attribute : " + MsgAttrID )
+    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp + +" Attribute Type:" + MsgAttType + " Attribute : " + MsgAttrID )
 
     if MsgAttrID == "0000":          # Lockstate
         Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
@@ -336,9 +336,9 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData))
 
     elif MsgAttrID == "0508" or MsgAttrID == "0055" or MsgAttrID == "0503":   # Aqara Vibration
-        Domoticz.Log("ReadCluster 0101 - Aqara Vibration - Attribute: %s" %(MsgAttrID) )
+        Domoticz.Log("ReadCluster 0101 - Aqara Vibration - Attribute: %s" %(MsgClusterData) )
         if MsgAttType == "21": # Uint16
-            value = decode_vibr( MsgAttrID )
+            value = decode_vibr( MsgClusterData )
             z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
         else:
