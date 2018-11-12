@@ -600,17 +600,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                     Domoticz.Debug("MajDomoDevice (LvlControl) - " +str(Devices[x].Name) +" is switched off. No update of dimmer")
                 else :
                     sValue =  round((int(value,16)/255)*100)
-                    if sValue == 0: 
-                        nValue = 0
-                        sValue = 'Off'
-                    elif sValue == 100:
-                        nValue = 1
-                        sValue = 'On'
+                    if sValue == 0:
+                        if Devices[x].SwitchType == "16":
+                            UpdateDevice_v2(Devices, x, 0, '0' ,BatteryLevel, SignalLevel)
+                        else:
+                            UpdateDevice_v2(Devices, x, 0, 'Off' ,BatteryLevel, SignalLevel)
+                    elif sValue == 1:
+                        if Devices[x].SwitchType == "16":
+                            UpdateDevice_v2(Devices, x, 1, '100' ,BatteryLevel, SignalLevel)
+                        else:
+                            UpdateDevice_v2(Devices, x, 1, 'On' ,BatteryLevel, SignalLevel)
                     else:
                         nValue = 2
-                    Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
-                    UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
-
+                        Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
+                        UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
             if DeviceType == "ColorControl" and \
                     ( ClusterType == "ColorControl" or ClusterType == 'Switch' or ClusterType == 'LvlControl' ):
