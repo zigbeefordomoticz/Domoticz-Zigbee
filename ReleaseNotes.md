@@ -1,5 +1,5 @@
 # Release Notes 
-## xx mmmmmmmm  2018 - dev-x.x.x
+## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
 - [Enhancement] Get async Level of Level Control devices
 - [Technical] Use IEEE instead of Network addresses in Domoticz
