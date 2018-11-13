@@ -38,6 +38,9 @@ def LoadDeviceList( self ):
     with open( self.DeviceListName , 'r') as myfile2:
         Domoticz.Debug( "Open : " + self.DeviceListName )
         for line in myfile2:
+            if not line.strip() :
+                #Empty line
+                continue
             (key, val) = line.split(":",1)
             key = key.replace(" ","")
             key = key.replace("'","")
