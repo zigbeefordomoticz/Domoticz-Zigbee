@@ -130,7 +130,7 @@ def CreateDomoDevice(self, Devices, NWKID) :
             if t=="Door": # capteur ouverture/fermeture xiaomi
                 self.ListOfDevices[NWKID]['Status']="inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=73 , Switchtype=2 ).Create()
+                Domoticz.Device(DeviceID=str(DeviceID_IEEE),Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), Unit=unit, Type=244, Subtype=73 , Switchtype=11 ).Create()
                 ID = Devices[unit].ID
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID )] = t
 
