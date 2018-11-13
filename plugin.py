@@ -119,19 +119,17 @@ class BasePlugin:
         
         if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
             z_var.CrcCheck = 0
-        if  self.PluginConf.get('refreshXiaomi') :
-            z_var.refreshXiaomi = int(self.PluginConf['refreshXiaomi'],10)
-        if  self.PluginConf.get('sendDelay') :
+        if  self.PluginConf.get('sendDelay') and self.PluginConf.get('sendDelay').isdigit():
             z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
-        if  self.PluginConf.get('logRSSI') :
+        if  self.PluginConf.get('logRSSI') and self.PluginConf.get('logRSSI').isdigit():
             z_var.logRSSI = int(self.PluginConf['logRSSI'],10)
-        if  self.PluginConf.get('storeDiscoveryFrames') :
+        if  self.PluginConf.get('storeDiscoveryFrames') and self.PluginConf.get('storeDiscoveryFrames').isdigit():
             z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
-        if  self.PluginConf.get('logFORMAT') :
+        if  self.PluginConf.get('logFORMAT') and self.PluginConf.get('logFORMAT').isdigit():
             z_var.logFORMAT = int(self.PluginConf['logFORMAT'],10)
-        if  self.PluginConf.get('LQI') :
+        if  self.PluginConf.get('LQI') and self.PluginConf.get('LQI').isdigit():
             z_var.LQI = int(self.PluginConf['LQI'],10)
-        if  self.PluginConf.get('ForceCreationDevice') :
+        if  self.PluginConf.get('ForceCreationDevice') and self.PluginConf.get('ForceCreationDevice').isdigit():
             self.ForceCreationDevice = int(self.PluginConf['ForceCreationDevice'],10)
         
         z_var.ReqRcv=bytearray()
