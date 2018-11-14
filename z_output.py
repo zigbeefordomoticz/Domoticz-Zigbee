@@ -252,7 +252,10 @@ def ReadAttributeRequest_0300(self, key):
     EPout= "01"
 
     listAttributes = []
+    listAttributes.append(0x0003) 
+    listAttributes.append(0x0004) 
     listAttributes.append(0x0007) 
+    listAttributes.append(0x0008) 
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0300" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
@@ -363,7 +366,7 @@ def getListofAttribute(self, nwkid, EpOut, cluster):
 
 
 
-def processConfigureReporting( self ):
+def processConfigureReporting( self, NWKID=None ):
     '''
     processConfigureReporting( self )
     Called at start of the plugin to configure Reporting of all connected object, based on their corresponding cluster
@@ -383,39 +386,65 @@ def processConfigureReporting( self ):
         Manufacturer spe: u8
         Manufacturer Id: u16
         Nb attributes : u8
-        Attribute list: u16 each
-        Attribute direc: u8
-        Attribute Type: u8
-        Min Interval  : u16
-        Max Interval  : u16
-        TimeOut       : u16
-        Change          : u8
+        Attribute list: 72 each
+            Attribute direc: u8
+            Attribute Type: u8
+            Min Interval  : u16
+            Max Interval  : u16
+            TimeOut       : u16
+            Change        : u8
 
     '''
 
     ATTRIBUTESbyCLUSTERS = {
             # 0xFFFF sable reporting-
             # 0x0E10 - 3600s A hour
+            # 0x0708 - 30'
             # 0x0384 - 15'
             # 0x012C - 5'
             # 0x003C - 1'
-        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'}}},
-        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'}}},
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        #'000c': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        #'8021': {'Attributes': { '0000': {'DataType': '39', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        #'0402': {'Attributes': { '0000': {'DataType': '37', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'003C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'05'},
-                                 '0200': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0301': {'DataType': '22', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0302': {'DataType': '22', 'MinInterval':'0001', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'0005', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}}
+        '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
+                                 '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        # On/Off
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        # Level Control
+        '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
+        # Binary Input 
+        '000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        # Colour Control
+        #'0300': {'Attributes': { '0007': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+        #                         '0003': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+        #                         '0004': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+        #                         '0008': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        # Illuminance Measurement
+        '0400': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
+        # Temperature
+        '0402': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # Pression Atmo
+        '0403': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+                                 '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
+        # Humidity
+        '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # Occupancy Sensing
+        #'0406': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # Power
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0A'},
+                                 '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
-    for key in self.ListOfDevices:
-        if 'PowerSource' in self.ListOfDevices[key]:
+    if NWKID is None :
+        target = self.ListOfDevices
+    else:
+        target = NWKID
+        Domoticz.Log("configureReporting for device : %s => %s" %(NWKID, self.ListOfDevices[NWKID]))
+
+    for key in target:
+        # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
+        if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
         else: continue
+        # We reach here because we have either a NWKID (we are pairing phase and we have a window to talk to the device even on battery mode
 
         manufacturer = "0000"
         if 'Manufacturer' in self.ListOfDevices[key]:
@@ -426,7 +455,6 @@ def processConfigureReporting( self ):
 
         for Ep in self.ListOfDevices[key]['Ep']:
             identifySend( self, key, Ep, 0)
-
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ATTRIBUTESbyCLUSTERS:
@@ -449,7 +477,7 @@ def processConfigureReporting( self ):
                         #Domoticz.Log("configureReporting - %2d %s " %(attrLen, attrList) )
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
-                        #Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
+                        Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas , 2)
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
