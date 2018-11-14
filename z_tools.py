@@ -256,6 +256,12 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['PowerSource']=DeviceListVal['PowerSource']
         if 'ReceiveOnIdle' in DeviceListVal :
             self.ListOfDevices[key]['ReceiveOnIdle']=DeviceListVal['ReceiveOnIdle']
+        if 'App Version' in DeviceListVal :
+            self.ListOfDevices[key]['App Version']=DeviceListVal['App Version']
+        if 'Stack Version' in DeviceListVal :
+            self.ListOfDevices[key]['Stack Version']=DeviceListVal['Stack Version']
+        if 'HW Version' in DeviceListVal :
+            self.ListOfDevices[key]['HW Version']=DeviceListVal['HW Version']
         if 'Status' in DeviceListVal :
             self.ListOfDevices[key]['Status']=DeviceListVal['Status']
         if 'Battery' in DeviceListVal :
@@ -266,8 +272,12 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['SQN']=DeviceListVal['SQN']
         if 'ClusterType' in DeviceListVal :
             self.ListOfDevices[key]['ClusterType']=DeviceListVal['ClusterType']
+        if 'RIA' in DeviceListVal :
+            self.ListOfDevices[key]['RIA']=DeviceListVal['RIA']
         if 'Version' in DeviceListVal :
             self.ListOfDevices[key]['Version']=DeviceListVal['Version']
+        if 'Stamp' in DeviceListVal :
+            self.ListOfDevices[key]['Stamp']=DeviceListVal['Stamp']
 
         # We will initialize Hearbeat with a random value between 0 to 12 in order to distribute the load when triggering action based on the Hearbeat value
         # 12 is equivalent to 12 Heartbeat cycle ==> 2 minutes
