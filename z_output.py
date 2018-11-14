@@ -348,9 +348,11 @@ def removeZigateDevice( self, IEEE ):
     # remove a device in Zigate
     # Key is the short address of the device
     # extended address is ieee address
-
-    Domoticz.Log("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
-    sendZigateCmd(self, "0026", str(IEEE) + str(IEEE) )
+    if self.ZigateIEEE != None:
+        Domoticz.Log("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
+        sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
+    else:
+        Domoticz.Log("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
 
     return
 
@@ -425,8 +427,9 @@ def processConfigureReporting( self, NWKID=None ):
         # Occupancy Sensing
         #'0406': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Power
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0A'},
+        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
+        #'0702': {'Attributes': { '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     if NWKID is None :
