@@ -969,11 +969,12 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
             i = i + 2
         self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16))     # Store the number of EPs
 
-    if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
-        self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
-        self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
+        Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
-    Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
+        if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+            self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
+            self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
+
     return
 
 def Decode8046(self, MsgData) : # Match Descriptor response
