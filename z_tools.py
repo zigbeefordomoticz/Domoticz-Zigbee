@@ -165,10 +165,16 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
         # Finaly let's see if there is any Devices left in this .
         emptyCT = 1
         if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
-            emptyCT = 0
+            Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
+            if self.ListOfDevices[key]['ClusterType'] != {}:
+                Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe' not empty")
+                emptyCT = 0
         for tmpEp in self.ListOfDevices[key]['Ep'] : 
             if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
-                emptyCT = 0
+                Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
+                if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
+                    Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe' not empty")
+                    emptyCT = 0
         
         if emptyCT == 1 :     # There is still something in the ClusterType either Global or at Ep level
             Domoticz.Log("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
