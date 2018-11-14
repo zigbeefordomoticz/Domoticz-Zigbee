@@ -607,7 +607,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_='') :
                         UpdateDevice_v2(Devices, x, 1, 'On' ,BatteryLevel, SignalLevel)
                 else:
                     nValue = 2
-                    Domoticz.Log("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
+                    Domoticz.Debug("MajDomoDevice update DevID : " + str(DeviceID_IEEE) + " from " + str(Devices[x].nValue) + " to " + str(nValue) )
                     UpdateDevice_v2(Devices, x, str(nValue), str(sValue) ,BatteryLevel, SignalLevel)
 
             if DeviceType == "ColorControl" and \
