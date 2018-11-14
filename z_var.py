@@ -18,3 +18,4 @@ logFORMAT = 0                # Log RSSI for further investigation and reports
 transport = ''
 LQISource = ''
 LQI = 0
+RemoveDevice = 0

@@ -11,6 +11,8 @@ import struct
 import json
 
 import Domoticz
+import z_var
+import z_output
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -182,6 +184,10 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
 
             Domoticz.Log("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
+
+            if z_var.RemoveDevice == 1:
+                Domoticz.Log("removeDeviceInList - removing Device in Zigate")
+                z_output.removeZigateDevice( self, IEEE )
 
 
 def initDeviceInList(self, Nwkid) :

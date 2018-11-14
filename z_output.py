@@ -344,17 +344,13 @@ def ReadAttributeRequest_0702(self, key):
     Domoticz.Log("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
-def removeZigateDevice( self, key ):
+def removeZigateDevice( self, IEEE ):
     # remove a device in Zigate
     # Key is the short address of the device
     # extended address is ieee address
 
-    if key in  self.ListOfDevices:
-        ieee =  self.ListOfDevices[key]['IEEE']
-        Domoticz.Log("Remove from Zigate Device = " + str(key) + " IEEE = " +str(ieee) )
-        sendZigateCmd(self, "0026", str(ieee) + str(ieee) )
-    else:
-        Domoticz.Log("Unknow device to be removed - Device  = " + str(key))
+    Domoticz.Log("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
+    sendZigateCmd(self, "0026", str(IEEE) + str(IEEE) )
 
     return
 
@@ -454,7 +450,10 @@ def processConfigureReporting( self, NWKID=None ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            identifySend( self, key, Ep, 0)
+            if NWKID is None:
+                identifySend( self, key, Ep, 0)
+            else:
+                identifySend( self, key, Ep, 15)
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ATTRIBUTESbyCLUSTERS:
