@@ -1,5 +1,6 @@
 {
 'CrcCheck':'On',
+'RemoveDevice':'0',
 'sendDelay':'1',
 'storeDiscoveryFrames':'0',
 'LQI':'0',
