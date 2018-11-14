@@ -9,7 +9,7 @@ while 1:
 
 
 nb = 0
-with open( "/var/lib/domoticz/plugins/Domoticz-Zigate/DeviceList-3.txt", 'r') as myfile2:
+with open( filename, 'r') as myfile2:
     for line in myfile2:
         if not line.strip() :
             #Empty line
