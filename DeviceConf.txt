@@ -1,7 +1,7 @@
 {
-'lumi.weather':{'Ep':{'01':{'0402','0405','0403'}},'Type':'Temp/Humi/Baro'},
+'lumi.weather':{'Ep':{'01':{'0000':'','0003':'','0402':'','0403':'','0405':'','ffff':'','Type':'Temp/Humi/Baro'}},'Type':''},
+'lumi.sensor_magnet.aq2':{'Ep':{'01':{'0000':'','0006':'','0003':'','ffff':'','Type':'Door'}},'Type':''},
 'lumi.sensor_ht':{'Ep':{'01':{'0402','0405'}},'Type':'Temp/Humi'},
-'lumi.sensor_magnet.aq2':{'Ep':{'01':{'0006'}},'Type':'Door'},
 'lumi.sensor_magnet':{'Ep':{'01':{'0006'}},'Type':'Door'},
 'lumi.sensor_motion':{'Ep':{'01':{'0006'}},'Type':'Motion'},
 'lumi.sensor_switch.aq2':{'Ep':{'01':{'0006'}},'Type':'SwitchAQ2'},
