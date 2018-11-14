@@ -58,10 +58,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # We should check if the device has not been already created via IEEE
         if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False:
             Domoticz.Debug("processNotinDBDevices - new device discovered request Node Descriptor for: " +str(NWKID) )
+            z_output.sendZigateCmd(self,"0045", str(NWKID),2)     # Request list of EPs
+            z_output.sendZigateCmd(self,"0042", str(NWKID),2)     # Request a Node Descriptor
             z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
-            z_output.ReadAttributeRequest_0001(self, NWKID )      # Power Cluster readAttribute Request
-            z_output.sendZigateCmd(self,"0045", str(NWKID), 2)    # Request list of EPs
-            z_output.sendZigateCmd(self,"0042", str(NWKID),2)    # Request a Node Descriptor
             self.ListOfDevices[NWKID]['Status']="0045"
             self.ListOfDevices[NWKID]['Heartbeat']="0"
         else:
@@ -87,6 +86,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             z_output.sendZigateCmd(self,"0043", str(NWKID)+str(cle), 2)    
         self.ListOfDevices[NWKID]['Status']="0043"
         self.ListOfDevices[NWKID]['Heartbeat']="0"
+
+    if status=="8043" and self.ListOfDevices[NWKID]['Heartbeat'] <= "2":    # Status is set by Decode8045
+        if self.ListOfDevices[NWKID]['Model'] == '':
+            z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+        z_output.ReadAttributeRequest_0001(self, NWKID )      # Basic Cluster readAttribute Request
 
     """
     Timeout management
@@ -220,6 +224,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if IsCreated == False:
                 Domoticz.Log("onHeartbeat - Creating device in Domoticz: " + str(NWKID) + " with: " + str(self.ListOfDevices[NWKID]) )
                 z_domoticz.CreateDomoDevice(self, Devices, NWKID)
+                z_output.processConfigureReporting( self, NWKID )  # Configure Reporting for that device
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( z_var.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  z_var.storeDiscoveryFrames == 1 and status == "8043" )
@@ -247,7 +252,7 @@ def processListOfDevices( self , Devices ):
             # Most likely we should receive a 0x004d, where the device come back with a new short address
             # For now we will display a message in the log every 1'
             # We might have to remove this entry if the device get not reconnected.
-            if ( int(self.ListOfDevices[NWKID]['Heartbeat']) % 6 ) == 0:
+            if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 6 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
                 Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
                 # Let's check if the device still exist in Domoticz
                 fnd = False
