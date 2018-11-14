@@ -1318,9 +1318,11 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgClusterId=MsgData[8:12]
     MsgDataStatus=MsgData[12:14]
 
+    Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
+       %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
-                %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
     return
 
 def Decode8140(self, MsgData) :  # Attribute Discovery response
@@ -1391,7 +1393,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
         Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
     else :
-        Domoticz.Log("Decode004d - Existing device")
+        Domoticz.Debug("Decode004d - Existing device")
         # Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
 
     if z_var.storeDiscoveryFrames == 1 :
