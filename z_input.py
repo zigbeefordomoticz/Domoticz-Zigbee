@@ -331,6 +331,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+    z_tools.timeStamped( self, MsgSrcAddr , 8401)
     z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 
     ## CLD CLD
@@ -597,7 +598,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
     # power_type: 2bytes - 0 Battery, 1 AC Power
     # rssi : 2 bytes - Signal Strength between 1 - 255
     numberofdev=len(MsgData)    
-    Domoticz.Status("Decode8015 : Number of devices known in Zigate = " + str(round(numberofdev/26)) )
+    Domoticz.Status("Decode8015 : Number of devices recently active in Zigate = " + str(round(numberofdev/26)) )
     idx=0
     while idx < (len(MsgData)):
         DevID=MsgData[idx:idx+2]
@@ -1045,7 +1046,6 @@ def Decode804A(self, MsgData) : # Management Network Update response
     Domoticz.Status("Decode804A - Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s, Scanned Channel: %s , Channel List: %s, Status: %s) " \
             %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), MsgScannedChannel, channelList, z_status.DisplayStatusCode(MsgDataStatus)) )
 
-    #Domoticz.Status("ZigateRead - MsgType 804A - Management Network Update response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Total Transmission : " + str(int(MsgTotalTransmission,16)) + " Transmission Failures : " + str(int(MsgTransmissionFailures,16)) + " Scanned Channel : " + MsgScannedChannel + " Scanned Channel List Count : " + MsgScannedChannelListCount + " Channel List : " + MsgChannelList)
     return
 
 def Decode804B(self, MsgData) : # System Server Discovery response
@@ -1233,6 +1233,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     Domoticz.Debug("Decode8100 - Report Individual Attribute : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
+    z_tools.timeStamped( self, MsgSrcAddr , 8100)
     if ( z_var.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
     try :
@@ -1285,6 +1286,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
+        z_tools.timeStamped( self, MsgSrcAddr , 8102)
         z_tools.updSQN( self, MsgSrcAddr, str(MsgSQN) )
         z_readClusters.ReadCluster(self, Devices, MsgData) 
     else :

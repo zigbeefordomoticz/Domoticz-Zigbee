@@ -7,6 +7,7 @@
 """
 import binascii
 import time
+import datetime
 import struct
 import json
 
@@ -273,7 +274,15 @@ def CheckDeviceList(self, key, val) :
         self.ListOfDevices[key]['Heartbeat']=random.randint(0, 12)
         Domoticz.Debug("CheckDeviceList - Hearbeat initialized for  self.ListOfDevices["+str(key)+"] to = "+str(self.ListOfDevices[key]['Heartbeat']) )
 
-        
+
+def timeStamped( self, key, Type ):
+    if key in self.ListOfDevices:
+        if 'Stamp' not in self.ListOfDevices[key]:
+            self.ListOfDevices[key]['Stamp'] = {}
+            self.ListOfDevices[key]['Stamp']['Time'] = {}
+            self.ListOfDevices[key]['Stamp']['MsgType'] = {}
+        self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+        self.ListOfDevices[key]['Stamp']['MsgType'] = "%4d" %(Type)
 
 def updSQN( self, key, newSQN) :
 
