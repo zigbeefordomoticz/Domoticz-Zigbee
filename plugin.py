@@ -116,22 +116,28 @@ class BasePlugin:
         z_var.CrcCheck = 1        # Enable or not Checksum check when receiving messages
         z_var.sendDelay = 0        # secs of delay per send message
         z_var.logFORMAT = 0        # enable a formated log of incoming messages with RSSI and SEQ number 
-        
+        z_var.logLQI = 0        # enable Network Toppology
+        z_var.RemoveDevice = 0    # Enable removal of Device in Sigate
+        z_var.storeDiscoveryFrames = 0    # Store in file all information related to discovery
+        self.ForceCreationDevice = 0    # For creation of device even if alreadye xisting in Domoticz
+         
         if  self.PluginConf['CrcCheck'] == "False" or self.PluginConf['CrcCheck'] == "Off" :
             z_var.CrcCheck = 0
         if  self.PluginConf.get('sendDelay') and self.PluginConf.get('sendDelay').isdigit():
             z_var.sendDelay = int(self.PluginConf['sendDelay'],10)
-        if  self.PluginConf.get('logRSSI') and self.PluginConf.get('logRSSI').isdigit():
-            z_var.logRSSI = int(self.PluginConf['logRSSI'],10)
         if  self.PluginConf.get('storeDiscoveryFrames') and self.PluginConf.get('storeDiscoveryFrames').isdigit():
             z_var.storeDiscoveryFrames = int(self.PluginConf['storeDiscoveryFrames'],10)
         if  self.PluginConf.get('logFORMAT') and self.PluginConf.get('logFORMAT').isdigit():
             z_var.logFORMAT = int(self.PluginConf['logFORMAT'],10)
         if  self.PluginConf.get('LQI') and self.PluginConf.get('LQI').isdigit():
             z_var.LQI = int(self.PluginConf['LQI'],10)
+        if  self.PluginConf.get('RemoveDevice') and self.PluginConf.get('RemoveDevice').isdigit():
+            z_var.RemoveDevice = int(self.PluginConf['RemoveDevice'],10)
         if  self.PluginConf.get('ForceCreationDevice') and self.PluginConf.get('ForceCreationDevice').isdigit():
             self.ForceCreationDevice = int(self.PluginConf['ForceCreationDevice'],10)
         
+        Domoticz.Log("CrcCheck: %s sendDelay: %s storeDiscoveryFrames: %s logFORMAT: %s LQI: %s RemoveDevice: %s ForceCreationDevice: %s" \
+                %(z_var.CrcCheck, z_var.sendDelay, z_var.storeDiscoveryFrames, z_var.logFORMAT, z_var.LQI, z_var.RemoveDevice, self.ForceCreationDevice) )
         z_var.ReqRcv=bytearray()
 
         if  z_var.storeDiscoveryFrames == 1 :
