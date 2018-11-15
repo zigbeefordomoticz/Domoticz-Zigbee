@@ -20,7 +20,7 @@ import z_tools
 
 import time
 
-def ZigateConf_light(self,  channel, discover ):
+def ZigateConf_light(self, discover ):
     '''
     It is called for normal startup
     '''
@@ -49,7 +49,7 @@ def ZigateConf_light(self,  channel, discover ):
     sendZigateCmd( self, "0014", "", 2 ) # Request status
 
 
-def ZigateConf(self, channel, discover ):
+def ZigateConf(self, discover ):
     '''
     Called after Erase
     '''
@@ -61,7 +61,7 @@ def ZigateConf(self, channel, discover ):
     sendZigateCmd(self, "0023","00", 1)
 
     ################### ZiGate - set channel ##################
-    sendZigateCmd(self, "0021", "0000" + z_tools.returnlen(2,hex(int(channel))[2:4]) + "00", 2)
+    setChannel(self, self.channel)
 
     ################### ZiGate - start network ##################
     sendZigateCmd(self, "0024","", 1)
@@ -524,3 +524,41 @@ def identifySend( self, nwkid, ep, duration=0):
     Domoticz.Debug("identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration))
     Domoticz.Debug("identifySend - data sent >%s< " %(datas) )
     sendZigateCmd(self, "0070", datas )
+
+
+def setChannel( self, channel):
+    '''
+    The channel list
+    is a bitmap, where each bit describes a channel (for example bit 12
+    corresponds to channel 12). Any combination of channels can be included.
+    ZigBee supports channels 11-26.
+    '''
+    CHANNELS = { 11: 0x00000800,
+            12: 0x00001000,
+            13: 0x00002000,
+            14: 0x00004000,
+            15: 0x00008000,
+            16: 0x00010000,
+            17: 0x00020000,
+            18: 0x00040000,
+            19: 0x00080000,
+            20: 0x00100000,
+            21: 0x00200000,
+            22: 0x00400000,
+            23: 0x00800000,
+            24: 0x01000000,
+            25: 0x02000000,
+            26: 0x04000000 }
+
+    mask = 0x00000000
+    Domoticz.Log("setChannel - Channel list: %s" %(channel))
+    if isinstance(channel, list):
+        for c in channel:
+            mask += CHANNELS[int(c)]
+    else:
+            mask = CHANNELS[int(channel)]
+    Domoticz.Debug("setChannel - Channel set to : %08.x " %(mask))
+
+    sendZigateCmd(self, "0021", "%08.x" %(mask), 2)
+    return
+

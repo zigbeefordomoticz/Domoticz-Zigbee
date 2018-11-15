@@ -74,6 +74,7 @@ class BasePlugin:
         self.DeviceListName = ''
         self.homedirectory = ''
         self.HardwareID = ''
+        self.channel = []
         self.Key = ''
         self.HBcount=0
         self.ZigateIEEE = None       # Zigate IEEE
@@ -135,6 +136,8 @@ class BasePlugin:
             z_var.RemoveDevice = int(self.PluginConf['RemoveDevice'],10)
         if  self.PluginConf.get('ForceCreationDevice') and self.PluginConf.get('ForceCreationDevice').isdigit():
             self.ForceCreationDevice = int(self.PluginConf['ForceCreationDevice'],10)
+        # Decode the Channel list if any
+        self.channel = [ c.strip() for c in Parameters["Mode5"].split(',')]
         
         Domoticz.Log("CrcCheck: %s sendDelay: %s storeDiscoveryFrames: %s logFORMAT: %s LQI: %s RemoveDevice: %s ForceCreationDevice: %s" \
                 %(z_var.CrcCheck, z_var.sendDelay, z_var.storeDiscoveryFrames, z_var.logFORMAT, z_var.LQI, z_var.RemoveDevice, self.ForceCreationDevice) )
@@ -215,14 +218,14 @@ class BasePlugin:
                 z_output.sendZigateCmd(self, "0012", "", 5)
                 Domoticz.Status("Sw reset")
                 z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
-                z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
+                z_output.ZigateConf(self, Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
                     Domoticz.Status("Sw reset")
                     z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
-                    z_output.ZigateConf(self, Parameters["Mode5"], Parameters["Mode2"])
+                    z_output.ZigateConf(self, Parameters["Mode2"])
                 else:
-                    z_output.ZigateConf_light(self, Parameters["Mode5"], Parameters["Mode2"])
+                    z_output.ZigateConf_light(self, Parameters["Mode2"])
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
