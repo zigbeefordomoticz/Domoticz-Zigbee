@@ -556,11 +556,13 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
     self.ZigateNWKID = addr
 
     Domoticz.Status("Decode8009 : Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
+
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0" : 
         Domoticz.Status("Decode8009 : Network state DOWN ! " )
     else :
-        Domoticz.Status("Decode8009 : Network state UP - PAN Id = " + str(PanID) + " on Channel = " + str(int(Channel,16)) )
+        Domoticz.Status("Decode8009 - Network state UP, PANID: %s extPANID: 0x%s Channel: %s" \
+                %( PanID, extPanID, int(Channel,16) ))
 
     return
 
