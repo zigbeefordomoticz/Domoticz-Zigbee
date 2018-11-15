@@ -146,10 +146,11 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
     # Must seach in the NwkID dictionnary and remove only the corresponding device entry in the ClusterType.
     # In case there is no more ClusterType , then the full entry can be removed
 
-    Domoticz.Log("removeDeviceInList - request to remove Device : " +str(Devices[Unit].ID ) )
     if IEEE in self.IEEE2NWK :
         key = self.IEEE2NWK[IEEE]
         ID = Devices[Unit].ID
+
+        Domoticz.Log("removeDeviceInList - request to remove Device: %s with IEEE: %s " %(key, IEEE))
 
         if 'ClusterTye' in self.ListOfDevices[key]:               # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
             if  str(ID) in self.ListOfDevices[key]['ClusterType']  :
