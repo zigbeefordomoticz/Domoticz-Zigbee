@@ -525,14 +525,7 @@ def identifySend( self, nwkid, ep, duration=0):
     Domoticz.Debug("identifySend - data sent >%s< " %(datas) )
     sendZigateCmd(self, "0070", datas )
 
-
-def setChannel( self, channel):
-    '''
-    The channel list
-    is a bitmap, where each bit describes a channel (for example bit 12
-    corresponds to channel 12). Any combination of channels can be included.
-    ZigBee supports channels 11-26.
-    '''
+def maskChannel( channel ):
     CHANNELS = { 11: 0x00000800,
             12: 0x00001000,
             13: 0x00002000,
@@ -554,9 +547,23 @@ def setChannel( self, channel):
     Domoticz.Log("setChannel - Channel list: %s" %(channel))
     if isinstance(channel, list):
         for c in channel:
-            mask += CHANNELS[int(c)]
+            if c.isdigit():
+                mask += CHANNELS[int(c)]
+            else:
+                Domoticz.Error("maskChannel - invalid channel %s" %c)
     else:
             mask = CHANNELS[int(channel)]
+    return mask
+
+
+def setChannel( self, channel):
+    '''
+    The channel list
+    is a bitmap, where each bit describes a channel (for example bit 12
+    corresponds to channel 12). Any combination of channels can be included.
+    ZigBee supports channels 11-26.
+    '''
+    mask = maskChannel( channel )
     Domoticz.Debug("setChannel - Channel set to : %08.x " %(mask))
 
     sendZigateCmd(self, "0021", "%08.x" %(mask), 2)
@@ -595,8 +602,14 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
         scanDuration = 0xFE # Change radio channel
     elif mode == 'update':
         scanDuration = 0xFF # Update stored radui
+    else:
+        Domoticz.Log("NwkMgtUpdReq Unknown mode %s" %mode)
+        return
 
     scanCount = 1
+
+    mask = maskChannel( channel )
+    Domoticz.Log("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
 
     datas = "0000" + "%08.x" %(channel) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
     Domoticz.Log("NwkMgtUpdReq - %s channel:%04.x duration: %02.x count: %s >%s<" \
