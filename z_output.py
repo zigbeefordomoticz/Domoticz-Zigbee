@@ -562,3 +562,57 @@ def setChannel( self, channel):
     sendZigateCmd(self, "0021", "%08.x" %(mask), 2)
     return
 
+
+def NwkMgtUpdReq( self, channel, mode='scan'  ):
+    '''
+    NwkMgtUpdReq( self, channel, mode )
+        channel: channel to scan or to use
+        mode: 'scan' => scanner
+              'change' => change the Radio Channel
+    '''
+    # <target short address: uint16_t>
+    # <channel mask: uint32_t>
+    # <scan duration: uint8_t>
+    # <scan count: uint8_t>
+    # <network update ID: uint8_t>
+    # <network manager short address: uint16_t>
+    # Channel Mask:
+    #    Mask of channels to scan
+    # Scan Duration:
+    # 0x00 - 0x05 :  Time in Second
+    # 0x60 - 0xFD : Reserved
+    # 0xFE        : Change radio channel to single channel specified through channel
+    # 0xFF        : Update the stored radio channel mask
+    # Scan count:
+    #    Scan repeats 0 – 5
+    # Network Update ID:
+    #    0 – 0xFF Transaction ID for scan
+
+    # Scan Duration
+    if mode == 'scan':
+        scanDuration = 0x01 # 5 seconds
+    elif mode == 'change':
+        scanDuration = 0xFE # Change radio channel
+    elif mode == 'update':
+        scanDuration = 0xFF # Update stored radui
+
+    scanCount = 1
+
+    datas = "0000" + "%08.x" %(channel) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
+    Domoticz.Log("NwkMgtUpdReq - %s channel:%04.x duration: %02.x count: %s >%s<" \
+            %( mode, channel, scanDuration, scanCount, datas) )
+    sendZigateCmd(self, "004A", datas )
+    return
+
+def setExtendedPANID(self, extPANID):
+    '''
+    setExtendedPANID should be call after an erase PDM. If you change it 
+    after having paired some devices, they won't be able to reach you anymore
+    Extended PAN IDs (EPIDs) are 64-bit numbers that uniquely identify a PAN. 
+    ZigBee communicates using the shorter 16-bit PAN ID for all communication except one.
+    '''
+
+    datas = "%016.x" %(extPANID)
+    Domoticz.Log("set ExtendedPANID - %16.x "\
+            %( extPANID) )
+    sendZigateCmd(self, "0020", datas )
