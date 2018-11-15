@@ -252,21 +252,26 @@ def processListOfDevices( self , Devices ):
             # Most likely we should receive a 0x004d, where the device come back with a new short address
             # For now we will display a message in the log every 1'
             # We might have to remove this entry if the device get not reconnected.
-            if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 6 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
+            if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 12 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
                 Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
                 # Let's check if the device still exist in Domoticz
-                fnd = False
-                if self.ListOfDevices[NWKID]['IEEE'] in Devices:
-                    for Unit in Devices:
-                        if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID:
-                            Domoticz.Log("processListOfDevices - " +Devices[Unit].Name + " is not connected any more !")
-                            fnd = True
+                fnd = True
+                for Unit in Devices:
+                    if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID:
+                        Domoticz.Debug("processListOfDevices - %s  is still connected cannot remove. NwkId: %s IEEE: %s " \
+                                %(Devices[Unit].Name, NWKID, self.ListOfDevices[NWKID]['IEEE']))
+                        fnd = True
+                        break
+                else: #We browse the all Devices and didn't find any IEEE.
+                    Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s " %( NWKID, self.ListOfDevices[NWKID]['IEEE']))
+                    fnd = False
+
                 if not fnd:
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
                     if self.ListOfDevices[NWKID]['IEEE'] in self.IEEE2NWK:
-                        Domoticz.Log("processListOfDevices - Removing " +str(self.ListOfDevices[NWKID]['IEEE']) + " from IEEE2NWK.")
+                        Domoticz.Log("processListOfDevices - Removing %s / %s from IEEE2NWK." %(self.ListOfDevices[NWKID]['IEEE'], NWKID))
                         del self.IEEE2NWK[self.ListOfDevices[NWKID]['IEEE']]
-                    Domoticz.Log("processListOfDevices - Removing the entry from ListOfDevice")
+                    Domoticz.Log("processListOfDevices - Removing the entry %s from ListOfDevice" %(NWKID))
                     z_tools.removeNwkInList( self, NWKID)
 
         elif status != "inDB" and status != "UNKNOW":
