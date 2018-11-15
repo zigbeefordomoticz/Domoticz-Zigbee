@@ -214,14 +214,15 @@ class BasePlugin:
             isConnected = True
             Domoticz.Log("Connected successfully")
             if Parameters["Mode3"] == "True":
-            ################### ZiGate - ErasePD ##################
+                ################### ZiGate - ErasePD ##################
+                Domoticz.Status("Erase Zigate PDM")
                 z_output.sendZigateCmd(self, "0012", "", 5)
-                Domoticz.Status("Sw reset")
+                Domoticz.Status("Software reset")
                 z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
                 z_output.ZigateConf(self, Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
-                    Domoticz.Status("Sw reset")
+                    Domoticz.Status("Software reset")
                     z_output.sendZigateCmd(self, "0011", "",7 ) # Software Reset
                     z_output.ZigateConf(self, Parameters["Mode2"])
                 else:
