@@ -75,6 +75,7 @@ class BasePlugin:
         self.homedirectory = ''
         self.HardwareID = ''
         self.channel = []
+        self.NetworkScan = 0
         self.Key = ''
         self.HBcount=0
         self.ZigateIEEE = None       # Zigate IEEE
@@ -136,11 +137,13 @@ class BasePlugin:
             z_var.RemoveDevice = int(self.PluginConf['RemoveDevice'],10)
         if  self.PluginConf.get('ForceCreationDevice') and self.PluginConf.get('ForceCreationDevice').isdigit():
             self.ForceCreationDevice = int(self.PluginConf['ForceCreationDevice'],10)
+        if  self.PluginConf.get('NetworkScan') and self.PluginConf.get('NetworkScan').isdigit():
+            self.NetworkScan = int(self.PluginConf['NetworkScan'],10)
         # Decode the Channel list if any
         self.channel = [ c.strip() for c in Parameters["Mode5"].split(',')]
         
-        Domoticz.Log("CrcCheck: %s sendDelay: %s storeDiscoveryFrames: %s logFORMAT: %s LQI: %s RemoveDevice: %s ForceCreationDevice: %s" \
-                %(z_var.CrcCheck, z_var.sendDelay, z_var.storeDiscoveryFrames, z_var.logFORMAT, z_var.LQI, z_var.RemoveDevice, self.ForceCreationDevice) )
+        Domoticz.Log("CrcCheck: %s sendDelay: %s storeDiscoveryFrames: %s logFORMAT: %s LQI: %s RemoveDevice: %s ForceCreationDevice: %s NetworkScan: %s" \
+                %(z_var.CrcCheck, z_var.sendDelay, z_var.storeDiscoveryFrames, z_var.logFORMAT, z_var.LQI, z_var.RemoveDevice, self.ForceCreationDevice, self.NetworkScan) )
         z_var.ReqRcv=bytearray()
 
         if  z_var.storeDiscoveryFrames == 1 :
