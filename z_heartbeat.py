@@ -252,7 +252,7 @@ def processListOfDevices( self , Devices ):
             # Most likely we should receive a 0x004d, where the device come back with a new short address
             # For now we will display a message in the log every 1'
             # We might have to remove this entry if the device get not reconnected.
-            if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 12 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
+            if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 36 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
                 Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
                 # Let's check if the device still exist in Domoticz
                 fnd = True
