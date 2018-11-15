@@ -521,6 +521,6 @@ def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
 def identifySend( self, nwkid, ep, duration=0):
 
     datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration) 
-    Domoticz.Log("identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration))
+    Domoticz.Debug("identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration))
     Domoticz.Debug("identifySend - data sent >%s< " %(datas) )
     sendZigateCmd(self, "0070", datas )
