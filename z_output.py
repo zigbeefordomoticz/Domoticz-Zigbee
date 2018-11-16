@@ -35,8 +35,8 @@ def ZigateConf_light(self, discover ):
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
-    Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "" , 2 )   # Start Network
+    #Domoticz.Status("Start network")
+    #sendZigateCmd(self, "0024", "" , 2 )   # Start Network
 
     if str(discover) != "0":
         if str(discover)=="255": 
@@ -51,20 +51,20 @@ def ZigateConf_light(self, discover ):
 
 def ZigateConf(self, discover ):
     '''
-    Called after Erase
+    Called after Erase and Software Reset
     '''
     ################### ZiGate - get Firmware version #############
     # answer is expected on message 8010
     sendZigateCmd(self, "0010","",1)
 
     ################### ZiGate - Set Type COORDINATOR #################
-    sendZigateCmd(self, "0023","00", 1)
+    sendZigateCmd(self, "0023","00", 3)
 
     ################### ZiGate - set channel ##################
     setChannel(self, self.channel)
 
     ################### ZiGate - start network ##################
-    sendZigateCmd(self, "0024","", 1)
+    sendZigateCmd(self, "0024","", 2)
 
     sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
 
@@ -526,7 +526,8 @@ def identifySend( self, nwkid, ep, duration=0):
     sendZigateCmd(self, "0070", datas )
 
 def maskChannel( channel ):
-    CHANNELS = { 11: 0x00000800,
+    CHANNELS = { 0: 0x00000000, # Scan for all channels
+            11: 0x00000800,
             12: 0x00001000,
             13: 0x00002000,
             14: 0x00004000,
@@ -548,7 +549,8 @@ def maskChannel( channel ):
     if isinstance(channel, list):
         for c in channel:
             if c.isdigit():
-                mask += CHANNELS[int(c)]
+                if c in ( 0, 11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26):
+                    mask += CHANNELS[int(c)]
             else:
                 Domoticz.Error("maskChannel - invalid channel %s" %c)
     else:
@@ -597,7 +599,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
 
     # Scan Duration
     if mode == 'scan':
-        scanDuration = 0x01 # 2 seconds
+        scanDuration = 0x05 # 2 seconds
     elif mode == 'change':
         scanDuration = 0xFE # Change radio channel
     elif mode == 'update':
@@ -619,7 +621,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
 
 def setExtendedPANID(self, extPANID):
     '''
-    setExtendedPANID should be call after an erase PDM. If you change it 
+    setExtendedPANID MUST be call after an erase PDM. If you change it 
     after having paired some devices, they won't be able to reach you anymore
     Extended PAN IDs (EPIDs) are 64-bit numbers that uniquely identify a PAN. 
     ZigBee communicates using the shorter 16-bit PAN ID for all communication except one.
