@@ -185,6 +185,8 @@ def ReadCluster(self, Devices, MsgData):
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0406": Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
+    elif MsgClusterId=="0500": Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
+            MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0702":  Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0b04": Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
@@ -304,9 +306,6 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off: " + str(MsgClusterData) )
 
     elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004":
-        # Nov 01 10:59:43 pi3 domoticz[865]: 2018-11-01 10:59:43.881  (Zigate) ReadCluster - 0006  Saddr: d54c SrcEp : 01 AttrID : f000 AttType : 0023 AttSize : 0004 Attribute : 070000c0
-        # Nov 01 10:59:43 pi3 domoticz[865]: 2018-11-01 10:59:43.881  (Zigate) ReadCluster - Feedback from device d54c/01 MsgClusterData: 070000c0 decoded: 117440704
-
         value = int(decodeAttribute( MsgAttType, MsgClusterData ))
         Domoticz.Log("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
                 " decoded: " + str(value) )
@@ -367,22 +366,6 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         Domoticz.Error("ReadCluster - ClusterId=0402 - MsgClusterData vide")
 
-
-#    if MsgClusterData != "":
-#        if MsgClusterData[0] == "f":  # cas temperature negative
-#            MsgClusterData=-(int(MsgClusterData,16)^int("FFFF",16))
-#            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
-#            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-#            Domoticz.Debug("ReadCluster - ClusterId=0402 - reception temp: " + str(MsgClusterData/100) )
-#        else:
-#            MsgClusterData=int(MsgClusterData,16)
-#            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, round(MsgClusterData/100,1))
-#            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(MsgClusterData/100,1)
-#            Domoticz.Debug("ReadCluster - ClusterId=0402 - reception temp: " + str(MsgClusterData/100) )
-#    else: 
-#        Domoticz.Error("ReadCluster - ClusterId=0402 - MsgClusterData vide")
-#
-
 def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: Pression atmospherique)
 
@@ -404,22 +387,6 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=value
         Domoticz.Debug("ReadCluster - ClusterId=0403 - 0010 reception atm: " + str(value ) )
-        #
-# OLD CODE
-#    if MsgAttType=="0028":
-#        #z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr,MsgSrcEp,"Barometer",round(int(MsgClusterData,8))
-#        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-#        Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: NOT DOMOTICZ UPDATE !!!!" + str(MsgClusterData) )
-#            
-#    if MsgAttType=="0029" and MsgAttrID=="0000":
-#        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/100,1))
-#        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/100,1)
-#        Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: " + str(round(int(MsgClusterData,16),1)))
-#            
-#    if MsgAttType=="0029" and MsgAttrID=="0010":
-#        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,round(int(MsgClusterData,16)/10,1))
-#        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=round(int(MsgClusterData,16)/10,1)
-#        Domoticz.Debug("ReadCluster - ClusterId=0403 - reception atm: " + str(round(int(MsgClusterData,16)/10,1)))
 
 
 def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -435,6 +402,40 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     Domoticz.Debug("ReadCluster - ClusterId=0400 - reception LUX Sensor: " + str(int(MsgClusterData,16)) )
     z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
+
+def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+    ''' 
+    Cluster: Security & Safety IAZ Zone
+    https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf ( section 26.2 )
+    '''
+    # Decoding of MsgClusterData
+    # We should be able to retreive :
+    #   zoneStatus bmap16   -  is a mandatory attribute which is a 16-bit bitmap indicating the status of each of the possible no tification triggers from the device
+    #   zoneType enum16     -  is a mandatory attribute which indicates the zone type and the types of security detectors that can trigger the alarms, Alarm1 and Alarm2
+    #   zoneID  int8        -  is a mandatory attribute containing the 8-bit identifier for the zone allocated by the CIE device at the time of enrollment    
+    #   zoneState enum8     -  is a mandatory attribute which indicates the membership status of the device in an IAS system ( 0x00 or 0x01)
+
+    #Potential attributes
+    #   'alarm1', 'alarm2', 'tamper', 'battery', 'supervision_report', 'restore_report', 'trouble_failure', 'ac', 'test_mode', 'battery_defect'
+
+    Domoticz.Log("ReadCluster0500 - Security & Safety IAZ Zone - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" \
+            %( MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ))
+
+    # from what I've seen in the source code
+    zoneStatus = extendedStatus = zoneId = delay = ''
+    if (len(MsgClusterData)) >= 3:
+        zoneStatus = MsgClusterData[0:4]
+    if (len(MsgClusterData)) >= 7:
+        extendedStatus = MsgClusterData[4:8]
+    if (len(MsgClusterData)) >= 11:
+        zoneId = MsgClusterData[8:12]
+    if (len(MsgClusterData)) >= 15:
+        delay = MsgClusterData[12:16]
+
+    Domoticz.Log("ReadCluster0500 - zoneStatus: %s extendedStatus: %s zoneId: %s delay: %s" \
+            %(zoneStatus, extendedStatus, zoneId, delay))
+
+    return
 
 
 def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
