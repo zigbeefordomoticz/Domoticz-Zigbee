@@ -35,8 +35,8 @@ def ZigateConf_light(self, discover ):
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
-    #Domoticz.Status("Start network")
-    #sendZigateCmd(self, "0024", "" , 2 )   # Start Network
+    Domoticz.Status("Start network")
+    sendZigateCmd(self, "0024", "" , 2 )   # Start Network
 
     if str(discover) != "0":
         if str(discover)=="255": 
