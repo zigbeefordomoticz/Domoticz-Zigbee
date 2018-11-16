@@ -291,6 +291,8 @@ def processListOfDevices( self , Devices ):
         # Trigger Conifre Reporting to eligeable decices
         z_output.processConfigureReporting( self )
     
+    if self.NetworkScan != 0 and (z_var.HeartbeatCount == 12 or (z_var.HeartbeatCount % (self.NetworkScan // 10)) == 0) :
+        z_output.NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
     return True
 
 

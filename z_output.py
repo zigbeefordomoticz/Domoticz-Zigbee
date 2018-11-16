@@ -30,7 +30,7 @@ def ZigateConf_light(self, discover ):
     sendZigateCmd(self, "0015", "")
 
     utctime = int(time.time())
-    Domoticz.Log("ZigateConf - Setting UTC Time to : %s" %( utctime) )
+    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( utctime) )
     sendZigateCmd(self, "0016", str(utctime) )
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
@@ -218,7 +218,7 @@ def ReadAttributeRequest_0000(self, key):
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
-        Domoticz.Log("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
+        Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
@@ -227,7 +227,7 @@ def ReadAttributeRequest_0000(self, key):
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
-        Domoticz.Log("Request Basic  via Read Attribute request: " + key + " EPout = " + EPout )
+        Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + EPout )
         ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_0001(self, key):
@@ -309,7 +309,7 @@ def ReadAttributeRequest_000C(self, key):
      Attribute Type: 39 Attribut ID: 0106
     """
 
-    Domoticz.Log("Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout )
     listAttributes = []
     listAttributes.append(0x41)
     listAttributes.append(0x51)
@@ -322,7 +322,7 @@ def ReadAttributeRequest_000C(self, key):
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
-    Domoticz.Log("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_0702(self, key):
@@ -341,7 +341,7 @@ def ReadAttributeRequest_0702(self, key):
             if "0702" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
 
-    Domoticz.Log("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
 def removeZigateDevice( self, IEEE ):
@@ -359,7 +359,7 @@ def removeZigateDevice( self, IEEE ):
 def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
-    Domoticz.Log("attribute_discovery_request - " +str(datas) )
+    Domoticz.Debug("attribute_discovery_request - " +str(datas) )
     sendZigateCmd(self, "0140", datas , 2 )
 
 
@@ -597,7 +597,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
 
     # Scan Duration
     if mode == 'scan':
-        scanDuration = 0x01 # 5 seconds
+        scanDuration = 0x01 # 2 seconds
     elif mode == 'change':
         scanDuration = 0xFE # Change radio channel
     elif mode == 'update':
@@ -609,11 +609,11 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     scanCount = 1
 
     mask = maskChannel( channel )
-    Domoticz.Log("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
+    Domoticz.Debug("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
 
-    datas = "0000" + "%08.x" %(channel) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
-    Domoticz.Log("NwkMgtUpdReq - %s channel:%04.x duration: %02.x count: %s >%s<" \
-            %( mode, channel, scanDuration, scanCount, datas) )
+    datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
+    Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x duration: %02.x count: %s >%s<" \
+            %( mode, mask, scanDuration, scanCount, datas) )
     sendZigateCmd(self, "004A", datas )
     return
 

@@ -1037,18 +1037,43 @@ def Decode804A(self, MsgData) : # Management Network Update response
     MsgTransmissionFailures=MsgData[8:12]
     MsgScannedChannel=MsgData[12:20]
     MsgScannedChannelListCount=MsgData[20:22]
-    MsgChannelList=MsgData[22:len(MsgData)]
+    MsgChannelListInterference=MsgData[22:len(MsgData)]
+
+    #Decode the Channel mask received
+    CHANNELS = { 11: 0x00000800,
+            12: 0x00001000,
+            13: 0x00002000,
+            14: 0x00004000,
+            15: 0x00008000,
+            16: 0x00010000,
+            17: 0x00020000,
+            18: 0x00040000,
+            19: 0x00080000,
+            20: 0x00100000,
+            21: 0x00200000,
+            22: 0x00400000,
+            23: 0x00800000,
+            24: 0x01000000,
+            25: 0x02000000,
+            26: 0x04000000 }
 
     channelList = []
+    for channel in CHANNELS:
+        if int(MsgScannedChannel,16) & CHANNELS[channel]:
+            channelList.append( channel )
+
+    channelListInterferences = []
     idx = 0
-    while idx < len(MsgChannelList):
-        channelList.append( MsgChannelList[idx:idx+4])
-        idx += 4
+    while idx < len(MsgChannelListInterference):
+        channelListInterferences.append( "%X" %(int(MsgChannelListInterference[idx:idx+2],16)))
+        idx += 2
 
-
-    Domoticz.Status("Decode804A - Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s, Scanned Channel: %s , Channel List: %s, Status: %s) " \
-            %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), MsgScannedChannel, channelList, z_status.DisplayStatusCode(MsgDataStatus)) )
-
+    Domoticz.Status("Decode804A - Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s , Status: %s) " \
+            %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), z_status.DisplayStatusCode(MsgDataStatus)) )
+    Domoticz.Status("Decode804A - Management Network Update")
+    for chan, inter in zip( channelList, channelListInterferences ):
+        Domoticz.Status("Decode804A -     Channel: %s Interference: : %s " %(chan, int(inter,16)))
+            
     return
 
 def Decode804B(self, MsgData) : # System Server Discovery response
