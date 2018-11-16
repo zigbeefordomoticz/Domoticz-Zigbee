@@ -545,11 +545,11 @@ def maskChannel( channel ):
             26: 0x04000000 }
 
     mask = 0x00000000
-    Domoticz.Log("setChannel - Channel list: %s" %(channel))
+    Domoticz.Debug("setChannel - Channel list: %s" %(channel))
     if isinstance(channel, list):
         for c in channel:
             if c.isdigit():
-                if c in ( 0, 11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26):
+                if c in ( '0', '11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'):
                     mask += CHANNELS[int(c)]
             else:
                 Domoticz.Error("maskChannel - invalid channel %s" %c)
