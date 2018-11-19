@@ -334,14 +334,19 @@ class BasePlugin:
                 Domoticz.Debug("request Network Status")
                 z_output.sendZigateCmd(self, "0009","")
         
+        prevLenDevices = len(Devices)
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         z_heartbeat.processListOfDevices( self , Devices )
 
         # Reset Motion sensors
         z_domoticz.ResetDevice( self, Devices, "Motion",5)
 
-        # Write the ListOfDevice in HBcount % 200 ( 3' )
-        z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)
+        # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
+        if len(Devices) != prevLenDevices:
+            Domoticz.Log("Devices size has changed , let's write ListOfDevices on disk")
+            z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
+        else:
+            z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)
 
         # Check if we still have connectivity. If not re-established the connectivity
         if (z_var.ZigateConn.Connected() != True):
