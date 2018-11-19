@@ -15,6 +15,14 @@ import datetime
 import importlib
 
 
+def _copyfile( source, dest ):
+    copy_buffer =''
+    with open(source, 'r') as src, open(dest, 'wt') as dst:
+        for line in src:
+            dst.write(line)
+    src.close()
+    dst.close()
+
 
 def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
@@ -27,12 +35,8 @@ def LoadDeviceList( self ):
         self.ListOfDevices = {}
         return True    
 
-    try:
-        import shutil
-        _backup =  self.DeviceListName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
-        shutil.copyfile( str(self.DeviceListName) , str(_backup) )
-    except:
-        Domoticz.Log("LoadDevice - shutil not imported, no backup done!")
+    _backup = self.DeviceListName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+    _copyfile( str(self.DeviceListName) , str(_backup) )
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize( self.DeviceListName )
