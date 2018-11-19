@@ -11,8 +11,8 @@ import Domoticz
 import z_var
 import z_tools
 import os.path
-import shutil
 import datetime
+import importlib
 
 
 
@@ -21,13 +21,18 @@ def LoadDeviceList( self ):
     #
     Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 
+
     # Check if the DeviceList file exist.
     if not os.path.isfile( self.DeviceListName ) :
         self.ListOfDevices = {}
         return True    
 
-    _backup =  self.DeviceListName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
-    shutil.copyfile( str(self.DeviceListName) , str(_backup) )
+    try:
+        import shutil
+        _backup =  self.DeviceListName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+        shutil.copyfile( str(self.DeviceListName) , str(_backup) )
+    except:
+        Domoticz.Log("LoadDevice - shutil not imported, no backup done!")
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize( self.DeviceListName )
