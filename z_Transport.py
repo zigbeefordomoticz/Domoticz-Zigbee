@@ -1,196 +1,457 @@
+#!/usr/bin/python
 
 import Domoticz
 import binascii
 import struct
+import time
+import threading
 
-DELAY = 1   # 1s delay when sending data
 
-class ZigateTransport:
+DELAY = 0
+TIMEOUT = 20 # Timeout after which we unblock
 
-    def __init__(self , transport, serialPort=None, wifiAddress=None, wifiPort=None ):
+# Standalone message. They are receive and do not belongs to a command
+STANDALONE_MESSAGE = ( 0x8101, 0x8102, 0x8003, 0x804, 0x8005,  0x8006, 0x8701, 0x8702, 0x004D )
+
+# Command message followed by a Status
+CMD_ONLY_STATUS = ( 0x0012, 0x0016, 0x0020, 0x0021, 0x0022, 0x0023, 0x0027, 0x0049,
+        # Group
+        0x0064, 0x0065,
+        # Identify
+        0x0070, 0x0071,
+        # Action Move
+        0x0080, 0x0081, 0x0082, 0x0083, 0x0084,
+        # On Off
+        0x0092, 0x0093, 0x0094,
+        # Action Touchlink
+        0x00D0, 0x00D2,
+        # IAS Zone
+        0x0400, 0x0401,
+        # Request APS
+        0x0530 )
+
+# Commands/Andswers
+CMD_DATA = { 0x0009:0x8009,
+        0x0010:0x8010,
+        0x0014:0x8014,
+        0x0015:0x8015,
+        0x0017:0x8017,
+        0x0024:0x8024,
+        0x0026:0x8048,
+        0x0028:0x8028,
+        0x002B:0x802B,
+        0x002C:0x802C,
+        0x0030:0x8030,
+        0x0031:0x8031,
+        0x0034:0x8034,
+        0x0040:0x8040,
+        0x0041:0x8041,
+        0x0042:0x8042,
+        0x0043:0x8043,
+        0x0044:0x8044,
+        0x0045:0x8045,
+        0x0046:0x8046,
+        0x0047:0x8047,
+        0x004A:0x804A,
+        0x004B:0x804B,
+        0x004E:0x804E,
+        # groups
+        0x0060:0x8060, 0x0061:0x8061, 0x0062:0x8062, 0x0063:0x8063,
+        # Scenes
+        0x00A0:0x80A0, 0x00A1:0x80A1, 0x00A2:0x80A2, 0x00A3:0x80A3,
+        0x00A4:0x80A4, 0x00A5:0x80A5, 0x00A6:0x80A6, 0x00A7:0x80A7,
+        0x00A8:0x80A8, 0x00A9:0x80A9,
+        # Action Hue
+        0x00B0:0x8002, 0x00B1:0x8002, 0x00B2:0x8002, 0x00B3:0x8002,
+        0x00B4:0x8002, 0x00B5:0x8002, 0x00B6:0x8002, 0x00B7:0x8002,
+        0x00B8:0x8002, 0x00B9:0x8002, 0x00BA:0x8002, 0x00BB:0x8002,
+        0x00BC:0x8002, 0x00BD:0x8002, 0x00BE:0x8002, 0x00BF:0x8002,
+        # Action Color
+        0x00C0:0x8002, 0x00C1:0x8002, 0x00C2:0x8002,
+        # Action Lock/Unlock Door
+        0x00F0:0x8002,
+        # Action Attribute
+        0x0100:0x8100, 0x0110:0x8110, 0x0120:0x8120, 0x0140:0x8140
+        }
+
+
+
+class ZigateTransport(object):
+    '''
+    Class in charge of Transport mecanism to and from Zigate
+    Managed also the Command -> Status -> Data sequence
+    '''
+
+    def __init__(self , transport, F_out, serialPort=None, wifiAddress=None, wifiPort=None ):
         Domoticz.Log("Setting Transport object")
 
-        self.__conn = None      # connection handle
-        self._highPrioQueue = None     # list if high prioirty commands
-        self._normalQueue = None       # list of normal priority commands
-        self._waitForStatus = None     # list of command sent and waiting for status 0x8000
-        self._waitForData = None      # list of command sent for which status received and waiting for data
-
-        self.__transp = None    # Transport mode USB or Wifi
-        self.__serialPort = None # serial port in case of USB
-        self.__wifiAddress = None # ip address in case of Wifi
-        self.__wifiPort = None  # wifi port
-        self.__crcErrors = 0    # count of crc errors
-        self.__framesErrors = 0 # count of frames error
-        self.__sent = 0         # count of sent messages
-        self.__received = 0     # count of received messages
-        self.__ReqRcv = bytearray() # on going receive buffer
+        self._connection = None         # connection handle
+        self._ReqRcv = bytearray()      # on going receive buffer
+        self._transp = None             # Transport mode USB or Wifi
+        self._serialPort = None         # serial port in case of USB
+        self._wifiAddress = None        # ip address in case of Wifi
+        self._wifiPort = None           # wifi port
+        self.F_out = F_out              # Function to call to bring the decoded Frame at plugin
 
         if str(transport) == "USB":
-            self.__transp = "USB"
-            self.__serialPort = serialPort 
+            self._transp = "USB"
+            self._serialPort = serialPort 
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", \
+                    Address=self._serialPort, Baud=115200)
         elif str(transport) == "Wifi":
-            self.__transp = "Wifi"
-            self.__wifiAddress = wifiAddress
-            self.__wifiPort = wifiPort
-        
-        return
+            self._transp = "Wifi"
+            self._wifiAddress = wifiAddress
+            self._wifiPort = wifiPort
+            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", \
+                    Address=self._wifiAddress, Port=self._wifiPort)
 
+        self._normalQueue = []          # list of normal priority commands
+        self._waitForStatus = []        # list of command sent and waiting for status 0x8000
+        self._waitForData = []          # list of command sent for which status received and waiting for data
 
+        self._crcErrors = 0     # count of crc errors
+        self._frameErrors = 0   # count of frames error
+        self._sent = 0          # count of sent messages
+        self._received = 0      # count of received messages
+        self._ack = 0           # count number of 0x8000
+        self._ackKO = 0         # 
+        self._data = 0          #
+        self._TOstatus = 0      # 
+        self._TOdata = 0        #
+        self._MissStatus = 0    # 
+        self._MissData = 0      # 
+
+    # Statistics methods 
     def crcErrors(self):
         ' return the number of crc Errors '
-        return self.__crcErrors
-
+        return self._crcErrors
     def frameErrors(self):
         ' return the number of frame errors'
-        return self.__framesErrors
-
-    def sent( self):
+        return self._frameErrors
+    def sent(self):
         ' return he number of sent messages'
-        return self.__sent
-
-    def received( self):
+        return self._sent
+    def received(self):
         ' return the number of received messages'
-        return self.__received
+        return self._received
+    def ackReceived(self):
+        ' return the number of ack 0x8000 '
+        return self._ack
+    def ackKOReceived(self):
+        ' return the number of ack 0x8000 '
+        return self._ackKO
+    def dataReceived(self):
+        ' return the number of ack 0x8000 '
+        return self._data
+    def MissedStatus(self):
+        ' return the number of ack 0x8000 '
+        return self._MissStatus
+    def MissedData(self):
+        ' return the number of ack 0x8000 '
+        return self._MissData
+    def TOStatus(self):
+        ' return the number of ack 0x8000 '
+        return self._TOStatus
+    def TOData(self):
+        ' return the number of ack 0x8000 '
+        return self._TOData
 
-    def openConn( self ):
-        if self.__transp == "USB":
-            Domoticz.Log("USB Connection : %s " %( self.__serialPort))
-            self.__conn  = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None", Address=self.__serialPort, Baud=115200)
-            self.__conn.Connect()
-        elif self.__transp == "Wifi":
-            Domoticz.Log("Wifi Connection : %s:%s " %( self.__wifiAddress, self.__wifiPort))
-            self.__conn = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ", Address=self.__wifiAddress, Port=self.__wifiPort)
-            self.__conn.Connect()
-        return self.__conn
+    # Transport / Opening / Closing Communication
+    def openConn(self):
+        self._connection.Connect()
 
-    def closeConn( self ):
-        self.__conn.Disconnect()
-        self.__conn = None
-        return
+    def closeConn(self):
+        self._connection.Disconnect()
+        self._connection = None
 
-    def isConn( self ):
-        if self.__conn is None:
+    def reConn(self):
+        if self.isConn() != True:
+            self.openConn()
+
+    def isConn(self):
+        if self._connection == None:
             return False
         else:
             return True
 
-    def __sendData( self, cmd, datas):
+    # Transport Sending Data
+    def _sendData( self, cmd, datas, delay):
         '''
         send data to Zigate via the communication transport
         '''
+        Domoticz.Log("_sendData %s" %cmd)
+
         if datas == "":
-            length="0000"
+            length = "0000"
         else:
             length = returnlen(4,(str(hex(int(round(len(datas)/2)))).split('x')[-1]))  # by Cortexlegeni 
-            Domoticz.Debug("sendZigateCmd - length is: " + str(length) )
-        if datas =="":
+
+        if datas == "":
             checksumCmd = getChecksum(cmd,length,"0")
-            if len(checksumCmd)==1:
-                strchecksum="0" + str(checksumCmd)
-            else:
-                strchecksum = checksumCmd
-            lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + "03" 
+            if len(checksumCmd) == 1: strchecksum = "0" + str(checksumCmd)
+            else: strchecksum = checksumCmd
+            lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
+                    str(ZigateEncode(strchecksum)) + "03" 
         else:
             checksumCmd = getChecksum(cmd,length,datas)
-            if len(checksumCmd)==1:
-                strchecksum="0" + str(checksumCmd)
-            else:
-                strchecksum = checksumCmd
-            lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
-        Domoticz.Debug("sendZigateCmd - Command send: " + str(lineinput))
+            if len(checksumCmd) == 1: strchecksum="0" + str(checksumCmd)
+            else: strchecksum = checksumCmd
+            lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
+                    str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
     
-        if self.__conn:
-            self.__conn.Send(bytes.fromhex(str(lineinput)), DELAY )
-            self.__sent += 1
+        self._connection.Send(bytes.fromhex(str(lineinput)), delay )
+        self._sent += 1
 
-    def __receiveData( self, Data):
+    # Transport / called by plugin 
+    def onMessage( self, Data):
+        Domoticz.Debug("onMessage called on Connection " +str(Data))
+
         FrameIsKo = 0                    
-        self.__ReqRcv += Data                # Add the incoming data
-        Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self.__ReqRcv).decode('utf-8'))+ "'" )
+
+        if Data != None:
+            self._ReqRcv += Data                # Add the incoming data
+            Domoticz.Debug("onMessage incoming data : '" + \
+                    str(binascii.hexlify(self._ReqRcv).decode('utf-8'))+ "'" )
+
         # Zigate Frames start with 0x01 and finished with 0x03    
         # It happens that we get some 
-        while 1 :                                                  # Loop until we have 0x03
-            Zero1=-1
-            Zero3=-1
+        while 1 :                    # Loop until we have 0x03
+            Zero1 = Zero3 = -1
             idx = 0
-            for val in self.__ReqRcv[0:len(self.__ReqRcv)] :
-                if Zero1 == - 1 and Zero3  == -1 and val == 1 :    # Do we get a 0x01
-                    Zero1 = idx                  # we have identify the Frame start
-                if Zero1 != -1 and val == 3 :    # If we have already started a Frame and do we get a 0x03
+            for val in self._ReqRcv[0:len(self._ReqRcv)] :
+                if Zero1 == - 1 and Zero3  == -1 and val == 1 :  # Do we get a 0x01
+                    Zero1 = idx                                  # we have identify the Frame start
+
+                if Zero1 != -1 and val == 3 :   # If we have already started a Frame and do we get a 0x03
                     Zero3 = idx + 1
-                    break                        # If we got 0x03, let process the Frame
+                    break                       # If we got 0x03, let process the Frame
                 idx += 1
-            if Zero3 == -1 :                     # No 0x03 in the Buffer, let's breat and wait to get more data
+
+            if Zero3 == -1 :                    # No 0x03 in the Buffer, let's breat and wait to get more data
                 return
-            Domoticz.Debug("onMessage Frame : Zero1=" + str(Zero1) + " Zero3=" + str(Zero3) )
+
             if Zero1 != 0 :
-                Domoticz.Log("onMessage : we have probably lost some datas, zero1 = " + str(Zero1) )
+                Domoticz.Debug("onMessage : we have probably lost some datas, zero1 = " + str(Zero1) )
+
             # uncode the frame
             BinMsg=bytearray()
-            iterReqRcv = iter (self.__ReqRcv[Zero1:Zero3])
-            for iByte in iterReqRcv:           # for each received byte
+            iterReqRcv = iter (self._ReqRcv[Zero1:Zero3])
+
+            for iByte in iterReqRcv :          # for each received byte
                 if iByte == 2 :                # Coded flag ?
-                    iByte = next(iterReqRcv) ^ 16    # then uncode the next value
+                    iByte = next(iterReqRcv) ^ 16   # then uncode the next value
                 BinMsg.append(iByte)           # copy
-            self.__ReqRcv = self.__ReqRcv[Zero3:]        # What is after 0x03 has to be reworked.
+
+            self._ReqRcv = self._ReqRcv[Zero3:]     # What is after 0x03 has to be reworked.
+
             # Check length
             Zero1, MsgType, Length, ReceivedChecksum = struct.unpack ('>BHHB', BinMsg[0:6])
             ComputedLength = Length + 7
             ReceveidLength = len(BinMsg)
-            Domoticz.Debug("onMessage Frame length : " + str(ComputedLength) + " " + str(ReceveidLength) ) # For testing purpose
             if ComputedLength != ReceveidLength :
                 FrameIsKo = 1
-                self.__frameErrors += 1
-                Domoticz.Error("onMessage : Frame size is bad, computed = " + str(ComputedLength) + " received = " + str(ReceveidLength) )
+                Domoticz.Error("onMessage : Frame size is bad, computed = " +\
+                        str(ComputedLength) + " received = " + str(ReceveidLength) )
+
             # Compute checksum
             ComputedChecksum = 0
             for idx, val in enumerate(BinMsg[1:-1]) :
                 if idx != 4 :                # Jump the checksum itself
                     ComputedChecksum ^= val
-            Domoticz.Debug("onMessage Frame : ComputedChekcum=" + str(ComputedChecksum) + " ReceivedChecksum=" + str(ReceivedChecksum) ) # For testing purpose
             if ComputedChecksum != ReceivedChecksum:
                 FrameIsKo = 1
-                self.__crcErrors += 1
-                Domoticz.Error("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + " received = " + str(ReceivedChecksum) )
-            AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
+                Domoticz.Error("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) +\
+                        " received = " + str(ReceivedChecksum) )
+
             if FrameIsKo == 0 :
-                self.__received += 1
-                return AsciiMsg
-        Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(self.__ReqRcv).decode('utf-8') ))
-        return
+                AsciiMsg=binascii.hexlify(BinMsg).decode('utf-8')
+                self.processFrame( AsciiMsg)
 
+        Domoticz.Debug("onMessage Remaining Frame : " + str(binascii.hexlify(self_ReqRcv).decode('utf-8') ))
+        return None
 
-    def sendData(self, cmd, datas):
-        self.__sendData( cmd, datas)
-        return
+    # For debuging purposes print the SendQueue
+    def _printSendQueue( self ):
+        cnt = 0
+        for iter in self._normalQueue:
+            Domoticz.Log("normalQueue[%d] = %s " %( cnt, iter[0]))
+            cnt += 1
 
-    def receiveData( self, Data):
+    def addCmdToSend(self, cmd, data):
+        'add a command to the waiting list'
+        timestamp = int(time.time())
+        self._normalQueue.append( ( cmd, data, timestamp) )
+        #self._printSendQueue()
+
+    def nextCmdtoSend(self ):
+        ' return the next Command to send pop'
+        if len(self._normalQueue) > 0 :
+            ret = self._normalQueue[0]
+            del self._normalQueue[0]
+            #self._printSendQueue()
+            return ret
+        return None
+
+    def nextStatusInWait( self ):
+        ' return the entry waiting for a Status '
+        if len(self._waitForStatus) > 0:
+            ret = self._waitForStatus[0]
+            del self._waitForStatus[0]
+            return ret
+        return None
+
+    def addCmdToWait(self, cmd, data):
+        'add a command to the waiting list'
+        timestamp = int(time.time())
+        self._waitForStatus.append( ( cmd, data, timestamp) )
+
+    def nextDataInWait( self ):
+        ' return the entry waiting for Data '
+        if len(self._waitForData) > 0:
+            ret = self._waitForData[0]
+            del self._waitForData[0]
+            return ret
+        return None
+
+    def addDataToWait(self, cmd):
+        'add a command to the waiting list'
+        timestamp = int(time.time())
+        self._waitForData.append( ( cmd, timestamp) )
+
+    def sendData(self, cmd, datas, delay=DELAY):
+        '''
+        in charge of sending Data. Call by sendZigateCmd
+        If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
+        '''
+        # Check if normalQueue is empty. If yes we can send the command straight
+        Domoticz.Debug("sendData         - waitQ: %s dataQ: %s normalQ: %s" \
+                %(len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+        if len(self._waitForStatus) != 0:
+            Domoticz.Debug("sendData - waitQ: %04.X" %(int(self._waitForStatus[0][0],16)))
+        if len(self._waitForData) != 0:
+            Domoticz.Debug("sendData - waitD: %04.X" %(int(self._waitForData[0][0])))
+
+        # Let's check if we don't have something waiting for ages !
+        self.checkTOwaitForStatus()
+
+        # If no wait on Status nor on Data, gooooooo
+        if len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
+            self.addCmdToWait( cmd, datas )
+            if int(cmd,16) in CMD_DATA:
+                self.addDataToWait( CMD_DATA[ int(cmd,16)] )
+            self._sendData( cmd, datas, delay)
+        else:
+            # Put in FIFO
+            self.addCmdToSend( cmd, datas )
+
+    def processFrame( self, frame):
         ''' 
         will return the Frame in the Data if any
+        process the Data and check if this is a 0x8000 message
+        in case the message contains several frame, receiveData will be recall
         '''
 
-        frame = self.__receiveData(Data)
-        if frame == None or frame == '':
-            return ''
+        Domoticz.Debug("receiveData - new Data coming")
+        if frame == '' or frame == None:
+            return
 
-        # Let's check if that Frame is in response to a Commande
         MsgType=frame[2:6]
         MsgLength=frame[6:10]
         MsgCRC=frame[10:12]
 
-        if MsgType != "8000":
-            # It is not a Status Type, so let(s return the frame back for processing
-            return frame
+        Domoticz.Debug("receiveData - MsgType: %s" %MsgType)
 
-        # We have receive a Status code in response to a command.
-        Msgframe=frame[12:len(frame)-4]
-        Status=Msgframe[0:2]
-        SEQ=Msgframe[2:4]
-        PacketType=Msgframe[4:8]
+        if MsgType == "8000":       # We are receiving a Status
+            if len(frame) > 12 :
+                # We have Payload : data + rssi
+                MsgData = frame[12:len(frame)-4]
+                if len(MsgData) < 8:
+                    Domoticz.Debug("receiveData - empty Frame payload: %s" %frame)
+                    return
+            else :
+                Domoticz.Debug("receiveData - empty Frame payload: %s" %frame)
+                return
 
-        return frame
+            # Here we have all information to decode the status
+            Status = MsgData[0:2]
+            SEQ = MsgData[2:4]
+            PacketType = MsgData[4:8]
+            Domoticz.Debug("receivedData - MsgType: %s PacketType: %s" %(MsgType, PacketType))
 
+            # We have receive a Status code in response to a command.
+            self.receiveStatusCmd( Status, PacketType, frame)
+            # We do not send this message for further processing as it is a pure internal to ack the command.
+            return
+
+        elif int(MsgType,16) in STANDALONE_MESSAGE:     # We receive an async message, just forward it to plugin
+            self.F_out( frame )                         # for processing
+        else:
+            self.receiveDataCmd( MsgType )              # 
+            self.F_out( frame )                         # Forward the message to plugin for further processing
+        self.checkTOwaitForStatus()                     #  Let's take the opportunity to check TiemOut
+        return 
+
+    def receiveDataCmd( self, MsgType ):
+        self._data += 1
+        Domoticz.Debug("receiveDataCmd - MsgType: %s" %MsgType)
+        if len(self._waitForData) != 0:
+            if int(MsgType,16) == self._waitForData[0][0]:
+                cmd, pTime = self.nextDataInWait()
+                if int(MsgType,16) != cmd:
+                    Domoticz.Log("receiveDataCmd - unexpected message Type: %s Expecting: %04.x" %(MsgType, cmd))
+            else:
+                Domoticz.Log("receiveDataCmd - unexpected message Type: %s Expecting: %04.x" \
+                        %(MsgType, self._waitForData[0][0]))
+
+        Domoticz.Debug("receiveDataCmd   - waitQ: %s dataQ: %s normalQ: %s" \
+                %(len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+
+        if len(self._normalQueue) != 0 \
+                and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
+            cmd, datas, timestamps = self.nextCmdtoSend()
+            self.sendData( cmd, datas)
+        return
+
+    def receiveStatusCmd( self, Status, PacketType, frame):
+        self._ack += 1
+        if Status != '00':
+            self._ackKO += 1
+        Domoticz.Debug("receiveStatusCmd - waitQ: %s dataQ: %s normalQ: %s" \
+                %(len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+        expectedCommand = self.nextStatusInWait()
+        if PacketType == '':
+            Domoticz.Debug("receiveStatusCmd - Empty PacketType: %s" %frame)
+        if PacketType != '' and int(expectedCommand[0],16) != int(PacketType,16):
+            Domoticz.Debug("receiveData - sync error : Expecting %s and Received: %s" \
+                    %( expectedCommand[0], PacketType ))
+
+        if len(self._normalQueue) != 0 \
+                and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
+            cmd, datas, timestamps = self.nextCmdtoSend()
+            self.sendData( cmd, datas)
+
+        return
+
+    def checkTOwaitForStatus(self):
+        'look at the waitForStatus, and in case of TimeOut delete the entry'
+        # Check waitForStatus
+        if ( len(self._waitForStatus) > 0 ):
+            now = int(time.time())
+            pCmd, pDatas, pTime = self._waitForStatus[0]
+            Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" %( int(pCmd,16), pTime, now - pTime))
+            if ( now - pTime ) > TIMEOUT:
+                entry = self.nextStatusInWait()
+                Domoticz.Error("waitForStatus - Timeout %s on %04.x " %( now - pTime, int(entry[0],16) ))
+
+        # Check waitForData
+        if ( len(self._waitForData) > 0 ):
+            now = int(time.time())
+            pCmd, pTime = self._waitForData[0]
+            Domoticz.Debug("checkTOwaitForStatus - %04.xs enter at: %s delta: %s" %( pCmd, pTime, now - pTime))
+            if ( now - pTime ) > TIMEOUT :
+                entry = self.nextDataInWait()
+                Domoticz.Error("waitForData - Timeout %s on %04.x " %( now - pTime, entry[0] ))
+        return
 
 def ZigateEncode(Data):  # ajoute le transcodage
     Domoticz.Debug("ZigateEncode - Encodind data: " + Data)
