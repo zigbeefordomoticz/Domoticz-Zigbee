@@ -20,8 +20,6 @@ def _copyfile( source, dest ):
     with open(source, 'r') as src, open(dest, 'wt') as dst:
         for line in src:
             dst.write(line)
-    src.close()
-    dst.close()
 
 
 def LoadDeviceList( self ):
@@ -70,7 +68,6 @@ def LoadDeviceList( self ):
 
     Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
 
-    myfile2.close()
     return res
 
 
@@ -81,7 +78,6 @@ def WriteDeviceList(self, Folder, count):
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
-        file.close()
     else :
         Domoticz.Debug("HB count = " + str(self.HBcount))
         self.HBcount=self.HBcount+1
@@ -93,7 +89,6 @@ def importDeviceConf( self ) :
     with open( self.homedirectory + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
     self.DeviceConf=eval(tmpread)
-    myfile.close()
 
 
 def importPluginConf( self ) :
@@ -101,7 +96,6 @@ def importPluginConf( self ) :
     tmpPluginConf=""
     with open(self.homedirectory+"PluginConf.txt", 'r') as myPluginConfFile:
         tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
-    myPluginConfFile.close()
     Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
     self.PluginConf=eval(tmpPluginConf)
 
