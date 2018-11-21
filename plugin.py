@@ -100,6 +100,8 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin V beta-3.2")
 
+        Domoticz.Heartbeat(5)  # Heartbeat set to 5s
+
         if Parameters["Mode6"] != "0":
             Domoticz.Debugging(int(Parameters["Mode6"]))
             DumpConfigToLog()
