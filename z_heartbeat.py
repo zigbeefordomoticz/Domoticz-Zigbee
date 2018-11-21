@@ -23,7 +23,7 @@ import z_LQI
 def processKnownDevices( self, NWKID ):
 
     # Check if Node Descriptor was run ( this could not be the case on early version)
-    if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 24 ):
+    if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 28 ):
         if not self.ListOfDevices[NWKID].get('PowerSource'):    # Looks like PowerSource is not available, let's request a Node Descriptor
             z_output.sendZigateCmd(self,"0042", str(NWKID), 2 )    # Request a Node Descriptor
 
