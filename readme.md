@@ -9,7 +9,9 @@ Python version 3.4 or higher required & Domoticz version 3.87xx or greater.
 To install:
 
 - Go in your Domoticz directory using a command line and open the plugins directory.
+- this is usally under 'domoticz/plugin'
 - Run: `git clone https://github.com/sasu-drooz/Domoticz-Zigate.git`
+- this will create a folder 'Domoticz-Zigate' which will contains all the plugin code
 - Restart Domoticz.
 
 In the web UI, navigate to the Hardware page. In the hardware dropdown there will be an entry called "Zigate plugin".
