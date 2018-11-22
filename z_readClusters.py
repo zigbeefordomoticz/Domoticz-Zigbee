@@ -492,7 +492,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             Domoticz.Debug("cube action: " + 'Double_tap_{}'.format(face) )
             value = '70'
         else:  
-            Domoticz.Debug("cube action: Not expected value" + value )
+            Domoticz.Debug("cube action: Not expected value %s" %value )
         return value
 
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
