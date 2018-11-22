@@ -921,7 +921,7 @@ def ReadCluster(self, Devices, MsgData):
 				Domoticz.Debug("cube action : " + 'Double_tap_{}'.format(face) )
 				value = '70'
 			else:  
-				Domoticz.Debug("cube action : Not expected value" + value )
+				Domoticz.Debug("cube action : Not expected value %s" %value )
 			return value
 
 		z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
