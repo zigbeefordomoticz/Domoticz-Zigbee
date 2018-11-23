@@ -613,34 +613,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
                     if value == "00":
                         if Devices[x].SwitchType == "16":
-                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
-                        else:
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+                        else:
+                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                     elif value == "01":
                         if Devices[x].SwitchType == "16":
-                            UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
-                        else:
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
-
-                elif DeviceType == "LvlControl":
-                    # SwitchType 16 is blinder/Shutter inversed
-                    nValue = None
-                    sValue = round((int(value, 16) / 255) * 100)
-                    if sValue == 0:
-                        nValue = 0
-                        if Devices[x].SwitchType == "16":
-                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                         else:
-                            UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
-                    elif sValue == 100:
-                        nValue = 1
-                        if Devices[x].SwitchType == "16":
                             UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
-                        else:
-                            UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
-                    else:
-                        nValue = 2
-                        UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
@@ -649,15 +629,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                     if sValue == 0:
                         nValue = 0
                         if Devices[x].SwitchType == "16":
-                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
-                        else:
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+                        else:
+                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                     elif sValue == 100:
                         nValue = 1
                         if Devices[x].SwitchType == "16":
-                            UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
-                        else:
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
+                        else:
+                            UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
                     else:
                         nValue = 2
                         UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
