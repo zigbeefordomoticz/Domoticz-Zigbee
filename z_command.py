@@ -89,7 +89,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 
     # A ce stade ClusterSearch est connu
-    ####  ASSEZ MOCHE .... MAIS l'IDEE ET D'AVOIR UN TRUC QUI MARCHE #####
     EPin="01"
     EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
     # We have now the DeviceType, let's look for the corresponding EP
@@ -109,19 +108,24 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     Domoticz.Debug("EPout = " +str(EPout) )
 
-
-
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
         z_output.sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "00")
-        if DSwitchtype == "16" :
+        if Devices[Unit].SwitchType == "16" :
             z_domoticz.UpdateDevice_v2(Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
         else :
             z_domoticz.UpdateDevice_v2(Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
+
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
         z_output.sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "01")
-        if DSwitchtype == "16" :
+
+        # In case we have a LvlControl or ColorControl, we must not change the Domoticz Lvl
+        old_nValue = Devices[Unit].nValue
+        old_sValue = Devices[Unit].sValue
+        Domoticz.Log("ON - LvlControl/ColorControl - old_sValue: %s DType: %s, DSwitchType: %s"
+                %(old_sValue, Devices[Unit].SwitchType, DSwitchtype))
+        if Devices[Unit].SwitchType == "16" :
             z_domoticz.UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:
             z_domoticz.UpdateDevice_v2(Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
@@ -134,7 +138,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         OnOff = '01' # 00 = off, 01 = on
         value=z_tools.Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
         z_output.sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
-        if DSwitchtype == "16" :
+        if Devices[Unit].SwitchType == "16" :
             z_domoticz.UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
         else:
             z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
