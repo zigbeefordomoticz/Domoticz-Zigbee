@@ -916,6 +916,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 
     if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
         self.ListOfDevices[MsgDataShAddr]['Status']="8043"
+        self.ListOfDevices[MsgDataShAddr]['Heartbeat']="0"
     else :
         z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
 
