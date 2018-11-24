@@ -24,8 +24,13 @@
 'TRADFRI bulb GU10 W 400lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0b05':'','1000':'','Type':'LvlControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0100'},
 'TRADFRI bulb E27 CWS opal 600lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0200'},
 'TRADFRI bulb E27 WS clear 950lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0220'},
+'TRADFRI control outlet':{'Ep':{'02':{'1000':'','0021':''},'01':{'0006':'','fc7c':'','0004':'','0000':'','0003':'','0008':'','0005':'','Type':'Switch'}},'Type':'','ProfileID':'c05e','ZDeviceID':'010a'},
+'TRADFRI on/off switch':{'Ep':{'01':{'0001':'','fc7c':'','0009':'','1000':'','0102':'','0000':'','0003':'','Type':'Switch'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0820'},
 'SPE600':{'Ep':{'09':{'0000':'','0001':'','0003':'','0004':'','0005':'','0006':'','0402':'','0702':'','fc01':'','Type':'Plug/Power/Meter/Voltage/Temp'}},'Type':'','ProfileID':'0104','ZDeviceID':'0051'},
 'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl','ProfileID':'0104','ZDeviceID':'0200'},
 'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':''},
 'plug.Celiane.Legrand':{'Ep':{'01':{'0004','0006','0005','fc01'}},'Type':'Switch','ProfileID':'0104','ZDeviceID':'010a'}
 }
+
+
+
