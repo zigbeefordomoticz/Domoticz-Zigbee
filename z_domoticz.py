@@ -724,8 +724,6 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     if str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']:
                         DeviceType = self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
-                        Domoticz.Debug("ResetDevice - Found ClusterType in EP[" + str(tmpEp) + "] : " + str(
-                            DeviceType) + " for Device :" + str(ID))
             if DeviceType == '':
                 if 'ClusterType' in self.ListOfDevices[NWKID]:
                     if str(ID) in self.ListOfDevices[NWKID]['ClusterType']:
