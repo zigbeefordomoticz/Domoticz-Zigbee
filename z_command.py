@@ -21,9 +21,7 @@ import z_domoticz
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     Domoticz.Debug("#########################")
-    Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + " Color: " + str(Color) )
-
-    Domoticz.Debug("DeviceID = " +str(Devices[Unit].DeviceID))
+    Domoticz.Debug("onCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
 
     # As we can have a new Short address, we need to retreive it from self.ListOfDevices
     if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -32,14 +30,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
         return
     Domoticz.Debug("mgtCommand - NWKID = " +str(NWKID) )
-
-    DSwitchtype= str(Devices[Unit].SwitchType)
-    Domoticz.Debug("DSwitchtype : " + DSwitchtype)
-
-    DSubType= str(Devices[Unit].SubType)
-    Domoticz.Debug("DSubType : " + DSubType)
-
-    DType= str(Devices[Unit].Type)
 
     if self.ListOfDevices[NWKID]['RSSI'] != '' :
         SignalLevel = self.ListOfDevices[NWKID]['RSSI']
@@ -119,12 +109,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
         z_output.sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "01")
-
-        # In case we have a LvlControl or ColorControl, we must not change the Domoticz Lvl
-        old_nValue = Devices[Unit].nValue
-        old_sValue = Devices[Unit].sValue
-        Domoticz.Log("ON - LvlControl/ColorControl - old_sValue: %s DType: %s, DSwitchType: %s"
-                %(old_sValue, Devices[Unit].SwitchType, DSwitchtype))
         if Devices[Unit].SwitchType == "16" :
             z_domoticz.UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:

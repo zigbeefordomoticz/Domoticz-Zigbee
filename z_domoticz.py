@@ -28,7 +28,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         # for x in Devices :
         #    if Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0 :
         #        return Devices[x].ID
-        Domoticz.Log("getCreateID - Liste de comprehension")
+        Domoticz.Debug("getCreateID - Liste de comprehension")
         return (Devices[x].ID for x in Devices if (Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0))
 
     def FreeUnit(self, Devices):
@@ -102,14 +102,8 @@ def CreateDomoDevice(self, Devices, NWKID):
             ID = Devices[unit].ID
             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-        # For color Bulb , we create only one switch - instead of 1,2 or 3 devices per cluster
-        if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
-            Type = ['ColorControl']
-        elif ("Switch" in Type) and ("LvlControl" in Type):
-            Type = ['LvlControl']
-
         for t in Type:
-            Domoticz.Log(
+            Domoticz.Debug(
                 "CreateDomoDevice - Device ID : " + str(DeviceID_IEEE) + " Device EP : " + str(Ep) + " Type : " + str(
                     t))
             if t == "Temp":  # Detecteur temp
@@ -378,14 +372,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                             if str(ID) == str(key):
                                 DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
                     else:
-                        Domoticz.Log("MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !")
-                        Domoticz.Log("MajDomoDevice - Network Id : " + NWKID + " Ep : " + str(
+                        Domoticz.Debug("MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !")
+                        Domoticz.Debug("MajDomoDevice - Network Id : " + NWKID + " Ep : " + str(
                             ptEP) + " Expected Cluster is " + str(clusterID))
                         continue
             if DeviceType == "":  # No match with ClusterType
                 continue
 
-            Domoticz.Debug("MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
+            Domoticz.Log("MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
                          % (NWKID, Devices[x].SwitchType, DeviceType, ClusterType, Devices[x].nValue, Devices[x].sValue))
 
             if self.ListOfDevices[NWKID]['RSSI'] != 0:
@@ -624,6 +618,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
+                    # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
+                    # We might get a Level, but the device is still Off and we shouldn't make it On .
+
                     nValue = None
                     sValue = round((int(value, 16) / 255) * 100)
                     if sValue == 0:
@@ -631,16 +628,26 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         if Devices[x].SwitchType == "16":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
-                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                            if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                                pass
+                            else:
+                                UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                     elif sValue == 100:
                         nValue = 1
                         if Devices[x].SwitchType == "16":
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
-                            UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                            if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                                pass
+                            else:
+                                UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
                     else:
-                        nValue = 2
-                        UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
+                        if Devices[x].SwitchType != "16" and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                            pass
+                        else:
+                            nValue = 2
+                            UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
+
                 elif DeviceType == "ColorControl":
                     nValue = 1
                     sValue = round((int(value, 16) / 255) * 100)
@@ -724,6 +731,8 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     if str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']:
                         DeviceType = self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
+                        Domoticz.Debug("ResetDevice - Found ClusterType in EP[" + str(tmpEp) + "] : " + str(
+                            DeviceType) + " for Device :" + str(ID))
             if DeviceType == '':
                 if 'ClusterType' in self.ListOfDevices[NWKID]:
                     if str(ID) in self.ListOfDevices[NWKID]['ClusterType']:
