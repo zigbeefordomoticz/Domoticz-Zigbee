@@ -132,7 +132,7 @@ def ReadCluster(self, Devices, MsgData):
 
     self.stats['clusters'] += 1
     if MsgAttrStatus != "00":
-        Domoticz.Log("ReadCluster - Status error : %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+        Domoticz.Log("ReadCluster - Status: %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
         self.stats['clusters_error'] += 1
         return
 
