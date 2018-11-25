@@ -605,27 +605,34 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         else:
                             return  # We just expect 01 , in case of other value nothing to do
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
-                    if value == "00":
-                        if Devices[x].SwitchType == "16":
+                    Domoticz.Log("DeviceType == LvlControl or DeviceType == ColorControl:")
+
+                    if str(Devices[x].SwitchType) == "16":
+                        if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
+                            # We are in the case of a Shutter/Blind inverse. If we receieve a Read Attribute telling it is On, great
+                            # We only update if the shutter was off before, otherwise we will keep its Level.
+                            if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                                UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
+                    else:
+                        if value == "00":
                             UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
-                    elif value == "01":
-                        if Devices[x].SwitchType == "16":
-                            UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
+                            Domoticz.Log("SwitchType: %s" %Devices[x].SwitchType)
                             UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
                     # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
+                    Domoticz.Log("elif ClusterType == LvlControl: / if DeviceType == LvlControl")
 
                     nValue = None
                     sValue = round((int(value, 16) / 255) * 100)
                     if sValue == 0:
                         nValue = 0
-                        if Devices[x].SwitchType == "16":
+                        if str(Devices[x].SwitchType) == "16":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -634,7 +641,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                                 UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                     elif sValue == 100:
                         nValue = 1
-                        if Devices[x].SwitchType == "16":
+                        if str(Devices[x].SwitchType) == "16":
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -642,7 +649,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                             else:
                                 UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
                     else:
-                        if Devices[x].SwitchType != "16" and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                        if str(Devices[x].SwitchType) != "16" and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                             pass
                         else:
                             nValue = 2
