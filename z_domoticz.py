@@ -379,7 +379,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
             if DeviceType == "":  # No match with ClusterType
                 continue
 
-            Domoticz.Log("MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
+            Domoticz.Debug("MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
                          % (NWKID, Devices[x].SwitchType, DeviceType, ClusterType, Devices[x].nValue, Devices[x].sValue))
 
             if self.ListOfDevices[NWKID]['RSSI'] != 0:
@@ -605,8 +605,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         else:
                             return  # We just expect 01 , in case of other value nothing to do
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
-                    Domoticz.Log("DeviceType == LvlControl or DeviceType == ColorControl:")
-
                     if str(Devices[x].SwitchType) == "16":
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
@@ -619,14 +617,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                         else:
-                            Domoticz.Log("SwitchType: %s" %Devices[x].SwitchType)
                             UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
                     # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
-                    Domoticz.Log("elif ClusterType == LvlControl: / if DeviceType == LvlControl")
 
                     nValue = None
                     sValue = round((int(value, 16) / 255) * 100)
@@ -656,9 +652,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                             UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "ColorControl":
-                    nValue = 1
-                    sValue = round((int(value, 16) / 255) * 100)
-                    UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
+                    if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                        pass
+                    else:
+                        nValue = 1
+                        sValue = round((int(value, 16) / 255) * 100)
+                        UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType == DeviceType == "ColorControl":
                 nValue = 1
