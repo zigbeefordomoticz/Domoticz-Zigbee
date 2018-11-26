@@ -311,7 +311,8 @@ def processListOfDevices( self , Devices ):
     # LQI Scanner
     #    - LQI = 0 - no scanning at all otherwise delay the scan by n x 10s
     
-    if self.pluginconf.logLQI > HEARBEAT_VALUE  and self.HeartbeatCount > ( self.pluginconf.logLQI // HEARBEAT_VALUE):
+    if self.pluginconf.logLQI != 0 and \
+            self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // HEARBEAT_VALUE):
         if self.ZigateComm.loadTransmit() < 5 :
             z_LQI.LQIcontinueScan( self )
 
@@ -319,7 +320,8 @@ def processListOfDevices( self , Devices ):
         # Trigger Conifre Reporting to eligeable decices
         z_output.processConfigureReporting( self )
     
-    if self.pluginconf.networkScan > HEARBEAT_VALUE and (self.HeartbeatCount == 12 or (self.HeartbeatCount % (self.pluginconf.networkScan // HEARBEAT_VALUE )) == 0) :
+    if self.pluginconf.networkScan != 0 and \
+            (self.HeartbeatCount == ( 120 // HEARBEAT_VALUE ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // HEARBEAT_VALUE )) == 0) :
         z_output.NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
 
 
