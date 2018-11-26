@@ -41,12 +41,15 @@ def ZigateConf_light(self, discover ):
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" )   # Start Network
 
-    if str(discover) != "0":
-        if str(discover)=="255": 
-            Domoticz.Status("Zigate enter in discover mode for ever")
-        else: 
-            Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
-        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
+    if not str(discover).isdigit() :
+        discover = 0
+    else:
+        discover = "%02.X" %int(discover)
+    if discover == "FF":
+        Domoticz.Status("Zigate enter in discover mode for ever")
+    else: 
+        Domoticz.Status("Zigate enter in discover mode for %s Secs" %(int(discover,16)))
+    sendZigateCmd(self, "0049","FFFC" + discover + "00")
 
     Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "" ) # Request status
@@ -345,12 +348,12 @@ def processConfigureReporting( self, NWKID=None ):
         # Binary Input 
         '000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
-                                 '0000': {'DataType': '20', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0001': {'DataType': '20', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0003': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0004': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0008': {'DataType': '30', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0001': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0003': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0004': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0008': {'DataType': '30', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Illuminance Measurement
         '0400': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
         # Temperature
