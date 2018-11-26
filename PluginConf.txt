@@ -1,8 +1,6 @@
 {
 'channel':'0,11',
-'zmode':'ZigBee',
 'allowRemoveZigateDevice':'0',
-'sendDelay':'0',
 'allowStoreDiscoveryFrames':'0',
 'forceCreationDomoDevice':'0',
 'logLQI':'0',
