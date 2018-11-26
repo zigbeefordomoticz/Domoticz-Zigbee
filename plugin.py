@@ -115,9 +115,11 @@ class BasePlugin:
 
         
         plugconf = self.pluginconf
-        Domoticz.Log("sendDelay: %s logFORMAT: %s logLQI: %s allowRemoveZigateDevice: %s"
-            %(plugconf.sendDelay, plugconf.logFORMAT, plugconf.logLQI, plugconf.allowRemoveZigateDevice))
-        Domoticz.Log("allowStoreDiscoveryFrames: %s forceCreationDevice: %s networkScan: %s channel: %s"
+        Domoticz.Status("ZigateMode: %s sendDelay: %s reTransmit: %s zTimeOut: %s" \
+                %(plugconf.zmode, plugconf.sendDelay, plugconf.reTransmit, plugconf.zTimeOut))
+        Domoticz.Status("logFORMAT: %s logLQI: %s allowRemoveZigateDevice: %s"
+            %(plugconf.logFORMAT, plugconf.logLQI, plugconf.allowRemoveZigateDevice))
+        Domoticz.Status("allowStoreDiscoveryFrames: %s forceCreationDevice: %s networkScan: %s channel: %s"
             %(plugconf.allowStoreDiscoveryFrames, plugconf.allowForceCreationDomoDevice, plugconf.networkScan, plugconf.channel))
 
         if  plugconf.allowStoreDiscoveryFrames == 1 :
