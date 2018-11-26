@@ -356,7 +356,7 @@ def processConfigureReporting( self, NWKID=None ):
         target = self.ListOfDevices
     else:
         target = NWKID
-        Domoticz.Log("configureReporting for device : %s => %s" %(NWKID, self.ListOfDevices[NWKID]))
+        Domoticz.Debug("configureReporting for device : %s => %s" %(NWKID, self.ListOfDevices[NWKID]))
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
