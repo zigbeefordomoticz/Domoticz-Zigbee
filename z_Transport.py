@@ -4,8 +4,6 @@
 # Author: zaraki673 & pipiche38
 #
 
-DELAY = 0
-
 import Domoticz
 import binascii
 import struct
@@ -275,7 +273,7 @@ class ZigateTransport(object):
             return ret
         return None
 
-    def sendData(self, cmd, datas, delay=DELAY):
+    def sendData(self, cmd, datas):
         '''
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
@@ -304,7 +302,7 @@ class ZigateTransport(object):
             if self.zmode == 'ZigBee' and int(cmd,
                                               16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
                 self.addDataToWait(CMD_DATA[int(cmd, 16)], cmd, datas)
-            self._sendData(cmd, datas, delay)
+            self._sendData(cmd, datas, self.sendDelay)
         else:
             # Put in FIFO
             self.addCmdToSend(cmd, datas)
