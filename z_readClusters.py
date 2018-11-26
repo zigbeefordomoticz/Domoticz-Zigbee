@@ -253,7 +253,40 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Color Temperature
-    Domoticz.Log("ReadCluster - ClusterID=0300 - NOT IMPLEMENTED YET - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) )
+    if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
+
+    value = decodeAttribute( MsgAttType, MsgClusterData)
+    if MsgAttrID == "0000":     # CurrentHue
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Hue'] = value
+        Domoticz.Log("ReadCluster0300 - CurrentHue: %s" %value)
+
+    elif MsgAttrID == "0001":   # CurrentSaturation
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Saturation'] = value
+        Domoticz.Log("ReadCluster0300 - CurrentSaturation: %s" %value)
+
+    elif MsgAttrID == "0003":     # CurrentX
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
+        Domoticz.Log("ReadCluster0300 - CurrentX: %s" %value)
+
+    elif MsgAttrID == "0004":   # CurrentY
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Y'] = value
+        Domoticz.Log("ReadCluster0300 - CurrentY: %s" %value)
+
+    elif MsgAttrID == "0007":   # ColorTemperatureMireds
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorTemperatureMireds'] = value
+        Domoticz.Log("ReadCluster0300 - ColorTemperatureMireds: %s" %value)
+
+    elif MsgAttrID == "0008":   # Color Mode 
+                                # 0x00: CurrentHue and CurrentSaturation
+                                # 0x01: CurrentX and CurrentY
+                                # 0x02: ColorTemperatureMireds
+        self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = value
+        Domoticz.Log("ReadCluster0300 - Color Mode: %s" %value)
+
+    else:
+        Domoticz.Log("ReadCluster - ClusterID=0300 - NOT IMPLEMENTED YET - MsgAttrID = " +\
+                str(MsgAttrID) + " value = " + str(MsgClusterData) )
 
 def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Electrical Measurement Cluster

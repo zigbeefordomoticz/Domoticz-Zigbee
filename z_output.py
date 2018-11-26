@@ -133,6 +133,7 @@ def ReadAttributeRequest_0000(self, key):
     listAttributes.append(0x0001)        # Application Version
     listAttributes.append(0x0002)        # Stack Version
     listAttributes.append(0x0003)        # HW Version
+    listAttributes.append(0x0004)        # Model Identifier
     listAttributes.append(0x0005)        # Model Identifier
     listAttributes.append(0x0007)        # Power Source
     listAttributes.append(0x0010)        # Battery
@@ -156,9 +157,16 @@ def ReadAttributeRequest_0001(self, key):
     EPin = "01"
     EPout= "01"
     listAttributes = []
-    listAttributes.append(0x0000)        # Voltage
-    listAttributes.append(0x0010)        # Battery Voltage
-    listAttributes.append(0x0020)        # Battery %
+    listAttributes.append(0x0000)        # Mains information
+    listAttributes.append(0x0001)        # Mains Settings
+    listAttributes.append(0x0002)        # Battery Information
+    listAttributes.append(0x0003)        # Battery Settings
+    listAttributes.append(0x0004)        # Battery Source 2 Information
+    listAttributes.append(0x0005)        # Battery Source 2 Settings
+    listAttributes.append(0x0006)        # Battery Source 3 Information
+    listAttributes.append(0x0007)        # Battery Source 3 Settings
+    listAttributes.append(0x0020)        # Battery Voltage
+    listAttributes.append(0x0021)        # Battery BatteryPercentageRemaining
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0001" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
@@ -168,15 +176,20 @@ def ReadAttributeRequest_0001(self, key):
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0300(self, key):
+    # Cluster 0x0300 - Color Control
 
     EPin = "01"
     EPout= "01"
 
     listAttributes = []
-    listAttributes.append(0x0003) 
-    listAttributes.append(0x0004) 
-    listAttributes.append(0x0007) 
-    listAttributes.append(0x0008) 
+    listAttributes.append(0x0000)   # CurrentHue
+    listAttributes.append(0x0001)   # CurrentSaturation
+    listAttributes.append(0x0003)   # CurrentX
+    listAttributes.append(0x0004)   # CurrentY
+    listAttributes.append(0x0005)   # DriftCompensation
+    listAttributes.append(0x0006)   # CompensationText
+    listAttributes.append(0x0007)   # ColorTemperatureMireds
+    listAttributes.append(0x0008)   # ColorMode
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0300" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
@@ -332,10 +345,12 @@ def processConfigureReporting( self, NWKID=None ):
         # Binary Input 
         '000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        #'0300': {'Attributes': { '0007': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
-        #                         '0003': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-        #                         '0004': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-        #                         '0008': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0000': {'DataType': '20', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0001': {'DataType': '20', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0003': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0004': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0008': {'DataType': '30', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Illuminance Measurement
         '0400': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
         # Temperature
