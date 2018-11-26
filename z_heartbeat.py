@@ -48,8 +48,8 @@ def processKnownDevices( self, NWKID ):
                     #    z_output.ReadAttributeRequest_0000(self, NWKID )
                     if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
                         z_output.ReadAttributeRequest_0001(self, NWKID )
-                    #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
-                    #    z_output.ReadAttributeRequest_0300(self, NWKID )
+                    if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
+                        z_output.ReadAttributeRequest_0300(self, NWKID )
                     pass
 
     
