@@ -1,4 +1,8 @@
 # Release Notes 
+## xx November 2018 - beta-3.3
+- [Technical] New Zigate Transport layer 
+- [Technical] Creation of PluginConf class to manage the PluginConf.txt file
+
 ## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
 - [Enhancement] Get async Level of Level Control devices

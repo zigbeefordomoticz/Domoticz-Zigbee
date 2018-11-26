@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-3.2" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-3.3" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://www.zigate.fr/">
     <params>
         <param field="Mode1" label="Model" width="75px">
             <options>
@@ -95,7 +95,7 @@ class BasePlugin:
         return
 
     def onStart(self):
-        Domoticz.Status("onStart called - Zigate plugin V beta-3.2")
+        Domoticz.Status("onStart called - Zigate plugin V beta-3.3")
 
         Domoticz.Heartbeat(5)
 
