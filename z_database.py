@@ -102,7 +102,7 @@ def checkListOfDevice2Devices( self, Devices ) :
     for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
         ID = Devices[x].DeviceID
         if str(ID) not in self.IEEE2NWK :
-            if self.ForceCreationDomoDevice == 1 :
+            if self.pluginconf.allowForceCreationDomoDevice == 1 :
                 Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
                 continue
             else:

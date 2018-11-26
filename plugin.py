@@ -118,7 +118,7 @@ class BasePlugin:
         Domoticz.Log("sendDelay: %s logFORMAT: %s logLQI: %s allowRemoveZigateDevice: %s"
             %(plugconf.sendDelay, plugconf.logFORMAT, plugconf.logLQI, plugconf.allowRemoveZigateDevice))
         Domoticz.Log("allowStoreDiscoveryFrames: %s forceCreationDevice: %s networkScan: %s channel: %s"
-            %(plugconf.allowStoreDiscoveryFrames, plugconf.forceCreationDomoDevice, plugconf.networkScan, plugconf.channel))
+            %(plugconf.allowStoreDiscoveryFrames, plugconf.allowForceCreationDomoDevice, plugconf.networkScan, plugconf.channel))
 
         if  plugconf.allowStoreDiscoveryFrames == 1 :
             self.DiscoveryDevices = {}
@@ -149,10 +149,10 @@ class BasePlugin:
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         else :
             Domoticz.Error("Unknown Transport comunication protocol : "+str(self.transport) )
