@@ -1,4 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 import Domoticz
 import binascii
@@ -30,9 +34,9 @@ CMD_ONLY_STATUS = (0x0012, 0x0016, 0x0020, 0x0021, 0x0022, 0x0023, 0x0027, 0x004
                    # Request APS
                    0x0530)
 
-RETRANSMIT_COMMAND = ( 0x0092,  0x0093, 0x0094,
-            0x0080, 0x0081, 0x0082, 0x0083, 0x0084 ,
-            0x0045, 0x0042, 0x0043 )
+RETRANSMIT_COMMAND = (0x0092, 0x0093, 0x0094,
+                      0x0080, 0x0081, 0x0082, 0x0083, 0x0084,
+                      0x0045, 0x0042, 0x0043)
 
 # Commands/Answers
 CMD_DATA = {0x0009: 0x8009, 0x0010: 0x8010, 0x0014: 0x8014, 0x0015: 0x8015,
@@ -116,9 +120,9 @@ class ZigateTransport(object):
 
     # Transport Sending Data
     def _sendData(self, cmd, datas, delay):
-        '''
+        """
         send data to Zigate via the communication transport
-        '''
+        """
         Domoticz.Log("_sendData %s" % cmd)
 
         if datas == "":
@@ -272,7 +276,7 @@ class ZigateTransport(object):
         '''
         # Check if normalQueue is empty. If yes we can send the command straight
         Domoticz.Debug("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \
-                       % (int(cmd,16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+                       % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         if len(self._waitForStatus) != 0:
             Domoticz.Debug("sendData - waitQ: %04.X" % (int(self._waitForStatus[0][0], 16)))
         if len(self._waitForData) != 0:
@@ -285,13 +289,13 @@ class ZigateTransport(object):
 
         # If no wait on Status nor on Data, gooooooo
         if AGGRESSIVE:
-            waitIsRequired = len(self._waitForStatus) == 0 
+            waitIsRequired = len(self._waitForStatus) == 0
         else:
             waitIsRequired = len(self._waitForStatus) == 0 and len(self._waitForData) == 0
 
         if waitIsRequired:
-            self.addCmdToWait(cmd, datas )
-            if not AGGRESSIVE and int(cmd, 16) in CMD_DATA:     # We do wait only if required and if not in AGGRESSIVE mode
+            self.addCmdToWait(cmd, datas)
+            if not AGGRESSIVE and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
                 self.addDataToWait(CMD_DATA[int(cmd, 16)], cmd, datas)
             self._sendData(cmd, datas, delay)
         else:
@@ -349,9 +353,10 @@ class ZigateTransport(object):
         Domoticz.Debug("receiveDataCmd - MsgType: %s" % MsgType)
         if len(self._waitForData) != 0:
             if int(MsgType, 16) == self._waitForData[0][0]:
-                expResponse, cmd, datas, pTime, reTx  = self.nextDataInWait()
+                expResponse, cmd, datas, pTime, reTx = self.nextDataInWait()
                 if int(MsgType, 16) != expResponse:
-                    Domoticz.Log("receiveDataCmd - unexpected message Type: %s Expecting: %04.x" % (MsgType, expResponse))
+                    Domoticz.Log(
+                        "receiveDataCmd - unexpected message Type: %s Expecting: %04.x" % (MsgType, expResponse))
             else:
                 Domoticz.Log("receiveDataCmd - unexpected message Type: %s Expecting: %04.x" \
                              % (MsgType, self._waitForData[0][0]))
@@ -372,14 +377,14 @@ class ZigateTransport(object):
         Domoticz.Debug("receiveStatusCmd - waitQ: %s dataQ: %s normalQ: %s" \
                        % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         expectedCommand = self.nextStatusInWait()
-        if expectedCommand is None :
-            Domoticz.Debug("receiveStatusCmd - Empty Queue" )
+        if expectedCommand is None:
+            Domoticz.Debug("receiveStatusCmd - Empty Queue")
             if PacketType == '':
                 Domoticz.Debug("receiveStatusCmd - Empty PacketType: %s" % frame)
             else:
                 if PacketType != '' and int(expectedCommand[0], 16) != int(PacketType, 16):
                     Domoticz.Debug("receiveData - sync error : Expecting %s and Received: %s" \
-                                % (expectedCommand[0], PacketType))
+                                   % (expectedCommand[0], PacketType))
 
         if len(self._normalQueue) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
@@ -391,7 +396,7 @@ class ZigateTransport(object):
     def checkTOwaitFor(self):
         'look at the waitForStatus, and in case of TimeOut delete the entry'
         Domoticz.Log("checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \
-                       % (0x0000, len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+                     % (0x0000, len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         # Check waitForStatus
         if len(self._waitForStatus) > 0:
             now = int(time.time())
@@ -402,25 +407,26 @@ class ZigateTransport(object):
                 entry = self.nextStatusInWait()
                 Domoticz.Error("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
                 Domoticz.Debug("waitForData - waitQ: %s dataQ: %s normalQ: %s" \
-                       % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+                               % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
 
         # Check waitForData
         if len(self._waitForData) > 0:
             now = int(time.time())
-            expResponse, pCmd, pData, pTime , reTx = self._waitForData[0]
+            expResponse, pCmd, pData, pTime, reTx = self._waitForData[0]
             Domoticz.Debug("checkTOwaitForStatus - %04.xs enter at: %s delta: %s" % (expResponse, pTime, now - pTime))
             if (now - pTime) > TIMEOUT:
                 self.statistics._TOdata += 1
                 entry = self.nextDataInWait()
                 Domoticz.Log("waitForData - Timeout %s on %04.x " % (now - pTime, entry[0]))
                 Domoticz.Debug("waitForData - waitQ: %s dataQ: %s normalQ: %s" \
-                       % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+                               % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
                 # If we allow reTransmit, let's resend the command
                 if RETRANSMIT:
                     expResponse, pCmd, pData, pTime, reTx = entry
-                    if int(pCmd,16) in RETRANSMIT_COMMAND and reTx < 2:    
+                    if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx < 2:
                         self.statistics._reTx += 1
-                        Domoticz.Log("checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%d) " %(pCmd, pData, reTx))
+                        Domoticz.Log("checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%d) " % (
+                        pCmd, pData, reTx))
                         reTx += 1
                         self.addCmdToSend(pCmd, pData, reTx)
 
@@ -429,8 +435,9 @@ class ZigateTransport(object):
             cmd, datas, timestamps, reTx = self.nextCmdtoSend()
             self.sendData(cmd, datas)
 
-        #self._printSendQueue()
+        # self._printSendQueue()
         return
+
 
 def ZigateEncode(Data):  # ajoute le transcodage
     Domoticz.Debug("ZigateEncode - Encodind data: " + Data)

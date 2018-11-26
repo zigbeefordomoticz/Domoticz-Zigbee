@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8 -*-
 #
-# Author: zaraki673
+# Author: zaraki673 & pipiche38
 #
 
 """
@@ -71,8 +71,6 @@ class BasePlugin:
     enabled = False
 
     def __init__(self):
-        Domoticz.Log("Init BasePlugin - MRO = %s" %(type.mro(BasePlugin)))
-
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.ZigateComm = None
         self._ReqRcv = bytearray()
