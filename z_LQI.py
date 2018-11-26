@@ -103,7 +103,7 @@ def LQIcontinueScan(self):
         with open(_filename , 'wt') as file:
             for key in self.LQI:
                 file.write(key + ": " + str(self.LQI[key]) + "\n")
-        self.PluginConf.logLQI = 0
+        self.pluginconf.logLQI = 0
 
 def mgtLQIreq(self, nwkid='0000', index=0):
     """
@@ -180,9 +180,14 @@ def mgtLQIresp(self, MsgData):
         _ieee     = ListOfEntries[n+20:n+36]
         _depth    = ListOfEntries[n+36:n+38]
         _lnkqty   = ListOfEntries[n+38:n+40]
-        _bitmap   = int(ListOfEntries[n+40:n+42], 16)
-        Domoticz.Debug("mgtLQIresp - _bitmap {0:b}".format(_bitmap))
+        try:
+            _bitmap   = int(ListOfEntries[n+40:n+42], 16)
+        except:
 
+            Domoticz.Log("mgtLQIresp - wrong bitmap :%s " %ListOfEntries[n+40:n+42])
+            _bitmap = 0
+
+        Domoticz.Debug("mgtLQIresp - error on _bitmap {0:b}".format(_bitmap))
         _devicetype   = _bitmap & 0b00000011
         _permitjnt    = (_bitmap & 0b00001100) >> 2
         _relationshp  = (_bitmap & 0b00110000) >> 4

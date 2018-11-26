@@ -16,7 +16,6 @@
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
-        <param field="Mode5" label="Channel " width="50px" required="true" default="11" />
         <param field="Mode4" label="Software Reset" width="75px" required="true" default="False" >
             <options>
                 <option label="True" value="True"/>
@@ -66,6 +65,7 @@ from z_PluginConf import PluginConf
 from z_Transport import ZigateTransport
 from z_TransportStats import TransportStatistics
 
+HEARBEAT_VALUE = 5
 
 class BasePlugin:
     enabled = False
@@ -97,7 +97,7 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin V beta-3.3")
 
-        Domoticz.Heartbeat(5)
+        Domoticz.Heartbeat( HEARBEAT_VALUE )
 
         if Parameters["Mode6"] != "0":
             Domoticz.Debugging(int(Parameters["Mode6"]))
@@ -230,7 +230,7 @@ class BasePlugin:
         self.HeartbeatCount += 1
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % 90 ) == 0 :
+            if (self.HeartbeatCount % ( 90 // HEARBEAT_VALUE ) ) == 0 :
                 Domoticz.Debug("request Network Status")
                 z_output.sendZigateCmd(self, "0009","")
         

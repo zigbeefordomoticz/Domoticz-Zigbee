@@ -64,7 +64,8 @@ def ZigateConf(self, discover ):
     sendZigateCmd(self, "0023","00")
 
     ################### ZiGate - set channel ##################
-    setChannel(self, self.channel)
+    Domoticz.Log("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
+    setChannel(self, self.pluginconf.channel)
 
     ################### ZiGate - start network ##################
     sendZigateCmd(self, "0024","")
@@ -399,7 +400,7 @@ def processConfigureReporting( self, NWKID=None ):
                         #Domoticz.Log("configureReporting - %2d %s " %(attrLen, attrList) )
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
-                        Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
+                        Domoticz.Debug("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas )
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 

@@ -41,7 +41,8 @@ CMD_DATA = {0x0009: 0x8009, 0x0010: 0x8010, 0x0014: 0x8014, 0x0015: 0x8015,
             0x002B: 0x802B, 0x002C: 0x802C, 0x0030: 0x8030, 0x0031: 0x8031,
             0x0034: 0x8034, 0x0040: 0x8040, 0x0041: 0x8041, 0x0042: 0x8042,
             0x0043: 0x8043, 0x0044: 0x8044, 0x0045: 0x8045, 0x0046: 0x8046,
-            0x0047: 0x8047, 0x004A: 0x804A, 0x004B: 0x804B, 0x004E: 0x804E,
+            #0x0047: 0x8047, 0x004A: 0x804A, 0x004B: 0x804B, 0x004E: 0x804E,
+            0x0047: 0x8047, 
             # groups
             0x0060: 0x8060, 0x0061: 0x8061, 0x0062: 0x8062, 0x0063: 0x8063,
             # Scenes
@@ -246,6 +247,9 @@ class ZigateTransport(object):
         timestamp = int(time.time())
         self._waitForData.append((expResponse, cmd, data, timestamp, reTransmit))
 
+    def loadTransmit(self):
+        return len(self._normalQueue)
+
     def nextCmdtoSend(self):
         ' return the next Command to send pop'
         if len(self._normalQueue) > 0:
@@ -379,15 +383,16 @@ class ZigateTransport(object):
             self.statistics._ackKO += 1
         Domoticz.Debug("receiveStatusCmd - waitQ: %s dataQ: %s normalQ: %s" \
                        % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
-        expectedCommand = self.nextStatusInWait()
-        if expectedCommand is None:
-            Domoticz.Debug("receiveStatusCmd - Empty Queue")
-            if PacketType == '':
-                Domoticz.Debug("receiveStatusCmd - Empty PacketType: %s" % frame)
+        if PacketType == '':
+            Domoticz.Debug("receiveStatusCmd - Empty PacketType: %s" % frame)
+        else:
+            expectedCommand = self.nextStatusInWait()
+            if expectedCommand is None:
+                Domoticz.Debug("receiveStatusCmd - Empty Queue")
             else:
-                if PacketType != '' and int(expectedCommand[0], 16) != int(PacketType, 16):
+                if int(expectedCommand[0], 16) != int(PacketType, 16):
                     Domoticz.Debug("receiveData - sync error : Expecting %s and Received: %s" \
-                                   % (expectedCommand[0], PacketType))
+                            % (expectedCommand[0], PacketType))
 
         if len(self._normalQueue) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
