@@ -187,7 +187,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Log("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
 
-            if z_var.RemoveDevice == 1:
+            if self.pluginconf.allowRemoveZigateDevice == 1:
                 Domoticz.Log("removeDeviceInList - removing Device in Zigate")
                 z_output.removeZigateDevice( self, IEEE )
 

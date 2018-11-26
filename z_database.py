@@ -90,15 +90,6 @@ def importDeviceConf( self ) :
         tmpread+=myfile.read().replace('\n', '')
     self.DeviceConf=eval(tmpread)
 
-
-def importPluginConf( self ) :
-    # Import PluginConf.txt
-    tmpPluginConf=""
-    with open(self.homedirectory+"PluginConf.txt", 'r') as myPluginConfFile:
-        tmpPluginConf+=myPluginConfFile.read().replace('\n', '')
-    Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
-    self.PluginConf=eval(tmpPluginConf)
-
 def checkListOfDevice2Devices( self, Devices ) :
 
     # As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.
@@ -108,7 +99,7 @@ def checkListOfDevice2Devices( self, Devices ) :
     for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
         ID = Devices[x].DeviceID
         if str(ID) not in self.IEEE2NWK :
-            if self.ForceCreationDevice == 1 :
+            if self.ForceCreationDomoDevice == 1 :
                 Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
                 continue
             else:

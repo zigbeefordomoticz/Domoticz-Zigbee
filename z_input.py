@@ -45,7 +45,6 @@ def ZigateRead(self, Devices, Data):
 
     Domoticz.Debug("ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s; RSSI: %s" \
             %( MsgType, MsgLength, MsgCRC, MsgData, MsgRSSI) )
-    self.stats['received'] += 1
 
     if str(MsgType)=="004d":  # Device announce
         Domoticz.Debug("ZigateRead - MsgType 004d - Reception Device announce : " + Data)
@@ -385,44 +384,25 @@ def Decode8000_v2(self, MsgData) : # Status
     SEQ=MsgData[2:4]
     PacketType=MsgData[4:8]
 
-    Domoticz.Debug("Decode8000 - Command in progress : " + str (z_var.cmdInProgress.qsize() ) )
-    if not z_var.cmdInProgress.empty() :                 # Should not happen
-        mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
-        Domoticz.Debug("Decode8000 - expected command status for : " + str(mycmd['cmd']) + "/" + str(mycmd['datas']) )
-        if int(mycmd['cmd'],16) == int(PacketType,16) :
-            if ( len(mycmd['datas']) > 10 ) :            # As we have the datas from the sendZigateCmd() call, we have the Saddr.
-                CmdSrcAddr = mycmd['datas'][2:6]
-                Domoticz.Debug("Decode8000 - Command for sAddr : " +str( CmdSrcAddr ) )
-                z_tools.updSQN( self, CmdSrcAddr, SEQ )
+    if   Status=="00" : 
+        Status="Success"
+    elif Status=="01" : Status="Incorrect Parameters"
+    elif Status=="02" : Status="Unhandled Command"
+    elif Status=="03" : Status="Command Failed"
+    elif Status=="04" : Status="Busy"
+    elif Status=="05" : Status="Stack Already Started"
+    elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
 
-            if   Status=="00" : 
-                Status="Success"
-                self.stats['ok_status'] += 1
-            elif Status=="01" : Status="Incorrect Parameters"
-            elif Status=="02" : Status="Unhandled Command"
-            elif Status=="03" : Status="Command Failed"
-            elif Status=="04" : Status="Busy"
-            elif Status=="05" : Status="Stack Already Started"
-            elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
+    Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
-            Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType + " Queue = " +str(z_var.cmdInProgress.qsize()) )
-
-            if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
-            elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
-            elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
-            elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
-            elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
-
-        else :
-            Domoticz.Debug("Decode8000 - Out of sequence : Queue: Command " + str(mycmd) + " vs. " + str(PacketType) + " remaining queue items : " + str(z_var.cmdInProgress.qsize()) )
-            # As we are out-of-sequence , this is most-likely because we have lost 1 message.
-            # If I still have a message in the queue, let's dequeue one.
-            if  z_var.cmdInProgress.qsize() >= 1 :
-                mycmd = z_var.cmdInProgress.get(block=False, timeout=None)
+    if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
+    elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
+    elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
+    elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
+    elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
     if str(MsgData[0:2]) != "00" :
-            self.stats['ko_status'] += 1
-            Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType + " Queue = " +str(z_var.cmdInProgress.qsize()) )
+            Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
     return
 
@@ -763,7 +743,7 @@ def Decode8041(self, MsgData, MsgRSSI) : # IEEE Address response
                     + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 
 
-    if ( z_var.logFORMAT == 1 ) :
+    if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8041 " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
 
     if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :        # We have requested a IEEE address for a Short Address, 
@@ -831,7 +811,7 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     Domoticz.Log("Decode8042 - Logical Type = " +str(LogicalType) )
 
     if self.ListOfDevices[addr]['Status']!="inDB" :
-        if z_var.storeDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
             self.DiscoveryDevices[addr]['Manufacturer']=manufacturer
             self.DiscoveryDevices[addr]['8042']=MsgData
             self.DiscoveryDevices[addr]['DeviceType']=str(DeviceType)
@@ -864,13 +844,13 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 
     self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
-    if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+    if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
         self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
 
     MsgDataDeviceId=MsgData[16:20]
 
     self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
-    if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+    if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
         self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
 
     MsgDataBField=MsgData[20:22]
@@ -902,7 +882,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
             MsgDataCluster=""
             i=i+1
 
-    if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+    if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
         if self.DiscoveryDevices[MsgDataShAddr].get('8043') :
             self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
@@ -974,7 +954,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 
         Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
-        if z_var.storeDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
             self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
 
@@ -1014,7 +994,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
 
 
-    if ( z_var.logFORMAT == 1 ) :
+    if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
@@ -1263,7 +1243,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
     z_tools.timeStamped( self, MsgSrcAddr , 8100)
-    if ( z_var.logFORMAT == 1 ) :
+    if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
     try :
         self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
@@ -1301,7 +1281,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     Domoticz.Debug("Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
-    if ( z_var.logFORMAT == 1 ) :
+    if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 
     if z_tools.DeviceExist(self, MsgSrcAddr) == True :
@@ -1409,7 +1389,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
 
     Domoticz.Status("Decode0004d - Reception Device announce : Source :" + MsgSrcAddr + ", IEEE : "+ MsgIEEE + ", Mac capa : " + MsgMacCapa)
 
-    if ( z_var.logFORMAT == 1 ) :
+    if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     # tester si le device existe deja dans la base domoticz
@@ -1427,7 +1407,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
         Domoticz.Debug("Decode004d - Existing device")
         # Should we not force status to "004d" and reset Hearbeat , in order to start the processing from begining in onHeartbeat() ?
 
-    if z_var.storeDiscoveryFrames == 1 :
+    if self.pluginconf.allowStoreDiscoveryFrames == 1 :
         self.DiscoveryDevices[MsgSrcAddr] = {}
         self.DiscoveryDevices[MsgSrcAddr]['004d']={}
         self.DiscoveryDevices[MsgSrcAddr]['8043']={}

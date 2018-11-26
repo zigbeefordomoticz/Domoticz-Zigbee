@@ -130,10 +130,10 @@ def ReadCluster(self, Devices, MsgData):
     tmpEp=""
     tmpClusterid=""
 
-    self.stats['clusters'] += 1
+    self.statistics._clusterOK += 1
     if MsgAttrStatus != "00":
-        Domoticz.Log("ReadCluster - Status: %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
-        self.stats['clusters_error'] += 1
+        Domoticz.Log("ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+        self.statistics._clusterKO += 1
         return
 
     if z_tools.DeviceExist(self, MsgSrcAddr) == False:
@@ -557,25 +557,25 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0000": # ZCL Version
         Domoticz.Debug("ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
-        if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ZCL_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0001": # Application Version
         Domoticz.Debug("ReadCluster - Application version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
-        if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['App_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['App Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0002": # Stack Version
         Domoticz.Debug("ReadCluster - Stack version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         self.ListOfDevices[MsgSrcAddr]['Stack Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
-        if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Stack_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0003": # Hardware version
         Domoticz.Debug("ReadCluster - 0x0000 - Hardware version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         self.ListOfDevices[MsgSrcAddr]['HW Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
-        if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004": # Manufacturer
@@ -588,7 +588,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if modelName != '':
                 # It has been decoded !
                 Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
-                if z_var.storeDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+                if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
                     self.DiscoveryDevices[MsgSrcAddr]['Model']=modelName
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
                     self.ListOfDevices[MsgSrcAddr]['Model'] = modelName

@@ -100,8 +100,7 @@ def LQIcontinueScan(self):
         with open(_filename , 'wt') as file:
             for key in self.LQI:
                 file.write(key + ": " + str(self.LQI[key]) + "\n")
-        file.close()
-        z_var.LQI = 0 
+        self.PluginConf.logLQI = 0
 
 def mgtLQIreq(self, nwkid='0000', index=0):
     """
@@ -116,7 +115,7 @@ def mgtLQIreq(self, nwkid='0000', index=0):
     z_var.LQISource.put(str(nwkid))
     datas = str(nwkid) + "{:02n}".format(index)
     Domoticz.Debug("mgtLQIreq: from Nwkid: " +str(nwkid) + " index: "+str(index))
-    z_output.sendZigateCmd(self, "004E",datas, 2)    
+    z_output.sendZigateCmd(self, "004E",datas)    
 
     return
 

@@ -36,17 +36,17 @@ def ZigateConf_light(self, discover ):
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
     Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "" , 2 )   # Start Network
+    sendZigateCmd(self, "0024", "" )   # Start Network
 
     if str(discover) != "0":
         if str(discover)=="255": 
             Domoticz.Status("Zigate enter in discover mode for ever")
         else: 
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
-        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
+        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
 
     Domoticz.Debug("Request network Status")
-    sendZigateCmd( self, "0014", "", 2 ) # Request status
+    sendZigateCmd( self, "0014", "" ) # Request status
 
 
 def ZigateConf(self, discover ):
@@ -55,23 +55,23 @@ def ZigateConf(self, discover ):
     '''
     ################### ZiGate - get Firmware version #############
     # answer is expected on message 8010
-    sendZigateCmd(self, "0010","",1)
+    sendZigateCmd(self, "0010","")
 
     ################### ZiGate - Set Type COORDINATOR #################
-    sendZigateCmd(self, "0023","00", 3)
+    sendZigateCmd(self, "0023","00")
 
     ################### ZiGate - set channel ##################
     setChannel(self, self.channel)
 
     ################### ZiGate - start network ##################
-    sendZigateCmd(self, "0024","", 2)
+    sendZigateCmd(self, "0024","")
 
     sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
 
     ################### ZiGate - Request Device List #############
     # answer is expected on message 8015. Only available since firmware 03.0b
     Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
-    sendZigateCmd(self, "0015","",2)
+    sendZigateCmd(self, "0015","")
 
     ################### ZiGate - discover mode 255 sec Max ##################
     #### Set discover mode only if requested - so != 0                  #####
@@ -80,96 +80,13 @@ def ZigateConf(self, discover ):
             Domoticz.Status("Zigate enter in discover mode for ever")
         else: 
             Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
-        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00", 2)
+        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
 
     Domoticz.Debug("Request network Status")
-    sendZigateCmd( self, "0014", "", 2 ) # Request status
+    sendZigateCmd( self, "0014", "" ) # Request status
         
-def sendZigateCmd(self, cmd,datas, _weight=1 ):
-    def ZigateEncode(Data):  # ajoute le transcodage
-        Domoticz.Debug("ZigateEncode - Encodind data: " + Data)
-        Out=""
-        Outtmp=""
-        Transcode = False
-        for c in Data:
-            Outtmp+=c
-            if len(Outtmp)==2:
-                if Outtmp[0] == "1" and Outtmp != "10":
-                    if Outtmp[1] == "0":
-                        Outtmp="0200"
-                        Out+=Outtmp
-                    else:
-                        Out+=Outtmp
-                elif Outtmp[0] == "0":
-                    Out+="021" + Outtmp[1]
-                else:
-                    Out+=Outtmp
-                Outtmp=""
-        Domoticz.Debug("Transcode in: " + str(Data) + "  / out:" + str(Out) )
-        return Out
-
-    def getChecksum(msgtype,length,datas):
-        temp = 0 ^ int(msgtype[0:2],16)
-        temp ^= int(msgtype[2:4],16)
-        temp ^= int(length[0:2],16)
-        temp ^= int(length[2:4],16)
-        for i in range(0,len(datas),2):
-            temp ^= int(datas[i:i+2],16)
-            chk=hex(temp)
-        Domoticz.Debug("getChecksum - Checksum: " + str(chk))
-        return chk[2:4]
-
-
-    command = {}
-    command['cmd'] = cmd
-    command['datas'] = datas
-
-    if datas == "":
-        length="0000"
-    else:
-        length=z_tools.returnlen(4,(str(hex(int(round(len(datas)/2)))).split('x')[-1]))  # by Cortexlegeni 
-        Domoticz.Debug("sendZigateCmd - length is: " + str(length) )
-    if datas =="":
-        checksumCmd=getChecksum(cmd,length,"0")
-        if len(checksumCmd)==1:
-            strchecksum="0" + str(checksumCmd)
-        else:
-            strchecksum=checksumCmd
-        lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + "03" 
-    else:
-        checksumCmd=getChecksum(cmd,length,datas)
-        if len(checksumCmd)==1:
-            strchecksum="0" + str(checksumCmd)
-        else:
-            strchecksum=checksumCmd
-        lineinput="01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"   
-    Domoticz.Debug("sendZigateCmd - Command send: " + str(lineinput))
-
-    # Compute the Delay based on the weight of the command and the current queue
-    # For instance if queue is empty , you can engage the command immediatly
-    # _weight
-
-    if z_var.cmdInProgress.qsize() == 0:     # reset Delay to 0 as we don't have any more request in the pipe
-        delay = 0            # Allow immediate execution, and reset to default the liveSendDelay
-        z_var.liveSendDelay = z_var.sendDelay 
-    else:                    # Compute delay with _weight 
-        delay = ( z_var.sendDelay * _weight) * ( z_var.cmdInProgress.qsize() )
-        if delay < z_var.liveSendDelay:    # If the computed Delay is lower than previous, we must stay on the last one until queue is empty
-            delay =  z_var.liveSendDelay
-        else:
-            z_var.liveSendDelay = delay
-
-    z_var.cmdInProgress.put( command )
-    Domoticz.Debug("sendZigateCmd - Command in queue: " + str( z_var.cmdInProgress.qsize() ) )
-    if z_var.cmdInProgress.qsize() > 30:
-        Domoticz.Debug("sendZigateCmd - Command in queue: > 30 - queue is: " + str( z_var.cmdInProgress.qsize() ) )
-        Domoticz.Debug("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
-
-    Domoticz.Debug("sendZigateCmd(self, ) - Computed delay is: " + str(delay) + " liveSendDelay: " + str( z_var.liveSendDelay) + " based on _weight = " +str(_weight) + " sendDelay = " + str(z_var.sendDelay) + " Qsize = " + str(z_var.cmdInProgress.qsize()) )
-
-    if str(z_var.transport) == "USB" or str(z_var.transport) == "Wifi":
-        z_var.ZigateConn.Send(bytes.fromhex(str(lineinput)), delay )
-        self.stats['send'] += 1
+def sendZigateCmd(self, cmd,datas ):
+    self.ZigateComm.sendData( cmd, datas )
 
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -360,7 +277,7 @@ def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
     Domoticz.Debug("attribute_discovery_request - " +str(datas) )
-    sendZigateCmd(self, "0140", datas , 2 )
+    sendZigateCmd(self, "0140", datas )
 
 
 
@@ -480,13 +397,13 @@ def processConfigureReporting( self, NWKID=None ):
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
                         Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
-                        sendZigateCmd(self, "0120", datas , 2)
+                        sendZigateCmd(self, "0120", datas )
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                     ##datas +=  "%02x" %(attrLen) + attrList
                     #Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attrDisp) )
                     #Domoticz.Log("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
-                    #sendZigateCmd(self, "0120", datas , 2)
+                    #sendZigateCmd(self, "0120", datas )
     
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -568,7 +485,7 @@ def setChannel( self, channel):
     mask = maskChannel( channel )
     Domoticz.Debug("setChannel - Channel set to : %08.x " %(mask))
 
-    sendZigateCmd(self, "0021", "%08.x" %(mask), 2)
+    sendZigateCmd(self, "0021", "%08.x" %(mask))
     return
 
 

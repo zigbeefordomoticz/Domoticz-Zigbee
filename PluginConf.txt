@@ -1,10 +1,9 @@
 {
-'CrcCheck':'On',
-'RemoveDevice':'0',
-'sendDelay':'1',
-'storeDiscoveryFrames':'0',
-'LQI':'0',
-'ForceCreationDevice':'0',
-'NetworkScan':'21600',
+'allowRemoveZigateDevice':'0',
+'sendDelay':'0',
+'allowStoreDiscoveryFrames':'0',
+'forceCreationDomoDevice':'0',
+'logLQI':'0',
+'networkScan':'0',
 'logFORMAT':'0'
 }
