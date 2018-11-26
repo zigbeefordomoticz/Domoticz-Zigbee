@@ -31,7 +31,7 @@ CMD_ONLY_STATUS = (0x0012, 0x0016, 0x0020, 0x0021, 0x0022, 0x0023, 0x0027, 0x004
 
 RETRANSMIT_COMMAND = (0x0092, 0x0093, 0x0094,
                       0x0080, 0x0081, 0x0082, 0x0083, 0x0084,
-                      0x0045, 0x0042, 0x0043)
+                      0x0045, 0x0043)
 
 # Commands/Answers
 CMD_DATA = {0x0009: 0x8009, 0x0010: 0x8010, 0x0014: 0x8014, 0x0015: 0x8015,
@@ -232,8 +232,9 @@ class ZigateTransport(object):
     def addCmdToSend(self, cmd, data, reTransmit=0):
         """add a command to the waiting list"""
         timestamp = int(time.time())
+        Domoticz.Debug("addCmdToSend: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
         self._normalQueue.append((cmd, data, timestamp, reTransmit))
-        # self._printSendQueue()
+        #self._printSendQueue()
 
     def addCmdToWait(self, cmd, data, reTransmit=0):
         'add a command to the waiting list'
@@ -423,18 +424,18 @@ class ZigateTransport(object):
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOdata += 1
                 entry = self.nextDataInWait()
-                Domoticz.Log("waitForData - Timeout %s on %04.x " % (now - pTime, entry[0]))
+                Domoticz.Debug("waitForData - Timeout %s on %04.x " % (now - pTime, entry[0]))
                 Domoticz.Debug("waitForData - waitQ: %s dataQ: %s normalQ: %s" \
                                % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
                 # If we allow reTransmit, let's resend the command
-                if self.reTransmit:
-                    expResponse, pCmd, pData, pTime, reTx = entry
-                    if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx < 2:
-                        self.statistics._reTx += 1
-                        Domoticz.Log("checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%d) " % (
-                            pCmd, pData, reTx))
-                        reTx += 1
-                        self.addCmdToSend(pCmd, pData, reTx)
+                #if self.reTransmit:
+                #    expResponse, pCmd, pData, pTime, reTx = entry
+                #    if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit:
+                #        self.statistics._reTx += 1
+                #        Domoticz.Log("checkTOwaitForStatus - Request a reTransmit of Command : %s/%s (%s) " % (
+                #            pCmd, pData, reTx))
+                #        reTx += 1
+                #        self.addCmdToSend(pCmd, pData, reTransmit=reTx)
 
         if len(self._normalQueue) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
