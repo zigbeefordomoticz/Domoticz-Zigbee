@@ -83,4 +83,4 @@ class PluginConf:
 
         if self.PluginConf.get('zTimeOut') and \
                 self.PluginConf.get('zTimeOut').isdigit():
-            self.reTransmit = int(self.PluginConf.get('zTimeOut'))
+            self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
