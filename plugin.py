@@ -165,7 +165,7 @@ class BasePlugin:
 
     def onStop(self):
         Domoticz.Status("onStop called")
-        self.ZigateComm.closeConn()
+        #self.ZigateComm.closeConn()
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
         self.statistics.printSummary()
 
