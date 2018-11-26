@@ -28,11 +28,12 @@ HEARBEAT_VALUE = 5
 def processKnownDevices( self, NWKID ):
 
     # Check if Node Descriptor was run ( this could not be the case on early version)
-    if ( int( self.ListOfDevices[NWKID]['Heartbeat']) == 28 ):
+    intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
+    if  intHB == ( 28 // HEARBEAT_VALUE):
         if not self.ListOfDevices[NWKID].get('PowerSource'):    # Looks like PowerSource is not available, let's request a Node Descriptor
             z_output.sendZigateCmd(self,"0042", str(NWKID) )    # Request a Node Descriptor
 
-    if ( int( self.ListOfDevices[NWKID]['Heartbeat']) % 60 ) == 0 or ( self.ListOfDevices[NWKID]['Heartbeat'] == "24" ):
+    if ( intHB % ( 60 // HEARBEAT_VALUE) ) == 0 or ( intHB == ( 24 // HEARBEAT_VALUE)):
         if  'PowerSource' in self.ListOfDevices[NWKID]:        # Let's check first that the field exist, if not it will be requested at Heartbeat == 12 (see above)
             if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':    #  Only for device receiving req on idle
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
@@ -48,8 +49,8 @@ def processKnownDevices( self, NWKID ):
                     #    z_output.ReadAttributeRequest_0000(self, NWKID )
                     if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
                         z_output.ReadAttributeRequest_0001(self, NWKID )
-                    if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
-                        z_output.ReadAttributeRequest_0300(self, NWKID )
+                    #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
+                    #    z_output.ReadAttributeRequest_0300(self, NWKID )
                     pass
 
     
