@@ -1,6 +1,6 @@
 # Release Notes 
 ## xx November 2018 - beta-3.3
-- [Technical] New Zigate Transport layer 
+- [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
 
 ## xx November  2018 - beta-3.2
