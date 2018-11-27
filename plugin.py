@@ -210,7 +210,7 @@ class BasePlugin:
         return True
 
     def onMessage(self, Connection, Data):
-        Domoticz.Debug("onMessage called on Connection " +str(Connection) + " Data = '" +str(Data) + "'")
+        Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
         self.ZigateComm.onMessage(Data)
 
     def processFrame( self, Data ):
@@ -226,14 +226,12 @@ class BasePlugin:
     def onHeartbeat(self):
 
         #Domoticz.Log("onHeartbeat called" )
-        Domoticz.Debug("ListOfDevices : " + str(self.ListOfDevices))
 
         ## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
         self.HeartbeatCount += 1
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % ( 90 // HEARBEAT_VALUE ) ) == 0 :
-                Domoticz.Debug("request Network Status")
+            if (self.HeartbeatCount % ( 120 // HEARBEAT_VALUE ) ) == 0 :
                 z_output.sendZigateCmd(self, "0009","")
         
         prevLenDevices = len(Devices)
