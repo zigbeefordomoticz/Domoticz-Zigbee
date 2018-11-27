@@ -638,6 +638,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                     self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}           # create it.
                             if 'Type' in self.DeviceConf[modelName]['Ep'][Ep]:                     # If type exist at EP level : copy it
                                 self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[modelName]['Ep'][Ep]['Type']
+                            if 'ColorMode' in self.DeviceConf[modelName]['Ep'][Ep]:
+                                if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
+                                    self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
+                                self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = self.DeviceConf[modelName]['ColorMode']
                         if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
                             self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
 
