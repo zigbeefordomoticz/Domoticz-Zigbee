@@ -23,6 +23,7 @@
 'TRADFRI bulb E27 W opal 1000lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0b05':'','1000':'','Type':'LvlControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0100','NickName':'LED1623G12'},
 'TRADFRI bulb GU10 W 400lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0b05':'','1000':'','Type':'LvlControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0100','NickName':'LED1536G5'},
 'TRADFRI bulb E27 CWS opal 600lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0200','NickName':'LED1624G9'},
+'TRADFRI bulb E27 WS opal 950lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl','ColorMode':'2'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0220','NickName':'LED1545G12'},
 'TRADFRI bulb E27 WS clear 950lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl','ColorMode':'2'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0220','NickName':'LED1546G12'},
 'TRADFRI control outlet':{'Ep':{'02':{'1000':'','0021':''},'01':{'0006':'','fc7c':'','0004':'','0000':'','0003':'','0008':'','0005':'','Type':'Switch'}},'Type':'','ProfileID':'c05e','ZDeviceID':'010a'},
 'TRADFRI on/off switch':{'Ep':{'01':{'0001':'','fc7c':'','0009':'','1000':'','0102':'','0000':'','0003':'','Type':'Switch'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0820'},
