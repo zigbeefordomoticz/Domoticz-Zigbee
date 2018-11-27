@@ -248,7 +248,7 @@ class BasePlugin:
             Domoticz.Log("Devices size has changed , let's write ListOfDevices on disk")
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
         else:
-            z_database.WriteDeviceList(self, Parameters["HomeFolder"], 200)
+            z_database.WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * HEARTBEAT_VALUE) )
 
         # Check if we still have connectivity. If not re-established the connectivity
         self.ZigateComm.reConn()
