@@ -783,8 +783,6 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     PowerSource =   ( mac_capability >> 2 ) & 1
     ReceiveonIdle = ( mac_capability >> 3 ) & 1
 
-    Domoticz.Debug("Decode8042 - mac_capability = " +str(mac_capability) )
-
     if DeviceType == 1 : 
         DeviceType = "FFD"
     else : 
@@ -1252,8 +1250,6 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
     except : 
         self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
-    Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" 
-                        + str(MsgRSSI) + " for " + str(MsgSrcAddr) )
 
     z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
     z_readClusters.ReadCluster(self, Devices, MsgData) 
@@ -1293,8 +1289,6 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         except:
             self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
-        Domoticz.Debug("Decode8012 : RSSI set to " + str( self.ListOfDevices[MsgSrcAddr]['RSSI']) + "/" + str(MsgRSSI) 
-                        + " for " + str(MsgSrcAddr) )
         Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
