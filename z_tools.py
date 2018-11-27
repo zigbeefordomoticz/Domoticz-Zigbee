@@ -425,3 +425,57 @@ def getListofType( self, Type ) :
     retList = list()
     retList= Type.split("/")
     return retList
+
+def hex_to_rgb(value):
+    """Return (red, green, blue) for the color given as #rrggbb."""
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
+def hex_to_xy(h):
+    ''' convert hex color to xy tuple '''
+    return rgb_to_xy(hex_to_rgb(h))
+
+def rgb_to_hex(rgb):
+    return '#%02x%02x%02x' % rgb
+
+def rgb_to_xy(rgb):
+    ''' convert rgb tuple to xy tuple '''
+    red, green, blue = rgb
+    r = ((red + 0.055) / (1.0 + 0.055))**2.4 if (red > 0.04045) else (red / 12.92)
+    g = ((green + 0.055) / (1.0 + 0.055))**2.4 if (green > 0.04045) else (green / 12.92)
+    b = ((blue + 0.055) / (1.0 + 0.055))**2.4 if (blue > 0.04045) else (blue / 12.92)
+    X = r * 0.664511 + g * 0.154324 + b * 0.162028
+    Y = r * 0.283881 + g * 0.668433 + b * 0.047685
+    Z = r * 0.000088 + g * 0.072310 + b * 0.986039
+    cx = 0
+    cy = 0
+    if (X + Y + Z) != 0:
+        cx = X / (X + Y + Z)
+        cy = Y / (X + Y + Z)
+    return (cx, cy)
+
+def rgb_to_hsl(rgb):
+    ''' convert rgb tuple to hls tuple '''
+    r, g, b = rgb
+    r = float(r/255)
+    g = float(g/255)
+    b = float(b/255)
+    high = max(r, g, b)
+    low = min(r, g, b)
+    h, s, l = ((high + low) / 2,)*3
+
+    if high == low:
+        h = 0.0
+        s = 0.0
+    else:
+        d = high - low
+        s = d / (2 - high - low) if l > 0.5 else d / (high + low)
+        h = {
+            r: (g - b) / d + (6 if g < b else 0),
+            g: (b - r) / d + 2,
+            b: (r - g) / d + 4,
+        }[high]
+        h /= 6
+
+    return h, s, l

@@ -144,47 +144,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
         #
 
-        def rgb_to_xy(rgb):
-            ''' convert rgb tuple to xy tuple '''
-            red, green, blue = rgb
-            r = ((red + 0.055) / (1.0 + 0.055))**2.4 if (red > 0.04045) else (red / 12.92)
-            g = ((green + 0.055) / (1.0 + 0.055))**2.4 if (green > 0.04045) else (green / 12.92)
-            b = ((blue + 0.055) / (1.0 + 0.055))**2.4 if (blue > 0.04045) else (blue / 12.92)
-            X = r * 0.664511 + g * 0.154324 + b * 0.162028
-            Y = r * 0.283881 + g * 0.668433 + b * 0.047685
-            Z = r * 0.000088 + g * 0.072310 + b * 0.986039
-            cx = 0
-            cy = 0
-            if (X + Y + Z) != 0:
-                cx = X / (X + Y + Z)
-                cy = Y / (X + Y + Z)
-            return (cx, cy)
-
-        def rgb_to_hsl(rgb):
-            ''' convert rgb tuple to hls tuple '''
-            r, g, b = rgb
-            r = float(r/255)
-            g = float(g/255)
-            b = float(b/255)
-            high = max(r, g, b)
-            low = min(r, g, b)
-            h, s, l = ((high + low) / 2,)*3
-
-            if high == low:
-                h = 0.0
-                s = 0.0
-            else:
-                d = high - low
-                s = d / (2 - high - low) if l > 0.5 else d / (high + low)
-                h = {
-                    r: (g - b) / d + (6 if g < b else 0),
-                    g: (b - r) / d + 2,
-                    b: (r - g) / d + 4,
-                }[high]
-                h /= 6
-
-            return h, s, l
-
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
 
         #First manage level
@@ -209,7 +168,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             z_output.sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
-            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             #Convert 0>1 to 0>FFFF
             x = int(x*65536)
             y = int(y*65536)
@@ -219,12 +178,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif Hue_List['m'] == 4:
             ww = int(Hue_List['ww'])
             cw = int(Hue_List['cw'])
-            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
+            x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
             #TODO, Pas trouve de device avec ca encore ...
             Domoticz.Debug("Not implemented device color 2")
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
-            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            h,l,s = z_tools.rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             saturation = s * 100   #0 > 100
             hue = h *360           #0 > 360
             hue = int(hue*254//360)
