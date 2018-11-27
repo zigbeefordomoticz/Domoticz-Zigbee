@@ -61,7 +61,7 @@ class PluginConf:
                 self.PluginConf.get('allowRemoveZigateDevice').isdigit():
             self.allowRemoveZigateDevice = int(self.PluginConf['allowRemoveZigateDevice'], 10)
 
-        if self.PluginConf.get('allowrFforceCreationDomoDevice') and \
+        if self.PluginConf.get('allowForceCreationDomoDevice') and \
                 self.PluginConf.get('allowForceCreationDomoDevice').isdigit():
             self.allowForceCreationDomoDevice = int(self.PluginConf['allowForceCreationDomoDevice'], 10)
 
