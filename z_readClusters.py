@@ -308,7 +308,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Magic Cube Xiaomi rotation and Power Meter
 
-    Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
+    Domoticz.Log("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
     if MsgAttrID=="0055":
         # Are we receiving Power
         EPforPower = z_tools.getEPforClusterType( self, MsgSrcAddr, "Power" ) 
@@ -317,6 +317,8 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         # Are we receiving 'lumi.remote.b186acn01 status
         EPforSwitch =  z_tools.getEPforClusterType( self, MsgSrcAddr, "Button" )
+
+        Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s, EPforSwitch: %s" %(EPforPower, EPforMeter, EPforPowerMeter, EPforSwitch))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == len(EPforSwitch) == 0:
             Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
