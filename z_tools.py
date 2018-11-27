@@ -105,8 +105,6 @@ def DeviceExist(self, newNWKID , IEEE = ''):
                 if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' and self.ListOfDevices[existingNWKkey]['Status'] != "Left" :
                     continue
 
-                Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " and Status = inDB ")
-
                 # Updating process by :
                 # - mapping the information to the new newNWKID
 
@@ -290,7 +288,6 @@ def CheckDeviceList(self, key, val) :
         # We will initialize Hearbeat with a random value between 0 to 12 in order to distribute the load when triggering action based on the Hearbeat value
         # 12 is equivalent to 12 Heartbeat cycle ==> 2 minutes
         self.ListOfDevices[key]['Heartbeat']=random.randint(0, 12)
-        Domoticz.Debug("CheckDeviceList - Hearbeat initialized for  self.ListOfDevices["+str(key)+"] to = "+str(self.ListOfDevices[key]['Heartbeat']) )
 
 
 def timeStamped( self, key, Type ):
@@ -339,7 +336,6 @@ def updSQN( self, key, newSQN) :
             Domoticz.Log("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
             return
     else :
-        Domoticz.Debug("updSQN - Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " SQN " + str(newSQN) )
         self.ListOfDevices[key]['SQN'] = {}
 
 
