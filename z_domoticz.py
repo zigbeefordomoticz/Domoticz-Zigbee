@@ -31,7 +31,6 @@ def CreateDomoDevice(self, Devices, NWKID):
         # for x in Devices :
         #    if Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0 :
         #        return Devices[x].ID
-        Domoticz.Debug("getCreateID - Liste de comprehension")
         return (Devices[x].ID for x in Devices if (Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0))
 
     def FreeUnit(self, Devices):
@@ -794,9 +793,6 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
     if (Unit in Devices):
         if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or (
                 Devices[Unit].Color != Color_) or ForceUpdate_:
-            Domoticz.Debug(
-                "Update v2 Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + " SuppTrigger_: " + str(
-                    SuppTrigger_) + " ForceUpdate_: " + str(ForceUpdate_) + "' (" + Devices[Unit].Name + ")")
             Domoticz.Log("Update v2 Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
                 Unit].Name + ")")
             if Color_:
@@ -813,9 +809,6 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
                 Devices[Unit].SignalLevel != rssi):  # In that case we do update, but do not trigger any notification.
             Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
                                  BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
-            Domoticz.Debug(
-                "Update v2 SignalLevel: " + str(rssi) + ":' BatteryLevel: " + str(BatteryLvl) + "' (" + Devices[
-                    Unit].Name + ")")
     return
 
 
