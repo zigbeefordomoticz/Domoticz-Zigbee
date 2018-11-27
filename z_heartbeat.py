@@ -65,8 +65,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             Domoticz.Log("processNotinDBDevices - new device discovered request Node Descriptor for: " +str(NWKID) )
             self.ListOfDevices[NWKID]['Heartbeat'] = "0"
             self.ListOfDevices[NWKID]['Status'] = "0045"
-            z_output.sendZigateCmd(self,"0045", str(NWKID))     # Request list of EPs
             z_output.ReadAttributeRequest_0000(self, NWKID )    # Basic Cluster readAttribute Request
+            z_output.sendZigateCmd(self,"0045", str(NWKID))     # Request list of EPs
             z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             return
         else:
