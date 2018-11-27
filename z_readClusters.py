@@ -260,22 +260,32 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == "0000":     # CurrentHue
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Hue'] = value
         Domoticz.Log("ReadCluster0300 - CurrentHue: %s" %value)
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Hue']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0001":   # CurrentSaturation
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Saturation'] = value
         Domoticz.Log("ReadCluster0300 - CurrentSaturation: %s" %value)
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0003":     # CurrentX
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
         Domoticz.Log("ReadCluster0300 - CurrentX: %s" %value)
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-X']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004":   # CurrentY
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Y'] = value
         Domoticz.Log("ReadCluster0300 - CurrentY: %s" %value)
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Y']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0007":   # ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorTemperatureMireds'] = value
         Domoticz.Log("ReadCluster0300 - ColorTemperatureMireds: %s" %value)
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorTemperatureMireds']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0008":   # Color Mode 
                                 # 0x00: CurrentHue and CurrentSaturation
@@ -283,6 +293,8 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 # 0x02: ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = value
         Domoticz.Log("ReadCluster0300 - Color Mode: %s" %value)
+        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     else:
         Domoticz.Log("ReadCluster - ClusterID=0300 - NOT IMPLEMENTED YET - MsgAttrID = " +\
@@ -302,10 +314,20 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         EPforPower = z_tools.getEPforClusterType( self, MsgSrcAddr, "Power" ) 
         EPforMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
-        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
+
+        # Are we receiving 'lumi.remote.b186acn01 status
+        EPforSwitch =  z_tools.getEPforClusterType( self, MsgSrcAddr, "Button" )
+       
+        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == len(EPforSwitch) == 0:
             Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
 
-        else: # We have several EPs in Power/Meter
+        elif len(EPforSwitch) > 0:
+            value = decodeAttribute( MsgAttType, MsgClusterData )
+            Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqar: %s " %value)
+            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
+                                                                                                # a switch in order to behave as a switch
+            
+        elif len(EPforSwitch) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
             Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
             Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
@@ -315,6 +337,9 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
                     z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
                     break      # We just need to send once
+        else:
+            Domoticz.Log("ReadCluster 000c - received unknown value - MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
+                    %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     elif MsgAttrID=="ff05": # Rotation - horinzontal
         Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
