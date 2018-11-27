@@ -5,9 +5,12 @@ Either the information is coming from one of the plugin user (through direct com
 
 | Brand | Device/Type | Domoticz usage | Description | Status | Plugin Version |
 | ----- | ----------- | -------------- | ----------- | ------ | -------------- |
-| IKEA/Tradfri | LED 1545G12  | Switch Light, Level Control, Color Control | You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
+| IKEA/Tradfri | LED1623G12 | Combied Switch+Level Control |  |   Fully Operationnal | 2.3.5 |
+| IKEA/Tradfri | LED1536G5 | Combined Switch+Level Control |  | Fully Operationnal | 2.4.0 |
+| IKEA/Tradfri | LED1624G9 | Combined Switch+Level+Color control | |  Fully Operationnal | 2.4.0 |
+| IKEA/Tradfri | LED1545G12 | Combined  Switch+Level+Color control | | Fully Operationnal | 2.4.0 |
+| IKEA/Tradfri | LED1546G12 | Combined  Switch+Level+Color control | |  Fully Operationnal | 2.4.0 |
 | IKEA/Tradfri | LED 1622G12 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 2.3.5 |
-| IKEA/Tradfri | LED 1624G9  | Switch Light, Level Control, Color Control | You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 2.4.0 |
 | IKEA/Tradfri | remote control E1524 | Remote Control | you can pair the remote control to your Tradfri buld, but the remote control cannot be paired to the Zigate for the time been | Not supported | required Group/Scene |
 | IKEA/Tradfri | TRADFRI motion sensor |  | | Not supported | required Group/Scene |
 | Jiawen | JW-A04-RGBW Led Strip Controler | Switch Light, Level Control, Color Control |  You can switch on/off the lead, managed the LUX via the level control and the LED color, through the Color Seting. | Fully operationnal | 3.1.0 |
