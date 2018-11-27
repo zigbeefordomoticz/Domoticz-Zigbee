@@ -268,21 +268,36 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "ColorControl":  # variateur de couleur/luminosite/on-off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 # Type 0xF1    pTypeColorSwitch
+                # Switchtype 7 STYPE_Dimmer
                 # SubType sTypeColor_RGB_W                0x01 // RGB + white, either RGB or white can be lit
-                # SubType sTypeColor_RGB                  0x02 // RGB
                 # SubType sTypeColor_White                0x03 // Monochrome white
                 # SubType sTypeColor_RGB_CW_WW            0x04 // RGB + cold white + warm white, either RGB or white can be lit
                 # SubType sTypeColor_LivCol               0x05
                 # SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
-                # SubType sTypeColor_RGB_CW_WW_Z          0x07 // Like RGBWW, but allows combining RGB and white
-                # SubType sTypeColor_CW_WW                0x08 // Cold white + Warm white
-                # Switchtype 7 STYPE_Dimmer
                 # The test should be done in an other way ( ProfileID for instance )
-                if self.ListOfDevices[NWKID]['Model'] == "Ampoule.LED1624G9.Tradfri":
-                    Subtype_ = 2
-                elif self.ListOfDevices[NWKID]['Model'] == "Ampoule.LED1545G12.Tradfri":
-                    Subtype_ = 8
+                if 'ColorInfos' in  self.ListOfDevices[NWKID]:
+                    Domoticz.Debug("ColorInfos: %s" %self.ListOfDevices[NWKID]['ColorInfos'])
+                    if 'ColorMode' in self.ListOfDevices[NWKID]['ColorInfos']:
+                        Domoticz.Debug("ColorMode: %s" %self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'])
+                        if self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 2:
+                                                # SubType sTypeColor_CW_WW       0x08 // Cold white + Warm white
+                            Subtype_ = 8        # "Ampoule.LED1545G12.Tradfri":
+                        elif  self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 1:
+                                                # SubType sTypeColor_RGB         0x02 // RGB
+                            Subtype_ = 2        # "Ampoule.LED1624G9.Tradfri":
+                        elif self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 0:
+                                                # SubType sTypeColor_RGB_CW_WW_Z 0x07 // Like RGBWW, 
+                                                # but allows combining RGB and white
+                            Subtype_ = 7
+                        else:
+                            Domoticz.Log("CreateDomoDevice - unexpected ColorMode: %s" \
+                                    %self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'])
+                            Subtype_ = 7
+                    else:
+                        Domoticz.Log("CreateDomoDevice - undefined ColorMode")
+                        Subtype_ = 7
                 else:
+                    Domoticz.Log("CreateDomoDevice - undefined ColorInfos")
                     Subtype_ = 7
 
                 unit = FreeUnit(self, Devices)
