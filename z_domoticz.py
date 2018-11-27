@@ -104,11 +104,10 @@ def CreateDomoDevice(self, Devices, NWKID):
             ID = Devices[unit].ID
             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-	if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
-		Type = ['ColorControl']
-	elif ("Switch" in Type) and ("LvlControl" in Type):
+        if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
+            Type = ['ColorControl']
+        elif ("Switch" in Type) and ("LvlControl" in Type):
             Type = ['LvlControl']
-
 
         for t in Type:
             Domoticz.Debug(
