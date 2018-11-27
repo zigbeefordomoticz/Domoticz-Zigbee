@@ -40,10 +40,8 @@ def LQIcontinueScan(self):
         for child in self.LQI[src]:
             trt += 1
             if self.LQI[src][child]['Scanned']: scn += 1
-            Domoticz.Debug(" Source {:>4}".format(src) + " child {:>4}".format(child) + \
-                    " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + \
-                    " type {:>11}".format(self.LQI[src][child]['_devicetype']) + \
-                    " deepth {:2n}".format((int(self.LQI[src][child]['_depth'], 16))) + " " +str(self.LQI[src][child]['Scanned']))
+            Domoticz.Debug(" Source: %4s Child: %4s Relation: %7s Type: %11s Deepth: %2s Scanner: %s" \
+                    %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['Scanned']))
     if scn > 0:
         Domoticz.Log("LQIcontinueScan - Nodes = {:2n}".format(trt) + " True " +str(scn) + " {:2n}% completed ".format(round((scn/trt)*100)))
     else:
