@@ -1335,6 +1335,10 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
     if MsgDataStatus != '00':
+        # Looks like that this Device doesn't handle Configure Reporting, so let's flag it as such, so we won't do it anymore
+        if 'NO cfg rprtng' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['NO cfg rprtng'] = []
+        self.ListOfDevices[MsgSrcAddr]['NO cfg rprtng'].append(MsgClusterId)
         Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
     return

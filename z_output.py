@@ -49,7 +49,9 @@ def ZigateConf_light(self, discover ):
         Domoticz.Status("Zigate enter in discover mode for ever")
     else: 
         Domoticz.Status("Zigate enter in discover mode for %s Secs" %(int(discover,16)))
-    sendZigateCmd(self, "0049","FFFC" + discover + "00")
+
+    if discover != "00":    # In order to avoid Devices's noise
+        sendZigateCmd(self, "0049","FFFC" + discover + "00")
 
     Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "" ) # Request status
@@ -398,6 +400,9 @@ def processConfigureReporting( self, NWKID=None ):
                 identifySend( self, key, Ep, 15)
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
+                if 'NO cfg rprtng' in  self.ListOfDevices[key]:
+                    if cluster in  self.ListOfDevices[key]['NO cfg rprtng']:
+                        continue
                 if cluster in ATTRIBUTESbyCLUSTERS:
                     bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     #attrDisp = []   # Used only for printing purposes

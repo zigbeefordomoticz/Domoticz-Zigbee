@@ -284,6 +284,8 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['Stamp']=DeviceListVal['Stamp']
         if 'ColorInfos' in DeviceListVal :
             self.ListOfDevices[key]['ColorInfos']=DeviceListVal['ColorInfos']
+        if 'NO cfg rprtng' in DeviceListVal :
+            self.ListOfDevices[key]['NO cfg rprtng']=DeviceListVal['NO cfg rprtng']
 
         # We will initialize Hearbeat with a random value between 0 to 12 in order to distribute the load when triggering action based on the Hearbeat value
         # 12 is equivalent to 12 Heartbeat cycle ==> 2 minutes
