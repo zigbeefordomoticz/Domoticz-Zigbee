@@ -106,7 +106,7 @@ def decodeAttribute(AttType, Attribute):
             decoded = str(Attribute)
         return decoded
     else:
-        Domoticz.Log("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+        Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
         return Attribute
 
 
@@ -225,19 +225,19 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     Domoticz.Debug("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
 
     if MsgAttrID == "0000": 
-        Domoticz.Log("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value))
+        Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value))
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         #z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0301":   # Multiplier
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
-        Domoticz.Log("Cluster0702 - Multiplier: %s" %(value))
+        Domoticz.Debug("Cluster0702 - Multiplier: %s" %(value))
 
     elif MsgAttrID == "0302":   # Divisor
-        Domoticz.Log("Cluster0702 - Divisor: %s" %(value))
+        Domoticz.Debug("Cluster0702 - Divisor: %s" %(value))
 
     elif MsgAttrID == "0200": 
-        Domoticz.Log("Cluster0702 - Status: %s" %(value))
+        Domoticz.Debug("Cluster0702 - Status: %s" %(value))
 
 
     elif MsgAttrID == "0400": 
@@ -259,31 +259,31 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     value = decodeAttribute( MsgAttType, MsgClusterData)
     if MsgAttrID == "0000":     # CurrentHue
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Hue'] = value
-        Domoticz.Log("ReadCluster0300 - CurrentHue: %s" %value)
+        Domoticz.Debug("ReadCluster0300 - CurrentHue: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Hue']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0001":   # CurrentSaturation
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Saturation'] = value
-        Domoticz.Log("ReadCluster0300 - CurrentSaturation: %s" %value)
+        Domoticz.Debug("ReadCluster0300 - CurrentSaturation: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0003":     # CurrentX
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
-        Domoticz.Log("ReadCluster0300 - CurrentX: %s" %value)
+        Domoticz.Debug("ReadCluster0300 - CurrentX: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-X']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004":   # CurrentY
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Y'] = value
-        Domoticz.Log("ReadCluster0300 - CurrentY: %s" %value)
+        Domoticz.Debug("ReadCluster0300 - CurrentY: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Y']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0007":   # ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorTemperatureMireds'] = value
-        Domoticz.Log("ReadCluster0300 - ColorTemperatureMireds: %s" %value)
+        Domoticz.Debug("ReadCluster0300 - ColorTemperatureMireds: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorTemperatureMireds']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
@@ -292,7 +292,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 # 0x01: CurrentX and CurrentY
                                 # 0x02: ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = value
-        Domoticz.Log("ReadCluster0300 - Color Mode: %s" %value)
+        Domoticz.Debug("ReadCluster0300 - Color Mode: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
