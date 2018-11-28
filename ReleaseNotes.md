@@ -2,6 +2,14 @@
 ## xx November 2018 - beta-3.3
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
+- [Technical] Refactor the inclusion/discovery and domoticz widget creation
+- [Enhacement] Automaticaly handle Bulbe ColorMode in order to create the corresponding Widget WW, RGB or LED
+- [Technical] Manage ConfigureReporting and ReadAttributes errors in the way that we do not ask anymore.
+- [Hardware] Salus SP600 plug (power reporting will required a firmware update of Zigate)
+- [Hardware] WXKG03LM Aqara wireles switch single button (using Cluster 0x0012)
+- [Enhacement] Improve stats report at plugin exit
+- [Hardware] Adding more IKEA Tradfri bulbes
+- [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode. 
 
 ## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
