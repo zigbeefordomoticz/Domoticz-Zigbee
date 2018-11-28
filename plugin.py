@@ -210,7 +210,7 @@ class BasePlugin:
         return True
 
     def onMessage(self, Connection, Data):
-        Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
+        #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
         self.ZigateComm.onMessage(Data)
 
     def processFrame( self, Data ):
