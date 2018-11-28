@@ -91,8 +91,11 @@ def CreateDomoDevice(self, Devices, NWKID):
         if "Humi" in Type and "Temp" in Type and "Baro" in Type:
             t = "Temp+Hum+Baro"  # Detecteur temp + Hum + Baro
             unit = FreeUnit(self, Devices)
+            Domoticz.Debug("CreateDomoDevice - unit: %s" %unit)
             Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                             Unit=unit, TypeName=t).Create()
+            for x in Devices:
+                Domoticz.Debug("CreateDomoDevice - Devices: %s" %Devices[x] )
             ID = Devices[unit].ID
             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
