@@ -551,7 +551,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                     UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "Button":  # boutton simple
                     state = ''
-                    if value == "01":
+                    if int(value) == 1:
                         state = "On"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
                                         ForceUpdate_=True)
@@ -627,7 +627,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         else:
                             return  # We just expect 01 , in case of other value nothing to do
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
-                    if str(Devices[x].SwitchType) == "16":
+                    if Devices[x].SwitchType == 16:
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
@@ -650,7 +650,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                     sValue = round((int(value, 16) / 255) * 100)
                     if sValue == 0:
                         nValue = 0
-                        if str(Devices[x].SwitchType) == "16":
+                        if Devices[x].SwitchType == 16:
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -659,7 +659,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                                 UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                     elif sValue == 100:
                         nValue = 1
-                        if str(Devices[x].SwitchType) == "16":
+                        if Devices[x].SwitchType == 16:
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -667,7 +667,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                             else:
                                 UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
                     else:
-                        if str(Devices[x].SwitchType) != "16" and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                        if Devices[x].SwitchType != 16 and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                             pass
                         else:
                             nValue = 2

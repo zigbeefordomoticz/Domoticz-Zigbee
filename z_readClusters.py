@@ -252,6 +252,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
     # Color Temperature
     if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
@@ -315,19 +316,12 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         EPforMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
 
-        # Are we receiving 'lumi.remote.b186acn01 status
-        EPforSwitch =  z_tools.getEPforClusterType( self, MsgSrcAddr, "Button" )
 
         Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s, EPforSwitch: %s" %(EPforPower, EPforMeter, EPforPowerMeter, EPforSwitch))
        
-        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == len(EPforSwitch) == 0:
+        if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
 
-        elif len(EPforSwitch) > 0:
-            value = decodeAttribute( MsgAttType, MsgClusterData )
-            Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqar: %s " %value)
-            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
-                                                                                                # a switch in order to behave as a switch
             
         elif len(EPforSwitch) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
@@ -557,6 +551,17 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         else:  
             Domoticz.Debug("cube action: Not expected value %s" %value )
         return value
+
+    # Are we receiving 'lumi.remote.b186acn01 status
+    EPforSwitch =  z_tools.getEPforClusterType( self, MsgSrcAddr, "Button" )
+
+    if len(EPforSwitch) > 0:
+        value = decodeAttribute( MsgAttType, MsgClusterData )
+        Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqara: %s " %value)
+        if value.isdigit():
+            value = int(value)
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
+        return                                                                              # a switch in order to behave as a switch
 
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
     z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
