@@ -998,6 +998,8 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
+    if MsgExtAddress not in self.IEEE2NWK: # Most likely this object has been removed and we are receiving the confirmation.
+        return
     sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
