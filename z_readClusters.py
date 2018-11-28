@@ -660,7 +660,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b186acn01':
         value = decodeAttribute( MsgAttType, MsgClusterData )
-        Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqara: %s " %value)
+        Domoticz.Debug("ReadCluster - ClusterId=000c - Switch Aqara: %s " %value)
         if value.isdigit():
             value = int(value)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
