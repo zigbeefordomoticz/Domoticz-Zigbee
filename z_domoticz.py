@@ -104,7 +104,8 @@ def CreateDomoDevice(self, Devices, NWKID):
             ID = Devices[unit].ID
             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-        if self.ListOfDevices[NWKID]['Model'] == {}:    # If Model is known, then Type must be set correctly
+        if self.ListOfDevices[NWKID]['Model'] == {} or \
+                self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:    # If Model is known, then Type must be set correctly
             if ("Switch" in Type) and ("LvlControl" in Type) and ("ColorControl" in Type):
                 Type = ['ColorControl']
             elif ("Switch" in Type) and ("LvlControl" in Type):
