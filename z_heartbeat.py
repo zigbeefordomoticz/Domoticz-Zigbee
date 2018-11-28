@@ -55,19 +55,26 @@ def processKnownDevices( self, NWKID ):
 
     
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
+    HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
 
-    # 0x004d is a device annoucement.
-    # Usally we get Network Address (short address) and IEEE
-    if status == "004d" and self.ListOfDevices[NWKID]['Heartbeat'] <= "4":
-        Domoticz.Log("processNotinDBDevices - Discovery process for " + str(NWKID) + " Info: " + str(self.ListOfDevices[NWKID]) )
+    # 0x004d is a device annoucement.  Usally we get Network Address (short address) and IEEE
+    if status == "004d" and self.ListOfDevices[NWKID]['Heartbeat']:
+        Domoticz.Status("[%s] NEW OBJECT: %s (re)Starting process" %(RIA, NWKID))
         # We should check if the device has not been already created via IEEE
         if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False:
-            Domoticz.Log("processNotinDBDevices - new device discovered request Node Descriptor for: " +str(NWKID) )
             self.ListOfDevices[NWKID]['Heartbeat'] = "0"
             self.ListOfDevices[NWKID]['Status'] = "0045"
-            z_output.ReadAttributeRequest_0000(self, NWKID )    # Basic Cluster readAttribute Request
-            z_output.sendZigateCmd(self,"0045", str(NWKID))     # Request list of EPs
-            z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
+            z_output.sendZigateCmd(self,"0045", str(NWKID))             # Request list of EPs
+            if 'Model' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Model'] == {}:
+                    Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
+                    z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
+                    Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
+                    z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0001" %(RIA, NWKID))
+            z_output.ReadAttributeRequest_0001(self, NWKID )            # Basic Cluster readAttribute Request
             return
         else:
             for dup in self.ListOfDevices:
@@ -79,25 +86,31 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.ListOfDevices[NWKID]['Heartbeat']="0"
                     self.ListOfDevices[NWKID]['RIA']="99"
                     break
-    # 0x8045 is providing the list of active EPs
-    #we will so request EP descriptor for each of them
-    if status == "8045" and self.ListOfDevices[NWKID]['Heartbeat'] <= "4":    # Status is set by Decode8045
-        Domoticz.Log("onHeartbeat - new device discovered 0x8045 received " + NWKID)
-        if self.ListOfDevices[NWKID]['Model'] == '':
-            z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+            return
+
+    # 0x8045 is providing the list of active EPs we will so request EP descriptor for each of them
+    if status == "8045": # Status is set in Decode8045 (z_input)
+        Domoticz.Status("[%s] NEW OBJECT: %s Ox8045 received Infos" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Heartbeat'] = "0"
         self.ListOfDevices[NWKID]['Status'] = "0043"
         for cle in self.ListOfDevices[NWKID]['Ep']:
-            Domoticz.Log("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of: " + NWKID)
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( RIA, NWKID, cle))
             z_output.sendZigateCmd(self,"0043", str(NWKID)+str(cle))    
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == {}:
+                Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
+                z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+        if 'Manufacturer' in self.ListOfDevices[NWKID]:
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
+            if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
+                z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
         return
-        z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
 
-
+    # In case we received 0x8043, we might want to check if there is a 0x0300 cluster. 
+    # In that case, that is a Color Bulbe and we might want to ReadAttribute in ordert o discover what is the ColorMode .
     waitForDomoDeviceCreation = 0
     if status == "8043":
-        # In case we received 0x8043, we might want to check if there is a 0x0300 cluster. 
-        # In that case, that is a Color Bulbe and we might want to ReadAttribute in ordert o discover what is the ColorMode .
+        Domoticz.Status("[%s] NEW OBJECT: %s Ox8043 received Infos" %(RIA, NWKID))
         waitForDomoDeviceCreation = 0
         reqColorModeAttribute = 0
 
@@ -118,110 +131,34 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     waitForDomoDeviceCreation = 1
                     reqColorModeAttribute = 1
                     break
-
         if reqColorModeAttribute == 1:
             self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
             z_output.ReadAttributeRequest_0300(self, NWKID )
 
-
     # Timeout management
-    if (status == "004d" or status == "0045") and self.ListOfDevices[NWKID]['Heartbeat']>="6":
-        Domoticz.Log("onHeartbeat - new device %s discovered but no processing done, let's Timeout at %s " %(status, NWKID))
+
+    if (status == "004d" or status == "0045") and HB_ > 2:
+        Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" %(RIA, NWKID, status))
         self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
         self.ListOfDevices[NWKID]['Heartbeat']="0"
-        self.ListOfDevices[NWKID]['Status']="0045"
-        z_output.sendZigateCmd(self,"0045", str(NWKID))     # Request list of EPs
-        z_output.ReadAttributeRequest_0000(self, NWKID)      # Basic Cluster readAttribute Request
-        z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
+        self.ListOfDevices[NWKID]['Status']="004d"
         return
 
-    if (status == "8045" or status == "0043") and self.ListOfDevices[NWKID]['Heartbeat']>="6":
-        Domoticz.Log("onHeartbeat - new device %s discovered but no processing done, let's Timeout at %s " %(status, NWKID))
+    if (status == "8045" or status == "0043") and HB_ > 2:
+        Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x0043" %(RIA, NWKID, status))
         self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
         self.ListOfDevices[NWKID]['Heartbeat']="0"
         self.ListOfDevices[NWKID]['Status']="0043"
-        for cle in self.ListOfDevices[NWKID]['Ep']:
-            Domoticz.Log("onHeartbeat - new device discovered request Simple Descriptor 0x0043 and wait for 0x8043 for EP " + cle + ", of: " + NWKID)
-            z_output.sendZigateCmd(self,"0043", str(NWKID)+str(cle))    
         return
 
-    if status!="UNKNOW" and self.ListOfDevices[NWKID]['RIA'] > "5":  # We have done several retry
-        Domoticz.Log("onHeartbeat - new device %s discovered but no processing done, let's Timeout at %s " %(status, NWKID))
-        self.ListOfDevices[NWKID]['Heartbeat']="0"
+    if status != "UNKNOW" and self.ListOfDevices[NWKID]['RIA'] > "6":  # We have done several retry
+        Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
-        Domoticz.Error("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
-        Domoticz.Error("processNotinDB - we are not able to Create this Device " +str(NWKID) + " stop process at " +str(status) )
+        Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
+        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
 
-    #ZLL
-    #Lightning devices
-    # ZDeviceID = 0000 >> On/Off light
-    # ZDeviceID = 0010 >> on/off light but plug
-    # ZDeviceID = 0100 >> Dimable but no color
-    # ZDeviceID = 0110 >> Dimable but no color and plug
-    # ZDeviceID = 0200 >> Color light or shutter
-    # ZDeviceID = 0220 >> Temperature Color change
-    # ZDeviceID = 0210 >> Hue/Extended Color change
-    #Controllers devices
-    # ZDeviceID = 0800 >> Color controler
-    # ZDeviceID = 0810 >> Color scene controler
-    # ZDeviceID = 0820 >> Non color controler
-    # ZDeviceID = 0830 >> Non color scene controler
-    # ZDeviceID = 0840 >> Control bridge
-    # ZDeviceID = 0850 >> on/off sensor
-    
-    #ZHA
-    #Device
-    # ZDeviceID = 0000 >> On/Off switch
-    # ZDeviceID = 0001 >> Level control switch
-    # ZDeviceID = 0002 >> on/off output
-    # ZDeviceID = 0003 >> Level contro output
-    # ZDeviceID = 0004 >> Scene selector
-    # ZDeviceID = 0005 >> Configuration tool
-    # ZDeviceID = 0006 >> Remote control
-    # ZDeviceID = 0007 >> Combined interface
-    # ZDeviceID = 0008 >> Range extender
-    # ZDeviceID = 0009 >> Mains Power Outlet
-    # ZDeviceID = 000A >> Door lock
-    # ZDeviceID = 000B >> Door lock controler
-    # ZDeviceID = 000C >> HSimple sensor
-    # ZDeviceID = 000D >> Consumption awarness Device
-    # ZDeviceID = 0050 >> Home gateway
-    # ZDeviceID = 0051 >> Smart plug
-    # ZDeviceID = 0052 >> White goods
-    # ZDeviceID = 0053 >> Meter interface
-    # ZDeviceID = 0100 >> On/Off light
-    # ZDeviceID = 0101 >> Dimable light
-    # ZDeviceID = 0102 >> Color dimable light
-    # ZDeviceID = 0103 >> on/off light
-    # ZDeviceID = 0104 >> Dimmer switch
-    # ZDeviceID = 0105 >> Color Dimmer switch
-    # ZDeviceID = 0106 >> Light sensor
-    # ZDeviceID = 0107 >> Occupancy sensor
-    # ZDeviceID = 010a >> Unknow: plug legrand
-    # ZDeviceID = 0200 >> Shade
-    # ZDeviceID = 0201 >> Shade controler
-    # ZDeviceID = 0202 >> Window covering device
-    # ZDeviceID = 0203 >> Window Covering controler
-    # ZDeviceID = 0300 >> Heating/cooling Unit
-    # ZDeviceID = 0301 >> Thermostat
-    # ZDeviceID = 0302 >> Temperature sensor
-    # ZDeviceID = 0303 >> Pump
-    # ZDeviceID = 0304 >> Pump controler
-    # ZDeviceID = 0305 >> Pressure sensor
-    # ZDeviceID = 0306 >> flow sensor
-    # ZDeviceID = 0307 >> Mini split AC
-    # ZDeviceID = 0400 >> IAS Control and indicating equipement 
-    # ZDeviceID = 0401 >> IAS Ancillary Control Equipement
-    # ZDeviceID = 0402 >> IAS zone
-    # ZDeviceID = 0403 >> IAS Warning device
-    
-    # ProfileID = c05e >> ZLL: ZigBee Light Link
-    # ProfileID = 0104 >> ZHA: ZigBee Home Automation
-    # ProfileID = a1e0 >> Philips Hue ???
-    # ProfileID =      >> SEP: Smart Energy Profile
-    # There is too ZBA, ZTS, ZRS, ZHC but I haven't find information for them
-    
-    #ZigBee HA contains (nearly?) everything in ZigBee Light Link
+    # https://github.com/sasu-drooz/Domoticz-Zigate/wiki/ProfileID---ZDeviceID
 
     # If we are in status = 0x8043 we have received EPs descriptors
     # If we have Model we might be able to identify the device with it's model
@@ -230,7 +167,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             ( waitForDomoDeviceCreation != 1 and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
         if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ):
             #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-            Domoticz.Log("processNotinDBDevices - Let's try to create the device with what we have: " +str(NWKID) + " => " +str(self.ListOfDevices[NWKID]) )
+            Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
 
             IsCreated=False
             x=0
@@ -248,7 +185,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             break
 
             if IsCreated == False:
-                Domoticz.Log("onHeartbeat - Creating device in Domoticz: " + str(NWKID) + " with: " + str(self.ListOfDevices[NWKID]) )
+                Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
                 z_domoticz.CreateDomoDevice(self, Devices, NWKID)
                 z_output.processConfigureReporting( self, NWKID )  # Configure Reporting for that device
 
@@ -305,11 +242,10 @@ def processListOfDevices( self , Devices ):
         elif status != "inDB" and status != "UNKNOW":
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
             processNotinDBDevices( self , Devices, NWKID, status , RIA )
-
     #end for key in ListOfDevices
 
     # LQI Scanner
-    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x 10s
+    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x HEARTBEAT_VALUE
     
     if self.pluginconf.logLQI != 0 and \
             self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // HEARBEAT_VALUE):
@@ -326,6 +262,3 @@ def processListOfDevices( self , Devices ):
 
 
     return True
-
-
-
