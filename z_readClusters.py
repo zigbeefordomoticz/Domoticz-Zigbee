@@ -317,13 +317,12 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         EPforPowerMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
 
 
-        Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s, EPforSwitch: %s" %(EPforPower, EPforMeter, EPforPowerMeter, EPforSwitch))
+        Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
 
-            
-        elif len(EPforSwitch) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
+        elif len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
             Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
             Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
