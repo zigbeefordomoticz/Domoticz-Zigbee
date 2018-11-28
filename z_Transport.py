@@ -407,7 +407,7 @@ class ZigateTransport(object):
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOstatus += 1
                 entry = self.nextStatusInWait()
-                Domoticz.Error("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
+                Domoticz.Log("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
 
         # Check waitForData
         if len(self._waitForData) > 0:
@@ -417,7 +417,7 @@ class ZigateTransport(object):
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOdata += 1
                 expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()
-                Domoticz.Error("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
+                Domoticz.Log("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
                 # If we allow reTransmit, let's resend the command
                 if self.reTransmit:
                     if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit:
