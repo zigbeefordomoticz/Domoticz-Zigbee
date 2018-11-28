@@ -6,6 +6,7 @@ Either the information is coming from one of the plugin user (through direct com
 | Brand | Device/Type | Domoticz usage | Description | Status | Plugin Version |
 | ----- | ----------- | -------------- | ----------- | ------ | -------------- |
 | IKEA/Tradfri | LED1623G12 | Combied Switch+Level Control |  |   Fully Operationnal | 2.3.5 |
+| IKEA/Tradfri | LED1649C5 | Switch Light, Level Control | You can switch on/off the lead, managed the LUX via the level control. | Fully operationnal | 3.3.2 |
 | IKEA/Tradfri | LED1536G5 | Combined Switch+Level Control |  | Fully Operationnal | 2.4.0 |
 | IKEA/Tradfri | LED1624G9 | Combined Switch+Level+Color control | |  Fully Operationnal | 2.4.0 |
 | IKEA/Tradfri | LED1545G12 | Combined  Switch+Level+Color control | | Fully Operationnal | 2.4.0 |
