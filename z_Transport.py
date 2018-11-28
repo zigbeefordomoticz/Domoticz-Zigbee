@@ -154,14 +154,13 @@ class ZigateTransport(object):
 
     # Transport / called by plugin 
     def onMessage(self, Data):
-        Domoticz.Debug("onMessage called on Connection " + str(Data))
+        #Domoticz.Debug("onMessage called on Connection " + str(Data))
 
         FrameIsKo = 0
 
         if Data is not None:
             self._ReqRcv += Data  # Add the incoming data
-            Domoticz.Debug("onMessage incoming data : '" + \
-                           str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
+            #Domoticz.Debug("onMessage incoming data : '" + str(binascii.hexlify(self._ReqRcv).decode('utf-8')) + "'")
 
         # Zigate Frames start with 0x01 and finished with 0x03    
         # It happens that we get some 
