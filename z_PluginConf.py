@@ -32,6 +32,8 @@ class PluginConf:
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
         self.reTransmit = 1  # Default mode, we do one retransmit if Data not reach at TO
         self.zTimeOut = 2  # 2'' Tiemout to get Ack and Data
+        self.forceConfigureReporting = 0 # Allow to reset the Configure Reporting record
+        self.forceReadAttributes = 0 # Allow to reset the ReadAttribute
 
         # Import PluginConf.txt
         tmpPluginConf = ""
@@ -49,6 +51,14 @@ class PluginConf:
         if self.PluginConf.get('allowStoreDiscoveryFrames') and \
                 self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
             self.allowStoreDiscoveryFrames = int(self.PluginConf['allowStoreDiscoveryFrames'], 10)
+
+        if self.PluginConf.get('forceConfigureReporting') and \
+                self.PluginConf.get('forceConfigureReporting').isdigit():
+            self.forceConfigureReporting = int(self.PluginConf['forceConfigureReporting'], 10)
+
+        if self.PluginConf.get('forceReadAttributes') and \
+                self.PluginConf.get('forceReadAttributes').isdigit():
+            self.forceReadAttribute = int(self.PluginConf['forceReadAttributes'], 10)
 
         if self.PluginConf.get('logFORMAT') and \
                 self.PluginConf.get('logFORMAT').isdigit():

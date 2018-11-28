@@ -103,25 +103,55 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     # frame to be send is:
     # DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
 
+    direction = '00'
+    manufacturer_spec = '00'
+    manufacturer = '0000'
+    #if 'Manufacturer' in self.ListOfDevices[addr]:
+    #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
+
+    # Init the ReadAttribute structutre if not existing
+    # Check if Configure Reporting has to be reset
+    if self.pluginconf.forceReadAttributes:
+        self.ListOfDevices[addr]['ReadAttributes'] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
+
+    if 'ReadAttributes' in self.ListOfDevices[addr]:
+        if EpOut in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
+            if str(Cluster) in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
+                pass
+            else:
+                self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
+        else:
+            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
+            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
+    else:
+        self.ListOfDevices[addr]['ReadAttributes'] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
+
     Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
         Attr = "%04x" %(ListOfAttributes)
         lenAttr = 1
         weight = 1
+
+        if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
+            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' :
+                return
     else:
         lenAttr = len(ListOfAttributes)
         weight = int ((lenAttr ) / 2) + 1
         Attr =''
         Domoticz.Debug("attributes: " +str(ListOfAttributes) +" len =" +str(lenAttr) )
         for x in ListOfAttributes:
-            Attr += "%04x" %(x)
-
-    direction = '00'
-    manufacturer_spec = '00'
-    manufacturer = '0000'
-    #if 'Manufacturer' in self.ListOfDevices[addr]:
-    #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
+            Attr_ = "%04x" %(x)
+            if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
+                if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' :
+                    continue
+            Attr += Attr_
 
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -394,21 +424,47 @@ def processConfigureReporting( self, NWKID=None ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
+
+            # Check if Configure Reporting has to be reset
+            if self.pluginconf.forceConfigureReporting:
+                self.ListOfDevices[key]['ConfigureReporting'] = {}
+                self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
+                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
+
             if NWKID is None:
                 identifySend( self, key, Ep, 0)
             else:
                 identifySend( self, key, Ep, 15)
             clusterList = z_tools.getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
-                if 'NO cfg rprtng' in  self.ListOfDevices[key]:
-                    if cluster in  self.ListOfDevices[key]['NO cfg rprtng']:
-                        continue
+                if cluster in ( 'Type', 'ColorMode'):
+                    continue
+
+                if 'ConfigureReporting' in self.ListOfDevices[key]:
+                    if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
+                        if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != '00':
+                                continue
+                        else:
+                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
+                    else:
+                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
+                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
+                else:
+                    self.ListOfDevices[key]['ConfigureReporting'] = {}
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
+
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = ''
+
                 if cluster in ATTRIBUTESbyCLUSTERS:
                     bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     #attrDisp = []   # Used only for printing purposes
                     #attrList = ''
                     attrLen = 0
                     for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
+
                         attrdirection = "00"
                         attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
                         minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']

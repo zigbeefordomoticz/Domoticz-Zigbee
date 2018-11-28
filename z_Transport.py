@@ -71,6 +71,7 @@ class ZigateTransport(object):
     def __init__(self, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
         Domoticz.Debug("Setting Transport object")
 
+        self._checkTO_flag = None
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
         self._transp = None  # Transport mode USB or Wifi
@@ -397,6 +398,12 @@ class ZigateTransport(object):
 
     def checkTOwaitFor(self):
         'look at the waitForStatus, and in case of TimeOut delete the entry'
+
+        if self._checkTO_flag:  # checkTOwaitFor can be called either by onHeartbeat or from inside the Class. 
+                                # In case it comes from onHearbeat we might have a re-entrance issue
+            Domoticz.Log("checkTOwaitFor already ongoing")
+            return
+        self._checkTO_flag = True
         Domoticz.Debug("checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \
                      % (0x0000, len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         # Check waitForStatus
@@ -439,6 +446,7 @@ class ZigateTransport(object):
             self.sendData(cmd, datas)
 
         # self._printSendQueue()
+        self._checkTO_flag = False
         return
 
 
