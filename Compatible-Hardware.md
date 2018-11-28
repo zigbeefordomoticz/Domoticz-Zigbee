@@ -28,6 +28,7 @@ Either the information is coming from one of the plugin user (through direct com
 | Xiaomi Aqara | WXKG01LM (86sw1) | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | 3.1.0 |
 | Xiaomi Aqara | WXKG02LM (86sw2) | Switch Selector | The following events are reported to the Domoticz Switch selectors : Right Click, Left Click, Both Click | Fully operationnal | 3.1.0 |
 | Xiaomi Aqara | WXKG11LM Square Device with round Button | Switch Selector | The following events are reported to the Domoticz Switch selectors : 1 Click, 2 Click, 3 Click, 4 CliCk | Fully operationnal | 3.1.0 |
+| Xiaomi Aqara | WXKG03LM Aqara wireles switch single button | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | beta 3.3 |
 | Xiaomi | Aqara Cube | Switch Selector | The following events are reported to the Domoticz Switch selectors : Shake, Wakepup, Drop, 90° and 180° rotation, Push, Tab and horizontal Rotation . | Fully operationnal | 2.4.0 |
 | Xiaomi | Human Motion Sensor | Human Motion Sensor | Switch turns on when a movement is detected | Fully operationnal | 2.4.0 |
 | Xiaomi | Plug | Plug, Power meter | Can switch on/off the plug and you get Watts consuption | Fully operationnal | 3.1.0 |
