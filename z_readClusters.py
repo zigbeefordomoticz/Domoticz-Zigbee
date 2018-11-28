@@ -587,6 +587,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
                     # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
                	    if modelName in self.DeviceConf:                                               # If the model exist in DeviceConf.txt
+                        Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
                         for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
                             if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
                                 self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
@@ -599,7 +600,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
                                     self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
                                 if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
-                                    self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = self.DeviceConf[modelName]['Ep'][Ep]['ColorMode']
+                                    self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
                         if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
                             self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
 
