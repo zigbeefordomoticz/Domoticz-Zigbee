@@ -514,7 +514,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, Options, SignalLvl, Color_ = 
 
 def GetType(self, Addr, Ep) :
 	Type =""
-	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf :  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
+	if self.ListOfDevices[Addr]['Model']!={} and self.ListOfDevices[Addr]['Model'] in self.DeviceConf and Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:  # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
 		# CLD CLD
 		if 'Type' in  self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep] :
 			if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "" :
