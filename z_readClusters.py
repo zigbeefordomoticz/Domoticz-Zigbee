@@ -494,80 +494,6 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     return
 
 
-def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
-    # Magic Cube Xiaomi
-    # Thanks to: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/138#issuecomment-325101635
-    #         +---+
-    #         | 2 |
-    #     +---+---+---+
-    #     | 4 | 0 | 1 |
-    #     +---+---+---+
-    #         | 5 |
-    #         +---+
-    #         | 3 |
-    #         +---+
-    #     Side 5 is with the MI logo; side 3 contains the battery door.
-    #
-    #     Shake: 0x0000 (side on top doesn't matter)
-    #     90º Flip from side x on top to side y on top: 0x0040 + (x << 3) + y
-    #     180º Flip to side x on top: 0x0080 + x
-    #     Push while side x is on top: 0x0100 + x
-    #     Double Tap while side x is on top: 0x0200 + x
-    #     Push works in any direction.
-    #     For Double Tap you really need to lift the cube and tap it on the table twice.
-    def cube_decode(value):
-        value=int(value,16)
-        if value == '' or value is None:
-            return value
-
-        if value == 0x0000:         
-            Domoticz.Debug("cube action: " + 'Shake' )
-            value='10'
-        elif value == 0x0002:            
-            Domoticz.Debug("cube action: " + 'Wakeup' )
-            value = '20'
-        elif value == 0x0003:
-            Domoticz.Debug("cube action: " + 'Drop' )
-            value = '30'
-        elif value & 0x0040 != 0:    
-            face = value ^ 0x0040
-            face1 = face >> 3
-            face2 = face ^ (face1 << 3)
-            Domoticz.Debug("cube action: " + 'Flip90_{}{}'.format(face1, face2))
-            value = '40'
-        elif value & 0x0080 != 0:  
-            face = value ^ 0x0080
-            Domoticz.Debug("cube action: " + 'Flip180_{}'.format(face) )
-            value = '50'
-        elif value & 0x0100 != 0:  
-            face = value ^ 0x0100
-            Domoticz.Debug("cube action: " + 'Push/Move_{}'.format(face) )
-            value = '60'
-        elif value & 0x0200 != 0:  # double_tap
-            face = value ^ 0x0200
-            Domoticz.Debug("cube action: " + 'Double_tap_{}'.format(face) )
-            value = '70'
-        else:  
-            Domoticz.Debug("cube action: Not expected value %s" %value )
-        return value
-
-    # Are we receiving 'lumi.remote.b186acn01 status
-    EPforSwitch =  z_tools.getEPforClusterType( self, MsgSrcAddr, "Button" )
-
-    if len(EPforSwitch) > 0:
-        value = decodeAttribute( MsgAttType, MsgClusterData )
-        Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqara: %s " %value)
-        if value.isdigit():
-            value = int(value)
-        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
-        return                                                                              # a switch in order to behave as a switch
-
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-    z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
-    Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(MsgClusterData) )
-    Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(MsgClusterData)) )
-
-
 
 def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # General Basic Cluster
@@ -685,3 +611,62 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         Domoticz.Debug("ReadCluster 0x0000 - Message attribut inconnu: " + str(decodeAttribute( MsgAttType, MsgClusterData) ))
     
+
+def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    def cube_decode(value):
+        'https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Aqara-Cube-decoding'
+        value=int(value,16)
+        if value == '' or value is None:
+            return value
+
+        if value == 0x0000:         
+            Domoticz.Debug("cube action: " + 'Shake' )
+            value='10'
+        elif value == 0x0002:            
+            Domoticz.Debug("cube action: " + 'Wakeup' )
+            value = '20'
+        elif value == 0x0003:
+            Domoticz.Debug("cube action: " + 'Drop' )
+            value = '30'
+        elif value & 0x0040 != 0:    
+            face = value ^ 0x0040
+            face1 = face >> 3
+            face2 = face ^ (face1 << 3)
+            Domoticz.Debug("cube action: " + 'Flip90_{}{}'.format(face1, face2))
+            value = '40'
+        elif value & 0x0080 != 0:  
+            face = value ^ 0x0080
+            Domoticz.Debug("cube action: " + 'Flip180_{}'.format(face) )
+            value = '50'
+        elif value & 0x0100 != 0:  
+            face = value ^ 0x0100
+            Domoticz.Debug("cube action: " + 'Push/Move_{}'.format(face) )
+            value = '60'
+        elif value & 0x0200 != 0:  # double_tap
+            face = value ^ 0x0200
+            Domoticz.Debug("cube action: " + 'Double_tap_{}'.format(face) )
+            value = '70'
+        else:  
+            Domoticz.Debug("cube action: Not expected value %s" %value )
+        return value
+
+    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b186acn01':
+        value = decodeAttribute( MsgAttType, MsgClusterData )
+        Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqara: %s " %value)
+        if value.isdigit():
+            value = int(value)
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
+        return                                                                              # a switch in order to behave as a switch
+
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_cube.aqgl01' or \
+            self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_cube':
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
+        Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(MsgClusterData) )
+        Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(MsgClusterData)) )
+        return
+
+    else:
+        Domoticz.Log("Cluster0012 - unknown Model: %s for this Attribute: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgAttrID))
+
