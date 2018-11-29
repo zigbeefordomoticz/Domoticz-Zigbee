@@ -23,6 +23,8 @@ import z_tools
 
 import time
 
+ZLL_DEVICES = ( 0x0000, 0x0010, 0x0100, 0x0110, 0x0200, 0x0220, 0x0210 )
+
 def ZigateConf_light(self, discover ):
     '''
     It is called for normal startup
@@ -517,6 +519,47 @@ def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
     '''
 
     return
+
+def identifyEffect( self, nwkid, ep, effect='Blink' ):
+
+    '''
+        Blink   / Light is switched on and then off (once)
+        Breathe / Light is switched on and off by smoothly increasing and 
+                  then decreasing its brightness over a one-second period, 
+                  and then this is repeated 15 times
+        Okay    / •  Colour light goes green for one second
+                  •  Monochrome light flashes twice in one second
+        Channel change / •  Colour light goes orange for 8 seconds
+                         •  Monochrome light switches to
+                            maximum brightness for 0.5 s and then to
+                            minimum brightness for 7.5 s
+        Finish effect  /  Current stage of effect is completed and then identification mode is
+                          terminated (e.g. for the Breathe effect, only the current one-second
+                          cycle will be completed)
+        Stop effect    /  Current effect and id
+
+
+        A variant of the selected effect can also be specified, but currently only the default
+        (as described above) is available.
+    '''
+
+    effect_command = { 'Blink': 0x00 ,
+            'Breathe': 0x01,
+            'Okay': 0x02,
+            'ChannelChange': 0x0b,
+            'FinishEffect': 0xfe,
+            'StopEffect': 0xff }
+
+
+    if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) not in ZLL_DEVICES:
+        return
+
+    if effect not in effect_command:
+        effect = 'Blink'
+
+    datas = "02" + "%s"%(nwkid) + "01" + ep + "%02x"%(effect_command[effect])  + "%02x" %0
+    sendZigateCmd(self, "00E0", datas )
+    
 
 def identifySend( self, nwkid, ep, duration=0):
 

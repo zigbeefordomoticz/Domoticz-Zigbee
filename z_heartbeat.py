@@ -129,7 +129,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             z_output.ReadAttributeRequest_0300(self, NWKID )
 
     # Timeout management
-
     if (status == "004d" or status == "0045") and HB_ > 2:
         Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" %(RIA, NWKID, status))
         self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
@@ -180,6 +179,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
                 z_domoticz.CreateDomoDevice(self, Devices, NWKID)
                 z_output.processConfigureReporting( self, NWKID )  # Configure Reporting for that device
+                ep = '01'
+                for ep in self.ListOfDevices[NWKID]['Ep']:
+                    if ep in ( '01', '03', '09' ):
+                        break
+                z_output.identifyEffect( self, NWKID, ep , effect='Blink' )
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )

@@ -1264,8 +1264,8 @@ def Decode8101(self, MsgData) :  # Default Response
     MsgClusterId=MsgData[4:8]
     MsgDataCommand=MsgData[8:10]
     MsgDataStatus=MsgData[10:12]
-    Domoticz.Debug("Decode8101 - reception Default response : SQN : " + MsgDataSQN + ", EP : " + MsgDataEp + ", Cluster ID : " 
-                        + MsgClusterId + " , Command : " + MsgDataCommand+ ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Debug("Decode8101 - Default response - SQN: %s, EP: %s, ClusterID: %s , DataCommand: %s, - Status: [%s] %s" \
+            %(MsgDataSQN, MsgDataEp, MsgClusterId, MsgDataCommand, MsgDataStatus,  z_status.DisplayStatusCode( MsgDataStatus ) ))
     return
 
 def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
