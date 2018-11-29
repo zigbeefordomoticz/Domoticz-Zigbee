@@ -10,6 +10,8 @@
 - [Enhacement] Improve stats report at plugin exit
 - [Hardware] Adding more IKEA Tradfri bulbes
 - [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode. 
+- [Enhancement] When commissioning is over and the Domoticz device is created, ZLL device will blink
+- [Issue] In case the Domoticz widget creation failed, plugin test the return of the Create() and in case of error report in the log
 
 ## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
