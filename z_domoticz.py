@@ -92,20 +92,26 @@ def CreateDomoDevice(self, Devices, NWKID):
             t = "Temp+Hum+Baro"  # Detecteur temp + Hum + Baro
             unit = FreeUnit(self, Devices)
             Domoticz.Debug("CreateDomoDevice - unit: %s" %unit)
-            Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                            Unit=unit, TypeName=t).Create()
-            for x in Devices:
-                Domoticz.Debug("CreateDomoDevice - Devices: %s" %Devices[x] )
-            ID = Devices[unit].ID
-            self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+            myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                            Unit=unit, TypeName=t)
+            myDev.Create()
+            ID = myDev.DeviceID
+            if ID == -1 :
+                Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+            else:
+                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
         if "Humi" in Type and "Temp" in Type:
             t = "Temp+Hum"
             unit = FreeUnit(self, Devices)
-            Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                            Unit=unit, TypeName=t).Create()
-            ID = Devices[unit].ID
-            self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+            myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                            Unit=unit, TypeName=t)
+            myDev.Create()
+            ID = myDev.DeviceID
+            if ID == -1 :
+                Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+            else:
+                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
         if self.ListOfDevices[NWKID]['Model'] == {} or \
                 self.ListOfDevices[NWKID][ 'Model'] not in self.DeviceConf:    # If Model is known, then Type must be set correctly
@@ -121,104 +127,152 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Temp":  # Detecteur temp
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, TypeName="Temperature").Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, TypeName="Temperature")
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Humi":  # Detecteur hum
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, TypeName="Humidity").Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, TypeName="Humidity")
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Baro":  # Detecteur Baro
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, TypeName="Barometer").Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, TypeName="Barometer")
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Door":  # capteur ouverture/fermeture xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=11).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=11)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Motion":  # detecteur de presence
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=8).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=8)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "SwitchAQ2":  # interrupteur multi lvl lumi.sensor_switch.aq2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click",
                            "LevelOffHidden": "false", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "DSwitch":  # interrupteur double sur EP different
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click",
                            "LevelOffHidden": "true", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "DButton":  # interrupteur double sur EP different lumi.sensor_86sw2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click",
                            "LevelOffHidden": "true", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Smoke":  # detecteur de fumee
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=5).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=5)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Lux":  # Lux sensors
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=246, Subtype=1, Switchtype=0).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=246, Subtype=1, Switchtype=0)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Switch":  # inter sans fils 1 touche 86sw1 xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=0).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Button":  # inter sans fils 1 touche 86sw1 xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=9).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=9)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Aqara" or t == "XCube":  # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -226,53 +280,78 @@ def CreateDomoDevice(self, Devices, NWKID):
                            "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation",
                            "LevelOffHidden": "true", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "Vibration":  # Aqara Vibration Sensor v1
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Tilt|Vibrate|Free Fall", \
                            "LevelOffHidden": "false", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
-                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Water":  # detecteur d'eau
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=0, Image=11).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=0, Image=11)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Plug":  # prise pilote
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=0, Image=1).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=0, Image=1)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "LvlControl" and self.ListOfDevices[NWKID][
                 'Model'] == "shutter.Profalux":  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=16).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "LvlControl" and self.ListOfDevices[NWKID][
                 'Model'] != "shutter.Profalux":  # variateur de luminosite + On/off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=7).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=7)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "ColorControl":  # variateur de couleur/luminosite/on-off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -310,35 +389,51 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Subtype_ = 7
 
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=241, Subtype=Subtype_, Switchtype=7).Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=241, Subtype=Subtype_, Switchtype=7)
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             # Ajout meter
             if t == "Power":  # Will display Watt real time
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, TypeName="Usage").Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, TypeName="Usage")
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Meter":  # Will display kWh
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, TypeName="kWh").Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, TypeName="kWh")
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Voltage":  # Will display kWh
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, TypeName="Voltage").Create()
-                ID = Devices[unit].ID
-                self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, TypeName="Voltage")
+                myDev.Create()
+                ID = myDev.DeviceID
+                if ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
