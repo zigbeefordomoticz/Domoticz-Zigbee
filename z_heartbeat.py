@@ -65,16 +65,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.ListOfDevices[NWKID]['Heartbeat'] = "0"
             self.ListOfDevices[NWKID]['Status'] = "0045"
             z_output.sendZigateCmd(self,"0045", str(NWKID))             # Request list of EPs
-            #if 'Model' in self.ListOfDevices[NWKID]:
-            #    if self.ListOfDevices[NWKID]['Model'] == {}:
-            #        Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
-            #        z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
-            #if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            #    if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
-            #        Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
-            #        z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
-            #Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0001" %(RIA, NWKID))
-            #z_output.ReadAttributeRequest_0001(self, NWKID )            # Basic Cluster readAttribute Request
             return
         else:
             for dup in self.ListOfDevices:
@@ -104,6 +94,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
             if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
                 z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
+        Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0001" %(RIA, NWKID))
+        z_output.ReadAttributeRequest_0001(self, NWKID )            # Basic Cluster readAttribute Request
         return
 
     # In case we received 0x8043, we might want to check if there is a 0x0300 cluster. 
