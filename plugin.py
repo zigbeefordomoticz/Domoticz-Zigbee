@@ -230,8 +230,12 @@ class BasePlugin:
         ## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
         self.HeartbeatCount += 1
 
+        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   # Ig ZigateIEEE not known, try to get it during the first 10 HB
+            z_output.sendZigateCmd(self, "0009","")
+
+
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % ( 120 // HEARBEAT_VALUE ) ) == 0 :
+            if (self.HeartbeatCount % ( 3600 // HEARBEAT_VALUE ) ) == 0 :
                 z_output.sendZigateCmd(self, "0009","")
         
         prevLenDevices = len(Devices)
