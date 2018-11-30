@@ -473,30 +473,30 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:
                     if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                         nbClusterType = nbClusterType + 1
-                        ptEP = tmpEp
+                        ptEP_single = tmpEp
 
                 Domoticz.Debug("MajDomoDevice - We have " + str(nbClusterType) + " EPs with ClusterType")
 
                 if nbClusterType == 1:  # All Updates are redirected to the same EP
                     # We must redirect all to the EP where there is a ClusterType
-                    # ptEP is be the Only  EP where we have found ClusterType
-                    for key in self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType']:
+                    # ptEP_single is be the Only  EP where we have found ClusterType
+                    for key in self.ListOfDevices[NWKID]['Ep'][ptEP_single]['ClusterType']:
                         if str(ID) == str(key):
-                            DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
+                            DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEP_single]['ClusterType'][key])
 
                 else:
                     Domoticz.Debug("MajDomoDevice - search ClusterType in : " + str(
-                        self.ListOfDevices[NWKID]['Ep'][ptEP]) + " for : " + str(ID))
-                    if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][ptEP]:
+                        self.ListOfDevices[NWKID]['Ep'][ptEp]) + " for : " + str(ID))
+                    if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][ptEp]:
                         Domoticz.Debug("MajDomoDevice - search ClusterType in : " + str(
-                            self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType']) + " for : " + str(ID))
-                        for key in self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType']:
+                            self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']) + " for : " + str(ID))
+                        for key in self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType']:
                             if str(ID) == str(key):
-                                DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEP]['ClusterType'][key])
+                                DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEp]['ClusterType'][key])
                     else:
                         Domoticz.Debug("MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !")
                         Domoticz.Debug("MajDomoDevice - Network Id : " + NWKID + " Ep : " + str(
-                            ptEP) + " Expected Cluster is " + str(clusterID))
+                            ptEp) + " Expected Cluster is " + str(clusterID))
                         continue
             if DeviceType == "":  # No match with ClusterType
                 continue
