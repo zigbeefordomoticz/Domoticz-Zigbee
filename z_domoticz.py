@@ -81,7 +81,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         # Check if Type is known
         if Type == '':
-            return
+            continue
 
         Domoticz.Debug("CreateDomoDevice - Creating devices based on Type: %s" % Type)
 
