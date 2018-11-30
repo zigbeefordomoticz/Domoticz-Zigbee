@@ -401,7 +401,7 @@ class ZigateTransport(object):
 
         if self._checkTO_flag:  # checkTOwaitFor can be called either by onHeartbeat or from inside the Class. 
                                 # In case it comes from onHearbeat we might have a re-entrance issue
-            Domoticz.Log("checkTOwaitFor already ongoing")
+            Domoticz.Debug("checkTOwaitFor already ongoing")
             return
         self._checkTO_flag = True
         Domoticz.Debug("checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \
@@ -414,7 +414,7 @@ class ZigateTransport(object):
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOstatus += 1
                 entry = self.nextStatusInWait()
-                Domoticz.Log("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
+                Domoticz.Debug("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
 
         # Check waitForData
         if len(self._waitForData) > 0:
@@ -424,7 +424,7 @@ class ZigateTransport(object):
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOdata += 1
                 expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()
-                Domoticz.Log("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
+                Domoticz.Debug("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
                 # If we allow reTransmit, let's resend the command
                 if self.reTransmit:
                     if int(pCmd, 16) in RETRANSMIT_COMMAND and reTx <= self.reTransmit:
