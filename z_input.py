@@ -405,7 +405,8 @@ def Decode8000_v2(self, MsgData) : # Status
     elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
     if str(MsgData[0:2]) != "00" :
-            Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+        Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" \
+                %(PacketType, MsgData[0:2], Status))
 
     return
 
@@ -796,11 +797,11 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     else :
         PowerSource = "Battery"
 
-    Domoticz.Log("Decode8042 - Alternate PAN Coordinator = " +str(AltPAN ))    # 1 if node is capable of becoming a PAN coordinator
-    Domoticz.Log("Decode8042 - Receiver on Idle = " +str(ReceiveonIdle))     # 1 if the device does not disable its receiver to 
+    Domoticz.Debug("Decode8042 - Alternate PAN Coordinator = " +str(AltPAN ))    # 1 if node is capable of becoming a PAN coordinator
+    Domoticz.Debug("Decode8042 - Receiver on Idle = " +str(ReceiveonIdle))     # 1 if the device does not disable its receiver to 
                                                                             # conserve power during idle periods.
-    Domoticz.Log("Decode8042 - Power Source = " +str(PowerSource))            # 1 if the current power source is mains power. 
-    Domoticz.Log("Decode8042 - Device type  = " +str(DeviceType))            # 1 if this node is a full function device (FFD). 
+    Domoticz.Debug("Decode8042 - Power Source = " +str(PowerSource))            # 1 if the current power source is mains power. 
+    Domoticz.Debug("Decode8042 - Device type  = " +str(DeviceType))            # 1 if this node is a full function device (FFD). 
 
     bit_fieldL   = int(bit_field[2:4],16)
     bit_fieldH   = int(bit_field[0:2],16)
@@ -808,8 +809,8 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     if   LogicalType == 0 : LogicalType = "Coordinator"
     elif LogicalType == 1 : LogicalType = "Router"
     elif LogicalType == 2 : LogicalType = "End Device"
-    Domoticz.Log("Decode8042 - bit_field = " +str(bit_fieldL) +" : "+str(bit_fieldH) )
-    Domoticz.Log("Decode8042 - Logical Type = " +str(LogicalType) )
+    Domoticz.Debug("Decode8042 - bit_field = " +str(bit_fieldL) +" : "+str(bit_fieldH) )
+    Domoticz.Debug("Decode8042 - Logical Type = " +str(LogicalType) )
 
     if self.ListOfDevices[addr]['Status']!="inDB" :
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
@@ -934,7 +935,7 @@ def Decode8044(self, MsgData): # Power Descriptior response
     current_power_source = bit_fields[2]
     current_power_level = bit_fields[3]
 
-    Domoticz.Log("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power mode = " + power_mode + " power_source = " + power_source + " current_power_source = " + current_power_source + " current_power_level = " + current_power_level )
+    Domoticz.Debug("Decode8044 - SQNum = " +SQNum +" Status = " + Status + " Power mode = " + power_mode + " power_source = " + power_source + " current_power_source = " + current_power_source + " current_power_level = " + current_power_level )
     return
 
 def Decode8045(self, MsgData) : # Reception Active endpoint response
@@ -948,7 +949,7 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
 
     MsgDataEPlist=MsgData[10:len(MsgData)]
 
-    Domoticz.Log("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+    Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
     OutEPlist=""
     
@@ -1021,8 +1022,8 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
     else :
-        Domoticz.Log("Decode8048 - device " +str(sAddr) + " annouced to leave" )
-        Domoticz.Log("Decode8048 - most likely a 0x004d will come" )
+        Domoticz.Debug("Decode8048 - device " +str(sAddr) + " annouced to leave" )
+        Domoticz.Debug("Decode8048 - most likely a 0x004d will come" )
         self.ListOfDevices[sAddr]['Status'] = 'Left'
         self.ListOfDevices[sAddr]['Hearbeat'] = 0
 
@@ -1380,7 +1381,7 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     # We need to identify to which NetworkId and which ClusterId this is coming from. This is in response to 0x0140
     # When MsgComplete == 01, we have received all Attribute/AttributeType
 
-    Domoticz.Log("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttID)
+    Domoticz.Debug("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttID)
     return
 
 #Router Discover
