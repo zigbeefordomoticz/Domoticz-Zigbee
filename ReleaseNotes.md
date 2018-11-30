@@ -12,6 +12,16 @@
 - [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode. 
 - [Enhancement] When commissioning is over and the Domoticz device is created, ZLL device will blink
 - [Issue] In case the Domoticz widget creation failed, plugin test the return of the Create() and in case of error report in the log
+- [Issue] Fix some potential problem when receiveing and empty EP
+- [Issue] Fix a potential issue when requetsing a Configure reporting on an non-ready cluster
+- [Enhacement] Introducing a PluginConf parameter for tracking readCluster incoming message
+- [Technical] reducing log leve, and reducing Debug level
+- [Enhacement] Elaborate the correct Color widget based on Color Mode and ProfileID/ZDeviceID
+- [Technical] Filtering out Commissiong ProfileID/ZDeviceID
+- [Hardware] Certification (@d2e2n2o) of XCube, lumi.sensor_switch.aq2, lumi.sensor_86sw1, lumi.sensor_86sw2, lumi.ctrl_ln2, TRADFRI bulb E27 WS opal 950lm, TRADFRI control outlet
+- [Technical] Set the frequency of Network test to hourly
+- [Enhacement] When stoping the Plugin , Transmission statistics will be print out
+- {Technical] Introduce a Constants file.
 
 ## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
