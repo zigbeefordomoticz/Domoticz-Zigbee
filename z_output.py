@@ -550,7 +550,10 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
             'StopEffect': 0xff }
 
 
-    if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) not in z_consts.ZLL_DEVICES:
+    if 'ZDeviceID' in self.ListOfDevices[nwkid]:
+        if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) not in z_consts.ZLL_DEVICES:
+            return
+    else:
         return
 
     if effect not in effect_command:
