@@ -842,22 +842,23 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
 
     MsgDataEp=MsgData[10:12]
     MsgDataProfile=MsgData[12:16]
-
-    self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
-
-    if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
-        self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
-
     MsgDataDeviceId=MsgData[16:20]
-
-    self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
-    if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
-        self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
-
     MsgDataBField=MsgData[20:22]
     MsgDataInClusterCount=MsgData[22:24]
-    Domoticz.Log("Decode8043 - Reception Simple descriptor response : EP : " + MsgDataEp + ", Profile : " + MsgDataProfile + ", Device Id : " + MsgDataDeviceId + ", Bit Field : " + MsgDataBField)
-    Domoticz.Log("Decode8043 - Reception Simple descriptor response : In Cluster Count : " + MsgDataInClusterCount)
+
+    if int(MsgDataProfile,16) == 0xC05E and int(MsgDataDeviceId,16) == 0xE15E:
+        # Commission / Jaiwel
+        Domoticz.Log("Decode8043 - Received ProfileID: %s, ZDeviceID: %s - skip" %(MsgDataProfile, MsgDataDeviceId))
+        return
+
+    self.ListOfDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
+    self.ListOfDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+
+
+    Domoticz.Log("Decode8043 - Reception Simple Descriptor EP: %s , ProfileID: %s, ZDeviceID: %s BitField: %s" \
+            %( MsgDataEp, MsgDataProfile, MsgDataDeviceId, MsgDataBField))
+
+    Domoticz.Log("Decode8043 - ClusterIN Count : " + MsgDataInClusterCount)
     i=1
     if int(MsgDataInClusterCount,16)>0 :
         while i <= int(MsgDataInClusterCount,16) :
@@ -865,13 +866,13 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
-            Domoticz.Log("Decode8043 - Reception Simple descriptor response : Cluster in: " + MsgDataCluster)
+            Domoticz.Log("Decode8043 - cluster[%s]: %s" %(i, MsgDataCluster))
             z_output.getListofAttribute( self, MsgDataShAddr, MsgDataEp, MsgDataCluster) 
             MsgDataCluster=""
             i=i+1
 
     MsgDataOutClusterCount=MsgData[24+(int(MsgDataInClusterCount,16)*4):26+(int(MsgDataInClusterCount,16)*4)]
-    Domoticz.Log("Decode8043 - Reception Simple descriptor response : Out Cluster Count : " + MsgDataOutClusterCount)
+    Domoticz.Log("Decode8043 - ClusterOUT Count : " + MsgDataOutClusterCount)
     i=1
     if int(MsgDataOutClusterCount,16)>0 :
         while i <= int(MsgDataOutClusterCount,16) :
@@ -879,11 +880,13 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
-            Domoticz.Log("Decode8043 - Reception Simple descriptor response : Cluster out: " + MsgDataCluster)
+            Domoticz.Log("Decode8043 - cluster[%s]: %s" %(i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
 
     if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+        self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
+        self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
         if self.DiscoveryDevices[MsgDataShAddr].get('8043') :
             self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
