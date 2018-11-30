@@ -83,12 +83,14 @@ class ZigateTransport(object):
         if str(transport) == "USB":
             self._transp = "USB"
             self._serialPort = serialPort
+            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
             self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
         elif str(transport) == "Wifi":
             self._transp = "Wifi"
             self._wifiAddress = wifiAddress
             self._wifiPort = wifiPort
+            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
                                                    Address=self._wifiAddress, Port=self._wifiPort)
 
@@ -112,14 +114,11 @@ class ZigateTransport(object):
         self._connection = None
 
     def reConn(self):
-        if not self.isConn():
-            self.openConn()
-
-    def isConn(self):
-        if self._connection is None:
-            return False
+        if self._connection.Connected() :
+            return
         else:
-            return True
+            Domoticz.Debug("Transport.reConn: %s" %self._connection)
+            self.openConn()
 
     # Transport Sending Data
     def _sendData(self, cmd, datas, delay):
