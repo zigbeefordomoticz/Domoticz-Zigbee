@@ -16,6 +16,7 @@ import time
 import struct
 import json
 import queue
+import string
 
 import z_domoticz
 import z_var
@@ -71,7 +72,7 @@ def decodeAttribute(AttType, Attribute):
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])   # Zigate retourne un Uint32
 
     elif int(AttType,16) == 0x23:   # 32BitUint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
@@ -86,11 +87,11 @@ def decodeAttribute(AttType, Attribute):
             #return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])   # Zigate retourne un Uint32
     elif int(AttType,16) == 0x2b:   # 32Bitint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x2d:   # ZigBee_48Bitint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
             return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x30:  # 8BitEnum
@@ -102,6 +103,8 @@ def decodeAttribute(AttType, Attribute):
     elif int(AttType,16) == 0x42:  # CharacterString
         try:
             decoded = binascii.unhexlify(str(Attribute)).decode('utf-8')
+            printable = set(string.printable)
+            decode = filter(lambda x: x in printable, decoded)
         except: 
             decoded = str(Attribute)
         return decoded
@@ -164,7 +167,8 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-    Domoticz.Log("ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
+    if self.pluginconf.debugReadCluster == 1:
+        Domoticz.Log("ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData))
 
         
@@ -215,10 +219,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0010": # Voltage
-        Domoticz.Log("readCluster 0001 - Battery Voltage: %s " %(value) )
+        Domoticz.Debug("readCluster 0001 - Battery Voltage: %s " %(value) )
 
     elif MsgAttrID == "0020": # Battery %
-        Domoticz.Log("readCluster 0001 - Battery: %s " %(value) )
+        Domoticz.Debug("readCluster 0001 - Battery: %s " %(value) )
 
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
