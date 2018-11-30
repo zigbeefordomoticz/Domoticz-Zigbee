@@ -137,8 +137,8 @@ class BasePlugin:
         
         Domoticz.Log("ListOfDevices : " )
         for e in self.ListOfDevices.items(): Domoticz.Log(" "+str(e))
-        Domoticz.Log("IEEE2NWK      : " )
-        for e in self.IEEE2NWK.items(): Domoticz.Log("  "+str(e))
+        Domoticz.Debug("IEEE2NWK      : " )
+        for e in self.IEEE2NWK.items(): Domoticz.Debug("  "+str(e))
 
         # Check proper match against Domoticz Devices
         z_database.checkListOfDevice2Devices( self, Devices )
