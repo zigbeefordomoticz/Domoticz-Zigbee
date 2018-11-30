@@ -18,12 +18,11 @@ import struct
 import json
 import queue
 
+import z_consts
 import z_var
 import z_tools
 
 import time
-
-ZLL_DEVICES = ( 0x0000, 0x0010, 0x0100, 0x0110, 0x0200, 0x0220, 0x0210 )
 
 def ZigateConf_light(self, discover ):
     '''
@@ -551,7 +550,7 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
             'StopEffect': 0xff }
 
 
-    if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) not in ZLL_DEVICES:
+    if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) not in z_consts.ZLL_DEVICES:
         return
 
     if effect not in effect_command:
