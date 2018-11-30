@@ -381,6 +381,8 @@ def CreateDomoDevice(self, Devices, NWKID):
                                 if  self.ListOfDevices[NWKID]['ZDeviceID'] == "0210":
                                     #// RGB + cold white + warm white, either RGB or white can be lit
                                     Subtype_ = 4
+                                elif self.ListOfDevices[NWKID]['ZDeviceID'] == "0200":
+                                    Subtype_ = 7
                                 else:
                                     # SubType sTypeColor_CW_WW       0x08 // Cold white + Warm white
                                     Subtype_ = 8        # "Ampoule.LED1545G12.Tradfri":
