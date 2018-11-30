@@ -21,7 +21,8 @@
 - [Hardware] Certification (@d2e2n2o) of XCube, lumi.sensor_switch.aq2, lumi.sensor_86sw1, lumi.sensor_86sw2, lumi.ctrl_ln2, TRADFRI bulb E27 WS opal 950lm, TRADFRI control outlet
 - [Technical] Set the frequency of Network test to hourly
 - [Enhacement] When stoping the Plugin , Transmission statistics will be print out
-- {Technical] Introduce a Constants file.
+- [Technical] Introduce a Constants file.
+- [Enhancement] #266 send identify message when completing the commissioning and get devices created.
 
 ## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
