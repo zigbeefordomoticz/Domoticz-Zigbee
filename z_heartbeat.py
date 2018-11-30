@@ -166,7 +166,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             for x in Devices:
                 if self.ListOfDevices[NWKID].get('IEEE'):
                     if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                        if self.pluginconf.forceCreationDomoDevice == 1:
+                        if self.pluginconf.allowForceCreationDomoDevice == 1:
                             Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
                             Domoticz.Error("processNotinDBDevices - ForceCreationDevice enable, we continue")
                         else:
