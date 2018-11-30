@@ -60,7 +60,7 @@ def CreateDomoDevice(self, Devices, NWKID):
     # If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
     GlobalEP = False
     for Ep in self.ListOfDevices[NWKID]['Ep']:
-        Type = ''
+        dType = aType = Type = ''
         # Use 'type' at level EndPoint if existe
         Domoticz.Debug("CreatDomoDevice - Process EP : " + str(Ep))
         if not GlobalEP:  # First time, or we dont't GlobalType
@@ -69,15 +69,17 @@ def CreateDomoDevice(self, Devices, NWKID):
                     dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
                     aType = str(dType)
                     Type = aType.split("/")
-                    Domoticz.Debug("CreateDomoDevice -  Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep))
+                    Domoticz.Debug("CreateDomoDevice - Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep))
             else:
-                if self.ListOfDevices[NWKID]['Type'] == {}:
+                if self.ListOfDevices[NWKID]['Type'] == {} or self.ListOfDevices[NWKID]['Type'] == '':
                     Type = GetType(self, NWKID, Ep).split("/")
-                    Domoticz.Debug("CreateDomoDevice -  Type via GetType: " + str(Type) + " Ep : " + str(Ep))
+                    Domoticz.Debug("CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep))
                 else:
                     GlobalEP = True
-                    Type = self.ListOfDevices[NWKID]['Type'].split("/")
-                    Domoticz.Debug("CreateDomoDevice - Type : '" + str(Type) + "'")
+                    if 'Type' in self.ListOfDevices[NWKID]:
+                        if self.ListOfDevices[NWKID]['Type'] != '':
+                            Type = self.ListOfDevices[NWKID]['Type'].split("/")
+                            Domoticz.Debug("CreateDomoDevice - Type : '" + str(Type) + "'")
         else:
             break  # We have created already the Devices (as GlobalEP is set)
 
