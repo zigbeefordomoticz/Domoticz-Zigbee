@@ -464,8 +464,10 @@ def processConfigureReporting( self, NWKID=None ):
                     #attrDisp = []   # Used only for printing purposes
                     #attrList = ''
                     attrLen = 0
-                    for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
+                    if cluster not in ATTRIBUTESbyCLUSTERS:
+                        continue
 
+                    for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
                         attrdirection = "00"
                         attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
                         minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
