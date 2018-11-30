@@ -372,15 +372,9 @@ def CreateDomoDevice(self, Devices, NWKID):
                         Domoticz.Debug("ColorMode: %s" %self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'])
                         if self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 2:
                             if 'ZDeviceID' in self.ListOfDevices[NWKID]:
-                                if  self.ListOfDevices[NWKID]['ZDeviceID'] == '0210': # Hue/Extended Color change
-                                    # SubType sTypeColor_RGB         0x02 // RGB
-                                    Subtype_ = 2
-                                else:
+                                if  self.ListOfDevices[NWKID]['ZDeviceID'] != '0210': # Hue/Extended Color change
                                     # SubType sTypeColor_CW_WW       0x08 // Cold white + Warm white
                                     Subtype_ = 8        # "Ampoule.LED1545G12.Tradfri":
-                            else:
-                                Domoticz.Log("CreateDomoDevice - unknown ZDeviceID" )
-                                Subtype_ = 7
                         elif  self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 1:
                             # SubType sTypeColor_RGB         0x02 // RGB
                             Subtype_ = 2        # "Ampoule.LED1624G9.Tradfri":
