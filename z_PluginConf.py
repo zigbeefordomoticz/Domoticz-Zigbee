@@ -34,6 +34,7 @@ class PluginConf:
         self.zTimeOut = 2  # 2'' Tiemout to get Ack and Data
         self.forceConfigureReporting = 0 # Allow to reset the Configure Reporting record
         self.forceReadAttributes = 0 # Allow to reset the ReadAttribute
+        self.debugReadCluster = 0
 
         # Import PluginConf.txt
         tmpPluginConf = ""
@@ -43,6 +44,10 @@ class PluginConf:
         Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
 
         self.PluginConf = eval(tmpPluginConf)
+
+        if self.PluginConf.get('debugReadCluster') and \
+                self.PluginConf.get('debugReadCluster').isdigit():
+            self.sendDelay = int(self.PluginConf['debugReadCluster'], 10)
 
         if self.PluginConf.get('sendDelay') and \
                 self.PluginConf.get('sendDelay').isdigit():
