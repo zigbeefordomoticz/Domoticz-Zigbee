@@ -1,5 +1,6 @@
 # Release Notes 
-## xx November 2018 - beta-3.3
+
+## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
 - [Technical] Refactor the inclusion/discovery and domoticz widget creation
@@ -23,8 +24,6 @@
 - [Enhacement] When stoping the Plugin , Transmission statistics will be print out
 - [Technical] Introduce a Constants file.
 - [Enhancement] #266 send identify message when completing the commissioning and get devices created.
-
-## xx November  2018 - beta-3.2
 - [Enhancement] Get async status of switches and plug 
 - [Enhancement] Get async Level of Level Control devices
 - [Technical] Use IEEE instead of Network addresses in Domoticz
@@ -42,9 +41,6 @@
 - [Enhacement] Configure Reporting enabled by default on Clsuter 0x0006 , 0x0008, 0x0702
 - [Technical] Implementation of Send Signal to get the Device visible. (if available)
 - [Enhacement] Implement Software Reset of Zigate - Called at startup if enable in the Plugin menu
-
-## xx mmmmmmmm  2018 - beta-3.1.0
-
 - [Hardware] Xiaomi Plug - enabling power and meter reporting
 - [Technical] control of Command versus status response
 - [Technical] control of SQN on messages from battery powered devices. In case of out of sequence a message is logged
@@ -59,7 +55,6 @@
 - [Technical] Enable/Disable login Discovery Process information. The purpose is to keep in a dedicated file all informations captures during the discovery phase. This will allow us to work on new -un certified - devices.
 - [Issue] - Handle Leave message
 - [Issue] - When you remove a device in Domoticz, we remove the entry in the Plugin, but we don't remove the device in Zigate, yet.
-
 
 
 ## 12 September 2018 - 3.0.0 
