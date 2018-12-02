@@ -594,7 +594,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
         rssi=MsgData[idx+24:idx+26]
 
         if z_tools.DeviceExist(self, saddr, ieee):
-            Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format((int(rssi,16))) + " Power = " + power + " HB = {:02n}".format(int(self.ListOfDevices[saddr]['Heartbeat'])) + " found in ListOfDevice")
+            Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format((int(rssi,16))) + " Power = " + power + " HB = {:02n}".format(int(self.ListOfDevices[saddr]['Heartbeat'])) + " found in ListOfDevices")
 
             if rssi !="00" :
                 self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
@@ -602,7 +602,7 @@ def Decode8015(self,MsgData) : # Get device list ( following request device list
                 self.ListOfDevices[saddr]['RSSI']= 12
             Domoticz.Debug("Decode8015 : RSSI set to " + str( self.ListOfDevices[saddr]['RSSI']) + "/" + str(rssi) + " for " + str(saddr) )
         else: 
-            Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format(int(rssi,16)) + " Power = " + power + " not found in ListOfDevice")
+            Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format(int(rssi,16)) + " Power = " + power + " not found in ListOfDevices")
         idx=idx+26
 
     Domoticz.Debug("Decode8015 - IEEE2NWK      : " +str(self.IEEE2NWK) )
@@ -1301,7 +1301,10 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
     if ( self.pluginconf.logFORMAT == 1 ) :
-        Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+        if 'IEEE' in self.ListOfDevices[MsgSrcAddr]:
+            Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" | " +str(self.ListOfDevices[MsgSrcAddr]['IEEE']) +" | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+        else:
+            Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" | - | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 
     if z_tools.DeviceExist(self, MsgSrcAddr) == True :
         try:
