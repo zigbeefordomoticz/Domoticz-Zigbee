@@ -16,7 +16,6 @@ import datetime
 
 import Domoticz
 import z_output
-import z_var
 
 def LQIdiscovery(self):
     """
@@ -25,7 +24,7 @@ def LQIdiscovery(self):
     the information in the LQI dictionary, will will trigger one new request on an non-scanned Network address
     """
 
-    z_var.LQISource = queue.Queue()
+    self.LQISource = queue.Queue()
     self.LQI = {}
     mgtLQIreq(self)    # We start and by default, it will be on 0x0000 , Index 0
 
@@ -113,7 +112,7 @@ def mgtLQIreq(self, nwkid='0000', index=0):
      <Start Index: uint8_t>
     """
 
-    z_var.LQISource.put(str(nwkid))
+    self.LQISource.put(str(nwkid))
     datas = str(nwkid) + "{:02n}".format(index)
     Domoticz.Debug("mgtLQIreq: from Nwkid: " +str(nwkid) + " index: "+str(index))
     z_output.sendZigateCmd(self, "004E",datas)    
@@ -164,7 +163,7 @@ def mgtLQIresp(self, MsgData):
         Domoticz.Debug("mgtLQIresp -  No element in that list ")
         return
 
-    NwkIdSource = z_var.LQISource.get()
+    NwkIdSource = self.LQISource.get()
     # Let's not overwrite
     if NwkIdSource in self.LQI:                 # Source record exists
         Domoticz.Debug("mgtLQIresp - " +str(NwkIdSource) + " found LQI["+str(NwkIdSource)+"] " + str(self.LQI[NwkIdSource]))

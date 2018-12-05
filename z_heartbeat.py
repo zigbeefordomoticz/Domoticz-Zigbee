@@ -21,18 +21,18 @@ import z_output
 import z_tools
 import z_domoticz
 import z_LQI
+import z_consts
 
-HEARBEAT_VALUE = 5
 
 def processKnownDevices( self, NWKID ):
 
     # Check if Node Descriptor was run ( this could not be the case on early version)
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
-    if  intHB == ( 28 // HEARBEAT_VALUE):
+    if  intHB == ( 28 // z_consts.HEARTBEAT):
         if not self.ListOfDevices[NWKID].get('PowerSource'):    # Looks like PowerSource is not available, let's request a Node Descriptor
             z_output.sendZigateCmd(self,"0042", str(NWKID) )    # Request a Node Descriptor
 
-    if ( intHB % ( 60 // HEARBEAT_VALUE) ) == 0 or ( intHB == ( 24 // HEARBEAT_VALUE)):
+    if ( intHB % ( 60 // z_consts.HEARTBEAT) ) == 0 or ( intHB == ( 24 // z_consts.HEARTBEAT)):
         if  'PowerSource' in self.ListOfDevices[NWKID]:        # Let's check first that the field exist, if not it will be requested at Heartbeat == 12 (see above)
             if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':    #  Only for device receiving req on idle
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
@@ -240,10 +240,10 @@ def processListOfDevices( self , Devices ):
     #end for key in ListOfDevices
 
     # LQI Scanner
-    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x HEARTBEAT_VALUE
+    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x z_consts.HEARTBEAT
     
     if self.pluginconf.logLQI != 0 and \
-            self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // HEARBEAT_VALUE):
+            self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // z_consts.HEARTBEAT):
         if self.ZigateComm.loadTransmit() < 5 :
             z_LQI.LQIcontinueScan( self )
 
@@ -252,7 +252,7 @@ def processListOfDevices( self , Devices ):
         z_output.processConfigureReporting( self )
     
     if self.pluginconf.networkScan != 0 and \
-            (self.HeartbeatCount == ( 120 // HEARBEAT_VALUE ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // HEARBEAT_VALUE )) == 0) :
+            (self.HeartbeatCount == ( 120 // z_consts.HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // z_consts.HEARTBEAT )) == 0) :
         z_output.NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
 
 

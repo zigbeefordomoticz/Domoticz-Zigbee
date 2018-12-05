@@ -1,5 +1,6 @@
 {
 'channel':'0',
+'resetMotiondelay':'30',
 'allowRemoveZigateDevice':'0',
 'allowStoreDiscoveryFrames':'0',
 'logFORMAT':'0'

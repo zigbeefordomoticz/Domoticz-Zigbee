@@ -51,7 +51,6 @@ import struct
 import json
 import queue
 
-import z_var          # Global variables
 import z_tools
 import z_output
 import z_input
@@ -60,12 +59,11 @@ import z_database
 import z_domoticz
 import z_command
 import z_LQI
+import z_consts
 
 from z_PluginConf import PluginConf
 from z_Transport import ZigateTransport
 from z_TransportStats import TransportStatistics
-
-HEARBEAT_VALUE = 5
 
 class BasePlugin:
     enabled = False
@@ -78,6 +76,7 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
+        self.LQISource = ''
         self.DeviceListName = ''
         self.homedirectory = ''
         self.HardwareID = ''
@@ -97,7 +96,7 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin V 4.0.0")
 
-        Domoticz.Heartbeat( HEARBEAT_VALUE )
+        Domoticz.Heartbeat( z_consts.HEARTBEAT )
 
         if Parameters["Mode6"] != "0":
             Domoticz.Debugging(int(Parameters["Mode6"]))
@@ -227,7 +226,7 @@ class BasePlugin:
 
         #Domoticz.Log("onHeartbeat called" )
 
-        ## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
+        ## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
         self.HeartbeatCount += 1
 
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   # Ig ZigateIEEE not known, try to get it during the first 10 HB
@@ -235,7 +234,7 @@ class BasePlugin:
 
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % ( 3600 // HEARBEAT_VALUE ) ) == 0 :
+            if (self.HeartbeatCount % ( 3600 // z_consts.HEARTBEAT ) ) == 0 :
                 z_output.sendZigateCmd(self, "0009","")
         
         prevLenDevices = len(Devices)

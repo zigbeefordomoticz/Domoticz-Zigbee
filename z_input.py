@@ -395,7 +395,7 @@ def Decode8000_v2(self, MsgData) : # Status
     elif Status=="05" : Status="Stack Already Started"
     elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
 
-    Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+    Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
     if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
     elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
@@ -1025,6 +1025,8 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
         Domoticz.Debug("Decode8048 - most likely a 0x004d will come" )
         self.ListOfDevices[sAddr]['Status'] = 'Left'
         self.ListOfDevices[sAddr]['Hearbeat'] = 0
+        Domoticz.Log("Calling leaveMgt to request a rejoin")
+        z_output.leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
     return
 
@@ -1396,9 +1398,15 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
     else:
         MsgDataStatus=MsgData[0:2]
         NwkStatus=MsgData[2:4]
-        Domoticz.Debug("Decode8701 - Reception Router Discovery Confirm Status:" + z_status.DisplayStatusCode( MsgDataStatus ) + ", Nwk Status : "+ NwkStatus )
     
-        if NwkStatus != "00" : Domoticz.Error("Decode8701 - Reception Router Discovery Confirm Status:" + z_status.DisplayStatusCode( NwkStatus) + ", Nwk Status : "+ NwkStatus )
+    Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
+            %( MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
+
+    if NwkStatus != "00" :
+        Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
+                %( MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
+
+
         return
 
 #Réponses APS
