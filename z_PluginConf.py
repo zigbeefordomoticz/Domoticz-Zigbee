@@ -12,13 +12,14 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 """
 
 import Domoticz
+import os.path
 
 PLUGINCONF_FILENAME = "PluginConf.txt"
 
 
 class PluginConf:
 
-    def __init__(self, homedir):
+    def __init__(self, homedir, hardwareid):
         self.homedirectory = homedir
         self.CrcCheck = 1
         self.sendDelay = 0
@@ -36,15 +37,27 @@ class PluginConf:
         self.forceReadAttributes = 0 # Allow to reset the ReadAttribute
         self.debugReadCluster = 0
         self.resetMotiondelay = 30
+        self.enablegroupmanagement = 0
+        self.filename = None
 
         # Import PluginConf.txt
+
+        self.filename = self.homedirectory + "PluginConf-%02d.txt" %hardwareid
+        if not os.path.isfile(self.filename) :
+            self.filename = self.homedirectory + "PluginConf.txt"
+
+        Domoticz.Status("PluginConf: %s" %self.filename)
         tmpPluginConf = ""
-        with open(self.homedirectory + PLUGINCONF_FILENAME, 'r') as myPluginConfFile:
+        with open( self.filename, 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
         Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
 
         self.PluginConf = eval(tmpPluginConf)
+
+        if self.PluginConf.get('enablegroupmanagement') and \
+                self.PluginConf.get('enablegroupmanagement').isdigit():
+            self.enablegroupmanagement = int(self.PluginConf['enablegroupmanagement'], 10)
 
         if self.PluginConf.get('debugReadCluster') and \
                 self.PluginConf.get('debugReadCluster').isdigit():
