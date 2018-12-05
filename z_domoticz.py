@@ -218,8 +218,8 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "DButton":  # interrupteur double sur EP different lumi.sensor_86sw2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click",
-                           "LevelOffHidden": "true", "SelectorStyle": "0"}
+                Options = {"LevelActions": "|||", "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
+                           "LevelOffHidden": "true", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
