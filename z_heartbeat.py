@@ -17,7 +17,6 @@ import struct
 import json
 import queue
 
-import z_var
 import z_output
 import z_tools
 import z_domoticz

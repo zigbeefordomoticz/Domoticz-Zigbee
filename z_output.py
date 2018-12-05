@@ -19,7 +19,6 @@ import json
 import queue
 
 import z_consts
-import z_var
 import z_tools
 
 import time

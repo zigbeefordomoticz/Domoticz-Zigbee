@@ -19,7 +19,6 @@ import queue
 import string
 
 import z_domoticz
-import z_var
 import z_tools
 import z_status
 

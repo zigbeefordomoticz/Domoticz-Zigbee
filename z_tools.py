@@ -15,7 +15,6 @@ import struct
 import json
 
 import Domoticz
-import z_var
 import z_output
 
 def returnlen(taille , value) :
