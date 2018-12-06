@@ -35,8 +35,8 @@ Either the information is coming from one of the plugin user (through direct com
 | Xiaomi | Smoke Sensor | Smoke Sensor | Need 3 push on button to run synch| can't be reset from Domoticz | 2.3.5 |
 | Xiaomi | Temperature Humidity Sensor | Temp + Humidity | | Fully operationnal | 2.3.5 |
 | Xiaomi | Vibration Sensor | Switch Selector | | Not yet support | - |
-| Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter n each line | Fully operationnal | 3.1.0  |
-| Xiaomi | Wall Double Switch QBKG03LM | Switch | 2 switches with Power meter for each line | Fully operationnal | 4.0.0  |
+| Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter for each line  // need Neutral & Line| Fully operationnal | 3.1.0  |
+| Xiaomi | Wall Double Switch QBKG03LM | Switch | 2 switches // only need line wire | Fully operationnal | 4.0.0  |
 | Xiaomi | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.4.0 |
 
 QBKG03LM
