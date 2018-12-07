@@ -1,5 +1,9 @@
 # Release Notes 
 
+## xx xxx 2018 - Version x.x.
+- [Issue] Make the possibility to use a PluginConf per HardwareID #271
+- [Issue] Make Motion Resetdevice customizable via a PluginConf parameter #270
+
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
