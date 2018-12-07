@@ -1105,14 +1105,8 @@ def Decode804E(self, MsgData) : # Management LQI response
 
 #Group response
 def Decode8060(self, MsgData) : # Add Group response
-    MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8060 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
-    MsgSequenceNumber=MsgData[0:2]
-    MsgEP=MsgData[2:4]
-    MsgClusterID=MsgData[4:8]
-    
-    Domoticz.Status("ZigateRead - MsgType 8060 - Add Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID)
+    self.groupmgt.addGroupResponse( MsgData )
     return
 
 def Decode8061(self, MsgData) : # View Group response
@@ -1144,16 +1138,8 @@ def Decode8062(self, MsgData) : # Get Group Membership response
     return
 
 def Decode8063(self, MsgData) : # Remove Group response
-    MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8063 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
-    MsgSequenceNumber=MsgData[0:2]
-    MsgEP=MsgData[2:4]
-    MsgClusterID=MsgData[4:8]
-    MsgDataStatus=MsgData[8:10]
-    MsgGroupID=MsgData[10:14]
-    
-    Domoticz.Status("ZigateRead - MsgType 8063 - Remove Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID)
+    self.groupmgt.removeGroupResponse( MsgData )
     return
 
 #Reponses SCENE

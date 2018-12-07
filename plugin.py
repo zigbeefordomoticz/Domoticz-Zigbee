@@ -64,6 +64,7 @@ import z_consts
 from z_PluginConf import PluginConf
 from z_Transport import ZigateTransport
 from z_TransportStats import TransportStatistics
+from z_GroupMgt import GroupsManagement
 
 class BasePlugin:
     enabled = False
@@ -73,6 +74,7 @@ class BasePlugin:
         self.ZigateComm = None
         self._ReqRcv = bytearray()
 
+        self.groupmgt = None
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
@@ -110,7 +112,7 @@ class BasePlugin:
 
         # Import PluginConf.txt
         Domoticz.Status("load PluginConf" )
-        self.pluginconf = PluginConf(Parameters["HomeFolder"])
+        self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
         
         plugconf = self.pluginconf
@@ -162,19 +164,32 @@ class BasePlugin:
         Domoticz.Log("Establish Zigate connection" )
         self.ZigateComm.openConn()
 
+
         return
 
     def onStop(self):
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
+        if self.groupmgt:
+            self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
 
 
     def onDeviceRemoved( self, Unit ) :
         Domoticz.Status("onDeviceRemoved called" )
-        z_tools.removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
-        Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+        # Let's check if this is End Node, or Group related.
+        if Devices[Unit].DeviceID in self.IEEE2NWK:
+            # Command belongs to a end node
+            z_tools.removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
+            Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+
+        if self.pluginconf.enablegroupmanagement and self.groupmgt:
+            if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+                # Command belongs to a Zigate group
+                self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
+                Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+
         # We might evaluate teh removal of the physical device from Zigate.
         # Could be done if a Flag is enabled in the PluginConf.txt.
         
@@ -203,6 +218,10 @@ class BasePlugin:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
 
+        if self.pluginconf.enablegroupmanagement:
+            Domoticz.Log("Start Group Management")
+            self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+
         if (self.pluginconf).logLQI != 0 :
             z_LQI.LQIdiscovery( self ) 
 
@@ -216,7 +235,16 @@ class BasePlugin:
         z_input.ZigateRead( self, Devices, Data )
 
     def onCommand(self, Unit, Command, Level, Color):
-        z_command.mgtCommand( self, Devices, Unit, Command, Level, Color )
+
+        # Let's check if this is End Node, or Group related.
+        if Devices[Unit].DeviceID in self.IEEE2NWK:
+            # Command belongs to a end node
+            z_command.mgtCommand( self, Devices, Unit, Command, Level, Color )
+        if self.pluginconf.enablegroupmanagement and self.groupmgt:
+            if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+                # Command belongs to a Zigate group
+                self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
+                Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
 
 
     def onDisconnect(self, Connection):
@@ -250,6 +278,11 @@ class BasePlugin:
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
         else:
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
+
+
+        # Group Management
+        if self.groupmgt:
+            self.groupmgt.hearbeatGroupMgt()
 
         # Check if we still have connectivity. If not re-established the connectivity
         self.ZigateComm.reConn()
