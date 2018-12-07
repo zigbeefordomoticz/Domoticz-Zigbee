@@ -26,7 +26,7 @@ Either the information is coming from one of the plugin user (through direct com
 | Xiaomi Aqara | Water sensor | Water sensor | Sensor turns on when it is under water | Fully operationnal | 2.4.0 |
 | Xiaomi Aqara | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.4.0 |
 | Xiaomi Aqara | WXKG01LM (86sw1) | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | 3.1.0 |
-| Xiaomi Aqara | WXKG02LM (86sw2) | Switch Selector | The following events are reported to the Domoticz Switch selectors : Right Click, Left Click, Both Click | Fully operationnal | 3.1.0 |
+| Xiaomi Aqara | WXKG02LM (86sw2) | Switch Selector | The following events are reported to the Domoticz Switch selectors : Switch 1, Switch 2, Both_Click | Fully operationnal | 3.1.0 |
 | Xiaomi Aqara | WXKG11LM Square Device with round Button | Switch Selector | The following events are reported to the Domoticz Switch selectors : 1 Click, 2 Click, 3 Click, 4 CliCk | Fully operationnal | 3.1.0 |
 | Xiaomi Aqara | WXKG03LM Aqara wireles switch single button | Push On | The following events are reported to the Domoticz Switch : ON | Fully operationnal | beta 3.3 |
 | Xiaomi | Aqara Cube | Switch Selector | The following events are reported to the Domoticz Switch selectors : Shake, Wakepup, Drop, 90° and 180° rotation, Push, Tab and horizontal Rotation . | Fully operationnal | 2.4.0 |
@@ -35,5 +35,8 @@ Either the information is coming from one of the plugin user (through direct com
 | Xiaomi | Smoke Sensor | Smoke Sensor | Need 3 push on button to run synch| can't be reset from Domoticz | 2.3.5 |
 | Xiaomi | Temperature Humidity Sensor | Temp + Humidity | | Fully operationnal | 2.3.5 |
 | Xiaomi | Vibration Sensor | Switch Selector | | Not yet support | - |
-| Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter n each line | Fully operationnal | 3.1.0  |
+| Xiaomi | Wall Double Switch QBKG12LM | Switch, Power meter | 2 switches with Power meter for each line  // need Neutral & Line| Fully operationnal | 3.1.0  |
+| Xiaomi | Wall Double Switch QBKG03LM | Switch | 2 switches // only need line wire | Fully operationnal | 4.0.0  |
 | Xiaomi | Window Door switch | Window Door switch | Switch turns on when the door is open | Fully operationnal | 2.4.0 |
+
+QBKG03LM
