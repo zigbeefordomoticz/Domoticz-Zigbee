@@ -181,14 +181,16 @@ class BasePlugin:
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
+            Domoticz.Log("onDeviceRemoved - removing End Device")
             z_tools.removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
             Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+            return
 
         if self.pluginconf.enablegroupmanagement and self.groupmgt:
             if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+                Domoticz.Log("onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
                 self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
-                Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
 
         # We might evaluate teh removal of the physical device from Zigate.
         # Could be done if a Flag is enabled in the PluginConf.txt.

@@ -23,8 +23,8 @@ ZHA_DEVICES = ( 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006,
 HEARTBEAT = 5
 
 
-ADDRESS_MODE = ( 'bound':0x00, 
+ADDRESS_MODE = { 'bound':0x00, 
         'group':0x01, # Group
         'short':0x02, # Short address
         'ieee':0x03 # IEEE
-        )
+        }
