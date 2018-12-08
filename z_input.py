@@ -16,6 +16,7 @@ import time
 import struct
 import json
 import queue
+import time
 
 import z_domoticz
 import z_tools
@@ -217,27 +218,26 @@ def ZigateRead(self, Devices, Data):
     elif str(MsgType)=="804e":  #
         Domoticz.Debug("ZigateRead - MsgType 804e - Reception Management LQI response : " + Data)
         z_LQI.mgtLQIresp( self, MsgData)    
-        #Decode804E(self, MsgData)
         return
 
     elif str(MsgType)=="8060":  #
         Domoticz.Log("ZigateRead - MsgType 8060 - Reception Add group response : " + Data)
-        Decode8060(self, MsgData)
+        self.groupmgt.addGroupResponse( MsgData )
         return
 
     elif str(MsgType)=="8061":  #
         Domoticz.Log("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
-        Decode8061(self, MsgData)
+        self.groupmgt.viewGroupResponse( MsgData )
         return
 
     elif str(MsgType)=="8062":  #
         Domoticz.Log("ZigateRead - MsgType 8062 - Reception Get group Membership response : " + Data)
-        Decode8062(self, MsgData)
+        self.groupmgt.getGroupMembershipResponse(MsgData)
         return
 
     elif str(MsgType)=="8063":  #
         Domoticz.Log("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
-        Decode8063(self, MsgData)
+        self.groupmgt.removeGroupResponse( MsgData )
         return
 
     elif str(MsgType)=="80a0":  #
@@ -395,7 +395,7 @@ def Decode8000_v2(self, MsgData) : # Status
     elif Status=="05" : Status="Stack Already Started"
     elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
 
-    Domoticz.Log("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
+    Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
     if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
     elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
@@ -407,6 +407,8 @@ def Decode8000_v2(self, MsgData) : # Status
         Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
+    if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
+        self.groupmgt.statusGroupRequest
     return
 
 def Decode8001(self, MsgData) : # Reception log Level
@@ -1060,6 +1062,7 @@ def Decode804A(self, MsgData) : # Management Network Update response
             25: 0x02000000,
             26: 0x04000000 }
 
+    nwkscan = {}
     channelList = []
     for channel in CHANNELS:
         if int(MsgScannedChannel,16) & CHANNELS[channel]:
@@ -1073,10 +1076,21 @@ def Decode804A(self, MsgData) : # Management Network Update response
 
     Domoticz.Status("Decode804A - Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s , Status: %s) " \
             %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), z_status.DisplayStatusCode(MsgDataStatus)) )
-    Domoticz.Status("Decode804A - Management Network Update")
+
+    timing = time.time()
+    nwkscan[timing] = {}
+    nwkscan[timing]['Total Tx'] = int(MsgTotalTransmission,16)
+    nwkscan[timing]['Total failures'] = int(MsgTransmissionFailures,16)
     for chan, inter in zip( channelList, channelListInterferences ):
+        nwkscan[timing][chan] = int(inter,16)
         Domoticz.Status("Decode804A -     Channel: %s Interference: : %s " %(chan, int(inter,16)))
-            
+
+    # Write the report onto file
+    _filename =  self.pluginconf.logRepo + 'Network_scan' + '02.%d' %self.HardwareID + '.txt'
+    Domoticz.Status("LQI report save on " +str(_filename))
+    with open(_filename , 'at') as file:
+        for key in nwkscan:
+            file.write(key + ": " + str(nwkscan[key]) + "\n")
     return
 
 def Decode804B(self, MsgData) : # System Server Discovery response
@@ -1090,57 +1104,8 @@ def Decode804B(self, MsgData) : # System Server Discovery response
     Domoticz.Status("ZigateRead - MsgType 804B - System Server Discovery response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Server Mask : " + MsgServerMask)
     return
 
-def Decode804E(self, MsgData) : # Management LQI response
-    MsgLen=len(MsgData)
-    Domoticz.Debug("Decode804E - MsgData lenght is : " + str(MsgLen) + " out of 2" )
-
-    MsgSequenceNumber=MsgData[0:2]
-    MsgDataStatus=MsgData[2:4]
-    MsgNeighbourTableEntrie=MsgData[4:6]
-    MsgNeighbourTableListCount=MsgData[6:8]
-    MsgStartIndex=MsgData[8:10]
-    MsgListOfEntries=MsgData[10:len(MsgData)]
-    Domoticz.Status("ZigateRead - MsgType 804E - Management LQI response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Neighbour Table Entrie : " + MsgNeighbourTableEntrie + " Neighbour Table List Count : " + MsgNeighbourTableListCount + " Start Index : " + MsgStartIndex + " List of Entries : " + MsgListOfEntries)
-    return
-
 #Group response
-def Decode8060(self, MsgData) : # Add Group response
-
-    self.groupmgt.addGroupResponse( MsgData )
-    return
-
-def Decode8061(self, MsgData) : # View Group response
-    MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8061 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
-
-    MsgSequenceNumber=MsgData[0:2]
-    MsgEP=MsgData[2:4]
-    MsgClusterID=MsgData[4:8]
-    MsgDataStatus=MsgData[8:10]
-    MsgGroupID=MsgData[10:14]
-    
-    Domoticz.Status("ZigateRead - MsgType 8061 - View Group response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID)
-    return
-
-def Decode8062(self, MsgData) : # Get Group Membership response
-    MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8062 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
-
-    MsgSequenceNumber=MsgData[0:2]
-    MsgEP=MsgData[2:4]
-    MsgClusterID=MsgData[4:8]
-    MsgSourceAddress=MsgData[8:12]
-    MsgCapacity=MsgData[12:14]
-    MsgGroupCount=MsgData[14:16]
-    MsgListOfGroup=MsgData[16:len(MsgData)]
-    
-    Domoticz.Status("ZigateRead - MsgType 8062 - Get Group Membership response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Source Address : " + MsgSourceAddress + " Capacity : " + MsgCapacity + " Group Count : " + MsgGroupCount + " List Of Group : " + MsgListOfGroup)
-    return
-
-def Decode8063(self, MsgData) : # Remove Group response
-
-    self.groupmgt.removeGroupResponse( MsgData )
-    return
+# Implemented in z_GrpMgt.py
 
 #Reponses SCENE
 def Decode80A0(self, MsgData) : # View Scene response
