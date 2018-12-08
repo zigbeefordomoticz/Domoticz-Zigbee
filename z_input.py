@@ -1026,6 +1026,8 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
         Domoticz.Debug("Decode8048 - most likely a 0x004d will come" )
         self.ListOfDevices[sAddr]['Status'] = 'Left'
         self.ListOfDevices[sAddr]['Hearbeat'] = 0
+        Domoticz.Log("Calling leaveMgt to request a rejoin")
+        z_output.leaveMgt( self, sAddr, MsgExtAddress )
 
     return
 
@@ -1399,7 +1401,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
         NwkStatus=MsgData[2:4]
         Domoticz.Debug("Decode8701 - Reception Router Discovery Confirm Status:" + z_status.DisplayStatusCode( MsgDataStatus ) + ", Nwk Status : "+ NwkStatus )
     
-        if NwkStatus != "00" : Domoticz.Error("Decode8701 - Reception Router Discovery Confirm Status:" + z_status.DisplayStatusCode( NwkStatus) + ", Nwk Status : "+ NwkStatus )
+        if NwkStatus != "00" : Domoticz.Log("Decode8701 - Reception Router Discovery Confirm Status:" + z_status.DisplayStatusCode( NwkStatus) + ", Nwk Status : "+ NwkStatus )
         return
 
 #Réponses APS

@@ -685,3 +685,16 @@ def setExtendedPANID(self, extPANID):
     Domoticz.Log("set ExtendedPANID - %16.x "\
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
+
+
+
+def leaveMgt( self, saddr, ieee):
+    ' in case of receiving a leave, and that is not related to an explicit remove '
+
+    Domoticz.Log("Switch to Permit to Join for 5s")
+    discover = "%02.X" %int(3)
+    sendZigateCmd(self, "0049","FFFC" + discover + "00")
+    Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
+    datas = saddr + ieee + '01' + '01'
+    sendZigateCmd(self, "0047", datas )
+

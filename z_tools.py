@@ -124,7 +124,7 @@ def DeviceExist(self, newNWKID , IEEE = ''):
                 removeNwkInList( self, existingNWKkey )    
 
                 if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
-                    Domoticz.Log("DeviceExist - Update Status from 'inDB' to 'Left' for NetworkID : " +str(newNWKID) )
+                    Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Hearbeat'] = 0
                 found = 1
