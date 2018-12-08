@@ -378,7 +378,7 @@ class ZigateTransport(object):
             # In that case we need to unblock data, as we will never get it !
             if len(self._waitForData) > 0:
                 expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()
-                Domoticz.Debug("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
+                Domoticz.Debug("waitForData - unlock waitForData due to command %s failed, remove %s/%s" %(PacketType, expResponse, pCmd))
 
         Domoticz.Debug("receiveStatusCmd - waitQ: %s dataQ: %s normalQ: %s" \
                        % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
