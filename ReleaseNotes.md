@@ -1,5 +1,10 @@
 # Release Notes 
 
+## 08 December 2018 - Version 4.0.1
+- [Issue] #272
+- [Issue] Correct the Selector tab label for the Double Button swicth
+- [Issue] When receiving a leave message , if the object is not 'removed' then request a rejoin
+
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
