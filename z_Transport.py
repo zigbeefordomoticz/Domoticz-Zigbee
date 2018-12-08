@@ -375,7 +375,7 @@ class ZigateTransport(object):
         self.statistics._ack += 1
         if Status != '00':
             self.statistics._ackKO += 1
-            # In that case we need to un-block data, as we will never get it !
+            # In that case we need to unblock data, as we will never get it !
             if len(self._waitForData) > 0:
                 expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()
                 Domoticz.Debug("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
