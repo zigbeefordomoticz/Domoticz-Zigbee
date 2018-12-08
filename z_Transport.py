@@ -338,7 +338,7 @@ class ZigateTransport(object):
 
             # We have receive a Status code in response to a command.
             self.receiveStatusCmd(Status, PacketType, frame)
-            # We do not send this message for further processing as it is a pure internal to ack the command.
+            self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
@@ -375,6 +375,11 @@ class ZigateTransport(object):
         self.statistics._ack += 1
         if Status != '00':
             self.statistics._ackKO += 1
+            # In that case we need to un-block data, as we will never get it !
+            if len(self._waitForData) > 0:
+                expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()
+                Domoticz.Debug("waitForData - Timeout %s on %04.x Command waiting for %04.x " % (now - pTime, expResponse, int(pCmd,16)))
+
         Domoticz.Debug("receiveStatusCmd - waitQ: %s dataQ: %s normalQ: %s" \
                        % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         if PacketType == '':
