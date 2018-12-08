@@ -574,6 +574,8 @@ class GroupsManagement(object):
         ' hearbeat to process Group Management actions '
 
         self.HB += 1
+        if not self.stillWIP:
+            return
 
         Domoticz.Log("hearbeatGroupMgt - %s self.getGMS_count: %s, WIP: %s " %(self.HB, self.getGMS_count, self.stillWIP))
         if self.HB == 1: 
