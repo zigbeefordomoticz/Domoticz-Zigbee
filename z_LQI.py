@@ -13,6 +13,7 @@
 
 import queue
 import datetime
+import time
 
 import Domoticz
 import z_output
@@ -96,11 +97,13 @@ def LQIcontinueScan(self):
                         " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl']) ) 
 
         # Write the report onto file
-        _filename =  self.pluginconf.logRepo + "LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+        _filename = self.pluginconf.logRepo + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
+        storeLQI = {}
+        storeLQI[int(time.time())] = self.LQI
         Domoticz.Status("LQI report save on " +str(_filename))
-        with open(_filename , 'wt') as file:
-            for key in self.LQI:
-                file.write(key + ": " + str(self.LQI[key]) + "\n")
+        with open(_filename , 'at') as file:
+            for key in storeLQI:
+                file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
         self.pluginconf.logLQI = 0
 
 def mgtLQIreq(self, nwkid='0000', index=0):
