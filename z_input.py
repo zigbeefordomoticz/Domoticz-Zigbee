@@ -1087,10 +1087,10 @@ def Decode804A(self, MsgData) : # Management Network Update response
 
     # Write the report onto file
     _filename =  self.pluginconf.logRepo + 'Network_scan' + '02.%d' %self.HardwareID + '.txt'
-    Domoticz.Status("LQI report save on " +str(_filename))
+    Domoticz.Status("Network Scan report save on " +str(_filename))
     with open(_filename , 'at') as file:
         for key in nwkscan:
-            file.write(key + ": " + str(nwkscan[key]) + "\n")
+            file.write(str(key) + ": " + str(nwkscan[key]) + "\n")
     return
 
 def Decode804B(self, MsgData) : # System Server Discovery response
