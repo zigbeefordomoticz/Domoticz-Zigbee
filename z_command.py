@@ -16,7 +16,6 @@ import time
 import struct
 import json
 
-import z_var          # Global variables
 import z_tools
 import z_output
 import z_domoticz
