@@ -47,8 +47,10 @@ def ZigateConf_light(self, discover ):
         discover = "%02.X" %int(discover)
     if discover == "FF":
         Domoticz.Status("Zigate enter in discover mode for ever")
+        self.permitTojoin = 0xff
     else: 
         Domoticz.Status("Zigate enter in discover mode for %s Secs" %(int(discover,16)))
+        self.permitTojoin = int(discover,16)
 
     if discover != "00":    # In order to avoid Devices's noise
         sendZigateCmd(self, "0049","FFFC" + discover + "00")
@@ -690,9 +692,11 @@ def setExtendedPANID(self, extPANID):
 def leaveMgtReJoin( self, saddr, ieee):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
-    Domoticz.Log("Switch to Permit to Join for 5s")
-    discover = "%02.X" %int(3)
-    sendZigateCmd(self, "0049","FFFC" + discover + "00")
+    if self.permitTojoin != 0xff:
+        Domoticz.Log("Switch to Permit to Join for 5s")
+        discover = "%02.X" %int(3)
+        sendZigateCmd(self, "0049","FFFC" + discover + "00")
+
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
     # Request a Re-Join and Do not remove children
     datas = saddr + ieee + '01' + '01'

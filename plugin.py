@@ -73,7 +73,7 @@ class BasePlugin:
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.ZigateComm = None
         self._ReqRcv = bytearray()
-
+        self.permitTojoin = None
         self.groupmgt = None
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
