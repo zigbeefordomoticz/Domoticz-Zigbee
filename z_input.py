@@ -1077,7 +1077,7 @@ def Decode804A(self, MsgData) : # Management Network Update response
     Domoticz.Status("Decode804A - Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s , Status: %s) " \
             %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), z_status.DisplayStatusCode(MsgDataStatus)) )
 
-    timing = time.time()
+    timing = int(time.time())
     nwkscan[timing] = {}
     nwkscan[timing]['Total Tx'] = int(MsgTotalTransmission,16)
     nwkscan[timing]['Total failures'] = int(MsgTransmissionFailures,16)
