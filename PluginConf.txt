@@ -4,5 +4,7 @@
 'enablegroupmanagement':'0',
 'allowRemoveZigateDevice':'0',
 'allowStoreDiscoveryFrames':'0',
+'logRepo':'/var/lib/domoticz/www/templates/zigate/reports/',
+'logLQI':'240',
 'logFORMAT':'0'
 }

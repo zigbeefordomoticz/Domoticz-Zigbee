@@ -90,12 +90,12 @@ def LQIcontinueScan(self):
         for src in self.LQI:
             for child in self.LQI[src]:
                 Domoticz.Log(" Node {:>4}".format(src) + " child {:>4}".format(child) +\
-                            " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + \
-                            " deepth {:2n}".format((int(self.LQI[src][child]['_depth'], 16))) + " linkQty {:3n}".format((int(self.LQI[src][child]['_lnkqty'], 16))) +\
-                            " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl']) ) 
+                        " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + \
+                        " deepth {:2n}".format((int(self.LQI[src][child]['_depth'], 16))) + " linkQty {:3n}".format((int(self.LQI[src][child]['_lnkqty'], 16))) +\
+                        " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl']) ) 
 
         # Write the report onto file
-        _filename =  self.homedirectory + "LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+        _filename =  self.pluginconf.logRepo + "LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
         Domoticz.Status("LQI report save on " +str(_filename))
         with open(_filename , 'wt') as file:
             for key in self.LQI:
@@ -175,16 +175,15 @@ def mgtLQIresp(self, MsgData):
         _nwkid    = ListOfEntries[n:n+4]
         _extPANID = ListOfEntries[n+4:n+20]
         _ieee     = ListOfEntries[n+20:n+36]
-        _depth    = ListOfEntries[n+36:n+38]
-        _lnkqty   = ListOfEntries[n+38:n+40]
-        try:
+
+        _depth = _lnkqty = _bitmap = 0
+        if ListOfEntries[n+36:n+38] != '':
+            _depth    = ListOfEntries[n+36:n+38]
+        if ListOfEntries[n+38:n+40] != '':
+            _lnkqty   = ListOfEntries[n+38:n+40]
+        if ListOfEntries[n+40:n+42] != '':
             _bitmap   = int(ListOfEntries[n+40:n+42], 16)
-        except:
 
-            Domoticz.Log("mgtLQIresp - wrong bitmap :%s " %ListOfEntries[n+40:n+42])
-            _bitmap = 0
-
-        Domoticz.Debug("mgtLQIresp - error on _bitmap {0:b}".format(_bitmap))
         _devicetype   = _bitmap & 0b00000011
         _permitjnt    = (_bitmap & 0b00001100) >> 2
         _relationshp  = (_bitmap & 0b00110000) >> 4

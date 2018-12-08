@@ -25,6 +25,7 @@ class PluginConf:
         self.sendDelay = 0
         self.logFORMAT = 0
         self.logLQI = 0
+        self.logRepo = homedir
         self.allowRemoveZigateDevice = 0
         self.allowStoreDiscoveryFrames = 0
         self.allowForceCreationDomoDevice = 0
@@ -54,6 +55,9 @@ class PluginConf:
         Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
 
         self.PluginConf = eval(tmpPluginConf)
+
+        if self.PluginConf.get('logRepo'):
+            self.logRepo = self.PluginConf['logRepo']
 
         if self.PluginConf.get('enablegroupmanagement') and \
                 self.PluginConf.get('enablegroupmanagement').isdigit():
