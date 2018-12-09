@@ -78,7 +78,7 @@ function DrawTable(date, data, id) {
         }
         OutResultContents += "<th>" + LQIlist[orderlist[i][0]] + "</th>";
         //MatrixId[i] = LQIlist[orderlist[i][0]];
-        MatrixId[date] += '{ "name" :"' + LQIlist[orderlist[i][0]] + '", "color" : "#' + LQIlist[orderlist[i][0]] + '"}';
+        MatrixId[date] += '{ "name" :"' + LQIlist[orderlist[i][0]] + '", "color" : "#' + Math.floor(Math.random() * 16777215).toString(16) + '"}';
     }
     MatrixId[date] += "]";
     OutResultContents += "</tr>";
@@ -255,6 +255,14 @@ function Graph(id, date, matriX, matrixid) {
 
     var formatPercent = d3.format(".1%");
 
+    console.log('d3.select : LQI_' + id + '_' + date);
+    var svg = d3.select('#LQI_' + id + '_' + date).append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("id", "circle")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
     var arc = d3.svg.arc()
         .innerRadius(innerRadius)
         .outerRadius(outerRadius);
@@ -267,21 +275,13 @@ function Graph(id, date, matriX, matrixid) {
     var path = d3.svg.chord()
         .radius(innerRadius);
 
-    console.log('d3.select : LQI_' + id + '_' + date);
-    var svg = d3.select('#LQI_' + id + '_' + date).append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .append("g")
-        .attr("id", "circle")
-        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
-
     svg.append("circle")
         .attr("r", outerRadius);
 
     // Compute the chord layout.
     matrix = JSON.parse(matriX);
     IEEE = JSON.parse(matrixid);
-    console.log('Graph(' + id + ', ' + date + ', ' + matrix + ', ' + IEEE + ')');
+    //console.log('Graph(' + id + ', ' + date + ', ' + matrix + ', ' + IEEE + ')');
     console.log('Load matrix ok ');
     layout.matrix(matrix);
 
@@ -357,7 +357,7 @@ function PrintGraph(id) {
     }
 }
 
-$(document).ready(function() {
+function ReadHxIDx() {
     $.domoticzurl = ""; //"http://localhost:8080";
     $.getJSON($.domoticzurl + "/json.htm", {
             type: "hardware",
@@ -382,4 +382,9 @@ $(document).ready(function() {
             readTXT(ReportsFolder + NetworkFile, HwIDX, "Network");
 
         });
+};
+
+
+$(document).ready(function() {
+    ReadHxIDx();
 });
