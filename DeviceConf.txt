@@ -8,6 +8,7 @@
 'lumi.sensor_switch':{'Ep':{'01':{'0006'}},'Type':'SwitchAQ2'},
 'lumi.sensor_86sw2':{'Ep':{'01':{'0006'},'02':{'0006'}},'Type':'DButton'},
 'lumi.sensor_smoke':{'Ep':{'01':{'0006'}},'Type':'Smoke'},
+'SmokeSensor-N':{'Ep':{'01':{'0000':'','0003':'','0500':'','0001':'','Type':'Smoke'}},'Type':''},
 'lumi.sensor_wleak.aq1':{'Ep':{'01':{'0006'}},'Type':'Water'},
 'lumi.sensor_86sw1':{'Ep':{'01':{'0006'}},'Type':'Button'},
 'lumi.remote.b186acn01':{'Ep':{'01':{'0000':'','0003':'','0006':'','Type':'Button'}},'Type':''},
