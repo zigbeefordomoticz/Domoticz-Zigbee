@@ -2,12 +2,14 @@
 <link rel="stylesheet" type="text/css" href="./templates/zigate/zigate.css">
 <script src="https://d3js.org/d3.v2.min.js?2.8.1"></script>
 
+
 <div id="cnt">
     <div class="tab">
         <button class="tablinks" onclick="openTab(event, 'conf')">Conf</button>
         <button class="tablinks" onclick="openTab(event, 'Devices')">Devices</button>
         <button class="tablinks" onclick="openTab(event, 'LQI')">LQI</button>
         <button class="tablinks" onclick="openTab(event, 'Network')">Network</button>
+        <button class="tablinks" onclick="openTab(event, 'GroupMngt')">Group Mngt</button>
     </div>
 
     <div id="conf" class="tabcontent">
@@ -31,6 +33,12 @@
     <div id="Network" class="tabcontent">
         <div id="Output">
             <output id="NetResult"></output>
+        </div>
+    </div>
+
+    <div id="GroupMngt" class="tabcontent">
+        <div id="Output">
+            <output id="GrpMngtResult"></output>
         </div>
     </div>
 
