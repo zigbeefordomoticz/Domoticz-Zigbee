@@ -90,11 +90,13 @@ def LQIcontinueScan(self):
         Domoticz.Log("LQI Results:")
         for src in self.LQI:
             for child in self.LQI[src]:
-                Domoticz.Log(" Node {:>4}".format(src) + " child {:>4}".format(child) +\
-                        " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + \
-                        " deepth {:2n}".format((int(self.LQI[src][child]['_depth'], 16))) +\
-                        " linkQty {:3n}".format((int(self.LQI[src][child]['_lnkqty'], 16))) +\
-                        " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl']) ) 
+                try:
+                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
+                        %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], int(self.LQI[src][child]['_depth'], 16), int(self.LQI[src][child]['_lnkqty'], 16), self.LQI[src][child]['_rxonwhenidl']))
+                except:
+                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
+                            %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], int(self.LQI[src][child]['_depth'], 16), 0, self.LQI[src][child]['_rxonwhenidl']))
+                    Domoticz.Log(" linkQty: " +str(self.LQI[src][child]['_lnkqty']))
 
         # Write the report onto file
         _filename = self.pluginconf.logRepo + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
