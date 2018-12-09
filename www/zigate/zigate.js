@@ -118,7 +118,7 @@ function DrawTable(date, data, id) {
 };
 
 function DrawGraph(date, data, id) {
-    OutResultContents += '<div id="GraphFile_' + id + '_' + date + '">Graph here :';
+    OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
     OutResultContents += '<output id="LQI_' + id + '_' + date + '"></output></div></div>';
     console.log('draw graph ' + date + '_' + id);
 };
