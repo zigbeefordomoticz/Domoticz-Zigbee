@@ -1,18 +1,38 @@
 <link rel="stylesheet" type="text/css" href="./templates/zigate/zigate.css">
-<script src="https://d3js.org/d3.v2.min.js?2.8.1"></script>
+<script src="http://d3js.org/d3.v2.min.js?2.8.1"></script>
 
 <div id="cnt">
-    <div id="Loading">
-        <output id="ZigateHwLoad"></output>
+    <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'conf')">Conf</button>
+        <button class="tablinks" onclick="openTab(event, 'Devices')">Devices</button>
+        <button class="tablinks" onclick="openTab(event, 'LQI')">LQI</button>
+        <button class="tablinks" onclick="openTab(event, 'Network')">Network</button>
     </div>
-    <div id="Input" height="100px" width="500px">
-        Drop LQI Report files here :
-        <div id="drop_zone"></div>
-    </div>
-    <div id="Output">Result :
-        <output id="Result"></output>
-    </div>
-</div>
 
+    <div id="conf" class="tabcontent">
+        <div id="Output">
+            <output id="ZigateConf"></output>
+        </div>
+    </div>
+
+    <div id="Devices" class="tabcontent">
+        <div id="Output">
+            <output id="ZigateHwLoad"></output>
+        </div>
+    </div>
+
+    <div id="LQI" class="tabcontent">
+        <div id="Output">
+            <output id="LQIResult"></output>
+        </div>
+    </div>
+
+    <div id="Network" class="tabcontent">
+        <div id="Output">
+            <output id="NetResult"></output>
+        </div>
+    </div>
+
+</div>
 
 <script type="text/javascript" src="templates/zigate/zigate.js"></script>
