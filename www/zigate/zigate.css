@@ -72,7 +72,15 @@ div#Output {
 }
 
 svg {
-    background-color: whitesmoke;
+    background-color: rgba(245, 245, 245, 0);
+    font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
 }
 
 #circle circle {
