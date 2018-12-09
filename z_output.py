@@ -559,8 +559,9 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
             identify = True
 
     if 'ZDeviceID' in self.ListOfDevices[nwkid]:
-        if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) in z_consts.ZLL_DEVICES:
-            identify = True
+        if self.ListOfDevices[nwkid]['ZDeviceID'] != {}:
+            if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) in z_consts.ZLL_DEVICES:
+                identify = True
 
     if not identify:
         return
