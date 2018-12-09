@@ -1,5 +1,9 @@
 # Release Notes 
 
+## 09 December 2018 - Version 4.0.2
+- [Issue] #278 , make the plugin windows compatible
+- [Issue] #279 , test if ZDeviceID before trying o convert it to an int
+
 ## 08 December 2018 - Version 4.0.1
 - [Issue] #272
 - [Issue] Correct the Selector tab label for the Double Button swicth
