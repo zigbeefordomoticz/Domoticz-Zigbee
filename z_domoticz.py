@@ -730,6 +730,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                                             ForceUpdate_=True)
                         else:
                             return  # We just expect 01 , in case of other value nothing to do
+
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
                     if Devices[x].SwitchType == 16:
                         if value == "00":
@@ -741,9 +742,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                                 UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else:
                         if value == "00":
+                            Domoticz.Log("Devices[%s].nValue: %s, Devices[%s].sValue: %s" %( x, Devices[x].nValue, x, Devices[x].sValue))
                             UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                         else:
+                            Domoticz.Log("Devices[%s].nValue: %s, Devices[%s].sValue: %s" %( x, Devices[x].nValue, x, Devices[x].sValue))
                             UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
