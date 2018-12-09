@@ -32,7 +32,7 @@ def retreive8Tag(tag,chain):
     if c == 3: return ''
     return chain[c:(c+8)]
 
-def decodeAttribute(AttType, Attribute):
+def decodeAttribute(AttType, Attribute, handleErrors=False):
     '''
     decodeAttribute( Attribute Type, Attribute Data )
     Will return an int converted in str, which is the decoding of Attribute Data base on Attribute Type
@@ -101,12 +101,13 @@ def decodeAttribute(AttType, Attribute):
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x42:  # CharacterString
         try:
-            decoded = binascii.unhexlify(str(Attribute)).decode('utf-8')
-            printable = set(string.printable)
-            decode = filter(lambda x: x in printable, decoded)
-        except: 
-            decoded = str(Attribute)
-        return decoded
+            decode = binascii.unhexlify(Attribute).decode('utf-8')
+        except:
+            if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
+                decode = ''
+            else:
+                decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
+        return decode
     else:
         Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
         return Attribute
@@ -585,7 +586,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
-            modelName = decodeAttribute( MsgAttType, MsgClusterData)
+            modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
             Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
             if modelName != '':
                 # It has been decoded !
