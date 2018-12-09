@@ -99,19 +99,23 @@ def checkListOfDevice2Devices( self, Devices ) :
     # At that stage the ListOfDevices has beene initialized.
     for x in Devices : # initialise listeofdevices avec les devices en bases domoticz
         ID = Devices[x].DeviceID
-        if str(ID) not in self.IEEE2NWK :
-            if self.pluginconf.allowForceCreationDomoDevice == 1 :
-                Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
-                continue
-            else:
-                Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
-                Domoticz.Debug("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
-                continue
-
-        NWKID = self.IEEE2NWK[ID]
-        if str(NWKID) in self.ListOfDevices :
-            Domoticz.Debug("checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) )
-        else :
-            Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
+        if (len(str(ID)) == 4 ):
+            # This is a Group Id (short address)
+            pass
+        else:
+            if str(ID) not in self.IEEE2NWK :
+                if self.pluginconf.allowForceCreationDomoDevice == 1 :
+                    Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+                    continue
+                else:
+                    Domoticz.Error("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
+                    Domoticz.Debug("checkListOfDevice2Devices - " +str(ID) + " not found in " +str(self.IEEE2NWK) )
+                    continue
+    
+            NWKID = self.IEEE2NWK[ID]
+            if str(NWKID) in self.ListOfDevices :
+                Domoticz.Debug("checkListOfDevice2Devices - we found a matching entry for ID " +str(x) + " as DeviceID = " +str(ID) +" NWK_ID = " + str(NWKID) )
+            else :
+                Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
 
