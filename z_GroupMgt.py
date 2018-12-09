@@ -18,7 +18,7 @@ GROUPS_CONFIG_FILENAME = "GroupsConfig.txt"
 class GroupsManagement(object):
 
     def __init__( self, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
-        Domoticz.Log("GroupsManagement __init__")
+        Domoticz.Debug("GroupsManagement __init__")
         self.HB = 0
         self.ListOfGroups = {}      # Data structutre to store all groups
         self.toBeImported = {}
@@ -49,11 +49,11 @@ class GroupsManagement(object):
     def _loadListOfGroups( self ):
         ' Desrialize with Pickle'
         if not os.path.isfile( self.groupListFileName ) :
-            Domoticz.Log("_loadListOfGroups - File doesn't exist. no quick start")
+            Domoticz.Debug("_loadListOfGroups - File doesn't exist. no quick start")
             return
         with open(  self.groupListFileName, 'rb') as handle:
             self.ListOfGroups = pickle.loads( handle.read() )
-        Domoticz.Log("loadListOfGroups - ListOfGroups loaded: %s" %self.ListOfGroups)
+        Domoticz.Debug("loadListOfGroups - ListOfGroups loaded: %s" %self.ListOfGroups)
 
         return 
 
@@ -76,7 +76,7 @@ class GroupsManagement(object):
         if grpid not in self.ListOfGroups:
             return
 
-        Domoticz.Log("_addGroup - Adding device: %s/%s into group: %s" \
+        Domoticz.Debug("_addGroup - Adding device: %s/%s into group: %s" \
                 %( device_addr, device_ep, grpid))
 
         datas = "02" + device_addr + "01" + device_ep + grpid
@@ -88,7 +88,7 @@ class GroupsManagement(object):
         SEQ=MsgData[2:4]
         PacketType=MsgData[4:8]
 
-        Domoticz.Log("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
+        Domoticz.Debug("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
 
         if PacketType == '0062' and Status != '00':
             self.getGMS_count  -= 1
@@ -113,11 +113,11 @@ class GroupsManagement(object):
         # RSSI: 42
         # End: 03
 
-        Domoticz.Log("addGroupResponse - MsgData: %s (%s)" %(MsgData,len(MsgData)))
+        Domoticz.Debug("addGroupResponse - MsgData: %s (%s)" %(MsgData,len(MsgData)))
 
         # search for the Group/dev
         if len(MsgData) != 14:
-            Domoticz.Log("addGroupResponse - uncomplete message %s" %MsgData)
+            Domoticz.Debug("addGroupResponse - uncomplete message %s" %MsgData)
 
         MsgSequenceNumber=MsgData[0:2]
         MsgEP=MsgData[2:4]
@@ -169,7 +169,7 @@ class GroupsManagement(object):
 
     def _getGroupMembership(self, device_addr, device_ep, group_list=None):
 
-        Domoticz.Log("_getGroupMembership - %s/%s " %(device_addr, device_ep))
+        Domoticz.Debug("_getGroupMembership - %s/%s " %(device_addr, device_ep))
         datas = "02" + device_addr + "01" + device_ep 
 
         if not group_list:
@@ -200,7 +200,7 @@ class GroupsManagement(object):
         MsgGroupCount=MsgData[14:16]
         MsgListOfGroup=MsgData[16:len(MsgData)]
 
-        Domoticz.Log("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Debug("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         self.getGMS_count  -= 1
@@ -208,7 +208,7 @@ class GroupsManagement(object):
         idx = 0
         while idx < int(MsgGroupCount,16):
             groupID = MsgData[16+(idx*4):16+(4+(idx*4))]
-            Domoticz.Log("        - GroupID: %s" %groupID)
+            Domoticz.Debug("        - GroupID: %s" %groupID)
             if groupID not in self.ListOfGroups:
                 self.ListOfGroups[groupID] ={}
                 self.ListOfGroups[groupID]['Grp Status'] = 'Discover'
@@ -221,7 +221,7 @@ class GroupsManagement(object):
                         if MsgSourceAddress == iterDev[0] and MsgEP == iterDev[1]:
                             break
                     else:
-                        Domoticz.Log("getGroupMembershipResponse - Didn't find this entry, let's add it. %s/%s " %(MsgSourceAddress, MsgEP))
+                        Domoticz.Debug("getGroupMembershipResponse - Didn't find this entry, let's add it. %s/%s " %(MsgSourceAddress, MsgEP))
                         self.ListOfGroups[groupID]['Devices'].append( [MsgSourceAddress, MsgEP, 'Ok'] )
             idx += 1
         return
@@ -347,36 +347,36 @@ class GroupsManagement(object):
         ' This is to import User Defined/Modified Groups of Devices for processing in the hearbeatGroupMgt'
 
         if not os.path.isfile( self.groupsConfigFilename ) :
-            Domoticz.Log("GroupMgt - Nothing to import")
+            Domoticz.Debug("GroupMgt - Nothing to import")
             return
 
         self.toBeImported = {}
         myfile = open( self.groupsConfigFilename, 'r')
-        Domoticz.Log("load_groupsConfig. Reading the file")
+        Domoticz.Debug("load_groupsConfig. Reading the file")
         while True:
             tmpread = myfile.readline().replace('\n', '')
-            Domoticz.Log("line: %s" %tmpread )
+            Domoticz.Debug("line: %s" %tmpread )
             if not tmpread: 
                 break
 
             group_id = group_name = None
 
             for token in tmpread.split(','):
-                Domoticz.Log("%s" %str(token))
+                Domoticz.Debug("%s" %str(token))
                 if group_id is None:
                     group_id = token
-                    Domoticz.Log("GroupID: %s" %token)
+                    Domoticz.Debug("GroupID: %s" %token)
                     self.toBeImported[group_id]= {}
                     self.toBeImported[group_id]['Name'] = ''
                     self.toBeImported[group_id]['List of Devices'] = []
                     continue
                 elif group_name is None:
                     group_name = token
-                    Domoticz.Log("GroupName: %s" %token)
+                    Domoticz.Debug("GroupName: %s" %token)
                     self.toBeImported[group_id]['Name'] = group_name
                     continue
                 else:
-                    Domoticz.Log("device:%s" %token)
+                    Domoticz.Debug("device:%s" %token)
                     if token.strip() != '':
                         self.toBeImported[group_id]['List of Devices'].append(token.strip())
 
@@ -394,19 +394,19 @@ class GroupsManagement(object):
 
         Domoticz.Log("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
         for grpid in self.toBeImported:
-            Domoticz.Log("_processGroupConfig - process: %s - %s" %(grpid, str(self.toBeImported[grpid])))
+            Domoticz.Debug("_processGroupConfig - process: %s - %s" %(grpid, str(self.toBeImported[grpid])))
             if grpid in self.ListOfGroups:
-                Domoticz.Log("_processGroupConfig - existing group: len: %s" \
+                Domoticz.Debug("_processGroupConfig - existing group: len: %s" \
                         %len(self.toBeImported[grpid]['List of Devices']))
 
                 if self.ListOfGroups[grpid]['Grp Status'] == 'Discover':
-                    Domoticz.Log("_processGroupConfig - Name: >%s<, newName: >%s<" %(self.ListOfGroups[grpid]['Name'], self.toBeImported[grpid]['Name']))
+                    Domoticz.Debug("_processGroupConfig - Name: >%s<, newName: >%s<" %(self.ListOfGroups[grpid]['Name'], self.toBeImported[grpid]['Name']))
                     if self.ListOfGroups[grpid]['Name'] == '':
                         self.ListOfGroups[grpid]['Name'] = self.toBeImported[grpid]['Name']
 
                 # If this is an existing one, lets see if there are any updates
                 if len(self.toBeImported[grpid]['List of Devices']) == 0:
-                    Domoticz.Log("_processGroupConfig - remove group: %s" %grpid)
+                    Domoticz.Debug("_processGroupConfig - remove group: %s" %grpid)
                     # We have to remove this Group and so remove all devices attached to the group
                     idx = 0
                     self.ListOfGroups[grpid]['Grp Status'] = 'Remove'
@@ -442,7 +442,7 @@ class GroupsManagement(object):
                         Domoticz.Log("_processGroupConfig - unknown device: %s, skip" %iterDev)
                         continue
                     for iterLoG in self.ListOfGroups[grpid]['Devices']:
-                        Domoticz.Log("_processGroupConfig - %s versus %s" %(iterDev, iterLoG))
+                        Domoticz.Debug("_processGroupConfig - %s versus %s" %(iterDev, iterLoG))
                         if self.IEEE2NWK[iterDev] == iterLoG[0]:
                             Domoticz.Log("_processGroupConfig - %s found in ListOFGroup[%s] " %(iterDev, grpid))
                             break
@@ -498,7 +498,7 @@ class GroupsManagement(object):
         for iterGrp in self.ListOfGroups:
             Domoticz.Log("_processListOfGroups - Group: %s" %iterGrp)
             if self.ListOfGroups[iterGrp]['Grp Status'] in ('Ok'):
-                Domoticz.Log('_processListOfGroups - Nothing to do')
+                Domoticz.Debug('_processListOfGroups - Nothing to do')
                 continue
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Discover'):
