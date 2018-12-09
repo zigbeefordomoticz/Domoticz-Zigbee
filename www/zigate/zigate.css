@@ -1,5 +1,5 @@
 body {
-    background: #000;
+    background: rgba(0, 0, 0, 0);
 }
 
 div#cnt {
@@ -7,7 +7,7 @@ div#cnt {
     width: 990px;
     margin: 0 auto;
     text-align: center;
-    border: thick white solid;
+    /*border: thick white solid;*/
 }
 
 a,
@@ -59,9 +59,36 @@ div#Output {
     font-family: arial;
     font-weight: normal;
     color: #999;
-    font-size: 17px;
+    font-size: 14px;
     box-align: center;
     /* border: thick white solid; */
+}
+
+#LQI_Tab,
+#Devices_Tab {
+    background-color: #1a1818;
+}
+
+svg {
+    background-color: whitesmoke;
+}
+
+#circle circle {
+    fill: none;
+    pointer-events: all;
+}
+
+.group path {
+    fill-opacity: .5;
+}
+
+path.chord {
+    stroke: #000;
+    stroke-width: .25px;
+}
+
+#circle:hover path.fade {
+    display: #ffff;
 }
 
 
@@ -103,28 +130,10 @@ div#Output {
 
 /* Style the tab content */
 
-.tabcontent {
+.tabcontent,
+.tabcontent2 {
     display: none;
-    background-color: #ffff;
     padding: 6px 12px;
-    /*border: 1px solid #ccc;*/
+    border: 1px solid #ccc;
     border-top: none;
-}
-
-#circle circle {
-    fill: none;
-    pointer-events: all;
-}
-
-.group path {
-    fill-opacity: .5;
-}
-
-path.chord {
-    stroke: #000;
-    stroke-width: .25px;
-}
-
-#circle:hover path.fade {
-    display: #ffff;
 }

@@ -5,67 +5,49 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
     alert('The File APIs are not fully supported in this browser.');
 }
 
-
-var HwIDX;
+var ReportsFolder = location.origin + '/templates/zigate/reports/';
+var HwIDX = "";
 var DeviceIEEE = new Object();
 var Devices;
 var LQIlist = new Object();
 var LQIdata = new Object();
-var MatrixId;
-var Matrix;
+var MatrixId = new Object();
+var Matrix = new Object();
 var orderlist;
 var OutResultLinks = "";
 var OutResultContents = "";
+var NetworkFiles;
 
-
-function GetHWId() {
-    $.getJSON($.domoticzurl + "/json.htm", {
-            type: "hardware",
-            format: "json"
-        },
-        function(HWdata) {
-            var txtHW = "Zigate absente";
-            if (typeof HWdata.result != 'undefined') {
-                $.each(HWdata.result, function(i, item) {
-                    if (item.Extra == 'Zigate') {
-                        HwIDX = item.idx;
-                        txtHW = "HwID : " + HwIDX;
-                    }
-                });
-            }
-            $('#ZigateHwLoad').html(txtHW);
-        });
-};
-
-function GetDevs() {
+function GetDevs(id) {
     $.getJSON($.domoticzurl + "/json.htm", {
             type: "devices",
             format: "json"
         },
         function(DEVdata) {
-            var txtdev = "Pas de devices sur le HwID : " + HwIDX;
+            var txtdev = "Pas de devices sur le HwID : " + id;
             var tempDevicesList = '{ "ListOfDevices" : [';
             var ii = 0;
             if (typeof DEVdata.result != 'undefined') {
-                OutResultContents = '</div><div id="TabDevices" class="tabcontent">'
-                OutResultContents += '<table border=1><tr><th>Devices ID</th><th>Devices Name</th><th>Devices IEEE</th></tr>';
+                //txt = '</div><div id="TabDevices" class="tabcontent">';
+                txt = '<table id=Devices_Tab border=1><tr><th>Devices ID</th><th>Devices Name</th><th>Devices IEEE</th></tr>';
                 $.each(DEVdata.result, function(i, itemDEV) {
-                    if (itemDEV.HardwareID == HwIDX) {
+                    if (itemDEV.HardwareID == id) {
                         if (CheckIfDeviceInList(itemDEV.ID) == false) {
-                            OutResultContents += "<tr><td>" + itemDEV.idx + "</td><td>" + itemDEV.Name + "</td><td>" + itemDEV.ID + "</td></tr>";
-                            txtdev = "Chargement terminé, selectionner votre fichier LQI_report"
+                            txt += "<tr><td>" + itemDEV.idx + "</td><td>" + itemDEV.Name + "</td><td>" + itemDEV.ID + "</td></tr>";
+                            txtdev = "Chargement terminé, selectionner votre fichier LQI_report";
                             DeviceIEEE[ii] = itemDEV.ID;
                             ii++;
-                            if (tempDevicesList.length < 30)
+                            if (tempDevicesList.length < 30) {
                                 tempDevicesList += '{ "id" : "' + itemDEV.idx + '", "name" : "' + itemDEV.Name + '", "IEEE" : "' + itemDEV.ID + '"}';
+                            }
                         }
                     }
                 });
                 tempDevicesList += "]}";
                 Devices = JSON.parse(tempDevicesList);
-                OutResultContents += "</table></div>";
+                txt += "</table>";
             }
-            $('#ZigateHwLoad').html(txtdev);
+            $('#ZigateHwLoad').html(txt);
 
         });
 };
@@ -83,62 +65,60 @@ function CheckIfDeviceInList(IEEE) {
 };
 
 
-function DrawTable(k) {
-    var txtdev;
-    txtdev = '<div id="TabFile_' + k + '" class="tabcontent">';
-    txtdev += "<table border=1><tr><th>Devices ID</th>";
-    MatrixId = '[';
+function DrawTable(date, data, id) {
+    OutResultContents += '<div id="' + id + '_' + date + '" class="tabcontent2"><div id="tab">';
+    OutResultContents += "<br><H2>" + date + "</H2><table id=LQI_Tab border=1><tr><th>Devices ID</th>";
+    console.log('draw table ' + date + '_' + id);
+    MatrixId[date] = '[';
     for (i = 0; i < Object.keys(LQIlist).length; i++) {
         if (i > 0) {
-            MatrixId += ",";
+            MatrixId[date] += ",";
         }
-        txtdev += "<th>" + LQIlist[orderlist[i][0]] + "</th>";
+        OutResultContents += "<th>" + LQIlist[orderlist[i][0]] + "</th>";
         //MatrixId[i] = LQIlist[orderlist[i][0]];
-        MatrixId += '{ "name" :"' + LQIlist[orderlist[i][0]] + '", "color" : "#' + LQIlist[orderlist[i][0]] + '"}';
+        MatrixId[date] += '{ "name" :"' + LQIlist[orderlist[i][0]] + '", "color" : "#' + LQIlist[orderlist[i][0]] + '"}';
     }
-    MatrixId += "]";
-    txtdev += "</tr>";
-    Matrix = "[";
+    MatrixId[date] += "]";
+    OutResultContents += "</tr>";
+    Matrix[date] = "[";
     for (i = 0; i < Object.keys(LQIlist).length; i++) {
         if (i > 0) {
-            Matrix += ",";
+            Matrix[date] += ",";
         }
-        Matrix += "[";
-        txtdev += "<tr>";
-        txtdev += "<th>" + LQIlist[orderlist[i][0]] + "</th>";
-        console.log("Short adress search (line) : " + LQIlist[i])
+        Matrix[date] += "[";
+        OutResultContents += "<tr>";
+        OutResultContents += "<th>" + LQIlist[orderlist[i][0]] + "</th>";
+        //console.log("Short adress search (line) : " + LQIlist[i])
         for (ii = 0; ii < Object.keys(LQIlist).length; ii++) {
-            console.log("Short adress search (row) : " + LQIlist[ii])
+            //console.log("Short adress search (row) : " + LQIlist[ii])
             if (ii > 0) {
-                Matrix += ",";
+                Matrix[date] += ",";
             }
             if (LQIlist[orderlist[i][0]] == LQIlist[orderlist[ii][0]]) {
-                txtdev += "<th bgcolor='black'>O</th>";
-                Matrix += "0";
-            } else if (LQIlist[orderlist[ii][0]] in LQIdata[LQIlist[orderlist[i][0]]]) {
-                txtdev += "<th bgcolor='green'>Y</th>";
-                Matrix += "1";
-            } else if (LQIlist[orderlist[i][0]] in LQIdata[LQIlist[orderlist[ii][0]]]) {
-                txtdev += "<th bgcolor='green'>Y</th>";
-                Matrix += "1";
+                OutResultContents += "<th bgcolor='black'>O</th>";
+                Matrix[date] += "0";
+            } else if (LQIlist[orderlist[ii][0]] in data[LQIlist[orderlist[i][0]]]) {
+                OutResultContents += "<th bgcolor='green'>Y</th>";
+                Matrix[date] += "1";
+            } else if (LQIlist[orderlist[i][0]] in data[LQIlist[orderlist[ii][0]]]) {
+                OutResultContents += "<th bgcolor='green'>Y</th>";
+                Matrix[date] += "1";
             } else {
-                txtdev += "<th bgcolor='red'>X</th>";
-                Matrix += "0";
+                OutResultContents += "<th bgcolor='red'>X</th>";
+                Matrix[date] += "0";
             };
         };
-        txtdev += "</tr>";
-        Matrix += "]";
+        OutResultContents += "</tr>";
+        Matrix[date] += "]";
     };
-    txtdev += "</table></div>";
-    Matrix += "]";
-    OutResultContents += txtdev;
+    OutResultContents += "</table>";
+    Matrix[date] += "]";
 };
 
-function DrawGraph(j) {
-    var txtdev;
-    txtdev = '<div id="GraphFile_' + j + '" class="tabcontent">';
-    txtdev += '<output id="networkchart"></output>';
-    OutResultContents += txtdev;
+function DrawGraph(date, data, id) {
+    OutResultContents += '<div id="GraphFile_' + id + '_' + date + '">Graph here :';
+    OutResultContents += '<output id="LQI_' + id + '_' + date + '"></output></div></div>';
+    console.log('draw graph ' + date + '_' + id);
 };
 
 
@@ -163,6 +143,26 @@ function openTab(evt, TabName) {
     evt.currentTarget.className += " active";
 }
 
+function openTab2(evt, TabName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent2");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks2");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(TabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
 
 function sortProperties(obj) {
     // convert object into array
@@ -181,57 +181,70 @@ function sortProperties(obj) {
 }
 
 
-function handleFileSelect(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
+function readTXT(file, id, type) {
+    console.log('file read is : ' + file)
+    $.get({
+        url: file,
+        dataType: "text",
+        success: function(data) {
+            if (type == 'LQI') {
+                readLQI(id, data);
+                PrintGraph(id);
+            }
+            if (type == 'Conf') {
+                readConf(id, data);
+            }
+            if (type == 'Network') {
+                readNetwork(id, data);
+            }
+        }
+    });
+};
 
-    var files = evt.dataTransfer.files; // FileList object.
-    var reader = new FileReader();
-
-    var II = 0;
-    OutResultLinks = '<div class="tab">';
-    OutResultLinks += '<button class="tablinks" onclick="openTab(event, `TabDevices`)">Devices</button>';
-    for (var i = 0, f; f = files[i]; i++) {
-        // Closure to capture the file information.
-        reader.onload = (event) => {
-            //LQIlst = '['
-            const file = event.target.result;
-            const allLines = file.split(/\r\n|\n/); // Reading line by line 
-            allLines.map((line) => {
-                //console.log('next line');
-                if (line.replace(/ /g, '') != '') {
-                    LQIlist[II] = line.slice(0, 4);
-                    //LQIlst += "{'shID':'" + line.slice(0, 4) + "'},";
-                    //console.log('LQI :' + LQIlist[II])
-                    LQIdata[LQIlist[II]] = JSON.parse(line.slice(6).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
-                    //console.log('LQI data :' + LQIdata[LQIlist[II]])
-                    II++;
-                    //} else {
-                    //    LQIlst += LQIlst.slice(-1) + "]"
-                };
-            });
+function readLQI(id, data) {
+    // Closure to capture the file information.
+    const allLines = data.split(/\r\n|\n/); // Reading line by line 
+    allLines.map((line) => {
+        if (line.replace(/ /g, '') != '') {
+            LQIdate = line.slice(0, 9);
+            console.log('LQI reports date : ' + LQIdate)
+            LQIdata[LQIdate] = JSON.parse(line.slice(11).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
+            console.log('LQI reports data :' + LQIdata[LQIdate]);
+            LQIlist = Object.keys(LQIdata[LQIdate]);
             // Make Table
             orderlist = sortProperties(LQIlist);
-            OutResultLinks += '<button class="tablinks" onclick="openTab(event, `TabFile_' + i + '`)">TabFile' + i + '</button>';
-            OutResultLinks += '<button class="tablinks" onclick="openTab(event, `GraphFile_' + i + '`)">GraphFile' + i + '</button>';
-            DrawTable(i);
-            DrawGraph(i);
-            OutResultLinks += '</div>';
-            //Print Out result
-            $('#Result').html(OutResultLinks + OutResultContents);
-            //$('#Result').html(OutResultContents);
-            Graph();
+            //OutResultContents += '<div class="tabcontent2">';
+            DrawTable(LQIdate, LQIdata[LQIdate], id);
+            DrawGraph(LQIdate, LQIdata[LQIdate], id);
+            OutResultContents += '</div>';
+            console.log('Next reports (line)');
         };
-        reader.onerror = (evt) => {
-            alert(evt.target.error.name);
-        };
-        reader.readAsText(f);
+    });
+    OutResultLinks += "<div class='LQItab'>"
+
+    for (ii = 0; ii < Object.keys(LQIdata).length; ii++) {
+        var datelist = Object.keys(LQIdata);
+        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`' + id + '_' + datelist[ii] + '`)">' + id + '_' + datelist[ii] + '</button>';
     }
+    OutResultLinks += "</div>"
+        //Print Out result
+    $('#LQIResult').html(OutResultLinks + OutResultContents);
+    //PrintGraph(id);
+}
+
+function readNetwork(id, data) {
+
+    console.log('Network read');
+    // Closure to capture the file information.
+    const allLines = data.split(/\r\n|\n/); // Reading line by line 
+
+    //Print Out result
+    $('#NetResult').html(allLines);
+
 
 }
 
-
-function Graph() {
+function Graph(id, date, matriX, matrixid) {
 
     var width = 720,
         height = 720,
@@ -252,7 +265,8 @@ function Graph() {
     var path = d3.svg.chord()
         .radius(innerRadius);
 
-    var svg = d3.select("#networkchart").append("svg")
+    console.log('d3.select : LQI_' + id + '_' + date);
+    var svg = d3.select('#LQI_' + id + '_' + date).append("svg")
         .attr("width", width)
         .attr("height", height)
         .append("g")
@@ -262,9 +276,11 @@ function Graph() {
     svg.append("circle")
         .attr("r", outerRadius);
 
-    matrix = JSON.parse(Matrix);
-    IEEE = JSON.parse(MatrixId);
     // Compute the chord layout.
+    matrix = JSON.parse(matriX);
+    IEEE = JSON.parse(matrixid);
+    console.log('Graph(' + id + ', ' + date + ', ' + matrix + ', ' + IEEE + ')');
+    console.log('Load matrix ok ');
     layout.matrix(matrix);
 
     // Add a group per neighborhood.
@@ -325,20 +341,43 @@ function Graph() {
 
 }
 
-function handleDragOver(evt) {
-    evt.stopPropagation();
-    evt.preventDefault();
-    evt.dataTransfer.dropEffect = 'copy'; // Explicitly show this is a copy.
+function n(n) {
+    return n > 9 ? "" + n : "0" + n;
 }
 
+function PrintGraph(id) {
+    console.log('Print Graph :' + id + ', data : ' + LQIdata);
+    for (ii = 0; ii < Object.keys(LQIdata).length; ii++) {
+        var datelist = Object.keys(LQIdata);
+        console.log("Graph for :" + id + ', date : ' + datelist[ii]);
+        //console.log('Graph(' + id + ',' + datelist[ii] + ', ' + Matrix[datelist[ii]] + ',' + MatrixId[datelist[ii]] + ');');
+        Graph(id, datelist[ii], Matrix[datelist[ii]], MatrixId[datelist[ii]]);
+    }
+}
 
 $(document).ready(function() {
     $.domoticzurl = ""; //"http://localhost:8080";
-    GetHWId();
-    GetDevs();
-});
+    $.getJSON($.domoticzurl + "/json.htm", {
+            type: "hardware",
+            format: "json"
+        },
+        function(HWdata) {
+            var txtHW = "Zigate absente";
+            if (typeof HWdata.result != 'undefined') {
+                $.each(HWdata.result, function(i, item) {
+                    if (item.Extra == 'Zigate') {
+                        HwIDX = n(item.idx);
+                        txtHW = "HwID : " + HwIDX;
+                    }
+                });
+            }
+            //console.log(txtHW);
+            $('#ZigateHwLoad').html(txtHW);
+            NetworkFile = 'Network_scan-' + HwIDX + '.txt';
+            LQIFile = 'LQI_reports-' + HwIDX + '.txt';
+            GetDevs(HwIDX);
+            readTXT(ReportsFolder + LQIFile, HwIDX, "LQI");
+            readTXT(ReportsFolder + NetworkFile, HwIDX, "Network");
 
-// Setup the dnd listeners.
-var dropZone = document.getElementById('drop_zone');
-dropZone.addEventListener('dragover', handleDragOver, false);
-dropZone.addEventListener('drop', handleFileSelect, false);
+        });
+});
