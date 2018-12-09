@@ -331,8 +331,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "LvlControl" and self.ListOfDevices[NWKID][
-                'Model'] == "shutter.Profalux":  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
+            if t == "LvlControl" and self.ListOfDevices[NWKID]['Manufacturer'] == "1110":  
+                # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
+                # 'ProfileID': '0104', 'ZDeviceID': '0200', 'Manufacturer': '1110'
+
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
@@ -344,8 +346,8 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "LvlControl" and self.ListOfDevices[NWKID][
-                'Model'] != "shutter.Profalux":  # variateur de luminosite + On/off
+            if t == "LvlControl" and self.ListOfDevices[NWKID]['Manufacturer'] != "1110":  
+                # variateur de luminosite + On/off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
@@ -732,6 +734,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                             return  # We just expect 01 , in case of other value nothing to do
 
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
+                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
+                            %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
                     if Devices[x].SwitchType == 16:
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
@@ -742,12 +746,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                                 UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else:
                         if value == "00":
-                            Domoticz.Log("Devices[%s].nValue: %s, Devices[%s].sValue: %s" %( x, Devices[x].nValue, x, Devices[x].sValue))
                             UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                         else:
-                            Domoticz.Log("Devices[%s].nValue: %s, Devices[%s].sValue: %s" %( x, Devices[x].nValue, x, Devices[x].sValue))
-                            UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
-
+                            if Devices[x].sValue == "Off":
+                                # We do update only if this is a On/off
+                                UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
