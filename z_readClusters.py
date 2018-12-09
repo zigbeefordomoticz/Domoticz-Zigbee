@@ -104,9 +104,11 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
             decode = binascii.unhexlify(Attribute).decode('utf-8')
         except:
             if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
+                Domoticz.Log("decodeAttribute - seems errors, so returning empty")
                 decode = ''
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
+                Domoticz.Log("decodeAttribute - seems errors, returning with errors ignore")
         return decode
     else:
         Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
@@ -352,7 +354,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
     else:
-        Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
+        Domoticz.Debug("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
                 str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
 
@@ -373,7 +375,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004":
         value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-        Domoticz.Log("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
+        Domoticz.Debug("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
                 " decoded: " + str(value) )
     else:
         Domoticz.Debug("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu: " + MsgAttrID + " / " + MsgClusterData)
