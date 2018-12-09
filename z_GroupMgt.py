@@ -326,6 +326,23 @@ class GroupsManagement(object):
     def remove_device_from_all_group(self):
         pass
 
+    def processRemoveGroup( self, unit, grpid):
+
+        # Remove all devices from the corresponding group
+        if grpid not in self.ListOfGroups:
+            return
+
+        # Remove the Domo Device
+        idx = 0
+        for iterDev in self.ListOfGroups[grpid]['Devices']:
+            for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[grpid]['Devices']:
+                Domoticz.Log("_processListOfGroups - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
+                self.ListOfGroups[grpid]['Devices'][idx][2] = 'Remove' 
+        self.ListOfGroups[grpid]['Grp Status'] = 'Remove'
+        self.stillWIP = True
+        return
+
+
     def load_groupsConfig(self):
         ' This is to import User Defined/Modified Groups of Devices for processing in the hearbeatGroupMgt'
 
@@ -554,9 +571,9 @@ class GroupsManagement(object):
                             break
                     else:
                         #DO not exist in Domoticz, let's create a widget
-                        Domoticz.Log("_processListOfGroups - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                         if self.ListOfGroups[iterGrp]['Name'] == '':
                             self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
+                        Domoticz.Log("_processListOfGroups - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                         self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
             else:
                 Domoticz.Log("_processListOfGroups - unknown status: %s for group: %s." \
@@ -642,11 +659,3 @@ class GroupsManagement(object):
         return
 
 
-    def processRemoveGroup( self, unit, nwkid):
-
-
-        # Remove all devices from the corresponding group
-
-        # Remove the Domo Device
-
-        return
