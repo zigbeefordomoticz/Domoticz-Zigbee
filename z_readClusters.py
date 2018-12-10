@@ -321,18 +321,24 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Magic Cube Xiaomi rotation and Power Meter
 
-    Domoticz.Debug("ReadCluster - ClusterID=000C - MsgAttrID = " +str(MsgAttrID) + " value = " + str(MsgClusterData) + " len = " +str(len(MsgClusterData)))
+    Domoticz.Debug("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
     if MsgAttrID=="0055":
         # Are we receiving Power
         EPforPower = z_tools.getEPforClusterType( self, MsgSrcAddr, "Power" ) 
         EPforMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = z_tools.getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
-
-
         Domoticz.Debug("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
+            if struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0] < 0:
+                #anti-clokc
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="90"
+                z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"90")
+            if struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0] >= 0:
+                # Clock
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
+                z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
         elif len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
@@ -350,8 +356,8 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID=="ff05": # Rotation - horinzontal
         Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
-        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
+        #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
+        #z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
     else:
         Domoticz.Debug("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
@@ -393,7 +399,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return ''
 
     Domoticz.Error("ReadCluster 0101 not fully implemented, please contact us on https://github.com/sasu-drooz/Domoticz-Zigate" )
-    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp + +" Attribute Type:" + MsgAttType + " Attribute : " + MsgAttrID )
+    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp + " Attribute Type:" + MsgAttType + " Attribute : " + MsgAttrID )
 
     if MsgAttrID == "0000":          # Lockstate
         Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
