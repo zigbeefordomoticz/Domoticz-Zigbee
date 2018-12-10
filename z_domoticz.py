@@ -853,6 +853,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                     data = "09"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
 
+            if ClusterType == DeviceType == "Vibration":
+                    if value =="00":
+                        data = 0
+                        state = "00"
+                    elif value == "10":
+                        data = 1
+                        state = "10"
+                    elif value == "20":
+                        data = 2
+                        state = "20"
+                    elif value == "30":
+                        data = 3
+                        state = "30"
+                    else:
+                        data = 0
+                        state = "00"
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+
             if ClusterType == DeviceType == "Lux":
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
 
