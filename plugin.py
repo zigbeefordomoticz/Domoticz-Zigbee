@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.0.0" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="dev groupmgt" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <params>
         <param field="Mode1" label="Model" width="75px">
             <options>
@@ -96,7 +96,7 @@ class BasePlugin:
         return
 
     def onStart(self):
-        Domoticz.Status("onStart called - Zigate plugin V 4.0.0")
+        Domoticz.Status("onStart called - Zigate plugin V Dev Group Management")
 
         Domoticz.Heartbeat( z_consts.HEARTBEAT )
 
@@ -110,7 +110,18 @@ class BasePlugin:
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
 
+        Domoticz.Log("HomeFolder: %s" %Parameters["HomeFolder"])
+
+        Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
+        Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
+        Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
         # Import PluginConf.txt
+        if Parameters["DomoticzVersion"] >= '4.10267':
+            Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
+            Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
+
+
+
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
@@ -197,10 +208,8 @@ class BasePlugin:
         
     def onConnect(self, Connection, Status, Description):
         Domoticz.Status("onConnect called")
-        global isConnected
 
         if (Status == 0):
-            isConnected = True
             Domoticz.Log("Connected successfully")
             if Parameters["Mode3"] == "True":
                 ################### ZiGate - ErasePD ##################
@@ -237,6 +246,10 @@ class BasePlugin:
         z_input.ZigateRead( self, Devices, Data )
 
     def onCommand(self, Unit, Command, Level, Color):
+
+        if  self.HeartbeatCount < ( 60 // z_consts.HEARTBEAT ):
+            Domoticz.Log("onCommand receive a command, but plugin not yet ready to handle it")
+            return False
 
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:

@@ -280,8 +280,8 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Aqara" or t == "XCube":  # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||||||||",
-                           "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation",
+                Options = {"LevelActions": "||||||||||",
+                           "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
                            "LevelOffHidden": "true", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
@@ -802,7 +802,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "03":  # Magic Cube Acara Rotation
-                Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value))
+                state = value
+                data = value
+                if value == "80":
+                    data = 8
+                elif value == "90":
+                    data = 9
+                Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "XCube" and Ep == "02":  # cube xiaomi
@@ -810,11 +816,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                     state = "10"
                     data = "01"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
-                elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205":  # tap
+                elif value in ( "0204", "0200", "0203", "0201", "0202", "0205" ):
                     state = "50"
                     data = "05"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
-                elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105":  # Slide
+                elif value in ( "0103", "0100", "0104", "0101", "0102", "0105"): # Slide/M%ove
                     state = "20"
                     data = "02"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
