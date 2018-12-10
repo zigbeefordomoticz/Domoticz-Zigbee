@@ -315,6 +315,42 @@ def ReadAttributeRequest_0702(self, key):
     Domoticz.Debug("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
+
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+
+    addr_mode = "02" # Short address
+    direction = "00"
+    lenght = "01" # Only 1 attribute
+    datas = addr_mode + key + EPin + EPout + clusterID 
+    datas += direction + manuf_spec + manuf_id
+    datas += lenght +attribute + data_type + data
+    sendZigateCmd(self, "0110", str(datas) )
+
+def setXiaomiVibrationSensibility( self, key, sensibility = 'medium'):
+
+    VIBRATION_SENSIBILITY = { 'high':0x01, 'medium':0x0B, 'low':0x15}
+
+    if sensibility not in VIBRATION_SENSIBILITY:
+        sensibility = 'medium'
+
+    manuf_id = "115F"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0000
+    attribute = "%04x" %0xFF0D
+    data_type = "20" # Int8
+    data = "%02x" %VIBRATION_SENSIBILITY[sensibility]
+    write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+
+def setIASzoneControlerIEEE( self, key ):
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0500
+    attribute = "%04x" %0x0010
+    data_type = "F0" # ZigBee_IeeeAddress = 0xf0
+    data = str(self.ZigateIEEE)
+    write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+
 def removeZigateDevice( self, IEEE ):
     # remove a device in Zigate
     # Key is the short address of the device
