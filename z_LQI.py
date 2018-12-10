@@ -94,19 +94,26 @@ def LQIcontinueScan(self):
                     Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
                         %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], int(self.LQI[src][child]['_depth'], 16), int(self.LQI[src][child]['_lnkqty'], 16), self.LQI[src][child]['_rxonwhenidl']))
                 except:
-                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
-                            %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], int(self.LQI[src][child]['_depth'], 16), 0, self.LQI[src][child]['_rxonwhenidl']))
                     Domoticz.Log(" linkQty: " +str(self.LQI[src][child]['_lnkqty']))
+                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2s linkQty     Rx-Idl %6s" \
+                            %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
 
         # Write the report onto file
         _filename = self.pluginconf.logRepo + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
         storeLQI = {}
         storeLQI[int(time.time())] = self.LQI
-        Domoticz.Status("LQI report save on " +str(_filename))
-        with open(_filename , 'at') as file:
-            for key in storeLQI:
-                file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
-        self.pluginconf.logLQI = 0
+
+        if os.path.isdir( self.pluginconf.logRepo ) :
+            Domoticz.Status("LQI report save on " +str(_filename))
+            with open(_filename , 'at') as file:
+                for key in storeLQI:
+                    file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
+            self.pluginconf.logLQI = 0
+        else:
+            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.logRepo))
+            self.pluginconf.logLQI = 0
+            return 
+
 
 def mgtLQIreq(self, nwkid='0000', index=0):
     """
