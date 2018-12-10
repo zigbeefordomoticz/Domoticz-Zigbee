@@ -393,29 +393,43 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
         if value == '' or value is None:
             return value
-        if   value == "0001": return 'Take'
-        elif value == "0002": return 'Tilt' # we will most-likely receive 0x0054 after
-        elif value == "0003": return 'Drop'
-        return ''
+        if   value == "0001": return '20' # Take/Vibrate
+        elif value == "0002": return '10' # we will most-likely receive 0x0503/0x0054 after
+        elif value == "0003": return '30' #Drop
+        return '00'
 
-    Domoticz.Error("ReadCluster 0101 not fully implemented, please contact us on https://github.com/sasu-drooz/Domoticz-Zigate" )
-    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp + " Attribute Type:" + MsgAttType + " Attribute : " + MsgAttrID )
+    Domoticz.Log("ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, Attribute: %s" \
+            %( +MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData))
 
     if MsgAttrID == "0000":          # Lockstate
         Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
+
     elif MsgAttrID == "0001":         # Locktype
         Domoticz.Log("ReadCluster 0101 - Dev: Lock type "  + str(MsgClusterData))
+
     elif MsgAttrID == "0002":         # Enabled
         Domoticz.Log("ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData))
 
-    elif MsgAttrID == "0508" or MsgAttrID == "0055" or MsgAttrID == "0503":   # Aqara Vibration
+    elif MsgAttrID ==  "0055":   # Aqara Vibration
         Domoticz.Log("ReadCluster 0101 - Aqara Vibration - Attribute: %s" %(MsgClusterData) )
-        if MsgAttType == "21": # Uint16
-            value = decode_vibr( MsgClusterData )
-            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
-        else:
-            Domoticz.Debug("ReadCluster 0101 - Aqara Vibration receiveving unknown command: %s " %(MsgAttrID) )
+        # "LevelNames": "Off|Tilt|Vibrate|Free Fall"
+        state = decode_vibr( MsgClusterData )
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
+
+    elif MsgAttrID == "0503":   # Aqara Vibration
+        if MsgClusterData == "0054": # Following Tilt
+            pass
+
+    elif MsgAttrID == "0505":   # Aqara Vibration
+        if MsgClusterData == "00CA0000":
+            pass
+
+    elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode 
+        pass
+
+    else:
+        Domoticz.Debug("ReadCluster 0101 - unknown AtttrID: %s Attribute: %s" %(MsgAttrID, MsgClusterData) )
         
 
 
