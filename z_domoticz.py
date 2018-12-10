@@ -282,7 +282,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "||||||||||",
                            "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
-                           "LevelOffHidden": "true", "SelectorStyle": "0"}
+                           "LevelOffHidden": "true", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
@@ -296,7 +296,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Vibration":  # Aqara Vibration Sensor v1
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Tilt|Vibrate|Free Fall", \
-                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
