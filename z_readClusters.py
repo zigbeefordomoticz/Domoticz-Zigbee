@@ -399,7 +399,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return '00'
 
     Domoticz.Log("ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, Attribute: %s" \
-            %( +MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData))
+            %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData))
 
     if MsgAttrID == "0000":          # Lockstate
         Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
