@@ -3,29 +3,31 @@
 ## xx xxx 2018 - Version x.x.
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
 - [Issue] Make Motion Resetdevice customizable via a PluginConf parameter #270
+- [Enhancement] Add Clock and Anti-clokc rotation tabs for XCube. This will require a remove and re-inclusion of the device #282, #281
+- [Enhancement] Discover group membership from each main powered devices which also have cluster 0x0004
 
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
 - [Technical] Refactor the inclusion/discovery and domoticz widget creation
-- [Enhacement] Automaticaly handle Bulbe ColorMode in order to create the corresponding Widget WW, RGB or LED
+- [Enhancement] Automaticaly handle Bulbe ColorMode in order to create the corresponding Widget WW, RGB or LED
 - [Technical] Manage ConfigureReporting and ReadAttributes errors in the way that we do not ask anymore.
 - [Hardware] Salus SP600 plug (power reporting will required a firmware update of Zigate)
 - [Hardware] WXKG03LM Aqara wireles switch single button (using Cluster 0x0012)
-- [Enhacement] Improve stats report at plugin exit
+- [Enhancement] Improve stats report at plugin exit
 - [Hardware] Adding more IKEA Tradfri bulbes
 - [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode. 
 - [Enhancement] When commissioning is over and the Domoticz device is created, ZLL device will blink
 - [Issue] In case the Domoticz widget creation failed, plugin test the return of the Create() and in case of error report in the log
 - [Issue] Fix some potential problem when receiveing and empty EP
 - [Issue] Fix a potential issue when requetsing a Configure reporting on an non-ready cluster
-- [Enhacement] Introducing a PluginConf parameter for tracking readCluster incoming message
+- [Enhancement] Introducing a PluginConf parameter for tracking readCluster incoming message
 - [Technical] reducing log level, and reducing Debug level
-- [Enhacement] Elaborate the correct Color widget based on Color Mode and ProfileID/ZDeviceID
+- [Enhancement] Elaborate the correct Color widget based on Color Mode and ProfileID/ZDeviceID
 - [Technical] Filtering out Commissiong ProfileID/ZDeviceID
 - [Hardware] Certification (@d2e2n2o) of XCube, lumi.sensor_switch.aq2, lumi.sensor_86sw1, lumi.sensor_86sw2, lumi.ctrl_ln2, TRADFRI bulb E27 WS opal 950lm, TRADFRI control outlet
 - [Technical] Set the frequency of Network test to hourly
-- [Enhacement] When stoping the Plugin , Transmission statistics will be print out
+- [Enhancement] When stoping the Plugin , Transmission statistics will be print out
 - [Technical] Introduce a Constants file.
 - [Enhancement] #266 send identify message when completing the commissioning and get devices created.
 - [Enhancement] Get async status of switches and plug 
@@ -42,9 +44,9 @@
 - [Technical] Randomize the time when Read Attribute Req will be sent. This will distribute the load of those recurring tasks.
 - [Technical] Implementation of Configure Reporting
 - [Technical] Implementation of bind and unbind commands ( needed for Configure reporting)
-- [Enhacement] Configure Reporting enabled by default on Clsuter 0x0006 , 0x0008, 0x0702
+- [Enhancement] Configure Reporting enabled by default on Clsuter 0x0006 , 0x0008, 0x0702
 - [Technical] Implementation of Send Signal to get the Device visible. (if available)
-- [Enhacement] Implement Software Reset of Zigate - Called at startup if enable in the Plugin menu
+- [Enhancement] Implement Software Reset of Zigate - Called at startup if enable in the Plugin menu
 - [Hardware] Xiaomi Plug - enabling power and meter reporting
 - [Technical] control of Command versus status response
 - [Technical] control of SQN on messages from battery powered devices. In case of out of sequence a message is logged
