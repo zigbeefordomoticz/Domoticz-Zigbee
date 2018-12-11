@@ -17,6 +17,7 @@ import struct
 import json
 import queue
 import time
+import json
 
 import z_domoticz
 import z_tools
@@ -1091,6 +1092,12 @@ def Decode804A(self, MsgData) : # Management Network Update response
     with open(_filename , 'at') as file:
         for key in nwkscan:
             file.write(str(key) + ": " + str(nwkscan[key]) + "\n")
+
+    json_filename = _filename + ".json"
+    with open( json_filename , 'at') as json_file:
+        json.dump( nwkscan, json_file)
+
+
     return
 
 def Decode804B(self, MsgData) : # System Server Discovery response
