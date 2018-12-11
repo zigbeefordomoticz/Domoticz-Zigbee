@@ -419,14 +419,18 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0503":   # Aqara Vibration
         if MsgClusterData == "0054": # Following Tilt
-            pass
+            state = "10"
+            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
     elif MsgAttrID == "0505":   # Aqara Vibration
         if MsgClusterData == "00CA0000":
             pass
 
     elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode 
-        pass
+        state = "00"
+        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
     else:
         Domoticz.Debug("ReadCluster 0101 - unknown AtttrID: %s Attribute: %s" %(MsgAttrID, MsgClusterData) )
