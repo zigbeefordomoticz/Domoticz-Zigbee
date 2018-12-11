@@ -76,10 +76,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.ListOfDevices[NWKID]['RIA']="99"
                     break
             return
-    if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
-        Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
-                %(NWKID, self.pluginconf.vibrationAqarasensitivity))
-        z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
     # 0x8045 is providing the list of active EPs we will so request EP descriptor for each of them
     if status == "8045": # Status is set in Decode8045 (z_input)
@@ -163,13 +159,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
             Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
 
-            # IAS Zone / Mostlikley Status is 0x8053, but it could also be Model set and we have populated the information from DeviceConf
-            if 'Ep' in self.ListOfDevices[NWKID]:
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                        z_output.setIASzoneControlerIEEE( self, NWKID, iterEp)
-                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
 
             IsCreated=False
             x=0
@@ -189,12 +178,34 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if IsCreated == False:
                 Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
                 z_domoticz.CreateDomoDevice(self, Devices, NWKID)
-                z_output.processConfigureReporting( self, NWKID )  # Configure Reporting for that device
+
+                # Post creation widget
+
+
+                # 1 Enable Configure Reporting for any applicable cluster/attributes
+                z_output.processConfigureReporting( self, NWKID )  
+
+                # Identify for ZLL compatible devices
+                # Search for EP to be used 
                 ep = '01'
                 for ep in self.ListOfDevices[NWKID]['Ep']:
                     if ep in ( '01', '03', '09' ):
                         break
                 z_output.identifyEffect( self, NWKID, ep , effect='Blink' )
+
+                # IAS Zone / Mostlikley Status is 0x8053, but it could also be Model set and we have populated the information from DeviceConf
+                if 'Ep' in self.ListOfDevices[NWKID]:
+                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                        if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                            # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                            z_output.setIASzoneControlerIEEE( self, NWKID, iterEp)
+                            Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
+    
+                # Set the sensitivity for Xiaomi Vibration
+                #if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
+                #     Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
+                #            %(NWKID, self.pluginconf.vibrationAqarasensitivity))
+                #     z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
