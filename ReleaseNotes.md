@@ -5,6 +5,7 @@
 - [Issue] Make Motion Resetdevice customizable via a PluginConf parameter #270
 - [Enhancement] Add Clock and Anti-clokc rotation tabs for XCube. This will require a remove and re-inclusion of the device #282, #281
 - [Enhancement] Discover group membership from each main powered devices which also have cluster 0x0004
+- [Hardware] NEXBANG Wireless Door Windows sensor Alarm Home WIFI Security Door (#287)
 
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
