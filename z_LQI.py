@@ -115,6 +115,7 @@ def LQIcontinueScan(self):
             json_filename = _filename + ".json"
             with open( json_filename, 'at') as json_file:
                 json.dump( storeLQI, json_file)
+                json_file.write('\n')
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.logRepo))
             self.pluginconf.logLQI = 0
