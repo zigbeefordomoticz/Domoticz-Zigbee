@@ -29,5 +29,7 @@ Moving from this channel to the other will required either ar restart from scrat
 ## How to switch from one channel to the other
 
 `git pull`
+
 `git checkout stable  // will move you to the stable channel`
+
 `git checkout beta    // will move you to the beta channel`
