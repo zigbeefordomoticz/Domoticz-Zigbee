@@ -341,7 +341,7 @@ def setXiaomiVibrationsensitivity( self, key, sensitivity = 'medium'):
     data = "%02x" %VIBRATION_SENSIBILITY[sensitivity]
     write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
-def setIASzoneControlerIEEE( self, key ):
+def setIASzoneControlerIEEE( self, key, Epout ):
 
     manuf_id = "0000"
     manuf_spec = "00"
@@ -349,7 +349,7 @@ def setIASzoneControlerIEEE( self, key ):
     attribute = "%04x" %0x0010
     data_type = "F0" # ZigBee_IeeeAddress = 0xf0
     data = str(self.ZigateIEEE)
-    write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    write_attribute( self, key, "01", Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def removeZigateDevice( self, IEEE ):
     # remove a device in Zigate

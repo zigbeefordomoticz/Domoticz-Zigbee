@@ -163,6 +163,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
             Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
 
+            # IAS Zone / Mostlikley Status is 0x8053, but it could also be Model set and we have populated the information from DeviceConf
+            if 'Ep' in self.ListOfDevices[NWKID]:
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                        z_output.setIASzoneControlerIEEE( self, NWKID, iterEp)
+                        Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
+
             IsCreated=False
             x=0
             # Let's check if the IEEE is not known in Domoticz
