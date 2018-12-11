@@ -1095,8 +1095,8 @@ def Decode804A(self, MsgData) : # Management Network Update response
 
     json_filename = _filename + ".json"
     with open( json_filename , 'at') as json_file:
-        json.dump( nwkscan, json_file)
         json_file.write('\n')
+        json.dump( nwkscan, json_file)
 
     return
 
