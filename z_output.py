@@ -112,7 +112,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
 
     # Init the ReadAttribute structutre if not existing
-    # Check if Configure Reporting has to be reset
+    # Check if ReadAttribute has to be reset
     if self.pluginconf.forceReadAttributes:
         self.ListOfDevices[addr]['ReadAttributes'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
@@ -141,8 +141,10 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         weight = 1
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' :
+            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
+                    self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {} :
                 return
+        # Attributes was either '00' or {}
     else:
         lenAttr = len(ListOfAttributes)
         weight = int ((lenAttr ) / 2) + 1
@@ -481,7 +483,8 @@ def processConfigureReporting( self, NWKID=None ):
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
                     if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
                         if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != '00':
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != '00' and \
+                                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
                                 continue
                         else:
                             self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
