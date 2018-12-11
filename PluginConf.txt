@@ -1,5 +1,6 @@
 {
 'channel':'0',
+'vibrationAqarasensitivity':'medium',
 'resetMotiondelay':'30',
 'enablegroupmanagement':'0',
 'allowRemoveZigateDevice':'0',

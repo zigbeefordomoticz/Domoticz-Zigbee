@@ -40,6 +40,7 @@ class PluginConf:
         self.resetMotiondelay = 30
         self.enablegroupmanagement = 0
         self.filename = None
+        self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
 
         # Import PluginConf.txt
 
@@ -55,6 +56,9 @@ class PluginConf:
         Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
 
         self.PluginConf = eval(tmpPluginConf)
+
+        if self.PluginConf.get('vibrationAqarasensitivity'):
+            self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
 
         if self.PluginConf.get('logRepo'):
             self.logRepo = self.PluginConf['logRepo']

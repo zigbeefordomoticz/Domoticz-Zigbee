@@ -76,6 +76,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.ListOfDevices[NWKID]['RIA']="99"
                     break
             return
+    if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
+        Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
+                %(NWKID, self.pluginconf.vibrationAqarasensitivity))
+        z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
     # 0x8045 is providing the list of active EPs we will so request EP descriptor for each of them
     if status == "8045": # Status is set in Decode8045 (z_input)

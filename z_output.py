@@ -326,19 +326,19 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += lenght +attribute + data_type + data
     sendZigateCmd(self, "0110", str(datas) )
 
-def setXiaomiVibrationSensibility( self, key, sensibility = 'medium'):
+def setXiaomiVibrationsensitivity( self, key, sensitivity = 'medium'):
 
     VIBRATION_SENSIBILITY = { 'high':0x01, 'medium':0x0B, 'low':0x15}
 
-    if sensibility not in VIBRATION_SENSIBILITY:
-        sensibility = 'medium'
+    if sensitivity not in VIBRATION_SENSIBILITY:
+        sensitivity = 'medium'
 
     manuf_id = "115F"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0000
     attribute = "%04x" %0xFF0D
     data_type = "20" # Int8
-    data = "%02x" %VIBRATION_SENSIBILITY[sensibility]
+    data = "%02x" %VIBRATION_SENSIBILITY[sensitivity]
     write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def setIASzoneControlerIEEE( self, key ):
