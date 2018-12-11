@@ -15,6 +15,7 @@ import queue
 import datetime
 import time
 import os.path
+import json
 
 import Domoticz
 import z_output
@@ -110,6 +111,10 @@ def LQIcontinueScan(self):
                 for key in storeLQI:
                     file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
             self.pluginconf.logLQI = 0
+
+            json_filename = _filename + ".json"
+            with open( json_filename, 'at') as json_file:
+                json.dump( storeLQI, json_file)
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.logRepo))
             self.pluginconf.logLQI = 0
