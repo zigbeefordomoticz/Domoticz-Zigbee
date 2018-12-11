@@ -14,6 +14,7 @@ import Domoticz
 import z_tools
 import os.path
 import datetime
+import json
 
 
 def _copyfile( source, dest ):
@@ -79,9 +80,15 @@ def WriteDeviceList(self, Folder, count):
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
+
+        json_filename = self.DeviceListName + ".json"
+        with open (json_filename, 'wt') as json_file:
+            json.dump(self.ListOfDevices, json_file)
     else :
         Domoticz.Debug("HB count = " + str(self.HBcount))
         self.HBcount=self.HBcount+1
+
+
 
 
 def importDeviceConf( self ) :
