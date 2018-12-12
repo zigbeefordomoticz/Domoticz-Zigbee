@@ -61,6 +61,7 @@ import z_command
 import z_LQI
 import z_consts
 
+from z_IAS import IAS_Zone_Management
 from z_PluginConf import PluginConf
 from z_Transport import ZigateTransport
 from z_TransportStats import TransportStatistics
@@ -85,6 +86,7 @@ class BasePlugin:
         self.transport = ''         # USB or Wifi
         self.pluginconf = None     # PlugConf object / all configuration parameters
         self.statistics = None
+        self.iaszonemgt = None      # Object to manage IAS Zone
         self.Key = ''
         self.HBcount=0
         self.HeartbeatCount = 0
@@ -158,8 +160,10 @@ class BasePlugin:
         Domoticz.Debug("ListOfDevices after checkListOfDevice2Devices: " +str(self.ListOfDevices) )
         Domoticz.Debug("IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
 
-        # Create Statistics project
+        # Create Statistics object
         self.statistics = TransportStatistics()
+
+
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
@@ -174,18 +178,16 @@ class BasePlugin:
 
         Domoticz.Log("Establish Zigate connection" )
         self.ZigateComm.openConn()
-
-
         return
 
     def onStop(self):
+
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
         if self.groupmgt:
             self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
-
 
     def onDeviceRemoved( self, Unit ) :
         Domoticz.Status("onDeviceRemoved called" )
@@ -232,6 +234,10 @@ class BasePlugin:
         if self.pluginconf.enablegroupmanagement:
             Domoticz.Log("Start Group Management")
             self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+
+        # Create IAS Zone object
+        self.iaszonemgt = IAS_Zone_Management( self.ZigateComm )
+
 
         if (self.pluginconf).logLQI != 0 :
             z_LQI.LQIdiscovery( self ) 
@@ -298,6 +304,9 @@ class BasePlugin:
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeatGroupMgt()
+
+        # IAS Zone Management
+        self.iaszonemgt.IAS_heartbeat( )
 
         # Check if we still have connectivity. If not re-established the connectivity
         self.ZigateComm.reConn()

@@ -528,6 +528,18 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == "0000":
         Domoticz.Log("ReadCluster0500 - receiving attribute 0x0000: %s" %MsgClusterData)
 
+    elif MsgAttrID == "0001":
+        Domoticz.Log("ReadCluster0500 - receiving attribute 0x0001: %s" %MsgClusterData)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+
+    elif MsgAttrID == "0002":
+        Domoticz.Log("ReadCluster0500 - receiving attribute 0x0002: %s" %MsgClusterData)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+
+    elif MsgAttrID == "0010":
+        Domoticz.Log("ReadCluster0500 - receiving attribute 0x0010: %s" %MsgClusterData)
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 7, MsgClusterData)
+
     Domoticz.Log("ReadCluster0500 - zoneStatus: %s extendedStatus: %s zoneId: %s delay: %s" \
             %(zoneStatus, extendedStatus, zoneId, delay))
 

@@ -26,6 +26,9 @@ import z_output
 import z_readClusters
 import z_LQI
 
+
+from z_IAS import IAS_Zone_Management
+
 def ZigateRead(self, Devices, Data):
     Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
 
@@ -552,6 +555,8 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
 
+    self.iaszonemgt.setZigateIEEE( extaddr )
+
     Domoticz.Status("Decode8009 : Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
 
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
@@ -636,6 +641,7 @@ def Decode8024(self, MsgData) : # Network joined / formed
     if MsgExtendedAddress != '' and MsgShortAddress != '':
         self.ZigateIEEE = MsgExtendedAddress
         self.ZigateNWKID = MsgShortAddress
+        self.iaszonemgt.setZigateIEE( extaddr )
 
     if MsgDataStatus == "00": 
         Status = "Joined existing network"
@@ -1311,7 +1317,8 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
 
     Domoticz.Log("Decode8110 - Write Attribute Response - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
     Domoticz.Log("Decode8110 - Calling ReadCluster(%s - %s - %s)" %(MsgAttType, MsgAttSize, MsgClusterData))
-    z_readClusters.ReadCluster(self, Devices, MsgData) 
+    #z_readClusters.ReadCluster(self, Devices, MsgData) 
+    self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
 
     return
 

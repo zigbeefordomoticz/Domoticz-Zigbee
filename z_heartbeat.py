@@ -18,11 +18,12 @@ import json
 import queue
 
 import z_output
-import z_IAS
 import z_tools
 import z_domoticz
 import z_LQI
 import z_consts
+
+from z_IAS import IAS_Zone_Management
 
 
 def processKnownDevices( self, NWKID ):
@@ -199,11 +200,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     for iterEp in self.ListOfDevices[NWKID]['Ep']:
                         if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                            z_IAS.setIASzoneControlerIEEE( self, NWKID, iterEp)
-                            z_IAS.readConfirmEnroll( self, NWKID, iterEp)
-                            #z_IAS.IASZone_enroll_response_zoneID( self, NWKID, iterEp)
-                            z_IAS.IASZone_attributes( self, NWKID, iterEp)
                             Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
+                            self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
     
                 # Set the sensitivity for Xiaomi Vibration
                 if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
