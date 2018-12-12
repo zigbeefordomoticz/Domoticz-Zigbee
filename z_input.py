@@ -282,6 +282,7 @@ def ZigateRead(self, Devices, Data):
         
     elif str(MsgType)=="8110":  #
         Domoticz.Log("ZigateRead - MsgType 8110 - Reception Write attribute response : " + Data)
+        Decode8110( self, Devices, MsgData)
         return
 
     elif str(MsgType)=="8120":  #
@@ -317,7 +318,7 @@ def ZigateRead(self, Devices, Data):
 
 #IAS Zone
 def Decode8401(self, Devices, MsgData) : # Reception Zone status change notification
-    Domoticz.Debug("Decode8401 - Reception Zone status change notification : " + MsgData)
+    Domoticz.Log("Decode8401 - Reception Zone status change notification : " + MsgData)
     MsgSQN=MsgData[0:2]            # sequence number: uint8_t
     MsgEp=MsgData[2:4]            # endpoint : uint8_t
     MsgClusterId=MsgData[4:8]        # cluster id: uint16_t
@@ -337,7 +338,17 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 
     ## CLD CLD
-    Model =  self.ListOfDevices[MsgSrcAddr]['Model']
+    Model = ''
+    if MsgSrcAddr in self.ListOfDevices:
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            Model =  self.ListOfDevices[MsgSrcAddr]['Model']
+    else:
+        Domoticz.Log("Decode8401 - receive a message for an unknown device %s : %s" %( MsgSrcAddr, MsgData))
+        return
+
+    Domoticz.Log("Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s" \
+            %( MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay))
+
     if Model == "PST03A-v2.2.5" :
         # bit 3, battery status (0=Ok 1=to replace)
         iData = int(MsgZoneStatus,16) & 8 >> 3                 # Set batery level
@@ -1288,7 +1299,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         #self.ListOfDevices[MsgSrcAddr]['MacCapa']= "0"
     return
 
-def Decode8110(self, MsgData) :  # Write Attribute response
+def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1298,7 +1309,10 @@ def Decode8110(self, MsgData) :  # Write Attribute response
     MsgAttSize=MsgData[20:24]
     MsgClusterData=MsgData[24:len(MsgData)]
 
-    Domoticz.Debug("Decode8110 - Write Attribute Response - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
+    Domoticz.Log("Decode8110 - Write Attribute Response - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
+    Domoticz.Log("Decode8110 - Calling ReadCluster(%s)" %(MsgData))
+    z_readClusters.ReadCluster(self, Devices, MsgData) 
+
     return
 
 def Decode8120(self, MsgData) :  # Configure Reporting response
