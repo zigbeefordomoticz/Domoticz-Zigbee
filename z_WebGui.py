@@ -30,7 +30,7 @@ def CheckForUpdate( self ) :
     for l in listOfFiles:
         fileOld=DomoticzWWWFolder + "/zigate/" + l
         Domoticz.Log("Old file : " + fileOld)
-        fileNew=self.homedirectory + "/www/zigate/" + l
+        fileNew=self.homedirectory + "www/zigate/" + l
         Domoticz.Log("New file : " + fileNew)
         if os.path.isfile( fileOld ):
             if CheckVersion( fileNew ) >> CheckVersion( fileOld ) :
@@ -53,6 +53,7 @@ def CheckForUpdate( self ) :
 
 def CheckVersion( file ) :
     version=""
+    Domoticz.Log("Reading " + file + "'s version")
     with open( file ) as f:
         first_line = f.readline()
         Domoticz.Log("firstline : " + str(first_line))
