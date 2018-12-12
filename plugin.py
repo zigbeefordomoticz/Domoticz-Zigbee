@@ -60,6 +60,7 @@ import z_domoticz
 import z_command
 import z_LQI
 import z_consts
+import z_WebGui
 
 from z_IAS import IAS_Zone_Management
 from z_PluginConf import PluginConf
@@ -115,12 +116,14 @@ class BasePlugin:
         Domoticz.Log("HomeFolder: %s" %Parameters["HomeFolder"])
 
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
+        self.DomoticzVersion = Parameters["DomoticzVersion"]
         Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
         Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
         # Import PluginConf.txt
         if Parameters["DomoticzVersion"] >= '4.10267':
             Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
+            self.StartupFolder = Parameters["StartupFolder"]
 
 
 
@@ -163,7 +166,8 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics()
 
-
+        # Check update for web GUI
+        #z_WebGui.CheckForUpdate( self )
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
