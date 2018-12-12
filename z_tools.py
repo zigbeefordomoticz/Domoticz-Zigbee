@@ -123,7 +123,7 @@ def DeviceExist(self, newNWKID , IEEE = ''):
                 removeNwkInList( self, existingNWKkey )    
 
                 if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
-                    Domoticz.Log("DeviceExist - Update Status from 'inDB' to 'Left' for NetworkID : " +str(newNWKID) )
+                    Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Hearbeat'] = 0
                 found = 1
@@ -300,44 +300,61 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4d" %(Type)
 
-def updSQN( self, key, newSQN) :
+def updSQN_mainpower(self, key, newSQN):
+
+    return
+
+def updSQN_battery(self, key, newSQN):
+
+    if 'SQN' in self.ListOfDevices[key]:
+        oldSQN = self.ListOfDevices[key]['SQN']
+        if oldSQN == '' or oldSQN is None or oldSQN == {} :
+            oldSQN='00'
+    else :
+        oldSQN='00'
 
     try:
-        if not self.ListOfDevices[key] :
-            # Seems that the structutre is not yet initialized
-            return
+        if int(oldSQN,16) != int(newSQN,16) :
+            Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
+            self.ListOfDevices[key]['SQN'] = newSQN
+            if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
+                Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
+                                + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
     except:
-        return
+        Domoticz.Log("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
+        self.ListOfDevices[key]['SQN'] = {}
+    return
 
-    if newSQN == '' or newSQN is None:
-            return
+def updSQN( self, key, newSQN) :
+
+    if key not in self.ListOfDevices or \
+             newSQN == {} or newSQN == '' or newSQN is None:
+        return
 
     # For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
     Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
 
-    if newSQN == '' or newSQN is None or newSQN == {}:
-        return
+    if 'PowerSource' in self.ListOfDevices[key] :
+        if self.ListOfDevices[key]['PowerSource'] == 'Main':
+            # Device on Main Power. SQN is increasing independetly of the object
+            updSQN_mainpower( self, key, newSQN)
+        elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
+            # On Battery, each object managed its SQN
+            updSQN_battery( self, key, newSQN)
+        else:
+            self.ListOfDevices[key]['SQN'] = {}
+            Domoticz.Log("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['PowerSource'] )
 
-    if self.ListOfDevices[key]['MacCapa'] != '8e' :         # So far we have a good understanding on how SQN is managed for battery powered devices
-        if 'SQN' in self.ListOfDevices[key]:
-            oldSQN = self.ListOfDevices[key]['SQN']
-            if oldSQN == '' or oldSQN is None or oldSQN == {} :
-                oldSQN='00'
-        else :
-            oldSQN='00'
-
-        try:
-            if int(oldSQN,16) != int(newSQN,16) :
-                Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
-                self.ListOfDevices[key]['SQN'] = newSQN
-                if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                    Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
-                                    + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
-        except:
-            Domoticz.Log("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
-            return
-    else :
-        self.ListOfDevices[key]['SQN'] = {}
+    if 'MacCapa' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['MacCapa'] == '8e' :     # So far we have a good understanding on 
+            # Device on Main Power. SQN is increasing independetly of the object
+            updSQN_mainpower( self, key, newSQN)
+        elif self.ListOfDevices[key]['MacCapa'] == '80':
+            # On Battery, each object managed its SQN
+            updSQN_battery( self, key, newSQN)
+        else:
+            self.ListOfDevices[key]['SQN'] = {}
+            Domoticz.Log("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['MacCapa'] )
 
 
 #### Those functions will be use with the new DeviceConf structutre
