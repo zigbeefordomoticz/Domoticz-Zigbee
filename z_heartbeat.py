@@ -18,6 +18,7 @@ import json
 import queue
 
 import z_output
+import z_IAS
 import z_tools
 import z_domoticz
 import z_LQI
@@ -198,14 +199,15 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     for iterEp in self.ListOfDevices[NWKID]['Ep']:
                         if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                            z_output.setIASzoneControlerIEEE( self, NWKID, iterEp)
+                            z_IAS.setIASzoneControlerIEEE( self, NWKID, iterEp)
+                            z_IAS.IASZone_enroll_response( self, NWKID, iterEp)
                             Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
     
                 # Set the sensitivity for Xiaomi Vibration
-                #if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
-                #     Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
-                #            %(NWKID, self.pluginconf.vibrationAqarasensitivity))
-                #     z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
+                if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
+                     Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
+                            %(NWKID, self.pluginconf.vibrationAqarasensitivity))
+                    z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
