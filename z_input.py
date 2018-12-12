@@ -1310,7 +1310,7 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     MsgClusterData=MsgData[24:len(MsgData)]
 
     Domoticz.Log("Decode8110 - Write Attribute Response - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
-    Domoticz.Log("Decode8110 - Calling ReadCluster(%s)" %(MsgData))
+    Domoticz.Log("Decode8110 - Calling ReadCluster(%s - %s - %s)" %(MsgAttType, MsgAttSize, MsgClusterData))
     z_readClusters.ReadCluster(self, Devices, MsgData) 
 
     return

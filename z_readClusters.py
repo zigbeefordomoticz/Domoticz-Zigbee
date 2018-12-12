@@ -145,8 +145,8 @@ def ReadCluster(self, Devices, MsgData):
             if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp]:
                 self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
 
-    if MsgAttrStatus != "00":
-        Domoticz.Debug("ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+    if MsgAttrStatus != "00" and MsgClusterId != '0500':
+        Domoticz.Log("ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
         self.statistics._clusterKO += 1
         return
 
@@ -523,6 +523,10 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         zoneId = MsgClusterData[8:12]
     if (len(MsgClusterData)) >= 15:
         delay = MsgClusterData[12:16]
+
+
+    if MsgAttrID == "0000":
+        Domoticz.Log("ReadCluster0500 - receiving attribute 0x0000: %s" %MsgClusterData)
 
     Domoticz.Log("ReadCluster0500 - zoneStatus: %s extendedStatus: %s zoneId: %s delay: %s" \
             %(zoneStatus, extendedStatus, zoneId, delay))

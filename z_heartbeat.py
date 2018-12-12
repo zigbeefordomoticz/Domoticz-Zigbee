@@ -200,8 +200,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                             # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
                             z_IAS.setIASzoneControlerIEEE( self, NWKID, iterEp)
-                            z_IAS.IASZone_enroll_response( self, NWKID, iterEp)
                             z_IAS.readConfirmEnroll( self, NWKID, iterEp)
+                            #z_IAS.IASZone_enroll_response_zoneID( self, NWKID, iterEp)
+                            z_IAS.IASZone_attributes( self, NWKID, iterEp)
                             Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
     
                 # Set the sensitivity for Xiaomi Vibration
