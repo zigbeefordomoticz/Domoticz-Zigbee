@@ -391,7 +391,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return ''
 
     Domoticz.Error("ReadCluster 0101 not fully implemented, please contact us on https://github.com/sasu-drooz/Domoticz-Zigate" )
-    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp + +" Attribute Type:" + MsgAttType + " Attribute : " + MsgAttrID )
+    Domoticz.Log("ReadCluster 0101 - Dev: " +MsgSrcAddr + " Ep : " + MsgSrcEp +" Attribute Type:" + MsgAttType + " Attribute : " + MsgAttrID )
 
     if MsgAttrID == "0000":          # Lockstate
         Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
@@ -662,16 +662,15 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             Domoticz.Debug("cube action: Not expected value %s" %value )
         return value
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b186acn01':
+    if self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b186acn01', 'lumi.remote.b1acn01','lumi.remote.b286acn01'):
         value = decodeAttribute( MsgAttType, MsgClusterData )
-        Domoticz.Debug("ReadCluster - ClusterId=000c - Switch Aqara: %s " %value)
+        Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
         if value.isdigit():
             value = int(value)
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
         return                                                                              # a switch in order to behave as a switch
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_cube.aqgl01' or \
-            self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_cube':
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.sensor_cube.aqgl01', 'lumi.sensor_cube'):
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
         Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(MsgClusterData) )

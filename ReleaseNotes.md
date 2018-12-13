@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 13 December 2018 - Version 4.0.3
+- [Hardware] Handle new Aqara switches WXKG03LM and WXKG02LM
+
 ## 09 December 2018 - Version 4.0.2
 - [Issue] #278 , make the plugin windows compatible
 - [Issue] #279 , test if ZDeviceID before trying o convert it to an int
