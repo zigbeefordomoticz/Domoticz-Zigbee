@@ -11,8 +11,14 @@ Description: Check if zigate.html, zigate folder and files exist, and update the
 """
 
 import Domoticz
-import z_database
 import os
+
+
+def _copyfileasB( source, dest ):
+    copy_buffer =''
+    with open(source, 'r+b') as src, open(dest, 'w+b') as dst:
+        for line in src:
+            dst.write(line)
 
 
 def CheckForUpdate( self ) :
@@ -28,36 +34,41 @@ def CheckForUpdate( self ) :
     Domoticz.Log("web source dir : " + self.homedirectory + "www/zigate/")
     listOfFiles = os.listdir( self.homedirectory + "www/zigate/")
     for l in listOfFiles:
-        fileOld=DomoticzWWWFolder + "/zigate/" + l
-        Domoticz.Log("Old file : " + fileOld)
-        fileNew=self.homedirectory + "www/zigate/" + l
-        Domoticz.Log("New file : " + fileNew)
-        if os.path.isfile( fileOld ):
-            if CheckVersion( fileNew ) >> CheckVersion( fileOld ) :
-                z_database._copyfile( fileNew, fileOld)
-                Domoticz.Log("New file " + l + " is copied")
-        else :
-            z_database._copyfile( fileNew, fileOld)
-            Domoticz.Log("New file " + l + " is created")
+        if len(l) >=3 :
+            fileOld=DomoticzWWWFolder + "/zigate/" + l
+            Domoticz.Log("Old file : " + fileOld)
+            fileNew=self.homedirectory + "www/zigate/" + l
+            Domoticz.Log("New file : " + fileNew)
+            if not os.path.isdir(fileNew) :
+                if os.path.isfile( fileOld ) :
+                    if CheckVersion( fileNew ) >> CheckVersion( fileOld ) :
+                        _copyfileasB( fileNew, fileOld)
+                        Domoticz.Log("New file " + l + " is copied")
+                else :
+                    _copyfileasB( fileNew, fileOld)
+                    Domoticz.Log("New file " + l + " is created")
     fileOld=DomoticzWWWFolder + "/zigate.html"
-    fileNew=self.homedirectory + "www/zigate/zigate.html"
+    fileNew=self.homedirectory + "www/zigate.html"
     if os.path.isfile( fileOld ):
         if CheckVersion( fileNew ) >> CheckVersion( fileOld ) :
-            z_database._copyfile( fileNew, fileOld)
+            _copyfileasB( fileNew, fileOld)
             Domoticz.Log("New file zigate.html is copied")
     else :
-        z_database._copyfile( fileNew, fileOld)
+        _copyfileasB( fileNew, fileOld)
         Domoticz.Log("New file zigate.html is created")
     Domoticz.Status("Check for Web update finished!")
 
 
 def CheckVersion( file ) :
-    version=""
-    Domoticz.Log("Reading " + file + "'s version")
-    with open( file ) as f:
-        first_line = f.readline()
-        Domoticz.Log("firstline : " + str(first_line))
-    version = first_line[first_line.find(":"),first_line.find(";")]
-    Domoticz.Log(file + " version is : " + str(version))
+    version="0"
+    Domoticz.Status("Reading " + file + "'s version")
+    with open( file , 'rt') as f :
+        line = f.readline()
+
+    if (line.find(":")!=0) :
+        if (line.find(";")!=0) :
+            Domoticz.Log("firstline : " + str(line))
+            version = line[line.find(":"),line.find(";")]
+            Domoticz.Log(file + " version is : " + str(version))
     return int(version)
 
