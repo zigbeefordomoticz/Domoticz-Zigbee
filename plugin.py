@@ -77,6 +77,7 @@ class BasePlugin:
         self._ReqRcv = bytearray()
         self.permitTojoin = None
         self.groupmgt = None
+        self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
@@ -240,7 +241,7 @@ class BasePlugin:
             self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
 
         # Create IAS Zone object
-        self.iaszonemgt = IAS_Zone_Management( self.ZigateComm )
+        self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
 
 
         if (self.pluginconf).logLQI != 0 :

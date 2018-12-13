@@ -28,7 +28,7 @@ ZONE_TYPE = { 0x0000: 'standard',
         0x0115: 'key_fob',
         0x021D: 'key_pad',
         0x0225: 'standar_warning',
-        0xFFFF:'invalid' }
+        0xFFFF: 'invalid' }
 
 ENROLL_RESPONSE_CODE =  0x00
 
@@ -36,8 +36,9 @@ ZONE_ID = 0x00
 
 class IAS_Zone_Management:
 
-    def __init__( self , ZigateComm, ZigateIEEE = None):
+    def __init__( self , ZigateComm, ListOfDevices, ZigateIEEE = None):
         self.devices = {}
+        self.ListOfDevices = ListOfDevices
         self.wip = False
         self.HB = 0
         self.ZigateComm = ZigateComm
@@ -62,6 +63,8 @@ class IAS_Zone_Management:
         direction = '00'
         manufacturer_spec = '00'
         manufacturer = '0000'
+        if 'Manufacturer' in self.ListOfDevices[key]:
+            manufacturer = self.ListOfDevices[key]['Manufacturer']
         if not isinstance(ListOfAttributes, list):
             # We received only 1 attribute
             Attr = "%04x" %(ListOfAttributes)
@@ -77,8 +80,6 @@ class IAS_Zone_Management:
         self.ZigateComm.sendData( "0100", datas )
         return
 
-
-
     def setZigateIEEE(self, ZigateIEEE):
 
         Domoticz.Log("setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
@@ -88,9 +89,10 @@ class IAS_Zone_Management:
     def setIASzoneControlerIEEE( self, key, Epout ):
 
         Domoticz.Log("setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
-
-
         manuf_id = "0000"
+        if 'Manufacturer' in self.ListOfDevices[key]:
+            manuf_id = self.ListOfDevices[key]['Manufacturer']
+
         manuf_spec = "00"
         cluster_id = "%04x" %0x0500
         attribute = "%04x" %0x0010
@@ -110,7 +112,6 @@ class IAS_Zone_Management:
         cluster_id = "%04x" %0x0500
         attribute = 0x0000
         self.__ReadAttributeReq( key, "01", Epout, cluster_id , attribute )
-
 
     def IASZone_enroll_response_( self, nwkid, Epout ):
         '''2.the CIE sends a ‘enroll’ message to the IAS Zone device'''
@@ -141,7 +142,6 @@ class IAS_Zone_Management:
             Domoticz.Log("IASZone_enroll_response_zoneID - while not yet started")
             return
 
-
         Domoticz.Log("IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
@@ -164,7 +164,6 @@ class IAS_Zone_Management:
         cluster_id = "%04x" %0x0500
         attribute = [ 0x0000, 0x0001, 0x0002 ]
         self.__ReadAttributeReq( nwkid, "01", Epout, cluster_id , attribute )
-
 
     def IASZone_triggerenrollement( self, nwkid, Epout):
 
@@ -196,8 +195,10 @@ class IAS_Zone_Management:
         iterEp = self.devices[nwkid]['Ep']
 
         if  step == 3:  # Receive Write Attribute Message
+            Domoticz.Log("receiveIASmessages - Write rAttribute Response: %s" %value)
             self.HB = 0
             self.devices[nwkid]['Step'] = 4
+            self.readConfirmEnroll(nwkid, iterEp)
             self.IASZone_attributes( nwkid, iterEp)
 
         elif step == 5: # Receive Attribute 0x0001 and 0x0002
@@ -210,6 +211,37 @@ class IAS_Zone_Management:
             self.wip = False
             self.devices[nwkid]['Step'] = 0
             del self.devices[nwkid]
+
+        return
+
+    def decode8401(self, MsgSQN, MsgEp, MsgClusterId, MsgSrcAddrMode, MsgSrcAddr, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay):
+
+
+        # Custom Command Payload
+
+        # ‘Zone Status Change Notification’ Payload
+        # ZoneStatus : 0x01 (Not Enrolled ) / 0x02 (Enrolled)
+        # Extended Status: 0x00
+        # ZoneID is the index of the entry for the sending device
+        # Delay is the time-delay in quarter-seconds between satus change taking place in ZoneState
+
+        # IAS ZONE STATE
+        # 0x00 not enrolled
+        # 0x01 enrolled
+
+
+        # Zone Status Change Notification
+        # Bit 0: Alarm1
+        #     1: Alarm2
+        #     2: Tamper
+        #     3: Battery
+        #     4: Supervision reports
+        #     5: Restore Reports
+        #     6: Trouble
+        #     7: AC Mains
+        #     8: Test
+        #     9: Battery defect
+        # 10-15: Reserved
 
         return
 

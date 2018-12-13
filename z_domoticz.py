@@ -101,6 +101,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             myDev.Create()
             ID = myDev.ID
             if myDev.ID == -1 :
+                self.ListOfDevices[NWKID]['Status'] = "failDB"
                 Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
             else:
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -113,6 +114,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             myDev.Create()
             ID = myDev.ID
             if myDev.ID == -1 :
+                self.ListOfDevices[NWKID]['Status'] = "failDB"
                 Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
             else:
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -136,6 +138,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -148,6 +151,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -160,6 +164,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -172,6 +177,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -184,6 +190,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -198,6 +205,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -212,6 +220,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -226,6 +235,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -238,6 +248,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -250,6 +261,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -262,6 +274,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -274,6 +287,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -289,6 +303,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -303,6 +318,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -315,6 +331,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -327,6 +344,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -341,6 +359,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -359,6 +378,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         myDev.Create()
                         ID = myDev.ID
                         if myDev.ID == -1 :
+                            self.ListOfDevices[NWKID]['Status'] = "failDB"
                             Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                         else:
                             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -371,6 +391,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         myDev.Create()
                         ID = myDev.ID
                         if myDev.ID == -1 :
+                            self.ListOfDevices[NWKID]['Status'] = "failDB"
                             Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                         else:
                             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -415,6 +436,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -428,6 +450,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -440,6 +463,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -452,6 +476,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
