@@ -145,7 +145,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
                     self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {} :
                 return
         # Attributes was either '00' or {}
-        Domoticz.Log("ReadAttributeReq: %s" %self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr])
+        Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
     else:
         lenAttr = len(ListOfAttributes)
         weight = int ((lenAttr ) / 2) + 1
@@ -154,11 +154,13 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         for x in ListOfAttributes:
             Attr_ = "%04x" %(x)
             if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-                Domoticz.Log("ReadAttributeReq: %s" %self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_])
                 if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' and \
                         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != {} :
                     continue
+                Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]))
             Attr += Attr_
+        else: # We skip all !
+            return
 
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -431,6 +433,12 @@ def processConfigureReporting( self, NWKID=None ):
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
         #'0406': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # IAS ZOne
+        '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
+                                 '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
+                                 '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # Occupancy Sensing
+
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'003C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
