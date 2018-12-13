@@ -321,16 +321,24 @@ def ZigateRead(self, Devices, Data):
 
 #IAS Zone
 def Decode8401(self, Devices, MsgData) : # Reception Zone status change notification
+
     Domoticz.Log("Decode8401 - Reception Zone status change notification : " + MsgData)
-    MsgSQN=MsgData[0:2]            # sequence number: uint8_t
+    MsgSQN=MsgData[0:2]           # sequence number: uint8_t
     MsgEp=MsgData[2:4]            # endpoint : uint8_t
-    MsgClusterId=MsgData[4:8]        # cluster id: uint16_t
-    MsgSrcAddrMode=MsgData[8:10]        # src address mode: uint8_t
-    MsgSrcAddr=MsgData[10:14]        # src address: uint64_t or uint16_t based on address mode
-    MsgZoneStatus=MsgData[14:18]        # zone status: uint16_t
-    MsgExtStatus=MsgData[18:20]        # extended status: uint8_t
-    MsgZoneID=MsgData[20:22]        # zone id : uint8_t
-    MsgDelay=MsgData[22:24]            # delay: data each element uint16_t
+    MsgClusterId=MsgData[4:8]     # cluster id: uint16_t
+    MsgSrcAddrMode=MsgData[8:10]  # src address mode: uint8_t
+    if MsgSrcAddrMode == "02":
+        MsgSrcAddr=MsgData[10:14]     # src address: uint64_t or uint16_t based on address mode
+        MsgZoneStatus=MsgData[14:18]  # zone status: uint16_t
+        MsgExtStatus=MsgData[18:20]   # extended status: uint8_t
+        MsgZoneID=MsgData[20:22]      # zone id : uint8_t
+        MsgDelay=MsgData[22:26]       # delay: data each element uint16_t
+    elif MsgSrcAddrMode == "03":
+        MsgSrcAddr=MsgData[10:26]     # src address: uint64_t or uint16_t based on address mode
+        MsgZoneStatus=MsgData[26:30]  # zone status: uint16_t
+        MsgExtStatus=MsgData[30:32]   # extended status: uint8_t
+        MsgZoneID=MsgData[32:34]      # zone id : uint8_t
+        MsgDelay=MsgData[34:38]       # delay: data each element uint16_t
 
     # 0  0  0    0  1    1    1  2  2
     # 0  2  4    8  0    4    8  0  2
@@ -340,7 +348,6 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     z_tools.timeStamped( self, MsgSrcAddr , 8401)
     z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 
-    ## CLD CLD
     Model = ''
     if MsgSrcAddr in self.ListOfDevices:
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
@@ -353,6 +360,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
             %( MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay))
 
     if Model == "PST03A-v2.2.5" :
+        ## CLD CLD
         # bit 3, battery status (0=Ok 1=to replace)
         iData = int(MsgZoneStatus,16) & 8 >> 3                 # Set batery level
         if iData == 0 :
@@ -384,7 +392,6 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     else :      ## default 
         # Previously MsgZoneStatus length was only 2 char.
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", MsgZoneStatus[2:4])
- 
 
     return
 
@@ -641,7 +648,7 @@ def Decode8024(self, MsgData) : # Network joined / formed
     if MsgExtendedAddress != '' and MsgShortAddress != '':
         self.ZigateIEEE = MsgExtendedAddress
         self.ZigateNWKID = MsgShortAddress
-        self.iaszonemgt.setZigateIEE( extaddr )
+        self.iaszonemgt.setZigateIEEE( extaddr )
 
     if MsgDataStatus == "00": 
         Status = "Joined existing network"
@@ -1318,7 +1325,8 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     Domoticz.Log("Decode8110 - Write Attribute Response - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
     Domoticz.Log("Decode8110 - Calling ReadCluster(%s - %s - %s)" %(MsgAttType, MsgAttSize, MsgClusterData))
     #z_readClusters.ReadCluster(self, Devices, MsgData) 
-    self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
+    if MsgClusterId == "0500":
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
 
     return
 
@@ -1412,7 +1420,6 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
 
-
     Domoticz.Status("[%s] NEW OBJECT: %s Device Annouce" %(0, MsgSrcAddr))
 
     if ( self.pluginconf.logFORMAT == 1 ) :
@@ -1421,6 +1428,7 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
     # tester si le device existe deja dans la base domoticz
     if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
         Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
+        self.CommiSSionning = True
         z_tools.initDeviceInList(self, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
         self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE

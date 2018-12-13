@@ -548,6 +548,7 @@ class GroupsManagement(object):
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
                     if dev_status == 'Wip':
                         self.stillWIP = True
+                        # Might do one more remove
                         break
                 else:
                     toBeRemoved.append( iterGrp )    # Remove the element from ListOfGroup and Remove the Domoticz Device
