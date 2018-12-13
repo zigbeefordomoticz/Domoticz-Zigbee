@@ -63,8 +63,8 @@ class IAS_Zone_Management:
         direction = '00'
         manufacturer_spec = '00'
         manufacturer = '0000'
-        if 'Manufacturer' in self.ListOfDevices[key]:
-            manufacturer = self.ListOfDevices[key]['Manufacturer']
+        if 'Manufacturer' in self.ListOfDevices[addr]:
+            manufacturer = self.ListOfDevices[addr]['Manufacturer']
         if not isinstance(ListOfAttributes, list):
             # We received only 1 attribute
             Attr = "%04x" %(ListOfAttributes)
@@ -200,16 +200,21 @@ class IAS_Zone_Management:
             self.devices[nwkid]['Step'] = 4
             self.readConfirmEnroll(nwkid, iterEp)
             self.IASZone_attributes( nwkid, iterEp)
+            self.IASZone_enroll_response_zoneID( nwkid, iterEp )
 
         elif step == 5: # Receive Attribute 0x0001 and 0x0002
             self.HB = 0
             self.devices[nwkid]['Step'] = 7
+            self.IASZone_attributes( nwkid, iterEp)
+            self.IASZone_enroll_response_zoneID( nwkid, iterEp )
             self.readConfirmEnroll(nwkid, iterEp)
 
         elif step == 7: # Receive Confirming Enrollement
             self.HB = 0
             self.wip = False
             self.devices[nwkid]['Step'] = 0
+            self.IASZone_attributes( nwkid, iterEp)
+            self.readConfirmEnroll(nwkid, iterEp)
             del self.devices[nwkid]
 
         return

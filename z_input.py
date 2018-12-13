@@ -1318,13 +1318,13 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     MsgAttrID=MsgData[12:16]
-    MsgAttType=MsgData[16:20]
-    MsgAttSize=MsgData[20:24]
-    MsgClusterData=MsgData[24:len(MsgData)]
+    MsgAttType=MsgData[16:18]
+    MsgAttSize=MsgData[18:22]
+    MsgClusterData=MsgData[22:len(MsgData)]
 
-    Domoticz.Log("Decode8110 - Write Attribute Response - reception data : " + MsgClusterData + " ClusterID : " + MsgClusterId + " Attribut ID : " + MsgAttrID + " Src Addr : " + MsgSrcAddr + " Scr Ep: " + MsgSrcEp)
-    Domoticz.Log("Decode8110 - Calling ReadCluster(%s - %s - %s)" %(MsgAttType, MsgAttSize, MsgClusterData))
-    #z_readClusters.ReadCluster(self, Devices, MsgData) 
+    Domoticz.Log("Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
+            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
 
