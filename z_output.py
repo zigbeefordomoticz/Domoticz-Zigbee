@@ -466,6 +466,8 @@ def processConfigureReporting( self, NWKID=None ):
                     attrLen = 0
                     if cluster not in ATTRIBUTESbyCLUSTERS:
                         continue
+                    if 'Attributes' not in ATTRIBUTESbyCLUSTERS[cluster]:
+                        continue
 
                     for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
                         attrdirection = "00"
