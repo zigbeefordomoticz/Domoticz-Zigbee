@@ -60,15 +60,18 @@ def CheckForUpdate( self ) :
 
 
 def CheckVersion( file ) :
-    version="0"
     Domoticz.Status("Reading " + file + "'s version")
-    with open( file , 'rt') as f :
+    with open( file , 'rt', encoding='utf-8') as f :
         line = f.readline()
-
-    if (line.find(":")!=0) :
-        if (line.find(";")!=0) :
-            Domoticz.Log("firstline : " + str(line))
-            version = line[line.find(":"),line.find(";")]
-            Domoticz.Log(file + " version is : " + str(version))
+        Domoticz.Log("firstline : " + str(line))
+    version = find_between(line, ":", ";")
+    Domoticz.Log(file + " version is : " + str(version))
     return int(version)
 
+def find_between( s, first, last ):
+    try:
+        start = s.index( first ) + len( first )
+        end = s.index( last, start )
+        return s[start:end]
+    except ValueError:
+        return "0"
