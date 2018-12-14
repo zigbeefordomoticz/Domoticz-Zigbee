@@ -168,7 +168,7 @@ class BasePlugin:
         self.statistics = TransportStatistics()
 
         # Check update for web GUI
-        #z_WebGui.CheckForUpdate( self )
+        z_WebGui.CheckForUpdate( self )
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":

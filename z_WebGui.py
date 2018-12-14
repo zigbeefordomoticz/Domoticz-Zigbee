@@ -60,7 +60,7 @@ def CheckForUpdate( self ) :
 
 
 def CheckVersion( file ) :
-    Domoticz.Status("Reading " + file + "'s version")
+    Domoticz.Log("Reading " + file + "'s version")
     with open( file , 'rt', encoding='utf-8') as f :
         line = f.readline()
         Domoticz.Log("firstline : " + str(line))
