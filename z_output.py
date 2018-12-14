@@ -498,7 +498,6 @@ def processConfigureReporting( self, NWKID=None ):
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
-
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = ''
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
@@ -507,6 +506,8 @@ def processConfigureReporting( self, NWKID=None ):
                     #attrList = ''
                     attrLen = 0
                     if cluster not in ATTRIBUTESbyCLUSTERS:
+                        continue
+                    if 'Attributes' not in ATTRIBUTESbyCLUSTERS[cluster]:
                         continue
 
                     for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
