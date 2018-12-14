@@ -719,38 +719,37 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         state = "Off"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
-                    if value == "01":
-                        state = "00"
-                    elif value == "02":
-                        state = "10"
-                    elif value == "03":
-                        state = "20"
-                    elif value == "04":
-                        state = "30"
+                    value = int(value)
+                    if value == 1: state = "00"
+                    elif value == 2: state = "10"
+                    elif value == 3: state = "20"
+                    elif value == 4: state = "30"
                     else:
                         return  # Simply return and don't process any other values than the above
                     UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif DeviceType == "DSwitch":
                     # double switch avec EP different 
+                    value = int(value)
                     if Ep == "01":
-                        if value == "01" or value == "00":
+                        if value == 1 or value == 0:
                             state = "10"
                             data = "01"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                     elif Ep == "02":
-                        if value == "01" or value == "00":
+                        if value == 1 or value == 0:
                             state = "20"
                             data = "02"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                     elif Ep == "03":
-                        if value == "01" or value == "00":
+                        if value == 1 or value == 0:
                             state = "30"
                             data = "03"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "DButton":
                     # double bouttons avec EP different lumi.sensor_86sw2 
+                    value = int(value)
                     if Ep == "01":
-                        if value == "01":
+                        if value == 1:
                             state = "10"
                             data = "01"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
@@ -758,7 +757,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         else:
                             return  # We just expect 01 , in case of other value nothing to do
                     elif Ep == "02":
-                        if value == "01":
+                        if value == 1:
                             state = "20"
                             data = "02"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
@@ -766,7 +765,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         else:
                             return  # We just expect 01 , in case of other value nothing to do
                     elif Ep == "03":
-                        if value == "01":
+                        if value == 1:
                             state = "30"
                             data = "03"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
