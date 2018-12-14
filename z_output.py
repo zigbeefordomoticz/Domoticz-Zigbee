@@ -742,6 +742,6 @@ def leaveMgtReJoin( self, saddr, ieee):
 
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
     # Request a Re-Join and Do not remove children
-    datas = saddr + ieee + '01' + '01'
+    datas = saddr + ieee + '01' + '00'
     sendZigateCmd(self, "0047", datas )
 
