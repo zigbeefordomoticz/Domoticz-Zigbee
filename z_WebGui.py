@@ -59,8 +59,8 @@ def CheckForUpdate( self ) :
     else :
         _copyfileasB( fileNew, fileOld)
         Domoticz.Log("New file zigate.html is created")
-    _copyfileasB(self.DeviceListName, DomoticzWWWFolder + "/zigate/conf/DeviceList-" + self.HardwareID + ".txt")
-    _copyfileasB(self.pluginconf, DomoticzWWWFolder + "/zigate/conf/PluginConf-" + self.HardwareID + ".txt")
+    _copyfileasB(self.DeviceListName, DomoticzWWWFolder + "/zigate/conf/DeviceList-" + str(self.HardwareID) + ".txt")
+    _copyfileasB(self.pluginconf, DomoticzWWWFolder + "/zigate/conf/PluginConf-" + str(self.HardwareID) + ".txt")
     Domoticz.Status("Check for Web update finished!")
 
 
