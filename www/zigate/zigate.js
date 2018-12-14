@@ -1,4 +1,4 @@
-///version:1;
+///version:2;
 
 // Check for the various File API support.
 if (window.File && window.FileReader && window.FileList && window.Blob) {
@@ -208,9 +208,9 @@ function readLQI(id, data) {
     const allLines = data.split(/\r\n|\n/); // Reading line by line 
     allLines.map((line) => {
         if (line.replace(/ /g, '') != '') {
-            LQIdate = line.slice(0, 9);
+            LQIdate = line.slice(2,11);
             console.log('LQI reports date : ' + LQIdate)
-            LQIdata[LQIdate] = JSON.parse(line.slice(11).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
+            LQIdata[LQIdate] = JSON.parse(line.slice(14,line.length-1).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
             console.log('LQI reports data :' + LQIdata[LQIdate]);
             LQIlist = Object.keys(LQIdata[LQIdate]);
             // Make Table
@@ -375,8 +375,8 @@ function ReadHxIDx() {
             }
             //console.log(txtHW);
             $('#ZigateHwLoad').html(txtHW);
-            NetworkFile = 'Network_scan-' + HwIDX + '.txt';
-            LQIFile = 'LQI_reports-' + HwIDX + '.txt';
+            NetworkFile = 'Network_scan-' + HwIDX + '.txt.json';
+            LQIFile = 'LQI_reports-' + HwIDX + '.txt.json';
             GetDevs(HwIDX);
             readTXT(ReportsFolder + LQIFile, HwIDX, "LQI");
             readTXT(ReportsFolder + NetworkFile, HwIDX, "Network");
