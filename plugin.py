@@ -258,10 +258,6 @@ class BasePlugin:
 
     def onCommand(self, Unit, Command, Level, Color):
 
-        if  self.HeartbeatCount < ( 60 // z_consts.HEARTBEAT ):
-            Domoticz.Log("onCommand receive a command, but plugin not yet ready to handle it")
-            return False
-
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
