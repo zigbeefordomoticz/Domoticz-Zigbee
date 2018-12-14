@@ -26,8 +26,8 @@ def CheckForUpdate( self ) :
         DomoticzWWWFolder = self.StartupFolder + "www/templates"
     else :
         DomoticzWWWFolder = self.homedirectory + "../../www/templates"
-        # define the access rights
-        access_rights = 0o775
+    # define the access rights
+    access_rights = 0o775
     if not os.path.exists(DomoticzWWWFolder + "/zigate") :
         os.mkdir(DomoticzWWWFolder + "/zigate", access_rights)
     if not os.path.exists(DomoticzWWWFolder + "/zigate/reports") :
