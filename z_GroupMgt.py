@@ -41,9 +41,9 @@ class GroupsManagement(object):
 
     def storeListOfGroups(self):
         ' Serialize with Pickle'
-        #Domoticz.Debug("storeListOfGroups - Saving %s" %self.ListOfGroups)
-        #with open( self.groupListFileName, 'wb') as handle:
-        #    pickle.dump( self.ListOfGroups, handle)
+        Domoticz.Debug("storeListOfGroups - Saving %s" %self.ListOfGroups)
+        with open( self.groupListFileName, 'wb') as handle:
+            pickle.dump( self.ListOfGroups, handle)
         return
 
     def _loadListOfGroups( self ):
@@ -469,7 +469,7 @@ class GroupsManagement(object):
                 # We have to update, add or remove some devices !
                 self.ListOfGroups[grpid]['Grp Status'] = 'Update'
                 if  self.ListOfGroups[grpid]['Name'] != self.ListOfGroups[grpid]['Name']:
-                    Domoticz("_processGroupConfig - Different group name: %s vs. %s, skip " %(self.ListOfGroups[grpid]['Name'], self.ListOfGroups[grpid]['Name']))
+                    Domoticz.Log("_processGroupConfig - Different group name: %s vs. %s, skip " %(self.ListOfGroups[grpid]['Name'], self.ListOfGroups[grpid]['Name']))
                     continue
 
                 # Let's check if we don't have any Device to remove
@@ -649,7 +649,7 @@ class GroupsManagement(object):
                 for iterEp in self.ListOfDevices[iterDev]['Ep']:
                     if 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                         '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp]:
-                        Domoticz.Log("_constructGroupList - req membership for %s/%s " %(iterDev, iterEp))
+                        Domoticz.Debug("_constructGroupList - req membership for %s/%s " %(iterDev, iterEp))
                         self._getGroupMembership(iterDev, iterEp)
                         self.getGMS_count += 1
 
@@ -663,7 +663,7 @@ class GroupsManagement(object):
 
             return
 
-        Domoticz.Log("hearbeatGroupMgt - %s self.getGMS_count: %s, WIP: %s " %(self.HB, self.getGMS_count, self.stillWIP))
+        Domoticz.Log("hearbeatGroupMgt - %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
         if self.HB == 1: 
             self._constructGroupList( )
 
