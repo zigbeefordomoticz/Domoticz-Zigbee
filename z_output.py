@@ -449,7 +449,7 @@ def processConfigureReporting( self, NWKID=None ):
         target = self.ListOfDevices
     else:
         target = NWKID
-        Domoticz.Debug("configureReporting for device : %s => %s" %(NWKID, self.ListOfDevices[NWKID]))
+        Domoticz.Log("configureReporting for device : %s => %s" %(NWKID, self.ListOfDevices[NWKID]))
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
@@ -525,7 +525,7 @@ def processConfigureReporting( self, NWKID=None ):
                         #Domoticz.Log("configureReporting - %2d %s " %(attrLen, attrList) )
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
-                        Domoticz.Debug("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
+                        Domoticz.Log("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas )
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 

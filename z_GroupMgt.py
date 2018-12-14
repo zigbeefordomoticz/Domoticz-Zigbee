@@ -303,6 +303,57 @@ class GroupsManagement(object):
 
         return
 
+    def updateDomoGroupDevice( self, group_nwkid):
+        ' Update the Group status On/Off , based on the attached devices'
+
+        if group_nwkid not in self.ListOfGroups:
+            Domoticz.Log("updateDomoGroupDevice - unknown group: %s" %group_nwkid)
+            return
+        if 'Devices' not in self.ListOfGroups[group_nwkid]:
+            Domoticz.Log("updateDomoGroupDevice - no Devices for that group: %s" %self.ListOfGroups[group_nwkid])
+            return
+
+        unit = 0
+        for unit in self.Devices:
+            if self.Devices[unit].DeviceID == group_nwkid:
+                break
+        else:
+            Domoticz.Log("updateDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
+            return
+
+        # If one device is on, then the group is on. If all devices are off, then the group is off
+        nValue = 0
+        level = None
+        for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[group_nwkid]['Devices']:
+            Domoticz.Debug("updateDomoGroupDevice - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
+            if dev_nwkid in self.ListOfDevices:
+                if 'Ep' in  self.ListOfDevices[dev_nwkid]:
+                    if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
+                        if '0006' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
+                            if str(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']).isdigit():
+                                if int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']) != 0:
+                                    Domoticz.Log("updateDomoGroupDevice - Device: %s OnOff: %s" %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006'])))
+                                    nValue = 1
+                        if '0008' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
+                            Domoticz.Log("updateDomoGroupDevice - Cluster 0008 value: %s" %self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])
+                            if self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'] != '' and self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'] != {}:
+                                if level is None:
+                                    level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
+                                else:
+                                    level = ( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) // 2
+                                Domoticz.Log("updateDomoGroupDevice - Device: %s level: %s" %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])))
+                                nValue = 1
+            Domoticz.Log("updateDomoGroupDevice - OnOff: %s, Level: %s" %( nValue, level))
+                                
+        if level:
+            sValue = str(int((level*100)/255))
+        else:
+            sValue = "Off"
+        Domoticz.Log("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
+        if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
+            Domoticz.Log("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
+            self.Devices[unit].Update( nValue, sValue)
+
 
     def domGroupDeviceRemoved(self, groupname, group_nwkid):
         ' User has remove dthe Domoticz Device corresponding to this group'
@@ -608,6 +659,9 @@ class GroupsManagement(object):
 
         self.HB += 1
         if not self.stillWIP:
+            for group_nwkid in self.ListOfGroups:
+                self.updateDomoGroupDevice( group_nwkid)
+
             return
 
         Domoticz.Log("hearbeatGroupMgt - %s self.getGMS_count: %s, WIP: %s " %(self.HB, self.getGMS_count, self.stillWIP))
@@ -619,6 +673,7 @@ class GroupsManagement(object):
 
         if self.stillWIP and self.HB > 3:
             self._processListOfGroups()
+
 
         return
 

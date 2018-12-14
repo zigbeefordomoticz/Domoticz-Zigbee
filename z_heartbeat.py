@@ -45,12 +45,12 @@ def processKnownDevices( self, NWKID ):
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
                     if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Metering
                         z_output.ReadAttributeRequest_0702(self, NWKID )
-                    #if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
-                    #    z_output.ReadAttributeRequest_0008(self, NWKID )
+                    if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
+                        z_output.ReadAttributeRequest_0008(self, NWKID )
                     #if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
                     #    z_output.ReadAttributeRequest_000C(self, NWKID )
-                    #if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
-                    #    z_output.ReadAttributeRequest_0006(self, NWKID )
+                    if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
+                        z_output.ReadAttributeRequest_0006(self, NWKID )
                     #if "0000" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
                     #    z_output.ReadAttributeRequest_0000(self, NWKID )
                     #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
