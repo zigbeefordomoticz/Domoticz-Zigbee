@@ -13,13 +13,14 @@ import os.path
 
 import z_consts
 
-GROUPS_CONFIG_FILENAME = "GroupsConfig.txt"
+GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig.txt"
 
 class GroupsManagement(object):
 
     def __init__( self, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
         Domoticz.Debug("GroupsManagement __init__")
         self.HB = 0
+        self.StartupPhase = 'init'
         self.ListOfGroups = {}      # Data structutre to store all groups
         self.toBeImported = {}
         self.stillWIP = True
@@ -535,6 +536,7 @@ class GroupsManagement(object):
                 self.toBeImported[grpid]['List of Devices'] = []
         self.toBeImported = {}
         Domoticz.Log("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
+        self.StartupPhase = 'step2'
 
     def _processListOfGroups( self ):
         ''' 
@@ -633,8 +635,8 @@ class GroupsManagement(object):
         for iter in toBeRemoved:
             del self.ListOfGroups[iter]
 
-
         Domoticz.Log("_processListOfGroups - WIP: %s ListOfGroups: %s " %( self.stillWIP, str(self.ListOfGroups)))
+        self.StartupPhase = 'step3'
 
         return 
 
@@ -652,26 +654,34 @@ class GroupsManagement(object):
                         Domoticz.Debug("_constructGroupList - req membership for %s/%s " %(iterDev, iterEp))
                         self._getGroupMembership(iterDev, iterEp)
                         self.getGMS_count += 1
+        self.StartupPhase = 'step1'
 
     def hearbeatGroupMgt( self ):
         ' hearbeat to process Group Management actions '
 
+        Domoticz.Debug("hearbeatGroupMgt - Phase: %s HB: %s WIP: %s" %(self.StartupPhase, self.HB, self.stillWIP))
         self.HB += 1
-        if not self.stillWIP:
-            for group_nwkid in self.ListOfGroups:
-                self.updateDomoGroupDevice( group_nwkid)
 
-            return
+        if self.StartupPhase == 'ready':
+            if not self.stillWIP:
+                for group_nwkid in self.ListOfGroups:
+                    self.updateDomoGroupDevice( group_nwkid)
 
-        Domoticz.Log("hearbeatGroupMgt - %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
-        if self.HB == 1: 
+        elif self.StartupPhase == 'init':
+            Domoticz.Log("hearbeatGroupMgt - STEP1 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
             self._constructGroupList( )
 
-        if self.HB == 3:
+        elif self.StartupPhase == 'step1':
+            Domoticz.Log("hearbeatGroupMgt - STEP2 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
             self._processGroupConfig()
 
-        if self.stillWIP and self.HB > 3:
+        elif self.StartupPhase == 'step2':
+            Domoticz.Log("hearbeatGroupMgt - STEP3 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
             self._processListOfGroups()
+
+        elif self.StartupPhase == 'step3':
+            Domoticz.Log("hearbeatGroupMgt - READY %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            self.StartupPhase = 'ready'
 
 
         return
