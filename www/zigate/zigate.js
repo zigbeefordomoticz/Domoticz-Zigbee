@@ -228,7 +228,7 @@ function readTXT(file, id, type) {
             }
             if (type == 'Network') {
                 readNetwork(id, data);
-                //PrintNETGraph(id);
+                PrintNETGraph(id);
             }
         }
     });
@@ -408,26 +408,7 @@ function LQIGraph(id, date, matriX, matrixid) {
 
 function NETGraph(id, date, matriX) {
 
-    data = (await require("@observablehq/alphabet"))
-        .slice()
-        .sort((a, b) => b.frequency - a.frequency)
-        .map(({ letter, frequency }) => ({ name: letter, value: frequency }))
 
-    const svg = d3.select(DOM.svg(width, height));
-
-    svg.append("g")
-        .attr("fill", "steelblue")
-        .selectAll("rect").data(data).enter().append("rect")
-        .attr("x", d => x(d.name))
-        .attr("y", d => y(d.value))
-        .attr("height", d => y(0) - y(d.value))
-        .attr("width", x.bandwidth());
-
-    svg.append("g")
-        .call(xAxis);
-
-    svg.append("g")
-        .call(yAxis);
 }
 
 function n(n) {
