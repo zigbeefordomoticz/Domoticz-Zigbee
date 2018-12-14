@@ -636,7 +636,8 @@ class GroupsManagement(object):
             del self.ListOfGroups[iter]
 
         Domoticz.Log("_processListOfGroups - WIP: %s ListOfGroups: %s " %( self.stillWIP, str(self.ListOfGroups)))
-        self.StartupPhase = 'step3'
+        if not self.stillWIP:
+            self.StartupPhase = 'step3'
 
         return 
 
