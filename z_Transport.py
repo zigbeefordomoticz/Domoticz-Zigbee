@@ -114,10 +114,11 @@ class ZigateTransport(object):
         self._connection = None
 
     def reConn(self):
+        Domoticz.Debug("Transport.reConn: %s" %self._connection)
         if self._connection.Connected() :
             return
         else:
-            Domoticz.Debug("Transport.reConn: %s" %self._connection)
+            Domoticz.Log("Transport.reConn: %s" %self._connection)
             self.openConn()
 
     # Transport Sending Data
