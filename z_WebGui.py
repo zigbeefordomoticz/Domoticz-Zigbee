@@ -26,11 +26,14 @@ def CheckForUpdate( self ) :
         DomoticzWWWFolder = self.StartupFolder + "www/templates"
     else :
         DomoticzWWWFolder = self.homedirectory + "../../www/templates"
+    # define the access rights
+    access_rights = 0o775
     if not os.path.exists(DomoticzWWWFolder + "/zigate") :
-        # define the access rights
-        access_rights = 0o775
         os.mkdir(DomoticzWWWFolder + "/zigate", access_rights)
+    if not os.path.exists(DomoticzWWWFolder + "/zigate/reports") :
         os.mkdir(DomoticzWWWFolder + "/zigate/reports", access_rights)
+    if not os.path.exists(DomoticzWWWFolder + "/zigate/conf") :
+        os.mkdir(DomoticzWWWFolder + "/zigate/conf", access_rights)
     Domoticz.Log("web source dir : " + self.homedirectory + "www/zigate/")
     listOfFiles = os.listdir( self.homedirectory + "www/zigate/")
     for l in listOfFiles:
@@ -56,6 +59,8 @@ def CheckForUpdate( self ) :
     else :
         _copyfileasB( fileNew, fileOld)
         Domoticz.Log("New file zigate.html is created")
+    #_copyfileasB(self.DeviceListName, DomoticzWWWFolder + "/zigate/conf/DeviceList-" + str(self.HardwareID) + ".txt")
+    #_copyfileasB(self.pluginconf, DomoticzWWWFolder + "/zigate/conf/PluginConf-" + str(self.HardwareID) + ".txt")
     Domoticz.Status("Check for Web update finished!")
 
 

@@ -1,4 +1,4 @@
-///version:1;
+///version:3;
 
 // Check for the various File API support.
 if (window.File && window.FileReader && window.FileList && window.Blob) {
@@ -8,11 +8,14 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
 }
 
 var ReportsFolder = location.origin + '/templates/zigate/reports/';
+var ConfFolder = location.origin + '/templates/zigate/conf/';
 var HwIDX = "";
 var DeviceIEEE = new Object();
 var Devices;
 var LQIlist = new Object();
 var LQIdata = new Object();
+var NETlist = new Object();
+var NETdata = new Object();
 var MatrixId = new Object();
 var Matrix = new Object();
 var orderlist;
@@ -68,7 +71,7 @@ function CheckIfDeviceInList(IEEE) {
 
 
 function DrawTable(date, data, id) {
-    OutResultContents += '<div id="' + id + '_' + date + '" class="tabcontent2"><div id="tab">';
+    OutResultContents += '<div id="LQI-' + id + '_' + date + '" class="tabcontent2"><div id="LQItab">';
     OutResultContents += "<br><H2>" + date + "</H2><table id=LQI_Tab border=1><tr><th>Devices ID</th>";
     console.log('draw table ' + date + '_' + id);
     MatrixId[date] = '[';
@@ -120,9 +123,15 @@ function DrawTable(date, data, id) {
 function DrawGraph(date, data, id) {
     OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
     OutResultContents += '<output id="LQI_' + id + '_' + date + '"></output></div></div>';
-    console.log('draw graph ' + date + '_' + id);
+    console.log('draw LQI graph ' + date + '_' + id);
 };
 
+function DrawNetGraph(date, data, id) {
+    OutResultContents += '<div id="NET-' + id + '_' + date + '" class="tabcontent3"><div id="Nettab">';
+    OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
+    OutResultContents += '<output id="NET_' + id + '_' + date + '"></output></div></div>';
+    console.log('draw net graph ' + date + '_' + id);
+};
 
 function openTab(evt, TabName) {
     // Declare all variables
@@ -166,6 +175,27 @@ function openTab2(evt, TabName) {
     evt.currentTarget.className += " active";
 }
 
+function openTab3(evt, TabName) {
+    // Declare all variables
+    var i, tabcontent, tablinks;
+
+    // Get all elements with class="tabcontent" and hide them
+    tabcontent = document.getElementsByClassName("tabcontent3");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+
+    // Get all elements with class="tablinks" and remove the class "active"
+    tablinks = document.getElementsByClassName("tablinks3");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the current tab, and add an "active" class to the button that opened the tab
+    document.getElementById(TabName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+
 function sortProperties(obj) {
     // convert object into array
     var sortable = [];
@@ -191,13 +221,14 @@ function readTXT(file, id, type) {
         success: function(data) {
             if (type == 'LQI') {
                 readLQI(id, data);
-                PrintGraph(id);
+                PrintLQIGraph(id);
             }
             if (type == 'Conf') {
                 readConf(id, data);
             }
             if (type == 'Network') {
                 readNetwork(id, data);
+                PrintNETGraph(id);
             }
         }
     });
@@ -208,9 +239,9 @@ function readLQI(id, data) {
     const allLines = data.split(/\r\n|\n/); // Reading line by line 
     allLines.map((line) => {
         if (line.replace(/ /g, '') != '') {
-            LQIdate = line.slice(0, 9);
+            LQIdate = line.slice(2, 11);
             console.log('LQI reports date : ' + LQIdate)
-            LQIdata[LQIdate] = JSON.parse(line.slice(11).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
+            LQIdata[LQIdate] = JSON.parse(line.slice(14, line.length - 1).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
             console.log('LQI reports data :' + LQIdata[LQIdate]);
             LQIlist = Object.keys(LQIdata[LQIdate]);
             // Make Table
@@ -226,7 +257,7 @@ function readLQI(id, data) {
 
     for (ii = 0; ii < Object.keys(LQIdata).length; ii++) {
         var datelist = Object.keys(LQIdata);
-        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`' + id + '_' + datelist[ii] + '`)">' + id + '_' + datelist[ii] + '</button>';
+        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`LQI-' + id + '_' + datelist[ii] + '`)">' + id + '_' + datelist[ii] + '</button>';
     }
     OutResultLinks += "</div>"
         //Print Out result
@@ -239,14 +270,46 @@ function readNetwork(id, data) {
     console.log('Network read');
     // Closure to capture the file information.
     const allLines = data.split(/\r\n|\n/); // Reading line by line 
+    allLines.map((line) => {
+        if (line.replace(/ /g, '') != '') {
+            NETdate = line.slice(2, 11);
+            console.log('Network scan reports date : ' + LQIdate)
+            NETdata[NETdate] = JSON.parse(line.slice(14, line.length - 1).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
+            console.log('Network scan reports data :' + NETdata[NETdate]);
+            NETlist = Object.keys(NETdata[NETdate]);
+            DrawNetGraph(NETdate, NETdata[NETdate], id);
+            OutResultContents += '</div>';
+            console.log('Next reports (line)');
+        };
+    });
+    OutResultLinks += "<div class='NETtab'>"
 
-    //Print Out result
-    $('#NetResult').html(allLines);
+    for (ii = 0; ii < Object.keys(NETdata).length; ii++) {
+        var datelist = Object.keys(NETdata);
+        OutResultLinks += '<button class="tablinks3" onclick="openTab3(event,`NET-' + id + '_' + datelist[ii] + '`)">' + id + '_' + datelist[ii] + '</button>';
+    }
+    OutResultLinks += "</div>"
+        //Print Out result
+    $('#NetResult').html(OutResultLinks + OutResultContents);
+
 
 
 }
 
-function Graph(id, date, matriX, matrixid) {
+function readConf(id, data) {
+
+    console.log('Conf read');
+    // Closure to capture the file information.
+    const allLines = data.split(/\r\n|\n/); // Reading line by line 
+
+    //Print Out result
+    $('#ZigateConf').html(allLines);
+
+
+}
+
+
+function LQIGraph(id, date, matriX, matrixid) {
 
     var width = 720,
         height = 720,
@@ -343,17 +406,32 @@ function Graph(id, date, matriX, matrixid) {
 
 }
 
+function NETGraph(id, date, matriX) {
+
+
+}
+
 function n(n) {
     return n > 9 ? "" + n : "0" + n;
 }
 
-function PrintGraph(id) {
+function PrintLQIGraph(id) {
     console.log('Print Graph :' + id + ', data : ' + LQIdata);
     for (ii = 0; ii < Object.keys(LQIdata).length; ii++) {
         var datelist = Object.keys(LQIdata);
         console.log("Graph for :" + id + ', date : ' + datelist[ii]);
         //console.log('Graph(' + id + ',' + datelist[ii] + ', ' + Matrix[datelist[ii]] + ',' + MatrixId[datelist[ii]] + ');');
-        Graph(id, datelist[ii], Matrix[datelist[ii]], MatrixId[datelist[ii]]);
+        LQIGraph(id, datelist[ii], Matrix[datelist[ii]], MatrixId[datelist[ii]]);
+    }
+}
+
+function PrintNETGraph(id) {
+    console.log('Print Graph :' + id + ', data : ' + LQIdata);
+    for (ii = 0; ii < Object.keys(NETdata).length; ii++) {
+        var datelist = Object.keys(NETdata);
+        console.log("Graph for :" + id + ', date : ' + datelist[ii]);
+        //console.log('Graph(' + id + ',' + datelist[ii] + ', ' + Matrix[datelist[ii]] + ',' + MatrixId[datelist[ii]] + ');');
+        NETGraph(id, datelist[ii], NETdata[datelist[ii]]);
     }
 }
 
@@ -375,11 +453,13 @@ function ReadHxIDx() {
             }
             //console.log(txtHW);
             $('#ZigateHwLoad').html(txtHW);
-            NetworkFile = 'Network_scan-' + HwIDX + '.txt';
-            LQIFile = 'LQI_reports-' + HwIDX + '.txt';
+            NetworkFile = 'Network_scan-' + HwIDX + '.txt.json';
+            LQIFile = 'LQI_reports-' + HwIDX + '.txt.json';
+            ConfFile = 'PluginConf-' + HwIDX + '.txt';
             GetDevs(HwIDX);
             readTXT(ReportsFolder + LQIFile, HwIDX, "LQI");
             readTXT(ReportsFolder + NetworkFile, HwIDX, "Network");
+            readTXT(ConfFolder + ConfFile, HwIDX, "Conf");
 
         });
 };
