@@ -874,27 +874,32 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] = MsgDataDeviceId
     Domoticz.Status("[%s] NEW OBJECT: %s ZDeviceID %s" %('-', MsgDataShAddr, MsgDataDeviceId))
 
-    Domoticz.Debug("Decode8043 - ClusterIN Count : " + MsgDataInClusterCount)
+    # Decoding Cluster IN
+    Domoticz.Status("[%s] NEW OBJECT: %s Cluster IN Count: %s" %('-', MsgDataShAddr, MsgDataInClusterCount))
+    idx = 24
     i=1
     if int(MsgDataInClusterCount,16)>0 :
         while i <= int(MsgDataInClusterCount,16) :
-            MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
+            MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
-
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
 
-    MsgDataOutClusterCount=MsgData[24+(int(MsgDataInClusterCount,16)*4):26+(int(MsgDataInClusterCount,16)*4)]
-    Domoticz.Debug("Decode8043 - ClusterOUT Count : " + MsgDataOutClusterCount)
+    # Decoding Cluster Out
+    idx = 24 + int(MsgDataInClusterCount,16) *4
+    MsgDataOutClusterCount=MsgData[idx:idx+2]
+    Domoticz.Status("[%s] NEW OBJECT: %s Cluster OUT Count: %s" %('-', MsgDataShAddr, MsgDataOutClusterCount))
+
+    print("Cluster Out: %s" %MsgDataOutClusterCount)
+    idx += 2
     i=1
     if int(MsgDataOutClusterCount,16)>0 :
         while i <= int(MsgDataOutClusterCount,16) :
-            MsgDataCluster=MsgData[24+((i-1)*4):24+(i*4)]
+            MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
-
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
