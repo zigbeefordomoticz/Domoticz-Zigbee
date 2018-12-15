@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 15 December 2018 - Version 4.0.4
+- [Issue] #291 , wrong decoding of Cluster Out frame in 0x8043
+
 ## 13 December 2018 - Version 4.0.3
 - [Hardware] Handle new Aqara switches WXKG03LM and WXKG02LM
 
