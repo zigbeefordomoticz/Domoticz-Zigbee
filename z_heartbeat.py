@@ -38,7 +38,7 @@ def processKnownDevices( self, NWKID ):
                                                               # available, let's request a Node Descriptor
             z_output.sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
 
-    if ( intHB % ( 60 // z_consts.HEARTBEAT) ) == 0 or ( intHB == ( 24 // z_consts.HEARTBEAT)):
+    if ( intHB % ( 600 // z_consts.HEARTBEAT) ) == 0 or ( intHB == ( 24 // z_consts.HEARTBEAT)):
         if  'PowerSource' in self.ListOfDevices[NWKID]:       # Let's check first that the field exist, if not 
                                                               # it will be requested at Heartbeat == 12 (see above)
             if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':    #  Only for device receiving req on idle
