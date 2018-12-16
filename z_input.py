@@ -225,22 +225,22 @@ def ZigateRead(self, Devices, Data):
         return
 
     elif str(MsgType)=="8060":  #
-        Domoticz.Log("ZigateRead - MsgType 8060 - Reception Add group response : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8060 - Reception Add group response : " + Data)
         self.groupmgt.addGroupResponse( MsgData )
         return
 
     elif str(MsgType)=="8061":  #
-        Domoticz.Log("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
         self.groupmgt.viewGroupResponse( MsgData )
         return
 
     elif str(MsgType)=="8062":  #
-        Domoticz.Log("ZigateRead - MsgType 8062 - Reception Get group Membership response : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8062 - Reception Get group Membership response : " + Data)
         self.groupmgt.getGroupMembershipResponse(MsgData)
         return
 
     elif str(MsgType)=="8063":  #
-        Domoticz.Log("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
         self.groupmgt.removeGroupResponse( MsgData )
         return
 
@@ -648,7 +648,7 @@ def Decode8024(self, MsgData) : # Network joined / formed
     if MsgExtendedAddress != '' and MsgShortAddress != '':
         self.ZigateIEEE = MsgExtendedAddress
         self.ZigateNWKID = MsgShortAddress
-        self.iaszonemgt.setZigateIEEE( extaddr )
+        self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
 
     if MsgDataStatus == "00": 
         Status = "Joined existing network"
