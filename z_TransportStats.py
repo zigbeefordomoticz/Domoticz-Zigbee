@@ -71,6 +71,8 @@ class TransportStatistics:
         return self._clusterKO
 
     def printSummary(self):
+        if self.received() == 0:
+            return
         Domoticz.Status("Statistics on message")
         Domoticz.Status("Sent:")
         Domoticz.Status("   TX commands      : %s" % (self.sent()))
