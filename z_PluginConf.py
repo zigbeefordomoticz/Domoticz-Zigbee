@@ -69,7 +69,7 @@ class PluginConf:
 
         if self.PluginConf.get('debugReadCluster') and \
                 self.PluginConf.get('debugReadCluster').isdigit():
-            self.sendDelay = int(self.PluginConf['debugReadCluster'], 10)
+            self.debugReadCluster = int(self.PluginConf['debugReadCluster'], 10)
 
         if self.PluginConf.get('resetMotiondelay') and \
                 self.PluginConf.get('resetMotiondelay').isdigit():
