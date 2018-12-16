@@ -13,7 +13,7 @@ import os.path
 
 import z_consts
 
-GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig.txt"
+GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
 
 class GroupsManagement(object):
 
@@ -33,7 +33,7 @@ class GroupsManagement(object):
         self.IEEE2NWK = IEEE2NWK
         self.homeDirectory = HomeDirectory
         self.ZigateComm = ZigateComm
-        self.groupsConfigFilename = HomeDirectory + GROUPS_CONFIG_FILENAME
+        self.groupsConfigFilename = HomeDirectory + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
 
         self._loadListOfGroups()
         self.load_groupsConfig()
@@ -77,7 +77,7 @@ class GroupsManagement(object):
         if grpid not in self.ListOfGroups:
             return
 
-        Domoticz.Debug("_addGroup - Adding device: %s/%s into group: %s" \
+        Domoticz.Log("_addGroup - Adding device: %s/%s into group: %s" \
                 %( device_addr, device_ep, grpid))
 
         datas = "02" + device_addr + "01" + device_ep + grpid
@@ -128,17 +128,17 @@ class GroupsManagement(object):
 
         Domoticz.Log("addGroupResponse - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
 
-        if MsgStatus == "00":
+        if MsgStatus in ( '00', '8a'):
             # We need to find which Device was requested to be add to this group
             if MsgGroupID not in self.ListOfGroups:
                 Domoticz.Log("addGroupResponse - unknown GroupID: %s " %MsgGroupID)
                 return
-            idx = 0
+            idx = -1
             for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[MsgGroupID]['Devices']:
+                idx += 1
                 if dev_status == 'Wip':
                     self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
                     break
-                idx += 1
         return
 
     def _updateGroup(  self, device_ieee, device_addr, device_ep, goup_addr ):
@@ -206,11 +206,12 @@ class GroupsManagement(object):
 
         self.getGMS_count  -= 1
 
-        idx = 0
+        idx =  0
         while idx < int(MsgGroupCount,16):
             groupID = MsgData[16+(idx*4):16+(4+(idx*4))]
-            Domoticz.Debug("        - GroupID: %s" %groupID)
+            Domoticz.Log("        - GroupID: %s" %groupID)
             if groupID not in self.ListOfGroups:
+                #Create the Group
                 self.ListOfGroups[groupID] ={}
                 self.ListOfGroups[groupID]['Grp Status'] = 'Discover'
                 self.ListOfGroups[groupID]['Name'] = ''
@@ -220,9 +221,12 @@ class GroupsManagement(object):
                 if 'Devices' in self.ListOfGroups[groupID]:
                     for iterDev in self.ListOfGroups[groupID]['Devices']:
                         if MsgSourceAddress == iterDev[0] and MsgEP == iterDev[1]:
+                            # Already in the list
+                            Domoticz.Debug("getGroupMembershipResponse - %s alreday known in Grooup: %s" %( MsgSourceAddress, groupID))
                             break
                     else:
                         Domoticz.Debug("getGroupMembershipResponse - Didn't find this entry, let's add it. %s/%s " %(MsgSourceAddress, MsgEP))
+                        self.ListOfGroups[groupID]['Grp Status'] = 'Discover'
                         self.ListOfGroups[groupID]['Devices'].append( [MsgSourceAddress, MsgEP, 'Ok'] )
             idx += 1
         return
@@ -248,17 +252,18 @@ class GroupsManagement(object):
         Domoticz.Log("Decode8063 - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s" 
                 %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
 
-        if MsgStatus == "00":
+        # MsgStatus: 00 - Ok, 8b - moste likely it was not in the group
+        if MsgStatus in ( '00', '8b') :
             # We need to find which Device was requested to be add to this group
             if MsgGroupID not in self.ListOfGroups:
                 Domoticz.Log("addGroupResponse - unknown GroupID: %s " %MsgGroupID)
                 return
-            idx = 0
+            idx = -1
             for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[MsgGroupID]['Devices']:
+                idx += 1
                 if dev_status == 'Wip':
                     self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
                     break
-                idx += 1
         return
 
     def _removeAllGroups(self, device_addr, device_ep ):
@@ -292,6 +297,8 @@ class GroupsManagement(object):
     def _createDomoGroupDevice(self, groupname, group_nwkid):
         ' Create Device for just created group in Domoticz. '
 
+        if groupname == '' or group_nwkid == '':
+            Domoticz.Log("createDomoGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
         unit = self.FreeUnit( self.Devices )
         Domoticz.Log("_createDomoGroupDevice - Unit: %s" %unit)
         myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=241, Subtype=7, Switchtype=7)
@@ -300,12 +307,11 @@ class GroupsManagement(object):
         if myDev.ID == -1 :
             Domoticz.Log("CreateDomoGroupDevice - failed to create Group device.")
 
-    def _removeDomoGroupDevice(self, group_nwkid):
-
-        return
-
     def updateDomoGroupDevice( self, group_nwkid):
-        ' Update the Group status On/Off , based on the attached devices'
+        """ 
+        Update the Group status On/Off and Level , based on the attached devices
+        """
+
 
         if group_nwkid not in self.ListOfGroups:
             Domoticz.Log("updateDomoGroupDevice - unknown group: %s" %group_nwkid)
@@ -355,28 +361,28 @@ class GroupsManagement(object):
             self.Devices[unit].Update( nValue, sValue)
 
 
-    def domGroupDeviceRemoved(self, groupname, group_nwkid):
+    def _removeDomoGroupDevice(self, group_nwkid):
         ' User has remove dthe Domoticz Device corresponding to this group'
 
-        # Remove all device attached to that group
+        if group_nwkid not in self.ListOfGroups:
+            Domoticz.Log("updateDomoGroupDevice - unknown group: %s" %group_nwkid)
+            return
+        if 'Devices' not in self.ListOfGroups[group_nwkid]:
+            Domoticz.Log("updateDomoGroupDevice - no Devices for that group: %s" %self.ListOfGroups[group_nwkid])
+            return
+
+        unit = 0
+        for unit in self.Devices:
+            if self.Devices[unit].DeviceID == group_nwkid:
+                break
+        else:
+            Domoticz.Log("updateDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
+            return
+        Domoticz.Log("domGroupDeviceRemoved - removing Domoticz Widget")
+        self.Devices[unit].Delete()
         
 
     # Group Management methods
-    def add_device_to_group(self, device_nwkid, group):
-
-        # Find the Ep or the List of EP active for this Nwkid. Have a look
-        # in ListOfDevices to see which Ep got a Domoticz Device
-        if device_nwkid not in self.ListOfDevices:
-            return
-
-        return
-
-    def remove_device_from_group(self):
-        pass
-
-    def remove_device_from_all_group(self):
-        pass
-
     def processRemoveGroup( self, unit, grpid):
 
         # Remove all devices from the corresponding group
@@ -384,13 +390,15 @@ class GroupsManagement(object):
             return
 
         # Remove the Domo Device
-        idx = 0
         for iterDev in self.ListOfGroups[grpid]['Devices']:
+            idx = -1
             for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[grpid]['Devices']:
-                Domoticz.Log("_processListOfGroups - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
+                idx += 1
+                Domoticz.Log("processRemoveGroup - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
                 self.ListOfGroups[grpid]['Devices'][idx][2] = 'Remove' 
         self.ListOfGroups[grpid]['Grp Status'] = 'Remove'
         self.stillWIP = True
+        self.StartupPhase = 'step2'
         return
 
 
@@ -409,9 +417,7 @@ class GroupsManagement(object):
             Domoticz.Debug("line: %s" %tmpread )
             if not tmpread: 
                 break
-
             group_id = group_name = None
-
             for token in tmpread.split(','):
                 Domoticz.Debug("%s" %str(token))
                 if group_id is None:
@@ -430,26 +436,20 @@ class GroupsManagement(object):
                     Domoticz.Debug("device:%s" %token)
                     if token.strip() != '':
                         self.toBeImported[group_id]['List of Devices'].append(token.strip())
-
             if group_id :
-                Domoticz.Log("load_groupsConfig - Group[%s]: %s List of Devices: %s to be processed" \
+                Domoticz.Debug("load_groupsConfig - Group[%s]: %s List of Devices: %s to be processed" \
                     %( group_id, self.toBeImported[group_id]['Name'], str(self.toBeImported[group_id]['List of Devices'])))
-
-        # Empty the file to confirm the full import
-        #myfile = open(self.groupsConfigFilename, 'w')
-        #myfile.truncate(0)
-        #myfile.close()
+        myfile.close()
     
     def _processGroupConfig( self ):
-        'Load the Group to be created/Updated into ListOfGroups'
+        """
+        Load the Group to be created/Updated into ListOfGroups, no actions are done
+        """
 
-        Domoticz.Log("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
+        Domoticz.Debug("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
         for grpid in self.toBeImported:
             Domoticz.Debug("_processGroupConfig - process: %s - %s" %(grpid, str(self.toBeImported[grpid])))
             if grpid in self.ListOfGroups:
-                Domoticz.Debug("_processGroupConfig - existing group: len: %s" \
-                        %len(self.toBeImported[grpid]['List of Devices']))
-
                 if self.ListOfGroups[grpid]['Grp Status'] == 'Discover':
                     Domoticz.Debug("_processGroupConfig - Name: >%s<, newName: >%s<" %(self.ListOfGroups[grpid]['Name'], self.toBeImported[grpid]['Name']))
                     if self.ListOfGroups[grpid]['Name'] == '':
@@ -459,12 +459,12 @@ class GroupsManagement(object):
                 if len(self.toBeImported[grpid]['List of Devices']) == 0:
                     Domoticz.Debug("_processGroupConfig - remove group: %s" %grpid)
                     # We have to remove this Group and so remove all devices attached to the group
-                    idx = 0
+                    idx = -1
                     self.ListOfGroups[grpid]['Grp Status'] = 'Remove'
                     for devid, iterep, status  in self.ListOfGroups[grpid]['Devices']:
+                        idx += 1
                         # Remove that one from group
                         self.ListOfGroups[grpid]['Devices'][idx][2] = 'Remove' 
-                        idx += 1
                     continue # Go to next group
 
                 # We have to update, add or remove some devices !
@@ -473,40 +473,56 @@ class GroupsManagement(object):
                     Domoticz.Log("_processGroupConfig - Different group name: %s vs. %s, skip " %(self.ListOfGroups[grpid]['Name'], self.ListOfGroups[grpid]['Name']))
                     continue
 
-                # Let's check if we don't have any Device to remove
-                idx = 0
-                for iternwkid,iterep, iterstatus in self.ListOfGroups[grpid]['Devices']:
-                    for impDev in self.toBeImported[grpid]['List of Devices']:
-                        if self.IEEE2NWK[impDev] == iternwkid:
-                            break
-                    else:
-                        # NOt found in the device to Importe
-                        # We need to remove that device
-                        Domoticz.Log("_processGroupConfig - %s not found in ImportGroups.txt, so remove" %iternwkid)
-                        self.ListOfGroups[grpid]['Devices'][idx][2] = 'Remove' 
-                    idx += 1
-
                 # Let's check what are the new devices for this group
                 for iterDev in  self.toBeImported[grpid]['List of Devices']:
                     if iterDev not in self.IEEE2NWK:
                         # Unknown device
                         Domoticz.Log("_processGroupConfig - unknown device: %s, skip" %iterDev)
                         continue
+                    idx = -1
                     for iterLoG in self.ListOfGroups[grpid]['Devices']:
+                        idx += 1
                         Domoticz.Debug("_processGroupConfig - %s versus %s" %(iterDev, iterLoG))
                         if self.IEEE2NWK[iterDev] == iterLoG[0]:
-                            Domoticz.Log("_processGroupConfig - %s found in ListOFGroup[%s] " %(iterDev, grpid))
+                            Domoticz.Debug("_processGroupConfig - %s found in ListOFGroup[%s] " %(iterDev, grpid))
+                            self.ListOfGroups[grpid]['Devices'][idx][2] = 'Ok'
                             break
                     else: # For loop went to the end , so we didn't find a matching iterDev
                         Domoticz.Log("_processGroupConfig - New device: %s to be added to the group %s " %(iterDev, grpid))
-                        if iterDev in self.IEEE2NWK:
-                            nwkidDev = self.IEEE2NWK[iterDev]
-                            if 'Ep' in self.ListOfDevices[nwkidDev]:
-                                for iterEp in self.ListOfDevices[nwkidDev]['Ep']:
-                                    if 'ClusterType' in self.ListOfDevices[nwkidDev]['Ep'][iterEp] and \
-                                            '0004' in self.ListOfDevices[nwkidDev]['Ep'][iterEp]:
-                                        self.ListOfGroups[grpid]['Devices'].append( [nwkidDev, iterEp, 'New'] )
+                        nwkidDev = self.IEEE2NWK[iterDev]
+                        if 'Ep' in self.ListOfDevices[nwkidDev]:
+                            for iterEp in self.ListOfDevices[nwkidDev]['Ep']:
+                                if ( 'ClusterType' in self.ListOfDevices[nwkidDev] or 'ClusterType' in self.ListOfDevices[nwkidDev]['Ep'][iterEp]) and \
+                                        '0004' in self.ListOfDevices[nwkidDev]['Ep'][iterEp]:
+                                    self.ListOfGroups[grpid]['Devices'].append( [nwkidDev, iterEp, 'New'] )
+                                    Domoticz.Debug("_processGroupConfig - found 'ClusterType' and '0004' for %s/%s in %s" \
+                                        %(nwkidDev, iterEp, str(self.ListOfDevices[nwkidDev]['Ep'][iterEp])))
+                                    break
+                                else:
+                                    Domoticz.Debug("_processGroupConfig - not found 'ClusterType' or '0004' for %s/%s in %s" \
+                                        %(nwkidDev, iterEp, str(self.ListOfDevices[nwkidDev]['Ep'][iterEp])))
+                    #end for else iterLog:
+                # end for loop checking if we got new devices
 
+                # Let's check if we don't have any Device to remove
+                idx = -1
+                for iternwkid,iterep, iterstatus in self.ListOfGroups[grpid]['Devices']:
+                    idx += 1
+                    for impDev in self.toBeImported[grpid]['List of Devices']:
+                        if impDev not in self.IEEE2NWK:
+                            Domoticz.Log("_processGroupConfig - unknown IEEE: %s" %(impDev))
+                            continue
+                        if self.IEEE2NWK[impDev] == iternwkid:
+                            self.ListOfGroups[grpid]['Devices'][idx][2] = 'Ok'
+                            break
+                    else:
+                        # NOt found in the device to Importe
+                        # We need to remove that device
+                        Domoticz.Log("_processGroupConfig - %s not found in ImportGroups.txt, so remove" %iternwkid)
+                        self.ListOfGroups[grpid]['Devices'][idx][2] = 'Remove' 
+
+                # end for iterDev
+                Domoticz.Debug("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
             else:
                 Domoticz.Log("_processGroupConfig - New group to create %s" %grpid)
                 # If this is an unknwon group, start the creation.
@@ -516,26 +532,33 @@ class GroupsManagement(object):
                 self.ListOfGroups[grpid] ={}
                 self.ListOfGroups[grpid]['Grp Status'] = 'New'
                 self.ListOfGroups[grpid]['Name'] = self.toBeImported[grpid]['Name']
-                self.ListOfGroups[grpid]['Devices'] = {}
+                self.ListOfGroups[grpid]['Devices'] = []
                 for iterDev in self.toBeImported[grpid]['List of Devices']:
-                    Domoticz.Log("_processGroupConfig - process: %s/%s" %(grpid, iterDev))
+                    Domoticz.Debug("_processGroupConfig - process: %s/%s" %(grpid, iterDev))
                     if iterDev in self.IEEE2NWK:
                         nwkidDev = self.IEEE2NWK[iterDev]
-                        self.ListOfGroups[grpid]['Devices'] = []
                         if 'Ep' in self.ListOfDevices[nwkidDev]:
                             for iterEp in self.ListOfDevices[nwkidDev]['Ep']:
-                                if 'ClusterType' in self.ListOfDevices[nwkidDev]['Ep'][iterEp] and\
+                                if ( 'ClusterType' in self.ListOfDevices[nwkidDev] or 'ClusterType' in self.ListOfDevices[nwkidDev]['Ep'][iterEp]) and \
                                         '0004' in self.ListOfDevices[nwkidDev]['Ep'][iterEp]:
                                     self.ListOfGroups[grpid]['Devices'].append( [nwkidDev, iterEp, 'New'] )
+                                    Domoticz.Debug("_processGroupConfig - found 'ClusterType'andr '0004' for %s/%s in %s" \
+                                            %(nwkidDev, iterEp, str(self.ListOfDevices[nwkidDev]['Ep'][iterEp])))
+                                    break
+                                else:
+                                    Domoticz.Debug("_processGroupConfig - not found 'ClusterType' or '0004' for %s/%s in %s" \
+                                            %(nwkidDev, iterEp, str(self.ListOfDevices[nwkidDev]['Ep'][iterEp])))
                     else:
                         Domoticz.Log("hearbeatGroupMgt - unknow device to be imported >%s<" %iterDev)
                 self.ListOfGroups[grpid]['Grp Status'] = 'New'
-                Domoticz.Log("hearbeatGroupMgt - Ready to processgroup %s " %self.ListOfGroups[grpid]['Name'])
+                Domoticz.Debug("hearbeatGroupMgt - Ready to processgroup %s " %self.ListOfGroups[grpid]['Name'])
                 for iter in self.ListOfGroups[grpid]['Devices']:
-                    Domoticz.Log("                -  %s  " %iter)
+                    Domoticz.Debug("                -  %s  " %iter)
                 self.toBeImported[grpid]['List of Devices'] = []
+            #end else:
+        # end for grpid
         self.toBeImported = {}
-        Domoticz.Log("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
+        Domoticz.Debug("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
         self.StartupPhase = 'step2'
 
     def _processListOfGroups( self ):
@@ -544,7 +567,7 @@ class GroupsManagement(object):
         Only 1 action at a time, in order to receive the response of Creation and the go to the next one.
         '''
 
-        Domoticz.Log("_processListOfGroups: %s" %str(self.ListOfGroups))
+        Domoticz.Debug("_processListOfGroups: %s" %str(self.ListOfGroups))
         self.stillWIP = False
         toBeRemoved = []
         for iterGrp in self.ListOfGroups:
@@ -555,52 +578,79 @@ class GroupsManagement(object):
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Discover'):
                 # Group retreived from the Zigate
-                Domoticz.Log("_processListOfGroups - Discover, Name: %s and Devices: %s " %(self.ListOfGroups[iterGrp]['Name'],self.ListOfGroups[iterGrp]['Devices']))
+                Domoticz.Debug("_processListOfGroups - Discover, Name: %s and Devices: %s " %(self.ListOfGroups[iterGrp]['Name'],self.ListOfGroups[iterGrp]['Devices']))
                 # Do we have a name for this Group, if yes, let's create a Domo Widget
                 self.stillWIP = True     # In order to force going to Wip_xxx
                 self.ListOfGroups[iterGrp]['Grp Status'] = 'Update'
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('New', 'Remove', 'Update'):
-                Domoticz.Log("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
+                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
                 self.stillWIP = True     # In order to force going to Wip_xxx
-                idx = 0
+                idx = -1
                 self.ListOfGroups[iterGrp]['Grp Status'] = 'Wip_' + self.ListOfGroups[iterGrp]['Grp Status']
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
-                    Domoticz.Log("_processListOfGroups - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
+                    idx += 1
+                    Domoticz.Debug("_processListOfGroups - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
                     if dev_status == 'Ok':
                         pass
                     elif dev_status == 'New':
+                        self.stillWIP = True
                         dev_ieee = self.ListOfDevices[dev_nwkid]['IEEE']
                         self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip' 
-                        Domoticz.Log("_processListOfGroups - _addGroup %s %s %s %s" %(dev_ieee, dev_nwkid, dev_ep, iterGrp))
+                        Domoticz.Debug("_processListOfGroups - _addGroup %s %s %s %s" %(dev_ieee, dev_nwkid, dev_ep, iterGrp))
                         self._addGroup( dev_ieee, dev_nwkid, dev_ep, iterGrp )
+                        break
                     elif dev_status == 'Remove':
+                        self.stillWIP = True
                         self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip' 
-                        Domoticz.Log("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
+                        Domoticz.Debug("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
                         self._removeGroup(dev_nwkid, dev_ep, iterGrp )
-                    idx += 1
+                        break
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Wip_New'):
-                Domoticz.Log("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
+                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
                 # Let's check that all devices have been created
+                idx = -1
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
+                    idx += 1
+                    Domoticz.Debug("_processListOfGroups - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
                     if dev_status == 'Wip':
                         self.stillWIP = True
+                        continue
+                    elif dev_status == 'Ok':
+                        continue
+                    elif dev_status == 'New':
+                        self.stillWIP = True
+                        dev_ieee = self.ListOfDevices[dev_nwkid]['IEEE']
+                        self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip'
+                        Domoticz.Debug("_processListOfGroups - _addGroup %s %s %s %s" %(dev_ieee, dev_nwkid, dev_ep, iterGrp))
+                        self._addGroup( dev_ieee, dev_nwkid, dev_ep, iterGrp )
                         break
+                    elif dev_status == 'Remove':
+                        self.stillWIP = True
+                        self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip'
+                        Domoticz.Debug("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
+                        self._removeGroup(dev_nwkid, dev_ep, iterGrp )
+                        break
+
                 else:
-                    Domoticz.Log("_processListOfGroups - All devices attached to the Zigate Group. Let's create the Widget")
-                    if self.ListOfGroups[iterGrp]['Name'] == '':
-                        self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
-                    self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
-                    self.ListOfGroups[iterGrp]['Grp Status'] = 'Ok'
+                    Domoticz.Debug("_processListOfGroups - All devices attached to the Zigate Group. Let's create the Widget")
+                    if iterGrp != '':
+                        if self.ListOfGroups[iterGrp]['Name'] == '':
+                            self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
+                        self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
+                        self.ListOfGroups[iterGrp]['Grp Status'] = 'Ok'
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Wip_Remove'):
-                Domoticz.Log("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
+                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
                 # Let's check that all Devices have been removed from the Zigate Group
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
                     if dev_status == 'Wip':
                         self.stillWIP = True
                         # Might do one more remove
+                        if self.HB % 5:
+                            Domoticz.Debug("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
+                            self._removeGroup(dev_nwkid, dev_ep, iterGrp )
                         break
                 else:
                     toBeRemoved.append( iterGrp )    # Remove the element from ListOfGroup and Remove the Domoticz Device
@@ -608,17 +658,17 @@ class GroupsManagement(object):
                     self.ListOfGroups[iterGrp]['Grp Status'] = 'Ok'
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Wip_Update'):
-                Domoticz.Log("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
+                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
                     if dev_status == 'Wip':
                         self.stillWIP = True
                         break
                 else:
-                    Domoticz.Log("_processListOfGroups - Set group %s to Ok" %iterGrp)
+                    Domoticz.Debug("_processListOfGroups - Set group %s to Ok" %iterGrp)
                     self.ListOfGroups[iterGrp]['Grp Status'] = 'Ok'
                     for iterUnit in self.Devices:
                         if iterGrp == self.Devices[iterUnit].DeviceID:
-                            Domoticz.Log("_processListOfGroups - found %s in Domoticz." %iterGrp)
+                            Domoticz.Debug("_processListOfGroups - found %s in Domoticz." %iterGrp)
                             # Update the group name if required
                             self.ListOfGroups[iterGrp]['Name'] = self.Devices[iterUnit].Name
                             break
@@ -626,7 +676,7 @@ class GroupsManagement(object):
                         #DO not exist in Domoticz, let's create a widget
                         if self.ListOfGroups[iterGrp]['Name'] == '':
                             self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
-                        Domoticz.Log("_processListOfGroups - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
+                        Domoticz.Debug("_processListOfGroups - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                         self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
             else:
                 Domoticz.Log("_processListOfGroups - unknown status: %s for group: %s." \
@@ -635,13 +685,13 @@ class GroupsManagement(object):
         for iter in toBeRemoved:
             del self.ListOfGroups[iter]
 
-        Domoticz.Log("_processListOfGroups - WIP: %s ListOfGroups: %s " %( self.stillWIP, str(self.ListOfGroups)))
+        Domoticz.Debug("_processListOfGroups - WIP: %s ListOfGroups: %s " %( self.stillWIP, str(self.ListOfGroups)))
         if not self.stillWIP:
             self.StartupPhase = 'step3'
 
         return 
 
-    def _constructGroupList( self ):
+    def _discoverZigateGroups( self ):
 
         self.getGMS_count = 0
         for iterDev in self.ListOfDevices:
@@ -652,15 +702,15 @@ class GroupsManagement(object):
                 for iterEp in self.ListOfDevices[iterDev]['Ep']:
                     if 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                         '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp]:
-                        Domoticz.Debug("_constructGroupList - req membership for %s/%s " %(iterDev, iterEp))
-                        self._getGroupMembership(iterDev, iterEp)
-                        self.getGMS_count += 1
+                        Domoticz.Debug("_discoverZigateGroups - req membership for %s/%s " %(iterDev, iterEp))
+                        self._getGroupMembership(iterDev, iterEp)   # We request MemberShip List
+                                                                    # We will manage it in the getGroupMembershipResponse
+                        self.getGMS_count += 1                      # However sometime we don't tget response at all.
         self.StartupPhase = 'step1'
 
     def hearbeatGroupMgt( self ):
         ' hearbeat to process Group Management actions '
 
-        Domoticz.Debug("hearbeatGroupMgt - Phase: %s HB: %s WIP: %s" %(self.StartupPhase, self.HB, self.stillWIP))
         self.HB += 1
 
         if self.StartupPhase == 'ready':
@@ -670,18 +720,22 @@ class GroupsManagement(object):
 
         elif self.StartupPhase == 'init':
             Domoticz.Log("hearbeatGroupMgt - STEP1 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
-            self._constructGroupList( )
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
+            self._discoverZigateGroups( )
 
-        elif self.StartupPhase == 'step1':
-            Domoticz.Log("hearbeatGroupMgt - STEP2 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+        elif self.StartupPhase == 'step1' and ( self.getGMS_count == 0 or self.HB > 6 ):
+            Domoticz.Log("hearbeatGroupMgt - STEP3 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
             self._processGroupConfig()
 
         elif self.StartupPhase == 'step2':
-            Domoticz.Log("hearbeatGroupMgt - STEP3 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - STEP4 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
             self._processListOfGroups()
 
         elif self.StartupPhase == 'step3':
             Domoticz.Log("hearbeatGroupMgt - READY %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
             self.StartupPhase = 'ready'
 
 
