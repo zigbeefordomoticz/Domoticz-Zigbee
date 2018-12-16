@@ -10,7 +10,7 @@ import pickle
 import json
 
 import os.path
-
+import z_tools
 import z_consts
 
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
@@ -36,7 +36,7 @@ class GroupsManagement(object):
         self.groupsConfigFilename = HomeDirectory + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
 
         self._loadListOfGroups()
-        self.load_groupsConfig()
+        self.load_ZigateGroupConfiguration()
 
         return
 
@@ -77,20 +77,22 @@ class GroupsManagement(object):
         if grpid not in self.ListOfGroups:
             return
 
-        Domoticz.Log("_addGroup - Adding device: %s/%s into group: %s" \
+        Domoticz.Debug("_addGroup - Adding device: %s/%s into group: %s" \
                 %( device_addr, device_ep, grpid))
-
         datas = "02" + device_addr + "01" + device_ep + grpid
         self.ZigateComm.sendData( "0060", datas)
         return
 
     def statusGroupRequest( self, MsgData):
+        """
+        This is a 0x8000 message
+        """
+
         Status=MsgData[0:2]
         SEQ=MsgData[2:4]
         PacketType=MsgData[4:8]
 
         Domoticz.Debug("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
-
         if PacketType == '0062' and Status != '00':
             self.getGMS_count  -= 1
 
@@ -141,15 +143,9 @@ class GroupsManagement(object):
                     break
         return
 
-    def _updateGroup(  self, device_ieee, device_addr, device_ep, goup_addr ):
-        # Called when a Device came with a new Network@
-
-        # We have to remove the all NwkId and add the New Nwkid to the Group
-
-        return
-
     def _viewGroup( self, device_addr, device_ep, goup_addr ):
 
+        Domoticz.Debug("_viewGroup - addr: %s ep: %s group: %s" %(device_addr, device_ep, goup_addr))
         datas = "02" + device_addr + "01" + device_ep + goup_addr
         self.ZigateComm.sendData( "0061", datas)
         return
@@ -402,7 +398,7 @@ class GroupsManagement(object):
         return
 
 
-    def load_groupsConfig(self):
+    def load_ZigateGroupConfiguration(self):
         ' This is to import User Defined/Modified Groups of Devices for processing in the hearbeatGroupMgt'
 
         if not os.path.isfile( self.groupsConfigFilename ) :
@@ -411,7 +407,7 @@ class GroupsManagement(object):
 
         self.toBeImported = {}
         myfile = open( self.groupsConfigFilename, 'r')
-        Domoticz.Debug("load_groupsConfig. Reading the file")
+        Domoticz.Debug("load_ZigateGroupConfiguration. Reading the file")
         while True:
             tmpread = myfile.readline().replace('\n', '')
             Domoticz.Debug("line: %s" %tmpread )
@@ -437,13 +433,16 @@ class GroupsManagement(object):
                     if token.strip() != '':
                         self.toBeImported[group_id]['List of Devices'].append(token.strip())
             if group_id :
-                Domoticz.Debug("load_groupsConfig - Group[%s]: %s List of Devices: %s to be processed" \
+                Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" \
                     %( group_id, self.toBeImported[group_id]['Name'], str(self.toBeImported[group_id]['List of Devices'])))
         myfile.close()
     
     def _processGroupConfig( self ):
         """
-        Load the Group to be created/Updated into ListOfGroups, no actions are done
+        Process the loaded Group Configuration file.
+            - If the groupID is new then Create the group and add the associated Device
+            - If the GroupID is alone ( no device associated ), then remove the group and the device membership
+            - If the GroupID exists, check if there is any additional devices or if some device have been removed. In that case update the membership
         """
 
         Domoticz.Debug("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
@@ -524,7 +523,7 @@ class GroupsManagement(object):
                 # end for iterDev
                 Domoticz.Debug("_processGroupConfig - ListOfGroups: %s" %str(self.ListOfGroups))
             else:
-                Domoticz.Log("_processGroupConfig - New group to create %s" %grpid)
+                Domoticz.Debug("_processGroupConfig - New group to create %s" %grpid)
                 # If this is an unknwon group, start the creation.
                 if len(self.toBeImported[grpid]['List of Devices']) == 0:
                     # Nothing to do, Create a group but no device attached !
@@ -599,13 +598,13 @@ class GroupsManagement(object):
                         self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip' 
                         Domoticz.Debug("_processListOfGroups - _addGroup %s %s %s %s" %(dev_ieee, dev_nwkid, dev_ep, iterGrp))
                         self._addGroup( dev_ieee, dev_nwkid, dev_ep, iterGrp )
-                        break
+                        break   # Break from the inside Loop. We will process the next Group
                     elif dev_status == 'Remove':
                         self.stillWIP = True
                         self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip' 
                         Domoticz.Debug("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
                         self._removeGroup(dev_nwkid, dev_ep, iterGrp )
-                        break
+                        break   # Break from the inside Loop. We will process the next Group
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Wip_New'):
                 Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
@@ -625,13 +624,13 @@ class GroupsManagement(object):
                         self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip'
                         Domoticz.Debug("_processListOfGroups - _addGroup %s %s %s %s" %(dev_ieee, dev_nwkid, dev_ep, iterGrp))
                         self._addGroup( dev_ieee, dev_nwkid, dev_ep, iterGrp )
-                        break
+                        break   # Break from the inside Loop. We will process the next Group
                     elif dev_status == 'Remove':
                         self.stillWIP = True
                         self.ListOfGroups[iterGrp]['Devices'][idx][2] = 'Wip'
                         Domoticz.Debug("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
                         self._removeGroup(dev_nwkid, dev_ep, iterGrp )
-                        break
+                        break   # Break from the inside Loop. We will process the next Group
 
                 else:
                     Domoticz.Debug("_processListOfGroups - All devices attached to the Zigate Group. Let's create the Widget")
@@ -647,11 +646,7 @@ class GroupsManagement(object):
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
                     if dev_status == 'Wip':
                         self.stillWIP = True
-                        # Might do one more remove
-                        if self.HB % 5:
-                            Domoticz.Debug("_processListOfGroups - _removeGroup %s %s %s" %( dev_nwkid, dev_ep, iterGrp))
-                            self._removeGroup(dev_nwkid, dev_ep, iterGrp )
-                        break
+                        break   # Break from the inside Loop. We will process the next Group
                 else:
                     toBeRemoved.append( iterGrp )    # Remove the element from ListOfGroup and Remove the Domoticz Device
                     self._removeDomoGroupDevice(iterGrp )
@@ -662,7 +657,7 @@ class GroupsManagement(object):
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
                     if dev_status == 'Wip':
                         self.stillWIP = True
-                        break
+                        break   # Break from the inside Loop. We will process the next Group
                 else:
                     Domoticz.Debug("_processListOfGroups - Set group %s to Ok" %iterGrp)
                     self.ListOfGroups[iterGrp]['Grp Status'] = 'Ok'
@@ -671,7 +666,7 @@ class GroupsManagement(object):
                             Domoticz.Debug("_processListOfGroups - found %s in Domoticz." %iterGrp)
                             # Update the group name if required
                             self.ListOfGroups[iterGrp]['Name'] = self.Devices[iterUnit].Name
-                            break
+                            break   # Break from the inside Loop. We will process the next Group
                     else:
                         #DO not exist in Domoticz, let's create a widget
                         if self.ListOfGroups[iterGrp]['Name'] == '':
@@ -751,12 +746,24 @@ class GroupsManagement(object):
             zigate_param = '00'
             nValue = 0
             sValue = 'Off'
+            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            #datas = "01" + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            Domoticz.Log("Command: %s" %datas)
+            self.ZigateComm.sendData( zigate_cmd, datas)
+            return
 
         elif Command == 'On' :
             zigate_cmd = "0092"
             zigate_param = '01'
             nValue = '1'
             sValue = 'On'
+            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            #datas = "01" + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            Domoticz.Log("Command: %s" %datas)
+            self.ZigateComm.sendData( zigate_cmd, datas)
+            return
 
         elif Command == 'Set Level':
             zigate_cmd = "0081"
@@ -765,17 +772,85 @@ class GroupsManagement(object):
             zigate_param = OnOff + "%02x" %value + "0010"
             nValue = '1'
             sValue = str(Level)
-        else:
+            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            #datas = "01" + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            Domoticz.Log("Command: %s" %datas)
+            self.ZigateComm.sendData( zigate_cmd, datas)
             return
 
-        if Color_:
-            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
-        else: 
-            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-        #datas = "01" + nwkid + EPin + EPout + zigate_param
-        datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-        Domoticz.Log("Command: %s" %datas)
-        self.ZigateComm.sendData( zigate_cmd, datas)
-        return
+        elif Command == "Set Color" :
+            Hue_List = json.loads(Color_)
+            #First manage level
+            OnOff = '01' # 00 = off, 01 = on
+            value=z_tools.Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+            zigate_cmd = "0081"
+            zigate_param = OnOff + value + "0000"
+            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+            self.ZigateComm.sendData( zigate_cmd, datas)
 
+            if Hue_List['m'] == 1:
+                ww = int(Hue_List['ww']) # Can be used as level for monochrome white
+                #TODO : Jamais vu un device avec ca encore
+                Domoticz.Debug("Not implemented device color 1")
+            #ColorModeTemp = 2   // White with color temperature. Valid fields: t
+            if Hue_List['m'] == 2:
+                #Value is in mireds (not kelvin)
+                #Correct values are from 153 (6500K) up to 588 (1700K)
+                # t is 0 > 255
+                TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
+                TempMired = 1000000 // TempKelvin
+                zigate_cmd = "00C0"
+                zigate_param = z_tools.Hex_Format(4,TempMired) + "0000"
+                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                self.ZigateComm.sendData( zigate_cmd, datas)
 
+            #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
+            elif Hue_List['m'] == 3:
+                x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+                #Convert 0>1 to 0>FFFF
+                x = int(x*65536)
+                y = int(y*65536)
+                strxy = z_tools.Hex_Format(4,x) + z_tools.Hex_Format(4,y)
+                zigate_cmd = "00B7"
+                zigate_param = strxy + "0000"
+                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                self.ZigateComm.sendData( zigate_cmd, datas)
+
+            #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
+            elif Hue_List['m'] == 4:
+                ww = int(Hue_List['ww'])
+                cw = int(Hue_List['cw'])
+                x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+                #TODO, Pas trouve de device avec ca encore ...
+                Domoticz.Debug("Not implemented device color 2")
+
+            #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
+            elif Hue_List['m'] == 9998:
+                h,l,s = z_tools.rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+                saturation = s * 100   #0 > 100
+                hue = h *360           #0 > 360
+                hue = int(hue*254//360)
+                saturation = int(saturation*254//100)
+                value = int(l * 254//100)
+                OnOff = '01'
+                zigate_cmd = "00B6"
+                zigate_param = z_tools.Hex_Format(2,hue) + z_tools.Hex_Format(2,saturation) + "0000"
+                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                self.ZigateComm.sendData( zigate_cmd, datas)
+
+                zigate_cmd = "0081"
+                zigate_param = OnOff + z_tools.Hex_Format(2,value) + "0010"
+                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                self.ZigateComm.sendData( zigate_cmd, datas)
+
+                #Update Device
+                nValue = 1
+                sValue = str(value)
+                self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
+                return
