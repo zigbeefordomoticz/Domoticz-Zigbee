@@ -38,6 +38,10 @@ def processKnownDevices( self, NWKID ):
                                                               # available, let's request a Node Descriptor
             z_output.sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
 
+    # Ping each device, even the battery one. It will make at least the route up-to-date
+    if ( intHB % ( 3000 // z_consts.HEARTBEAT)) == 0:
+        z_output.ReadAttributeRequest_Ack(self, NWKID)
+
     if ( intHB % ( 600 // z_consts.HEARTBEAT) ) == 0 or ( intHB == ( 24 // z_consts.HEARTBEAT)):
         if  'PowerSource' in self.ListOfDevices[NWKID]:       # Let's check first that the field exist, if not 
                                                               # it will be requested at Heartbeat == 12 (see above)
