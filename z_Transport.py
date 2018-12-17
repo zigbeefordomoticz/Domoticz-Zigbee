@@ -257,7 +257,7 @@ class ZigateTransport(object):
             del self._normalQueue[0]
             # self._printSendQueue()
             return ret
-        return None
+        return (None, None, None, None)
 
     def nextStatusInWait(self):
         ' return the entry waiting for a Status '
@@ -265,7 +265,7 @@ class ZigateTransport(object):
             ret = self._waitForStatus[0]
             del self._waitForStatus[0]
             return ret
-        return None
+        return ( None, None, None, None)
 
     def nextDataInWait(self):
         ' return the entry waiting for Data '
@@ -273,7 +273,7 @@ class ZigateTransport(object):
             ret = self._waitForData[0]
             del self._waitForData[0]
             return ret
-        return None
+        return ( None, None, None, None, None)
 
     def sendData(self, cmd, datas):
         '''
