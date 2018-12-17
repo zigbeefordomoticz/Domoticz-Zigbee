@@ -20,6 +20,7 @@ import string
 
 import z_domoticz
 import z_tools
+import z_output
 import z_status
 
 def retreive4Tag(tag,chain):
