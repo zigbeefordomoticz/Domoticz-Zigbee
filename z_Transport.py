@@ -265,7 +265,7 @@ class ZigateTransport(object):
             ret = self._waitForStatus[0]
             del self._waitForStatus[0]
             return ret
-        return ( None, None, None, None)
+        return None
 
     def nextDataInWait(self):
         ' return the entry waiting for Data '
@@ -418,7 +418,8 @@ class ZigateTransport(object):
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOstatus += 1
                 entry = self.nextStatusInWait()
-                Domoticz.Debug("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
+                if entry:
+                    Domoticz.Debug("waitForStatus - Timeout %s on %04.x " % (now - pTime, int(entry[0], 16)))
 
         # Check waitForData
         if len(self._waitForData) > 0:
