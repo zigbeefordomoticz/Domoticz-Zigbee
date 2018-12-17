@@ -92,9 +92,11 @@ class BasePlugin:
         self.Key = ''
         self.HBcount=0
         self.HeartbeatCount = 0
-        self.ZigateIEEE = None       # Zigate IEEE
-        self.ZigateNWKID = None       # Zigate NWKID
+        self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
+        self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
+        self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
         self.FirmwareVersion = None
+        self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # Allow to force devices even if they are not in the Plugin Database. Could be usefull after the Firmware update where you have your devices in domoticz
 
         return
@@ -300,7 +302,6 @@ class BasePlugin:
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
         else:
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
-
 
         # Group Management
         if self.groupmgt:
