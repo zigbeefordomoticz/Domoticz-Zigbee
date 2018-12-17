@@ -204,12 +204,13 @@ def ReadAttributeRequest_Ack(self, key):
 
     # General
     listAttributes = []
-    listAttributes.append(0x0000)        # Application Version
+    listAttributes.append(0x0000) 
+    listAttributes.append(0xff01)
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
             EPout= tmpEp
-    Domoticz.Debug("Requesting Ack for %s/%s" %(key, EPout))
+    Domoticz.Log("Requesting Ack for %s/%s" %(key, EPout))
     ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 
