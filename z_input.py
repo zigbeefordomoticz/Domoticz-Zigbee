@@ -1038,8 +1038,10 @@ def Decode8047(self, MsgData) : # Management Leave response
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
-    
-    Domoticz.Status("ZigateRead - MsgType 8047 - Management Leave response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+
+    Domoticz.Status("Decode8047 - Leave response, SQN: %s Status: %s - %s" \
+            %( MsgSequenceNumber, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus )))
+
     return
 
 def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
@@ -1051,13 +1053,13 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     
     Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
 
-
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     if MsgExtAddress not in self.IEEE2NWK: # Most likely this object has been removed and we are receiving the confirmation.
         return
     sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
+
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
     else :
