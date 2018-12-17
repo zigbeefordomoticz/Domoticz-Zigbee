@@ -429,6 +429,9 @@ def Decode8000_v2(self, MsgData) : # Status
         Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
+    if PacketType in ('004a'):
+        z_output.channelChangeContinue( self)
+
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
         self.groupmgt.statusGroupRequest
     return
@@ -559,6 +562,7 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
     Channel=MsgData[40:42]
     Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + str(int(Channel,16)) )
 
+    self.currentChannel = int(Channel,16)
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
 
@@ -646,6 +650,7 @@ def Decode8024(self, MsgData) : # Network joined / formed
     MsgChannel=MsgData[22:24]
 
     if MsgExtendedAddress != '' and MsgShortAddress != '':
+        self.currentChannel = int(MsgChannel,16)
         self.ZigateIEEE = MsgExtendedAddress
         self.ZigateNWKID = MsgShortAddress
         self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
@@ -865,6 +870,9 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     MsgDataLenght=MsgData[8:10]
     Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + \
             ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
+
+    z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
+
 
     if int(MsgDataLenght,16) == 0 : return
 
@@ -1331,6 +1339,8 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     Domoticz.Log("Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
+    z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
+
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
 
@@ -1346,6 +1356,7 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
 
+    z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
 
 
     if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
@@ -1389,15 +1400,16 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
     if MsgLen==0 :
         return
     else:
-        MsgDataStatus=MsgData[0:2]
-        NwkStatus=MsgData[2:4]
+        # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
+        Status=MsgData[2:4]
+        NwkStatus=MsgData[0:2]
     
-    Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
-            %( MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
+    Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
+            %( Status, NwkStatus))
 
     if NwkStatus != "00" :
         Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
-                %( MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
+                %( Status, z_status.DisplayStatusCode( Status ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
 
 
         return

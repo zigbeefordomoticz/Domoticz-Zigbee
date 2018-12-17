@@ -55,7 +55,7 @@ def ZigateConf_light(self, discover ):
     if discover != "00":    # In order to avoid Devices's noise
         sendZigateCmd(self, "0049","FFFC" + discover + "00")
 
-    Domoticz.Debug("Request network Status")
+    Domoticz.Debug("Request Permit Join Status")
     sendZigateCmd( self, "0014", "" ) # Request status
 
 
@@ -712,10 +712,27 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     Domoticz.Debug("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
 
     datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
-    Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x duration: %02.x count: %s >%s<" \
-            %( mode, mask, scanDuration, scanCount, datas) )
+    if mode == 'scan':
+        Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x duration: %02.x count: %s >%s<" \
+                %( mode, mask, scanDuration, scanCount, datas) )
+    elif mode in ('change', 'update'):
+        Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x" \
+                %( mode, mask ) )
+
     sendZigateCmd(self, "004A", datas )
     return
+
+def channelChangeInitiate( self, channel ):
+
+    Domoticz.Status("Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
+    NwkMgtUpdReq( self, channel, 'change')
+
+def channelChangeContinue( self ):
+
+    Domoticz.Status("Restart network")
+    sendZigateCmd(self, "0024", "" )   # Start Network
+    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
+
 
 def setExtendedPANID(self, extPANID):
     '''
