@@ -353,19 +353,18 @@ class ZigateTransport(object):
     def receiveDataCmd(self, MsgType):
         self.statistics._data += 1
         Domoticz.Debug("receiveDataCmd - MsgType: %s" % MsgType)
-        if len(self._waitForData) != 0:
-            if int(MsgType, 16) == self._waitForData[0][0]:
-                expResponse, cmd, datas, pTime, reTx = self.nextDataInWait()
-                if int(MsgType, 16) != expResponse:
-                    Domoticz.Log(
-                        "receiveDataCmd - unexpected message Type: %s Expecting: %04.x" % (MsgType, expResponse))
-            else:
-                Domoticz.Log("receiveDataCmd - unexpected message Type: %s Expecting: %04.x" \
-                             % (MsgType, self._waitForData[0][0]))
+        # There is a probability that we get an ASYNC message, which is not related to a Command request.
+        # In that case we should just process this message.
 
+        if len(self._waitForData) != 0:
+            if int(MsgType, 16) != self._waitForData[0][0]:
+                return
+
+        expResponse, cmd, datas, pTime, reTx = self.nextDataInWait()
         Domoticz.Debug("receiveDataCmd   - waitQ: %s dataQ: %s normalQ: %s" \
                        % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
 
+        # If we have Still commands in the queue and the WaitforStatus+Data are free
         if len(self._normalQueue) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self.nextCmdtoSend()
