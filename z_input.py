@@ -429,9 +429,6 @@ def Decode8000_v2(self, MsgData) : # Status
         Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
-    if PacketType in ('004a'):
-        z_output.channelChangeContinue( self)
-
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
         self.groupmgt.statusGroupRequest
     return
@@ -742,7 +739,9 @@ def Decode8034(self, MsgData) : # Complex Descriptor response
     MsgCountField=MsgData[12:14]
     MsgFieldValues=MsgData[14:len(MsgData)]
     
-    Domoticz.Status("ZigateRead - MsgType 8034 - Complex Descriptor response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Network address of interest : " + MsgNetworkAddressInterest + " Lenght : " + MsgLenght + " XML Tag : " + MsgXMLTag + " Count Field : " + MsgCountField + " Field Values : " + MsgFieldValues)
+    Domoticz.Status("Decode8034 - Complex Descriptor for: %s xmlTag: %s fieldCount: %s fieldValue: %s, Status: %s" \
+            %( MsgNetworkAddressInterest, MsgXMLTag, MsgCountField, MsgFieldValues, MsgDataStatus))
+
     return
 
 def Decode8040(self, MsgData) : # Network Address response
