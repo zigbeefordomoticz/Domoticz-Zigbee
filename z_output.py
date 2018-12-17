@@ -196,6 +196,23 @@ def ReadAttributeRequest_0000(self, key):
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + EPout )
         ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
+def ReadAttributeRequest_Ack(self, key):
+
+
+    EPin = "01"
+    EPout= "01"
+
+    # General
+    listAttributes = []
+    listAttributes.append(0x0000)        # Application Version
+
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+            EPout= tmpEp
+    Domoticz.Debug("Requesting Ack for %s/%s" %(key, EPout))
+    ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+
+
 def ReadAttributeRequest_0001(self, key):
     # Power Config
     EPin = "01"
@@ -753,8 +770,8 @@ def leaveMgtReJoin( self, saddr, ieee):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
     if self.permitTojoin != 0xff:
-        Domoticz.Log("Switch to Permit to Join for 5s")
-        discover = "%02.X" %int(3)
+        Domoticz.Log("Switch to Permit to Join for 10s")
+        discover = "%02.X" %int(10)
         sendZigateCmd(self, "0049","FFFC" + discover + "00")
 
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))

@@ -1065,7 +1065,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
         Domoticz.Debug("Decode8048 - most likely a 0x004d will come" )
         self.ListOfDevices[sAddr]['Status'] = 'Left'
         self.ListOfDevices[sAddr]['Hearbeat'] = 0
-        Domoticz.Log("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
+        Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
         z_output.leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
     return
