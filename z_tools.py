@@ -339,18 +339,17 @@ def updSQN( self, key, newSQN) :
     if 'PowerSource' in self.ListOfDevices[key] :
         if self.ListOfDevices[key]['PowerSource'] == 'Main':
             # Device on Main Power. SQN is increasing independetly of the object
-            updSQN_mainpower( self, key, newSQN)
+           # updSQN_mainpower( self, key, newSQN)
+            pass
         elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
             # On Battery, each object managed its SQN
             updSQN_battery( self, key, newSQN)
-        else:
-            self.ListOfDevices[key]['SQN'] = {}
-            Domoticz.Log("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['PowerSource'] )
 
-    if 'MacCapa' in self.ListOfDevices[key]:
+    elif 'MacCapa' in self.ListOfDevices[key]:
         if self.ListOfDevices[key]['MacCapa'] == '8e' :     # So far we have a good understanding on 
             # Device on Main Power. SQN is increasing independetly of the object
-            updSQN_mainpower( self, key, newSQN)
+            #updSQN_mainpower( self, key, newSQN)
+            pass
         elif self.ListOfDevices[key]['MacCapa'] == '80':
             # On Battery, each object managed its SQN
             updSQN_battery( self, key, newSQN)
