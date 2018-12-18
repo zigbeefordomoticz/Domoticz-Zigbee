@@ -949,9 +949,8 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
             self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
         
-        with open( self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".txt", 'w') as file:
+        with open( self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".txt", 'a') as file:
             file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
-            self.pluginData
 
     if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
         self.ListOfDevices[MsgDataShAddr]['Status']="8043"

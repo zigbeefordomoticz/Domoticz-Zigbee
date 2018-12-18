@@ -296,9 +296,9 @@ class GroupsManagement(object):
         if groupname == '' or group_nwkid == '':
             Domoticz.Log("createDomoGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
 
-        for x in Devices:
-            if Devices[x].DeviceId == group_nwkid:
-                Domoticz.Log("_createDomoGroupDevice - existing group %s" %(Devices[x].Name))
+        for x in self.Devices:
+            if self.Devices[x].DeviceId == group_nwkid:
+                Domoticz.Log("_createDomoGroupDevice - existing group %s" %(self.Devices[x].Name))
                 return
         unit = self.FreeUnit( self.Devices )
         Domoticz.Log("_createDomoGroupDevice - Unit: %s" %unit)
