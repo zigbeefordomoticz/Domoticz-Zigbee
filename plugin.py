@@ -284,7 +284,6 @@ class BasePlugin:
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   # Ig ZigateIEEE not known, try to get it during the first 10 HB
             z_output.sendZigateCmd(self, "0009","")
 
-
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
             if (self.HeartbeatCount % ( 3600 // z_consts.HEARTBEAT ) ) == 0 :
                 z_output.sendZigateCmd(self, "0009","")
@@ -292,6 +291,9 @@ class BasePlugin:
         prevLenDevices = len(Devices)
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         z_heartbeat.processListOfDevices( self , Devices )
+
+        # IAS Zone Management
+        self.iaszonemgt.IAS_heartbeat( )
 
         # Reset Motion sensors
         z_domoticz.ResetDevice( self, Devices, "Motion",5)
@@ -303,15 +305,16 @@ class BasePlugin:
         else:
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
 
+        # Check if we still have connectivity. If not re-established the connectivity
+        self.ZigateComm.reConn()
+
+        if self.CommiSSionning:
+            return
+
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeatGroupMgt()
 
-        # IAS Zone Management
-        self.iaszonemgt.IAS_heartbeat( )
-
-        # Check if we still have connectivity. If not re-established the connectivity
-        self.ZigateComm.reConn()
 
         return True
 
