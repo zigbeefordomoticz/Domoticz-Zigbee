@@ -1,4 +1,8 @@
 {
+'pluginData':'./data/',
+'pluginReports':'./reports/',
+'pluginConfig':'./config/',
+'pluginWWW':'../../www/templates/',
 'channel':'0',
 'vibrationAqarasensitivity':'medium',
 'resetMotiondelay':'30',
