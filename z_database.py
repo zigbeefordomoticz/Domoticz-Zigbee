@@ -29,7 +29,6 @@ def LoadDeviceList( self ):
     #
     Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 
-
     # Check if the DeviceList file exist.
     if not os.path.isfile( self.DeviceListName ) :
         self.ListOfDevices = {}
@@ -88,13 +87,10 @@ def WriteDeviceList(self, Folder, count):
         Domoticz.Debug("HB count = " + str(self.HBcount))
         self.HBcount=self.HBcount+1
 
-
-
-
 def importDeviceConf( self ) :
     #Import DeviceConf.txt
     tmpread=""
-    with open( self.homedirectory + "DeviceConf.txt", 'r') as myfile:
+    with open( self.pluginconf.pluginConfig  + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
     self.DeviceConf=eval(tmpread)
 
