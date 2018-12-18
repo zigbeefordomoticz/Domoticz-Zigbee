@@ -44,9 +44,9 @@ class PluginConf:
         # Plugin Directories
         self.pluginHome = homedir
         self.pluginData = self.pluginHome + './data/'
-        self.pluginReports = self.pluginHome + './reports'
-        self.pluginConfig = self.pluginHome + './config'
-        self.pluginWWW = self.pluginHome + '../../www/templates'
+        self.pluginReports = self.pluginHome + './reports/'
+        self.pluginConfig = self.pluginHome + './config/'
+        self.pluginWWW = self.pluginHome + '../../www/templates/'
         self.logRepo = homedir
         self.homedirectory = homedir
         self.filename = None
@@ -90,6 +90,8 @@ class PluginConf:
         if self.PluginConf.get('pluginConfig'):
             self.pluginConfig = self.PluginConf['pluginConfig']
 
+        if self.PluginConf.get('pluginWWW'):
+            self.pluginWWW = self.PluginConf['pluginWWW']
 
         if self.PluginConf.get('logRepo'):
             self.logRepo = self.PluginConf['logRepo']
