@@ -1051,7 +1051,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     MsgExtAddress=MsgData[0:16]
     MsgDataStatus=MsgData[16:18]
     
-    Domoticz.Status("Decode8048 - Leave indication, IEEE : " + MsgExtAddress + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Status("Decode8048 - Leave indication from IEEE: %s , Status: %s " %(MsgExtAddress, MsgDataStatus))
 
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
@@ -1063,8 +1063,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
     else :
-        Domoticz.Debug("Decode8048 - device " +str(sAddr) + " annouced to leave" )
-        Domoticz.Debug("Decode8048 - most likely a 0x004d will come" )
+        Domoticz.Status("Decode8048 - device " +str(sAddr) + " annouced to leave" )
         self.ListOfDevices[sAddr]['Status'] = 'Left'
         self.ListOfDevices[sAddr]['Hearbeat'] = 0
         Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
