@@ -43,11 +43,12 @@ class PluginConf:
 
         # Plugin Directories
         self.pluginHome = homedir
-        self.pluginData = self.pluginHome + './data/'
-        self.pluginReports = self.pluginHome + './reports/'
-        self.pluginConfig = self.pluginHome + './config/'
+        self.pluginData = self.pluginHome + './'
+        self.pluginZData = self.pluginHome + './Zdatas/'
+        self.pluginReports = self.pluginHome + './'
+        self.pluginConfig = self.pluginHome + './'
         self.pluginWWW = self.pluginHome + '../../www/templates/'
-        self.logRepo = homedir
+        self.logRepo = self.pluginWWW + 'zigate/reports/'
         self.homedirectory = homedir
         self.filename = None
 
@@ -82,115 +83,22 @@ class PluginConf:
             self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
 
         if self.PluginConf.get('pluginData'):
-            self.pluginData = self.PluginConf['pluginData']
+            self.pluginData = self.pluginHome + self.PluginConf['pluginData']
+
+        if self.PluginConf.get('pluginZData'):
+            self.pluginZData = self.pluginHome + self.PluginConf['pluginZData']
 
         if self.PluginConf.get('pluginReports'):
-            self.pluginReports = self.PluginConf['pluginReports']
+            self.pluginReports = self.pluginHome + self.PluginConf['pluginReports']
 
         if self.PluginConf.get('pluginConfig'):
-            self.pluginConfig = self.PluginConf['pluginConfig']
+            self.pluginConfig = self.pluginHome + self.PluginConf['pluginConfig']
 
         if self.PluginConf.get('pluginWWW'):
-            self.pluginWWW = self.PluginConf['pluginWWW']
+            self.pluginWWW = self.pluginHome + self.PluginConf['pluginWWW']
 
         if self.PluginConf.get('logRepo'):
-            self.logRepo = self.PluginConf['logRepo']
-
-        if self.PluginConf.get('enablegroupmanagement') and \
-                self.PluginConf.get('enablegroupmanagement').isdigit():
-            self.enablegroupmanagement = int(self.PluginConf['enablegroupmanagement'], 10)
-
-        if self.PluginConf.get('debugReadCluster') and \
-                self.PluginConf.get('debugReadCluster').isdigit():
-            self.debugReadCluster = int(self.PluginConf['debugReadCluster'], 10)
-
-        if self.PluginConf.get('resetMotiondelay') and \
-                self.PluginConf.get('resetMotiondelay').isdigit():
-            self.resetMotiondelay = int(self.PluginConf['resetMotiondelay'], 10)
-
-        if self.PluginConf.get('sendDelay') and \
-                self.PluginConf.get('sendDelay').isdigit():
-            self.sendDelay = int(self.PluginConf['sendDelay'], 10)
-
-        if self.PluginConf.get('allowStoreDiscoveryFrames') and \
-                self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
-            self.allowStoreDiscoveryFrames = int(self.PluginConf['allowStoreDiscoveryFrames'], 10)
-
-        if self.PluginConf.get('forceConfigureReporting') and \
-                self.PluginConf.get('forceConfigureReporting').isdigit():
-            self.forceConfigureReporting = int(self.PluginConf['forceConfigureReporting'], 10)
-
-        if self.PluginConf.get('forceReadAttributes') and \
-                self.PluginConf.get('forceReadAttributes').isdigit():
-            self.forceReadAttribute = int(self.PluginConf['forceReadAttributes'], 10)
-
-        if self.PluginConf.get('logFORMAT') and \
-                self.PluginConf.get('logFORMAT').isdigit():
-            self.logFORMAT = int(self.PluginConf['logFORMAT'], 10)
-
-        if self.PluginConf.get('logLQI') and self.PluginConf.get('logLQI').isdigit():
-            self.logLQI = int(self.PluginConf['logLQI'], 10)
-
-        if self.PluginConf.get('allowRemoveZigateDevice') and \
-                self.PluginConf.get('allowRemoveZigateDevice').isdigit():
-            self.allowRemoveZigateDevice = int(self.PluginConf['allowRemoveZigateDevice'], 10)
-
-        if self.PluginConf.get('allowForceCreationDomoDevice') and \
-                self.PluginConf.get('allowForceCreationDomoDevice').isdigit():
-            self.allowForceCreationDomoDevice = int(self.PluginConf['allowForceCreationDomoDevice'], 10)
-
-        if self.PluginConf.get('networkScan') and \
-                self.PluginConf.get('networkScan').isdigit():
-            self.networkScan = int(self.PluginConf['networkScan'], 10)
-
-        if self.PluginConf.get('channel'): 
-            self.channel = self.PluginConf.get('channel')
-            self.channel = [c.strip() for c in self.channel.split(',')]
-
-        if self.PluginConf.get('zmode'):
-            if self.PluginConf.get('zmode') == 'Agressive':
-                self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
-
-        if self.PluginConf.get('reTransmit') and \
-                self.PluginConf.get('reTransmit').isdigit():
-            self.reTransmit = int(self.PluginConf.get('reTransmit'))
-
-        if self.PluginConf.get('zTimeOut') and \
-                self.PluginConf.get('zTimeOut').isdigit():
-            self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
-
-
-
-        # Import PluginConf.txt
-
-        self.filename = self.homedirectory + "PluginConf-%02d.txt" %hardwareid
-        if not os.path.isfile(self.filename) :
-            self.filename = self.homedirectory + "PluginConf.txt"
-
-        Domoticz.Status("PluginConf: %s" %self.filename)
-        tmpPluginConf = ""
-        with open( self.filename, 'r') as myPluginConfFile:
-            tmpPluginConf += myPluginConfFile.read().replace('\n', '')
-
-        Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
-
-        self.PluginConf = eval(tmpPluginConf)
-
-        if self.PluginConf.get('vibrationAqarasensitivity'):
-            self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
-
-        if self.PluginConf.get('pluginData'):
-            self.pluginData = self.PluginConf['pluginData']
-
-        if self.PluginConf.get('pluginReports'):
-            self.pluginReports = self.PluginConf['pluginReports']
-
-        if self.PluginConf.get('pluginConfig'):
-            self.pluginConfig = self.PluginConf['pluginConfig']
-
-
-        if self.PluginConf.get('logRepo'):
-            self.logRepo = self.PluginConf['logRepo']
+            self.logRepo = self.pluginHome + self.PluginConf['logRepo']
 
         if self.PluginConf.get('enablegroupmanagement') and \
                 self.PluginConf.get('enablegroupmanagement').isdigit():
@@ -278,6 +186,7 @@ class PluginConf:
         Domoticz.Log("Plugin Directories")
         Domoticz.Log(" -pluginHome: %s" %self.pluginHome)
         Domoticz.Log(" -pluginData: %s" %self.pluginData)
+        Domoticz.Log(" -pluginZData: %s" %self.pluginZData)
         Domoticz.Log(" -pluginReports: %s" %self.pluginReports)
         Domoticz.Log(" -pluginConfig: %s" %self.pluginConfig)
         Domoticz.Log(" -pluginWWW: %s" %self.pluginWWW)
