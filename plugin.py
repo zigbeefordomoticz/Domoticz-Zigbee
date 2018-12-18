@@ -110,18 +110,15 @@ class BasePlugin:
             Domoticz.Debugging(int(Parameters["Mode6"]))
             DumpConfigToLog()
         
-        self.DeviceListName = Parameters["HomeFolder"]+"DeviceList-"+str(Parameters['HardwareID'])+".txt"
         self.homedirectory = Parameters["HomeFolder"]
         self.HardwareID = (Parameters["HardwareID"])
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
 
-        Domoticz.Log("HomeFolder: %s" %Parameters["HomeFolder"])
-
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
-        self.DomoticzVersion = Parameters["DomoticzVersion"]
         Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
         Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
+        self.DomoticzVersion = Parameters["DomoticzVersion"]
         # Import PluginConf.txt
         if Parameters["DomoticzVersion"] >= '4.10267':
             Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
@@ -131,6 +128,10 @@ class BasePlugin:
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
         
+
+        self.DeviceListName = self.pluginconf.pluginData + "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
+        Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
+
         plugconf = self.pluginconf
         if  plugconf.allowStoreDiscoveryFrames == 1 :
             self.DiscoveryDevices = {}
