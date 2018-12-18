@@ -65,7 +65,7 @@ def processKnownDevices( self, Devices, NWKID ):
                     pass
 
     # Checking Time stamps
-    if intHB % ( 1800 // z_consts.HEARTBEAT) == 0:
+    if (intHB == 2) or intHB % ( 1800 // z_consts.HEARTBEAT) == 0:
         if 'Stamp' in self.ListOfDevices[NWKID]:
             if 'Time' in self.ListOfDevices[NWKID]['Stamp']:
                 lastShow = time.mktime(time.strptime(self.ListOfDevices[NWKID]['Stamp']['Time'],'%Y-%m-%d %H:%M:%S'))
