@@ -53,8 +53,8 @@ class PluginConf:
 
         # Groups Management
         self.enablegroupmanagement = 0
-        self.discoverZigateGroups = 1
-        self.enableConfigGroups = 1
+        self.discoverZigateGroups = 0
+        self.enableConfigGroups = 0
 
         # Network Topoology
         self.logLQI = 0

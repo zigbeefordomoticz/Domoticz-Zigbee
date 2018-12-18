@@ -10,6 +10,6 @@
 'allowRemoveZigateDevice':'0',
 'allowStoreDiscoveryFrames':'0',
 'logRepo':'/var/lib/domoticz/www/templates/zigate/reports/',
-'logLQI':'240',
+'logLQI':'0',
 'logFORMAT':'0'
 }
