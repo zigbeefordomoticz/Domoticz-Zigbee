@@ -13,6 +13,7 @@
 import Domoticz
 import binascii
 import time
+import datetime
 import struct
 import json
 import queue
@@ -26,7 +27,7 @@ import z_consts
 from z_IAS import IAS_Zone_Management
 
 
-def processKnownDevices( self, NWKID ):
+def processKnownDevices( self, Devices, NWKID ):
 
     if self.CommiSSionning: # We have a commission in progress, skip it.
         return
@@ -63,6 +64,21 @@ def processKnownDevices( self, NWKID ):
                     #    z_output.ReadAttributeRequest_0300(self, NWKID )
                     pass
 
+    # Checking Time stamps
+    if intHB % ( 1800 // z_consts.HEARTBEAT) == 0:
+        if 'Stamp' in self.ListOfDevices[NWKID]:
+            if 'Time' in self.ListOfDevices[NWKID]['Stamp']:
+                lastShow = time.mktime(time.strptime(self.ListOfDevices[NWKID]['Stamp']['Time'],'%Y-%m-%d %H:%M:%S'))
+                delta = int(time.time() - lastShow)
+     
+                if delta > 7200:
+                    IEEE = self.ListOfDevices[NWKID]['IEEE']
+                    unit = [x for x in Devices if Devices[x].DeviceID == IEEE ]
+                    unit = unit[0]
+                    Domoticz.Status("%s - Last Update was: %s --> %s ago (More than 2 hours) %s" \
+                        %( Devices[unit].Name, self.ListOfDevices[NWKID]['Stamp']['Time'], 
+                            datetime.datetime.fromtimestamp(delta).strftime('%H:%M:%S'), delta))
+    
     
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
@@ -245,7 +261,7 @@ def processListOfDevices( self , Devices ):
 
         ########## Known Devices 
         if status == "inDB": 
-            processKnownDevices( self , NWKID )
+            processKnownDevices( self , Devices, NWKID )
 
         if status == "Left":
             # Device has sent a 0x8048 message annoucing its departure (Leave)
