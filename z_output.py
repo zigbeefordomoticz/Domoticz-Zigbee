@@ -21,7 +21,7 @@ import queue
 import z_consts
 import z_tools
 
-import time
+from datetime import datetime
 
 def ZigateConf_light(self, discover ):
     '''
@@ -32,11 +32,14 @@ def ZigateConf_light(self, discover ):
     Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
     sendZigateCmd(self, "0015", "")
 
-    utctime = int(time.time())
+    utctime = int(datetime.now().timestamp())
     Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( utctime) )
     sendZigateCmd(self, "0016", str(utctime) )
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
+
+    #Domoticz.Status("Start network scan")
+    #sendZigateCmd(self, "0025", "" )   # Start Network Scan ( Network Formation )
 
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" )   # Start Network
