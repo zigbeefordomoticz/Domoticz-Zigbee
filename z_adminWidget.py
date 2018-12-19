@@ -13,10 +13,10 @@
 import Domoticz
 
 DEVICEID_ADMIN_WIDGET = 'Zigate-01-'
-DEVICEID_ADMIN_WIDGET_TXT = 'Zigate Administration'
 DEVICEID_STATUS_WIDGET = 'Zigate-02-'
-DEVICEID_STATUS_WIDGET_TXT = 'Zigate Status'
 DEVICEID_TEXT_WIDGET = 'Zigate-03-'
+DEVICEID_ADMIN_WIDGET_TXT = 'Zigate Administration'
+DEVICEID_STATUS_WIDGET_TXT = 'Zigate Status'
 DEVICEID_TEXT_WIDGET_TXT = 'Zigate Notifications'
 
 def FreeUnit(self, Devices):
@@ -35,7 +35,7 @@ def FreeUnit(self, Devices):
 
 def createAdminWidget( self, Devices ):
 
-    deviceid_admin_widget = DEVICEID_ADMIN_WIDGET + "%02d" %self.HardwareID
+    deviceid_admin_widget = DEVICEID_ADMIN_WIDGET + "%02s" %self.HardwareID
     unit = 0
     for x in Devices:
         if Devices[x].DeviceID == deviceid_admin_widget:
@@ -43,11 +43,12 @@ def createAdminWidget( self, Devices ):
             break
     if unit != 0:
         return
+
     Options = {"LevelActions": "||||||",
                "LevelNames": "Off|Reset|Erase PDM|Pairing Object|Join for Ever|Interf Scan|LQI Report",
                "LevelOffHidden": "true", "SelectorStyle": "0"}
     unit = FreeUnit(self, Devices)
-    widget_name = DEVICEID_ADMIN_WIDGET_TXT_01 + " %02d" %self.HardwareID
+    widget_name = DEVICEID_ADMIN_WIDGET_TXT_01 + " %02s" %self.HardwareID
     myDev = Domoticz.Device(DeviceID=deviceid_admin_widget, Name=widget_name,
                     Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
     myDev.Create()
@@ -58,7 +59,7 @@ def createAdminWidget( self, Devices ):
 
 def createStatusWidget( self, Devices ):
 
-    deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02d" %self.HardwareID
+    deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" %self.HardwareID
     unit = 0
     for x in Devices:
         if Devices[x].DeviceID == deviceid_status_widget:
@@ -66,7 +67,7 @@ def createStatusWidget( self, Devices ):
             break
     if unit != 0:
         return
-        Devices[unit].Delete()
+        #Devices[unit].Delete()
 
     Options = {"LevelActions": "||",
                "LevelNames": "Off|Startup|Ready|Enrollement|Busy",
@@ -117,11 +118,14 @@ def updateStatusWidget( self, Devices,  statusType ):
             unit = x
             break
     if unit == 0: 
+        Domoticz.Log("updateStatusWidget - didn't find the Widget: %s" %deviceid_status_widget)
         return
+
     sValue = str(STATUS_WIDGET[statusType])
     nValue = int(int(sValue)/10)
     if sValue != Devices[unit].sValue:
-        Domoticz.Log("updateStatusWidget - %s nValue: %s, sValue: %s/%s" %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
+        Domoticz.Log("updateStatusWidget - %s nValue: %s, sValue: %s/%s" 
+                %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
         Devices[unit].Update( nValue =nValue , sValue=sValue)
 
     return
