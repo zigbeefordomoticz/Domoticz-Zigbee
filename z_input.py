@@ -1404,7 +1404,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
         Status=MsgData[2:4]
         NwkStatus=MsgData[0:2]
     
-    Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
+    Domoticz.Debug("Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
             %( Status, NwkStatus))
 
     if NwkStatus != "00" :

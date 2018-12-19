@@ -124,7 +124,7 @@ def updateStatusWidget( self, Devices,  statusType ):
     sValue = str(STATUS_WIDGET[statusType])
     nValue = int(int(sValue)/10)
     if sValue != Devices[unit].sValue:
-        Domoticz.Log("updateStatusWidget - %s nValue: %s, sValue: %s/%s" 
+        Domoticz.Debug("updateStatusWidget - %s nValue: %s, sValue: %s/%s" 
                 %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
         Devices[unit].Update( nValue =nValue , sValue=sValue)
 

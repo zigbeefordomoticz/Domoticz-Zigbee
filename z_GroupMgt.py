@@ -4,6 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 
+
 import Domoticz
 import random
 import pickle
@@ -141,6 +142,9 @@ class GroupsManagement(object):
                 if dev_status == 'Wip':
                     self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
                     break
+        else: 
+            Domoticz.Log("addGroupResponse - [%s] GroupID: %s unexpected status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+
         return
 
     def _viewGroup( self, device_addr, device_ep, goup_addr ):
@@ -260,6 +264,8 @@ class GroupsManagement(object):
                 if dev_status == 'Wip':
                     self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
                     break
+        else:
+            Domoticz.Log("removeGroupResponse - GroupID: %s unexpected Status: %s" %(MsgGroupID, MsgStatus))
         return
 
     def _removeAllGroups(self, device_addr, device_ep ):
@@ -341,7 +347,8 @@ class GroupsManagement(object):
                         if '0006' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
                             if str(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']).isdigit():
                                 if int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']) != 0:
-                                    Domoticz.Debug("updateDomoGroupDevice - Device: %s OnOff: %s" %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006'])))
+                                    Domoticz.Debug("updateDomoGroupDevice - Device: %s OnOff: %s" \
+                                            %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006'])))
                                     nValue = 1
                         if '0008' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
                             Domoticz.Debug("updateDomoGroupDevice - Cluster 0008 value: %s" %self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])
@@ -350,7 +357,8 @@ class GroupsManagement(object):
                                     level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
                                 else:
                                     level = ( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) // 2
-                                Domoticz.Debug("updateDomoGroupDevice - Device: %s level: %s" %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])))
+                                Domoticz.Debug("updateDomoGroupDevice - Device: %s level: %s" \
+                                        %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])))
             Domoticz.Debug("updateDomoGroupDevice - OnOff: %s, Level: %s" %( nValue, level))
                                 
         if level:
@@ -583,13 +591,15 @@ class GroupsManagement(object):
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Discover'):
                 # Group retreived from the Zigate
-                Domoticz.Debug("_processListOfGroups - Discover, Name: %s and Devices: %s " %(self.ListOfGroups[iterGrp]['Name'],self.ListOfGroups[iterGrp]['Devices']))
+                Domoticz.Debug("_processListOfGroups - Discover, Name: %s and Devices: %s " \
+                        %(self.ListOfGroups[iterGrp]['Name'],self.ListOfGroups[iterGrp]['Devices']))
                 # Do we have a name for this Group, if yes, let's create a Domo Widget
                 self.stillWIP = True     # In order to force going to Wip_xxx
                 self.ListOfGroups[iterGrp]['Grp Status'] = 'Update'
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('New', 'Remove', 'Update'):
-                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
+                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" \
+                        %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
                 self.stillWIP = True     # In order to force going to Wip_xxx
                 idx = -1
                 self.ListOfGroups[iterGrp]['Grp Status'] = 'Wip_' + self.ListOfGroups[iterGrp]['Grp Status']
@@ -613,7 +623,8 @@ class GroupsManagement(object):
                         break   # Break from the inside Loop. We will process the next Group
 
             elif self.ListOfGroups[iterGrp]['Grp Status'] in ('Wip_New'):
-                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
+                Domoticz.Debug("_processListOfGroups - self.ListOfGroups[%s]['Grp Status']: %s" \
+                        %(iterGrp, self.ListOfGroups[iterGrp]['Grp Status']))
                 # Let's check that all devices have been created
                 idx = -1
                 for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[iterGrp]['Devices']:
@@ -709,38 +720,6 @@ class GroupsManagement(object):
                         self.getGMS_count += 1                      # However sometime we don't tget response at all.
         self.StartupPhase = 'step1'
 
-    def hearbeatGroupMgt( self ):
-        ' hearbeat to process Group Management actions '
-
-        self.HB += 1
-
-        if self.StartupPhase == 'ready':
-            if not self.stillWIP:
-                for group_nwkid in self.ListOfGroups:
-                    self.updateDomoGroupDevice( group_nwkid)
-
-        elif self.StartupPhase == 'init':
-            Domoticz.Log("hearbeatGroupMgt - STEP1 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
-            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
-            self._discoverZigateGroups( )
-
-        elif self.StartupPhase == 'step1' and ( self.getGMS_count == 0 or self.HB > 6 ):
-            Domoticz.Log("hearbeatGroupMgt - STEP3 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
-            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
-            self._processGroupConfig()
-
-        elif self.StartupPhase == 'step2':
-            Domoticz.Log("hearbeatGroupMgt - STEP4 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
-            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
-            self._processListOfGroups()
-
-        elif self.StartupPhase == 'step3':
-            Domoticz.Log("hearbeatGroupMgt - READY %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
-            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
-            self.StartupPhase = 'ready'
-
-
-        return
 
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
 
@@ -860,3 +839,38 @@ class GroupsManagement(object):
                 sValue = str(value)
                 self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
                 return
+
+    def hearbeatGroupMgt( self ):
+        ' hearbeat to process Group Management actions '
+        # Groups Management
+        # self.pluginconf.enablegroupmanagement 
+        # self.pluginconf.discoverZigateGroups 
+        # self.pluginconf.enableConfigGroups
+
+        self.HB += 1
+
+        if self.StartupPhase == 'ready':
+            if not self.stillWIP:
+                for group_nwkid in self.ListOfGroups:
+                    self.updateDomoGroupDevice( group_nwkid)
+
+        elif self.StartupPhase == 'init':
+            Domoticz.Log("hearbeatGroupMgt - STEP1 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
+            self._discoverZigateGroups( )
+
+        elif self.StartupPhase == 'step1' and ( self.getGMS_count == 0 or self.HB > 6 ):
+            Domoticz.Log("hearbeatGroupMgt - STEP3 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
+            self._processGroupConfig()
+
+        elif self.StartupPhase == 'step2':
+            Domoticz.Log("hearbeatGroupMgt - STEP4 %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
+            self._processListOfGroups()
+
+        elif self.StartupPhase == 'step3':
+            Domoticz.Log("hearbeatGroupMgt - READY %s self.getGMS_count: %s, WIP: %s HB: %s" %(self.HB, self.getGMS_count, self.stillWIP, self.HB))
+            Domoticz.Log("hearbeatGroupMgt - ListOfGrousp: %s " %(str(self.ListOfGroups)))
+            self.StartupPhase = 'ready'
+        return
