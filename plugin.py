@@ -313,7 +313,7 @@ class BasePlugin:
         self.ZigateComm.reConn()
 
         if self.CommiSSionning:
-            z_adminWidget.updateStatusWidget( self, Devices, 'Enrolling')
+            z_adminWidget.updateStatusWidget( self, Devices, 'Enrolment')
             return
 
         # Group Management

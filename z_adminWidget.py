@@ -70,7 +70,7 @@ def createStatusWidget( self, Devices ):
         #Devices[unit].Delete()
 
     Options = {"LevelActions": "||",
-               "LevelNames": "Off|Startup|Ready|Enrollement|Busy",
+               "LevelNames": "Off|Startup|Ready|Enrolment|Busy",
                "LevelOffHidden": "true", "SelectorStyle": "1"}
     unit = FreeUnit(self, Devices)
     widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02s" %self.HardwareID
@@ -106,7 +106,7 @@ def handleAdminWidget( self, Devices, Unit, Command , Color ):
 def updateStatusWidget( self, Devices,  statusType ):
 
 
-    STATUS_WIDGET = { 'Off':'00', 'Startup':'10', 'Ready':'20', 'Enrolling':'30', 'Busy':'40' }
+    STATUS_WIDGET = { 'Off':'00', 'Startup':'10', 'Ready':'20', 'Enrolment':'30', 'Busy':'40' }
 
     deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" %self.HardwareID
     if statusType not in STATUS_WIDGET:
