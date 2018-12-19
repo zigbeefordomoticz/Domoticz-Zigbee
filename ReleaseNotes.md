@@ -6,6 +6,11 @@
 - [Enhancement] Add Clock and Anti-clokc rotation tabs for XCube. This will require a remove and re-inclusion of the device #282, #281
 - [Enhancement] Discover group membership from each main powered devices which also have cluster 0x0004
 - [Hardware] NEXBANG Wireless Door Windows sensor Alarm Home WIFI Security Door (#287)
+- [Hardware] ZIPATO smoke detector
+- [Hardware] IAS Zone enrollement
+- [Enhacement] Group Management (auto-discovery of existing group set via remote controller)
+- [Enhacement] Zigate Status Widget ( Ready, Enrollement, Busy level)
+
 
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
