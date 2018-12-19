@@ -320,7 +320,7 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.hearbeatGroupMgt()
 
-        if self.busy or self.groupmgt.stillWIP:
+        if self.busy or self.groupmgt.stillWIP or len(self.ZigateComm._normalQueue) > 3:
             z_adminWidget.updateStatusWidget( self, Devices, 'Busy')
         else:
             z_adminWidget.updateStatusWidget( self, Devices, 'Ready')
