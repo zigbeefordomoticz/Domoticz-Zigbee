@@ -32,16 +32,19 @@ def processKnownDevices( self, Devices, NWKID ):
     if self.CommiSSionning: # We have a commission in progress, skip it.
         return
 
+    cnt_cmds = 0
     # Check if Node Descriptor was run ( this could not be the case on early version)
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
     if  intHB == ( 28 // z_consts.HEARTBEAT):
         if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
                                                               # available, let's request a Node Descriptor
             z_output.sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
+            cnt_cmds += 1
 
     # Ping each device, even the battery one. It will make at least the route up-to-date
     if ( intHB % ( 3000 // z_consts.HEARTBEAT)) == 0:
         z_output.ReadAttributeRequest_Ack(self, NWKID)
+        cnt_cmds += 1
 
     if ( intHB % ( 600 // z_consts.HEARTBEAT) ) == 0 or ( intHB == ( 24 // z_consts.HEARTBEAT)):
         if  'PowerSource' in self.ListOfDevices[NWKID]:       # Let's check first that the field exist, if not 
@@ -50,12 +53,15 @@ def processKnownDevices( self, Devices, NWKID ):
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
                     if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Metering
                         z_output.ReadAttributeRequest_0702(self, NWKID )
+                        cnt_cmds += 1
                     if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
                         z_output.ReadAttributeRequest_0008(self, NWKID )
+                        cnt_cmds += 1
                     #if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
                     #    z_output.ReadAttributeRequest_000C(self, NWKID )
                     if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
                         z_output.ReadAttributeRequest_0006(self, NWKID )
+                        cnt_cmds += 1
                     #if "0000" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
                     #    z_output.ReadAttributeRequest_0000(self, NWKID )
                     #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
@@ -63,6 +69,9 @@ def processKnownDevices( self, Devices, NWKID ):
                     #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
                     #    z_output.ReadAttributeRequest_0300(self, NWKID )
                     pass
+
+    if cnt_cmds > 5:
+        self.busy = True
 
     # Checking Time stamps
     if (intHB == 2) or intHB % ( 1800 // z_consts.HEARTBEAT) == 0:

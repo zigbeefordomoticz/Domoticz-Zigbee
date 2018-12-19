@@ -79,6 +79,7 @@ class BasePlugin:
         self.permitTojoin = None
         self.groupmgt = None
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
+        self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
@@ -104,6 +105,8 @@ class BasePlugin:
 
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin V Dev Group Management")
+        self.busy = True
+        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
 
         Domoticz.Heartbeat( z_consts.HEARTBEAT )
 
@@ -180,16 +183,17 @@ class BasePlugin:
 
         Domoticz.Log("Establish Zigate connection" )
         self.ZigateComm.openConn()
+        self.busy = False
         return
 
     def onStop(self):
-
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
         if self.groupmgt:
             self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
+        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
 
     def onDeviceRemoved( self, Unit ) :
         Domoticz.Status("onDeviceRemoved called" )
@@ -211,7 +215,9 @@ class BasePlugin:
         # Could be done if a Flag is enabled in the PluginConf.txt.
         
     def onConnect(self, Connection, Status, Description):
+        self.busy = True
         Domoticz.Status("onConnect called")
+        z_adminWidget.updateStatusWidget( self, Devices, 'Busy')
 
         if (Status == 0):
             Domoticz.Log("Connected successfully")
@@ -232,10 +238,12 @@ class BasePlugin:
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
+            z_adminWidget.updateStatusWidget( self, Devices, 'Off')
 
         if self.pluginconf.enablegroupmanagement:
             Domoticz.Log("Start Group Management")
-            self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+            self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
+                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
 
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
@@ -244,6 +252,7 @@ class BasePlugin:
         if (self.pluginconf).logLQI != 0 :
             z_LQI.LQIdiscovery( self ) 
 
+        self.busy = False
         return True
 
     def onMessage(self, Connection, Data):
@@ -265,18 +274,18 @@ class BasePlugin:
                 self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
                 Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
 
-
     def onDisconnect(self, Connection):
+        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
         Domoticz.Status("onDisconnect called")
 
     def onHeartbeat(self):
-
-        #Domoticz.Log("onHeartbeat called" )
+        
 
         ## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
         self.HeartbeatCount += 1
 
-        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   # Ig ZigateIEEE not known, try to get it during the first 10 HB
+        # Ig ZigateIEEE not known, try to get it during the first 10 HB
+        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
             z_output.sendZigateCmd(self, "0009","")
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
@@ -304,13 +313,19 @@ class BasePlugin:
         self.ZigateComm.reConn()
 
         if self.CommiSSionning:
+            z_adminWidget.updateStatusWidget( self, Devices, 'Enrolling')
             return
 
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeatGroupMgt()
 
+        if self.busy or self.groupmgt.stillWIP:
+            z_adminWidget.updateStatusWidget( self, Devices, 'Busy')
+        else:
+            z_adminWidget.updateStatusWidget( self, Devices, 'Ready')
 
+        self.busy = False
         return True
 
 

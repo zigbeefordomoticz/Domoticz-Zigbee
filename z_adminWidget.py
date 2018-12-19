@@ -12,11 +12,11 @@
 
 import Domoticz
 
-DEVICEID_ADMIN_WIDGET = 'Zigate-Adm-01'
+DEVICEID_ADMIN_WIDGET = 'Zigate-01-'
 DEVICEID_ADMIN_WIDGET_TXT = 'Zigate Administration'
-DEVICEID_STATUS_WIDGET = 'Zigate-Adm-02'
+DEVICEID_STATUS_WIDGET = 'Zigate-02-'
 DEVICEID_STATUS_WIDGET_TXT = 'Zigate Status'
-DEVICEID_TEXT_WIDGET = 'Zigate-Adm-03'
+DEVICEID_TEXT_WIDGET = 'Zigate-03-'
 DEVICEID_TEXT_WIDGET_TXT = 'Zigate Notifications'
 
 def FreeUnit(self, Devices):
@@ -65,14 +65,14 @@ def createStatusWidget( self, Devices ):
             unit = x
             break
     if unit != 0:
-        updateStatusWidget( self, Devices,  'Off' )
         return
+        Devices[unit].Delete()
 
-    Options = {"LevelActions": "||||||",
-               "LevelNames": "Off|Ready|Group Enabled|Permit Join|status1|status2|status3",
+    Options = {"LevelActions": "||",
+               "LevelNames": "Off|Startup|Ready|Enrollement|Busy",
                "LevelOffHidden": "true", "SelectorStyle": "1"}
     unit = FreeUnit(self, Devices)
-    widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02d" %self.HardwareID
+    widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02s" %self.HardwareID
     myDev = Domoticz.Device(DeviceID=deviceid_status_widget, Name=widget_name,
                     Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
     myDev.Create()
@@ -105,9 +105,9 @@ def handleAdminWidget( self, Devices, Unit, Command , Color ):
 def updateStatusWidget( self, Devices,  statusType ):
 
 
-    STATUS_WIDGET = { 'Off':'00', 'Ready':'10', 'Group Enabled':'20', 'Permit Join':'30', 'status1':'40', 'status2':'50', 'status3':'60' }
+    STATUS_WIDGET = { 'Off':'00', 'Startup':'10', 'Ready':'20', 'Enrolling':'30', 'Busy':'40' }
 
-    deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02d" %self.HardwareID
+    deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" %self.HardwareID
     if statusType not in STATUS_WIDGET:
         return
 
@@ -118,9 +118,10 @@ def updateStatusWidget( self, Devices,  statusType ):
             break
     if unit == 0: 
         return
-
-    sValue = STATUS_WIDGET[statusType]
-    nValue = int(sValue)/10
-    Devices[unit].Update( nValue =nValue , sValue=sValue)
+    sValue = str(STATUS_WIDGET[statusType])
+    nValue = int(int(sValue)/10)
+    if sValue != Devices[unit].sValue:
+        Domoticz.Log("updateStatusWidget - %s nValue: %s, sValue: %s/%s" %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
+        Devices[unit].Update( nValue =nValue , sValue=sValue)
 
     return
