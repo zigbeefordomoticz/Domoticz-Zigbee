@@ -60,6 +60,7 @@ import z_domoticz
 import z_command
 import z_LQI
 import z_consts
+import z_adminWidget
 import z_WebGui
 
 from z_IAS import IAS_Zone_Management
@@ -162,6 +163,9 @@ class BasePlugin:
 
         # Check update for web GUI
         z_WebGui.CheckForUpdate( self )
+
+        # Create the adminStatusWidget if needed
+        z_adminWidget.createStatusWidget( self, Devices)
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
