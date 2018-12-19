@@ -106,7 +106,7 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin V Dev Group Management")
         self.busy = True
-        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
+        z_adminWidget.updateStatusWidget( self, Devices, 'Startup')
 
         Domoticz.Heartbeat( z_consts.HEARTBEAT )
 
@@ -215,9 +215,9 @@ class BasePlugin:
         # Could be done if a Flag is enabled in the PluginConf.txt.
         
     def onConnect(self, Connection, Status, Description):
+        z_adminWidget.updateStatusWidget( self, Devices, 'Startup')
         self.busy = True
         Domoticz.Status("onConnect called")
-        z_adminWidget.updateStatusWidget( self, Devices, 'Busy')
 
         if (Status == 0):
             Domoticz.Log("Connected successfully")
