@@ -69,13 +69,13 @@ def createStatusWidget( self, Devices ):
         return
         #Devices[unit].Delete()
 
-    Options = {"LevelActions": "||",
-               "LevelNames": "Off|Startup|Ready|Enrolment|Busy",
-               "LevelOffHidden": "true", "SelectorStyle": "1"}
+    #Options = {"LevelActions": "||",
+    #           "LevelNames": "Off|Startup|Ready|Enrolment|Busy",
+    #           "LevelOffHidden": "true", "SelectorStyle": "1"}
     unit = FreeUnit(self, Devices)
     widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02s" %self.HardwareID
     myDev = Domoticz.Device(DeviceID=deviceid_status_widget, Name=widget_name,
-                    Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                    Unit=unit, Type=243, Subtype=22, Switchtype=0)
     myDev.Create()
     ID = myDev.ID
     if myDev.ID == -1 :
@@ -106,7 +106,11 @@ def handleAdminWidget( self, Devices, Unit, Command , Color ):
 def updateStatusWidget( self, Devices,  statusType ):
 
 
-    STATUS_WIDGET = { 'Off':'00', 'Startup':'10', 'Ready':'20', 'Enrolment':'30', 'Busy':'40' }
+    STATUS_WIDGET = { 'Off':4, 
+            'Startup':0, 
+            'Ready':1, 
+            'Enrolment':3, 
+            'Busy':3 }
 
     deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" %self.HardwareID
     if statusType not in STATUS_WIDGET:
@@ -121,8 +125,8 @@ def updateStatusWidget( self, Devices,  statusType ):
         Domoticz.Log("updateStatusWidget - didn't find the Widget: %s" %deviceid_status_widget)
         return
 
-    sValue = str(STATUS_WIDGET[statusType])
-    nValue = int(int(sValue)/10)
+    nValue = STATUS_WIDGET[statusType]
+    sValue = str(statusType)
     if sValue != Devices[unit].sValue:
         Domoticz.Debug("updateStatusWidget - %s nValue: %s, sValue: %s/%s" 
                 %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
