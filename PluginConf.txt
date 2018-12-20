@@ -1,5 +1,5 @@
 {
-'channel':'15,16,21,22',
+'channel':'11,15,16,21,22',
 'vibrationAqarasensitivity':'medium',
 'resetMotiondelay':'30',
 'enablegroupmanagement':'0',

@@ -306,7 +306,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="8701":  # 
         Domoticz.Debug("ZigateRead - MsgType 8701 - Reception Router discovery confirm : " + Data)
-        Decode8701(self, MsgData, Data)
+        Decode8701(self, MsgData)
         return
 
     elif str(MsgType)=="8702":  # APS Data Confirm Fail
@@ -1400,7 +1400,7 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     return
 
 #Router Discover
-def Decode8701(self, MsgData, Data) : # Reception Router Disovery Confirm Status
+def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8701 - MsgLen = " + str(MsgLen))
 
@@ -1417,10 +1417,8 @@ def Decode8701(self, MsgData, Data) : # Reception Router Disovery Confirm Status
     if NwkStatus != "00" :
         Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
                 %( Status, z_status.DisplayStatusCode( Status ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
-        Domoticz.Log("Decode8701 - Data Received: %s" %Data)
 
-
-        return
+    return
 
 #Réponses APS
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
