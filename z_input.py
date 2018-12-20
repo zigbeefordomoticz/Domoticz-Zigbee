@@ -105,7 +105,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="8009":  #
         Domoticz.Debug("ZigateRead - MsgType 8009 - Network State response : " + Data)
-        Decode8009( self, MsgData)
+        Decode8009( self, Devices, MsgData)
         return
 
 
@@ -306,7 +306,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="8701":  # 
         Domoticz.Debug("ZigateRead - MsgType 8701 - Reception Router discovery confirm : " + Data)
-        Decode8701(self, MsgData)
+        Decode8701(self, MsgData, Data)
         return
 
     elif str(MsgType)=="8702":  # APS Data Confirm Fail
@@ -550,7 +550,7 @@ def Decode8006(self,MsgData) : # Non “Factory new” Restart
 
     Domoticz.Status("Decode8006 - Non 'Factory new' Restart status: %s" %(Status) )
 
-def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
+def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
     addr=MsgData[0:4]
@@ -563,10 +563,11 @@ def Decode8009(self,MsgData) : # Network State response (Firm v3.0d)
     self.currentChannel = int(Channel,16)
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
-
     self.iaszonemgt.setZigateIEEE( extaddr )
 
     Domoticz.Status("Decode8009 : Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
+    z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate IEEE: %s' %self.ZigateIEEE)
+    z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
 
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0" : 
@@ -1399,7 +1400,7 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     return
 
 #Router Discover
-def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
+def Decode8701(self, MsgData, Data) : # Reception Router Disovery Confirm Status
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8701 - MsgLen = " + str(MsgLen))
 
@@ -1416,6 +1417,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
     if NwkStatus != "00" :
         Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
                 %( Status, z_status.DisplayStatusCode( Status ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
+        Domoticz.Log("Decode8701 - Data Received: %s" %Data)
 
 
         return

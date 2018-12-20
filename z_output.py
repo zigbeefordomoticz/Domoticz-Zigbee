@@ -685,7 +685,7 @@ def setChannel( self, channel):
     ZigBee supports channels 11-26.
     '''
     mask = maskChannel( channel )
-    Domoticz.Debug("setChannel - Channel set to : %08.x " %(mask))
+    Domoticz.Log("setChannel - Channel set to : %08.x " %(mask))
 
     sendZigateCmd(self, "0021", "%08.x" %(mask))
     return
