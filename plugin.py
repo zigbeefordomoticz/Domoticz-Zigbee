@@ -315,11 +315,17 @@ class BasePlugin:
             z_adminWidget.updateStatusWidget( self, Devices, 'Enrolment')
             return
 
+        busy_ = False
         # Group Management
         if self.groupmgt:
             self.groupmgt.hearbeatGroupMgt()
+            if self.groupmgt.stillWIP:
+                busy_ = True
+            
+        if self.busy  or len(self.ZigateComm._normalQueue) > 3:
+            busy_ = True
 
-        if self.busy or self.groupmgt.stillWIP or len(self.ZigateComm._normalQueue) > 3:
+        if busy_:
             z_adminWidget.updateStatusWidget( self, Devices, 'Busy')
         else:
             z_adminWidget.updateStatusWidget( self, Devices, 'Ready')
