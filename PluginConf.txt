@@ -1,10 +1,4 @@
 {
-'pluginData':'./',
-'pluginZData':'./Zdatas/',
-'pluginConfig':'./',
-'pluginWWW':'../../www/templates/',
-'pluginReports':'../../www/templates/zigate/reports/',
-'logRepo':'../../www/templates/zigate/reports/',
 'channel':'0',
 'vibrationAqarasensitivity':'medium',
 'resetMotiondelay':'30',

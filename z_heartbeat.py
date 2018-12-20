@@ -193,7 +193,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
-        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
+        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
+                %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
         self.CommiSSionning = False
 
     # https://github.com/sasu-drooz/Domoticz-Zigate/wiki/ProfileID---ZDeviceID
@@ -225,7 +226,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if IsCreated == False:
                 Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
                 z_domoticz.CreateDomoDevice(self, Devices, NWKID)
-                self.CommiSSionning = False
                 # Post creation widget
 
                 # 1 Enable Configure Reporting for any applicable cluster/attributes
@@ -244,6 +244,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                      Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
                             %(NWKID, self.pluginconf.vibrationAqarasensitivity))
                      z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
+
+                z_adminWidget.updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
+                        %(self.ListOfDevices[NWKID]['Model'], NWKID))
+                self.CommiSSionning = False
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
@@ -315,7 +319,7 @@ def processListOfDevices( self , Devices ):
     if self.pluginconf.logLQI != 0 and \
             self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // z_consts.HEARTBEAT):
         if self.ZigateComm.loadTransmit() < 5 :
-            z_LQI.LQIcontinueScan( self )
+            z_LQI.LQIcontinueScan( self, Devices )
 
     if self.HeartbeatCount == 4:
         # Trigger Conifre Reporting to eligeable decices

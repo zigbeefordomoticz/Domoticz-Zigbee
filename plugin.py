@@ -280,7 +280,6 @@ class BasePlugin:
 
     def onHeartbeat(self):
         
-
         ## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
         self.HeartbeatCount += 1
 

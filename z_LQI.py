@@ -19,6 +19,7 @@ import json
 
 import Domoticz
 import z_output
+import z_adminWidget
 
 def LQIdiscovery(self):
     """
@@ -31,7 +32,7 @@ def LQIdiscovery(self):
     self.LQI = {}
     mgtLQIreq(self)    # We start and by default, it will be on 0x0000 , Index 0
 
-def LQIcontinueScan(self):
+def LQIcontinueScan(self, Devices):
 
     LQIfound = False
     LODfound = False
@@ -101,11 +102,11 @@ def LQIcontinueScan(self):
                             %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
 
         # Write the report onto file
-        _filename = self.pluginconf.logRepo + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
+        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
         storeLQI = {}
         storeLQI[int(time.time())] = self.LQI
 
-        if os.path.isdir( self.pluginconf.logRepo ) :
+        if os.path.isdir( self.pluginconf.pluginReports ) :
             Domoticz.Status("LQI report save on " +str(_filename))
             with open(_filename , 'at') as file:
                 for key in storeLQI:
@@ -116,8 +117,9 @@ def LQIcontinueScan(self):
             with open( json_filename, 'at') as json_file:
                 json_file.write('\n')
                 json.dump( storeLQI, json_file)
+            z_adminWidget.updateNotificationWidget( self, Devices, 'A new LQI report is available')
         else:
-            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.logRepo))
+            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
             self.pluginconf.logLQI = 0
             return 
 

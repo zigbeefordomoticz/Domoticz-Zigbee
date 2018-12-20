@@ -43,19 +43,18 @@ class PluginConf:
 
         # Plugin Directories
         self.pluginHome = homedir
+        self.homedirectory = homedir
         self.pluginData = self.pluginHome + './'
         self.pluginZData = self.pluginHome + './Zdatas/'
-        self.pluginReports = self.pluginHome + './'
         self.pluginConfig = self.pluginHome + './'
         self.pluginWWW = self.pluginHome + '../../www/templates/'
-        self.logRepo = self.pluginWWW + 'zigate/reports/'
-        self.homedirectory = homedir
+        self.pluginReports = self.pluginWWW + 'zigate/reports/'
         self.filename = None
 
         # Groups Management
         self.enablegroupmanagement = 0
-        self.discoverZigateGroups = 0
-        self.enableConfigGroups = 0
+        self.discoverZigateGroups = 1
+        self.enableConfigGroups = 1
 
         # Network Topoology
         self.logLQI = 0
@@ -83,22 +82,19 @@ class PluginConf:
             self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
 
         if self.PluginConf.get('pluginData'):
-            self.pluginData = self.pluginHome + self.PluginConf['pluginData']
+            self.pluginData = self.PluginConf['pluginData']
 
         if self.PluginConf.get('pluginZData'):
-            self.pluginZData = self.pluginHome + self.PluginConf['pluginZData']
+            self.pluginZData = self.PluginConf['pluginZData']
 
         if self.PluginConf.get('pluginReports'):
-            self.pluginReports = self.pluginHome + self.PluginConf['pluginReports']
+            self.pluginReports = self.PluginConf['pluginReports']
 
         if self.PluginConf.get('pluginConfig'):
-            self.pluginConfig = self.pluginHome + self.PluginConf['pluginConfig']
+            self.pluginConfig = self.PluginConf['pluginConfig']
 
         if self.PluginConf.get('pluginWWW'):
-            self.pluginWWW = self.pluginHome + self.PluginConf['pluginWWW']
-
-        if self.PluginConf.get('logRepo'):
-            self.logRepo = self.pluginHome + self.PluginConf['logRepo']
+            self.pluginWWW = self.PluginConf['pluginWWW']
 
         if self.PluginConf.get('enablegroupmanagement') and \
                 self.PluginConf.get('enablegroupmanagement').isdigit():
@@ -190,7 +186,6 @@ class PluginConf:
         Domoticz.Log(" -pluginReports: %s" %self.pluginReports)
         Domoticz.Log(" -pluginConfig: %s" %self.pluginConfig)
         Domoticz.Log(" -pluginWWW: %s" %self.pluginWWW)
-        Domoticz.Log(" -logRepo: %s" %self.logRepo)
         Domoticz.Log(" -homedirectory: %s" %self.homedirectory)
         Domoticz.Log(" -filename: %s" %self.filename)
 

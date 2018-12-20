@@ -25,6 +25,7 @@ import z_status
 import z_output
 import z_readClusters
 import z_LQI
+import z_adminWidget
 
 
 from z_IAS import IAS_Zone_Management
@@ -211,7 +212,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="804a":  #
         Domoticz.Debug("ZigateRead - MsgType 804a - Reception Management Network Update response : " + Data)
-        Decode804A(self, MsgData)
+        Decode804A(self, Devices, MsgData)
         return
 
     elif str(MsgType)=="804b":  #
@@ -1052,6 +1053,7 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
     MsgDataStatus=MsgData[16:18]
     
     Domoticz.Status("Decode8048 - Leave indication from IEEE: %s , Status: %s " %(MsgExtAddress, MsgDataStatus))
+    z_adminWidget.updateNotificationWidget( self, Devices, 'Leave indication from %s' %MsgExtAddress )
 
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
@@ -1064,14 +1066,15 @@ def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
     else :
         Domoticz.Status("Decode8048 - device " +str(sAddr) + " annouced to leave" )
-        self.ListOfDevices[sAddr]['Status'] = 'Left'
-        self.ListOfDevices[sAddr]['Hearbeat'] = 0
-        Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
-        z_output.leaveMgtReJoin( self, sAddr, MsgExtAddress )
+        if self.ListOfDevices[sAddr]['Status'] == 'inDB':
+            self.ListOfDevices[sAddr]['Status'] = 'Left'
+            self.ListOfDevices[sAddr]['Hearbeat'] = 0
+            Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
+            z_output.leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
     return
 
-def Decode804A(self, MsgData) : # Management Network Update response
+def Decode804A(self, Devices, MsgData) : # Management Network Update response
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode804A - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
@@ -1125,7 +1128,7 @@ def Decode804A(self, MsgData) : # Management Network Update response
         Domoticz.Status("Decode804A -     Channel: %s Interference: : %s " %(chan, int(inter,16)))
 
     # Write the report onto file
-    _filename =  self.pluginconf.logRepo + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
+    _filename =  self.pluginconf.pluginReports + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
     Domoticz.Status("Network Scan report save on " +str(_filename))
     with open(_filename , 'at') as file:
         for key in nwkscan:
@@ -1135,6 +1138,9 @@ def Decode804A(self, MsgData) : # Management Network Update response
     with open( json_filename , 'at') as json_file:
         json_file.write('\n')
         json.dump( nwkscan, json_file)
+
+
+    z_adminWidget.updateNotificationWidget( self, Devices, 'A new Network Scan report is available' )
 
     return
 
