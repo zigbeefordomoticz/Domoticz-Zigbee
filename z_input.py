@@ -560,18 +560,26 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
     Channel=MsgData[40:42]
     Domoticz.Debug("Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + str(int(Channel,16)) )
 
-    self.currentChannel = int(Channel,16)
+    
+    if self.ZigateIEEE != extaddr:
+        z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate IEEE: %s' %extaddr)
+
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
+
+    if self.currentChannel != int(Channel,16):
+        z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
+    self.currentChannel = int(Channel,16)
+
     self.iaszonemgt.setZigateIEEE( extaddr )
 
     Domoticz.Status("Decode8009 : Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
-    z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate IEEE: %s' %self.ZigateIEEE)
-    z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
 
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0" : 
         Domoticz.Status("Decode8009 : Network state DOWN ! " )
+        z_adminWidget.updateNotificationWidget( self, Devices, 'Network down PanID = 0' )
+        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
     else :
         Domoticz.Status("Decode8009 - Network state UP, PANID: %s extPANID: 0x%s Channel: %s" \
                 %( PanID, extPanID, int(Channel,16) ))
