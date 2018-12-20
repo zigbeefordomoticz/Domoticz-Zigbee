@@ -222,6 +222,11 @@ def CheckDeviceList(self, key, val) :
     Domoticz.Debug("CheckDeviceList - with value : " + str(val))
 
     DeviceListVal=eval(val)
+    # Do not load Devices in State == 'unknown' or 'left' 
+    if 'Status' in DeviceListVal:
+        if DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP' ):
+            Domoticz.Status("Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+            return
     if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
         initDeviceInList(self, key)
         self.ListOfDevices[key]['RIA']="10"
