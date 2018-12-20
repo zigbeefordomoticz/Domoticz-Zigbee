@@ -14,10 +14,10 @@ import Domoticz
 
 DEVICEID_ADMIN_WIDGET = 'Zigate-01-'
 DEVICEID_STATUS_WIDGET = 'Zigate-02-'
-DEVICEID_TEXT_WIDGET = 'Zigate-03-'
+DEVICEID_TXT_WIDGET = 'Zigate-03-'
 DEVICEID_ADMIN_WIDGET_TXT = 'Zigate Administration'
 DEVICEID_STATUS_WIDGET_TXT = 'Zigate Status'
-DEVICEID_TEXT_WIDGET_TXT = 'Zigate Notifications'
+DEVICEID_TXT_WIDGET_TXT = 'Zigate Notifications'
 
 def FreeUnit(self, Devices):
     '''
@@ -32,6 +32,13 @@ def FreeUnit(self, Devices):
     else:
         Domoticz.Debug("FreeUnit - device " + str(len(Devices) + 1))
         return len(Devices) + 1
+
+
+def initializeZigateWidgets( self, Devices ):
+
+    createStatusWidget( self, Devices)
+    createNotificationWidget( self, Devices)
+    return
 
 def createAdminWidget( self, Devices ):
 
@@ -85,6 +92,29 @@ def createStatusWidget( self, Devices ):
     updateStatusWidget( self, Devices,  'Off' )
     return
 
+def createNotificationWidget( self, Devices ):
+
+    deviceid_txt_widget = DEVICEID_TXT_WIDGET + "%02s" %self.HardwareID
+    unit = 0
+    for x in Devices:
+        if Devices[x].DeviceID == deviceid_txt_widget:
+            unit = x
+            break
+    if unit != 0:
+        return
+
+    unit = FreeUnit(self, Devices)
+    widget_name = DEVICEID_TXT_WIDGET_TXT + " %02s" %self.HardwareID
+    myDev = Domoticz.Device(DeviceID=deviceid_txt_widget, Name=widget_name,
+                    Unit=unit, Type=243, Subtype=19, Switchtype=0)
+    myDev.Create()
+    ID = myDev.ID
+    if myDev.ID == -1 :
+        Domoticz.Error("createNotificationWidget - Fail to create %s. %s" %(widget_name, str(myDev)))
+        return
+
+    return
+
 def handleAdminWidget( self, Devices, Unit, Command , Color ):
 
 
@@ -105,13 +135,11 @@ def handleAdminWidget( self, Devices, Unit, Command , Color ):
 
 def updateStatusWidget( self, Devices,  statusType ):
 
-
     STATUS_WIDGET = { 'Off':4, 
             'Startup':0, 
             'Ready':1, 
             'Enrolment':3, 
             'Busy':3 }
-
     deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" %self.HardwareID
     if statusType not in STATUS_WIDGET:
         return
@@ -122,14 +150,34 @@ def updateStatusWidget( self, Devices,  statusType ):
             unit = x
             break
     if unit == 0: 
-        Domoticz.Log("updateStatusWidget - didn't find the Widget: %s" %deviceid_status_widget)
+        Domoticz.Log("updateNotificationWidget - didn't find the Widget: %s" %deviceid_status_widget)
         return
 
     nValue = STATUS_WIDGET[statusType]
     sValue = str(statusType)
     if sValue != Devices[unit].sValue:
-        Domoticz.Debug("updateStatusWidget - %s nValue: %s, sValue: %s/%s" 
+        Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s" 
                 %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
         Devices[unit].Update( nValue =nValue , sValue=sValue)
 
     return
+
+def updateNotificationWidget( self, Devices, notification ):
+
+    deviceid_txt_widget = DEVICEID_TXT_WIDGET + "%02s" %self.HardwareID
+    unit = 0
+    for x in Devices:
+        if Devices[x].DeviceID == deviceid_txt_widget:
+            unit = x
+            break
+    if unit == 0:
+        Domoticz.Log("updateNotificationWidget - didn't find the Widget: %s" %deviceid_status_widget)
+        return
+
+    nValue = 0
+    sValue = str(notification)
+    if sValue != Devices[unit].sValue:
+        Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s"
+                %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
+        Devices[unit].Update( nValue =nValue , sValue=sValue)
+

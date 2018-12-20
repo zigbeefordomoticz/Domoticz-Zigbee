@@ -168,7 +168,7 @@ class BasePlugin:
         z_WebGui.CheckForUpdate( self )
 
         # Create the adminStatusWidget if needed
-        z_adminWidget.createStatusWidget( self, Devices)
+        z_adminWidget.initializeZigateWidgets( self, Devices)
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
