@@ -207,7 +207,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="8048":  #
         Domoticz.Log("ZigateRead - MsgType 8048 - Reception Leave indication : " + Data)
-        Decode8048(self, MsgData, MsgRSSI)
+        Decode8048(self, Devices, MsgData, MsgRSSI)
         return
 
     elif str(MsgType)=="804a":  #
@@ -1046,7 +1046,7 @@ def Decode8047(self, MsgData) : # Management Leave response
 
     return
 
-def Decode8048(self, MsgData, MsgRSSI) : # Leave indication
+def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8048 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
