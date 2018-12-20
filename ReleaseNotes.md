@@ -9,8 +9,11 @@
 - [Hardware] ZIPATO smoke detector
 - [Hardware] IAS Zone enrollement
 - [Enhacement] Group Management (auto-discovery of existing group set via remote controller)
-- [Enhacement] Zigate Status Widget ( Ready, Enrollement, Busy level)
-
+- [Enhacement] Zigate Status Widget (Measure section) ( Ready, Enrollement, Busy )
+- [Technical] At startup when loading the ListOfDevice, do not load UNKNOW devices.
+- [Enhacement] Zigate Notification Widget (measures section) to display plugin notification
+- [Technical] Configurable plugin folders ( Data, Zdata, reports, www/templates )
+- [Technical] Confirgure by default the ZigBee Channels (recommended for Europe
 
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
