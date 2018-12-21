@@ -168,7 +168,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
 
-def ReadAttributeRequest_0000(self, key):
+def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
@@ -177,13 +177,16 @@ def ReadAttributeRequest_0000(self, key):
 
     # General
     listAttributes = []
-    listAttributes.append(0x0001)        # Application Version
-    listAttributes.append(0x0002)        # Stack Version
-    listAttributes.append(0x0003)        # HW Version
-    listAttributes.append(0x0004)        # Model Identifier
+    # By default only request attribute 0x0005 to get the model Identifier
     listAttributes.append(0x0005)        # Model Identifier
-    listAttributes.append(0x0007)        # Power Source
-    listAttributes.append(0x0010)        # Battery
+
+    if fullScope:
+        listAttributes.append(0x0001)        # Application Version
+        listAttributes.append(0x0002)        # Stack Version
+        listAttributes.append(0x0003)        # HW Version
+        listAttributes.append(0x0004)        # 
+        listAttributes.append(0x0007)        # Power Source
+        listAttributes.append(0x0010)        # Battery
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
@@ -191,7 +194,6 @@ def ReadAttributeRequest_0000(self, key):
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
-
     else:
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster

@@ -240,6 +240,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "DButton_3":  # interrupteur double sur EP different lumi.sensor_86sw2
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click",
+                           "LevelOffHidden": "true", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "Smoke":  # detecteur de fumee
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -284,6 +299,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=73, Switchtype=9)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "Button_3":  # inter sans fils 1 touche 86sw1 xiaomi 3 States 
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Off|Click|Double Click|Long Click", \
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -702,6 +732,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         state = "On"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
                                         ForceUpdate_=True)
+                elif DeviceType == "Button_3":  # boutton simple 3 states
+                    state = ''
+                    if int(value) == 1:
+                        state = '10'
+                    elif int(value) == 2:
+                        state = '20'
+                    elif int(value) == 3:
+                        state = '30'
+                    else:
+                        value = 0
+                        state = '00'
+                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
+                                    ForceUpdate_=True)
                 elif DeviceType == "Water":  # detecteur d eau
                     state = ''
                     if value == "01":
@@ -745,33 +788,42 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                             state = "30"
                             data = "03"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+
                 elif DeviceType == "DButton":
                     # double bouttons avec EP different lumi.sensor_86sw2 
                     value = int(value)
                     if Ep == "01":
-                        if value == 1:
-                            state = "10"
-                            data = "01"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
-                                            ForceUpdate_=True)
-                        else:
-                            return  # We just expect 01 , in case of other value nothing to do
+                        if value == 1: state = "10"; data = "01"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                     elif Ep == "02":
                         if value == 1:
-                            state = "20"
-                            data = "02"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
-                                            ForceUpdate_=True)
-                        else:
-                            return  # We just expect 01 , in case of other value nothing to do
+                            state = "20"; data = "02"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                     elif Ep == "03":
                         if value == 1:
-                            state = "30"
-                            data = "03"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                            state = "30"; data = "03"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif DeviceType == "DButton_3":
+                    # double bouttons avec EP different lumi.sensor_86sw2 
+                    value = int(value)
+                    data = '00'
+                    state = '00'
+                    if Ep == "01":
+                        if value == 1: state = "10"; data = "01"
+                        elif value == 2: state = "20"; data = "02"
+                        elif value == 3: state = "30"; data = "03"
+                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
-                        else:
-                            return  # We just expect 01 , in case of other value nothing to do
+                    elif Ep == "02":
+                        if value == 1: state = "40"; data = "04"
+                        elif value == 2: state = "50"; data = "05"
+                        elif value == 3: state = "60"; data = "06"
+                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                                            ForceUpdate_=True)
+                    elif Ep == "03":
+                        if value == 1: state = "70"; data = "07"
+                        elif value == 2: state = "80"; data = "08"
+                        elif value == 3: state = "90"; data = "09"
+                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                                            ForceUpdate_=True)
 
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
                     Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \

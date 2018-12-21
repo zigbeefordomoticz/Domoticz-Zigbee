@@ -23,6 +23,7 @@ import z_tools
 import z_domoticz
 import z_LQI
 import z_consts
+import z_adminWidget
 
 from z_IAS import IAS_Zone_Management
 
@@ -38,8 +39,11 @@ def processKnownDevices( self, Devices, NWKID ):
     if  intHB == ( 28 // z_consts.HEARTBEAT):
         if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
                                                               # available, let's request a Node Descriptor
+            for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
+                if "0000" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
+                    z_output.ReadAttributeRequest_0000(self, NWKID, fullScope = True )
             z_output.sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
-            cnt_cmds += 1
+            cnt_cmds += 2
 
     # Ping each device, even the battery one. It will make at least the route up-to-date
     if ( intHB % ( 3000 // z_consts.HEARTBEAT)) == 0:
@@ -62,8 +66,6 @@ def processKnownDevices( self, Devices, NWKID ):
                     if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
                         z_output.ReadAttributeRequest_0006(self, NWKID )
                         cnt_cmds += 1
-                    #if "0000" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
-                    #    z_output.ReadAttributeRequest_0000(self, NWKID )
                     #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
                     #    z_output.ReadAttributeRequest_0001(self, NWKID )
                     #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
@@ -127,6 +129,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
                 z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+            else: 
+                Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
             if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
@@ -138,41 +142,50 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     # In case we received 0x8043, we might want to check if there is a 0x0300 cluster. 
     # In that case, that is a Color Bulbe and we might want to ReadAttribute in ordert o discover what is the ColorMode .
     waitForDomoDeviceCreation = 0
-    if status == "8043" or self.ListOfDevices[NWKID]['Model']!= {}:
-        Domoticz.Status("[%s] NEW OBJECT: %s Ox8043 received Infos" %(RIA, NWKID))
-        waitForDomoDeviceCreation = 0
-        reqColorModeAttribute = 0
+    if status == "8043" and self.ListOfDevices[NWKID]['Model'] == {}:
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == {}:
+                Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
+                z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+            else: 
+                Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+
+    if status == "8043" or self.ListOfDevices[NWKID]['Model'] != {}:
+        Domoticz.Status("[%s] NEW OBJECT: %s Ox8043 received Infos, gather IAS and Color is required" \
+                %(RIA, NWKID))
+        waitForDomoDeviceCreation = False
+        reqColorModeAttribute = False
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            if '0300' not in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                continue
-            else:
+            #IAS Zone
+            if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" \
+                        %( RIA, NWKID, int(status,16)))
+                self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            # ColorMode
+            if '0300' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 if 'ColorInfos' in self.ListOfDevices[NWKID]:
                     if 'ColorMode' in self.ListOfDevices[NWKID]['ColorInfos']:
-                        waitForDomoDeviceCreation = 0
-                        reqColorModeAttribute = 0
+                        waitForDomoDeviceCreation = False
+                        reqColorModeAttribute = False
                         break
                     else:
-                        waitForDomoDeviceCreation = 1
-                        reqColorModeAttribute = 1
+                        waitForDomoDeviceCreation = True
+                        reqColorModeAttribute = True
                         break
                 else:
-                    waitForDomoDeviceCreation = 1
-                    reqColorModeAttribute = 1
+                    waitForDomoDeviceCreation = True
+                    reqColorModeAttribute = True
                     break
-        if reqColorModeAttribute == 1:
+
+        if reqColorModeAttribute:
             self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
             z_output.ReadAttributeRequest_0300(self, NWKID )
 
-    # IAS Zone / Mostlikley Status is 0x8053, but it could also be Model set and we have populated the information from DeviceConf
-    if status == "8043" or  self.ListOfDevices[NWKID]['Model']!= {}:
-        if 'Ep' in self.ListOfDevices[NWKID]:
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" %( RIA, NWKID, int(status,16)))
-                    self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
 
     # Timeout management
     if (status == "004d" or status == "0045") and HB_ > 2:
@@ -180,6 +193,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
         self.ListOfDevices[NWKID]['Heartbeat']="0"
         self.ListOfDevices[NWKID]['Status']="004d"
+        if self.ListOfDevices[NWKID]['Model'] == {}:
+            z_output.ReadAttributeRequest_0000(self, NWKID)
         return
 
     if (status == "8045" or status == "0043") and HB_ > 2:
@@ -187,9 +202,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
         self.ListOfDevices[NWKID]['Heartbeat']="0"
         self.ListOfDevices[NWKID]['Status']="0043"
+        if self.ListOfDevices[NWKID]['Model'] == {}:
+            z_output.ReadAttributeRequest_0000(self, NWKID)
         return
 
-    if status != "UNKNOW" and self.ListOfDevices[NWKID]['RIA'] > "6":  # We have done several retry
+    if status != "UNKNOW" and self.ListOfDevices[NWKID]['RIA'] > "5":  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
@@ -202,8 +219,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     # If we are in status = 0x8043 we have received EPs descriptors
     # If we have Model we might be able to identify the device with it's model
     # In case where self.pluginconf.storeDiscoveryFrames is set (1) then we force the full process and so wait for 0x8043
-    if ( waitForDomoDeviceCreation != 1 and  self.pluginconf.allowStoreDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or \
-            ( waitForDomoDeviceCreation != 1 and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
+    if ( not waitForDomoDeviceCreation and  self.pluginconf.allowStoreDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or \
+            ( not waitForDomoDeviceCreation and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
         if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ):
             #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
             Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))

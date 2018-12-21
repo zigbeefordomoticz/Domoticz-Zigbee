@@ -673,9 +673,15 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # It has been decoded !
                 Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
                 if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
-                    self.DiscoveryDevices[MsgSrcAddr]['Model']=modelName
-                if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
-                    self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
+
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
+                        self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
+                    else:
+                        if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:  
+                            modelName = self.ListOfDevices[MsgSrcAddr]['Model']
+                        elif modelName in self.DeviceConf:
+                            self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
+
                     # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
                	    if modelName in self.DeviceConf:                                               # If the model exist in DeviceConf.txt
                         Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
@@ -745,9 +751,9 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', 'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
         value = decodeAttribute( MsgAttType, MsgClusterData )
-        Domoticz.Log("ReadCluster - ClusterId=000c - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
-        if value.isdigit():
-            value = int(value)
+        Domoticz.Log("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
+        value = int(value)
+        if value == 0: value = 3
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
         return                                                                              # a switch in order to behave as a switch
 
