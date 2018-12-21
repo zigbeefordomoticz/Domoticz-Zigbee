@@ -409,17 +409,17 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
             self.ListOfDevices[MsgSrcAddr]['Battery'] = '1'
 
         if 'IAS' in self.ListOfDevices[MsgSrcAddr]:
-            if 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]:
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['alarm1'] = alarm1
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['alarm2'] = alarm2
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['tamper'] = tamper
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['battery'] = battery
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['Support Reporting'] = suprrprt
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['Restore Reporting'] = restrprt
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['trouble'] = trouble
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['acmain'] = acmain
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['test'] = test
-                self.ListOfDevices[MsgSrcAddr]['ZoneStatus']['battdef'] = battdef
+            if 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm1'] = alarm1
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm2'] = alarm2
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['tamper'] = tamper
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battery'] = battery
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Support Reporting'] = suprrprt
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Restore Reporting'] = restrprt
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['trouble'] = trouble
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['acmain'] = acmain
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = battdef
 
         z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", MsgZoneStatus[2:4])
 
