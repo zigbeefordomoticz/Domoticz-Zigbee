@@ -92,69 +92,52 @@ def processKnownDevices( self, Devices, NWKID ):
     
     
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
-    HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
 
-    # 0x004d is a device annoucement.  Usally we get Network Address (short address) and IEEE
-    if status == "004d" and self.ListOfDevices[NWKID]['Heartbeat']:
-        Domoticz.Status("[%s] NEW OBJECT: %s (re)Starting process" %(RIA, NWKID))
-        # We should check if the device has not been already created via IEEE
-        if z_tools.IEEEExist( self, self.ListOfDevices[NWKID]['IEEE'] ) == False:
-            self.ListOfDevices[NWKID]['Heartbeat'] = "0"
-            self.ListOfDevices[NWKID]['Status'] = "0045"
-            z_output.sendZigateCmd(self,"0045", str(NWKID))             # Request list of EPs
-            return
-        else:
-            # We need to rework this. Not sure if this could happen,
-            for dup in self.ListOfDevices:
-                if self.ListOfDevices[NWKID]['IEEE'] == self.ListOfDevices[dup]['IEEE'] and self.ListOfDevices[dup]['Status'] == "inDB":
-                    Domoticz.Error("onHearbeat - Device: " + str(NWKID) + "already known under IEEE: " +str(self.ListOfDevices[NWKID]['IEEE'] ) 
-                                        + " Duplicate of " + str(dup) )
-                    Domoticz.Error("onHearbeat - Please check the consistency of the plugin database and domoticz database.")
-                    self.ListOfDevices[NWKID]['Status']="DUP"
-                    self.ListOfDevices[NWKID]['Heartbeat']="0"
-                    self.ListOfDevices[NWKID]['RIA']="99"
-                    self.CommiSSionning = False
-                    break
-            return
-
-    # 0x8045 is providing the list of active EPs we will so request EP descriptor for each of them
-    if status == "8045": # Status is set in Decode8045 (z_input)
-        Domoticz.Status("[%s] NEW OBJECT: %s Ox8045 received Infos" %(RIA, NWKID))
-        self.ListOfDevices[NWKID]['Heartbeat'] = "0"
-        self.ListOfDevices[NWKID]['Status'] = "0043"
-        for cle in self.ListOfDevices[NWKID]['Ep']:
-            Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( RIA, NWKID, cle))
-            z_output.sendZigateCmd(self,"0043", str(NWKID)+str(cle))    
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == {}:
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
-                z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
-            else: 
-                Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
-        if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
-            if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
-                z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
-        Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0001" %(RIA, NWKID))
-        z_output.ReadAttributeRequest_0001(self, NWKID )            # Basic Cluster readAttribute Request
+    # Starting V 4.1.x
+    # 0x0043 / List of EndPoints is requested at the time we receive the End Device Annocement
+    # 0x0045 / EndPoint Description is requested at the time we recice the List of EPs.
+    # In case Model is defined and is in DeviceConf, we will short cut the all process and go to the Widget creation
+    if status == 'UNKNOW':
         return
 
-    # In case we received 0x8043, we might want to check if there is a 0x0300 cluster. 
-    # In that case, that is a Color Bulbe and we might want to ReadAttribute in ordert o discover what is the ColorMode .
-    waitForDomoDeviceCreation = 0
-    if status == "8043" and self.ListOfDevices[NWKID]['Model'] == {}:
+    HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
+    Domoticz.Log("processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
+    Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+
+    if status in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
+        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+        if self.ListOfDevices[NWKID]['Model'] != {}:
+            Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+            # Let's check if this Model is known
+            if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                if not self.pluginconf.allowStoreDiscoveryFrames:
+                    status = 'createDB' # Fast track
+    else:
+        return
+
+    waitForDomoDeviceCreation = False
+    if status == "8043": # We have at least receive 1 EndPoint
+        reqColorModeAttribute = False
+        self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
+
+        # Did we receive the Model Name
         if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == {}:
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Attributes for Cluster 0x0000" %(RIA, NWKID))
-                z_output.ReadAttributeRequest_0000(self, NWKID )      # Basic Cluster readAttribute Request
+            if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
+                Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                z_output.ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+                                                                    # And wait 1 cycle
             else: 
                 Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+                # Let's check if this Model is known
+                if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                    status = 'createDB' # Fast track
 
-    if status == "8043" or self.ListOfDevices[NWKID]['Model'] != {}:
-        Domoticz.Status("[%s] NEW OBJECT: %s Ox8043 received Infos, gather IAS and Color is required" \
-                %(RIA, NWKID))
-        waitForDomoDeviceCreation = False
-        reqColorModeAttribute = False
+        if 'Manufacturer' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
+                Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
+                z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
+            else:
+                Domoticz.Log("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']))
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             #IAS Zone
@@ -179,92 +162,104 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 else:
                     waitForDomoDeviceCreation = True
                     reqColorModeAttribute = True
+                    reqColorModeAttribute = True
                     break
-
         if reqColorModeAttribute:
-            self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
+            self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
             z_output.ReadAttributeRequest_0300(self, NWKID )
-
+            return
+    # end if status== "8043"
 
     # Timeout management
-    if (status == "004d" or status == "0045") and HB_ > 2:
+    if (status == "004d" or status == "0045") and HB_ > 2 and status != 'createDB':
         Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" %(RIA, NWKID, status))
-        self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
+        self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
         self.ListOfDevices[NWKID]['Heartbeat']="0"
-        self.ListOfDevices[NWKID]['Status']="004d"
-        if self.ListOfDevices[NWKID]['Model'] == {}:
-            z_output.ReadAttributeRequest_0000(self, NWKID)
+        self.ListOfDevices[NWKID]['Status']="0045"
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == {}:
+                Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                z_output.ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+        z_output.sendZigateCmd(self,"0045", str(NWKID))
         return
 
-    if (status == "8045" or status == "0043") and HB_ > 2:
+    if (status == "8045" or status == "0043") and HB_ > 1 and status != 'createDB':
         Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x0043" %(RIA, NWKID, status))
-        self.ListOfDevices[NWKID]['RIA']=str(int(self.ListOfDevices[NWKID]['RIA'])+1)
-        self.ListOfDevices[NWKID]['Heartbeat']="0"
-        self.ListOfDevices[NWKID]['Status']="0043"
-        if self.ListOfDevices[NWKID]['Model'] == {}:
-            z_output.ReadAttributeRequest_0000(self, NWKID)
+        self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
+        self.ListOfDevices[NWKID]['Heartbeat'] = "0"
+        self.ListOfDevices[NWKID]['Status'] = "0043"
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == {}:
+                Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                z_output.ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
+            z_output.sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if status != "UNKNOW" and self.ListOfDevices[NWKID]['RIA'] > "5":  # We have done several retry
+    if self.ListOfDevices[NWKID]['RIA'] > '2' and status != 'UNKNOW':  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
         Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
+        Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
+        z_adminWidget.updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrolment of this devices. See Logs' )
         self.CommiSSionning = False
+        return
 
     # https://github.com/sasu-drooz/Domoticz-Zigate/wiki/ProfileID---ZDeviceID
 
+    #if ( not waitForDomoDeviceCreation and  self.pluginconf.allowStoreDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or \
+    #        ( not waitForDomoDeviceCreation and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
+    #    if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ):
     # If we are in status = 0x8043 we have received EPs descriptors
     # If we have Model we might be able to identify the device with it's model
     # In case where self.pluginconf.storeDiscoveryFrames is set (1) then we force the full process and so wait for 0x8043
-    if ( not waitForDomoDeviceCreation and  self.pluginconf.allowStoreDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or \
-            ( not waitForDomoDeviceCreation and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
-        if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ):
-            #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-            Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
+    if status in ( 'createDB', '8043' ):
+        #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
+        Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
 
-            IsCreated=False
-            x=0
-            # Let's check if the IEEE is not known in Domoticz
-            for x in Devices:
-                if self.ListOfDevices[NWKID].get('IEEE'):
-                    if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                        if self.pluginconf.allowForceCreationDomoDevice == 1:
-                            Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                            Domoticz.Error("processNotinDBDevices - ForceCreationDevice enable, we continue")
-                        else:
-                            IsCreated = True
-                            Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                            Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-                            break
-
-            if IsCreated == False:
-                Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
-                z_domoticz.CreateDomoDevice(self, Devices, NWKID)
-                # Post creation widget
-
-                # 1 Enable Configure Reporting for any applicable cluster/attributes
-                z_output.processConfigureReporting( self, NWKID )  
-
-                # Identify for ZLL compatible devices
-                # Search for EP to be used 
-                ep = '01'
-                for ep in self.ListOfDevices[NWKID]['Ep']:
-                    if ep in ( '01', '03', '09' ):
+        IsCreated=False
+        # Let's check if the IEEE is not known in Domoticz
+        for x in Devices:
+            if self.ListOfDevices[NWKID].get('IEEE'):
+                if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
+                    if self.pluginconf.allowForceCreationDomoDevice == 1:
+                        Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+                        Domoticz.Error("processNotinDBDevices - ForceCreationDevice enable, we continue")
+                    else:
+                        IsCreated = True
+                        Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
+                        Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
                         break
-                z_output.identifyEffect( self, NWKID, ep , effect='Blink' )
 
-                # Set the sensitivity for Xiaomi Vibration
-                if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
-                     Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
-                            %(NWKID, self.pluginconf.vibrationAqarasensitivity))
-                     z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
+        if IsCreated == False:
+            Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
+            z_domoticz.CreateDomoDevice(self, Devices, NWKID)
+            # Post creation widget
 
-                z_adminWidget.updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
-                        %(self.ListOfDevices[NWKID]['Model'], NWKID))
-                self.CommiSSionning = False
+            # 1 Enable Configure Reporting for any applicable cluster/attributes
+            z_output.processConfigureReporting( self, NWKID )  
+
+            # Identify for ZLL compatible devices
+            # Search for EP to be used 
+            ep = '01'
+            for ep in self.ListOfDevices[NWKID]['Ep']:
+                if ep in ( '01', '03', '09' ):
+                    break
+            z_output.identifyEffect( self, NWKID, ep , effect='Blink' )
+
+            # Set the sensitivity for Xiaomi Vibration
+            if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
+                 Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
+                        %(NWKID, self.pluginconf.vibrationAqarasensitivity))
+                 z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
+
+            z_adminWidget.updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
+                    %(self.ListOfDevices[NWKID]['Model'], NWKID))
+            self.CommiSSionning = False
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
@@ -282,8 +277,8 @@ def processListOfDevices( self , Devices ):
             entriesToBeRemoved.append( NWKID )
             continue
             
-        status=self.ListOfDevices[NWKID]['Status']
-        RIA=int(self.ListOfDevices[NWKID]['RIA'])
+        status = self.ListOfDevices[NWKID]['Status']
+        RIA = int(self.ListOfDevices[NWKID]['RIA'])
         self.ListOfDevices[NWKID]['Heartbeat']=str(int(self.ListOfDevices[NWKID]['Heartbeat'])+1)
 
         if status == "failDB":
@@ -301,7 +296,6 @@ def processListOfDevices( self , Devices ):
             if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 36 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
                 Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
                 # Let's check if the device still exist in Domoticz
-                fnd = True
                 for Unit in Devices:
                     if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID:
                         Domoticz.Debug("processListOfDevices - %s  is still connected cannot remove. NwkId: %s IEEE: %s " \

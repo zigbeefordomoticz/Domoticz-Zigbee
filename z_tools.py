@@ -84,10 +84,11 @@ def DeviceExist(self, newNWKID , IEEE = ''):
     #check in ListOfDevices
     if newNWKID in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[newNWKID] :
-            found = 1
-            Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
-            if not IEEE :
-                return True
+            if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
+                found = 1
+                Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
+                if not IEEE :
+                    return True
 
     #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
     if IEEE:
@@ -193,22 +194,23 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
 
 
 def initDeviceInList(self, Nwkid) :
-    if Nwkid != '' :
-        self.ListOfDevices[Nwkid]={}
-        self.ListOfDevices[Nwkid]['Version']="3"
-        self.ListOfDevices[Nwkid]['Status']="004d"
-        self.ListOfDevices[Nwkid]['SQN']={}
-        self.ListOfDevices[Nwkid]['Ep']={}
-        self.ListOfDevices[Nwkid]['Heartbeat']="0"
-        self.ListOfDevices[Nwkid]['RIA']="0"
-        self.ListOfDevices[Nwkid]['RSSI']={}
-        self.ListOfDevices[Nwkid]['Battery']={}
-        self.ListOfDevices[Nwkid]['Model']={}
-        self.ListOfDevices[Nwkid]['MacCapa']={}
-        self.ListOfDevices[Nwkid]['IEEE']={}
-        self.ListOfDevices[Nwkid]['Type']={}
-        self.ListOfDevices[Nwkid]['ProfileID']={}
-        self.ListOfDevices[Nwkid]['ZDeviceID']={}
+    if Nwkid not in self.ListOfDevices:
+        if Nwkid != '' :
+            self.ListOfDevices[Nwkid]={}
+            self.ListOfDevices[Nwkid]['Version']="3"
+            self.ListOfDevices[Nwkid]['Status']="004d"
+            self.ListOfDevices[Nwkid]['SQN']={}
+            self.ListOfDevices[Nwkid]['Ep']={}
+            self.ListOfDevices[Nwkid]['Heartbeat']="0"
+            self.ListOfDevices[Nwkid]['RIA']="0"
+            self.ListOfDevices[Nwkid]['RSSI']={}
+            self.ListOfDevices[Nwkid]['Battery']={}
+            self.ListOfDevices[Nwkid]['Model']={}
+            self.ListOfDevices[Nwkid]['MacCapa']={}
+            self.ListOfDevices[Nwkid]['IEEE']={}
+            self.ListOfDevices[Nwkid]['Type']={}
+            self.ListOfDevices[Nwkid]['ProfileID']={}
+            self.ListOfDevices[Nwkid]['ZDeviceID']={}
         
 
 

@@ -1034,13 +1034,13 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
     if z_tools.DeviceExist(self, MsgDataShAddr) == False:
         #Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
         Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
+        return
     else :
         if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
             self.ListOfDevices[MsgDataShAddr]['Status']="8045"
         else :
             z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
-        # PP: Does that mean that if we Device is already in the Database, we might overwrite 'EP' ?
-
+            
         i=0
         while i < 2 * int(MsgDataEpCount,16) :
             tmpEp = MsgDataEPlist[i:i+2]
@@ -1048,6 +1048,13 @@ def Decode8045(self, MsgData) : # Reception Active endpoint response
                 self.ListOfDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
             i = i + 2
         self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16))     # Store the number of EPs
+
+        for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
+            Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
+            z_output.sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
+        if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
+            self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
+            self.ListOfDevices[MsgDataShAddr]['Status'] = "0043"
 
         Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
@@ -1486,17 +1493,28 @@ def Decode004d(self, MsgData, MsgRSSI) : # Reception Device announce
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
-    # tester si le device existe deja dans la base domoticz
+    # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False :
-        Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
-        self.CommiSSionning = True
-        z_tools.initDeviceInList(self, MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
-        self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
         if MsgIEEE in self.IEEE2NWK :
             if self.IEEE2NWK[MsgIEEE] :
                 Domoticz.Log("Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
+        if z_tools.IEEEExist( self, MsgIEEE ) == False:
+            z_tools.initDeviceInList(self, MsgSrcAddr)
+            Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
+            self.CommiSSionning = True
+            self.ListOfDevices[MsgSrcAddr]['MacCapa']=MsgMacCapa
+            self.ListOfDevices[MsgSrcAddr]['IEEE']=MsgIEEE
+        else:
+            # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
+            if z_tools.DeviceExist(self, MsgSrcAddr,MsgIEEE) == False:
+                Domoticz.Log("Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
+
+        # We will request immediatly the List of EndPoints
+        self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
+        self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
+        z_output.sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
+
         Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
     else :
         Domoticz.Debug("Decode004d - Existing device")

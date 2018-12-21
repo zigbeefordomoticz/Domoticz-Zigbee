@@ -100,21 +100,32 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
         return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x39:  # Xiaomi Float
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
+    #elif int(AttType,16) == 0x42:  # CharacterString
+    #    try:
+    #        decode = binascii.unhexlify(Attribute).decode('utf-8')
+    #    except:
+    #        if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
+    #            Domoticz.Log("decodeAttribute - seems errors, so returning empty")
+    #            decode = ''
+    #        else:
+    #            decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
+    #            Domoticz.Log("decodeAttribute - seems errors, returning with errors ignore")
+    #    return decode
+    #else:
+    #    Domoticz.Log("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+    #    return Attribute
+
     elif int(AttType,16) == 0x42:  # CharacterString
         try:
-            decode = binascii.unhexlify(Attribute).decode('utf-8')
+            decoded = binascii.unhexlify(str(Attribute)).decode('utf-8')
+            printable = set(string.printable)
+            decode = filter(lambda x: x in printable, decoded)
         except:
-            if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
-                Domoticz.Log("decodeAttribute - seems errors, so returning empty")
-                decode = ''
-            else:
-                decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
-                Domoticz.Log("decodeAttribute - seems errors, returning with errors ignore")
-        return decode
+            decoded = str(Attribute)
+        return decoded
     else:
         Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
-        return Attribute
-
+    return Attribute
 
 def ReadCluster(self, Devices, MsgData):
 
@@ -668,23 +679,25 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
             modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
-            Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
+            Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
             if modelName != '':
                 # It has been decoded !
                 Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
-                if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
-
-                    if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
+                    self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
+                else:
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:  
+                        modelName = self.ListOfDevices[MsgSrcAddr]['Model']
+                    elif modelName in self.DeviceConf:
                         self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
-                    else:
-                        if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:  
-                            modelName = self.ListOfDevices[MsgSrcAddr]['Model']
-                        elif modelName in self.DeviceConf:
-                            self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
 
+                if not self.pluginconf.allowStoreDiscoveryFrames:
                     # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
-               	    if modelName in self.DeviceConf:                                               # If the model exist in DeviceConf.txt
+               	    if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:                 # If the model exist in DeviceConf.txt
+                        modelName = self.ListOfDevices[MsgSrcAddr]['Model']
                         Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
+                        if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
+                            self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
                         for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
                             if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
                                 self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
@@ -698,8 +711,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                     self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
                                 if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
                                     self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
-                        if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
-                            self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
 
     elif MsgAttrID == "0007": # Power Source
         Domoticz.Debug("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))

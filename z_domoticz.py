@@ -1070,7 +1070,7 @@ def GetType(self, Addr, Ep):
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
             if Type != "" and Type[:1] != "/":
                 Type += "/"
-            Type += TypeFromCluster(cluster)
+            Type += TypeFromCluster(cluster, create_=True)
             Domoticz.Debug("GetType - Type will be set to : " + str(Type))
 
         # Type+=Type
@@ -1092,14 +1092,14 @@ def GetType(self, Addr, Ep):
     return Type
 
 
-def TypeFromCluster(cluster):
+def TypeFromCluster(cluster, create_=False):
     if cluster == "0006":
         TypeFromCluster = "Switch"
     elif cluster == "0008":
         TypeFromCluster = "LvlControl"
-    elif cluster == "000c":
+    elif cluster == "000c" and not create_:
         TypeFromCluster = "XCube"
-    elif cluster == "0012":
+    elif cluster == "0012" and not create_:
         TypeFromCluster = "XCube"
     elif cluster == "0101":
         TypeFromCluster = "Vibration"

@@ -178,6 +178,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # General
     listAttributes = []
     # By default only request attribute 0x0005 to get the model Identifier
+    listAttributes.append(0x0000)        # 
     listAttributes.append(0x0005)        # Model Identifier
 
     if fullScope:
