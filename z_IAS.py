@@ -63,6 +63,8 @@ class IAS_Zone_Management:
         direction = '00'
         manufacturer_spec = '00'
         manufacturer = '0000'
+        if addr not in self.ListOfDevices:
+            return
         if 'Manufacturer' in self.ListOfDevices[addr]:
             manufacturer = self.ListOfDevices[addr]['Manufacturer']
         if not isinstance(ListOfAttributes, list):
