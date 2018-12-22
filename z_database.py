@@ -104,8 +104,11 @@ def checkListOfDevice2Devices( self, Devices ) :
         ID = Devices[x].DeviceID
         if (len(str(ID)) == 4 ):
             # This is a Group Id (short address)
-            pass
+            continue
+        elif Devices[x].Name.find('Zigate-01-'):
+            continue # This is a Widget ID
         else:
+            # Let's check if this is End Node
             if str(ID) not in self.IEEE2NWK :
                 if self.pluginconf.allowForceCreationDomoDevice == 1 :
                     Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
