@@ -608,7 +608,7 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
     if str(PanID) == "0" : 
         Domoticz.Status("Decode8009 : Network state DOWN ! " )
         z_adminWidget.updateNotificationWidget( self, Devices, 'Network down PanID = 0' )
-        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
+        z_adminWidget.updateStatusWidget( self, Devices, 'No Connection')
     else :
         Domoticz.Status("Decode8009 - Network state UP, PANID: %s extPANID: 0x%s Channel: %s" \
                 %( PanID, extPanID, int(Channel,16) ))
@@ -637,9 +637,19 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
     Domoticz.Debug("Decode8014 - MsgData lenght is : " +MsgData + "len: "+ str(MsgLen) + " out of 2")
 
     Status=MsgData[0:2]
-    if ( Status == "00" ) : Domoticz.Status("Permit Join is Off")
-    elif ( Status == "01" ) : Domoticz.Status("Permit Join is On")
-    else : Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
+    if Status == "00": 
+        if self.Ping['Permit'] is None:
+            Domoticz.Status("Permit Join is Off")
+        self.Ping['Permit'] = 'Off'
+    elif Status == "01" : 
+        if self.Ping['Permit'] is None:
+            Domoticz.Status("Permit Join is On")
+        self.Ping['Permit'] = 'On'
+    else: 
+        Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
+    self.Ping['TimeStamp'] = time.time()
+    self.Ping['Status'] = 'Receive'
+
     return
 
 def Decode8015(self,MsgData) : # Get device list ( following request device list 0x0015 )

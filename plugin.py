@@ -80,6 +80,8 @@ class BasePlugin:
         self.groupmgt = None
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
+        self.Ping = {}
+        self.connectionState = None
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
@@ -118,6 +120,7 @@ class BasePlugin:
         self.HardwareID = (Parameters["HardwareID"])
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
+
 
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
         Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
@@ -193,7 +196,7 @@ class BasePlugin:
         if self.groupmgt:
             self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
-        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
+        z_adminWidget.updateStatusWidget( self, Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :
         Domoticz.Status("onDeviceRemoved called" )
@@ -215,12 +218,23 @@ class BasePlugin:
         # Could be done if a Flag is enabled in the PluginConf.txt.
         
     def onConnect(self, Connection, Status, Description):
-        z_adminWidget.updateStatusWidget( self, Devices, 'Startup')
-        self.busy = True
-        Domoticz.Status("onConnect called")
 
-        if (Status == 0):
+        Domoticz.Debug("onConnect called with status: %s" %Status)
+        self.busy = True
+
+        if Status == 0:
             Domoticz.Log("Connected successfully")
+
+            if self.connectionState is None:
+                z_adminWidget.updateStatusWidget( self, Devices, 'Starting the plugin up')
+            elif self.connectionState == 0:
+                Domoticz.Status("Reconnected after failure")
+                z_adminWidget.updateStatusWidget( self, Devices, 'Reconnected after failure')
+            self.connectionState = 1
+            self.Ping['Status'] = None
+            self.Ping['TimeStamp'] = None
+            self.Ping['Permit'] = None
+
             if Parameters["Mode3"] == "True":
                 ################### ZiGate - ErasePD ##################
                 Domoticz.Status("Erase Zigate PDM")
@@ -238,7 +252,9 @@ class BasePlugin:
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
-            z_adminWidget.updateStatusWidget( self, Devices, 'Off')
+            self.connectionState = 0
+            self.ZigateComm.reConn()
+            z_adminWidget.updateStatusWidget( self, Devices, 'No Communication')
 
         if self.pluginconf.enablegroupmanagement:
             Domoticz.Log("Start Group Management")
@@ -247,7 +263,6 @@ class BasePlugin:
 
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
-
 
         if (self.pluginconf).logLQI != 0 :
             z_LQI.LQIdiscovery( self ) 
@@ -275,14 +290,13 @@ class BasePlugin:
                 Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
 
     def onDisconnect(self, Connection):
-        z_adminWidget.updateStatusWidget( self, Devices, 'Off')
+        self.connectionState = 0
+        z_adminWidget.updateStatusWidget( self, Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
 
     def onHeartbeat(self):
         
-        ## Check the Network status every 15' / Only possible if FirmwareVersion > 3.0d
         self.HeartbeatCount += 1
-
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
             z_output.sendZigateCmd(self, "0009","")
@@ -308,9 +322,6 @@ class BasePlugin:
         else:
             z_database.WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
 
-        # Check if we still have connectivity. If not re-established the connectivity
-        self.ZigateComm.reConn()
-
         if self.CommiSSionning:
             z_adminWidget.updateStatusWidget( self, Devices, 'Enrolment')
             return
@@ -325,8 +336,40 @@ class BasePlugin:
         if self.busy  or len(self.ZigateComm._normalQueue) > 3:
             busy_ = True
 
+        # Hearbeat - Ping Zigate every minute to check connectivity
+        # If fails then try to reConnect
+        if ( self.HeartbeatCount % ( 60 // z_consts.HEARTBEAT)) == 0 :
+            Domoticz.Debug("Ping")
+            now = time.time()
+            if 'Status' in self.Ping:
+                if self.Ping['Status'] == 'Sent':
+                    delta = now - self.Ping['TimeStamps']
+                    Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
+                    if delta > 50:
+                        Domoticz.Log("Ping - no Heartbeat with Zigate")
+                        z_adminWidget.updateNotificationWidget( self, Devices, 'Ping: Connection with Zigate Lost')
+                        self.connectionState = 0
+                        self.ZigateComm.reConn()
+                    else:
+                        if self.connectionState == 0:
+                            z_adminWidget.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+                            self.connectionState = 1
+                else:
+                    if self.connectionState == 0:
+                        z_adminWidget.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+                    z_output.sendZigateCmd( self, "0014", "" ) # Request status
+                    self.connectionState = 1
+                    self.Ping['Status'] = 'Sent'
+                    self.Ping['TimeStamps'] = now
+            else:
+                z_output.sendZigateCmd( self, "0014", "" ) # Request status
+                self.Ping['Status'] = 'Sent'
+                self.Ping['TimeStamps'] = now
+
         if busy_:
             z_adminWidget.updateStatusWidget( self, Devices, 'Busy')
+        elif not self.connectionState:
+            z_adminWidget.updateStatusWidget( self, Devices, 'No Communication')
         else:
             z_adminWidget.updateStatusWidget( self, Devices, 'Ready')
 

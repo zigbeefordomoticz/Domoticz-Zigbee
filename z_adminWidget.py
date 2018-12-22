@@ -135,7 +135,7 @@ def handleAdminWidget( self, Devices, Unit, Command , Color ):
 
 def updateStatusWidget( self, Devices,  statusType ):
 
-    STATUS_WIDGET = { 'Off':4, 
+    STATUS_WIDGET = { 'No Communication':4, 
             'Startup':0, 
             'Ready':1, 
             'Enrolment':3, 

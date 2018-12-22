@@ -26,6 +26,7 @@ import z_consts
 import z_adminWidget
 
 from z_IAS import IAS_Zone_Management
+from z_Transport import ZigateTransport
 
 
 def processKnownDevices( self, Devices, NWKID ):
@@ -36,7 +37,9 @@ def processKnownDevices( self, Devices, NWKID ):
     cnt_cmds = 0
     # Check if Node Descriptor was run ( this could not be the case on early version)
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
-    if  intHB == ( 28 // z_consts.HEARTBEAT):
+
+
+    if  self.HeartbeatCount == ( 28 // z_consts.HEARTBEAT):
         if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
                                                               # available, let's request a Node Descriptor
             for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
@@ -339,6 +342,5 @@ def processListOfDevices( self , Devices ):
     if self.pluginconf.networkScan != 0 and \
             (self.HeartbeatCount == ( 120 // z_consts.HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // z_consts.HEARTBEAT )) == 0) :
         z_output.NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
-
 
     return True

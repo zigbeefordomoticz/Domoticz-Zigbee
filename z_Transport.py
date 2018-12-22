@@ -114,20 +114,19 @@ class ZigateTransport(object):
         self._connection = None
 
     def reConn(self):
-        Domoticz.Debug("Transport.reConn: %s" %self._connection)
+        Domoticz.Log("Transport.reConn: %s" %self._connection)
         if self._connection.Connected() :
-            return
-        else:
-            Domoticz.Log("Lost connection, reConn Transport.reConn: %s" %self._connection)
-            if self._transp == "USB":
-                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                             Address=self._serialPort, Baud=115200)
-            elif self._transp == "Wifi":
-                Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
-                self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
-                             Address=self._wifiAddress, Port=self._wifiPort)
-            self.openConn()
+            self.closeConn()
+        Domoticz.Log("Lost connection, reConn Transport.reConn: %s" %self._connection)
+        if self._transp == "USB":
+            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                         Address=self._serialPort, Baud=115200)
+        elif self._transp == "Wifi":
+            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
+            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
+                         Address=self._wifiAddress, Port=self._wifiPort)
+        self.openConn()
 
     # Transport Sending Data
     def _sendData(self, cmd, datas, delay):
