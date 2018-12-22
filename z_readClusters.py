@@ -100,32 +100,20 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
         return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x39:  # Xiaomi Float
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
-    #elif int(AttType,16) == 0x42:  # CharacterString
-    #    try:
-    #        decode = binascii.unhexlify(Attribute).decode('utf-8')
-    #    except:
-    #        if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
-    #            Domoticz.Log("decodeAttribute - seems errors, so returning empty")
-    #            decode = ''
-    #        else:
-    #            decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
-    #            Domoticz.Log("decodeAttribute - seems errors, returning with errors ignore")
-    #    return decode
-    #else:
-    #    Domoticz.Log("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
-    #    return Attribute
-
     elif int(AttType,16) == 0x42:  # CharacterString
         try:
-            decoded = binascii.unhexlify(str(Attribute)).decode('utf-8')
-            printable = set(string.printable)
-            decode = filter(lambda x: x in printable, decoded)
+            decode = binascii.unhexlify(Attribute).decode('utf-8')
         except:
-            decoded = str(Attribute)
-        return decoded
+            if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
+                Domoticz.Log("decodeAttribute - seems errors, so returning empty")
+                decode = ''
+            else:
+                decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
+                Domoticz.Log("decodeAttribute - seems errors, returning with errors ignore")
+        return decode
     else:
-        Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
-    return Attribute
+        Domoticz.Log("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+        return Attribute
 
 def ReadCluster(self, Devices, MsgData):
 

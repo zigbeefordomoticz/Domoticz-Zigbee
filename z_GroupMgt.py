@@ -6,7 +6,6 @@
 
 
 import Domoticz
-import random
 import pickle
 import json
 
@@ -58,14 +57,6 @@ class GroupsManagement(object):
         Domoticz.Debug("loadListOfGroups - ListOfGroups loaded: %s" %self.ListOfGroups)
 
         return 
-
-    def _newGroupAddr( self ):
-        ' Provide a random non existing Groupe Address '
-        while True:
-            addr = "04.x" % random.randrange(int("ffee",16))
-            if addr not in self.ListOfGroup:
-                return addr
-        return
 
     # Zigate group related commands
     def _addGroup( self, device_ieee, device_addr, device_ep, grpid):
