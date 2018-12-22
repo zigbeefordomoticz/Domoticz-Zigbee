@@ -450,7 +450,6 @@ def Decode8000_v2(self, MsgData) : # Status
     Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
     if   PacketType=="0012" : Domoticz.Log("Erase Persistent Data cmd status : " +  Status )
-    elif PacketType=="0014" : Domoticz.Log("Permit Join status : " +  Status )
     elif PacketType=="0024" : Domoticz.Log("Start Network status : " +  Status )
     elif PacketType=="0026" : Domoticz.Log("Remove Device cmd status : " +  Status )
     elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
