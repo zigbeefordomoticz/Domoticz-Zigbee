@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 27 December 2018 - Version 4.0.5
+- [Issue] Negative temperature not correctly reported for Xiaomi Sensor
+
 ## 15 December 2018 - Version 4.0.4
 - [Issue] #291 , wrong decoding of Cluster Out frame in 0x8043
 
