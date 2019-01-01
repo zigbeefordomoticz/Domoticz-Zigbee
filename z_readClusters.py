@@ -150,7 +150,7 @@ def ReadCluster(self, Devices, MsgData):
         self.statistics._clusterKO += 1
         return
 
-    if z_tools.DeviceExist(self, MsgSrcAddr) == False:
+    if z_tools.DeviceExist(self, Devices, MsgSrcAddr) == False:
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
         return

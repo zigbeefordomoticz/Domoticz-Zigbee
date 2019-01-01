@@ -16,6 +16,7 @@ import json
 
 import Domoticz
 import z_output
+import z_adminWidget
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -73,19 +74,19 @@ def getClusterListforEP( self, NWKID, Ep ) :
     return ClusterList
 
 
-def DeviceExist(self, newNWKID , IEEE = ''):
+def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
     #Validity check
     if newNWKID == '':
         return False
 
-    found = 0
+    found = False
 
     #check in ListOfDevices
     if newNWKID in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[newNWKID] :
             if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
-                found = 1
+                found = True
                 Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
                 if not IEEE :
                     return True
@@ -96,16 +97,17 @@ def DeviceExist(self, newNWKID , IEEE = ''):
             if existingIEEEkey == IEEE :
                 # This device is already in Domoticz 
                 existingNWKkey = self.IEEE2NWK[IEEE]
-
                 if existingNWKkey == newNWKID :        #Check that I'm not myself
                     continue
-                Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " status " + str(self.ListOfDevices[existingNWKkey]['Status']) )
+
+                Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + \
+                        " found as " +str(existingNWKkey) + " status " + str(self.ListOfDevices[existingNWKkey]['Status']) )
 
                 # Make sure this device is valid 
-                if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' and self.ListOfDevices[existingNWKkey]['Status'] != "Left" :
+                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):
                     continue
 
-                # Updating process by :
+                # We got a new Network ID for an existing IEEE. So just re-connect.
                 # - mapping the information to the new newNWKID
 
                 Domoticz.Debug("DeviceExist - update self.ListOfDevices[" + newNWKID + "] with " + str(existingIEEEkey) )
@@ -117,22 +119,25 @@ def DeviceExist(self, newNWKID , IEEE = ''):
                 Domoticz.Debug("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
                 Domoticz.Debug("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
                 Domoticz.Debug("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
-
                 Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
+                devName = ''
+                for x in Devices:
+                    if Devices[x].DeviceID == existingIEEEkey:
+                        devName = Devices[x].Name
 
-                # MostLikely exitsingKey is not needed any more
+                z_adminWidget.updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
+
+                # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
 
                 if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
                     Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Hearbeat'] = 0
-                found = 1
+                found = True
+                break
 
-    if found == 1 :
-        return True
-    else :
-        return False
+    return found
 
 def removeNwkInList( self, NWKID) :
 
