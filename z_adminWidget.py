@@ -38,6 +38,7 @@ def initializeZigateWidgets( self, Devices ):
 
     createStatusWidget( self, Devices)
     createNotificationWidget( self, Devices)
+    createAdminWidget( self, Devices )
     return
 
 def createAdminWidget( self, Devices ):
@@ -51,11 +52,17 @@ def createAdminWidget( self, Devices ):
     if unit != 0:
         return
 
-    Options = {"LevelActions": "||||||",
-               "LevelNames": "Off|Reset|Erase PDM|Pairing Object|Join for Ever|Interf Scan|LQI Report",
+    if self.pluginconf.eraseZigatePDM:
+        Options = {"LevelActions": "|||||||",
+               "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolment|Perm. Enrolment|Interf Scan|LQI Report|Erase PDM",
                "LevelOffHidden": "true", "SelectorStyle": "0"}
+    else:
+        Options = {"LevelActions": "|||||||",
+               "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrolment|Interf Scan|LQI Report",
+               "LevelOffHidden": "true", "SelectorStyle": "0"}
+
     unit = FreeUnit(self, Devices)
-    widget_name = DEVICEID_ADMIN_WIDGET_TXT_01 + " %02s" %self.HardwareID
+    widget_name = DEVICEID_ADMIN_WIDGET_TXT+ " %02s" %self.HardwareID
     myDev = Domoticz.Device(DeviceID=deviceid_admin_widget, Name=widget_name,
                     Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
     myDev.Create()
@@ -180,4 +187,33 @@ def updateNotificationWidget( self, Devices, notification ):
         Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s"
                 %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
         Devices[unit].Update( nValue =nValue , sValue=sValue)
+
+
+def handleCommand( self, Command):
+
+    if Command == '00':
+        pass
+
+    elif Command == '10':
+        Domoticz.Log("handleCommand - Purge reports")
+
+    elif Command == '20':
+        Domoticz.Log("handleCommand - Soft Reset")
+
+    elif Command == '30':
+        Domoticz.Log("handleCommand - One Time Enrolmennt")
+
+    elif Command == '40':
+        Domoticz.Log("handleCommand - Perm. Enrolment")
+
+    elif Command == '50':
+        Domoticz.Log("handleCommand - Interference Scan")
+
+    elif Command == '60':
+        Domoticz.Log("handleCommand - LQI Report")
+
+    elif Command == '70':
+        Domoticz.Log("handleCommand - Erase Permanent Memory")
+        if self.pluginconf.eraseZigatePDM:
+            pass
 
