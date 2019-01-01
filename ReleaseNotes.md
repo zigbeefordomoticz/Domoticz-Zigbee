@@ -1,6 +1,8 @@
 # Release Notes 
 
 ## xx xxx 2018 - Version x.x.
+
+- [Technical] Full refactor of Discovery and Enrolement process
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
 - [Issue] Make Motion Resetdevice customizable via a PluginConf parameter #270
 - [Enhancement] Add Clock and Anti-clokc rotation tabs for XCube. This will require a remove and re-inclusion of the device #282, #281
