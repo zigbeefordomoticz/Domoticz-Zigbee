@@ -283,11 +283,16 @@ class BasePlugin:
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
             z_command.mgtCommand( self, Devices, Unit, Command, Level, Color )
-        if self.pluginconf.enablegroupmanagement and self.groupmgt:
+
+        elif self.pluginconf.enablegroupmanagement and self.groupmgt:
             if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
                 # Command belongs to a Zigate group
                 self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
                 Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+
+        elif Devices[Unit].Name.find('Zigate-01-'):
+            Domoticz.Log("onCommand - Command adminWidget: %s " %Command)
+            z_adminWidget.handleCommand( self, Command)
 
     def onDisconnect(self, Connection):
         self.connectionState = 0
