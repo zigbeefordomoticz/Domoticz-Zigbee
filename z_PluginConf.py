@@ -33,6 +33,7 @@ class PluginConf:
         # Zigate Configuration
         self.channel = 0
         self.allowRemoveZigateDevice = 0
+        self.eraseZigatePDM = 0
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -171,6 +172,7 @@ class PluginConf:
         Domoticz.Log("Zigate Configuration")
         Domoticz.Log(" -channel: %s" %self.channel)
         Domoticz.Log(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
+        Domoticz.Log(" -eraseZigatePDM: %s" %self.eraseZigatePDM)
 
         Domoticz.Log("Plugin Transport")
         Domoticz.Log(" -zmode: %s" %self.zmode)
