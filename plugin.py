@@ -78,6 +78,7 @@ class BasePlugin:
         self._ReqRcv = bytearray()
         self.permitTojoin = None
         self.groupmgt = None
+        self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.Ping = {}
@@ -193,7 +194,7 @@ class BasePlugin:
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
         z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
-        if self.groupmgt:
+        if self.groupmgt and self.FirmwareVersion >= '030f':
             self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
         z_adminWidget.updateStatusWidget( self, Devices, 'No Communication')
@@ -256,10 +257,6 @@ class BasePlugin:
             self.ZigateComm.reConn()
             z_adminWidget.updateStatusWidget( self, Devices, 'No Communication')
 
-        if self.pluginconf.enablegroupmanagement:
-            Domoticz.Log("Start Group Management")
-            self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
 
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
@@ -302,6 +299,17 @@ class BasePlugin:
     def onHeartbeat(self):
         
         self.HeartbeatCount += 1
+
+        if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement and self.FirmwareVersion:
+            # Check if we are with Firmware above 30f
+            if self.FirmwareVersion >= '030f':
+                Domoticz.Log("Start Group Management")
+                self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
+                      self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                self.groupmgt_NotStarted = False
+            else:
+                Domoticz.Error("Cannot start Group Management due to low firmware level. Need >= 3.0f")
+
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
             z_output.sendZigateCmd(self, "0009","")
@@ -333,7 +341,8 @@ class BasePlugin:
 
         busy_ = False
         # Group Management
-        if self.groupmgt:
+        
+        if self.groupmgt: 
             self.groupmgt.hearbeatGroupMgt()
             if self.groupmgt.stillWIP:
                 busy_ = True

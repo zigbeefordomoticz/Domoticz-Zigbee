@@ -92,35 +92,27 @@ class GroupsManagement(object):
 
     def addGroupResponse(self, MsgData):
         ' decoding 0x8060 '
-        # ZNC_BUF_U8_UPD   ( &au8LinkTxBuffer [u16Length],pCustom->uMessage.psAddGroupResponsePayload->eStatus,       u16Length );
-        # ZNC_BUF_U16_UPD  ( &au8LinkTxBuffer [u16Length],pCustom->uMessage.psAddGroupResponsePayload->u16GroupId,    u16Length );
 
-        # 0180600008a98d0100048a00014203
-        # Start: 01
-        # Command: 8060
-        # Leght: 0008
-        # Checksum: a9
-        # SQN: 8d
-        # EP:        01
-        # ClusterID        0004
-        # Status:        8a
-        # GroupID        0001
-        # RSSI: 42
-        # End: 03
-
-        Domoticz.Debug("addGroupResponse - MsgData: %s (%s)" %(MsgData,len(MsgData)))
-
+        Domoticz.Log("addGroupResponse - MsgData: %s (%s)" %(MsgData,len(MsgData)))
         # search for the Group/dev
-        if len(MsgData) != 14:
-            Domoticz.Debug("addGroupResponse - uncomplete message %s" %MsgData)
-
-        MsgSequenceNumber=MsgData[0:2]
-        MsgEP=MsgData[2:4]
-        MsgClusterID=MsgData[4:8]  
-        MsgStatus = MsgData[8:10]
-        MsgGroupID = MsgData[10:14]
-
-        Domoticz.Log("addGroupResponse - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+        if len(MsgData) == 14:  # Firmware < 030f
+            MsgSrcAddr = None
+            MsgSequenceNumber=MsgData[0:2]
+            MsgEP=MsgData[2:4]
+            MsgClusterID=MsgData[4:8]  
+            MsgStatus = MsgData[8:10]
+            MsgGroupID = MsgData[10:14]
+            Domoticz.Log("addGroupResponse - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+        elif len(MsgData) == 18:    # Firmware >= 030f
+            MsgSequenceNumber=MsgData[0:2]
+            MsgEP=MsgData[2:4]
+            MsgClusterID=MsgData[4:8]  
+            MsgSrcAddr = MsgData[8:12]
+            MsgStatus = MsgData[12:14]
+            MsgGroupID = MsgData[14:18]
+            Domoticz.Log("addGroupResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
+        else:
+            Domoticz.Log("addGroupResponse - uncomplete message %s" %MsgData)
 
         if MsgStatus in ( '00', '8a'):
             # We need to find which Device was requested to be add to this group
@@ -130,9 +122,16 @@ class GroupsManagement(object):
             idx = -1
             for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[MsgGroupID]['Devices']:
                 idx += 1
-                if dev_status == 'Wip':
-                    self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
-                    break
+                if MsgSrcAddr is not None:
+                    if dev_nwkid == MsgSrcAddr:
+                        self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
+                        break
+                else:
+                    if dev_status == 'Wip':
+                        self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
+                        break
+            else:
+                Domoticz.Log("addGroupResponse - dev_nwkid: %s do not what to do with.")
         else: 
             Domoticz.Log("addGroupResponse - [%s] GroupID: %s unexpected status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
 
@@ -234,11 +233,24 @@ class GroupsManagement(object):
 
         if len(MsgData) != 14:
             return
-        MsgSequenceNumber=MsgData[0:2]
-        MsgEP=MsgData[2:4]
-        MsgClusterID=MsgData[4:8]
-        MsgStatus=MsgData[8:10]
-        MsgGroupID=MsgData[10:14]
+        if len(MsgData) == 14:  # Firmware < 030f
+            MsgSrcAddr = None
+            MsgSequenceNumber=MsgData[0:2]
+            MsgEP=MsgData[2:4]
+            MsgClusterID=MsgData[4:8]  
+            MsgStatus = MsgData[8:10]
+            MsgGroupID = MsgData[10:14]
+            Domoticz.Log("removeGroupResponse - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+        elif len(MsgData) == 18:    # Firmware >= 030f
+            MsgSequenceNumber=MsgData[0:2]
+            MsgEP=MsgData[2:4]
+            MsgClusterID=MsgData[4:8]  
+            MsgSrcAddr = MsgData[8:12]
+            MsgStatus = MsgData[12:14]
+            MsgGroupID = MsgData[14:18]
+            Domoticz.Log("removeGroupResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
+        else:
+            Domoticz.Log("removeGroupResponse - uncomplete message %s" %MsgData)
 
         Domoticz.Log("Decode8063 - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s" 
                 %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
@@ -252,9 +264,14 @@ class GroupsManagement(object):
             idx = -1
             for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[MsgGroupID]['Devices']:
                 idx += 1
-                if dev_status == 'Wip':
-                    self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok' 
-                    break
+                if MsgSrcAddr is not None:
+                    if dev_nwkid == MsgSrcAddr:
+                        self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok'
+                        break
+                else:
+                    if dev_status == 'Wip':
+                        self.ListOfGroups[MsgGroupID]['Devices'][idx][2] = 'Ok'
+                        break
         else:
             Domoticz.Log("removeGroupResponse - GroupID: %s unexpected Status: %s" %(MsgGroupID, MsgStatus))
         return
