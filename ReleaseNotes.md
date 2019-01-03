@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 03 January 2019 - Version 4.0.6
+- [Isssue] Remove usage of random
+
 ## 27 December 2018 - Version 4.0.5
 - [Issue] Negative temperature not correctly reported for Xiaomi Sensor
 
