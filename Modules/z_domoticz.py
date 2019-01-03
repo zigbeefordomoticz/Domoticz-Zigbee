@@ -14,9 +14,6 @@ import time
 import struct
 import json
 
-import z_consts
-
-
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice

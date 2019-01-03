@@ -19,16 +19,16 @@ import queue
 import time
 import json
 
-import z_domoticz
-import z_tools
-import z_status
-import z_output
-import z_readClusters
-import z_LQI
-import z_adminWidget
+from Modules.z_domoticz import MajDomoDevice
+from Modules.z_tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
+from Modules.z_output import sendZigateCmd, leaveMgtReJoin
+from Modules.z_status import DisplayStatusCode
+from Modules.z_readClusters import ReadCluster
+from Modules.z_LQI import mgtLQIresp
+from Modules.z_adminWidget import updateNotificationWidget, updateStatusWidget
 
 
-from z_IAS import IAS_Zone_Management
+from Classes.z_IAS import IAS_Zone_Management
 
 def ZigateRead(self, Devices, Data):
     Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
@@ -222,7 +222,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="804e":  #
         Domoticz.Debug("ZigateRead - MsgType 804e - Reception Management LQI response : " + Data)
-        z_LQI.mgtLQIresp( self, MsgData)    
+        mgtLQIresp( self, MsgData)    
         return
 
     elif str(MsgType)=="8060":  #
@@ -346,8 +346,8 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
-    z_tools.timeStamped( self, MsgSrcAddr , 8401)
-    z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
+    timeStamped( self, MsgSrcAddr , 8401)
+    updSQN( self, MsgSrcAddr, MsgSQN)
 
     Model = ''
     if MsgSrcAddr in self.ListOfDevices:
@@ -373,7 +373,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
             # bit 0 = 1 (door is opened) ou bit 0 = 0 (door is closed)
             value = "%02d" % iData
             Domoticz.Debug("Decode8401 - PST03A-v2.2.5 door/windows status : " + value)
-            z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0500", value)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0500", value)
             # Nota : tamper alarm on EP 2 are discarded
         elif  MsgEp == "01" :
             iData = (int(MsgZoneStatus,16) & 1)    # For EP 1, bit 0 = "movement"
@@ -381,13 +381,13 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
             if iData == 1 :    
                 value = "%02d" % iData
                 Domoticz.Debug("Decode8401 - PST03A-v2.2.5 mouvements alarm")
-                z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", value)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", value)
             # bit 2 = 1 ==> tamper (device disassembly)
             iData = (int(MsgZoneStatus,16) & 4) >> 2
             if iData == 1 :     
                 value = "%02d" % iData
                 Domoticz.Debug("Decode8401 - PST03A-V2.2.5  tamper alarm")
-                z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
         else :
             Domoticz.Debug("Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgDataSrcEp)
     else :      ## default 
@@ -421,7 +421,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = battdef
 
-        z_domoticz.MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", MsgZoneStatus[2:4])
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", MsgZoneStatus[2:4])
 
     return
 
@@ -445,7 +445,7 @@ def Decode8000_v2(self, MsgData) : # Status
     elif Status=="03" : Status="Command Failed"
     elif Status=="04" : Status="Busy"
     elif Status=="05" : Status="Stack Already Started"
-    elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ z_status.DisplayStatusCode(Status)
+    elif int(Status,16) >= 128 and int(Status,16) <= 244 : Status="ZigBee Error Code "+ DisplayStatusCode(Status)
 
     Domoticz.Debug("Decode8000_v2 - status: " + Status + " SEQ: " + SEQ + " Packet Type: " + PacketType )
 
@@ -590,13 +590,13 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
 
     
     if self.ZigateIEEE != extaddr:
-        z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate IEEE: %s' %extaddr)
+        updateNotificationWidget( self, Devices, 'Zigate IEEE: %s' %extaddr)
 
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
 
     if self.currentChannel != int(Channel,16):
-        z_adminWidget.updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
+        updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
     self.currentChannel = int(Channel,16)
 
     self.iaszonemgt.setZigateIEEE( extaddr )
@@ -606,8 +606,8 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0" : 
         Domoticz.Status("Decode8009 : Network state DOWN ! " )
-        z_adminWidget.updateNotificationWidget( self, Devices, 'Network down PanID = 0' )
-        z_adminWidget.updateStatusWidget( self, Devices, 'No Connection')
+        updateNotificationWidget( self, Devices, 'Network down PanID = 0' )
+        updateStatusWidget( self, Devices, 'No Connection')
     else :
         Domoticz.Status("Decode8009 - Network state UP, PANID: %s extPANID: 0x%s Channel: %s" \
                 %( PanID, extPanID, int(Channel,16) ))
@@ -667,7 +667,7 @@ def Decode8015(self, Devices, MsgData) : # Get device list ( following request d
         power=MsgData[idx+22:idx+24]
         rssi=MsgData[idx+24:idx+26]
 
-        if z_tools.DeviceExist(self, Devices, saddr, ieee):
+        if DeviceExist(self, Devices, saddr, ieee):
             Domoticz.Status("Decode8015 : [{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " RSSI = {:03n}".format((int(rssi,16))) + " Power = " + power + " HB = {:02n}".format(int(self.ListOfDevices[saddr]['Heartbeat'])) + " found in ListOfDevices")
 
             if rssi !="00" :
@@ -705,12 +705,12 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
     elif MsgDataStatus == "01": 
         Status = "Formed new network"
     else: 
-        Status = z_status.DisplayStatusCode( MsgDataStatus )
+        Status = DisplayStatusCode( MsgDataStatus )
     
     Domoticz.Status("Decode8024 - Network joined / formed - IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
             %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
 
-    #Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
+    #Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + DisplayStatusCode( MsgDataStatus ) + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
 
 def Decode8028(self, MsgData) : # Authenticate response
     MsgLen=len(MsgData)
@@ -736,7 +736,7 @@ def Decode802B(self, MsgData) : # User Descriptor Notify
     MsgDataStatus=MsgData[2:4]
     MsgNetworkAddressInterest=MsgData[4:8]
     
-    Domoticz.Status("ZigateRead - MsgType 802B - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Network address of interest : " + MsgNetworkAddressInterest)
+    Domoticz.Status("ZigateRead - MsgType 802B - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Network address of interest : " + MsgNetworkAddressInterest)
     return
 
 def Decode802C(self, MsgData) : # User Descriptor Response
@@ -749,7 +749,7 @@ def Decode802C(self, MsgData) : # User Descriptor Response
     MsgLenght=MsgData[8:10]
     MsgMData=MsgData[10:len(MsgData)]
     
-    Domoticz.Status("ZigateRead - MsgType 802C - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Network address of interest : " + MsgNetworkAddressInterest + " Lenght : " + MsgLenght + " Data : " + MsgMData)
+    Domoticz.Status("ZigateRead - MsgType 802C - User Descriptor Notify, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Network address of interest : " + MsgNetworkAddressInterest + " Lenght : " + MsgLenght + " Data : " + MsgMData)
     return
 
 def Decode8030(self, MsgData) : # Bind response
@@ -760,9 +760,9 @@ def Decode8030(self, MsgData) : # Bind response
     MsgDataStatus=MsgData[2:4]
     
     if MsgDataStatus != '00':
-        Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, z_status.DisplayStatusCode(MsgDataStatus)) )
+        Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
-    Domoticz.Debug("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Debug("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, MsgData) : # Unbind response
@@ -772,7 +772,7 @@ def Decode8031(self, MsgData) : # Unbind response
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
     
-    Domoticz.Status("ZigateRead - MsgType 8031 - Unbind response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Status("ZigateRead - MsgType 8031 - Unbind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8034(self, MsgData) : # Complex Descriptor response
@@ -805,7 +805,7 @@ def Decode8040(self, MsgData) : # Network Address response
     MsgDeviceList=MsgData[28:len(MsgData)]
     
     Domoticz.Status("ZigateRead - MsgType 8040 - Network Address response, Sequence number : " + MsgSequenceNumber + " Status : " 
-                        + z_status.DisplayStatusCode( MsgDataStatus ) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress 
+                        + DisplayStatusCode( MsgDataStatus ) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress 
                         + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
     return
 
@@ -821,7 +821,7 @@ def Decode8041(self, Devices, MsgData, MsgRSSI) : # IEEE Address response
     MsgDeviceList=MsgData[28:len(MsgData)]
 
     Domoticz.Log("Decode8041 - IEEE Address response, Sequence number : " + MsgSequenceNumber + " Status : " 
-                    + z_status.DisplayStatusCode( MsgDataStatus ) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress 
+                    + DisplayStatusCode( MsgDataStatus ) + " IEEE : " + MsgIEEE + " Short Address : " + MsgShortAddress 
                     + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 
 
@@ -830,7 +830,7 @@ def Decode8041(self, Devices, MsgData, MsgRSSI) : # IEEE Address response
 
     if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :        # We have requested a IEEE address for a Short Address, 
                                                                         # hoping that we can reconnect to an existing Device
-        if z_tools.DeviceExist(self, Devices, MsgShortAddress, MsgIEEE ) == True :
+        if DeviceExist(self, Devices, MsgShortAddress, MsgIEEE ) == True :
             Domoticz.Log("Decode 8041 - Device details : " +str(self.ListOfDevices[MsgShortAddress]) )
         else :
             Domoticz.Error("Decode 8041 - Unknown device : " +str(MsgShortAddress) + " IEEE : " +str(MsgIEEE) )
@@ -916,9 +916,9 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
     Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + \
-            ", Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
+            ", Status : " + DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
 
-    z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
+    updSQN( self, MsgDataShAddr, MsgDataSQN)
 
 
     if int(MsgDataLenght,16) == 0 : return
@@ -1004,7 +1004,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
         self.ListOfDevices[MsgDataShAddr]['Status']="8043"
         self.ListOfDevices[MsgDataShAddr]['Heartbeat']="0"
     else :
-        z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
+        updSQN( self, MsgDataShAddr, MsgDataSQN)
 
     Domoticz.Debug("Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
     return
@@ -1036,11 +1036,11 @@ def Decode8045(self, Devices, MsgData) : # Reception Active endpoint response
 
     MsgDataEPlist=MsgData[10:len(MsgData)]
 
-    Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+    Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
     OutEPlist=""
     
-    if z_tools.DeviceExist(self, Devices, MsgDataShAddr) == False:
+    if DeviceExist(self, Devices, MsgDataShAddr) == False:
         #Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
         Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
         return
@@ -1048,7 +1048,7 @@ def Decode8045(self, Devices, MsgData) : # Reception Active endpoint response
         if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
             self.ListOfDevices[MsgDataShAddr]['Status']="8045"
         else :
-            z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
+            updSQN( self, MsgDataShAddr, MsgDataSQN)
             
         i=0
         while i < 2 * int(MsgDataEpCount,16) :
@@ -1060,7 +1060,7 @@ def Decode8045(self, Devices, MsgData) : # Reception Active endpoint response
 
         for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
-            z_output.sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
+            sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
         if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
             self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
             self.ListOfDevices[MsgDataShAddr]['Status'] = "0043"
@@ -1083,8 +1083,8 @@ def Decode8046(self, MsgData) : # Match Descriptor response
     MsgDataLenList=MsgData[8:10]
     MsgDataMatchList=MsgData[10:len(MsgData)]
 
-    z_tools.updSQN( self, MsgDataShAddr, MsgDataSQN)
-    Domoticz.Status("Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + z_status.DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
+    updSQN( self, MsgDataShAddr, MsgDataSQN)
+    Domoticz.Status("Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
     return
 
 def Decode8047(self, MsgData) : # Management Leave response
@@ -1095,7 +1095,7 @@ def Decode8047(self, MsgData) : # Management Leave response
     MsgDataStatus=MsgData[2:4]
 
     Domoticz.Status("Decode8047 - Leave response, SQN: %s Status: %s - %s" \
-            %( MsgSequenceNumber, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus )))
+            %( MsgSequenceNumber, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
 
     return
 
@@ -1112,14 +1112,14 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         if Devices[x].DeviceID == MsgExtAddress:
             devName = Devices[x].Name
             break
-    z_adminWidget.updateNotificationWidget( self, Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
+    updateNotificationWidget( self, Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
 
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     if MsgExtAddress not in self.IEEE2NWK: # Most likely this object has been removed and we are receiving the confirmation.
         return
-    sAddr = z_tools.getSaddrfromIEEE( self, MsgExtAddress )
+    sAddr = getSaddrfromIEEE( self, MsgExtAddress )
 
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
@@ -1129,7 +1129,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             self.ListOfDevices[sAddr]['Status'] = 'Left'
             self.ListOfDevices[sAddr]['Hearbeat'] = 0
             Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
-            z_output.leaveMgtReJoin( self, sAddr, MsgExtAddress )
+            leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
     return
 
@@ -1176,7 +1176,7 @@ def Decode804A(self, Devices, MsgData) : # Management Network Update response
         idx += 2
 
     Domoticz.Status("Decode804A - Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s , Status: %s) " \
-            %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), z_status.DisplayStatusCode(MsgDataStatus)) )
+            %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), DisplayStatusCode(MsgDataStatus)) )
 
     timing = int(time.time())
     nwkscan[timing] = {}
@@ -1199,7 +1199,7 @@ def Decode804A(self, Devices, MsgData) : # Management Network Update response
         json.dump( nwkscan, json_file)
 
 
-    z_adminWidget.updateNotificationWidget( self, Devices, 'A new Network Scan report is available' )
+    updateNotificationWidget( self, Devices, 'A new Network Scan report is available' )
 
     return
 
@@ -1211,7 +1211,7 @@ def Decode804B(self, MsgData) : # System Server Discovery response
     MsgDataStatus=MsgData[2:4]
     MsgServerMask=MsgData[4:8]
     
-    Domoticz.Status("ZigateRead - MsgType 804B - System Server Discovery response, Sequence number : " + MsgSequenceNumber + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Server Mask : " + MsgServerMask)
+    Domoticz.Status("ZigateRead - MsgType 804B - System Server Discovery response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Server Mask : " + MsgServerMask)
     return
 
 #Group response
@@ -1236,7 +1236,7 @@ def Decode80A0(self, MsgData) : # View Scene response
     #<extensions max length: uint16_t>
     #<extensions data: data each element is uint8_t>
     
-    Domoticz.Status("ZigateRead - MsgType 80A0 - View Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID)
+    Domoticz.Status("ZigateRead - MsgType 80A0 - View Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID)
     return
 
 def Decode80A1(self, MsgData) : # Add Scene response
@@ -1250,7 +1250,7 @@ def Decode80A1(self, MsgData) : # Add Scene response
     MsgGroupID=MsgData[10:14]
     MsgSceneID=MsgData[14:16]
     
-    Domoticz.Status("ZigateRead - MsgType 80A1 - Add Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
+    Domoticz.Status("ZigateRead - MsgType 80A1 - Add Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
     return
 
 def Decode80A2(self, MsgData) : # Remove Scene response
@@ -1264,7 +1264,7 @@ def Decode80A2(self, MsgData) : # Remove Scene response
     MsgGroupID=MsgData[10:14]
     MsgSceneID=MsgData[14:16]
     
-    Domoticz.Status("ZigateRead - MsgType 80A2 - Remove Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
+    Domoticz.Status("ZigateRead - MsgType 80A2 - Remove Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
     return
 
 def Decode80A3(self, MsgData) : # Remove All Scene response
@@ -1277,7 +1277,7 @@ def Decode80A3(self, MsgData) : # Remove All Scene response
     MsgDataStatus=MsgData[8:10]
     MsgGroupID=MsgData[10:14]
     
-    Domoticz.Status("ZigateRead - MsgType 80A3 - Remove All Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID)
+    Domoticz.Status("ZigateRead - MsgType 80A3 - Remove All Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID)
     return
 
 def Decode80A4(self, MsgData) : # Store Scene response
@@ -1291,7 +1291,7 @@ def Decode80A4(self, MsgData) : # Store Scene response
     MsgGroupID=MsgData[10:14]
     MsgSceneID=MsgData[14:16]
     
-    Domoticz.Status("ZigateRead - MsgType 80A4 - Store Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
+    Domoticz.Status("ZigateRead - MsgType 80A4 - Store Scene response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
     return
     
 def Decode80A6(self, MsgData) : # Scene Membership response
@@ -1307,7 +1307,7 @@ def Decode80A6(self, MsgData) : # Scene Membership response
     MsgSceneCount=MsgData[16:18]
     MsgSceneList=MsgData[18:len(MsgData)]
     
-    Domoticz.Status("ZigateRead - MsgType 80A6 - Scene Membership response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + z_status.DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
+    Domoticz.Status("ZigateRead - MsgType 80A6 - Scene Membership response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
     return
 
 #Reponses Attributs
@@ -1325,7 +1325,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     Domoticz.Debug("Decode8100 - Report Individual Attribute : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
-    z_tools.timeStamped( self, MsgSrcAddr , 8100)
+    timeStamped( self, MsgSrcAddr , 8100)
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
     try :
@@ -1333,8 +1333,8 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     except : 
         self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
-    z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
-    z_readClusters.ReadCluster(self, Devices, MsgData) 
+    updSQN( self, MsgSrcAddr, MsgSQN)
+    ReadCluster(self, Devices, MsgData) 
 
     return
 
@@ -1345,7 +1345,7 @@ def Decode8101(self, MsgData) :  # Default Response
     MsgDataCommand=MsgData[8:10]
     MsgDataStatus=MsgData[10:12]
     Domoticz.Debug("Decode8101 - Default response - SQN: %s, EP: %s, ClusterID: %s , DataCommand: %s, - Status: [%s] %s" \
-            %(MsgDataSQN, MsgDataEp, MsgClusterId, MsgDataCommand, MsgDataStatus,  z_status.DisplayStatusCode( MsgDataStatus ) ))
+            %(MsgDataSQN, MsgDataEp, MsgClusterId, MsgDataCommand, MsgDataStatus,  DisplayStatusCode( MsgDataStatus ) ))
     return
 
 def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
@@ -1368,7 +1368,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         else:
             Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" | - | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
 
-    if z_tools.DeviceExist(self, Devices, MsgSrcAddr) == True :
+    if DeviceExist(self, Devices, MsgSrcAddr) == True :
         try:
             self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
         except:
@@ -1377,16 +1377,16 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
-        z_tools.timeStamped( self, MsgSrcAddr , 8102)
-        z_tools.updSQN( self, MsgSrcAddr, str(MsgSQN) )
-        z_readClusters.ReadCluster(self, Devices, MsgData) 
+        timeStamped( self, MsgSrcAddr , 8102)
+        updSQN( self, MsgSrcAddr, str(MsgSQN) )
+        ReadCluster(self, Devices, MsgData) 
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
         Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
         #Domoticz.Status("Decode8102 - Will try to reconnect device : " + str(MsgSrcAddr) )
         #Domoticz.Status("Decode8102 - but will most likely fail if it is battery powered device.")
-        #z_tools.initDeviceInList(self, MsgSrcAddr)
+        #initDeviceInList(self, MsgSrcAddr)
         #self.ListOfDevices[MsgSrcAddr]['Status']="0041"
         #self.ListOfDevices[MsgSrcAddr]['MacCapa']= "0"
     return
@@ -1404,7 +1404,7 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     Domoticz.Log("Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
-    z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
+    updSQN( self, MsgSrcAddr, MsgSQN)
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
@@ -1419,9 +1419,9 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgDataStatus=MsgData[12:14]
 
     Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
-       %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
+       %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
 
-    z_tools.updSQN( self, MsgSrcAddr, MsgSQN)
+    updSQN( self, MsgSrcAddr, MsgSQN)
 
 
     if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
@@ -1443,7 +1443,7 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     if MsgDataStatus != '00':
         # Looks like that this Device doesn't handle Configure Reporting, so let's flag it as such, so we won't do it anymore
         Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, z_status.DisplayStatusCode( MsgDataStatus) ))
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
     return
 
 def Decode8140(self, MsgData) :  # Attribute Discovery response
@@ -1474,7 +1474,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 
     if NwkStatus != "00" :
         Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
-                %( Status, z_status.DisplayStatusCode( Status ), NwkStatus, z_status.DisplayStatusCode(NwkStatus)))
+                %( Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
 
     return
 
@@ -1492,8 +1492,8 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
         MsgDataDestAddr=MsgData[8:12]
         MsgDataSQN=MsgData[12:14]
 
-        z_tools.updSQN( self, MsgDataDestAddr, MsgDataSQN)
-        Domoticz.Debug("Decode 8702 - " +  z_status.DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+        updSQN( self, MsgDataDestAddr, MsgDataSQN)
+        Domoticz.Debug("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
         return
 
 #Device Announce
@@ -1508,26 +1508,26 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
-    if not z_tools.DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
+    if not DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
         if MsgIEEE in self.IEEE2NWK :
             if self.IEEE2NWK[MsgIEEE] :
                 Domoticz.Log("Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
-        if not z_tools.IEEEExist( self, MsgIEEE ):
-            z_tools.initDeviceInList(self, MsgSrcAddr)
+        if not IEEEExist( self, MsgIEEE ):
+            initDeviceInList(self, MsgSrcAddr)
             Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
             self.CommiSSionning = True
             self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
             self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
         else:
             # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
-            if not z_tools.DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
+            if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
                 Domoticz.Log("Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
 
         # We will request immediatly the List of EndPoints
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
-        z_output.sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
+        sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
 
         Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 

@@ -11,11 +11,11 @@
 """
 
 import Domoticz
-import z_tools
 import os.path
 import datetime
 import json
 
+from Modules.z_tools import CheckDeviceList
 
 def _copyfile( source, dest ):
     copy_buffer =''
@@ -65,7 +65,7 @@ def LoadDeviceList( self ):
                 res = "Failed"
             else:
                 nb = nb +1
-                z_tools.CheckDeviceList( self, key, val )
+                CheckDeviceList( self, key, val )
 
     Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
 

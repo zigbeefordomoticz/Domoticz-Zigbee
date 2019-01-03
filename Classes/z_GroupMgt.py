@@ -10,8 +10,8 @@ import pickle
 import json
 
 import os.path
-import z_tools
-import z_consts
+from Modules.z_tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.z_consts import ADDRESS_MODE
 
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
 
@@ -741,7 +741,7 @@ class GroupsManagement(object):
             sValue = 'Off'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             #datas = "01" + nwkid + EPin + EPout + zigate_param
-            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Log("Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             return
@@ -753,7 +753,7 @@ class GroupsManagement(object):
             sValue = 'On'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             #datas = "01" + nwkid + EPin + EPout + zigate_param
-            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Log("Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             return
@@ -767,7 +767,7 @@ class GroupsManagement(object):
             sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             #datas = "01" + nwkid + EPin + EPout + zigate_param
-            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Log("Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             return
@@ -776,10 +776,10 @@ class GroupsManagement(object):
             Hue_List = json.loads(Color_)
             #First manage level
             OnOff = '01' # 00 = off, 01 = on
-            value=z_tools.Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+            value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             zigate_cmd = "0081"
             zigate_param = OnOff + value + "0000"
-            datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
             self.ZigateComm.sendData( zigate_cmd, datas)
 
@@ -795,21 +795,21 @@ class GroupsManagement(object):
                 TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
                 TempMired = 1000000 // TempKelvin
                 zigate_cmd = "00C0"
-                zigate_param = z_tools.Hex_Format(4,TempMired) + "0000"
-                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                zigate_param = Hex_Format(4,TempMired) + "0000"
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
                 Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
             #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
             elif Hue_List['m'] == 3:
-                x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+                x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
                 #Convert 0>1 to 0>FFFF
                 x = int(x*65536)
                 y = int(y*65536)
-                strxy = z_tools.Hex_Format(4,x) + z_tools.Hex_Format(4,y)
+                strxy = Hex_Format(4,x) + Hex_Format(4,y)
                 zigate_cmd = "00B7"
                 zigate_param = strxy + "0000"
-                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
                 Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
@@ -817,13 +817,13 @@ class GroupsManagement(object):
             elif Hue_List['m'] == 4:
                 ww = int(Hue_List['ww'])
                 cw = int(Hue_List['cw'])
-                x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+                x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
                 #TODO, Pas trouve de device avec ca encore ...
                 Domoticz.Debug("Not implemented device color 2")
 
             #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
             elif Hue_List['m'] == 9998:
-                h,l,s = z_tools.rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+                h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
                 saturation = s * 100   #0 > 100
                 hue = h *360           #0 > 360
                 hue = int(hue*254//360)
@@ -831,14 +831,14 @@ class GroupsManagement(object):
                 value = int(l * 254//100)
                 OnOff = '01'
                 zigate_cmd = "00B6"
-                zigate_param = z_tools.Hex_Format(2,hue) + z_tools.Hex_Format(2,saturation) + "0000"
-                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                zigate_param = Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000"
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
                 Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
                 zigate_cmd = "0081"
-                zigate_param = OnOff + z_tools.Hex_Format(2,value) + "0010"
-                datas = "%02d" %z_consts.ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                zigate_param = OnOff + Hex_Format(2,value) + "0010"
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
                 Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 

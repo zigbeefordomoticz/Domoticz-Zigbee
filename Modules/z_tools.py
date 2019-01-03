@@ -15,8 +15,8 @@ import struct
 import json
 
 import Domoticz
-import z_output
-import z_adminWidget
+
+from Modules.z_adminWidget import updateNotificationWidget
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -125,7 +125,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     if Devices[x].DeviceID == existingIEEEkey:
                         devName = Devices[x].Name
 
-                z_adminWidget.updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
+                updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
 
                 # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
@@ -193,9 +193,6 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Log("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
 
-            if self.pluginconf.allowRemoveZigateDevice == 1:
-                Domoticz.Log("removeDeviceInList - removing Device in Zigate")
-                z_output.removeZigateDevice( self, IEEE )
 
 
 def initDeviceInList(self, Nwkid) :

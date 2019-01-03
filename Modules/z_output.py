@@ -16,12 +16,12 @@ import binascii
 import time
 import struct
 import json
-import queue
-
-import z_consts
-import z_tools
 
 from datetime import datetime
+
+from Modules.z_consts import ZLL_DEVICES
+from Modules.z_tools import getClusterListforEP
+
 
 def ZigateConf_light(self, discover ):
     '''
@@ -501,7 +501,7 @@ def processConfigureReporting( self, NWKID=None ):
                 identifySend( self, key, Ep, 0)
             else:
                 identifySend( self, key, Ep, 15)
-            clusterList = z_tools.getClusterListforEP( self, key, Ep )
+            clusterList = getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode'):
                     continue
@@ -627,7 +627,7 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
     if 'ZDeviceID' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['ZDeviceID'] != {} and self.ListOfDevices[nwkid]['ZDeviceID'] != '':
-            if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) in z_consts.ZLL_DEVICES:
+            if int(self.ListOfDevices[nwkid]['ZDeviceID'],16) in ZLL_DEVICES:
                 identify = True
 
     if not identify:

@@ -18,15 +18,17 @@ import struct
 import json
 import queue
 
-import z_output
-import z_tools
-import z_domoticz
-import z_LQI
-import z_consts
-import z_adminWidget
+from Modules.z_output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
+        ReadAttributeRequest_0008, ReadAttributeRequest_000C, ReadAttributeRequest_0006, ReadAttributeRequest_0001, \
+        ReadAttributeRequest_0300, processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq
+from Modules.z_tools import removeNwkInList
+from Modules.z_domoticz import CreateDomoDevice
+from Modules.z_LQI import LQIcontinueScan
+from Modules.z_consts import HEARTBEAT
+from Modules.z_adminWidget import updateNotificationWidget
 
-from z_IAS import IAS_Zone_Management
-from z_Transport import ZigateTransport
+from Classes.z_IAS import IAS_Zone_Management
+from Classes.z_Transport import ZigateTransport
 
 
 def processKnownDevices( self, Devices, NWKID ):
@@ -39,47 +41,47 @@ def processKnownDevices( self, Devices, NWKID ):
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
 
 
-    if  self.HeartbeatCount == ( 28 // z_consts.HEARTBEAT):
+    if  self.HeartbeatCount == ( 28 // HEARTBEAT):
         if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
                                                               # available, let's request a Node Descriptor
             for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
                 if "0000" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
-                    z_output.ReadAttributeRequest_0000(self, NWKID, fullScope = True )
-            z_output.sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
+                    ReadAttributeRequest_0000(self, NWKID, fullScope = True )
+            sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
             cnt_cmds += 2
 
     # Ping each device, even the battery one. It will make at least the route up-to-date
-    if ( intHB % ( 3000 // z_consts.HEARTBEAT)) == 0:
-        z_output.ReadAttributeRequest_Ack(self, NWKID)
+    if ( intHB % ( 3000 // HEARTBEAT)) == 0:
+        ReadAttributeRequest_Ack(self, NWKID)
         cnt_cmds += 1
 
-    if ( intHB % ( 600 // z_consts.HEARTBEAT) ) == 0 or ( intHB == ( 24 // z_consts.HEARTBEAT)):
+    if ( intHB % ( 600 // HEARTBEAT) ) == 0 or ( intHB == ( 24 // HEARTBEAT)):
         if  'PowerSource' in self.ListOfDevices[NWKID]:       # Let's check first that the field exist, if not 
                                                               # it will be requested at Heartbeat == 12 (see above)
             if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':    #  Only for device receiving req on idle
                 for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
                     if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Metering
-                        z_output.ReadAttributeRequest_0702(self, NWKID )
+                        ReadAttributeRequest_0702(self, NWKID )
                         cnt_cmds += 1
                     if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
-                        z_output.ReadAttributeRequest_0008(self, NWKID )
+                        ReadAttributeRequest_0008(self, NWKID )
                         cnt_cmds += 1
                     #if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
-                    #    z_output.ReadAttributeRequest_000C(self, NWKID )
+                    #    ReadAttributeRequest_000C(self, NWKID )
                     if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
-                        z_output.ReadAttributeRequest_0006(self, NWKID )
+                        ReadAttributeRequest_0006(self, NWKID )
                         cnt_cmds += 1
                     #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
-                    #    z_output.ReadAttributeRequest_0001(self, NWKID )
+                    #    ReadAttributeRequest_0001(self, NWKID )
                     #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
-                    #    z_output.ReadAttributeRequest_0300(self, NWKID )
+                    #    ReadAttributeRequest_0300(self, NWKID )
                     pass
 
     if cnt_cmds > 5:
         self.busy = True
 
     # Checking Time stamps
-    if (intHB == 2) or intHB % ( 1800 // z_consts.HEARTBEAT) == 0:
+    if (intHB == 2) or intHB % ( 1800 // HEARTBEAT) == 0:
         if 'Stamp' in self.ListOfDevices[NWKID]:
             if 'Time' in self.ListOfDevices[NWKID]['Stamp']:
                 lastShow = time.mktime(time.strptime(self.ListOfDevices[NWKID]['Stamp']['Time'],'%Y-%m-%d %H:%M:%S'))
@@ -127,7 +129,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                z_output.ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
                                                                     # And wait 1 cycle
             else: 
                 Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
@@ -138,7 +140,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
-                z_output.sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
+                sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
                 Domoticz.Log("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']))
 
@@ -170,7 +172,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if reqColorModeAttribute:
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
-            z_output.ReadAttributeRequest_0300(self, NWKID )
+            ReadAttributeRequest_0300(self, NWKID )
             return
     # end if status== "8043"
 
@@ -183,8 +185,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                z_output.ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
-        z_output.sendZigateCmd(self,"0045", str(NWKID))
+                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+        sendZigateCmd(self,"0045", str(NWKID))
         return
 
     if (status == "8045" or status == "0043") and HB_ > 1 and status != 'createDB':
@@ -195,10 +197,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                z_output.ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
-            z_output.sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
+            sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
     if self.ListOfDevices[NWKID]['RIA'] > '2' and status != 'UNKNOW':  # We have done several retry
@@ -208,7 +210,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
         Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
-        z_adminWidget.updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrolment of this devices. See Logs' )
+        updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrolment of this devices. See Logs' )
         self.CommiSSionning = False
         return
 
@@ -240,11 +242,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
         if IsCreated == False:
             Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
-            z_domoticz.CreateDomoDevice(self, Devices, NWKID)
+            CreateDomoDevice(self, Devices, NWKID)
             # Post creation widget
 
             # 1 Enable Configure Reporting for any applicable cluster/attributes
-            z_output.processConfigureReporting( self, NWKID )  
+            processConfigureReporting( self, NWKID )  
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
@@ -252,15 +254,15 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             for ep in self.ListOfDevices[NWKID]['Ep']:
                 if ep in ( '01', '03', '09' ):
                     break
-            z_output.identifyEffect( self, NWKID, ep , effect='Blink' )
+            identifyEffect( self, NWKID, ep , effect='Blink' )
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
                  Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
                         %(NWKID, self.pluginconf.vibrationAqarasensitivity))
-                 z_output.setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
+                 setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
-            z_adminWidget.updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
+            updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
             self.CommiSSionning = False
 
@@ -315,7 +317,7 @@ def processListOfDevices( self , Devices ):
                         Domoticz.Log("processListOfDevices - Removing %s / %s from IEEE2NWK." %(self.ListOfDevices[NWKID]['IEEE'], NWKID))
                         del self.IEEE2NWK[self.ListOfDevices[NWKID]['IEEE']]
                     Domoticz.Log("processListOfDevices - Removing the entry %s from ListOfDevice" %(NWKID))
-                    z_tools.removeNwkInList( self, NWKID)
+                    removeNwkInList( self, NWKID)
 
         elif status != "inDB" and status != "UNKNOW":
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
@@ -329,18 +331,18 @@ def processListOfDevices( self , Devices ):
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     # LQI Scanner
-    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x z_consts.HEARTBEAT
+    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x HEARTBEAT
     if self.pluginconf.logLQI != 0 and \
-            self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // z_consts.HEARTBEAT):
+            self.HeartbeatCount > (( 120 + self.pluginconf.logLQI) // HEARTBEAT):
         if self.ZigateComm.loadTransmit() < 5 :
-            z_LQI.LQIcontinueScan( self, Devices )
+            LQIcontinueScan( self, Devices )
 
     if self.HeartbeatCount == 4:
         # Trigger Conifre Reporting to eligeable decices
-        z_output.processConfigureReporting( self )
+        processConfigureReporting( self )
     
     if self.pluginconf.networkScan != 0 and \
-            (self.HeartbeatCount == ( 120 // z_consts.HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // z_consts.HEARTBEAT )) == 0) :
-        z_output.NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
+            (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // HEARTBEAT )) == 0) :
+        NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
 
     return True
