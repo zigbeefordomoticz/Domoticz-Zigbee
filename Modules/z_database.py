@@ -29,22 +29,23 @@ def LoadDeviceList( self ):
     #
     Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 
+    _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
     # Check if the DeviceList file exist.
-    if not os.path.isfile( self.DeviceListName ) :
+    if not os.path.isfile( _DeviceListFileName ) :
         self.ListOfDevices = {}
         return True    
 
-    _backup = self.DeviceListName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
-    _copyfile( str(self.DeviceListName) , str(_backup) )
+    _backup = _DeviceListFileName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+    _copyfile( str(_DeviceListFileName) , str(_backup) )
 
     # Keep the Size of the DeviceList in order to check changes
-    self.DeviceListSize = os.path.getsize( self.DeviceListName )
+    self.DeviceListSize = os.path.getsize( _DeviceListFileName )
 
     # File exists, let's go one
     res = "Success"
     nb = 0
-    with open( self.DeviceListName , 'r') as myfile2:
-        Domoticz.Debug( "Open : " + self.DeviceListName )
+    with open( _DeviceListFileName , 'r') as myfile2:
+        Domoticz.Debug( "Open : " + _DeviceListFileName )
         for line in myfile2:
             if not line.strip() :
                 #Empty line
@@ -67,20 +68,24 @@ def LoadDeviceList( self ):
                 nb = nb +1
                 CheckDeviceList( self, key, val )
 
-    Domoticz.Status("Entries loaded from " +str(self.DeviceListName) + " : " +str(nb) )
+    Domoticz.Status("Entries loaded from " +str(_DeviceListFileName) + " : " +str(nb) )
 
     return res
 
 
 def WriteDeviceList(self, Folder, count):
-    if self.HBcount>=count :
-        Domoticz.Debug("Write " + self.DeviceListName + " = " + str(self.ListOfDevices))
-        with open( self.DeviceListName , 'wt') as file:
+
+    if self.HBcount >= count :
+        _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
+        Domoticz.Log("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+        with open( _DeviceListFileName , 'wt') as file:
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
 
-        json_filename = self.DeviceListName + ".json"
+        # To be written in the Reporting folder
+        json_filename = self.pluginconf.pluginReports + self.DeviceListName + '.json'
+        Domoticz.Log("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
             json.dump(self.ListOfDevices, json_file)
     else :

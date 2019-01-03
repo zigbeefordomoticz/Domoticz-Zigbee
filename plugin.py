@@ -137,7 +137,7 @@ class BasePlugin:
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
         
 
-        self.DeviceListName = self.pluginconf.pluginData + "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
+        self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
         Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
 
         plugconf = self.pluginconf
