@@ -1502,7 +1502,7 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
 
-    Domoticz.Status("[%s] NEW OBJECT: %s Device Annouce" %(0, MsgSrcAddr))
+    Domoticz.Status("[%s] NEW OBJECT: %s Device Annouce IEEE: %s" %(0, MsgSrcAddr, MsgIEEE))
 
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
