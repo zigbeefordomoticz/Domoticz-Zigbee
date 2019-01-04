@@ -405,6 +405,8 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
         Domoticz.Status("IAS Zone change for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" \
                 %( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef))
 
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", '01')
+
         if battdef or battery:
             self.ListOfDevices[MsgSrcAddr]['Battery'] = '1'
 
@@ -421,7 +423,6 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = battdef
 
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", MsgZoneStatus[2:4])
 
     return
 
