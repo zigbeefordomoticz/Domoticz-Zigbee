@@ -52,7 +52,7 @@ import json
 import queue
 
 from Modules.z_tools import removeDeviceInList
-from Modules.z_output import sendZigateCmd, ZigateConf, ZigateConf_light
+from Modules.z_output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice
 from Modules.z_input import ZigateRead
 from Modules.z_heartbeat import processListOfDevices
 from Modules.z_database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
