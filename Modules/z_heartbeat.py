@@ -39,19 +39,21 @@ def processKnownDevices( self, Devices, NWKID ):
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
     # Checking Time stamps
     if (intHB == 2) or intHB % ( 1800 // HEARTBEAT) == 0:
-        if 'Stamp' in self.ListOfDevices[NWKID]:
-            if 'Time' in self.ListOfDevices[NWKID]['Stamp']:
-                lastShow = time.mktime(time.strptime(self.ListOfDevices[NWKID]['Stamp']['Time'],'%Y-%m-%d %H:%M:%S'))
-                delta = int(time.time() - lastShow)
-     
-                if delta > 7200:
-                    IEEE = self.ListOfDevices[NWKID]['IEEE']
-                    unit = [x for x in Devices if Devices[x].DeviceID == IEEE ]
-                    if len(unit) > 1:
-                        unit = unit[0]
-                        Domoticz.Status("%s - Last Update was: %s --> %s ago (More than 2 hours) %s" \
-                            %( Devices[unit].Name, self.ListOfDevices[NWKID]['Stamp']['Time'], 
-                            datetime.datetime.fromtimestamp(delta).strftime('%H:%M:%S'), delta))
+        if  'PowerSource' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['PowerSource'] == 'Battery': 
+                if 'Stamp' in self.ListOfDevices[NWKID]:
+                    if 'Time' in self.ListOfDevices[NWKID]['Stamp']:
+                        lastShow = time.mktime(time.strptime(self.ListOfDevices[NWKID]['Stamp']['Time'],'%Y-%m-%d %H:%M:%S'))
+                        delta = int(time.time() - lastShow)
+             
+                        if delta > 7200:
+                            IEEE = self.ListOfDevices[NWKID]['IEEE']
+                            unit = [x for x in Devices if Devices[x].DeviceID == IEEE ]
+                            if len(unit) > 1:
+                                unit = unit[0]
+                                Domoticz.Status("%s - Last Update from Battery device was: %s --> %s ago (More than 2 hours) %s" \
+                                    %( Devices[unit].Name, self.ListOfDevices[NWKID]['Stamp']['Time'], 
+                                    datetime.datetime.fromtimestamp(delta).strftime('%H:%M:%S'), delta))
 
     # Check if Node Descriptor was run ( this could not be the case on early version)
 
