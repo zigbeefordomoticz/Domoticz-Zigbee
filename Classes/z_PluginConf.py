@@ -65,7 +65,6 @@ class PluginConf:
         self.debugReadCluster = 0
 
         # Import PluginConf.txt
-
         self.filename = self.homedirectory + "PluginConf-%02d.txt" %hardwareid
         if not os.path.isfile(self.filename) :
             self.filename = self.homedirectory + "PluginConf.txt"
@@ -75,7 +74,7 @@ class PluginConf:
         with open( self.filename, 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
-        Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
+        Domoticz.Log("PluginConf.txt = " + str(tmpPluginConf))
 
         self.PluginConf = eval(tmpPluginConf)
 
@@ -123,7 +122,7 @@ class PluginConf:
 
         if self.PluginConf.get('forceReadAttributes') and \
                 self.PluginConf.get('forceReadAttributes').isdigit():
-            self.forceReadAttribute = int(self.PluginConf['forceReadAttributes'], 10)
+            self.forceReadAttributes = int(self.PluginConf['forceReadAttributes'], 10)
 
         if self.PluginConf.get('logFORMAT') and \
                 self.PluginConf.get('logFORMAT').isdigit():
