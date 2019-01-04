@@ -456,7 +456,7 @@ def Decode8000_v2(self, MsgData) : # Status
     elif PacketType=="0044" : Domoticz.Log("request Power Descriptor status : " +  Status )
 
     if str(MsgData[0:2]) != "00" :
-        Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" \
+        Domoticz.Debug("Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
