@@ -90,7 +90,8 @@ def processKnownDevices( self, Devices, NWKID ):
                             continue    # Just does it at plugin start
 
                         if self.busy  or len(self.ZigateComm._normalQueue) > 2:
-                            Domoticz.Log('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                            Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                                    %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
                             break # Will do at the next round
 
                         func = READ_ATTRIBUTES_REQUEST[Cluster][0]
@@ -102,7 +103,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                         %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                                 if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                                     if now > ( self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing): 
-                                        Domoticz.Log("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                        Domoticz.Debug("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                                         func(self, NWKID )
                                 else:
                                     Domoticz.Debug("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
