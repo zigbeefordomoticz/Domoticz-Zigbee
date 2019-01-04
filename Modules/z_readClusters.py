@@ -145,7 +145,7 @@ def ReadCluster(self, Devices, MsgData):
                 self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
 
     if MsgAttrStatus != "00" and MsgClusterId != '0500':
-        Domoticz.Log("ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
+        Domoticz.Debug("ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) )
         self.statistics._clusterKO += 1
         return
 
