@@ -206,8 +206,8 @@ class BasePlugin:
             removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
             if self.pluginconf.allowRemoveZigateDevice == 1:
-                Domoticz.Log("onDeviceRemoved - removing Device in Zigate")
-                removeZigateDevice( self, IEEE )
+                Domoticz.Log("onDeviceRemoved - removing Device in Zigate -Not Implemented")
+            #    removeZigateDevice( self, IEEE )
 
             Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
