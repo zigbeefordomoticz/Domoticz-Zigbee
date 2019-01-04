@@ -340,7 +340,7 @@ class BasePlugin:
             WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
 
         if self.CommiSSionning:
-            updateStatusWidget( self, Devices, 'Enrolment')
+            updateStatusWidget( self, Devices, 'Enrollment')
             return
 
         busy_ = False

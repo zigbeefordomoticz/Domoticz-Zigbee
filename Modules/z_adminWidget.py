@@ -54,11 +54,11 @@ def createAdminWidget( self, Devices ):
 
     if self.pluginconf.eraseZigatePDM:
         Options = {"LevelActions": "|||||||",
-               "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolment|Perm. Enrolment|Interf Scan|LQI Report|Erase PDM",
+               "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrollment|Perm. Enrollment|Interf Scan|LQI Report|Erase PDM",
                "LevelOffHidden": "true", "SelectorStyle": "0"}
     else:
         Options = {"LevelActions": "|||||||",
-               "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrolment|Interf Scan|LQI Report",
+               "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
                "LevelOffHidden": "true", "SelectorStyle": "0"}
 
     unit = FreeUnit(self, Devices)
@@ -84,7 +84,7 @@ def createStatusWidget( self, Devices ):
         #Devices[unit].Delete()
 
     #Options = {"LevelActions": "||",
-    #           "LevelNames": "Off|Startup|Ready|Enrolment|Busy",
+    #           "LevelNames": "Off|Startup|Ready|Enrollment|Busy",
     #           "LevelOffHidden": "true", "SelectorStyle": "1"}
     unit = FreeUnit(self, Devices)
     widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02s" %self.HardwareID
@@ -145,7 +145,7 @@ def updateStatusWidget( self, Devices,  statusType ):
     STATUS_WIDGET = { 'No Communication':4, 
             'Startup':0, 
             'Ready':1, 
-            'Enrolment':3, 
+            'Enrollment':3, 
             'Busy':3 }
     deviceid_status_widget = DEVICEID_STATUS_WIDGET + "%02s" %self.HardwareID
     if statusType not in STATUS_WIDGET:
@@ -204,7 +204,7 @@ def handleCommand( self, Command):
         Domoticz.Log("handleCommand - One Time Enrolmennt")
 
     elif Command == '40':
-        Domoticz.Log("handleCommand - Perm. Enrolment")
+        Domoticz.Log("handleCommand - Perm. Enrollment")
 
     elif Command == '50':
         Domoticz.Log("handleCommand - Interference Scan")

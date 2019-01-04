@@ -228,7 +228,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
         Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
-        updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrolment of this devices. See Logs' )
+        updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
         self.CommiSSionning = False
         return
 
