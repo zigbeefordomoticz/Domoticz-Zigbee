@@ -84,7 +84,7 @@ class IAS_Zone_Management:
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        Domoticz.Log("setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
+        Domoticz.Debug("setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
         return
 
