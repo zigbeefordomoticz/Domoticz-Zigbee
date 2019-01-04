@@ -19,6 +19,7 @@
 - [Hardware] Improve 2018 Xiaomi wireless sitches with 3 states per button ( lumi.remote.b286acn01, lumi.remote.b186acn01) 
 - [Technical] Remove the use of random
 - [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
+- [Technical] re-factor the ReadAttributes request in Hearbeat in order to avoid peak of load.
 
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
