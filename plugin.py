@@ -311,6 +311,7 @@ class BasePlugin:
                       self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                 self.groupmgt_NotStarted = False
             else:
+                self.pluginconf.enablegroupmanagemen = 0
                 Domoticz.Error("Cannot start Group Management due to low firmware level. Need >= 3.0f")
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
