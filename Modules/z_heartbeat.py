@@ -85,7 +85,7 @@ def processKnownDevices( self, Devices, NWKID ):
                     if tmpEp == 'ClusterType': continue
                     for Cluster in READ_ATTRIBUTES_REQUEST:
                         if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                            break
+                            continue
                         if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                             continue    # Just does it at plugin start
 
@@ -102,7 +102,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                         %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                                 if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                                     if now > ( self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing): 
-                                        Domoticz.Log("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                        Domoticz.Log("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                                         func(self, NWKID )
                                 else:
                                     Domoticz.Debug("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
