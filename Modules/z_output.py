@@ -13,11 +13,11 @@
 
 import Domoticz
 import binascii
-import time
 import struct
 import json
 
 from datetime import datetime
+from time import time
 
 from Modules.z_consts import ZLL_DEVICES
 from Modules.z_tools import getClusterListforEP
@@ -114,29 +114,24 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     #if 'Manufacturer' in self.ListOfDevices[addr]:
     #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
 
-    # Init the ReadAttribute structutre if not existing
-    # Check if ReadAttribute has to be reset
-    if self.pluginconf.forceReadAttributes:
-        self.ListOfDevices[addr]['ReadAttributes'] = {}
-        self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
-
     if 'ReadAttributes' in self.ListOfDevices[addr]:
         if EpOut in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
-            if str(Cluster) in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
-                pass
-            else:
+            if str(Cluster) not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
         else:
             self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
             self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
+        if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
+            self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
+            self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
     else:
         self.ListOfDevices[addr]['ReadAttributes'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
+        self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
 
-    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
         Attr = "%04x" %(ListOfAttributes)
@@ -150,10 +145,10 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
             # Attributes was either '00' or {}
             Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
     else:
-        lenAttr = len(ListOfAttributes)
+        lenAttr = 0
         weight = int ((lenAttr ) / 2) + 1
         Attr =''
-        Domoticz.Debug("attributes: " +str(ListOfAttributes) +" len =" +str(lenAttr) )
+        Domoticz.Debug("attributes: " +str(ListOfAttributes))
         for x in ListOfAttributes:
             Attr_ = "%04x" %(x)
             if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
@@ -162,9 +157,13 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
                     continue
                 Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]))
             Attr += Attr_
-        else: # We skip all !
+            lenAttr += 1
+
+        if lenAttr == 0:
             return
 
+    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
+    self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
 
@@ -172,6 +171,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
+    Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
 
@@ -216,11 +216,13 @@ def ReadAttributeRequest_Ack(self, key):
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
             EPout= tmpEp
-    Domoticz.Log("Requesting Ack for %s/%s" %(key, EPout))
+    Domoticz.Debug("Requesting Ack for %s/%s" %(key, EPout))
     ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 
 def ReadAttributeRequest_0001(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0001 - Key: %s " %key)
     # Power Config
     EPin = "01"
     EPout= "01"
@@ -246,6 +248,7 @@ def ReadAttributeRequest_0001(self, key):
 def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
 
+    Domoticz.Debug("ReadAttributeRequest_0300 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
 
@@ -268,6 +271,9 @@ def ReadAttributeRequest_0300(self, key):
 
 def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
+
+    Domoticz.Debug("ReadAttributeRequest_0006 - Key: %s " %key)
+
     EPin = "01"
     EPout= "01"
 
@@ -284,6 +290,9 @@ def ReadAttributeRequest_0006(self, key):
 
 def ReadAttributeRequest_0008(self, key):
     # Cluster 0x0008 
+
+    Domoticz.Debug("ReadAttributeRequest_0008 - Key: %s " %key)
+
     EPin = "01"
     EPout= "01"
     listAttributes = []
@@ -298,6 +307,9 @@ def ReadAttributeRequest_0008(self, key):
 
 def ReadAttributeRequest_000C(self, key):
     # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
+
+    Domoticz.Debug("ReadAttributeRequest_000C - Key: %s " %key)
+
     EPin = "01"
     EPout= "02"
 
@@ -329,6 +341,8 @@ def ReadAttributeRequest_000C(self, key):
 
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
+
+    Domoticz.Debug("ReadAttributeRequest_0702 - Key: %s " %key)
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
@@ -491,11 +505,6 @@ def processConfigureReporting( self, NWKID=None ):
 
         for Ep in self.ListOfDevices[key]['Ep']:
 
-            # Check if Configure Reporting has to be reset
-            if self.pluginconf.forceConfigureReporting:
-                self.ListOfDevices[key]['ConfigureReporting'] = {}
-                self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
-                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
 
             if NWKID is None:
                 identifySend( self, key, Ep, 0)

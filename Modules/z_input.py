@@ -686,7 +686,7 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
     MsgLen=len(MsgData)
 
     if MsgLen != 24:
-        Domoticz.Log("Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<" %(MsgData, MsgLen, Data) )
+        Domoticz.Debug("Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<" %(MsgData, MsgLen, Data) )
         return
 
     MsgDataStatus=MsgData[0:2]
@@ -1473,7 +1473,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
             %( Status, NwkStatus))
 
     if NwkStatus != "00" :
-        Domoticz.Log("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
+        Domoticz.Debug("Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
                 %( Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
 
     return

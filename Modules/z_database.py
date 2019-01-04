@@ -68,6 +68,21 @@ def LoadDeviceList( self ):
                 nb = nb +1
                 CheckDeviceList( self, key, val )
 
+    for addr in self.ListOfDevices:
+        if self.pluginconf.forceReadAttributes:
+            Domoticz.Log("ReadAttributeReq - Reset ReadAttributes data %s" %addr)
+            self.ListOfDevices[addr]['ReadAttributes'] = {}
+            self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
+            for iterEp in self.ListOfDevices[addr]['Ep']:
+                self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
+
+        if self.pluginconf.forceConfigureReporting:
+            Domoticz.Log("Reset ConfigureReporting data %s" %addr)
+            self.ListOfDevices[addr]['ConfigureReporting'] = {}
+            self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
+            for iterEp in self.ListOfDevices[addr]['Ep']:
+                self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
+
     Domoticz.Status("Entries loaded from " +str(_DeviceListFileName) + " : " +str(nb) )
 
     return res

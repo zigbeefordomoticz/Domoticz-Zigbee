@@ -122,7 +122,6 @@ class BasePlugin:
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
 
-
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
         Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
         Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
@@ -136,7 +135,6 @@ class BasePlugin:
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
         
-
         self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
         Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
 

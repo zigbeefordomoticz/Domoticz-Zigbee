@@ -36,50 +36,7 @@ def processKnownDevices( self, Devices, NWKID ):
     if self.CommiSSionning: # We have a commission in progress, skip it.
         return
 
-    cnt_cmds = 0
-    # Check if Node Descriptor was run ( this could not be the case on early version)
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
-
-
-    if  self.HeartbeatCount == ( 28 // HEARTBEAT):
-        if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
-                                                              # available, let's request a Node Descriptor
-            for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
-                if "0000" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
-                    ReadAttributeRequest_0000(self, NWKID, fullScope = True )
-            sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
-            cnt_cmds += 2
-
-    # Ping each device, even the battery one. It will make at least the route up-to-date
-    if ( intHB % ( 3000 // HEARTBEAT)) == 0:
-        ReadAttributeRequest_Ack(self, NWKID)
-        cnt_cmds += 1
-
-    if ( intHB % ( 600 // HEARTBEAT) ) == 0 or ( intHB == ( 24 // HEARTBEAT)):
-        if  'PowerSource' in self.ListOfDevices[NWKID]:       # Let's check first that the field exist, if not 
-                                                              # it will be requested at Heartbeat == 12 (see above)
-            if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':    #  Only for device receiving req on idle
-                for tmpEp in self.ListOfDevices[NWKID]['Ep']:    # Request ReadAttribute based on Cluster 
-                    if "0702" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Metering
-                        ReadAttributeRequest_0702(self, NWKID )
-                        cnt_cmds += 1
-                    if "0008" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster LvlControl
-                        ReadAttributeRequest_0008(self, NWKID )
-                        cnt_cmds += 1
-                    #if "000C" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Xiaomi
-                    #    ReadAttributeRequest_000C(self, NWKID )
-                    if "0006" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster On/off
-                        ReadAttributeRequest_0006(self, NWKID )
-                        cnt_cmds += 1
-                    #if "0001" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Cluster Power
-                    #    ReadAttributeRequest_0001(self, NWKID )
-                    #if "0300" in self.ListOfDevices[NWKID]['Ep'][tmpEp]:    # Color Temp
-                    #    ReadAttributeRequest_0300(self, NWKID )
-                    pass
-
-    if cnt_cmds > 5:
-        self.busy = True
-
     # Checking Time stamps
     if (intHB == 2) or intHB % ( 1800 // HEARTBEAT) == 0:
         if 'Stamp' in self.ListOfDevices[NWKID]:
@@ -90,11 +47,70 @@ def processKnownDevices( self, Devices, NWKID ):
                 if delta > 7200:
                     IEEE = self.ListOfDevices[NWKID]['IEEE']
                     unit = [x for x in Devices if Devices[x].DeviceID == IEEE ]
-                    unit = unit[0]
-                    Domoticz.Status("%s - Last Update was: %s --> %s ago (More than 2 hours) %s" \
-                        %( Devices[unit].Name, self.ListOfDevices[NWKID]['Stamp']['Time'], 
+                    if len(unit) > 1:
+                        unit = unit[0]
+                        Domoticz.Status("%s - Last Update was: %s --> %s ago (More than 2 hours) %s" \
+                            %( Devices[unit].Name, self.ListOfDevices[NWKID]['Stamp']['Time'], 
                             datetime.datetime.fromtimestamp(delta).strftime('%H:%M:%S'), delta))
-    
+
+    # Check if Node Descriptor was run ( this could not be the case on early version)
+
+    if  self.HeartbeatCount == ( 28 // HEARTBEAT):
+        if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
+                                                              # available, let's request a Node Descriptor
+            sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
+
+    # Ping each device, even the battery one. It will make at least the route up-to-date
+    if ( intHB % ( 3000 // HEARTBEAT)) == 0:
+        ReadAttributeRequest_Ack(self, NWKID)
+
+    READ_ATTRIBUTES_REQUEST = {  
+        # Cluster : ( ReadAttribute function, Frequency )
+        '0000' : ( ReadAttributeRequest_0000, 60 ),
+        '0001' : ( ReadAttributeRequest_0001, 3600 ),
+        '0006' : ( ReadAttributeRequest_0006, 300 ),
+        '0008' : ( ReadAttributeRequest_0008, 300 ),
+        '000C' : ( ReadAttributeRequest_000C, 3600 ),
+        '0300' : ( ReadAttributeRequest_0300, 300 ),
+        '0702' : ( ReadAttributeRequest_0702, 300 ),
+        }
+
+    now = int(time.time())   # Will be used to trigger ReadAttributes
+    if  'PowerSource' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['PowerSource'] == 'Main': 
+            if  (intHB == ( 120 // HEARTBEAT ) or ( ( intHB % (30 // HEARTBEAT)) == 0 )):
+                for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
+                    if tmpEp == 'ClusterType': continue
+                    for Cluster in READ_ATTRIBUTES_REQUEST:
+                        if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
+                            break
+                        if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
+                            continue    # Just does it at plugin start
+
+                        if self.busy  or len(self.ZigateComm._normalQueue) > 2:
+                            Domoticz.Log('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                            break # Will do at the next round
+
+                        func = READ_ATTRIBUTES_REQUEST[Cluster][0]
+                        timing = READ_ATTRIBUTES_REQUEST[Cluster][1]
+                        if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes'] :
+                            _idx = tmpEp + '-' + str(Cluster)
+                            if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
+                                Domoticz.Debug("processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                                        %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
+                                if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
+                                    if now > ( self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing): 
+                                        Domoticz.Log("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                        func(self, NWKID )
+                                else:
+                                    Domoticz.Debug("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                    func(self, NWKID )
+                            else:
+                                Domoticz.Debug("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                func(self, NWKID )
+                        else:
+                            Domoticz.Debug("processKnownDevices - %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                            func(self, NWKID )
     
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
