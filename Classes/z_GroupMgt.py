@@ -423,41 +423,41 @@ class GroupsManagement(object):
     def load_ZigateGroupConfiguration(self):
         ' This is to import User Defined/Modified Groups of Devices for processing in the hearbeatGroupMgt'
 
-        if not os.path.isfile( self.groupsConfigFilename ) :
-            Domoticz.Debug("GroupMgt - Nothing to import")
-            return
-
-        self.toBeImported = {}
-        myfile = open( self.groupsConfigFilename, 'r')
-        Domoticz.Debug("load_ZigateGroupConfiguration. Reading the file")
-        while True:
-            tmpread = myfile.readline().replace('\n', '')
-            Domoticz.Debug("line: %s" %tmpread )
-            if not tmpread: 
-                break
-            group_id = group_name = None
-            for token in tmpread.split(','):
-                Domoticz.Debug("%s" %str(token))
-                if group_id is None:
-                    group_id = token
-                    Domoticz.Debug("GroupID: %s" %token)
-                    self.toBeImported[group_id]= {}
-                    self.toBeImported[group_id]['Name'] = ''
-                    self.toBeImported[group_id]['List of Devices'] = []
-                    continue
-                elif group_name is None:
-                    group_name = token
-                    Domoticz.Debug("GroupName: %s" %token)
-                    self.toBeImported[group_id]['Name'] = group_name
-                    continue
-                else:
-                    Domoticz.Debug("device:%s" %token)
-                    if token.strip() != '':
-                        self.toBeImported[group_id]['List of Devices'].append(token.strip())
-            if group_id :
-                Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" \
-                    %( group_id, self.toBeImported[group_id]['Name'], str(self.toBeImported[group_id]['List of Devices'])))
-        myfile.close()
+#        if not os.path.isfile( self.groupsConfigFilename ) :
+#            Domoticz.Debug("GroupMgt - Nothing to import")
+#            return
+#
+#        self.toBeImported = {}
+#        myfile = open( self.groupsConfigFilename, 'r')
+#        Domoticz.Debug("load_ZigateGroupConfiguration. Reading the file")
+#        while True:
+#            tmpread = myfile.readline().replace('\n', '')
+#            Domoticz.Debug("line: %s" %tmpread )
+#            if not tmpread: 
+#                break
+#            group_id = group_name = None
+#            for token in tmpread.split(','):
+#                Domoticz.Debug("%s" %str(token))
+#                if group_id is None:
+#                    group_id = token
+#                    Domoticz.Debug("GroupID: %s" %token)
+#                    self.toBeImported[group_id]= {}
+#                    self.toBeImported[group_id]['Name'] = ''
+#                    self.toBeImported[group_id]['List of Devices'] = []
+#                    continue
+#                elif group_name is None:
+#                    group_name = token
+#                    Domoticz.Debug("GroupName: %s" %token)
+#                    self.toBeImported[group_id]['Name'] = group_name
+#                    continue
+#                else:
+#                    Domoticz.Debug("device:%s" %token)
+#                    if token.strip() != '':
+#                        self.toBeImported[group_id]['List of Devices'].append(token.strip())
+#            if group_id :
+#                Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" \
+#                    %( group_id, self.toBeImported[group_id]['Name'], str(self.toBeImported[group_id]['List of Devices'])))
+#        myfile.close()
     
     def _processGroupConfig( self ):
         """
