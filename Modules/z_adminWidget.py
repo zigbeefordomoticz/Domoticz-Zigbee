@@ -38,7 +38,7 @@ def initializeZigateWidgets( self, Devices ):
 
     createStatusWidget( self, Devices)
     createNotificationWidget( self, Devices)
-    createAdminWidget( self, Devices )
+    # createAdminWidget( self, Devices )
     return
 
 def createAdminWidget( self, Devices ):
