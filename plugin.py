@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.0.6" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-4.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <params>
         <param field="Mode1" label="Model" width="75px">
             <options>
@@ -51,21 +51,23 @@ import struct
 import json
 import queue
 
-import z_var          # Global variables
-import z_tools
-import z_output
-import z_input
-import z_heartbeat
-import z_database
-import z_domoticz
-import z_command
-import z_LQI
+from Modules.z_tools import removeDeviceInList
+from Modules.z_output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice
+from Modules.z_input import ZigateRead
+from Modules.z_heartbeat import processListOfDevices
+from Modules.z_database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
+from Modules.z_domoticz import ResetDevice
+from Modules.z_command import mgtCommand
+from Modules.z_LQI import LQIdiscovery
+from Modules.z_consts import HEARTBEAT
+from Modules.z_adminWidget import updateStatusWidget, initializeZigateWidgets, handleCommand, updateNotificationWidget
+from Modules.z_WebGui import CheckForUpdate
 
-from z_PluginConf import PluginConf
-from z_Transport import ZigateTransport
-from z_TransportStats import TransportStatistics
-
-HEARBEAT_VALUE = 5
+from Classes.z_IAS import IAS_Zone_Management
+from Classes.z_PluginConf import PluginConf
+from Classes.z_Transport import ZigateTransport
+from Classes.z_TransportStats import TransportStatistics
+from Classes.z_GroupMgt import GroupsManagement
 
 class BasePlugin:
     enabled = False
@@ -74,63 +76,78 @@ class BasePlugin:
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.ZigateComm = None
         self._ReqRcv = bytearray()
-
+        self.permitTojoin = None
+        self.groupmgt = None
+        self.groupmgt_NotStarted = True
+        self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
+        self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
+        self.Ping = {}
+        self.connectionState = None
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
+        self.LQISource = ''
         self.DeviceListName = ''
         self.homedirectory = ''
         self.HardwareID = ''
         self.transport = ''         # USB or Wifi
         self.pluginconf = None     # PlugConf object / all configuration parameters
         self.statistics = None
+        self.iaszonemgt = None      # Object to manage IAS Zone
         self.Key = ''
         self.HBcount=0
         self.HeartbeatCount = 0
-        self.ZigateIEEE = None       # Zigate IEEE
-        self.ZigateNWKID = None       # Zigate NWKID
+        self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
+        self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
+        self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
         self.FirmwareVersion = None
+        self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # Allow to force devices even if they are not in the Plugin Database. Could be usefull after the Firmware update where you have your devices in domoticz
 
         return
 
     def onStart(self):
-        Domoticz.Status("onStart called - Zigate plugin V 4.0.6")
+        Domoticz.Status("onStart called - Zigate plugin Beta 4.1.x")
+        self.busy = True
+        updateStatusWidget( self, Devices, 'Startup')
 
-        Domoticz.Heartbeat( HEARBEAT_VALUE )
+        Domoticz.Heartbeat( HEARTBEAT )
 
         if Parameters["Mode6"] != "0":
             Domoticz.Debugging(int(Parameters["Mode6"]))
             DumpConfigToLog()
         
-        self.DeviceListName = Parameters["HomeFolder"]+"DeviceList-"+str(Parameters['HardwareID'])+".txt"
         self.homedirectory = Parameters["HomeFolder"]
         self.HardwareID = (Parameters["HardwareID"])
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
 
+        Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
+        Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
+        Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
+        self.DomoticzVersion = Parameters["DomoticzVersion"]
         # Import PluginConf.txt
+        if Parameters["DomoticzVersion"] >= '4.10267':
+            Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
+            Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
+            self.StartupFolder = Parameters["StartupFolder"]
+
         Domoticz.Status("load PluginConf" )
-        self.pluginconf = PluginConf(Parameters["HomeFolder"])
-
+        self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
         
-        plugconf = self.pluginconf
-        Domoticz.Status("ZigateMode: %s sendDelay: %s reTransmit: %s zTimeOut: %s" \
-                %(plugconf.zmode, plugconf.sendDelay, plugconf.reTransmit, plugconf.zTimeOut))
-        Domoticz.Status("logFORMAT: %s logLQI: %s allowRemoveZigateDevice: %s"
-            %(plugconf.logFORMAT, plugconf.logLQI, plugconf.allowRemoveZigateDevice))
-        Domoticz.Status("allowStoreDiscoveryFrames: %s forceCreationDevice: %s networkScan: %s channel: %s"
-            %(plugconf.allowStoreDiscoveryFrames, plugconf.allowForceCreationDomoDevice, plugconf.networkScan, plugconf.channel))
+        self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
+        Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
 
+        plugconf = self.pluginconf
         if  plugconf.allowStoreDiscoveryFrames == 1 :
             self.DiscoveryDevices = {}
 
         #Import DeviceConf.txt
-        z_database.importDeviceConf( self ) 
+        importDeviceConf( self ) 
 
         #Import DeviceList.txt Filename is : DeviceListName
         Domoticz.Status("load ListOfDevice" )
-        if z_database.LoadDeviceList( self ) == 'Failed' :
+        if LoadDeviceList( self ) == 'Failed' :
             Domoticz.Error("Something wennt wrong during the import of Load of Devices ...")
             Domoticz.Error("Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
             return            
@@ -141,13 +158,19 @@ class BasePlugin:
         for e in self.IEEE2NWK.items(): Domoticz.Debug("  "+str(e))
 
         # Check proper match against Domoticz Devices
-        z_database.checkListOfDevice2Devices( self, Devices )
+        checkListOfDevice2Devices( self, Devices )
 
         Domoticz.Debug("ListOfDevices after checkListOfDevice2Devices: " +str(self.ListOfDevices) )
         Domoticz.Debug("IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
 
-        # Create Statistics project
+        # Create Statistics object
         self.statistics = TransportStatistics()
+
+        # Check update for web GUI
+        CheckForUpdate( self )
+
+        # Create the adminStatusWidget if needed
+        initializeZigateWidgets( self, Devices)
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
@@ -162,51 +185,89 @@ class BasePlugin:
 
         Domoticz.Log("Establish Zigate connection" )
         self.ZigateComm.openConn()
-
+        self.busy = False
         return
 
     def onStop(self):
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
-        z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)
+        WriteDeviceList(self, Parameters["HomeFolder"], 0)
+        if self.groupmgt and self.FirmwareVersion >= '030f':
+            self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
-
+        updateStatusWidget( self, Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :
         Domoticz.Status("onDeviceRemoved called" )
-        z_tools.removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
-        Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+        # Let's check if this is End Node, or Group related.
+        if Devices[Unit].DeviceID in self.IEEE2NWK:
+            # Command belongs to a end node
+            Domoticz.Log("onDeviceRemoved - removing End Device")
+            removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
+
+            if self.pluginconf.allowRemoveZigateDevice == 1:
+                Domoticz.Log("onDeviceRemoved - removing Device in Zigate -Not Implemented")
+            #    removeZigateDevice( self, IEEE )
+
+            Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
+            return
+
+        if self.pluginconf.enablegroupmanagement and self.groupmgt:
+            if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+                Domoticz.Log("onDeviceRemoved - removing Group of Devices")
+                # Command belongs to a Zigate group
+                self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
+
         # We might evaluate teh removal of the physical device from Zigate.
         # Could be done if a Flag is enabled in the PluginConf.txt.
         
     def onConnect(self, Connection, Status, Description):
-        Domoticz.Status("onConnect called")
-        global isConnected
 
-        if (Status == 0):
-            isConnected = True
+        Domoticz.Debug("onConnect called with status: %s" %Status)
+        self.busy = True
+
+        if Status == 0:
             Domoticz.Log("Connected successfully")
+
+            if self.connectionState is None:
+                updateStatusWidget( self, Devices, 'Starting the plugin up')
+            elif self.connectionState == 0:
+                Domoticz.Status("Reconnected after failure")
+                updateStatusWidget( self, Devices, 'Reconnected after failure')
+            self.connectionState = 1
+            self.Ping['Status'] = None
+            self.Ping['TimeStamp'] = None
+            self.Ping['Permit'] = None
+
             if Parameters["Mode3"] == "True":
                 ################### ZiGate - ErasePD ##################
                 Domoticz.Status("Erase Zigate PDM")
-                z_output.sendZigateCmd(self, "0012", "")
+                sendZigateCmd(self, "0012", "")
                 Domoticz.Status("Software reset")
-                z_output.sendZigateCmd(self, "0011", "") # Software Reset
-                z_output.ZigateConf(self, Parameters["Mode2"])
+                sendZigateCmd(self, "0011", "") # Software Reset
+                ZigateConf(self, Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
                     Domoticz.Status("Software reset")
-                    z_output.sendZigateCmd(self, "0011", "" ) # Software Reset
-                    z_output.ZigateConf(self, Parameters["Mode2"])
+                    sendZigateCmd(self, "0011", "" ) # Software Reset
+                    ZigateConf(self, Parameters["Mode2"])
                 else:
-                    z_output.ZigateConf_light(self, Parameters["Mode2"])
+                    ZigateConf_light(self, Parameters["Mode2"])
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
+            self.connectionState = 0
+            self.ZigateComm.reConn()
+            updateStatusWidget( self, Devices, 'No Communication')
+
+
+        # Create IAS Zone object
+        self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
 
         if (self.pluginconf).logLQI != 0 :
-            z_LQI.LQIdiscovery( self ) 
+            LQIdiscovery( self ) 
 
+        self.busy = False
         return True
 
     def onMessage(self, Connection, Data):
@@ -214,47 +275,123 @@ class BasePlugin:
         self.ZigateComm.onMessage(Data)
 
     def processFrame( self, Data ):
-        z_input.ZigateRead( self, Devices, Data )
+        ZigateRead( self, Devices, Data )
 
     def onCommand(self, Unit, Command, Level, Color):
-        z_command.mgtCommand( self, Devices, Unit, Command, Level, Color )
 
+        # Let's check if this is End Node, or Group related.
+        if Devices[Unit].DeviceID in self.IEEE2NWK:
+            # Command belongs to a end node
+            mgtCommand( self, Devices, Unit, Command, Level, Color )
+
+        elif self.pluginconf.enablegroupmanagement and self.groupmgt:
+            if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+                # Command belongs to a Zigate group
+                self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
+                Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+
+        elif Devices[Unit].Name.find('Zigate-01-'):
+            Domoticz.Log("onCommand - Command adminWidget: %s " %Command)
+            handleCommand( self, Command)
 
     def onDisconnect(self, Connection):
+        self.connectionState = 0
+        updateStatusWidget( self, Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
 
     def onHeartbeat(self):
-
-        #Domoticz.Log("onHeartbeat called" )
-
-        ## Check the Network status every 15' / Only possible if z_var.FirmwareVersion > 3.0d
+        
         self.HeartbeatCount += 1
 
-        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   # Ig ZigateIEEE not known, try to get it during the first 10 HB
-            z_output.sendZigateCmd(self, "0009","")
+        if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement and self.FirmwareVersion:
+            # Check if we are with Firmware above 30f
+            if self.FirmwareVersion >= '030f':
+                Domoticz.Log("Start Group Management")
+                self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
+                      self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                self.groupmgt_NotStarted = False
+            else:
+                self.pluginconf.enablegroupmanagement = 0
+                Domoticz.Error("Cannot start Group Management due to low firmware level. Need >= 3.0f")
 
+        # Ig ZigateIEEE not known, try to get it during the first 10 HB
+        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
+            sendZigateCmd(self, "0009","")
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % ( 3600 // HEARBEAT_VALUE ) ) == 0 :
-                z_output.sendZigateCmd(self, "0009","")
+            if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
+                sendZigateCmd(self, "0009","")
         
         prevLenDevices = len(Devices)
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
-        z_heartbeat.processListOfDevices( self , Devices )
+        processListOfDevices( self , Devices )
+
+        # IAS Zone Management
+        self.iaszonemgt.IAS_heartbeat( )
 
         # Reset Motion sensors
-        z_domoticz.ResetDevice( self, Devices, "Motion",5)
+        ResetDevice( self, Devices, "Motion",5)
 
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) != prevLenDevices:
             Domoticz.Log("Devices size has changed , let's write ListOfDevices on disk")
-            z_database.WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
+            WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
         else:
-            z_database.WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
+            WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
 
-        # Check if we still have connectivity. If not re-established the connectivity
-        self.ZigateComm.reConn()
+        if self.CommiSSionning:
+            updateStatusWidget( self, Devices, 'Enrollment')
+            return
 
+        busy_ = False
+        # Group Management
+        
+        if self.groupmgt: 
+            self.groupmgt.hearbeatGroupMgt()
+            if self.groupmgt.stillWIP:
+                busy_ = True
+            
+        if self.busy  or len(self.ZigateComm._normalQueue) > 3:
+            busy_ = True
+
+        # Hearbeat - Ping Zigate every minute to check connectivity
+        # If fails then try to reConnect
+        if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
+            Domoticz.Debug("Ping")
+            now = time.time()
+            if 'Status' in self.Ping:
+                if self.Ping['Status'] == 'Sent':
+                    delta = now - self.Ping['TimeStamps']
+                    Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
+                    if delta > 50:
+                        Domoticz.Log("Ping - no Heartbeat with Zigate")
+                        updateNotificationWidget( self, Devices, 'Ping: Connection with Zigate Lost')
+                        self.connectionState = 0
+                        self.ZigateComm.reConn()
+                    else:
+                        if self.connectionState == 0:
+                            updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+                            self.connectionState = 1
+                else:
+                    if self.connectionState == 0:
+                        updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+                    sendZigateCmd( self, "0014", "" ) # Request status
+                    self.connectionState = 1
+                    self.Ping['Status'] = 'Sent'
+                    self.Ping['TimeStamps'] = now
+            else:
+                sendZigateCmd( self, "0014", "" ) # Request status
+                self.Ping['Status'] = 'Sent'
+                self.Ping['TimeStamps'] = now
+
+        if busy_:
+            updateStatusWidget( self, Devices, 'Busy')
+        elif not self.connectionState:
+            updateStatusWidget( self, Devices, 'No Communication')
+        else:
+            updateStatusWidget( self, Devices, 'Ready')
+
+        self.busy = False
         return True
 
 

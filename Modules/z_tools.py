@@ -15,8 +15,8 @@ import struct
 import json
 
 import Domoticz
-import z_var
-import z_output
+
+from Modules.z_adminWidget import updateNotificationWidget
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -74,21 +74,22 @@ def getClusterListforEP( self, NWKID, Ep ) :
     return ClusterList
 
 
-def DeviceExist(self, newNWKID , IEEE = ''):
+def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
     #Validity check
     if newNWKID == '':
         return False
 
-    found = 0
+    found = False
 
     #check in ListOfDevices
     if newNWKID in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[newNWKID] :
-            found = 1
-            Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
-            if not IEEE :
-                return True
+            if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
+                found = True
+                Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
+                if not IEEE :
+                    return True
 
     #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
     if IEEE:
@@ -96,16 +97,17 @@ def DeviceExist(self, newNWKID , IEEE = ''):
             if existingIEEEkey == IEEE :
                 # This device is already in Domoticz 
                 existingNWKkey = self.IEEE2NWK[IEEE]
-
                 if existingNWKkey == newNWKID :        #Check that I'm not myself
                     continue
-                Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + " found as " +str(existingNWKkey) + " status " + str(self.ListOfDevices[existingNWKkey]['Status']) )
+
+                Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + \
+                        " found as " +str(existingNWKkey) + " status " + str(self.ListOfDevices[existingNWKkey]['Status']) )
 
                 # Make sure this device is valid 
-                if self.ListOfDevices[existingNWKkey]['Status'] != 'inDB' and self.ListOfDevices[existingNWKkey]['Status'] != "Left" :
+                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):
                     continue
 
-                # Updating process by :
+                # We got a new Network ID for an existing IEEE. So just re-connect.
                 # - mapping the information to the new newNWKID
 
                 Domoticz.Debug("DeviceExist - update self.ListOfDevices[" + newNWKID + "] with " + str(existingIEEEkey) )
@@ -117,22 +119,25 @@ def DeviceExist(self, newNWKID , IEEE = ''):
                 Domoticz.Debug("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
                 Domoticz.Debug("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
                 Domoticz.Debug("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
-
                 Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
+                devName = ''
+                for x in Devices:
+                    if Devices[x].DeviceID == existingIEEEkey:
+                        devName = Devices[x].Name
 
-                # MostLikely exitsingKey is not needed any more
+                updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
+
+                # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
 
                 if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
                     Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Hearbeat'] = 0
-                found = 1
+                found = True
+                break
 
-    if found == 1 :
-        return True
-    else :
-        return False
+    return found
 
 def removeNwkInList( self, NWKID) :
 
@@ -182,34 +187,34 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
                     emptyCT = 0
         
         if emptyCT == 1 :     # There is still something in the ClusterType either Global or at Ep level
-            Domoticz.Log("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
+            Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
             del self.ListOfDevices[key]
-
-            Domoticz.Log("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
+            Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
 
-            if self.pluginconf.allowRemoveZigateDevice == 1:
-                Domoticz.Log("removeDeviceInList - removing Device in Zigate")
-                z_output.removeZigateDevice( self, IEEE )
+            updateNotificationWidget( self, Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
+            Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
+
 
 
 def initDeviceInList(self, Nwkid) :
-    if Nwkid != '' :
-        self.ListOfDevices[Nwkid]={}
-        self.ListOfDevices[Nwkid]['Version']="3"
-        self.ListOfDevices[Nwkid]['Status']="004d"
-        self.ListOfDevices[Nwkid]['SQN']={}
-        self.ListOfDevices[Nwkid]['Ep']={}
-        self.ListOfDevices[Nwkid]['Heartbeat']="0"
-        self.ListOfDevices[Nwkid]['RIA']="0"
-        self.ListOfDevices[Nwkid]['RSSI']={}
-        self.ListOfDevices[Nwkid]['Battery']={}
-        self.ListOfDevices[Nwkid]['Model']={}
-        self.ListOfDevices[Nwkid]['MacCapa']={}
-        self.ListOfDevices[Nwkid]['IEEE']={}
-        self.ListOfDevices[Nwkid]['Type']={}
-        self.ListOfDevices[Nwkid]['ProfileID']={}
-        self.ListOfDevices[Nwkid]['ZDeviceID']={}
+    if Nwkid not in self.ListOfDevices:
+        if Nwkid != '' :
+            self.ListOfDevices[Nwkid]={}
+            self.ListOfDevices[Nwkid]['Version']="3"
+            self.ListOfDevices[Nwkid]['Status']="004d"
+            self.ListOfDevices[Nwkid]['SQN']={}
+            self.ListOfDevices[Nwkid]['Ep']={}
+            self.ListOfDevices[Nwkid]['Heartbeat']="0"
+            self.ListOfDevices[Nwkid]['RIA']="0"
+            self.ListOfDevices[Nwkid]['RSSI']={}
+            self.ListOfDevices[Nwkid]['Battery']={}
+            self.ListOfDevices[Nwkid]['Model']={}
+            self.ListOfDevices[Nwkid]['MacCapa']={}
+            self.ListOfDevices[Nwkid]['IEEE']={}
+            self.ListOfDevices[Nwkid]['Type']={}
+            self.ListOfDevices[Nwkid]['ProfileID']={}
+            self.ListOfDevices[Nwkid]['ZDeviceID']={}
         
 
 
@@ -222,6 +227,11 @@ def CheckDeviceList(self, key, val) :
     Domoticz.Debug("CheckDeviceList - with value : " + str(val))
 
     DeviceListVal=eval(val)
+    # Do not load Devices in State == 'unknown' or 'left' 
+    if 'Status' in DeviceListVal:
+        if DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP' ):
+            Domoticz.Status("Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+            return
     if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
         initDeviceInList(self, key)
         self.ListOfDevices[key]['RIA']="10"
@@ -285,7 +295,8 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['ConfigureReporting']=DeviceListVal['ConfigureReporting']
         if 'ReadAttributes' in DeviceListVal :
             self.ListOfDevices[key]['ReadAttributes']=DeviceListVal['ReadAttributes']
-
+        if 'IAS' in DeviceListVal :
+            self.ListOfDevices[key]['IAS']=DeviceListVal['IAS']
         self.ListOfDevices[key]['Heartbeat'] = DeviceListVal['Heartbeat']
 
 
@@ -298,44 +309,60 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4d" %(Type)
 
-def updSQN( self, key, newSQN) :
+def updSQN_mainpower(self, key, newSQN):
+
+    return
+
+def updSQN_battery(self, key, newSQN):
+
+    if 'SQN' in self.ListOfDevices[key]:
+        oldSQN = self.ListOfDevices[key]['SQN']
+        if oldSQN == '' or oldSQN is None or oldSQN == {} :
+            oldSQN='00'
+    else :
+        oldSQN='00'
 
     try:
-        if not self.ListOfDevices[key] :
-            # Seems that the structutre is not yet initialized
-            return
+        if int(oldSQN,16) != int(newSQN,16) :
+            Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
+            self.ListOfDevices[key]['SQN'] = newSQN
+            if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
+                Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
+                                + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
     except:
-        return
+        Domoticz.Log("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
+        self.ListOfDevices[key]['SQN'] = {}
+    return
 
-    if newSQN == '' or newSQN is None:
-            return
+def updSQN( self, key, newSQN) :
+
+    if key not in self.ListOfDevices or \
+             newSQN == {} or newSQN == '' or newSQN is None:
+        return
 
     # For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
     Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
 
-    if newSQN == '' or newSQN is None or newSQN == {}:
-        return
+    if 'PowerSource' in self.ListOfDevices[key] :
+        if self.ListOfDevices[key]['PowerSource'] == 'Main':
+            # Device on Main Power. SQN is increasing independetly of the object
+           # updSQN_mainpower( self, key, newSQN)
+            pass
+        elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
+            # On Battery, each object managed its SQN
+            updSQN_battery( self, key, newSQN)
 
-    if self.ListOfDevices[key]['MacCapa'] != '8e' :         # So far we have a good understanding on how SQN is managed for battery powered devices
-        if 'SQN' in self.ListOfDevices[key]:
-            oldSQN = self.ListOfDevices[key]['SQN']
-            if oldSQN == '' or oldSQN is None or oldSQN == {} :
-                oldSQN='00'
-        else :
-            oldSQN='00'
-
-        try:
-            if int(oldSQN,16) != int(newSQN,16) :
-                Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
-                self.ListOfDevices[key]['SQN'] = newSQN
-                if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                    Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
-                                    + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
-        except:
-            Domoticz.Log("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
-            return
-    else :
-        self.ListOfDevices[key]['SQN'] = {}
+    elif 'MacCapa' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['MacCapa'] == '8e' :     # So far we have a good understanding on 
+            # Device on Main Power. SQN is increasing independetly of the object
+            #updSQN_mainpower( self, key, newSQN)
+            pass
+        elif self.ListOfDevices[key]['MacCapa'] == '80':
+            # On Battery, each object managed its SQN
+            updSQN_battery( self, key, newSQN)
+        else:
+            self.ListOfDevices[key]['SQN'] = {}
+            Domoticz.Log("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['MacCapa'] )
 
 
 #### Those functions will be use with the new DeviceConf structutre

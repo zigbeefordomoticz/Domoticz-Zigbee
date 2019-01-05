@@ -1,6 +1,11 @@
 {
-'channel':'0',
+'channel':'11,15,16,21,22',
+'self.eraseZigatePDM':'0',
+'vibrationAqarasensitivity':'medium',
+'resetMotiondelay':'30',
+'enablegroupmanagement':'0',
 'allowRemoveZigateDevice':'0',
 'allowStoreDiscoveryFrames':'0',
+'logLQI':'0',
 'logFORMAT':'0'
 }

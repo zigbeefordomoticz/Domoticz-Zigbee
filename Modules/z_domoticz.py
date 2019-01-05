@@ -14,9 +14,6 @@ import time
 import struct
 import json
 
-import z_consts
-
-
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -101,6 +98,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             myDev.Create()
             ID = myDev.ID
             if myDev.ID == -1 :
+                self.ListOfDevices[NWKID]['Status'] = "failDB"
                 Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
             else:
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -113,6 +111,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             myDev.Create()
             ID = myDev.ID
             if myDev.ID == -1 :
+                self.ListOfDevices[NWKID]['Status'] = "failDB"
                 Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
             else:
                 self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -136,6 +135,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -148,6 +148,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -160,6 +161,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -172,6 +174,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -184,6 +187,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -198,6 +202,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -212,6 +217,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -226,6 +232,22 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "DButton_3":  # interrupteur double sur EP different lumi.sensor_86sw2
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click",
+                           "LevelOffHidden": "true", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -238,6 +260,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -250,6 +273,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -262,6 +286,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -274,21 +299,38 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "Button_3":  # inter sans fils 1 touche 86sw1 xiaomi 3 States 
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Off|Click|Double Click|Long Click", \
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "Aqara" or t == "XCube":  # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||||||||",
-                           "LevelNames": "Off|Shake|Wakeup|Drop|90°|180°|Push|Tap|Rotation",
-                           "LevelOffHidden": "true", "SelectorStyle": "0"}
+                Options = {"LevelActions": "||||||||||",
+                           "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
+                           "LevelOffHidden": "true", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -296,13 +338,14 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Vibration":  # Aqara Vibration Sensor v1
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Tilt|Vibrate|Free Fall", \
-                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -315,6 +358,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -327,25 +371,14 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "LvlControl" and self.ListOfDevices[NWKID][
-                'Model'] == "shutter.Profalux":  # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
-                self.ListOfDevices[NWKID]['Status'] = "inDB"
-                unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=244, Subtype=73, Switchtype=16)
-                myDev.Create()
-                ID = myDev.ID
-                if myDev.ID == -1 :
-                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
-                else:
-                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
-
-            if t == "LvlControl" and self.ListOfDevices[NWKID][
-                'Model'] != "shutter.Profalux":  # variateur de luminosite + On/off
+            if t == "LvlControl" and self.ListOfDevices[NWKID]['Model'] != '':  
+                # Well Identified Model
+                # variateur de luminosite + On/off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
@@ -353,9 +386,42 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "LvlControl" and (self.ListOfDevices[NWKID]['Model'] == '' or self.ListOfDevices[NWKID]['Model'] == {}):
+                # Could be a Shutter 
+                if 'Manufacturer' in  self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Manufacturer'] == "1110":
+                        # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
+                        # 'ProfileID': '0104', 'ZDeviceID': '0200', 'Manufacturer': '1110'
+
+                        self.ListOfDevices[NWKID]['Status'] = "inDB"
+                        unit = FreeUnit(self, Devices)
+                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                        myDev.Create()
+                        ID = myDev.ID
+                        if myDev.ID == -1 :
+                            self.ListOfDevices[NWKID]['Status'] = "failDB"
+                            Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                        else:
+                            self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                    else:
+                        # variateur de luminosite + On/off
+                        self.ListOfDevices[NWKID]['Status'] = "inDB"
+                        unit = FreeUnit(self, Devices)
+                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                    Unit=unit, Type=244, Subtype=73, Switchtype=7)
+                        myDev.Create()
+                        ID = myDev.ID
+                        if myDev.ID == -1 :
+                            self.ListOfDevices[NWKID]['Status'] = "failDB"
+                            Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                        else:
+                            self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "ColorControl":  # variateur de couleur/luminosite/on-off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -397,6 +463,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -410,6 +477,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -422,6 +490,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -434,6 +503,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
@@ -659,6 +729,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         state = "On"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
                                         ForceUpdate_=True)
+                elif DeviceType == "Button_3":  # boutton simple 3 states
+                    state = ''
+                    if int(value) == 1:
+                        state = '10'
+                    elif int(value) == 2:
+                        state = '20'
+                    elif int(value) == 3:
+                        state = '30'
+                    else:
+                        value = 0
+                        state = '00'
+                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
+                                    ForceUpdate_=True)
                 elif DeviceType == "Water":  # detecteur d eau
                     state = ''
                     if value == "01":
@@ -676,61 +759,72 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         state = "Off"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
-                    if value in ( '1', '01'):
-                        state = "00"
-                    elif value in ( '2', '02'):
-                        state = "10"
-                    elif value in ( '3', '03'):
-                        state = "20"
-                    elif value in ( '4', '04'):
-                        state = "30"
+                    value = int(value)
+                    if value == 1: state = "00"
+                    elif value == 2: state = "10"
+                    elif value == 3: state = "20"
+                    elif value == 4: state = "30"
                     else:
                         return  # Simply return and don't process any other values than the above
                     UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif DeviceType == "DSwitch":
                     # double switch avec EP different 
+                    value = int(value)
                     if Ep == "01":
-                        if value in ( '1', '0', "01", "00"):
+                        if value == 1 or value == 0:
                             state = "10"
                             data = "01"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                     elif Ep == "02":
-                        if value in ( '1', '0', "01", "00"):
+                        if value == 1 or value == 0:
                             state = "20"
                             data = "02"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                     elif Ep == "03":
-                        if value in ( '1', '0', "01" ,"00"):
+                        if value == 1 or value == 0:
                             state = "30"
                             data = "03"
                             UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+
                 elif DeviceType == "DButton":
                     # double bouttons avec EP different lumi.sensor_86sw2 
+                    value = int(value)
                     if Ep == "01":
-                        if value in ( '1', '01'):
-                            state = "10"
-                            data = "01"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
-                                            ForceUpdate_=True)
-                        else:
-                            return  # We just expect 01 , in case of other value nothing to do
+                        if value == 1: state = "10"; data = "01"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                     elif Ep == "02":
-                        if value in ( '1', '01'):
-                            state = "20"
-                            data = "02"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
-                                            ForceUpdate_=True)
-                        else:
-                            return  # We just expect 01 , in case of other value nothing to do
+                        if value == 1:
+                            state = "20"; data = "02"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                     elif Ep == "03":
-                        if value in ( '1', '01'):
-                            state = "30"
-                            data = "03"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                        if value == 1:
+                            state = "30"; data = "03"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif DeviceType == "DButton_3":
+                    # double bouttons avec EP different lumi.sensor_86sw2 
+                    value = int(value)
+                    data = '00'
+                    state = '00'
+                    if Ep == "01":
+                        if value == 1: state = "10"; data = "01"
+                        elif value == 2: state = "20"; data = "02"
+                        elif value == 3: state = "30"; data = "03"
+                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
-                        else:
-                            return  # We just expect 01 , in case of other value nothing to do
+                    elif Ep == "02":
+                        if value == 1: state = "40"; data = "04"
+                        elif value == 2: state = "50"; data = "05"
+                        elif value == 3: state = "60"; data = "06"
+                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                                            ForceUpdate_=True)
+                    elif Ep == "03":
+                        if value == 1: state = "70"; data = "07"
+                        elif value == 2: state = "80"; data = "08"
+                        elif value == 3: state = "90"; data = "09"
+                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                                            ForceUpdate_=True)
+
                 elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
+                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
+                            %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
                     if Devices[x].SwitchType == 16:
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
@@ -743,7 +837,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                         else:
-                            UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                            if Devices[x].sValue == "Off":
+                                # We do update only if this is a On/off
+                                UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
@@ -795,7 +891,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "03":  # Magic Cube Acara Rotation
-                Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value))
+                state = value
+                data = value
+                if value == "80":
+                    data = 8
+                elif value == "90":
+                    data = 9
+                Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "XCube" and Ep == "02":  # cube xiaomi
@@ -803,11 +905,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                     state = "10"
                     data = "01"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
-                elif value == "0204" or value == "0200" or value == "0203" or value == "0201" or value == "0202" or value == "0205":  # tap
+                elif value in ( "0204", "0200", "0203", "0201", "0202", "0205" ):
                     state = "50"
                     data = "05"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
-                elif value == "0103" or value == "0100" or value == "0104" or value == "0101" or value == "0102" or value == "0105":  # Slide
+                elif value in ( "0103", "0100", "0104", "0101", "0102", "0105"): # Slide/M%ove
                     state = "20"
                     data = "02"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
@@ -822,6 +924,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 elif value >= "0060":  # 180°
                     state = "90"
                     data = "09"
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+
+            if ClusterType == DeviceType == "Vibration":
+                    if value =="00":
+                        data = 0
+                        state = "00"
+                    elif value == "10":
+                        data = 1
+                        state = "10"
+                    elif value == "20":
+                        data = 2
+                        state = "20"
+                    elif value == "30":
+                        data = 3
+                        state = "30"
+                    else:
+                        data = 0
+                        state = "00"
                     UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Lux":
@@ -875,7 +995,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if self.ListOfDevices[NWKID].get('Battery'):
                 BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
-            if (current - LUpdate) > 30 and DeviceType == "Motion":
+            if (current - LUpdate) > self.pluginconf.resetMotiondelay and DeviceType in ('Motion'):
                 Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
                     current) + " this was : " + str(current - LUpdate) + " secondes ago")
                 UpdateDevice_v2(Devices, x, 0, "Off", BatteryLevel, SignalLevel, SuppTrigger_=True)
@@ -947,7 +1067,7 @@ def GetType(self, Addr, Ep):
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
             if Type != "" and Type[:1] != "/":
                 Type += "/"
-            Type += TypeFromCluster(cluster)
+            Type += TypeFromCluster(cluster, create_=True)
             Domoticz.Debug("GetType - Type will be set to : " + str(Type))
 
         # Type+=Type
@@ -969,14 +1089,14 @@ def GetType(self, Addr, Ep):
     return Type
 
 
-def TypeFromCluster(cluster):
+def TypeFromCluster(cluster, create_=False):
     if cluster == "0006":
         TypeFromCluster = "Switch"
     elif cluster == "0008":
         TypeFromCluster = "LvlControl"
-    elif cluster == "000c":
+    elif cluster == "000c" and not create_:
         TypeFromCluster = "XCube"
-    elif cluster == "0012":
+    elif cluster == "0012" and not create_:
         TypeFromCluster = "XCube"
     elif cluster == "0101":
         TypeFromCluster = "Vibration"
