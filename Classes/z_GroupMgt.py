@@ -42,9 +42,9 @@ class GroupsManagement(object):
 
     def storeListOfGroups(self):
         ' Serialize with Pickle'
-        Domoticz.Debug("storeListOfGroups - Saving %s" %self.ListOfGroups)
-        with open( self.groupListFileName, 'wb') as handle:
-            pickle.dump( self.ListOfGroups, handle)
+        #Domoticz.Debug("storeListOfGroups - Saving %s" %self.ListOfGroups)
+        #with open( self.groupListFileName, 'wb') as handle:
+        #    pickle.dump( self.ListOfGroups, handle)
         return
 
     def _loadListOfGroups( self ):
