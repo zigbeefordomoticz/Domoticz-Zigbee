@@ -1,6 +1,6 @@
 # Release Notes 
 
-## xx xxx 2018 - Version x.x.
+## 07 January 2019 - Version Beta 4.1.x
 
 - [Technical] Full refactor of Discovery and Enrolement process
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
@@ -20,6 +20,27 @@
 - [Technical] Remove the use of random
 - [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
 - [Technical] re-factor the ReadAttributes request in Hearbeat in order to avoid peak of load.
+
+## 03 January 2019 - Version 4.0.6
+- [Isssue] Remove usage of random
+
+## 27 December 2018 - Version 4.0.5
+- [Issue] Negative temperature not correctly reported for Xiaomi Sensor
+
+## 15 December 2018 - Version 4.0.4
+- [Issue] #291 , wrong decoding of Cluster Out frame in 0x8043
+
+## 13 December 2018 - Version 4.0.3
+- [Hardware] Handle new Aqara switches WXKG03LM and WXKG02LM
+
+## 09 December 2018 - Version 4.0.2
+- [Issue] #278 , make the plugin windows compatible
+- [Issue] #279 , test if ZDeviceID before trying o convert it to an int
+
+## 08 December 2018 - Version 4.0.1
+- [Issue] #272
+- [Issue] Correct the Selector tab label for the Double Button swicth
+- [Issue] When receiving a leave message , if the object is not 'removed' then request a rejoin
 
 ## 02 Decembre 2018 - Version 4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
