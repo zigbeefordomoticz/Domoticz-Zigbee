@@ -1,7 +1,13 @@
 # Zigate Plugin for Domoticz
 
+[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/sasu-drooz/Domoticz-Zigate.svg)](http://isitmaintained.com/project/sasu-drooz/Domoticz-Zigate "Average time to resolve an issue")
+[![Percentage of issues still open](http://isitmaintained.com/badge/open/sasu-drooz/Domoticz-Zigate.svg)](http://isitmaintained.com/project/sasu-drooz/Domoticz-Zigate "Percentage of issues still open")
+[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/pipiche "Donate via PayPal")
 
-[Zigate](https://zigate.fr Python Plugin for Domoticz home automation.
+
+
+
+[Zigate](https://zigate.fr "Python Plugin for Domoticz home automation.")
 
 For information around the Zigate Plugin, please refer to :
 * https://github.com/sasu-drooz/Domoticz-Zigate/wiki for informations 
