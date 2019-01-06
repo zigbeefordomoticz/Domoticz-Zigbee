@@ -20,6 +20,7 @@
 - [Technical] Remove the use of random
 - [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
 - [Technical] re-factor the ReadAttributes request in Hearbeat in order to avoid peak of load.
+- [Technical] Restructure python modules and classes, in order to have a much cleaner plugin home directory
 
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random
