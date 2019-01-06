@@ -12,6 +12,12 @@
 For information around the Zigate Plugin, please refer to :
 * https://github.com/sasu-drooz/Domoticz-Zigate/wiki for informations 
 
+## Support
+
+Your first place to get support is via the Forums.
+* English channel : https://www.domoticz.com/forum/viewforum.php?f=68
+* French Channel : https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47
+
 ## About release channels
 
 In order to provide stability and also provide more recent developement, Zigate plugin has the following channels
