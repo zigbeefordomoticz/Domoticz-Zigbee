@@ -33,3 +33,11 @@ Moving from this channel to the other will required either ar restart from scrat
 `git checkout stable  // will move you to the stable channel`
 
 `git checkout beta    // will move you to the beta channel`
+
+
+## Donations
+Donations are more than welcome and will be used to buy new hard, devices, sensors and in such testing and making them working with the Zigate plugin. Please feel free to use the current link :
+
+* <img src="https://www.pipiche.fr//pp.svg" width="24" height="24" alt="Donate via Paypal"/> <a href="paypal.me/pipiche">Donate via PayPal</a><br/>
+
+
