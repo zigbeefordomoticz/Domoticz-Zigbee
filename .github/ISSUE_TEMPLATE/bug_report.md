@@ -7,6 +7,11 @@ assignees: ''
 
 ---
 
+Your first place to get support is via the Forums.
+
+    English channel : https://www.domoticz.com/forum/viewforum.php?f=68
+    French Channel : https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47
+
 **Describe the bug**
 A clear and concise description of what the bug is.
 
