@@ -307,14 +307,14 @@ class BasePlugin:
 
         if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement and self.FirmwareVersion:
             # Check if we are with Firmware above 30f
-            #if self.FirmwareVersion >= '030f':
+            if self.FirmwareVersion >= '030f':
                 Domoticz.Log("Start Group Management")
                 self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
                       self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                 self.groupmgt_NotStarted = False
-            #else:
-            #    self.pluginconf.enablegroupmanagement = 0
-            #    Domoticz.Error("Cannot start Group Management due to low firmware level. Need >= 3.0f")
+            else:
+                self.pluginconf.enablegroupmanagement = 0
+                Domoticz.Error("Cannot start Group Management due to low firmware level. Need >= 3.0f")
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
