@@ -192,8 +192,6 @@ class BasePlugin:
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, Parameters["HomeFolder"], 0)
-        if self.groupmgt and self.FirmwareVersion >= '030f':
-            self.groupmgt.storeListOfGroups()
         self.statistics.printSummary()
         updateStatusWidget( self, Devices, 'No Communication')
 
