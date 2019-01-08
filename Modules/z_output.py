@@ -483,7 +483,13 @@ def processConfigureReporting( self, NWKID=None ):
         #'0702': {'Attributes': { '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
+    now = int(time())
+
     if NWKID is None :
+        if self.busy or len(self.ZigateComm._normalQueue) > 2:
+            Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                    %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+            return # Will do at the next round
         target = self.ListOfDevices
     else:
         target = NWKID
@@ -504,8 +510,6 @@ def processConfigureReporting( self, NWKID=None ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-
-
             if NWKID is None:
                 identifySend( self, key, Ep, 0)
             else:
@@ -533,16 +537,30 @@ def processConfigureReporting( self, NWKID=None ):
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = ''
 
+                _idx = Ep + '-' + str(cluster)
+                if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting'] :
+                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'] = {}
+                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
+                else:
+                    if _idx not in self.ListOfDevices[key]['ConfigureReporting']['TimeStamps']:
+                        self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
+
+                if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != {}:
+                     if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (3600)):  # Do only every hour
+                         continue
+
                 if cluster in ATTRIBUTESbyCLUSTERS:
                     bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
-                    #attrDisp = []   # Used only for printing purposes
-                    #attrList = ''
-                    attrLen = 0
                     if cluster not in ATTRIBUTESbyCLUSTERS:
                         continue
                     if 'Attributes' not in ATTRIBUTESbyCLUSTERS[cluster]:
                         continue
 
+                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
+
+                    #attrDisp = []   # Used only for printing purposes
+                    #attrList = ''
+                    attrLen = 0
                     for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
                         attrdirection = "00"
                         attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
@@ -551,22 +569,22 @@ def processConfigureReporting( self, NWKID=None ):
                         timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
                         attrList = attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-                        #attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen = 1
+
+                        #attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         #attrLen += 1
                         #attrDisp.append(attr)
-                        #Domoticz.Log("configureReporting - %2d %s " %(attrLen, attrList) )
+
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
-                        Domoticz.Debug("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
+                        Domoticz.Log("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas )
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                    ##datas +=  "%02x" %(attrLen) + attrList
-                    #Domoticz.Status("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attrDisp) )
+                    #datas +=  "%02x" %(attrLen) + attrList
                     #Domoticz.Log("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
                     #sendZigateCmd(self, "0120", datas )
-    
+
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
     Binding a device/cluster with ....

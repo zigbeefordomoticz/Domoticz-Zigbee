@@ -75,6 +75,7 @@ def LoadDeviceList( self ):
             self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
             for iterEp in self.ListOfDevices[addr]['Ep']:
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
+                self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
 
         if self.pluginconf.forceConfigureReporting:
             Domoticz.Log("Reset ConfigureReporting data %s" %addr)
@@ -82,6 +83,7 @@ def LoadDeviceList( self ):
             self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
             for iterEp in self.ListOfDevices[addr]['Ep']:
                 self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
+                self.ListOfDevices[addr]['ConfigureReporting']['TimeStamps'] = {}
 
     Domoticz.Status("Entries loaded from " +str(_DeviceListFileName) + " : " +str(nb) )
 

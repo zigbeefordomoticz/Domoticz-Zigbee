@@ -21,6 +21,7 @@
 - [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
 - [Technical] re-factor the ReadAttributes request in Hearbeat in order to avoid peak of load.
 - [Technical] Restructure python modules and classes, in order to have a much cleaner plugin home directory
+- [Technical] re-factor the ConfigureReporting in order to avoid peak of laod
 - [Technical] Profile the possibility to configure the location of Data, Config and Report files. See PluginConf Documentation on Wiki
 
 ## 03 January 2019 - Version 4.0.6
