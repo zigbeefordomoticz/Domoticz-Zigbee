@@ -127,10 +127,14 @@ class BasePlugin:
         Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
         self.DomoticzVersion = Parameters["DomoticzVersion"]
         # Import PluginConf.txt
-        if Parameters["DomoticzVersion"] >= '4.10267':
+        major, minor = Parameters["DomoticzVersion"].split('.')
+        major = int(major)
+        minor = int(minor)
+        if major > 4 or ( major == 4 and minor >= 10267):
             Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
             self.StartupFolder = Parameters["StartupFolder"]
+
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)

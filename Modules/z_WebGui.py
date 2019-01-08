@@ -22,10 +22,8 @@ def _copyfileasB( source, dest ):
 
 
 def CheckForUpdate( self ) :
-    if self.DomoticzVersion >= '4.10267':
-        DomoticzWWWFolder = self.StartupFolder + "www/templates"
-    else :
-        DomoticzWWWFolder = self.homedirectory + "../../www/templates"
+    DomoticzWWWFolder = self.pluginconf.pluginWWW
+
     # define the access rights
     access_rights = 0o775
     if not os.path.exists(DomoticzWWWFolder + "/zigate") :
