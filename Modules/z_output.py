@@ -577,7 +577,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                         datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
-                        Domoticz.Log("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
+                        Domoticz.Debug("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
                         sendZigateCmd(self, "0120", datas )
 
                     #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
