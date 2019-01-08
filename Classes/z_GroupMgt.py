@@ -311,8 +311,8 @@ class GroupsManagement(object):
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
         level = None
-        for dev_nwkid, dev_ep, dev_status in self.ListOfGroups[group_nwkid]['Devices']:
-            Domoticz.Debug("updateDomoGroupDevice - %s, %s, %s " %(dev_nwkid, dev_ep, dev_status))
+        for dev_nwkid, dev_ep in self.ListOfGroups[group_nwkid]['Devices']:
+            Domoticz.Debug("updateDomoGroupDevice - %s, %s" %(dev_nwkid, dev_ep))
             if dev_nwkid in self.ListOfDevices:
                 if 'Ep' in  self.ListOfDevices[dev_nwkid]:
                     if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
@@ -517,12 +517,11 @@ class GroupsManagement(object):
         self.HB += 1
 
         if self.StartupPhase == 'ready':
-            if not self.stillWIP:
-                for group_nwkid in self.ListOfGroups:
-                    self.updateDomoGroupDevice( group_nwkid)
+            for group_nwkid in self.ListOfGroups:
+                self.updateDomoGroupDevice( group_nwkid)
 
         elif self.StartupPhase == 'init' or  self.StartupPhase == 'discovery':
-            Domoticz.Log("Entering in discovery mode")
+            Domoticz.Log("Discovery mode")
             self.StartupPhase = 'discovery'
             # We will send a Request for Group memebership to each active device
             # In case a device doesn't belo,ng to any group, no response is provided.
@@ -602,8 +601,6 @@ class GroupsManagement(object):
 
             Domoticz.Log("Ready for working")
             self.StartupPhase = 'ready'
-
-
-            # Check that all reqMembership are now received
+            self.stillWIP = False
 
         return
