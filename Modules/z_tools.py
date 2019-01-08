@@ -222,6 +222,7 @@ def CheckDeviceList(self, key, val) :
     '''
         This function is call during DeviceList load
     '''
+
     Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
     Domoticz.Debug("CheckDeviceList - with value : " + str(val))
 
@@ -296,7 +297,8 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['ReadAttributes']=DeviceListVal['ReadAttributes']
         if 'IAS' in DeviceListVal :
             self.ListOfDevices[key]['IAS']=DeviceListVal['IAS']
-        self.ListOfDevices[key]['Heartbeat']=DeviceListVal['Heartbeat']
+        self.ListOfDevices[key]['Heartbeat'] = DeviceListVal['Heartbeat']
+
 
 def timeStamped( self, key, Type ):
     if key in self.ListOfDevices:

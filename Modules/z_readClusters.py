@@ -602,16 +602,14 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             ValueBattery=round(int(BatteryLvl,16)/10/3.3)
             Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
             self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
+
         if sTemp != '':
             Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
             ValueTemp=round(Temp/100,1)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']=ValueTemp
             Domoticz.Log("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) )
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-#        if sTemp2 != '':
-#            Temp2 = '%s%s' % (str(sTemp2[2:4]),str(sTemp2[0:2])) 
-#            ValueTemp2=round(int(Temp2,16)/100,1)
-#            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Device Temperature : " + str(ValueTemp2) )
+
         if sHumid != '':
             ValueHumid = struct.unpack('H',struct.pack('>H',int(sHumid,16)))[0]
             ValueHumid = round(ValueHumid/100,1)
