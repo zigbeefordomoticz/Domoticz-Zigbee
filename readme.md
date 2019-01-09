@@ -27,7 +27,7 @@ This is considered as a solid , reliable version.
 
 ### beta
 
-We can open the beta channel to provide early version and to stabilize he version priori t o be move to the stable channel
+We can open the beta channel to provide early version and to stabilize the version priori to be move to the stable channel
 
 ### dev
 
