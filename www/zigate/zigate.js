@@ -1,4 +1,4 @@
-///version:3;
+///version:4;
 
 // Check for the various File API support.
 if (window.File && window.FileReader && window.FileList && window.Blob) {
