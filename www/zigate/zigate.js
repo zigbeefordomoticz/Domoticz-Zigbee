@@ -71,8 +71,9 @@ function CheckIfDeviceInList(IEEE) {
 
 
 function DrawTable(date, data, id) {
+    dateR = Date(date);
     OutResultContents += '<div id="LQI-' + id + '_' + date + '" class="tabcontent2"><div id="LQItab">';
-    OutResultContents += "<br><H2>" + date + "</H2><table id=LQI_Tab border=1><tr><th>Devices ID</th>";
+    OutResultContents += "<br><H2>" + dateR + "</H2><table id=LQI_Tab border=1><tr><th>Devices ID</th>";
     console.log('draw table ' + date + '_' + id);
     MatrixId[date] = '[';
     for (i = 0; i < Object.keys(LQIlist).length; i++) {
@@ -121,12 +122,14 @@ function DrawTable(date, data, id) {
 };
 
 function DrawGraph(date, data, id) {
+    dateR = Date(date);
     OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
     OutResultContents += '<output id="LQI_' + id + '_' + date + '"></output></div></div>';
     console.log('draw LQI graph ' + date + '_' + id);
 };
 
 function DrawNetGraph(date, data, id) {
+    dateR = Date(date);
     OutResultContents += '<div id="NET-' + id + '_' + date + '" class="tabcontent3"><div id="Nettab">';
     OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
     OutResultContents += '<output id="NET_' + id + '_' + date + '"></output></div></div>';
@@ -257,7 +260,7 @@ function readLQI(id, data) {
 
     for (ii = 0; ii < Object.keys(LQIdata).length; ii++) {
         var datelist = Object.keys(LQIdata);
-        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`LQI-' + id + '_' + datelist[ii] + '`)">' + id + '_' + datelist[ii] + '</button>';
+        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`LQI-' + id + '_' + datelist[ii] + '`)">' + id + '_' + Date(datelist[ii]) + '</button>';
     }
     OutResultLinks += "</div>"
         //Print Out result
@@ -286,7 +289,7 @@ function readNetwork(id, data) {
 
     for (ii = 0; ii < Object.keys(NETdata).length; ii++) {
         var datelist = Object.keys(NETdata);
-        OutResultLinks += '<button class="tablinks3" onclick="openTab3(event,`NET-' + id + '_' + datelist[ii] + '`)">' + id + '_' + datelist[ii] + '</button>';
+        OutResultLinks += '<button class="tablinks3" onclick="openTab3(event,`NET-' + id + '_' + datelist[ii] + '`)">' + id + '_' + Date(datelist[ii]) + '</button>';
     }
     OutResultLinks += "</div>"
         //Print Out result
