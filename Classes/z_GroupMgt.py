@@ -8,10 +8,12 @@
 ListOfGroups[group id]['Name']    - Group Name as it will be created in Domoticz
 ListOfGroups[group id]['Devices'] - List of Devices associed to this group on Zigate
 ListOfGroups[group id]['Imported']- List of Devices to be associated to the group. We might have some removal, or some addiional from previous run
+
+self.ListOfDevices[nwkid]['GroupMgt'][Ep][GroupID]['Phase'] = 'OK-Membership' / 'REQ-Membership' / 'DEL-Membership'
+self.ListOfDevices[nwkid]['GroupMgt'][Ep][GroupID]['Phase-Stamp'] = time()
 """
 
 import Domoticz
-import pickle
 import json
 import os.path
 
@@ -21,6 +23,7 @@ from Modules.z_tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.z_consts import ADDRESS_MODE
 
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
+MAX_LOAD = 2
 
 class GroupsManagement(object):
 
@@ -49,12 +52,12 @@ class GroupsManagement(object):
         """
 
         if not os.path.isfile( self.groupsConfigFilename ) :
-            Domoticz.Log("GroupMgt - Nothing to import")
+            Domoticz.Debug("GroupMgt - Nothing to import")
             return
 
         self.toBeImported = {}
         myfile = open( self.groupsConfigFilename, 'r')
-        Domoticz.Log("load_ZigateGroupConfiguration. Reading the file")
+        Domoticz.Debug("load_ZigateGroupConfiguration. Reading the file")
         while True:
             tmpread = myfile.readline().replace('\n', '')
             Domoticz.Debug("line: %s" %tmpread )
@@ -64,21 +67,28 @@ class GroupsManagement(object):
             for token in tmpread.split(','):
                 if group_id is None:
                     # 1st item: group id
-                    group_id = token
+                    group_id = str(token)
                     if group_id not in self.ListOfGroups:
+                        Domoticz.Debug("  - Init ListOfGroups")
                         self.ListOfGroups[group_id] = {}
                         self.ListOfGroups[group_id]['Name'] = ''
                         self.ListOfGroups[group_id]['Devices'] = []
                         self.ListOfGroups[group_id]['Imported'] = []
+                    if 'Imported' not in self.ListOfGroups[group_id]:
+                        self.ListOfGroups[group_id]['Imported'] = []
+                    if 'Devices' not in self.ListOfGroups[group_id]:
+                        self.ListOfGroups[group_id]['Devices'] = []
+                    Domoticz.Debug(" )> Group ID: %s" %group_id)
                     continue
                 elif group_id and group_name is None:
                     # 2nd item: group name
-                    group_name = token
+                    group_name = str(token)
                     if 'Name' not in self.ListOfGroups[group_id]:
                         self.ListOfGroups[group_id]['Name'] = group_name
                     else:
                         if self.ListOfGroups[group_id]['Name'] == '':
                             self.ListOfGroups[group_id]['Name'] = group_name
+                    Domoticz.Debug(" )> Group Name: %s" %group_name)
                     continue
                 else:
                     # Last part, list of IEEE
@@ -86,16 +96,11 @@ class GroupsManagement(object):
                         if token.strip() not in self.IEEE2NWK:
                             Domoticz.Log("Unknown address %s to be imported" %token.strip() )
                             continue
-                        if 'Imported' not in self.ListOfGroups[group_id]:
-                            if 'Devices' not in self.ListOfGroups[group_id]:
-                                self.ListOfGroups[group_id] = []
-                            self.ListOfGroups[group_id]['Imported'] = []
-                            self.ListOfGroups[group_id]['Imported'].append(token.strip())
-                        else:
-                            self.ListOfGroups[group_id]['Imported'].append(token.strip())
+                        self.ListOfGroups[group_id]['Imported'].append(token.strip())
 
+                    Domoticz.Debug(" )> Group Imported: %s" %group_name)
             if group_id :
-                Domoticz.Log("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" 
+                Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" 
                     %( group_id, self.ListOfGroups[group_id]['Name'], str(self.ListOfGroups[group_id]['Imported'])))
         myfile.close()
 
@@ -110,7 +115,7 @@ class GroupsManagement(object):
         if grpid not in self.ListOfGroups:
             return
 
-        Domoticz.Debug("_addGroup - Adding device: %s/%s into group: %s" \
+        Domoticz.Log("_addGroup - Adding device: %s/%s into group: %s" \
                 %( device_addr, device_ep, grpid))
         datas = "02" + device_addr + "01" + device_ep + grpid
         self.ZigateComm.sendData( "0060", datas)
@@ -125,7 +130,7 @@ class GroupsManagement(object):
         SEQ=MsgData[2:4]
         PacketType=MsgData[4:8]
 
-        Domoticz.Debug("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
+        Domoticz.Log("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
 
         return
 
@@ -150,8 +155,9 @@ class GroupsManagement(object):
             MsgStatus = MsgData[12:14]
             MsgGroupID = MsgData[14:18]
             Domoticz.Log("addGroupResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
-            self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]['Phase'] = 'REQ-membership'
-            self._getGroupMembership( MsgSrcAddr, MsgEP, MsgGroupID)
+            self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP][MsgGroupID]['Phase'] = 'REQ-Membership'
+            self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP][MsgGroupID]['Phase-Stamp'] = int(time())
+            self._getGroupMembership( MsgSrcAddr, MsgEP, int(MsgGroupID,16))
         else:
             Domoticz.Log("addGroupResponse - uncomplete message %s" %MsgData)
 
@@ -164,7 +170,7 @@ class GroupsManagement(object):
 
     def _viewGroup( self, device_addr, device_ep, goup_addr ):
 
-        Domoticz.Debug("_viewGroup - addr: %s ep: %s group: %s" %(device_addr, device_ep, goup_addr))
+        Domoticz.Log("_viewGroup - addr: %s ep: %s group: %s" %(device_addr, device_ep, goup_addr))
         datas = "02" + device_addr + "01" + device_ep + goup_addr
         self.ZigateComm.sendData( "0061", datas)
         return
@@ -185,7 +191,7 @@ class GroupsManagement(object):
 
     def _getGroupMembership(self, device_addr, device_ep, group_list=None):
 
-        Domoticz.Debug("_getGroupMembership - %s/%s " %(device_addr, device_ep))
+        Domoticz.Debug("_getGroupMembership - %s/%s from %s" %(device_addr, device_ep, group_list))
         datas = "02" + device_addr + "01" + device_ep 
 
         if not group_list:
@@ -200,7 +206,7 @@ class GroupsManagement(object):
                 lenGrpLst = len(goup_list)
                 for x in goup_list:
                     group_list_ += "%04x" %(x)
-            datas += "02.x" %(lenGrpLst) + group_list_
+            datas += "%02.x" %(lenGrpLst) + group_list_
 
         self.ZigateComm.sendData( "0062", datas)
         return
@@ -216,37 +222,37 @@ class GroupsManagement(object):
         MsgGroupCount=MsgData[14:16]
         MsgListOfGroup=MsgData[16:len(MsgData)]
 
-        Domoticz.Debug("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Log("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
             Domoticz.Log('getGroupMembershipResponse - receiving a group memebership for a non exsiting device')
             Domoticz.Log('getGroupMembershipResponse - %s %s %s' %(MsgSourceAddress, MsgGroupCount, MsgListOfGroup))
 
-        if 'GroupMgt' not in  self.ListOfDevices[MsgSourceAddress]:
-             self.ListOfDevices[MsgSourceAddress]['GroupMgt'] = {}
-        if MsgEP not in  self.ListOfDevices[MsgSourceAddress]['GroupMgt']:
-             self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP] = {}
-        if 'Membership' not in  self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]:
-             self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]['Membership'] = {}
-        if 'Phase' in self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]:
-            if self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]['Phase'] != 'REQ-membership':
-                Domoticz.Log("getGroupMembershipResponse - not in the expected Phase : %s " 
-                    %self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]['Phase'])
-
-        self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]['Phase'] = 'OK-Membership'
         idx =  0
         while idx < int(MsgGroupCount,16):
             groupID = MsgData[16+(idx*4):16+(4+(idx*4))]
-            if groupID not in self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]['Membership']:
-                self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]['Membership'][groupID] = {}
+
+            if groupID not in self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]:
+                self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID] = {}
+                self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID]['Phase'] = {}
+                self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID]['Phase-Stamp'] = {}
+
+            if self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID]['Phase'] not in ( {}, 'REQ-Membership') :
+                Domoticz.Log("getGroupMembershipResponse - not in the expected Phase : %s for %s/%s - %s" 
+                    %(self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID]['Phase'], MsgSourceAddress, MsgEP, groupID))
+
+            self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID]['Phase'] = 'OK-Membership'
+            self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID]['Phase-Stamp'] = 0
+
             if groupID not in self.ListOfGroups:
                 self.ListOfGroups[groupID] = {}
                 self.ListOfGroups[groupID]['Name'] = ''
                 self.ListOfGroups[groupID]['Devices'] = []
                 self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP) )
             else:
-                self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP) )
+                if ( MsgSourceAddress,MsgEP) not in self.ListOfGroups[groupID]['Devices']:
+                    self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP) )
 
             Domoticz.Log("getGroupMembershipResponse - Group Membership : %s for (%s,%s)"
                     %(groupID, MsgSourceAddress, MsgEP))
@@ -292,14 +298,13 @@ class GroupsManagement(object):
             if MsgSrcAddr :
                 if 'GroupMgt' in self.ListOfDevices[MsgSrcAddr]:
                     if MsgEP in self.ListOfDevices[MsgSrcAddr]['GroupMgt']:
-                        if 'Membership' in self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]:
-                            if groupID in self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]['Membership']:
-                                del  self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]['Membership'][groupID]
+                        if groupID in self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]:
+                            del  self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP][groupID]
+
                 self.ListOfGroups[groupID]['Devices'].remove( MsgSrcAddr, MsgEP)
+                self._getGroupMembership( MsgSrcAddr, MsgEP, int(MsgGroupID,16))
         else:
             Domoticz.Log("removeGroupResponse - GroupID: %s unexpected Status: %s" %(MsgGroupID, MsgStatus))
-        # Sanity check. 
-        self._getGroupMembership( MsgSrcAddr, MsgEP, MsgGroupID)
 
         return
 
@@ -343,7 +348,7 @@ class GroupsManagement(object):
                 return
 
         unit = self.FreeUnit( self.Devices )
-        Domoticz.Log("_createDomoGroupDevice - Unit: %s" %unit)
+        Domoticz.Debug("_createDomoGroupDevice - Unit: %s" %unit)
         myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=241, Subtype=7, Switchtype=7)
         myDev.Create()
         ID = myDev.ID
@@ -354,7 +359,6 @@ class GroupsManagement(object):
         """ 
         Update the Group status On/Off and Level , based on the attached devices
         """
-
 
         if group_nwkid not in self.ListOfGroups:
             Domoticz.Log("updateDomoGroupDevice - unknown group: %s" %group_nwkid)
@@ -410,10 +414,10 @@ class GroupsManagement(object):
         ' User has remove dthe Domoticz Device corresponding to this group'
 
         if group_nwkid not in self.ListOfGroups:
-            Domoticz.Log("updateDomoGroupDevice - unknown group: %s" %group_nwkid)
+            Domoticz.Log("_removeDomoGroupDevice - unknown group: %s" %group_nwkid)
             return
         if 'Devices' not in self.ListOfGroups[group_nwkid]:
-            Domoticz.Log("updateDomoGroupDevice - no Devices for that group: %s" %self.ListOfGroups[group_nwkid])
+            Domoticz.Log("_removeDomoGroupDevice - no Devices for that group: %s" %self.ListOfGroups[group_nwkid])
             return
 
         unit = 0
@@ -421,9 +425,9 @@ class GroupsManagement(object):
             if self.Devices[unit].DeviceID == group_nwkid:
                 break
         else:
-            Domoticz.Log("updateDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
+            Domoticz.Log("_removeDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
             return
-        Domoticz.Log("domGroupDeviceRemoved - removing Domoticz Widget")
+        Domoticz.Log("_removeDomoGroupDevice - removing Domoticz Widget")
         self.Devices[unit].Delete()
         
 
@@ -440,16 +444,11 @@ class GroupsManagement(object):
             for iterEP in self.ListOfDevices[iterDev]['Ep']:
                 if iterEP not in self.ListOfDevices[iterDev]['GroupMgt']:
                     continue
-                if 'Membership' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEP]:
-                    continue
-                if grpid in self.ListOfDevices[iterDev]['GroupMgt'][iterEP]['Membership']:
+                if grpid in self.ListOfDevices[iterDev]['GroupMgt'][iterEP]:
                     Domoticz.Log("processRemoveGroup - remove %s %s %s" 
                             %(iterDev, iterEP, grpid))
                     self._removeGroup(iterDev, iterEP, grpid )
         return
-
-
-
 
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
 
@@ -597,23 +596,30 @@ class GroupsManagement(object):
                 if 'Ep' in self.ListOfDevices[iterDev]:
                     for iterEp in self.ListOfDevices[iterDev]['Ep']:
                         if iterEp == 'ClusterType': continue
-                        if  len(self.ZigateComm._normalQueue) > 2:
-                            _workcompleted = False
-                            break # will continue in the next cycle
                         if 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                             '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp]:
-                            Domoticz.Debug("_discoverZigateGroups - req membership for %s/%s " %(iterDev, iterEp))
+                            # As we are looking for Group Membership, we don't know to which Group it could belongs.
+                            # FFFF is a special group in the code to be used in that case.
                             if 'GroupMgt' not in  self.ListOfDevices[iterDev]:
                                 self.ListOfDevices[iterDev]['GroupMgt'] = {}
                             if iterEp not in  self.ListOfDevices[iterDev]['GroupMgt']:
                                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp] = {}
-                            if 'Phase' not in  self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
-                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] = ''
-                            if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] not in ('REQ-membership' , 'OK-Membership' ):
-                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] = 'REQ-membership'
-                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase-Stamp'] = time()
-                                Domoticz.Log(" - request group membership for %s/%s" %(iterDev, iterEp))
-                                self._getGroupMembership(iterDev, iterEp)   # We request MemberShip List
+                            if 'FFFF' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF'] = {}
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']['Phase'] = {}
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']['Phase-Stamp'] = {}
+
+                            if 'Phase' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']:
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']['Phase'] == 'REQ-Membership':
+                                    continue
+
+                            if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                                _workcompleted = False
+                                break # will continue in the next cycle
+                            self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']['Phase'] = 'REQ-Membership'
+                            self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']['Phase-Stamp'] = int(time())
+                            self._getGroupMembership(iterDev, iterEp)   # We request MemberShip List
+                            Domoticz.Log(" - request group membership for %s/%s" %(iterDev, iterEp))
             else:
                 if _workcompleted:
                     Domoticz.Log("hearbeatGroupMgt - Finish Discovery Phase" )
@@ -630,16 +636,29 @@ class GroupsManagement(object):
                         for iterEp in self.ListOfDevices[iterDev]['Ep']:
                             if iterEp not in self.ListOfDevices[iterDev]['GroupMgt']:
                                 continue
-                            if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] == 'OK-Membership':
-                                continue
-                            if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase-Stamp'] + 10 > now:
-                                _completedEPs = False
-                                break # Need to wait a couple of sec.
-                            self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] = 'TimeOut'
-                            Domoticz.Log("No response receive for %s/%s - assuming no group membership" %(iterDev,iterEp))
+
+                            if 'FFFF' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
+                                del  self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['FFFF']
+
+                            for iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
+                                if 'Phase' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
+                                    continue
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
+                                    continue
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] + 10 > now:
+                                    _completedEPs = False
+                                    break # Need to wait a couple of sec.
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
+                                Domoticz.Log(" - No response receive for %s/%s - assuming no group membership" %(iterDev,iterEp))
+
             else:
                 if _completedEPs:
-                    Domoticz.Log("hearbeatGroupMgt - End of Discovery Phase" )
+                    for iterGrp in  self.ListOfGroups:
+                        Domoticz.Log("Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
+                        Domoticz.Log("Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
+                        for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                            Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
+                    Domoticz.Log("hearbeatGroupMgt - Discovery Completed" )
                     self.StartupPhase = 'load config'
 
         elif  self.StartupPhase == 'load config':
@@ -648,24 +667,24 @@ class GroupsManagement(object):
             self.StartupPhase = 'process config'
 
         elif self.StartupPhase == 'process config':
-            now = time()
-            _completedEPs = True
+            _workcompleted = True
             for iterGrp in self.ListOfGroups:
-                Domoticz.Log("Processing Group: %s" %iterGrp)
                 if 'Imported' not in self.ListOfGroups[iterGrp]:
                     continue
-                if len(self.ListOfGroups[iterGrp]['Imported']) == 0:
+                if len(self.ListOfGroups[iterGrp]['Imported']) == 0 and len(self.ListOfGroups[iterGrp]['Devices']) == 0 :
                     continue
+
+                Domoticz.Log("Processing Group: %s - Checking Removal" %iterGrp)
                 # Remove group membership
                 Domoticz.Log(" - %s" %self.ListOfGroups[iterGrp]['Devices'])
+                Domoticz.Log(" - %s" %self.ListOfGroups[iterGrp]['Imported'])
+
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
-                    Domoticz.Log("    - device: %s" %iterDev)
+                    Domoticz.Log("    - checking device: %s to be removed " %iterDev)
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
                     if iterIEEE in self.ListOfGroups[iterGrp]['Imported']:
+                        Domoticz.Log("    - device: %s to be kept " %iterDev)
                         continue
-                    if  len(self.ZigateComm._normalQueue) > 2:
-                        _workcompleted = False
-                        break
                     removeIEEE = iterIEEE
                     if iterIEEE not in self.IEEE2NWK:
                         Domoticz.Log("Unknown IEEE to be removed %s" %iterIEEE)
@@ -674,31 +693,74 @@ class GroupsManagement(object):
                     if removeNKWID not in self.ListOfDevices:
                         Domoticz.Log("Unknown IEEE to be removed %s" %removeNKWID)
                         continue
-                    if self.ListOfDevices[removeNKWID]['GroupMgt'][iterEP]['Phase'] == 'OK-Membership':
-                        Domoticz.Log("Request removal of % from %s" %(removeNKWID, iterGrp))
-                        self.ListOfDevices[removeNKWID]['GroupMgt'][iterEP]['Phase'] == 'DEL-Membership'
-                        self.ListOfDevices[removeNKWID]['GroupMgt'][iterEP]['Phase-Stamp'] == now
+                    Domoticz.Log('Status Phase for %s/%s - %s before removal --> %s' 
+                            %(removeNKWID,iterEp,iterGrp, self.ListOfDevices[removeNKWID]['GroupMgt'][iterEp][iterGrp]['Phase']))
+                    if self.ListOfDevices[removeNKWID]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
+                        if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                            _workcompleted = False
+                            break
+                        Domoticz.Log("Request removal of %s from %s" %(removeNKWID, iterGrp))
+                        self.ListOfDevices[removeNKWID]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'DEL-Membership'
+                        self.ListOfDevices[removeNKWID]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
                         self._removeGroup( removeNKWID, iterEp, iterGrp )
+                        Domoticz.Log("Request membership removal for %s from group %s " %(removeNKWID, iterGrp))
                         continue
 
+                Domoticz.Log("Processing Group: %s - Checking Adding" %iterGrp)
                 # Add group membership
                 for iterIEEE in self.ListOfGroups[iterGrp]['Imported']:
                     iterDev = self.IEEE2NWK[iterIEEE]
+                    Domoticz.Debug("    - checking device: %s to be added " %iterDev)
                     if iterDev in self.ListOfGroups[iterGrp]['Devices']:
+                        Domoticz.Log("%s already in group %s" %(iterDev, iterGrp))
                         continue
+
+                    Domoticz.Debug("       - checking device: %s " %iterDev)
                     if 'Ep' in self.ListOfDevices[iterDev]:
                         for iterEp in self.ListOfDevices[iterDev]['Ep']:
-                            if  len(self.ZigateComm._normalQueue) > 2:
-                                _workcompleted = False
-                                break
-                            if  ('ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp]) and \
+                            Domoticz.Log("       - Check existing Membership %s/%s" %(iterDev,iterEp))
+
+                            if 'GroupMgt' in self.ListOfDevices[iterDev]:
+                                if iterEp in self.ListOfDevices[iterDev]['GroupMgt']:
+                                    if iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
+                                        Domoticz.Log("       - %s/%s already in group %s" %(iterDev, iterEp, iterGrp))
+                                        continue
+
+                            if  ('ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] :
-                                self.ListOfDevices[removeNKWID]['GroupMgt'][iterEP]['Phase'] == 'REQ-Membership'
-                                self.ListOfDevices[removeNKWID]['GroupMgt'][iterEP]['Phase-Stamp'] == now
-                                self._getGroupMembership(iterDev, iterEp)   # We request MemberShip List
-                
+
+                                if 'GroupMgt' not in self.ListOfDevices[iterDev]:
+                                    self.ListOfDevices[iterDev]['GroupMgt'] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = {}
+
+                                if iterGrp not in self.ListOfDevices[iterDev]['GroupMgt']:
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = {}
+
+                                if 'Phase' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
+                                    Domoticz.Log("Reset %s/%s - %s --> %s "
+                                            %(iterDev, iterEp, iterGrp, str( self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = {}
+                                    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = {}
+
+                                Domoticz.Log('Status Phase for %s/%s - %s before add --> %s' 
+                                    %(iterDev,iterEp,iterGrp,str( self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'])))
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'REQ-Membership':
+                                    continue
+
+                                if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                                    _workcompleted = False
+                                    break
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'REQ-Membership'
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
+                                self._addGroup( iterIEEE, iterDev, iterEp, iterGrp)
+                                Domoticz.Log("Request membership for %s/%s to group %s " %(iterDev, iterEp, iterGrp))
             else:
-                if _completedEPs:
+                if _workcompleted:
                     Domoticz.Log("hearbeatGroupMgt - End of Configuration processing" )
                     self.StartupPhase = 'finish configuration'
 
@@ -713,16 +775,23 @@ class GroupsManagement(object):
                         for iterEp in self.ListOfDevices[iterDev]['Ep']:
                             if iterEp not in self.ListOfDevices[iterDev]['GroupMgt']:
                                 continue
-                            if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] == 'OK-Membership':
-                                continue
-                            if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase-Stamp'] + 10 > now:
-                                _completedEPs = False
-                                break # Need to wait a couple of sec.
-                            self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['Phase'] = 'TimeOut'
-                            Domoticz.Log("No response receive for %s/%s - assuming no group membership" %(iterDev,iterEp))
+                            for iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
+                                Domoticz.Log("%s/%s - %s -> Check for Membership: %s" %(iterDev,iterEp,iterGrp,str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
+                                    continue
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] not in ( 'DEL-Membership' ,'REQ-Membership' ):
+                                    Domoticz.Log("Unexpected phase for %s/%s in group %s : phase!: %s"
+                                    %( iterDev, iterEp, iterGrp,  str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
+                                    continue
+                                Domoticz.Log('Checking if process is done for %s/%s - %s -> %s' %(iterDev,iterEp,iterGrp,str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
+                                if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] + 10 > now:
+                                    _completedEPs = False
+                                    break # Wait a couple of Sec
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
+                                Domoticz.Log(" - No response receive for %s/%s - assuming no group membership" %(iterDev,iterEp))
             else:
                 if _completedEPs:
-                    Domoticz.Log("hearbeatGroupMgt - End of Discovery Phase" )
+                    Domoticz.Log("hearbeatGroupMgt - Configuration mode completed" )
                     self.StartupPhase = 'check group list'
 
         elif self.StartupPhase == 'check group list':
@@ -737,7 +806,7 @@ class GroupsManagement(object):
                     # Unknown group in Domoticz. Create it
                     if self.ListOfGroups[iterGrp]['Name'] == '':
                         self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
-                    Domoticz.Debug("_processListOfGroups - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
+                    Domoticz.Log("_processListOfGroups - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                     self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
 
                 Domoticz.Log("Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
