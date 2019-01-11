@@ -31,23 +31,22 @@ class GroupsManagement(object):
 
     def __init__( self, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
         Domoticz.Debug("GroupsManagement __init__")
-        self.HB = 0
         self.StartupPhase = 'init'
         self.ListOfGroups = {}      # Data structutre to store all groups
-        self.TobeAdded = []
-        self.TobeRemoved = []
-        self.Cycle = 0
+        self.TobeAdded = []         # List of IEEE/NWKID/EP/GROUP to be added
+        self.TobeRemoved = []       # List of NWKID/EP/GROUP to be removed
+        self.Cycle = 0              # Cycle count
         self.stillWIP = True
 
-        self.SQN = 0
-        self.ListOfDevices = ListOfDevices
-        self.Devices = Devices
-        self.groupListFileName = HomeDirectory + "/GroupsList-%02d" %hardwareID + ".pck"
-        self.IEEE2NWK = IEEE2NWK
-        self.homeDirectory = HomeDirectory
-        self.ZigateComm = ZigateComm
-        self.groupsConfigFilename = HomeDirectory + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
+        self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
+        self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
+        self.Devices = Devices              # Point to the List of Domoticz Devices
 
+        self.ZigateComm = ZigateComm        # Point to the ZigateComm object
+
+        self.homeDirectory = HomeDirectory
+        self.groupListFileName = HomeDirectory + "/GroupsList-%02d" %hardwareID + ".pck"
+        self.groupsConfigFilename = HomeDirectory + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
         return
 
     def load_ZigateGroupConfiguration(self):
@@ -109,11 +108,6 @@ class GroupsManagement(object):
 
     # Zigate group related commands
     def _addGroup( self, device_ieee, device_addr, device_ep, grpid):
-        # Address Mode: 0x02
-        # Target short addre : uint1- ( device NWKID )
-        # Source EndPoint : 0x01
-        # Target EndPoint : uint8
-        # Group address : uint16 ( 0x0000 for a new one )
 
         if grpid not in self.ListOfGroups:
             return
@@ -134,7 +128,6 @@ class GroupsManagement(object):
         PacketType=MsgData[4:8]
 
         Domoticz.Log("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
-
         return
 
     def addGroupResponse(self, MsgData):
@@ -234,7 +227,7 @@ class GroupsManagement(object):
         MsgGroupCount=MsgData[14:16]
         MsgListOfGroup=MsgData[16:len(MsgData)]
 
-        Domoticz.Log("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Debug("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
@@ -606,8 +599,6 @@ class GroupsManagement(object):
         # self.pluginconf.discoverZigateGroups 
         # self.pluginconf.enableConfigGroups
 
-        self.HB += 1
-
         if self.StartupPhase == 'ready':
             for group_nwkid in self.ListOfGroups:
                 self.updateDomoGroupDevice( group_nwkid)
@@ -686,10 +677,8 @@ class GroupsManagement(object):
                                 _completed = False
                                 break # Need to wait a couple of sec.
 
-
-
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
-                            Domoticz.Log(" - No response receive for %s/%s - assuming no group membership for %s " %(iterDev,iterEp, iterGrp))
+                            Domoticz.Debug(" - No response receive for %s/%s - assuming no group membership for %s " %(iterDev,iterEp, iterGrp))
                         else:
                             if 'FFFF' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
                                 Domoticz.Debug('Checking if process is done for %s/%s - FFFF -> %s' 
@@ -858,7 +847,7 @@ class GroupsManagement(object):
                                     %(iterDev,iterEp,iterGrp,str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
 
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
-                            Domoticz.Log(" - No response receive for %s/%s - assuming no group membership to %s" %(iterDev,iterEp, iterGrp))
+                            Domoticz.Debug(" - No response receive for %s/%s - assuming no group membership to %s" %(iterDev,iterEp, iterGrp))
             else:
                 if _completed:
                     Domoticz.Log("hearbeatGroupMgt - Configuration mode completed" )
