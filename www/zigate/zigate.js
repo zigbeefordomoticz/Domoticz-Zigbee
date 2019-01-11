@@ -1,4 +1,4 @@
-///version:5;
+///version:6;
 
 // Check for the various File API support.
 if (window.File && window.FileReader && window.FileList && window.Blob) {
@@ -34,11 +34,11 @@ function GetDevs(id) {
             var ii = 0;
             if (typeof DEVdata.result != 'undefined') {
                 //txt = '</div><div id="TabDevices" class="tabcontent">';
-                txt = '<table id=Devices_Tab border=1><tr><th>Devices ID</th><th>Devices Name</th><th>Devices IEEE</th></tr>';
+                txt = '<table id=Devices_Tab border=1><tr><th>Devices ID</th><th>Devices Name</th><th>Devices IEEE</th><th>Last Update</th></tr>';
                 $.each(DEVdata.result, function(i, itemDEV) {
                     if (itemDEV.HardwareID == id) {
                         if (CheckIfDeviceInList(itemDEV.ID) == false) {
-                            txt += "<tr><td>" + itemDEV.idx + "</td><td>" + itemDEV.Name + "</td><td>" + itemDEV.ID + "</td></tr>";
+                            txt += "<tr><td>" + itemDEV.idx + "</td><td>" + itemDEV.Name + "</td><td>" + itemDEV.ID + "</td><td>" + itemDEV.LastUpdate + "</td></tr>";
                             txtdev = "Chargement terminé, selectionner votre fichier LQI_report";
                             DeviceIEEE[ii] = itemDEV.ID;
                             ii++;
