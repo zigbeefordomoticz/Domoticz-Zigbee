@@ -359,7 +359,8 @@ def processListOfDevices( self , Devices ):
 
     if  ( ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0 ):
         # Trigger Conifre Reporting to eligeable decices
-        processConfigureReporting( self )
+        for iterDev in self.ListOfDevices:
+            processConfigureReporting( self , iterDev)
     
     if self.pluginconf.networkScan != 0 and \
             (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // HEARTBEAT )) == 0) :
