@@ -96,6 +96,8 @@ def processKnownDevices( self, Devices, NWKID ):
 
                         func = READ_ATTRIBUTES_REQUEST[Cluster][0]
                         timing = READ_ATTRIBUTES_REQUEST[Cluster][1]
+                        if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
+                            self.ListOfDevices[NWKID]['ReadAttributes'] = {}
                         if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes'] :
                             _idx = tmpEp + '-' + str(Cluster)
                             if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
