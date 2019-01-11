@@ -357,10 +357,9 @@ def processListOfDevices( self , Devices ):
         if self.ZigateComm.loadTransmit() < 5 :
             LQIcontinueScan( self, Devices )
 
-    if  ( ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0 ):
+    if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
         # Trigger Conifre Reporting to eligeable decices
-        for iterDev in self.ListOfDevices:
-            processConfigureReporting( self , iterDev)
+        processConfigureReporting( self )
     
     if self.pluginconf.networkScan != 0 and \
             (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.networkScan ) // HEARTBEAT )) == 0) :
