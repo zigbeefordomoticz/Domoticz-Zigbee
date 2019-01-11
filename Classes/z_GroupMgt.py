@@ -773,7 +773,7 @@ class GroupsManagement(object):
             _completed = True
             Domoticz.Log("hearbeatGroupMgt - Perform Zigate commands")
             Domoticz.Log(" - Removal to be performed: %s" %str(self.TobeRemoved))
-            for iterDev, iterEp, iterGrp in self.TobeRemoved:
+            for iterDev, iterEp, iterGrp in list(self.TobeRemoved):
                 if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
@@ -785,7 +785,7 @@ class GroupsManagement(object):
                 self.TobeRemoved.remove( (iterDev, iterEp, iterGrp) )
 
             Domoticz.Log(" - Add to be performed: %s" %str(self.TobeAdded))
-            for iterIEEE, iterDev, iterEp, iterGrp in self.TobeAdded:
+            for iterIEEE, iterDev, iterEp, iterGrp in list(self.TobeAdded):
                 if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
@@ -850,12 +850,8 @@ class GroupsManagement(object):
                         for iterDev in self.ListOfDevices:
                             if 'GroupMgt' in self.ListOfDevices[iterDev]:
                                 del self.ListOfDevices[iterDev]['GroupMgt']
-                        removeGrp = []
-                        for iterGrp in self.ListOfGroups:
-                            removeGrp.append(iterGrp)
-                        for iterGrp in removeGrp:
+                        for iterGrp in dict(self.ListOfGroups):
                             del self.ListOfGroups[iterGrp]
-                        del removeGrp
 
         elif self.StartupPhase == 'check group list':
             # GroupList is build in the germembership response
