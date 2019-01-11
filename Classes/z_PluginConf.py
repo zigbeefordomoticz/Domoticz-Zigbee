@@ -50,6 +50,7 @@ class PluginConf:
         self.pluginConfig = self.pluginHome + './'
         self.pluginWWW = self.pluginHome + '../../www/templates/'
         self.pluginReports = self.pluginWWW + 'zigate/reports/'
+
         self.filename = None
 
         # Groups Management
@@ -200,3 +201,14 @@ class PluginConf:
         Domoticz.Log("Reportings and Statistics")
         Domoticz.Log(" -logLQI: %s"% self.logLQI)
         Domoticz.Log(" -networkScan: %s" %self.networkScan)
+
+        if not os.path.exists( self.pluginData ):
+            Domoticz.Error( "Cannot access pluginData: %s" %self.pluginData)
+        if not os.path.exists( self.pluginZData ):
+            Domoticz.Error( "Cannot access pluginZData: %s" %self.pluginZData)
+        if not os.path.exists( self.pluginConfig ):
+            Domoticz.Error( "Cannot access pluginConfig: %s" %self.pluginConfig)
+        if not os.path.exists( self.pluginWWW ):
+            Domoticz.Error( "Cannot access pluginWWW: %s" %self.pluginWWW)
+        if not os.path.exists( self.pluginReports ):
+            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginReports)
