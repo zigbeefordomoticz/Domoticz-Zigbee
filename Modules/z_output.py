@@ -115,6 +115,8 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
 
     if 'ReadAttributes' in self.ListOfDevices[addr]:
+        if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
+            self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
         if EpOut in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
             if str(Cluster) not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
