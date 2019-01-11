@@ -227,7 +227,7 @@ class GroupsManagement(object):
         MsgGroupCount=MsgData[14:16]
         MsgListOfGroup=MsgData[16:len(MsgData)]
 
-        Domoticz.Debug("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Log("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
@@ -461,7 +461,8 @@ class GroupsManagement(object):
         if grpid not in self.ListOfGroups:
             return
 
-        for iterDev in self.ListOfDevices:
+        _toremove = []
+        for iterDev in list(self.ListOfDevices):
             if 'GroupMgt' not in self.ListOfDevices[iterDev]:
                 continue
             for iterEP in self.ListOfDevices[iterDev]['Ep']:
@@ -471,6 +472,12 @@ class GroupsManagement(object):
                     Domoticz.Log("processRemoveGroup - remove %s %s %s" 
                             %(iterDev, iterEP, grpid))
                     self._removeGroup(iterDev, iterEP, grpid )
+                    _toremove.append( (iterDev,iterEP) )
+        for removeDev, removeEp in _toremove:
+            del self.ListOfDevices[removeDev]['GroupMgt'][removeEp][grpid]
+
+        del self.ListOfGroups[grpid]
+
         return
 
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
@@ -677,8 +684,10 @@ class GroupsManagement(object):
                                 _completed = False
                                 break # Need to wait a couple of sec.
 
+
+
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
-                            Domoticz.Debug(" - No response receive for %s/%s - assuming no group membership for %s " %(iterDev,iterEp, iterGrp))
+                            Domoticz.Log(" - No response receive for %s/%s - assuming no group membership for %s " %(iterDev,iterEp, iterGrp))
                         else:
                             if 'FFFF' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
                                 Domoticz.Debug('Checking if process is done for %s/%s - FFFF -> %s' 
@@ -847,7 +856,7 @@ class GroupsManagement(object):
                                     %(iterDev,iterEp,iterGrp,str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
 
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
-                            Domoticz.Debug(" - No response receive for %s/%s - assuming no group membership to %s" %(iterDev,iterEp, iterGrp))
+                            Domoticz.Log(" - No response receive for %s/%s - assuming no group membership to %s" %(iterDev,iterEp, iterGrp))
             else:
                 if _completed:
                     Domoticz.Log("hearbeatGroupMgt - Configuration mode completed" )
