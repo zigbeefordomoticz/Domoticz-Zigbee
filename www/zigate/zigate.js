@@ -1,4 +1,4 @@
-///version:4;
+///version:5;
 
 // Check for the various File API support.
 if (window.File && window.FileReader && window.FileList && window.Blob) {
@@ -71,7 +71,7 @@ function CheckIfDeviceInList(IEEE) {
 
 
 function DrawTable(date, data, id) {
-    dateR = Date(date);
+    dateR = dateFormat(parseInt(date) * 1000, "dd/mm/yyyy HH:MM");
     OutResultContents += '<div id="LQI-' + id + '_' + date + '" class="tabcontent2"><div id="LQItab">';
     OutResultContents += "<br><H2>" + dateR + "</H2><table id=LQI_Tab border=1><tr><th>Devices ID</th>";
     console.log('draw table ' + date + '_' + id);
@@ -122,14 +122,14 @@ function DrawTable(date, data, id) {
 };
 
 function DrawGraph(date, data, id) {
-    dateR = Date(date);
+    dateR = dateFormat(parseInt(date) * 1000, "dd/mm/yyyy HH:MM");
     OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
     OutResultContents += '<output id="LQI_' + id + '_' + date + '"></output></div></div>';
     console.log('draw LQI graph ' + date + '_' + id);
 };
 
 function DrawNetGraph(date, data, id) {
-    dateR = Date(date);
+    dateR = dateFormat(parseInt(date) * 1000, "dd/mm/yyyy HH:MM");
     OutResultContents += '<div id="NET-' + id + '_' + date + '" class="tabcontent3"><div id="Nettab">';
     OutResultContents += '<div id="GraphFile_' + id + '_' + date + '"><br>';
     OutResultContents += '<output id="NET_' + id + '_' + date + '"></output></div></div>';
@@ -242,7 +242,7 @@ function readLQI(id, data) {
     const allLines = data.split(/\r\n|\n/); // Reading line by line 
     allLines.map((line) => {
         if (line.replace(/ /g, '') != '') {
-            LQIdate = line.slice(2, 11);
+            LQIdate = line.slice(2, 12);
             console.log('LQI reports date : ' + LQIdate)
             LQIdata[LQIdate] = JSON.parse(line.slice(14, line.length - 1).replace(/ /g, '').replace(/'/g, '"').replace(/True/g, '"True"').replace(/False/g, '"False"'));
             console.log('LQI reports data :' + LQIdata[LQIdate]);
@@ -260,7 +260,8 @@ function readLQI(id, data) {
 
     for (ii = 0; ii < Object.keys(LQIdata).length; ii++) {
         var datelist = Object.keys(LQIdata);
-        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`LQI-' + id + '_' + datelist[ii] + '`)">' + id + '_' + Date(datelist[ii]) + '</button>';
+        dateR = dateFormat(parseInt(datelist[ii]) * 1000, "dd/mm/yyyy HH:MM");
+        OutResultLinks += '<button class="tablinks2" onclick="openTab2(event,`LQI-' + id + '_' + datelist[ii] + '`)">' + id + '_' + dateR + '</button>';
     }
     OutResultLinks += "</div>"
         //Print Out result
@@ -289,7 +290,8 @@ function readNetwork(id, data) {
 
     for (ii = 0; ii < Object.keys(NETdata).length; ii++) {
         var datelist = Object.keys(NETdata);
-        OutResultLinks += '<button class="tablinks3" onclick="openTab3(event,`NET-' + id + '_' + datelist[ii] + '`)">' + id + '_' + Date(datelist[ii]) + '</button>';
+        dateR = dateFormat(parseInt(datelist[ii]) * 1000, "dd/mm/yyyy HH:MM");
+        OutResultLinks += '<button class="tablinks3" onclick="openTab3(event,`NET-' + id + '_' + datelist[ii] + '`)">' + id + '_' + dateR + '</button>';
     }
     OutResultLinks += "</div>"
         //Print Out result
