@@ -450,7 +450,7 @@ class GroupsManagement(object):
         else:
             Domoticz.Log("_removeDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
             return
-        Domoticz.Log("_removeDomoGroupDevice - removing Domoticz Widget")
+        Domoticz.Log("_removeDomoGroupDevice - removing Domoticz Widget %s" %self.Devices[unit].Name)
         self.Devices[unit].Delete()
         
 
