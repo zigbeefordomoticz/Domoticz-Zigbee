@@ -50,6 +50,7 @@ import time
 import struct
 import json
 import queue
+import sys
 
 from Modules.z_tools import removeDeviceInList
 from Modules.z_output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice
@@ -109,6 +110,10 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin Beta 4.1.x")
         self.busy = True
+        Domoticz.Status("Python Version - %s" %sys.version)
+
+        assert sys.version_info >= (3, 4)
+
         updateStatusWidget( self, Devices, 'Startup')
 
         Domoticz.Heartbeat( HEARTBEAT )
