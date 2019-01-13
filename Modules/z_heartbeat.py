@@ -51,30 +51,30 @@ def processKnownDevices( self, Devices, NWKID ):
                             unit = [x for x in Devices if Devices[x].DeviceID == IEEE ]
                             if len(unit) > 1:
                                 unit = unit[0]
-                                Domoticz.Status("%s - Last Update from Battery device was: %s --> %s ago (More than 2 hours) %s" \
+                                Domoticz.Log("%s - Last Update from Battery device was: %s --> %s ago (More than 2 hours) %s" \
                                     %( Devices[unit].Name, self.ListOfDevices[NWKID]['Stamp']['Time'], 
                                     datetime.datetime.fromtimestamp(delta).strftime('%H:%M:%S'), delta))
 
     # Check if Node Descriptor was run ( this could not be the case on early version)
 
     if  self.HeartbeatCount == ( 28 // HEARTBEAT):
-        if 'PowerSource' not in self.ListOfDevices[NWKID]:    # Looks like PowerSource is not 
-                                                              # available, let's request a Node Descriptor
-            sendZigateCmd(self,"0042", str(NWKID) )  # Request a Node Descriptor
+        if 'PowerSource' not in self.ListOfDevices[NWKID]:  # Looks like PowerSource is not 
+                                                            # available, let's request a Node Descriptor
+            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
     # Ping each device, even the battery one. It will make at least the route up-to-date
-    if ( intHB % ( 3000 // HEARTBEAT)) == 0:
-        ReadAttributeRequest_Ack(self, NWKID)
+    #if ( intHB % ( 3000 // HEARTBEAT)) == 0:
+    #    ReadAttributeRequest_Ack(self, NWKID)
 
     READ_ATTRIBUTES_REQUEST = {  
         # Cluster : ( ReadAttribute function, Frequency )
-        '0000' : ( ReadAttributeRequest_0000, 60 ),
-        '0001' : ( ReadAttributeRequest_0001, 3600 ),
-        '0006' : ( ReadAttributeRequest_0006, 300 ),
-        '0008' : ( ReadAttributeRequest_0008, 300 ),
+        '0000' : ( ReadAttributeRequest_0000, 43200 ),
+        '0001' : ( ReadAttributeRequest_0001, 43200 ),
+        '0006' : ( ReadAttributeRequest_0006, 900 ),
+        '0008' : ( ReadAttributeRequest_0008, 900 ),
         '000C' : ( ReadAttributeRequest_000C, 3600 ),
-        '0300' : ( ReadAttributeRequest_0300, 300 ),
-        '0702' : ( ReadAttributeRequest_0702, 300 ),
+        '0300' : ( ReadAttributeRequest_0300, 900 ),
+        '0702' : ( ReadAttributeRequest_0702, 900 ),
         }
 
     now = int(time.time())   # Will be used to trigger ReadAttributes
@@ -128,7 +128,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         return
 
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
-    Domoticz.Log("processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
+    Domoticz.Debug("processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
     Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
 
     if status in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
@@ -164,7 +164,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
                 sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
-                Domoticz.Log("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']))
+                Domoticz.Debug("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']))
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             #IAS Zone
@@ -255,7 +255,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
                     if self.pluginconf.allowForceCreationDomoDevice == 1:
                         Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Error("processNotinDBDevices - ForceCreationDevice enable, we continue")
+                        Domoticz.Log("processNotinDBDevices - ForceCreationDevice enable, we continue")
                     else:
                         IsCreated = True
                         Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
@@ -263,7 +263,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         break
 
         if IsCreated == False:
-            Domoticz.Log("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
+            Domoticz.Debug("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
             CreateDomoDevice(self, Devices, NWKID)
             # Post creation widget
 
@@ -337,9 +337,9 @@ def processListOfDevices( self , Devices ):
                 if not fnd:
                     # Not devices found in Domoticz, so we are safe to remove it from Plugin
                     if self.ListOfDevices[NWKID]['IEEE'] in self.IEEE2NWK:
-                        Domoticz.Log("processListOfDevices - Removing %s / %s from IEEE2NWK." %(self.ListOfDevices[NWKID]['IEEE'], NWKID))
+                        Domoticz.Status("processListOfDevices - Removing %s / %s from IEEE2NWK." %(self.ListOfDevices[NWKID]['IEEE'], NWKID))
                         del self.IEEE2NWK[self.ListOfDevices[NWKID]['IEEE']]
-                    Domoticz.Log("processListOfDevices - Removing the entry %s from ListOfDevice" %(NWKID))
+                    Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" %(NWKID))
                     removeNwkInList( self, NWKID)
 
         elif status != "inDB" and status != "UNKNOW":
