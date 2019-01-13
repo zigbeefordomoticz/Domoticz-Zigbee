@@ -114,6 +114,8 @@ class BasePlugin:
 
         assert sys.version_info >= (3, 4)
 
+        # Create the adminStatusWidget if needed
+        initializeZigateWidgets( self, Devices)
         updateStatusWidget( self, Devices, 'Startup')
 
         Domoticz.Heartbeat( HEARTBEAT )
@@ -177,9 +179,6 @@ class BasePlugin:
 
         # Check update for web GUI
         CheckForUpdate( self )
-
-        # Create the adminStatusWidget if needed
-        initializeZigateWidgets( self, Devices)
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
