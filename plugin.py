@@ -116,6 +116,7 @@ class BasePlugin:
 
         # Create the adminStatusWidget if needed
         initializeZigateWidgets( self, Devices)
+
         updateStatusWidget( self, Devices, 'Startup')
 
         Domoticz.Heartbeat( HEARTBEAT )
