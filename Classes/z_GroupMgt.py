@@ -435,11 +435,14 @@ class GroupsManagement(object):
                                 
         if level:
             sValue = str(int((level*100)/255))
+            # Let's check if this is Shutter or a Color Bulb (as for Color Bulb we need nValue = 1
+            if nValue == 1 and self.Devices[unit].SwitchType == 16 :
+                nValue = 2
         else:
             sValue = "Off"
         Domoticz.Debug("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
-            Domoticz.Log("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
+            Domoticz.Log("UpdateDeviceGroup Values %s:%s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
             self.Devices[unit].Update( nValue, sValue)
 
 
