@@ -50,6 +50,7 @@ import time
 import struct
 import json
 import queue
+import sys
 
 from Modules.z_tools import removeDeviceInList
 from Modules.z_output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice
@@ -109,6 +110,10 @@ class BasePlugin:
     def onStart(self):
         Domoticz.Status("onStart called - Zigate plugin Beta 4.1.x")
         self.busy = True
+        Domoticz.Status("Python Version - %s" %sys.version)
+
+        assert sys.version_info >= (3, 4)
+
         updateStatusWidget( self, Devices, 'Startup')
 
         Domoticz.Heartbeat( HEARTBEAT )
@@ -358,33 +363,33 @@ class BasePlugin:
 
         # Hearbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
-        if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
-            Domoticz.Debug("Ping")
-            now = time.time()
-            if 'Status' in self.Ping:
-                if self.Ping['Status'] == 'Sent':
-                    delta = now - self.Ping['TimeStamps']
-                    Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
-                    if delta > 50:
-                        Domoticz.Log("Ping - no Heartbeat with Zigate")
-                        updateNotificationWidget( self, Devices, 'Ping: Connection with Zigate Lost')
-                        self.connectionState = 0
-                        self.ZigateComm.reConn()
-                    else:
-                        if self.connectionState == 0:
-                            updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-                            self.connectionState = 1
-                else:
-                    if self.connectionState == 0:
-                        updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-                    sendZigateCmd( self, "0014", "" ) # Request status
-                    self.connectionState = 1
-                    self.Ping['Status'] = 'Sent'
-                    self.Ping['TimeStamps'] = now
-            else:
-                sendZigateCmd( self, "0014", "" ) # Request status
-                self.Ping['Status'] = 'Sent'
-                self.Ping['TimeStamps'] = now
+        #if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
+        #    Domoticz.Debug("Ping")
+        #    now = time.time()
+        #    if 'Status' in self.Ping:
+        #        if self.Ping['Status'] == 'Sent':
+        #            delta = now - self.Ping['TimeStamps']
+        #            Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
+        #            if delta > 50:
+        #                Domoticz.Log("Ping - no Heartbeat with Zigate")
+        #                updateNotificationWidget( self, Devices, 'Ping: Connection with Zigate Lost')
+        #                self.connectionState = 0
+        #                self.ZigateComm.reConn()
+        #            else:
+        #                if self.connectionState == 0:
+        #                    updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+        #                    self.connectionState = 1
+        #        else:
+        #            if self.connectionState == 0:
+        #                updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+        #            sendZigateCmd( self, "0014", "" ) # Request status
+        #            self.connectionState = 1
+        #            self.Ping['Status'] = 'Sent'
+        #            self.Ping['TimeStamps'] = now
+        #    else:
+        #        sendZigateCmd( self, "0014", "" ) # Request status
+        #        self.Ping['Status'] = 'Sent'
+        #        self.Ping['TimeStamps'] = now
 
         if busy_:
             updateStatusWidget( self, Devices, 'Busy')
