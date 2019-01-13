@@ -589,7 +589,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                     datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                     datas +=  "%02x" %(attrLen) + attrList
-                    Domoticz.Log("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
+                    Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
                     sendZigateCmd(self, "0120", datas )
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
@@ -722,7 +722,7 @@ def setChannel( self, channel):
     ZigBee supports channels 11-26.
     '''
     mask = maskChannel( channel )
-    Domoticz.Log("setChannel - Channel set to : %08.x " %(mask))
+    Domoticz.Status("setChannel - Channel set to : %08.x " %(mask))
 
     sendZigateCmd(self, "0021", "%08.x" %(mask))
     return
