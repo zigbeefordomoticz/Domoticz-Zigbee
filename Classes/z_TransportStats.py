@@ -23,6 +23,7 @@ class TransportStatistics:
         self._clusterOK = 0
         self._clusterKO = 0
         self._reTx = 0
+        self._MaxLoad = 0
         self._start = int(time())
 
     # Statistics methods 
@@ -76,6 +77,7 @@ class TransportStatistics:
         Domoticz.Status("Statistics on message")
         Domoticz.Status("Sent:")
         Domoticz.Status("   TX commands      : %s" % (self.sent()))
+        Domoticz.Status("   Max Load (Queue) : %s " % (self._MaxLoad))
         Domoticz.Status("   TX failed        : %s (%s" % (self.ackKOReceived(), round((self.ackKOReceived()/self.sent())*10,2)) + '%)')
         Domoticz.Status("   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata()/self.sent())*100,2)) + '%)')

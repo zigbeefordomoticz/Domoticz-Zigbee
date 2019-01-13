@@ -95,14 +95,24 @@ class GroupsManagement(object):
                 else:
                     # Last part, list of IEEE
                     if group_id and group_name and token.strip() != '':
-                        if token.strip() not in self.IEEE2NWK:
-                            Domoticz.Log("Unknown address %s to be imported" %token.strip() )
+                        _ieeetoken = token.strip()
+                        if  len(_ieeetoken.split('/')) == 1 :
+                            _ieee = _ieeetoken
+                            _ieeeEp = None
+                        elif len(_ieeetoken.split('/')) == 2:
+                            _ieee, _ieeeEp = _ieeetoken.split('/')
+                        else:
+                            Domoticz("load_ZigateGroupConfiguration - Error in ZigateGroupConfig: %s" %( _ieeetoken))
                             continue
-                        self.ListOfGroups[group_id]['Imported'].append(token.strip())
+                        if _ieee not in self.IEEE2NWK:
+                            Domoticz.Error("load_ZigateGroupConfiguration - Unknown address %s to be imported" %_ieee )
+                            continue
+                        # Let's check if we don't have the EP included as well
+                        self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
 
                     Domoticz.Debug(" )> Group Imported: %s" %group_name)
             if group_id :
-                Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" 
+                Domoticz.Log("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" 
                     %( group_id, self.ListOfGroups[group_id]['Name'], str(self.ListOfGroups[group_id]['Imported'])))
         myfile.close()
 
@@ -425,11 +435,14 @@ class GroupsManagement(object):
                                 
         if level:
             sValue = str(int((level*100)/255))
+            # Let's check if this is Shutter or a Color Bulb (as for Color Bulb we need nValue = 1
+            if nValue == 1 and self.Devices[unit].SwitchType == 16 :
+                nValue = 2
         else:
             sValue = "Off"
         Domoticz.Debug("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
-            Domoticz.Log("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
+            Domoticz.Log("UpdateDeviceGroup Values %s:%s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
             self.Devices[unit].Update( nValue, sValue)
 
 
@@ -728,11 +741,26 @@ class GroupsManagement(object):
                 Domoticz.Debug(" - %s" %self.ListOfGroups[iterGrp]['Imported'])
 
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
-                    Domoticz.Debug("    - checking device: %s to be removed " %iterDev)
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
-                    if iterIEEE in self.ListOfGroups[iterGrp]['Imported']:
-                        Domoticz.Debug("    - device: %s to be kept " %iterDev)
+
+                    Domoticz.Log("    - checking device: %s / %s to be removed " %(iterDev, iterEp))
+                    Domoticz.Log("    - checking device: %s " %self.ListOfGroups[iterGrp]['Imported'])
+                    Domoticz.Log("    - checking device: IEEE: %s " %iterIEEE)
+
+                    _found = False
+                    for iterTuple in self.ListOfGroups[iterGrp]['Imported']:
+                        if iterIEEE == iterTuple[0]:
+                            if iterTuple[1]: 
+                                if iterEp == iterTuple[1]:
+                                    _found = True
+                                    break
+                            else:
+                                _found = True
+                                break
+
+                    if _found:
                         continue
+
                     removeIEEE = iterIEEE
                     if iterIEEE not in self.IEEE2NWK:
                         Domoticz.Debug("Unknown IEEE to be removed %s" %iterIEEE)
@@ -747,7 +775,7 @@ class GroupsManagement(object):
 
                 Domoticz.Debug("Processing Group: %s - Checking Adding" %iterGrp)
                 # Add group membership
-                for iterIEEE in self.ListOfGroups[iterGrp]['Imported']:
+                for iterIEEE, import_iterEp in self.ListOfGroups[iterGrp]['Imported']:
                     iterDev = self.IEEE2NWK[iterIEEE]
                     Domoticz.Debug("    - checking device: %s to be added " %iterDev)
                     if iterDev in self.ListOfGroups[iterGrp]['Devices']:
@@ -756,7 +784,14 @@ class GroupsManagement(object):
 
                     Domoticz.Debug("       - checking device: %s " %iterDev)
                     if 'Ep' in self.ListOfDevices[iterDev]:
-                        for iterEp in self.ListOfDevices[iterDev]['Ep']:
+                        _listDevEp = []
+                        if import_iterEp:
+                            _listDevEp.append(import_iterEp)
+                        else:
+                            _listDevEp = list(self.ListOfDevices[iterDev]['Ep'])
+                        Domoticz.Log('List of Ep: %s' %_listDevEp)
+
+                        for iterEp in _listDevEp:
                             Domoticz.Debug("       - Check existing Membership %s/%s" %(iterDev,iterEp))
 
                             if 'GroupMgt' in self.ListOfDevices[iterDev]:
@@ -765,6 +800,9 @@ class GroupsManagement(object):
                                         if  self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
                                             Domoticz.Debug("       - %s/%s already in group %s" %(iterDev, iterEp, iterGrp))
                                             continue
+                            if iterEp not in self.ListOfDevices[iterDev]['Ep']:
+                                Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
+                                continue
 
                             if  ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \

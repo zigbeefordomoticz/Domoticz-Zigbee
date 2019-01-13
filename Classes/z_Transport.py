@@ -242,6 +242,8 @@ class ZigateTransport(object):
         timestamp = int(time.time())
         Domoticz.Debug("addCmdToSend: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
         self._normalQueue.append((cmd, data, timestamp, reTransmit))
+        if len(self._normalQueue) > self.statistics._MaxLoad:
+            self.statistics._MaxLoad = len(self._normalQueue)
         #self._printSendQueue()
 
     def addCmdToWait(self, cmd, data, reTransmit=0):

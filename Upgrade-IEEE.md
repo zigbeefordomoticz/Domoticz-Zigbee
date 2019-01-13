@@ -9,7 +9,7 @@ The purpose of this upgrade is to comply with the Domoticz database and to get a
 1. Do a proper backup of domoticz.db and DeviceList.txt , so you are safe to go backward in case of issue
 
 1. Make sure that you are on the latest plugin version
-``` git checkout dev-IEEE ```
+``` git checkout stable ```
 1. Edit the file ```Tools/UprageDB-2-IEEE.py``` in order to reference the right DB and file
    * Update DomoDB parameter => put the Full path to the sqlite domoticz database
    * Update PluginHomeDirectory => put the full path to the plugin ( .../plugin/Domoticz-Zigate/
