@@ -137,7 +137,8 @@ class GroupsManagement(object):
         SEQ=MsgData[2:4]
         PacketType=MsgData[4:8]
 
-        Domoticz.Log("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
+        if Status != '00':
+            Domoticz.Log("statusGroupRequest - Status: %s for Command: %s" %(Status, PacketType))
         return
 
     def addGroupResponse(self, MsgData):
@@ -237,7 +238,7 @@ class GroupsManagement(object):
         MsgGroupCount=MsgData[14:16]
         MsgListOfGroup=MsgData[16:len(MsgData)]
 
-        Domoticz.Log("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Debug("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
@@ -506,7 +507,7 @@ class GroupsManagement(object):
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-            Domoticz.Log("Command: %s" %datas)
+            Domoticz.Debug("Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             return
 
@@ -518,7 +519,7 @@ class GroupsManagement(object):
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-            Domoticz.Log("Command: %s" %datas)
+            Domoticz.Debug("Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             return
 
@@ -532,7 +533,7 @@ class GroupsManagement(object):
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-            Domoticz.Log("Command: %s" %datas)
+            Domoticz.Debug("Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             return
 
@@ -544,7 +545,7 @@ class GroupsManagement(object):
             zigate_cmd = "0081"
             zigate_param = OnOff + value + "0000"
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-            Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+            Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
             self.ZigateComm.sendData( zigate_cmd, datas)
 
             if Hue_List['m'] == 1:
@@ -561,7 +562,7 @@ class GroupsManagement(object):
                 zigate_cmd = "00C0"
                 zigate_param = Hex_Format(4,TempMired) + "0000"
                 datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
             #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
@@ -574,7 +575,7 @@ class GroupsManagement(object):
                 zigate_cmd = "00B7"
                 zigate_param = strxy + "0000"
                 datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
             #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
@@ -597,13 +598,13 @@ class GroupsManagement(object):
                 zigate_cmd = "00B6"
                 zigate_param = Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000"
                 datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
                 zigate_cmd = "0081"
                 zigate_param = OnOff + Hex_Format(2,value) + "0010"
                 datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-                Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+                Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
                 #Update Device

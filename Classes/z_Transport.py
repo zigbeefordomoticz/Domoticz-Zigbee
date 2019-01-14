@@ -80,20 +80,6 @@ class ZigateTransport(object):
         self._wifiPort = None  # wifi port
         self.F_out = F_out  # Function to call to bring the decoded Frame at plugin
 
-        if str(transport) == "USB":
-            self._transp = "USB"
-            self._serialPort = serialPort
-            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                                                   Address=self._serialPort, Baud=115200)
-        elif str(transport) == "Wifi":
-            self._transp = "Wifi"
-            self._wifiAddress = wifiAddress
-            self._wifiPort = wifiPort
-            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
-            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
-                                                   Address=self._wifiAddress, Port=self._wifiPort)
-
         self._normalQueue = []  # list of normal priority commands
         self._waitForStatus = []  # list of command sent and waiting for status 0x8000
         self._waitForData = []  # list of command sent for which status received and waiting for data
@@ -104,6 +90,21 @@ class ZigateTransport(object):
         self.zmode = pluginconf.zmode
         self.sendDelay = pluginconf.sendDelay
         self.zTimeOut = pluginconf.zTimeOut
+
+        if str(transport) == "USB":
+            self._transp = "USB"
+            self._serialPort = serialPort
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                                                   Address=self._serialPort, Baud=115200)
+            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+        elif str(transport) == "Wifi":
+            self._transp = "Wifi"
+            self._wifiAddress = wifiAddress
+            self._wifiPort = wifiPort
+            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None",
+                                                   Address=self._wifiAddress, Port=self._wifiPort)
+            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._wifiAddress, self._wifiPort ))
+
 
     # Transport / Opening / Closing Communication
     def openConn(self):
