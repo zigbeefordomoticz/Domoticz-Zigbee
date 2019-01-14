@@ -548,7 +548,7 @@ def processConfigureReporting( self, NWKID=None ):
                         self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != {}:
-                     if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (3600)):  # Do only every hour
+                     if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
                          continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
