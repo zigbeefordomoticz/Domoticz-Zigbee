@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 14 January 2019 - Version 4.0.7
+- [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
+
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random
 

@@ -90,8 +90,8 @@ class ZigateTransport(object):
             self._transp = "Wifi"
             self._wifiAddress = wifiAddress
             self._wifiPort = wifiPort
-            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
-            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
+            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._wifiAddress, self._wifiPort ))
+            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None",
                                                    Address=self._wifiAddress, Port=self._wifiPort)
 
         self._normalQueue = []  # list of normal priority commands
@@ -117,7 +117,7 @@ class ZigateTransport(object):
         if self._connection.Connected() :
             return
         else:
-            Domoticz.Debug("Transport.reConn: %s" %self._connection)
+            Domoticz.Log("Lost connection, reConn Transport.reConn: %s" %self._connection)
             self.openConn()
 
     # Transport Sending Data
