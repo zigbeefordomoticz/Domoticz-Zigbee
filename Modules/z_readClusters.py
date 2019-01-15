@@ -597,6 +597,17 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sHumid2 = retreive4Tag( "6529", MsgClusterData )
         sPress = retreive8Tag( "662b", MsgClusterData )
 
+        sOnOff2 = retreive4Tag( "6420", MsgClusterData )    # OnOff for Aqara Bulb
+        stag9 = retreive4Tag( "6520", MsgClusterData )      # Dim level for Aqara Bulb
+        stag10 = retreive4Tag( "6621", MsgClusterData )
+
+        if sOnOff2 != '':
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag9: %s" %(MsgSrcAddr, stag9))
+        if stag9 != '':
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag9: %s" %(MsgSrcAddr, stag9))
+        if stag10 != '':
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
             ValueBattery=round(int(BatteryLvl,16)/10/3.3)
