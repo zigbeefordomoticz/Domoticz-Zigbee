@@ -78,6 +78,7 @@ def createStatusWidget( self, Devices ):
     for x in Devices:
         if Devices[x].DeviceID == deviceid_status_widget:
             unit = x
+            Domoticz.Log("createStatusWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
             break
     if unit != 0:
         return
@@ -106,6 +107,7 @@ def createNotificationWidget( self, Devices ):
     for x in Devices:
         if Devices[x].DeviceID == deviceid_txt_widget:
             unit = x
+            Domoticz.Log("createNotificationWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
             break
     if unit != 0:
         return

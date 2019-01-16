@@ -114,10 +114,6 @@ class BasePlugin:
 
         assert sys.version_info >= (3, 4)
 
-        # Create the adminStatusWidget if needed
-        initializeZigateWidgets( self, Devices)
-
-        updateStatusWidget( self, Devices, 'Startup')
 
         Domoticz.Heartbeat( HEARTBEAT )
 
@@ -149,6 +145,10 @@ class BasePlugin:
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
+
+        # Create the adminStatusWidget if needed
+        initializeZigateWidgets( self, Devices)
+        updateStatusWidget( self, Devices, 'Startup')
         
         self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
         Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
