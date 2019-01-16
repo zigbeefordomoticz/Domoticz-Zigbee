@@ -467,8 +467,8 @@ def processConfigureReporting( self, NWKID=None ):
         # Temperature
         '0402': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Pression Atmo
-        '0403': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
-                                 '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
+        '0403': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
+                                 '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
@@ -552,16 +552,19 @@ def processConfigureReporting( self, NWKID=None ):
                          continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
-                    bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     if cluster not in ATTRIBUTESbyCLUSTERS:
                         continue
                     if 'Attributes' not in ATTRIBUTESbyCLUSTERS[cluster]:
                         continue
 
+                    Domoticz.Log('Processing configureReporting for %s cluuster: %s' %(key,cluster))
+
                     if self.busy or len(self.ZigateComm._normalQueue) > 2:
                         Domoticz.Log("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round
+
+                    bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
@@ -608,9 +611,22 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
             return
 
-    Domoticz.Debug("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
-    datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
-    sendZigateCmd(self, "0030", datas )
+    # let's check if we alreardy bind .
+    nwkid = self.IEEE2NWK[ieee]
+    if 'Bind' not in self.ListOfDevices[nwkid]:
+        self.ListOfDevices[nwkid]['Bind'] = {}
+
+    if cluster not in self.ListOfDevices[nwkid]['Bind']:
+        self.ListOfDevices[nwkid]['Bind'][cluster] = {}
+        self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
+        self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'requested'
+        self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = ''
+
+        Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+        datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
+        sendZigateCmd(self, "0030", datas )
+    else:
+        Domoticz.Log("bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']))
 
     return
 
