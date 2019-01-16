@@ -552,11 +552,6 @@ def processConfigureReporting( self, NWKID=None ):
                          continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
-                    if cluster not in ATTRIBUTESbyCLUSTERS:
-                        continue
-                    if 'Attributes' not in ATTRIBUTESbyCLUSTERS[cluster]:
-                        continue
-
                     Domoticz.Log('Processing configureReporting for %s cluuster: %s' %(key,cluster))
 
                     if self.busy or len(self.ZigateComm._normalQueue) > 2:
