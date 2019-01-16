@@ -657,6 +657,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
     self.Ping['TimeStamp'] = time.time()
     self.Ping['Status'] = 'Receive'
+    Domoticz.Log("Ping - received")
 
     return
 
