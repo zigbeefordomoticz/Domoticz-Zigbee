@@ -178,7 +178,7 @@ def updateNotificationWidget( self, Devices, notification ):
             unit = x
             break
     if unit == 0:
-        Domoticz.Log("updateNotificationWidget - didn't find the Widget: %s" %deviceid_status_widget)
+        Domoticz.Log("updateNotificationWidget - didn't find the Widget: %s" %deviceid_txt_widget)
         return
 
     nValue = 0
