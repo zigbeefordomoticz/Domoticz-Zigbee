@@ -138,9 +138,12 @@ class BasePlugin:
         major, minor = Parameters["DomoticzVersion"].split('.')
         major = int(major)
         minor = int(minor)
-        if major > 4 or ( major == 4 and minor >= 10267):
+        if major > 4 or ( major == 4 and minor >= 10355):
             Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
+            Domoticz.Status("User Data Folder: %s" %Parameters["UserDataFolder"])
+            Domoticz.Status("Web Root Folder: %s" %Parameters["WebRoot"])
+            Domoticz.Status("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
 
 

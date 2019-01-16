@@ -100,8 +100,12 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 if existingNWKkey == newNWKID :        #Check that I'm not myself
                     continue
 
-                Domoticz.Debug("DeviceExist - given NWKID/IEEE = " + newNWKID + "/" + IEEE + \
-                        " found as " +str(existingNWKkey) + " status " + str(self.ListOfDevices[existingNWKkey]['Status']) )
+                if 'Status' in self.ListOfDevices[existingNWKkey]:
+                    Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: %s"
+                        %( newNWKID, IEEE, existingNWKkey, self.ListOfDevices[existingNWKkey]['Status']))
+                else:
+                    Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: unknown"
+                        %( newNWKID, IEEE, existingNWKkey))
 
                 # Make sure this device is valid 
                 if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):

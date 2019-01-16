@@ -10,16 +10,6 @@
 
 """
 
-ZLL_DEVICES = ( 0x0000, 0x0010, 0x0100, 0x0110, 0x0200, 0x0220, 0x0210 )
-
-ZHA_DEVICES = ( 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006,
-                0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x000C, 0x000D,
-                0x0050, 0x0051, 0x0052, 0x0053, 0x0100, 0x0101, 0x0102,
-                0x0103, 0x0104, 0x0105, 0x0106, 0x0107, 0x010a, 0x0200,
-                0x0201, 0x0202, 0x0203, 0x0300, 0x0301, 0x0302, 0x0303,
-                0x0304, 0x0305, 0x0306, 0x0307, 0x0400, 0x0401, 0x0402,
-                0x0403 )
-
 HEARTBEAT = 5
 
 # SQN 1st UINT8 except for 0x8000 where it is the 2nd Uint8
@@ -34,3 +24,56 @@ ADDRESS_MODE = { 'bound':0x00,
         'short':0x02, # Short address
         'ieee':0x03 # IEEE
         }
+
+
+ZLL_DEVICES = {
+        # https://www.nxp.com/docs/en/user-guide/JN-UG-3091.pdf
+        0x0000: 'On/Off Light', 
+        0x0010: 'On/Off Plug',
+        0x0100: 'Dimmable Light',
+        0x0110: 'Dimmabe Plug',
+        0x0200: 'Colour Light',
+        0x0210: 'Extended Colour Light',
+        0x0220: 'Colour Temperature Light',
+        0x0800: 'Colour Controller',
+        0x0810: 'Colour Scene Controller',
+        0x0820: 'Non-Colour Controller',
+        0x0830: 'Non-Colour Scene Controller',
+        0x0840: 'Control Bridge',
+        0x0850: 'On/Off sensor'}
+
+
+
+# https://www.nxp.com/docs/en/user-guide/JN-UG-3076.pdf
+PROFILE_ID = 0x0104
+ZHA_DEVICES = {
+        # Generic Devices
+        0x0000: 'On/Off Switch',
+        0x0002: 'On/Off Output',
+        0x0006: 'Remote Control',
+        0x000A: 'Door Lock',
+        0x000B: 'Door Lock Controller',
+        0x000C: 'Smart Plug',
+
+        # Lighting Devices
+        0x0100: 'On/Off Light',
+        0x0101: 'Dimmable Light',
+        0x0102: 'Colour Dimable Light',
+        0x0103: 'On/Off Light Switch',
+        0x0104: 'Dimmer Switch',
+        0x0105: 'Colour Dimmer Switch',
+        0x0106: 'Light Sensor',
+        0x0107: 'Occupancy Sensor',
+
+        # HVAC Devices
+        0x0301: 'Thermostat',
+
+        # Intruder Alam System (IAS) Devices
+        0x0400: 'IAS Control and Indicating Equipment',
+        0x0401: 'IAS Ancillary Control Equipment',
+        0x0402: 'IAS Zone',
+        0x0403: 'IAS Warning Device'
+        }
+
+
+
