@@ -65,11 +65,7 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
     elif int(AttType,16) == 0x21:   # 16BitUint
         return str(struct.unpack('H',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x22:   # ZigBee_24BitUint
-            Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
-                                    str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])))
             return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
-            #return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])   # Zigate retourne un Uint32
-
     elif int(AttType,16) == 0x23:   # 32BitUint
             Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
