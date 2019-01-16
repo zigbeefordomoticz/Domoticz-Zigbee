@@ -32,9 +32,14 @@ def ZigateConf_light(self, discover ):
     Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
     sendZigateCmd(self, "0015", "")
 
-    utctime = int(datetime.now().timestamp())
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( utctime) )
-    sendZigateCmd(self, "0016", str(utctime) )
+    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
+    # Page 263
+    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+
+    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+    sendZigateCmd(self, "0016", str(UTCTime) )
 
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
