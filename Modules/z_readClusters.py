@@ -77,7 +77,7 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
     elif int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
         return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x2a:   # ZigBee_24BitInt
-        Domoticz.Log("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+        Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                 str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])))
         return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
         #return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])   # Zigate retourne un Uint32
@@ -104,10 +104,10 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
                 decode = ''
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
-                Domoticz.Log("decodeAttribute - seems errors, returning with errors ignore")
+                Domoticz.Debug("decodeAttribute - seems errors, returning with errors ignore")
         return decode
     else:
-        Domoticz.Log("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+        Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
         return Attribute
 
 def ReadCluster(self, Devices, MsgData):
@@ -229,7 +229,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-    Domoticz.Log("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
+    Domoticz.Debug("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
 
     if MsgAttrID == "0000": 
         Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value))
@@ -248,7 +248,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 
     elif MsgAttrID == "0400": 
-        Domoticz.Log("Cluster0702 - 0x0400 Instant demand %s" %(value))
+        Domoticz.Debug("Cluster0702 - 0x0400 Instant demand %s" %(value))
         value = round(value/10, 3)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
@@ -303,6 +303,14 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("ReadCluster0300 - Color Mode: %s" %value)
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "f000":
+        # 070000df
+        # 00800900
+        #self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = value
+        Domoticz.Log("ReadCluster0300 - Color Mode: %s" %value)
+        #if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
+        #    self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     else:
         Domoticz.Log("ReadCluster - ClusterID=0300 - NOT IMPLEMENTED YET - MsgAttrID = " +\
@@ -593,15 +601,19 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sHumid2 = retreive4Tag( "6529", MsgClusterData )
         sPress = retreive8Tag( "662b", MsgClusterData )
 
-        sOnOff2 = retreive4Tag( "6420", MsgClusterData )    # OnOff for Aqara Bulb
-        stag9 = retreive4Tag( "6520", MsgClusterData )      # Dim level for Aqara Bulb
+        sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb
+        sLevel = retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
         stag10 = retreive4Tag( "6621", MsgClusterData )
 
         if sOnOff2 != '':
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag9: %s" %(MsgSrcAddr, stag9))
-        if stag9 != '':
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag9: %s" %(MsgSrcAddr, stag9))
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
+        if sLevel != '':
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
         if stag10 != '':
+            # f400 --
+            # 4602 --
             Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
