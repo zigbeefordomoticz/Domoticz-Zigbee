@@ -592,17 +592,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
             # if ( DeviceType=="Power" or DeviceType=="PowerMeter") and clusterID == "000c":
             if ('Power' in ClusterType and DeviceType == "Power") or \
                     (clusterID == "000c" and DeviceType == "Power"):  # kWh
-                nValue = float(value)
+                nValue = round(float(value),2)
                 sValue = value
-                Domoticz.Debug("MajDomoDevice Power : " + sValue)
+                Domoticz.Log("MajDomoDevice Power : " + sValue)
                 UpdateDevice_v2(Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel)
 
                 # if DeviceType=="Meter" and clusterID == "000c": # kWh
             if ('Meter' in ClusterType and DeviceType == "Meter") or \
                     (clusterID == "000c" and DeviceType == "Power"):  # kWh
-                nValue = float(value)
+                nValue = round(float(value),2)
                 sValue = "%s;%s" % (nValue, nValue)
-                Domoticz.Debug("MajDomoDevice Meter : " + sValue)
+                Domoticz.Log("MajDomoDevice Meter : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Voltage":  # Volts
