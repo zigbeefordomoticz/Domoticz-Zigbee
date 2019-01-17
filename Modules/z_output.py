@@ -827,8 +827,8 @@ def leaveMgtReJoin( self, saddr, ieee):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
     if self.permitTojoin != 0xff:
-        Domoticz.Log("Switch to Permit to Join for 10s")
-        discover = "%02.X" %int(10)
+        Domoticz.Log("Switch to Permit to Join for 30s")
+        discover = "%02.X" %int(30)
         sendZigateCmd(self, "0049","FFFC" + discover + "00")
 
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
