@@ -37,8 +37,6 @@
 'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':''},
 'ZHA-CSW':{'Ep':{'01':{'0000':'','0003':'','0500':'','ffff':'','0001':'','Type':'Smoke'}},'Type':'' },
 'SmokeSensor-N':{'Ep':{'01':{'0000':'','0003':'','0500':'','ffff':'','0001':'','Type':'Smoke'}},'Type':'' },
-'plug.Celiane.Legrand':{'Ep':{'01':{'0004','0006','0005','fc01'}},'Type':'Switch','ProfileID':'0104','ZDeviceID':'010a'}
+'plug.Celiane.Legrand':{'Ep':{'01':{'0004','0006','0005','fc01'}},'Type':'Switch','ProfileID':'0104','ZDeviceID':'010a'},
+'SPZB0001':{'Ep':{'01':{'0000':'','0001':'','0003':'','0201':'','0019':'','000a':'','0004':'','Type':'Thermostat'}},'Type':''}
 }
-
-
-
