@@ -416,25 +416,6 @@ def processConfigureReporting( self, NWKID=None ):
     - for each Device
         if they support Cluster we want to configure Reporting and if they have Manufacturer Id then configureReporting
 
-    Format configure Reporting Zigate command
-
-        Address Mode  : u8
-        Network Address: u16
-        Source EP     : u8
-        Dest   EP     : u8
-        ClusterId     : u16
-        Direction     : u8
-        Manufacturer spe: u8
-        Manufacturer Id: u16
-        Nb attributes : u8
-        Attribute list: 72 each
-            Attribute direc: u8
-            Attribute Type: u8
-            Min Interval  : u16
-            Max Interval  : u16
-            TimeOut       : u16
-            Change        : u8
-
     '''
 
     ATTRIBUTESbyCLUSTERS = {
@@ -453,6 +434,10 @@ def processConfigureReporting( self, NWKID=None ):
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
         # Binary Input 
         '000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+            # Thermostat
+        '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0011': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0012': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
         '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
