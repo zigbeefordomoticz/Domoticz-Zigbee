@@ -169,7 +169,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if lenAttr == 0:
             return
 
-    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
+    Domoticz.Log("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -233,23 +233,16 @@ def ReadAttributeRequest_0001(self, key):
     # Power Config
     EPin = "01"
     EPout= "01"
-    listAttributes = []
-    listAttributes.append(0x0000)        # Mains information
-    listAttributes.append(0x0001)        # Mains Settings
-    listAttributes.append(0x0002)        # Battery Information
-    listAttributes.append(0x0003)        # Battery Settings
-    listAttributes.append(0x0004)        # Battery Source 2 Information
-    listAttributes.append(0x0005)        # Battery Source 2 Settings
-    listAttributes.append(0x0006)        # Battery Source 3 Information
-    listAttributes.append(0x0007)        # Battery Source 3 Settings
-    listAttributes.append(0x0020)        # Battery Voltage
-    listAttributes.append(0x0021)        # Battery BatteryPercentageRemaining
-
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0001" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    listAttributes.append(0x0000)        # Mains information
+    listAttributes.append(0x0010)        # Battery Voltage
+    listAttributes.append(0x0020)        # Battery Voltage
+    listAttributes.append(0x0021)        # Battery BatteryPercentageRemaining
 
-    Domoticz.Debug("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Log("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0300(self, key):
@@ -836,3 +829,86 @@ def leaveMgtReJoin( self, saddr, ieee):
     datas = saddr + ieee + '01' + '00'
     sendZigateCmd(self, "0047", datas )
 
+def thermostat_Setpoint( self, key, setpoint):
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    Hattribute = "%04x" %0x0012
+    data_type = "29" # Int16
+    Hdata = "%04x" %setpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    Domoticz.Log("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type))
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+def thermostat_Calibration( self, key, calibration):
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    attribute = "%04x" %0x0010
+    data_type = "20" # Int8
+    data = "%02x" %calibration
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    Domoticz.Log("thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,attribute,data_type))
+
+def thermostat_Mode( self, key, mode ):
+
+    SYSTEM_MODE = { 'Off' : 0x00 ,
+            'Auto' : 0x01 ,
+            'Reserved' : 0x02,
+            'Cool' : 0x03,
+            'Heat' :  0x04,
+            'Emergency Heating' : 0x05,
+            'Pre-cooling' : 0x06,
+            'Fan only' : 0x07 }
+
+
+    if mode not in SYSTEM_MODE:
+        Domoticz.Log("thermostat_Mode - unknown system mode: %s" %mode)
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    attribute = "%04x" %0x001F
+    data_type = "30" # Enum8
+    data = "%02x" %SYSTEM_MODE[mode]
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    Domoticz.Log("thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,attribute,data_type))
+
+def ReadAttributeRequest_0201(self, key):
+
+    Domoticz.Log("ReadAttributeRequest_0201 - Key: %s " %key)
+    # Power Config
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    # Thermostat Information
+    listAttributes = []
+    listAttributes.append(0x0000)        # Local Temp / 0x29
+    listAttributes.append(0x0010)        # Calibration / 0x28
+    listAttributes.append(0x0011)        # COOLING_SETPOINT / 0x29
+    listAttributes.append(0x0012)        # HEATING_SETPOINT / 0x29
+    listAttributes.append(0x0015)        # MIN HEATING / 0x29
+    listAttributes.append(0x0016)        # MAX HEATING / 0x29
+    Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+    ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )

@@ -211,15 +211,18 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     value = decodeAttribute( MsgAttType, MsgClusterData)
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
-        Domoticz.Debug("readCluster 0001 - Voltage: %s V " %(value) )
+        Domoticz.Log("readCluster 0001 - Voltage: %s V " %(value) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0010": # Voltage
-        Domoticz.Debug("readCluster 0001 - Battery Voltage: %s " %(value) )
+        Domoticz.Log("readCluster 0001 - Battery Voltage: %s " %(value) )
 
-    elif MsgAttrID == "0020": # Battery %
-        Domoticz.Debug("readCluster 0001 - Battery: %s " %(value) )
+    elif MsgAttrID == "0020": # Battery Voltage
+        Domoticz.Log("readCluster 0001 - Battery: %s V" %(value) )
+
+    elif MsgAttrID == "0021": # Battery %
+        Domoticz.Log("readCluster 0001 - Battery: %s " %(value) )
 
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -786,3 +789,70 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         Domoticz.Log("Cluster0012 - unknown Model: %s for this Attribute: %s value: %s " %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgAttrID, MsgClusterData))
 
+
+
+def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    # Thermostat cluster
+
+    Domoticz.Log("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+            %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+
+    value = decodeAttribute( MsgAttType, MsgClusterData)
+
+    if MsgAttrID =='0000':  # Local Temperature (Zint16)
+        ValueTemp=round(int(value)/100,1)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = str(ValueTemp)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Local Temp: %s" %ValueTemp)
+
+    elif MsgAttrID == '0010':   # Calibration / Adjustement
+        value = int(value,16) / 10
+        Domoticz.Log("ReadCluster 0201 - Calibration: %s" %value)
+
+    elif MsgAttrID == '0011':   # Cooling Setpoint (Zinte16)
+        ValueTemp=round(int(value)/100,1)
+        Domoticz.Log("ReadCluster 0201 - Cooling Setpoint: %s" %ValueTemp)
+
+    elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
+        ValueTemp=round(int(value)/100,1)
+        #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Heating Setpoint: %s" %ValueTemp)
+
+    elif MsgAttrID == '0015':   # MIN_HEAT_SETPOINT_LIMIT
+        ValueTemp=round(int(value)/100,1)
+        Domoticz.Log("ReadCluster 0201 - Min SetPoint: %s" %ValueTemp)
+
+    elif MsgAttrID == '0016':   # MAX_HEAT_SETPOINT_LIMIT
+        ValueTemp=round(int(value)/100,1)
+        Domoticz.Log("ReadCluster 0201 - Max SetPoint: %s" %ValueTemp)
+
+    elif MsgAttrID == '001f' or MsgAttrID == '001e':   #
+
+        SYSTEM_MODE = { 'Off' : 0x00 ,
+            'Auto' : 0x01 ,
+            'Reserved' : 0x02,
+            'Cool' : 0x03,
+            'Heat' :  0x04,
+            'Emergency Heating' : 0x05,
+            'Pre-cooling' : 0x06,
+            'Fan only' : 0x07 }
+
+        for iterMode in SYSTEM_MODE:
+            if iterMode[1] == value:
+                Domoticz.Log("ReadCluster 0201 - System Mode is : %s" %iterMode[0])
+                break
+        else:
+            Domoticz.Log("ReadCluster 0201 - Unknown System Mode: %s" %value)
+
+    elif  MsgAttrID == '0020': # Alarm
+        Domoticz.Log("ReadCluster 0201 - Alarm: {:b}".format(int(value,16)))
+
+    elif MsgAttrID == '0025': # Scheduler On/Off
+        Domoticz.Log("ReadCluster 0201 - Scheduler On/off: %s " %(value))
+
+    elif MsgAttrID == '0029': # State ?
+        Domoticz.Log("ReadCluster 0201 - State: %s " %(value))
+
+    else:
+        Domoticz.Log("ReadCluster 0201 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))

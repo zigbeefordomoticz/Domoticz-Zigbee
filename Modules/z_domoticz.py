@@ -124,9 +124,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Type = ['LvlControl']
 
         for t in Type:
-            Domoticz.Debug(
-                "CreateDomoDevice - Device ID : " + str(DeviceID_IEEE) + " Device EP : " + str(Ep) + " Type : " + str(
-                    t))
+            Domoticz.Log("CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t))
+            if t == "ThermoSetpoint":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=242, Subtype=1)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "Temp":  # Detecteur temp
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -611,6 +622,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 Domoticz.Debug("MajDomoDevice Voltage : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
+            if 'ThermoSetpoint' in ClusterType:
+                nValue = float(value)
+                sValue = "%s;%s" % (nValue, nValue)
+                Domoticz.Debug("MajDomoDevice Setpoint : " + sValue)
+                UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+
             if ClusterType == "Temp":  # temperature
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
@@ -1090,34 +1107,21 @@ def GetType(self, Addr, Ep):
 
 
 def TypeFromCluster(cluster, create_=False):
-    if cluster == "0006":
-        TypeFromCluster = "Switch"
-    elif cluster == "0008":
-        TypeFromCluster = "LvlControl"
-    elif cluster == "000c" and not create_:
-        TypeFromCluster = "XCube"
-    elif cluster == "0012" and not create_:
-        TypeFromCluster = "XCube"
-    elif cluster == "0101":
-        TypeFromCluster = "Vibration"
-    elif cluster == "0300":
-        TypeFromCluster = "ColorControl"
-    elif cluster == "0400":
-        TypeFromCluster = "Lux"
-    elif cluster == "0402":
-        TypeFromCluster = "Temp"
-    elif cluster == "0403":
-        TypeFromCluster = "Baro"
-    elif cluster == "0405":
-        TypeFromCluster = "Humi"
-    elif cluster == "0406":
-        TypeFromCluster = "Motion"
-    elif cluster == "0702":
-        TypeFromCluster = "Power/Meter"
-    elif cluster == "0500":
-        TypeFromCluster = "Door"
-    elif cluster == "0001":
-        TypeFromCluster = "Voltage"
+    if cluster == "0006": TypeFromCluster = "Switch"
+    elif cluster == "0008": TypeFromCluster = "LvlControl"
+    elif cluster == "000c" and not create_: TypeFromCluster = "XCube"
+    elif cluster == "0012" and not create_: TypeFromCluster = "XCube"
+    elif cluster == "0101": TypeFromCluster = "Vibration"
+    elif cluster == "0201": TypeFromCluster = "Temp/ThermSetPoint"
+    elif cluster == "0300": TypeFromCluster = "ColorControl"
+    elif cluster == "0400": TypeFromCluster = "Lux"
+    elif cluster == "0402": TypeFromCluster = "Temp"
+    elif cluster == "0403": TypeFromCluster = "Baro"
+    elif cluster == "0405": TypeFromCluster = "Humi"
+    elif cluster == "0406": TypeFromCluster = "Motion"
+    elif cluster == "0702": TypeFromCluster = "Power/Meter"
+    elif cluster == "0500": TypeFromCluster = "Door"
+    elif cluster == "0001": TypeFromCluster = "Voltage"
     else:
         TypeFromCluster = ""
     return TypeFromCluster
