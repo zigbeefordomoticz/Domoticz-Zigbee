@@ -70,11 +70,11 @@ def processKnownDevices( self, Devices, NWKID ):
     READ_ATTRIBUTES_REQUEST = {  
         # Cluster : ( ReadAttribute function, Frequency )
         '0000' : ( ReadAttributeRequest_0000, 43200 ),
-        '0001' : ( ReadAttributeRequest_0001, 60 ),
+        '0001' : ( ReadAttributeRequest_0001, 300 ),
         '0006' : ( ReadAttributeRequest_0006, 900 ),
         '0008' : ( ReadAttributeRequest_0008, 900 ),
         '000C' : ( ReadAttributeRequest_000C, 3600 ),
-        '0201' : ( ReadAttributeRequest_0201, 60 ),
+        '0201' : ( ReadAttributeRequest_0201, 300 ),
         '0300' : ( ReadAttributeRequest_0300, 900 ),
         '0702' : ( ReadAttributeRequest_0702, 900 ),
         }
