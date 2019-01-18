@@ -596,7 +596,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
         sTemp2 = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
         sTemp = retreive4Tag( "6429", MsgClusterData )
-        sOnOff = retreive4Tag( "6410", MsgClusterData )
+        sOnOff = retreive4Tag( "6410", MsgClusterData )[0:2]
         sHumid = retreive4Tag( "6521", MsgClusterData )
         sHumid2 = retreive4Tag( "6529", MsgClusterData )
         sPress = retreive8Tag( "662b", MsgClusterData )
@@ -605,16 +605,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sLevel = retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
         stag10 = retreive4Tag( "6621", MsgClusterData )
 
-        if sOnOff2 != '':
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2))
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
-        if sLevel != '':
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel))
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
-        if stag10 != '':
-            # f400 --
-            # 4602 --
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
@@ -649,10 +639,24 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
 
         if sOnOff != '':
-            sOnOff = sOnOff[0:2]  
-            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " On/Off : " + str(sOnOff) )
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff))
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff
+
+        if sOnOff2 != '':
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']=sOnOff2
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
+
+        if sLevel != '':
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel))
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']=sLevel
+
+        if stag10 != '':
+            # f400 --
+            # 4602 --
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
     elif MsgAttrID == "0000": # ZCL Version
         Domoticz.Debug("ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
