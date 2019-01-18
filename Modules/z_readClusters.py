@@ -183,6 +183,8 @@ def ReadCluster(self, Devices, MsgData):
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0101": Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
+    elif MsgClusterId=="0201": Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
+            MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0300": Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0400": Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
