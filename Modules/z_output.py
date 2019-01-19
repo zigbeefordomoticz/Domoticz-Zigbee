@@ -148,6 +148,8 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
             if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
                     self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {} :
+                Domoticz.Log("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                         %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                 return
             # Attributes was either '00' or {}
             Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
@@ -169,7 +171,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if lenAttr == 0:
             return
 
-    Domoticz.Log("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
+    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -414,7 +416,7 @@ def processConfigureReporting( self, NWKID=None ):
 
     Synopsis:
     - for each Device
-        if they support Cluster we want to configure Reporting and if they have Manufacturer Id then configureReporting
+        if they support Cluster we want to configure Reporting 
 
     '''
 
@@ -435,9 +437,9 @@ def processConfigureReporting( self, NWKID=None ):
         # Binary Input 
         '000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
             # Thermostat
-        '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
-                                 '0011': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0012': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
         '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
