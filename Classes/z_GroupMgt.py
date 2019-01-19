@@ -432,6 +432,7 @@ class GroupsManagement(object):
                                     level = ( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) // 2
                                 Domoticz.Debug("updateDomoGroupDevice - Device: %s level: %s" \
                                         %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])))
+
             Domoticz.Debug("updateDomoGroupDevice - OnOff: %s, Level: %s" %( nValue, level))
                                 
         if level:
@@ -497,6 +498,11 @@ class GroupsManagement(object):
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
 
         Domoticz.Log("processCommand - unit: %s, nwkid: %s, cmd: %s, level: %s, color: %s" %(unit, nwkid, Command, Level, Color_))
+
+        for iterDev, iterEp in self.ListOfGroups[nwkid]['Devices']:
+            Domoticz.Log('processCommand - reset heartbeat for device : %s' %iterDev)
+            self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+
         EPin = EPout = '01'
 
         if Command == 'Off' :
