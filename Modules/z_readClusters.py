@@ -210,22 +210,43 @@ def ReadCluster(self, Devices, MsgData):
 
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
+    if len(oldValue) != 4:
+        Domoticz.Log('ReadCluster 0001 - reinit data struct')
+        oldValue = '0;0;0;0'.split(';')
+
+    Domoticz.Log('%s' %oldValue)
+    Domoticz.Log('%s %s %s %s' %(oldValue[0], oldValue[1], oldValue[2], oldValue[3]))
+
     value = decodeAttribute( MsgAttType, MsgClusterData)
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
-        Domoticz.Log("readCluster 0001 - Voltage: %s V " %(value) )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
+        Domoticz.Log("readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) )
+        mainVolt = value
+        newValue = '%s;%s;%s;%s' %(mainVolt, oldValue[1], oldValue[2], oldValue[3])
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0010": # Voltage
-        Domoticz.Log("readCluster 0001 - Battery Voltage: %s " %(value) )
+        battVolt = value
+        newValue = '%s;%s;%s;%s' %(oldValue[0], battVolt, oldValue[2], oldValue[3])
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
+        Domoticz.Log("readCluster 0001 - %s Battery Voltage: %s " %(MsgSrcAddr, value) )
 
     elif MsgAttrID == "0020": # Battery Voltage
-        Domoticz.Log("readCluster 0001 - Battery: %s V" %(value) )
+        battRemainVolt = value
+        newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], battRemainVolt, oldValue[3])
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
+        Domoticz.Log("readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) )
 
     elif MsgAttrID == "0021": # Battery %
-        Domoticz.Log("readCluster 0001 - Battery: %s " %(value) )
+        battRemainPer = value
+        newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], battRemainPer)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
+        Domoticz.Log("readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) )
 
+    else:
+        Domoticz.Log("readCluster 0001 - unexepected Attribute: %s %s %s %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Smart Energy Metering
@@ -809,7 +830,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0201 - Local Temp: %s" %ValueTemp)
 
     elif MsgAttrID == '0010':   # Calibration / Adjustement
-        value = int(value,16) / 10
+        value = value / 10 
         Domoticz.Log("ReadCluster 0201 - Calibration: %s" %value)
 
     elif MsgAttrID == '0011':   # Cooling Setpoint (Zinte16)
