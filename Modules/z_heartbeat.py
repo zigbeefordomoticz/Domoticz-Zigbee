@@ -70,7 +70,7 @@ def processKnownDevices( self, Devices, NWKID ):
     READ_ATTRIBUTES_REQUEST = {  
         # Cluster : ( ReadAttribute function, Frequency )
         '0000' : ( ReadAttributeRequest_0000, 43200 ),
-        '0001' : ( ReadAttributeRequest_0001, 900 ),
+        '0001' : ( ReadAttributeRequest_0001, 43200 ),
         '0006' : ( ReadAttributeRequest_0006, 900 ),
         '0008' : ( ReadAttributeRequest_0008, 900 ),
         '000C' : ( ReadAttributeRequest_000C, 3600 ),
@@ -94,7 +94,7 @@ def processKnownDevices( self, Devices, NWKID ):
                         continue
 
                 if self.busy  or len(self.ZigateComm._normalQueue) > 2:
-                    Domoticz.Log('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                    Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                             %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
                     break # Will do at the next round
 
@@ -106,7 +106,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes'] :
                     _idx = tmpEp + '-' + str(Cluster)
                     if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                        Domoticz.Log("processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                        Domoticz.Debug("processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
                                 %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now > ( self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing): 
