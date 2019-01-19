@@ -80,7 +80,7 @@ def processKnownDevices( self, Devices, NWKID ):
         }
 
     now = int(time.time())   # Will be used to trigger ReadAttributes
-    if  (intHB == ( 120 // HEARTBEAT ) or ( ( intHB % (30 // HEARTBEAT)) == 0 )):
+    if ( intHB % (30 // HEARTBEAT)) == 0 :
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
             if tmpEp == 'ClusterType': continue
             for Cluster in READ_ATTRIBUTES_REQUEST:
@@ -109,17 +109,17 @@ def processKnownDevices( self, Devices, NWKID ):
                         Domoticz.Debug("processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
                                 %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
-                            if now > ( self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing): 
-                                Domoticz.Log("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                            if now > (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
+                                Domoticz.Debug("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                                 func(self, NWKID )
                         else:
-                            Domoticz.Log("processKnownDevices - 1: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                            Domoticz.Debug("processKnownDevices - 1: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                             func(self, NWKID )
                     else:
-                        Domoticz.Log("processKnownDevices - 2: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                        Domoticz.Debug("processKnownDevices - 2: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                         func(self, NWKID )
                 else:
-                    Domoticz.Log("processKnownDevices - 3: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                    Domoticz.Debug("processKnownDevices - 3: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                     func(self, NWKID )
     
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
