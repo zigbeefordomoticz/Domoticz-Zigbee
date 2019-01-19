@@ -413,11 +413,11 @@ class BasePlugin:
                         self.Ping['TimeStamps'] = now
                 else:
                     # We receive a message less than a minute ago
-                    Domoticz.Log("Ping - We have receive a message less than 1' ago ")
+                    Domoticz.Debug("Ping - We have receive a message less than 1' ago ")
                     pass
             else:
                 # We receive a message inside the HEARTBEAT
-                Domoticz.Log("Ping - We have receive a message in between 2 Heartbeat")
+                Domoticz.Debug("Ping - We have receive a message in between 2 Heartbeat")
                 pass
 
         self.Ping['Rx Message'] += 1
