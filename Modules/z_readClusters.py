@@ -393,9 +393,15 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # LevelControl cluster
 
-    Domoticz.Debug("ReadCluster - ClusterId=0008 - Level Control: " + str(MsgClusterData) )
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = MsgClusterData
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+    Domoticz.Debug("ReadCluster - ClusterID: %s Addr: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
+            %(MsgClusterId, MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+    if MsgAttrID == '0000':
+        Domoticz.Debug("ReadCluster - ClusterId=0008 - Level Control: " + str(MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = MsgClusterData
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+    elif MsgAttrID == 'f000':
+        Domoticz.Debug("ReadCluster - ClusterId=0008 - Attribute f000: " + str(MsgClusterData) )
+
     return
 
 def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -408,10 +414,10 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004":
         value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-        Domoticz.Log("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
+        Domoticz.Debug("ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
                 " decoded: " + str(value) )
     else:
-        Domoticz.Log("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu: " + MsgAttrID + " / " + MsgClusterData)
+        Domoticz.Debug("ReadCluster - ClusterId=0006 - reception heartbeat - Message attribut inconnu: " + MsgAttrID + " / " + MsgClusterData)
     return
 
 def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -612,7 +618,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         ReadAttributeRequest_Ack(self, MsgSrcAddr)         # Ping Xiaomi devices
 
-        Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
+        Domoticz.Log("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
         # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
         # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
@@ -632,7 +638,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
             ValueBattery=round(int(BatteryLvl,16)/10/3.3)
-            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
             self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 
         if sTemp != '':
@@ -674,7 +680,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sLevel != '':
             Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel))
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']=sLevel
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008'] = sLevel
 
         if stag10 != '':
             # f400 --
