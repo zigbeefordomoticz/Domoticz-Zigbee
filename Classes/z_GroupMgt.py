@@ -238,7 +238,7 @@ class GroupsManagement(object):
         MsgGroupCount=MsgData[14:16]
         MsgListOfGroup=MsgData[16:len(MsgData)]
 
-        Domoticz.Debug("Decode8062 - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Log("getGroupMembershipResponse - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
