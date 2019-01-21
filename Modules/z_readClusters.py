@@ -271,9 +271,9 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 
     elif MsgAttrID == "0400": 
-        Domoticz.Debug("Cluster0702 - 0x0400 Instant demand %s" %(value))
+        Domoticz.Log("Cluster0702 - 0x0400 Instant demand %s" %(value))
         value = round(value/10, 3)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = str(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     else:
