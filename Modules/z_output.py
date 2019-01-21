@@ -146,12 +146,10 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         weight = 1
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
-                    self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {} :
-                Domoticz.Log("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == '86':
+                Domoticz.Debug("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                          %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                 return
-            # Attributes was either '00' or {}
             Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
     else:
         lenAttr = 0
@@ -191,10 +189,8 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     listAttributes.append(0x0005)        # Model Identifier
 
     if fullScope:
-        listAttributes.append(0x0001)        # Application Version
-        listAttributes.append(0x0002)        # Stack Version
-        listAttributes.append(0x0003)        # HW Version
         listAttributes.append(0x0004)        # 
+
         listAttributes.append(0x0007)        # Power Source
         listAttributes.append(0x0010)        # Battery
 
@@ -212,7 +208,6 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_Ack(self, key):
-
 
     EPin = "01"
     EPout= "01"
@@ -344,7 +339,7 @@ def ReadAttributeRequest_000C(self, key):
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
 
-    Domoticz.Debug("ReadAttributeRequest_0702 - Key: %s " %key)
+    Domoticz.Log("ReadAttributeRequest_0702 - Key: %s " %key)
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
@@ -435,8 +430,8 @@ def processConfigureReporting( self, NWKID=None ):
         # Level Control
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
         # Binary Input 
-        '000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
-            # Thermostat
+        #'000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        # Thermostat
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
@@ -467,7 +462,6 @@ def processConfigureReporting( self, NWKID=None ):
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'003C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
-        #'0702': {'Attributes': { '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     now = int(time())
@@ -483,6 +477,7 @@ def processConfigureReporting( self, NWKID=None ):
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
+        if key == '0000': continue
         if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
         else: continue
@@ -602,7 +597,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = ''
 
-        Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, dest_ieee: %s, desk_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+        Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
     else:
