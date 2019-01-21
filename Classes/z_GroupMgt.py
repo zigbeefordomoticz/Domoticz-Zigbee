@@ -505,6 +505,8 @@ class GroupsManagement(object):
 
         Domoticz.Log("processCommand - unit: %s, nwkid: %s, cmd: %s, level: %s, color: %s" %(unit, nwkid, Command, Level, Color_))
 
+        if nwkid not in self.ListOfGroups:
+            return
         for iterDev, iterEp in self.ListOfGroups[nwkid]['Devices']:
             Domoticz.Log('processCommand - reset heartbeat for device : %s' %iterDev)
             self.ListOfDevices[iterDev]['Heartbeat'] = '0'
