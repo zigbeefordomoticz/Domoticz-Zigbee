@@ -54,6 +54,7 @@ def LoadDeviceList( self ):
             key = key.replace(" ","")
             key = key.replace("'","")
 
+            if key in  ( 'ffff', '0000'): continue
             dlVal=eval(val)
             Domoticz.Debug("LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) )
 
