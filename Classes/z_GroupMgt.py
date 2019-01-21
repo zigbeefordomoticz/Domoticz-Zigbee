@@ -65,6 +65,8 @@ class GroupsManagement(object):
             Domoticz.Debug("line: %s" %tmpread )
             if not tmpread:
                 break
+            if tmpread[0] == '#':
+                continue
             group_id = group_name = None
             for token in tmpread.split(','):
                 if group_id is None:
@@ -105,6 +107,7 @@ class GroupsManagement(object):
                             Domoticz("load_ZigateGroupConfiguration - Error in ZigateGroupConfig: %s" %( _ieeetoken))
                             continue
                         if _ieee not in self.IEEE2NWK:
+                            # Check if this is not the Zigate itself
                             Domoticz.Error("load_ZigateGroupConfiguration - Unknown address %s to be imported" %_ieee )
                             continue
                         # Let's check if we don't have the EP included as well
@@ -120,6 +123,7 @@ class GroupsManagement(object):
     def _addGroup( self, device_ieee, device_addr, device_ep, grpid):
 
         if grpid not in self.ListOfGroups:
+            Domoticz.Log("_addGroup - skip as %s is not in %s" %(grpid, str(self.ListOfGroups)))
             return
 
         Domoticz.Log("_addGroup - Adding device: %s/%s into group: %s" \
@@ -153,7 +157,7 @@ class GroupsManagement(object):
             MsgClusterID=MsgData[4:8]  
             MsgStatus = MsgData[8:10]
             MsgGroupID = MsgData[10:14]
-            Domoticz.Log("addGroupResponse - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+            Domoticz.Log("addGroupResponse < 3.0f- [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
         elif len(MsgData) == 18:    # Firmware >= 030f
             MsgSequenceNumber=MsgData[0:2]
             MsgEP=MsgData[2:4]
@@ -161,7 +165,7 @@ class GroupsManagement(object):
             MsgSrcAddr = MsgData[8:12]
             MsgStatus = MsgData[12:14]
             MsgGroupID = MsgData[14:18]
-            Domoticz.Log("addGroupResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
+            Domoticz.Log("addGroupResponse >= 3.0f - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
             if 'GroupMgt' not in self.ListOfDevices[MsgSrcAddr]:
                 self.ListOfDevices[MsgSrcAddr]['GroupMgt'] = {}
                 self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP] = {}
@@ -224,6 +228,8 @@ class GroupsManagement(object):
                     group_list_ += "%04x" %(x)
             datas += "%02.x" %(lenGrpLst) + group_list_
 
+        Domoticz.Log("_getGroupMembership - Addr: %s Ep: %s Group: %s" %(device_addr, device_ep, group_list))
+        Domoticz.Log("_getGroupMembership - 0062/%s" %datas)
         self.ZigateComm.sendData( "0062", datas)
         return
 
@@ -299,7 +305,7 @@ class GroupsManagement(object):
             MsgClusterID=MsgData[4:8]  
             MsgStatus = MsgData[8:10]
             MsgGroupID = MsgData[10:14]
-            Domoticz.Log("removeGroupResponse - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+            Domoticz.Log("removeGroupResponse < 3.0f - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
         elif len(MsgData) == 18:    # Firmware >= 030f
             MsgSequenceNumber=MsgData[0:2]
             MsgEP=MsgData[2:4]
@@ -307,7 +313,7 @@ class GroupsManagement(object):
             MsgSrcAddr = MsgData[8:12]
             MsgStatus = MsgData[12:14]
             MsgGroupID = MsgData[14:18]
-            Domoticz.Log("removeGroupResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
+            Domoticz.Log("removeGroupResponse >= 3.0f - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
         else:
             Domoticz.Log("removeGroupResponse - uncomplete message %s" %MsgData)
 
@@ -640,13 +646,15 @@ class GroupsManagement(object):
             self.stillWIP = True
             _workcompleted = True
             for iterDev in self.ListOfDevices:
+                if iterDev == '0000':
+                    Domoticz.Log('Zigate: %s' %(str(self.ListOfDevices[iterDev])))
                 if 'PowerSource' in self.ListOfDevices[iterDev]:
                     if self.ListOfDevices[iterDev]['PowerSource'] != 'Main':
                         continue
                 if 'Ep' in self.ListOfDevices[iterDev]:
                     for iterEp in self.ListOfDevices[iterDev]['Ep']:
                         if iterEp == 'ClusterType': continue
-                        if  ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
+                        if  ( iterDev == '0000' or 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
                               '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                              ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                             # As we are looking for Group Membership, we don't know to which Group it could belongs.
@@ -770,13 +778,13 @@ class GroupsManagement(object):
 
                     removeIEEE = iterIEEE
                     if iterIEEE not in self.IEEE2NWK:
-                        Domoticz.Debug("Unknown IEEE to be removed %s" %iterIEEE)
+                        Domoticz.Log("Unknown IEEE to be removed %s" %iterIEEE)
                         continue
                     removeNKWID = self.IEEE2NWK[iterIEEE]
                     if removeNKWID not in self.ListOfDevices:
-                        Domoticz.Debug("Unknown IEEE to be removed %s" %removeNKWID)
+                        Domoticz.Log("Unknown IEEE to be removed %s" %removeNKWID)
                         continue
-                    Domoticz.Debug("Adding %s/%s to be removed from %s" 
+                    Domoticz.Log("Adding %s/%s to be removed from %s" 
                             %(removeNKWID, iterEp, iterGrp))
                     self.TobeRemoved.append( ( removeNKWID, iterEp, iterGrp ) )
 
@@ -811,7 +819,7 @@ class GroupsManagement(object):
                                 Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
                                 continue
 
-                            if  ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
+                            if  ( iterDev == '0000' or 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                                     ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                                 Domoticz.Debug("Adding %s/%s to be added to %s"
@@ -907,6 +915,7 @@ class GroupsManagement(object):
                     Domoticz.Log("hearbeatGroupMgt - Configuration mode completed" )
                     self.Cycle += 1
                     if self.Cycle > MAX_CYCLE:
+                        Domoticz.Log("We reach the max number of Cycle and didn't succeed in the Group Creation")
                         self.StartupPhase = 'check group list'
                     else:
                         self.StartupPhase = 'discovery'
