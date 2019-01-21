@@ -75,5 +75,36 @@ ZHA_DEVICES = {
         0x0403: 'IAS Warning Device'
         }
 
+#Color Attributes
+COLOR_TEMPERATURE = 0x0007
+ENHANCED_CURRENT_HUE = 0x4000
+CURRENT_SAT = 0x0001
+CURRENT_X = 0x0003
+CURRENT_Y = 0x0004
+COLOR_MODE = 0x0008
+COLOR_LOOP_ACTIVE = 0x4002
 
+COLOUR_MODE_HUE_SAT = 0x00
+COLOUR_MODE_XY = 0x01
+COLOUR_MODE_TEMP = 0x02
 
+# ProfileID versus Color mode
+BULB_ACTIONS = {
+    0x0105 : ('HUE',),
+    0x010D : ('COLOR' , 'HUE', 'TEMP'),
+    0x0210 : ('COLOR' , 'HUE', 'TEMP'),
+    0x0102 : ('TEMP',),
+    0x010C : ('TEMP',),
+    0x0220 : ('TEMP',),
+    0x0200 : ('HUE', 'COLOR')
+}
+
+# Possible Widget SubType 
+DOMOTICZ_LED_DIMMERS = { 'RGB_W'   : 1,  # RGB + white, either RGB or white can be lit
+                         'RGB'     : 2,  # RGB
+                         'White'   : 3,  # Monochrome White
+                         'RGB_CW_W': 4,  # RGB + cold white + warm white, either RGB or white can be lit
+                         'RGB_W_Z' : 6,  # Like RGBW, but allows combining RGB and white
+                         'RGB_CW_WW_Z' : 7, # Like RGBWW, but allows combining RGB and white
+                         'CW_WW'   : 8  # Cold white + Warm white
+                       }
