@@ -230,6 +230,12 @@ def ZigateRead(self, Devices, Data):
         self.groupmgt.addGroupResponse( MsgData )
         return
 
+    elif str(MsgType)=="80a7":
+        Domoticz.Log("ZigateRead - MsgType 80a7 - Reception Zone status change notification : " + Data)
+        Decode80A7(self, Devices, MsgData)
+        return
+
+
     elif str(MsgType)=="8061":  #
         Domoticz.Debug("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
         self.groupmgt.viewGroupResponse( MsgData )
@@ -243,6 +249,16 @@ def ZigateRead(self, Devices, Data):
     elif str(MsgType)=="8063":  #
         Domoticz.Debug("ZigateRead - MsgType 8063 - Reception Remove group response : " + Data)
         self.groupmgt.removeGroupResponse( MsgData )
+        return
+
+    elif str(MsgType)=="8085":
+        Domoticz.Log("ZigateRead - MsgType 8085 - Reception Zone status change notification : " + Data)
+        Decode8085(self, Devices, MsgData)
+        return
+
+    elif str(MsgType)=="8095":
+        Domoticz.Log("ZigateRead - MsgType 8085 - Reception Zone status change notification : " + Data)
+        Decode8085(self, Devices, MsgData)
         return
 
     elif str(MsgType)=="80a0":  #
@@ -304,6 +320,16 @@ def ZigateRead(self, Devices, Data):
         Decode8401(self, Devices, MsgData)
         return
 
+    elif str(MsgType)=="8501":
+        Domoticz.Log("ZigateRead - MsgType 8501 - Reception Zone status change notification : " + Data)
+        Decode8501(self, Devices, MsgData)
+        return
+
+    elif str(MsgType)=="8503":
+        Domoticz.Log("ZigateRead - MsgType 8503 - Reception Zone status change notification : " + Data)
+        Decode8503(self, Devices, MsgData)
+        return
+
     elif str(MsgType)=="8701":  # 
         Domoticz.Debug("ZigateRead - MsgType 8701 - Reception Router discovery confirm : " + Data)
         Decode8701(self, MsgData)
@@ -315,7 +341,7 @@ def ZigateRead(self, Devices, Data):
         return
 
     else: # unknow or not dev function
-        Domoticz.Log("ZigateRead - Unknow Message Type for : " + Data)
+        Domoticz.Log("ZigateRead - Unknow Message Type %s  - %s " %(MsgType, MsgData))
         return
     
     return
@@ -603,6 +629,16 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
 
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
+
+    self.IEEE2NWK[extaddr] = addr
+    self.ListOfDevices[addr] = {}
+    self.ListOfDevices[addr]['IEEE'] = extaddr
+    self.ListOfDevices[addr]['Ep'] = {}
+    self.ListOfDevices[addr]['Ep']['01'] = {}
+    self.ListOfDevices[addr]['Ep']['01']['0004'] = {}
+    self.ListOfDevices[addr]['Ep']['01']['0006'] = {}
+    self.ListOfDevices[addr]['Ep']['01']['0008'] = {}
+    self.ListOfDevices[addr]['PowerSource'] = 'Main'
 
     if self.currentChannel != int(Channel,16):
         updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
@@ -1556,5 +1592,95 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MsgMacCapa)
     
     return
+
+
+# OTA and Remote decoding kindly authorized by https://github.com/ISO-B
+
+def Decode8501(self, Devices, MsgData, MsgRSSI) : # OTA image block request
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgaddrMode = MsgData[8:10]
+    MsgIEEE = MsgData[10:26]
+    MsgSrcAddr = MsgData[26:30]
+    MsgFileOffset = MsgData[30:34]
+    MsgImageVersion = MsgData[34:38]
+    MsgImageType = MsgData[38:42]
+    MsgManufCode = MsgData[42:46]
+    MsgBlockRequestDelay = MsgData[46:50]
+    MsgMaxDataSize = MsgData[50:52]
+    MsgFieldControl = MsgData[52:54]
+
+    Domoticz.Log("Decode8501 - %s"%MsgData)
+
+    return
+
+def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
+    'OTA upgrade request'
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgSrcAddr = MsgData[8:12]
+    MsgImageVersion = MsgData[12:16]
+    MsgImageType = MsgData[16:20]
+    MsgManufCode = MsgData[20:24]
+    MsgStatus = MsgData[24:26]
+
+    Domoticz.Log("Decode8503 - %s" %MsgData)
+
+
+def Decode8085(self, Devices, MsgData, MsgRSSI) :
+    'Remote button pressed'
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgSrcAddr = MsgData[8:12]
+    MsgCmd = MsgData[12:14]
+
+    _PRESS_TYPE = {2: 'Click', 1: 'Hold', 3: 'Release'}
+    if MsgCmd in ( '01', '02', '03'):
+        # Action Down
+        _command = _PRESS_TYPE[MsgCmd]
+        Domoticz.Log("Decode8085 - Remote button pressed Down %s" %_command)
+    elif MsgCmd in ( '05', '06', '07'):
+        # Action Up
+        _command = _PRESS_TYPE[str(int(MsgCmd) - 4)]
+        Domoticz.Log("Decode8085 - Remote button pressed Up %s" %_command)
+
+
+def Decode8095(self, Devices, MsgData, MsgRSSI) :
+    'Remote button pressed ON/OFF'
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgSrcAddr = MsgData[8:12]
+    MsgCmd = MsgData[12:14]
+
+    _PRESS_TYPE = {2: 'Click'}
+    _command = _PRESS_TYPE[MsgCmd]
+    Domoticz.Log("Decode8095 - Remote button pressed ON/OFF %s" %_command)
+
+
+def Decode80A7(self, Devices, MsgData, MsgRSSI) :
+    'Remote button pressed (LEFT/RIGHT)'
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgSrcAddr = MsgData[8:12]
+    MsgCmd = MsgData[12:14]
+    MsgDirection = MsgData[14:16]
+
+
+    _PRESS_TYPE = {7: 'Click', 8: 'Hold', 9: 'Release'}
+    _DIRECTIONS = {0: 'Right', 1: 'Left', 2: 'Middle'}
+    _type = _PRESS_TYPE[MsgCmd]
+    _button = _DIRECTIONS[MsgDirection]
+
+    Domoticz.Log("Decode80A7 - Remote button pressed %s %s" %(_type, _button))
 
 
