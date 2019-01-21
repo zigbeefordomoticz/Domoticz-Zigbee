@@ -108,3 +108,12 @@ DOMOTICZ_LED_DIMMERS = { 'RGB_W'   : 1,  # RGB + white, either RGB or white can 
                          'RGB_CW_WW_Z' : 7, # Like RGBWW, but allows combining RGB and white
                          'CW_WW'   : 8  # Cold white + Warm white
                        }
+
+DOMOTICZ_COLOR_MODE = {
+    0 : 'Illegal',
+    1 : 'White',
+    2 : 'White with color temperature',
+    3 : 'Color RGB',
+    4 : 'Custom Color + White',
+    9998: 'With saturation and hue'
+}
