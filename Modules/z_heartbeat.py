@@ -302,6 +302,7 @@ def processListOfDevices( self , Devices ):
 
     entriesToBeRemoved = []
     for NWKID in list(self.ListOfDevices):
+        if NWKID in ('ffff', '0000'): continue
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
             Domoticz.Debug("Bad devices detected (empty one), remove it, adr:" + str(NWKID))
