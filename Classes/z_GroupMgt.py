@@ -647,7 +647,8 @@ class GroupsManagement(object):
             _workcompleted = True
             for iterDev in self.ListOfDevices:
                 if iterDev == '0000':
-                    Domoticz.Log('Zigate: %s' %(str(self.ListOfDevices[iterDev])))
+                    Domoticz.Log('Do not search 0x0000 membership: %s' %(str(self.ListOfDevices[iterDev])))
+                    continue
                 if 'PowerSource' in self.ListOfDevices[iterDev]:
                     if self.ListOfDevices[iterDev]['PowerSource'] != 'Main':
                         continue
