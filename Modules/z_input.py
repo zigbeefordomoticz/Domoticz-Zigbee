@@ -1503,6 +1503,44 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     Domoticz.Debug("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttID)
     return
 
+# OTA and Remote decoding kindly authorized by https://github.com/ISO-B
+def Decode8501(self, Devices, MsgData, MsgRSSI) : # OTA image block request
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgaddrMode = MsgData[8:10]
+    MsgIEEE = MsgData[10:26]
+    MsgSrcAddr = MsgData[26:30]
+    MsgFileOffset = MsgData[30:34]
+    MsgImageVersion = MsgData[34:38]
+    MsgImageType = MsgData[38:42]
+    MsgManufCode = MsgData[42:46]
+    MsgBlockRequestDelay = MsgData[46:50]
+    MsgMaxDataSize = MsgData[50:52]
+    MsgFieldControl = MsgData[52:54]
+
+    Domoticz.Log("Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %s Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
+            %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
+
+
+    return
+
+def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
+    'OTA upgrade request'
+
+    MsgSQN = MsgData[0:2]
+    MsgEP = MsgData[2:4]
+    MsgClusterId = MsgData[4:8]
+    MsgSrcAddr = MsgData[8:12]
+    MsgImageVersion = MsgData[12:16]
+    MsgImageType = MsgData[16:20]
+    MsgManufCode = MsgData[20:24]
+    MsgStatus = MsgData[24:26]
+
+    Domoticz.Log("Decode8503 - OTA upgrade request - %s/%s %s Version: %s Type: %s Code: %s Status: %s"
+            %(MsgSrcAddr, MsgEP, MsgClusterId, MsgImageVersion, MsgImageType, MsgManufCode, MsgStatus))
+
 #Router Discover
 def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
     MsgLen=len(MsgData)
@@ -1594,41 +1632,6 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     return
 
 
-# OTA and Remote decoding kindly authorized by https://github.com/ISO-B
-
-def Decode8501(self, Devices, MsgData, MsgRSSI) : # OTA image block request
-
-    MsgSQN = MsgData[0:2]
-    MsgEP = MsgData[2:4]
-    MsgClusterId = MsgData[4:8]
-    MsgaddrMode = MsgData[8:10]
-    MsgIEEE = MsgData[10:26]
-    MsgSrcAddr = MsgData[26:30]
-    MsgFileOffset = MsgData[30:34]
-    MsgImageVersion = MsgData[34:38]
-    MsgImageType = MsgData[38:42]
-    MsgManufCode = MsgData[42:46]
-    MsgBlockRequestDelay = MsgData[46:50]
-    MsgMaxDataSize = MsgData[50:52]
-    MsgFieldControl = MsgData[52:54]
-
-    Domoticz.Log("Decode8501 - %s"%MsgData)
-
-    return
-
-def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
-    'OTA upgrade request'
-
-    MsgSQN = MsgData[0:2]
-    MsgEP = MsgData[2:4]
-    MsgClusterId = MsgData[4:8]
-    MsgSrcAddr = MsgData[8:12]
-    MsgImageVersion = MsgData[12:16]
-    MsgImageType = MsgData[16:20]
-    MsgManufCode = MsgData[20:24]
-    MsgStatus = MsgData[24:26]
-
-    Domoticz.Log("Decode8503 - %s" %MsgData)
 
 
 def Decode8085(self, Devices, MsgData, MsgRSSI) :
