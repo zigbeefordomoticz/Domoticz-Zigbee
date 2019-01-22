@@ -23,6 +23,7 @@
 - [Technical] Restructure python modules and classes, in order to have a much cleaner plugin home directory
 - [Technical] re-factor the ConfigureReporting in order to avoid peak of laod
 - [Technical] Profile the possibility to configure the location of Data, Config and Report files. See PluginConf Documentation on Wiki
+- [Hardware] Implementation of Thermostat in order to handle Eurotronic Spirit Zigbee ( Temp sensor, Setpoint )
 
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random
