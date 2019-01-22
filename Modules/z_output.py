@@ -254,9 +254,6 @@ def ReadAttributeRequest_0300(self, key):
     listAttributes.append(0x0001)   # CurrentSaturation
     listAttributes.append(0x0003)   # CurrentX
     listAttributes.append(0x0004)   # CurrentY
-    listAttributes.append(0x0005)   # DriftCompensation
-    listAttributes.append(0x0006)   # CompensationText
-    listAttributes.append(0x0007)   # ColorTemperatureMireds
     listAttributes.append(0x0008)   # ColorMode
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
