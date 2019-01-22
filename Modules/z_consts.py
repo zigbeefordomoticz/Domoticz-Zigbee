@@ -25,6 +25,47 @@ ADDRESS_MODE = { 'bound':0x00,
         'ieee':0x03 # IEEE
         }
 
+# Used maninly for Attributes Read/Write
+
+ZHA_DATA_TYPE = {
+    '''
+    decodeAttribute( Attribute Type, Attribute Data )
+    Will return an int converted in str, which is the decoding of Attribute Data base on Attribute Type
+    Here after are the DataType and their DataType code
+    ZigBee_NoData = 0x00, ZigBee_8BitData = 0x08, ZigBee_16BitData = 0x09, ZigBee_24BitData = 0x0a,
+    ZigBee_32BitData = 0x0b, ZigBee_40BitData = 0x0c, ZigBee_48BitData = 0x0d, ZigBee_56BitData = 0x0e,
+    ZigBee_64BitData = 0x0f, ZigBee_Boolean = 0x10, ZigBee_8BitBitMap = 0x18, ZigBee_16BitBitMap = 0x19,
+    ZigBee_24BitBitMap = 0x1a, ZigBee_32BitBitMap = 0x1b, ZigBee_40BitBitMap = 0x1c, ZigBee_48BitBitMap = 0x1d,
+    ZigBee_56BitBitMap = 0x1e, ZigBee_64BitBitMap = 0x1f, ZigBee_8BitUint = 0x20, ZigBee_16BitUint = 0x21,
+    ZigBee_24BitUint = 0x22, ZigBee_32BitUint = 0x23, ZigBee_40BitUint = 0x24, ZigBee_48BitUint = 0x25,
+    ZigBee_56BitUint = 0x26, ZigBee_64BitUint = 0x27, ZigBee_8BitInt = 0x28, ZigBee_16BitInt = 0x29,
+    ZigBee_24BitInt = 0x2a, ZigBee_32BitInt = 0x2b, ZigBee_40BitInt = 0x2c, ZigBee_48BitInt = 0x2d,
+    ZigBee_56BitInt = 0x2e, ZigBee_64BitInt = 0x2f, ZigBee_8BitEnum = 0x30, ZigBee_16BitEnum = 0x31,
+    ZigBee_OctedString = 0x41, ZigBee_CharacterString = 0x42, ZigBee_LongOctedString = 0x43, ZigBee_LongCharacterString = 0x44,
+    ZigBee_TimeOfDay = 0xe0, ZigBee_Date = 0xe1, ZigBee_UtcTime = 0xe2, ZigBee_ClusterId = 0xe8,
+    ZigBee_AttributeId = 0xe9, ZigBee_BACNetOId = 0xea, ZigBee_IeeeAddress = 0xf0, ZigBee_128BitSecurityKey = 0xf1
+    '''
+
+        'nodata': 0x00,  # Bytestream 
+        'bool'  : 0x10,
+        '8bmap' : 0x16,
+        'uint8' : 0x20,  # B
+        'uchar' : 0x20,  # B
+        'Uint16': 0x21,  # H
+        'Uint24': 0x22,  # I
+        'Uint32': 0x23,
+        'Uint48': 0x25,
+        'int8'  : 0x28,  # b
+        'int16' : 0x29,  # h
+        'int24' : 0x2a,  # i
+        'int32' : 0x2b,
+        'int48' : 0x2d,
+        'enum8' : 0x30,  # b
+        'enum16': 0x31,
+        'Xfloat': 0x39,  # f
+        'string': 0x42   # s
+             }
+
 
 ZLL_DEVICES = {
         # https://www.nxp.com/docs/en/user-guide/JN-UG-3091.pdf
@@ -117,3 +158,5 @@ DOMOTICZ_COLOR_MODE = {
     4 : 'Custom Color + White',
     9998: 'With saturation and hue'
 }
+
+
