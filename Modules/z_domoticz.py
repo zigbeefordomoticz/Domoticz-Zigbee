@@ -387,6 +387,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "WindowCovering":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "LvlControl" and self.ListOfDevices[NWKID]['Model'] != '':  
                 # Well Identified Model
                 # variateur de luminosite + On/off
@@ -1112,6 +1125,7 @@ def TypeFromCluster(cluster, create_=False):
     elif cluster == "000c" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0012" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0101": TypeFromCluster = "Vibration"
+    elif cluster == "0102": TypeFromCluster = "WindowCovering"
     elif cluster == "0201": TypeFromCluster = "Temp/ThermSetPoint"
     elif cluster == "0300": TypeFromCluster = "ColorControl"
     elif cluster == "0400": TypeFromCluster = "Lux"

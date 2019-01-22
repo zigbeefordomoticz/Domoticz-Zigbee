@@ -62,8 +62,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     ClusterSearch = ''
     DeviceType = ''
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType =="Switch" or tmpDeviceType =="Plug" or tmpDeviceType =="SwitchAQ2" or tmpDeviceType =="Smoke" or tmpDeviceType =="DSwitch" or tmpDeviceType =="Button" or tmpDeviceType =="DButton":
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton"):
             ClusterSearch="0006"
+            DeviceType = tmpDeviceType
+        if tmpDeviceType == "WindowCovering":
+            ClusterSearch = '0102'
             DeviceType = tmpDeviceType
         if tmpDeviceType =="LvlControl" :
             ClusterSearch="0008"
@@ -72,8 +75,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'ThermoSetpoint':
-            DeviceType = tmpDeviceType
             ClusterSearch = '0201'
+            DeviceType = tmpDeviceType
 
     if DeviceType == '': 
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
@@ -104,7 +107,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-        sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "00")
+        if DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "01")
+        else:
+            sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "00")
+
         if Devices[Unit].SwitchType == "16" :
             UpdateDevice_v2(Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
         else :
@@ -112,7 +120,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-        sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "01")
+        if DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "09")
+        else:
+            sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "01")
         if Devices[Unit].SwitchType == "16" :
             UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:
@@ -122,19 +134,28 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
         
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
         if DeviceType == 'ThermoSetpoint':
             value = int(float(Level)*100)
             Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
             thermostat_Setpoint( self, NWKID, value )
+            return
+
+        elif  DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            value=Hex_Format(2,round(Level*255/100)) 
+            sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "05" + value)
+
         else:
-            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
             OnOff = '01' # 00 = off, 01 = on
-            value=Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
+            value=Hex_Format(2,(Level*255)//100)
             sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
-            if Devices[Unit].SwitchType == 16 :
-                UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
-            else:
-                UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
+
+        if Devices[Unit].SwitchType == 16 :
+            UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
+        else:
+            # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
+            UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
 
     if Command == "Set Color" :
         Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
