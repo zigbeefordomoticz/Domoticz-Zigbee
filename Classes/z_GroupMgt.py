@@ -158,6 +158,7 @@ class GroupsManagement(object):
             MsgStatus = MsgData[8:10]
             MsgGroupID = MsgData[10:14]
             Domoticz.Log("addGroupResponse < 3.0f- [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+
         elif len(MsgData) == 18:    # Firmware >= 030f
             MsgSequenceNumber=MsgData[0:2]
             MsgEP=MsgData[2:4]
@@ -203,6 +204,9 @@ class GroupsManagement(object):
         MsgClusterID=MsgData[4:8]
         MsgDataStatus=MsgData[8:10]
         MsgGroupID=MsgData[10:14]
+
+        if len(MsgData) > 14:
+            Domoticz.Log("viewGroupResponse ( 8061 ) - receiving for data than expected. New Firmware")
 
         Domoticz.Log("Decode8061 - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s" 
                 %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgDataStatus))
@@ -298,6 +302,7 @@ class GroupsManagement(object):
 
         if len(MsgData) != 14:
             return
+
         if len(MsgData) == 14:  # Firmware < 030f
             MsgSrcAddr = None
             MsgSequenceNumber=MsgData[0:2]
@@ -306,6 +311,7 @@ class GroupsManagement(object):
             MsgStatus = MsgData[8:10]
             MsgGroupID = MsgData[10:14]
             Domoticz.Log("removeGroupResponse < 3.0f - [%s] GroupID: %s Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgStatus ))
+
         elif len(MsgData) == 18:    # Firmware >= 030f
             MsgSequenceNumber=MsgData[0:2]
             MsgEP=MsgData[2:4]
