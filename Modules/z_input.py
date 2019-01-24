@@ -464,8 +464,12 @@ def Decode8000_v2(self, MsgData) : # Status
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8000_v2 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
-    if MsgLen != 8 :
+    if MsgLen < 8 :
+        Domoticz.Log("Decode8000 - uncomplete message : %s" %MsgData)
         return
+
+    if MsgLen > 8 :
+        Domoticz.Log("Decode8000 - More information . New Firmware ???")
 
     Status=MsgData[0:2]
     SEQ=MsgData[2:4]
@@ -1265,8 +1269,9 @@ def Decode804B(self, MsgData) : # System Server Discovery response
 
 #Reponses SCENE
 def Decode80A0(self, MsgData) : # View Scene response
+
     MsgLen=len(MsgData)
-    Domoticz.Debug("Decode80A0 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+    Domoticz.Debug("Decode80A0 - MsgData lenght is : " + str(MsgLen) + " out of 24" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
@@ -1458,11 +1463,16 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     return
 
 def Decode8120(self, MsgData) :  # Configure Reporting response
+
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     MsgDataStatus=MsgData[12:14]
+
+
+    if len(MsgData) > 14:
+        Domoticz.Log("Decode8120 - Len great than expected ... Firmware is providing more info ")
 
     Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
@@ -1497,6 +1507,10 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     MsgAttType=MsgData[2:4]
     MsgAttID=MsgData[4:8]
     
+
+    if len(MsgData) > 8:
+        Domoticz.Log("Decode8140 - Geting more data than expected. New firmware" )
+
     # We need to identify to which NetworkId and which ClusterId this is coming from. This is in response to 0x0140
     # When MsgComplete == 01, we have received all Attribute/AttributeType
 
