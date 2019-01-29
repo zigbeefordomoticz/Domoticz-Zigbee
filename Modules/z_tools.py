@@ -131,6 +131,14 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
                 updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
 
+                # We will also reset ReadAttributes
+                if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
+                    del self.ListOfDevices[newNWKID]['ReadAttributes']
+
+                if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
+                    del self.ListOfDevices[newNWKID]['ConfigureReporting']
+                self.ListOfDevices[newNWKID]['Hearbeat'] = 0
+
                 # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
 
@@ -138,6 +146,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Hearbeat'] = 0
+
                 found = True
                 break
 
