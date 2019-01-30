@@ -320,7 +320,7 @@ def timeStamped( self, key, Type ):
             self.ListOfDevices[key]['Stamp']['Time'] = {}
             self.ListOfDevices[key]['Stamp']['MsgType'] = {}
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-        self.ListOfDevices[key]['Stamp']['MsgType'] = "%4d" %(Type)
+        self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
 def updSQN_mainpower(self, key, newSQN):
 

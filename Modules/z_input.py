@@ -372,7 +372,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
-    timeStamped( self, MsgSrcAddr , 8401)
+    timeStamped( self, MsgSrcAddr , 0x8401)
     updSQN( self, MsgSrcAddr, MsgSQN)
 
     Model = ''
@@ -1174,6 +1174,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
     else :
+        timeStamped(self, sAddr, 0x8048)
         Domoticz.Status("Decode8048 - device " +str(sAddr) + " annouced to leave" )
         if self.ListOfDevices[sAddr]['Status'] == 'inDB':
             self.ListOfDevices[sAddr]['Status'] = 'Left'
@@ -1376,7 +1377,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     Domoticz.Debug("Decode8100 - Report Individual Attribute : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
-    timeStamped( self, MsgSrcAddr , 8100)
+    timeStamped( self, MsgSrcAddr , 0x8100)
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
     try :
@@ -1428,7 +1429,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
-        timeStamped( self, MsgSrcAddr , 8102)
+        timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         ReadCluster(self, Devices, MsgData) 
     else :
@@ -1455,6 +1456,7 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
     Domoticz.Log("Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
             %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
+    timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
 
     if MsgClusterId == "0500":
@@ -1477,8 +1479,8 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
 
+    timeStamped( self, MsgSrcAddr , 0x8120)
     updSQN( self, MsgSrcAddr, MsgSQN)
-
 
     if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
         if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep']:
@@ -1590,6 +1592,7 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
         MsgDataDestAddr=MsgData[8:12]
         MsgDataSQN=MsgData[12:14]
 
+        timeStamped( self, MsgDataDestAddr , 0x8702)
         updSQN( self, MsgDataDestAddr, MsgDataSQN)
         Domoticz.Debug("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
         return
@@ -1628,6 +1631,8 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
 
         Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
+
+    timeStamped( self, MsgSrcAddr , 0x004d)
 
     if self.pluginconf.allowStoreDiscoveryFrames == 1 :
         self.DiscoveryDevices[MsgSrcAddr] = {}
