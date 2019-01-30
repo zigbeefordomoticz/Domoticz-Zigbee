@@ -533,7 +533,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
 
-def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
+def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
     '''
     MajDomoDevice
     Update domoticz device accordingly to Type found in EP and value/Color provided
@@ -635,7 +635,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Color_=''):
                 Domoticz.Debug("MajDomoDevice Voltage : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
-            if 'ThermoSetpoint' in ClusterType:
+            if 'ThermoSetpoint' in ClusterType and ( Attribute_ == '4003' or Attribute_ == '0012'):
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
                 Domoticz.Debug("MajDomoDevice Setpoint : " + sValue)
