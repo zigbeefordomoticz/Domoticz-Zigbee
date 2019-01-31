@@ -1470,11 +1470,19 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
-    MsgDataStatus=MsgData[12:14]
 
-
-    if len(MsgData) > 14:
-        Domoticz.Log("Decode8120 - Len great than expected ... Firmware is providing more info ")
+    if len(MsgData) < 14:
+        Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
+        return
+    elif len(MsgData) == 14: # Firmware < 3.0f
+        MsgDataStatus=MsgData[12:14]
+    else:
+        nbattribute = ( len(MsgData) - 14 ) / 4
+        idx = 0
+        while idx < nbattribute :
+            MsgAttribute.append( MsgDataStatus[(12+(idx*4)):(12+(idx*4))+4] )
+            idx += 1
+        MsgDataStatus=MsgData[(12+(nbattribute*4)):(12+(nbattribute*4)+2)]
 
     Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
