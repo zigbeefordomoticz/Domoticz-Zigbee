@@ -252,8 +252,9 @@ class GroupsManagement(object):
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
-            Domoticz.Log('getGroupMembershipResponse - receiving a group memebership for a non exsiting device')
-            Domoticz.Log('getGroupMembershipResponse - %s %s %s' %(MsgSourceAddress, MsgGroupCount, MsgListOfGroup))
+            Domoticz.Error('getGroupMembershipResponse - receiving a group memebership for a non exsiting device')
+            Domoticz.Error('getGroupMembershipResponse - %s %s %s' %(MsgSourceAddress, MsgGroupCount, MsgListOfGroup))
+            return
 
         if 'GroupMgt' not in self.ListOfDevices[MsgSourceAddress]:
             self.ListOfDevices[MsgSourceAddress]['GroupMgt'] = {}
