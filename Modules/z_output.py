@@ -185,14 +185,14 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # General
     listAttributes = []
     # By default only request attribute 0x0005 to get the model Identifier
-    listAttributes.append(0x0000)        # 
+    listAttributes.append(0x0000)        # ZCL Version
     listAttributes.append(0x0005)        # Model Identifier
 
     if fullScope:
-        listAttributes.append(0x0004)        # 
-
+        listAttributes.append(0x0004)        # Manufacturer Name
         listAttributes.append(0x0007)        # Power Source
         listAttributes.append(0x0010)        # Battery
+        listAttributes.append(0x000A)        # Product Code
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
@@ -433,7 +433,8 @@ def processConfigureReporting( self, NWKID=None ):
         # Thermostat
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+                                 '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '4003': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
         '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -886,12 +887,15 @@ def ReadAttributeRequest_0201(self, key):
     # Thermostat Information
     listAttributes = []
     listAttributes.append(0x0000)        # Local Temp / 0x29
+    listAttributes.append(0x0008)        # Pi Heating Demand (valve position %)
     listAttributes.append(0x0010)        # Calibration / 0x28
     listAttributes.append(0x0011)        # COOLING_SETPOINT / 0x29
     listAttributes.append(0x0012)        # HEATING_SETPOINT / 0x29
-    listAttributes.append(0x0015)        # MIN HEATING / 0x29
-    listAttributes.append(0x0016)        # MAX HEATING / 0x29
-    if self.ListOfDevices[key]['Model'].find('SPZB') > 0:
+    listAttributes.append(0x0014)        # Unoccupied Heating Setpoint 0x29
+    #listAttributes.append(0x0015)        # MIN HEATING / 0x29
+    #listAttributes.append(0x0016)        # MAX HEATING / 0x29
+    if self.ListOfDevices[key]['Model'].find('SPZB') == 0:
+        Domoticz.Log("- req 0x4003 Current Set Point Eurotronic")
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
 
     Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
