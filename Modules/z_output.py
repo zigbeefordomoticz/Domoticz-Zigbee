@@ -891,7 +891,7 @@ def ReadAttributeRequest_0201(self, key):
     listAttributes.append(0x0012)        # HEATING_SETPOINT / 0x29
     listAttributes.append(0x0015)        # MIN HEATING / 0x29
     listAttributes.append(0x0016)        # MAX HEATING / 0x29
-    if self.ListOfDevices[key]['ModelName'].find('SPZB') > 0:
+    if self.ListOfDevices[key]['Model'].find('SPZB') > 0:
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
 
     Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
