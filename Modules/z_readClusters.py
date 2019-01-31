@@ -624,16 +624,16 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sLevel = retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
         stag10 = retreive4Tag( "6621", MsgClusterData )
 
-        MAX_VOLTS = 3.0
-        MIN_VOLTS = 2.5
+        #MAX_VOLTS = 3.0
+        #MIN_VOLTS = 2.5
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 
             ValueBattery=round(int(BatteryLvl,16)/10/3.3)
 
-            battery_percent = ( (ValueBattery - MIN_VOLTS) / (MAX_VOLTS - MIN_VOLTS)) * 100
-            Domoticz.Log("ReadCluster 0000/ff01 Saddr: %s - Volts: %s Battery %s" %(MsgSrcAddr, ValueBattery, battery_percent))
+            #battery_percent = ( (ValueBattery - MIN_VOLTS) / (MAX_VOLTS - MIN_VOLTS)) * 100
+            #Domoticz.Log("ReadCluster 0000/ff01 Saddr: %s - Volts: %s Battery %s" %(MsgSrcAddr, ValueBattery, battery_percent))
             Domoticz.Log("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
             self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
 
@@ -820,7 +820,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if len(oldValue) != 6:
         oldValue = '0;0;0;0;0;0'.split(';')
 
-    Domoticz.Debug("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+    Domoticz.Log("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     value = decodeAttribute( MsgAttType, MsgClusterData)
@@ -832,6 +832,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = str(ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(localTemp, oldValue[1], oldValue[2], oldValue[3], oldValue[4],oldValue[5])
         Domoticz.Log("ReadCluster 0201 - Local Temp: %s" %ValueTemp)
+
+    elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
+        Domoticz.Log("ReadCluster 0201 - Heating demand: %s" %value)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], value, oldValue[2], oldValue[3], oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0010':   # Calibration / Adjustement
         value = value / 10 
@@ -848,6 +852,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0201 - Heating Setpoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
 
+    elif MsgAttrID == '0014':   # Unoccupied Heating
+        Domoticz.Log("ReadCluster 0201 - Unoccupied Heating:  %s" %value)
+
     elif MsgAttrID == '0015':   # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp=round(int(value)/100,1)
         Domoticz.Log("ReadCluster 0201 - Min SetPoint: %s" %ValueTemp)
@@ -859,9 +866,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], oldValue[3], oldValue[4], ValueTemp)
 
     elif MsgAttrID == '4003': # Current Temperature Set point
-        ValueTemp=round(int(value)/100,1)
-        Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s" %ValueTemp)
-        if ValueTemp != oldValue[3]:
+        ValueTemp = round(int(value)/100,1)
+        Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
+        if ValueTemp != int(oldValue[3]):
             # Seems that there is a local setpoint
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp, Attribute_=MsgAttrID)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
