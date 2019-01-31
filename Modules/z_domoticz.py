@@ -56,6 +56,7 @@ def CreateDomoDevice(self, Devices, NWKID):
     # When Type is at Global level, then we create all Type against the 1st EP
     # If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
     GlobalEP = False
+    GlobalType = []
     for Ep in self.ListOfDevices[NWKID]['Ep']:
         dType = aType = Type = ''
         # Use 'type' at level EndPoint if existe
@@ -83,6 +84,11 @@ def CreateDomoDevice(self, Devices, NWKID):
         # Check if Type is known
         if Type == '':
             continue
+
+        for iterType in Type:
+            if iterType not in GlobalType and iterType != '': 
+                Domoticz.Log("adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)))
+                GlobalType.append(iterType)
 
         Domoticz.Debug("CreateDomoDevice - Creating devices based on Type: %s" % Type)
 
@@ -124,7 +130,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Type = ['LvlControl']
 
         for t in Type:
-            Domoticz.Log("CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t))
+            Domoticz.Debug("CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t))
             if t == "ThermoSetpoint":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -531,7 +537,16 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
-
+    # for Ep
+    Domoticz.Log("GlobalType: %s" %(str(GlobalType)))
+    if len(GlobalType) != 0:
+        self.ListOfDevices[NWKID]['Type'] = ''
+        for iterType in GlobalType:
+            if self.ListOfDevices[NWKID]['Type'] == '':
+                self.ListOfDevices[NWKID]['Type'] = iterType 
+            else:
+                self.ListOfDevices[NWKID]['Type'] = self.ListOfDevices[NWKID]['Type'] + '/' + iterType 
+        Domoticz.Log("CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'])
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
     '''
@@ -1081,12 +1096,12 @@ def GetType(self, Addr, Ep):
 
         if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
             if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
+                Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
                     self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
                 Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
                 Type = str(Type)
         else:
-            Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
+            Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
@@ -1113,9 +1128,6 @@ def GetType(self, Addr, Ep):
             Type = Type[:-1]
         if Type[0:] == "/":
             Type = Type[1:]
-        if Type != "":
-            self.ListOfDevices[Addr]['Type'] = Type
-            Domoticz.Debug("GetType - Type is now set to : " + str(Type))
     return Type
 
 
