@@ -238,8 +238,9 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("Cluster0702 - empty message ")
         return
 
+
     value = int(decodeAttribute( MsgAttType, MsgClusterData ))
-    Domoticz.Debug("Cluster0702 - MsgAttrID: %s MsgAttType: %s decodedValue: %s" %(MsgAttrID, MsgAttType, value))
+    Domoticz.Debug("Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
 
     if MsgAttrID == "0000": 
         Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value))
