@@ -34,6 +34,7 @@ class PluginConf:
         self.channel = 0
         self.allowRemoveZigateDevice = 0
         self.eraseZigatePDM = 0
+        self.blueLedOff = 0
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -64,6 +65,8 @@ class PluginConf:
 
         # Debugging
         self.debugReadCluster = 0
+
+        # Zigate
 
         # Import PluginConf.txt
         self.filename = self.homedirectory + "PluginConf-%02d.txt" %hardwareid
@@ -148,6 +151,11 @@ class PluginConf:
             self.channel = self.PluginConf.get('channel')
             self.channel = [c.strip() for c in self.channel.split(',')]
 
+
+        if self.PluginConf.get('blueLedOff') and \
+                self.PluginConf.get('blueLedOff').isdigit():
+            self.blueLedOff = int(self.PluginConf.get('blueLedOff'))
+
         if self.PluginConf.get('zmode'):
             if self.PluginConf.get('zmode') == 'Agressive':
                 self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
@@ -173,6 +181,7 @@ class PluginConf:
         Domoticz.Log(" -channel: %s" %self.channel)
         Domoticz.Log(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
         Domoticz.Log(" -eraseZigatePDM: %s" %self.eraseZigatePDM)
+        Domoticz.Log(" -blueLedOff: %s" %self.blueLedOff)
 
         Domoticz.Log("Plugin Transport")
         Domoticz.Log(" -zmode: %s" %self.zmode)

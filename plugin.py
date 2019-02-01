@@ -279,6 +279,10 @@ class BasePlugin:
             LQIdiscovery( self ) 
 
         self.busy = False
+
+        if self.pluginconf.blueLedOff:
+            sendZigateCmd(self, "0018","00")
+
         return True
 
     def onMessage(self, Connection, Data):
