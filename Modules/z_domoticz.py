@@ -455,37 +455,8 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "ColorControl":  # variateur de couleur/luminosite/on-off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                # Type 0xF1    pTypeColorSwitch
-                # Switchtype 7 STYPE_Dimmer
-                # SubType sTypeColor_RGB_W                0x01 // RGB + white, either RGB or white can be lit
-                # SubType sTypeColor_White                0x03 // Monochrome white
-                # SubType sTypeColor_RGB_CW_WW            0x04 // RGB + cold white + warm white, either RGB or white can be lit
-                # SubType sTypeColor_LivCol               0x05
-                # SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
-                # The test should be done in an other way ( ProfileID for instance )
 
-                # default: SubType sTypeColor_RGB_CW_WW_Z 0x07 // Like RGBWW, # but allows combining RGB and white
-                Subtype_ = 7
-
-
-                if 'ColorInfos' in  self.ListOfDevices[NWKID]:
-                    Domoticz.Debug("ColorInfos: %s" %self.ListOfDevices[NWKID]['ColorInfos'])
-                    if 'ColorMode' in self.ListOfDevices[NWKID]['ColorInfos']:
-                        Domoticz.Debug("ColorMode: %s" %self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'])
-                        if self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 2:
-                            if 'ZDeviceID' in self.ListOfDevices[NWKID]:
-                                if  self.ListOfDevices[NWKID]['ZDeviceID'] == "0210":
-                                    #// RGB + cold white + warm white, either RGB or white can be lit
-                                    Subtype_ = 4
-                                elif self.ListOfDevices[NWKID]['ZDeviceID'] == "0200":
-                                    Subtype_ = 7
-                                else:
-                                    # SubType sTypeColor_CW_WW       0x08 // Cold white + Warm white
-                                    Subtype_ = 8        # "Ampoule.LED1545G12.Tradfri":
-                        elif  self.ListOfDevices[NWKID]['ColorInfos']['ColorMode'] == 1:
-                                                # SubType sTypeColor_RGB         0x02 // RGB
-                            Subtype_ = 2        # "Ampoule.LED1624G9.Tradfri":
-
+                Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
 
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
@@ -1151,3 +1122,73 @@ def TypeFromCluster(cluster, create_=False):
     else:
         TypeFromCluster = ""
     return TypeFromCluster
+
+def subtypeRGB_FromProfile_Device_IDs( EndPoints, ProfileID, ZDeviceID, ColorInfos):
+
+        # Type 0xF1    pTypeColorSwitch
+        # Switchtype 7 STYPE_Dimmer
+        # SubType sTypeColor_RGB_W                0x01 // RGB + white, either RGB or white can be lit
+        # SubType sTypeColor_White                0x03 // Monochrome white
+        # SubType sTypeColor_RGB_CW_WW            0x04 // RGB + cold white + warm white, either RGB or white can be lit
+        # SubType sTypeColor_LivCol               0x05
+        # SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
+        # The test should be done in an other way ( ProfileID for instance )
+
+        # default: SubType sTypeColor_RGB_CW_WW_Z 0x07 // Like RGBWW, # but allows combining RGB and white
+
+    Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s, ZDeviceID: %s ColorInfos: %s" %(ProfileID, ZDeviceID, ColorInfos))
+
+    Subtype = None
+    ZLL_Commissioning = False
+
+    ColorMode = 0
+    if 'ColorMode' in ColorInfos:
+        ColorMode = ColorInfos['ColorMode']
+
+    for iterEp in EndPoints:
+        if '1000' in  iterEp:
+            ZLL_Commissioning = True
+            break
+
+    if ProfileID == '0104': # Home Automation
+        if ZLL_Commissioning and ZDeviceID == '0100': # Most likely IKEA Tradfri bulb LED1622G12
+            Subtype_ = 8
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+        if ZDeviceID == '0102':
+            pass
+        if ZDeviceID == '0105':
+            pass
+
+    if ProfileID == "a1e0": #Philips Hue
+        if ZDeviceID == "0061":
+            Subtype = 4
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+
+    if ProfileID == 'c05e': # ZLL ZigBee LightLink
+        # We should Check that ZLL Commissioning is also there. Cluster 0x1000
+
+        if ZDeviceID == '0100': # LED1622G12.Tradfri ou phillips hue white
+            pass
+        
+        if ZDeviceID == '0200': # ampoule Tradfri LED1624G9
+            Subtype = 7
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+
+        if ZDeviceID == '0210': # 
+            Subtype = 4
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+
+        if ZDeviceID == '0220': # ampoule Tradfi LED1545G12.Tradfri
+            pass
+
+    if Subtype is None and ColorInfos:
+        if ColorMode == 2:
+            Subtype = 8
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
+        elif ColorMode == 1:
+            Subtype = 2        
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
+        else:
+            Subtype = 7
+
+    return Subtype
