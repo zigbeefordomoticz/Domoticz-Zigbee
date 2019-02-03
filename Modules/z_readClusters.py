@@ -344,12 +344,16 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
-            Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: " + str(struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0])  )
-            if struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0] < 0:
+            rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
+
+            Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
+
+            if rotation_angle < 0:
                 #anti-clokc
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="90"
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"90")
-            if struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0] >= 0:
+            if rotation_angle >= 0:
                 # Clock
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
@@ -866,6 +870,15 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0201 - Max SetPoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], oldValue[3], oldValue[4], ValueTemp)
 
+    elif MsgAttrID == '4000': # TRV Mode
+        Domoticz.Log("ReadCluster 0201 - TRV Mode: %s" %value)
+
+    elif MsgAttrID == '4001': # Valve position
+        Domoticz.Log("ReadCluster 0201 - Valve position: %s" %value)
+
+    elif MsgAttrID == '4002': # Valve position
+        Domoticz.Log("ReadCluster 0201 - Errors: %s" %value)
+
     elif MsgAttrID == '4003': # Current Temperature Set point
         ValueTemp = round(int(value)/100,1)
         Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
@@ -873,6 +886,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # Seems that there is a local setpoint
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp, Attribute_=MsgAttrID)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
+
+    elif MsgAttrID == '4008': # Host Flags
+        Domoticz.Log("ReadCluster 0201 - Host Flags: %s" %value)
         
     else:
         Domoticz.Log("ReadCluster 0201 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))

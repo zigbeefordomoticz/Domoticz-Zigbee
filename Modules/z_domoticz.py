@@ -32,16 +32,26 @@ def CreateDomoDevice(self, Devices, NWKID):
         #        return Devices[x].ID
         return (Devices[x].ID for x in Devices if (Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0))
 
-    def FreeUnit(self, Devices):
+    def FreeUnit(self, Devices, nbunit_=1):
         '''
         FreeUnit
-        Look for a Free Unit number.
+        Look for a Free Unit number. If nbunit > 1 then we look for nbunit consecutive slots
         '''
         FreeUnit = ""
         for x in range(1, 255):
             if x not in Devices:
-                Domoticz.Debug("FreeUnit - device " + str(x) + " available")
-                return x
+                if nbunit_ == 1:
+                    return x
+                nb = 1
+                for y in range(x+1, 255):
+                    if y not in Devices:
+                        nb += 1
+                    else: 
+                        break
+                    if nb == nbunit_: # We have found nbunit consecutive slots
+                        Domoticz.Debug("FreeUnit - device " + str(x) + " available")
+                        return x
+
         else:
             Domoticz.Debug("FreeUnit - device " + str(len(Devices) + 1))
             return len(Devices) + 1
@@ -338,10 +348,12 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Aqara" or t == "XCube":  # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
+
+                # Create the XCube Widget
                 Options = {"LevelActions": "||||||||||",
                            "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
                            "LevelOffHidden": "true", "SelectorStyle": "1"}
-                unit = FreeUnit(self, Devices)
+                unit = FreeUnit(self, Devices, nbunit_=2) # Look for 2 consecutive slots
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
@@ -351,6 +363,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                
+                # Create the Status (Text) Widget to report Rotation angle
+
+                widget_name = "%s - %s - %s" %(t, DeviceID_IEEE, Ep)
+                unit += 1
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=widget_name,
+                                Unit=unit, Type=243, Subtype=19, Switchtype=0)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = 'Text'
 
             if t == "Vibration":  # Aqara Vibration Sensor v1
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -907,14 +932,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "03":  # Magic Cube Acara Rotation
-                state = value
-                data = value
-                if value == "80":
-                    data = 8
-                elif value == "90":
-                    data = 9
-                Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
-                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                if Attribute_ == '0055': # Rotation Angle
+                    # Update Text widget ( unit + 1 )
+                    UpdateDevice_v2(Devices, x + 1, 0 , value, BatteryLevel, SignalLevel, ForceUpdate_ = True)
+
+                else:
+                    state = value
+                    data = value
+                    if value == "80":
+                        data = 8
+                    elif value == "90":
+                        data = 9
+                    Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
+                    UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == DeviceType == "XCube" and Ep == "02":  # cube xiaomi
                 if value == "0000":  # shake
