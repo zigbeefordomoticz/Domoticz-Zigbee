@@ -86,7 +86,6 @@ ZLL_DEVICES = {
 
 
 # https://www.nxp.com/docs/en/user-guide/JN-UG-3076.pdf
-PROFILE_ID = 0x0104
 ZHA_DEVICES = {
         # Generic Devices
         0x0000: 'On/Off Switch',
