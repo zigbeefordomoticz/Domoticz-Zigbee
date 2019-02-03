@@ -904,7 +904,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "02":  # Magic Cube Acara
                 Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value))
-                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "03":  # Magic Cube Acara Rotation
                 state = value
@@ -914,33 +914,33 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == "90":
                     data = 9
                 Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
-                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == DeviceType == "XCube" and Ep == "02":  # cube xiaomi
                 if value == "0000":  # shake
                     state = "10"
                     data = "01"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value in ( "0204", "0200", "0203", "0201", "0202", "0205" ):
                     state = "50"
                     data = "05"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value in ( "0103", "0100", "0104", "0101", "0102", "0105"): # Slide/M%ove
                     state = "20"
                     data = "02"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value == "0003":  # Free Fall
                     state = "70"
                     data = "07"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif "0004" <= value <= "0059":  # 90°
                     state = "30"
                     data = "03"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value >= "0060":  # 180°
                     state = "90"
                     data = "09"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == DeviceType == "Vibration":
                     if value =="00":
@@ -958,7 +958,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     else:
                         data = 0
                         state = "00"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
             if ClusterType == DeviceType == "Lux":
                 UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
@@ -1034,8 +1034,8 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
     if (Unit in Devices):
-        if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or (
-                Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_:
+        if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
+            ( Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_:
             Domoticz.Log("Update v2 Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
                 Unit].Name + ")")
             if Color_:
