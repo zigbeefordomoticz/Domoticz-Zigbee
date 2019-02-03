@@ -818,6 +818,7 @@ def thermostat_Setpoint( self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
+    setpoint = round(( setpoint * 2 ) / 2, 1)   # Round to 0.5 degrees
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -896,7 +897,11 @@ def ReadAttributeRequest_0201(self, key):
     #listAttributes.append(0x0016)        # MAX HEATING / 0x29
     if self.ListOfDevices[key]['Model'].find('SPZB') == 0:
         Domoticz.Log("- req 0x4003 Current Set Point Eurotronic")
+        listAttributes.append(0x4000)        # TRV Mode
+        listAttributes.append(0x4001)        # Set Valve Position
+        listAttributes.append(0x4002)        # Errors
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
+        listAttributes.append(0x4008)        # HOst Flag
 
     Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
     ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
