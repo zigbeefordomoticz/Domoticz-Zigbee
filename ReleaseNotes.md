@@ -24,6 +24,9 @@
 - [Technical] re-factor the ConfigureReporting in order to avoid peak of laod
 - [Technical] Profile the possibility to configure the location of Data, Config and Report files. See PluginConf Documentation on Wiki
 - [Hardware] Implementation of Thermostat in order to handle Eurotronic Spirit Zigbee ( Temp sensor, Setpoint )
+- [Enhacement] Aqara Cube will get 2 Widgets , one Switch selector and one Text widget. The Text widget will get the Cube rotation Angle notification.
+- [Technical] Implement TX Power feature from firmware 3.0f.
+- [Technical] Implement the possibility to switch off the Blue led from firmware 3.0f.
 
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random
