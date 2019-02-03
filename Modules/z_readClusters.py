@@ -346,7 +346,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
 
-            Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
+            Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
 
             if rotation_angle < 0:
