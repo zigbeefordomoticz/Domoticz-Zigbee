@@ -241,7 +241,7 @@ def ReadAttributeRequest_0001(self, key):
     listAttributes.append(0x0031)        # Battery Battery Size
     listAttributes.append(0x0033)        # Battery Battery Quantity
 
-    Domoticz.Log("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0300(self, key):
@@ -338,7 +338,7 @@ def ReadAttributeRequest_000C(self, key):
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
 
-    Domoticz.Log("ReadAttributeRequest_0702 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0702 - Key: %s " %key)
 
     listAttributes = []
     listAttributes.append(0x0000) # Current Summation Delivered
@@ -467,7 +467,7 @@ def processConfigureReporting( self, NWKID=None ):
     now = int(time())
     if NWKID is None :
         if self.busy or len(self.ZigateComm._normalQueue) > 2:
-            Domoticz.Log("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+            Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
             return # Will do at the next round
         target = self.ListOfDevices
@@ -532,10 +532,10 @@ def processConfigureReporting( self, NWKID=None ):
                          continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
-                    Domoticz.Log('Processing configureReporting for %s cluuster: %s' %(key,cluster))
+                    Domoticz.Debug('Processing configureReporting for %s cluuster: %s' %(key,cluster))
 
                     if self.busy or len(self.ZigateComm._normalQueue) > 2:
-                        Domoticz.Log("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                        Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round
 
@@ -597,11 +597,11 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = ''
 
-        Domoticz.Log("bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+        Domoticz.Debug("bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
     else:
-        Domoticz.Log("bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']))
+        Domoticz.Debug("bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']))
 
     return
 

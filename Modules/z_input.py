@@ -1466,12 +1466,12 @@ def Decode8110(self, Devices, MsgData) :  # Write Attribute response
 
 def Decode8120(self, MsgData) :  # Configure Reporting response
 
-    Domoticz.Log("Decode8120 - Configure reporting response : %s" %MsgData)
+    Domoticz.Debug("Decode8120 - Configure reporting response : %s" %MsgData)
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
-    Domoticz.Log("Decode81020 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId))
+    Domoticz.Log("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId))
 
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
@@ -1485,9 +1485,9 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
         while idx < nbattribute :
             MsgAttribute.append( MsgData[(12+(idx*4)):(12+(idx*4))+4] )
             idx += 1
-        Domoticz.Log("nbAttribute: %s, idx: %s" %(nbattribute, idx))
+        Domoticz.Debug("nbAttribute: %s, idx: %s" %(nbattribute, idx))
         Domoticz.Log("Decode8120 - Attributes : %s " %(str(MsgAttribute)))
-        MsgDataStatus= MsgData[(12+(nbattribute*4)):(12+(nbattribute*4)+2)]
+        MsgDataStatus = MsgData[(12+(nbattribute*4)):(12+(nbattribute*4)+2)]
 
     Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
