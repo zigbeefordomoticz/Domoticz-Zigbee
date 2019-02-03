@@ -92,6 +92,7 @@ class BasePlugin:
         self.homedirectory = ''
         self.HardwareID = ''
         self.transport = ''         # USB or Wifi
+        self.initdone = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
         self.statistics = None
         self.iaszonemgt = None      # Object to manage IAS Zone
@@ -280,9 +281,6 @@ class BasePlugin:
 
         self.busy = False
 
-        if self.pluginconf.blueLedOff:
-            sendZigateCmd(self, "0018","00")
-
         return True
 
     def onMessage(self, Connection, Data):
@@ -327,24 +325,33 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
-        if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement and self.FirmwareVersion:
-            # Check if we are with Firmware above 30f
+        if self.FirmwareVersion and not self.initdone:
+            # We can now do what must be done when we known the Firmware version
+            self.initdone = True
             if self.FirmwareVersion >= '030f':
-                Domoticz.Log("Start Group Management")
-                self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
-                      self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
-                self.groupmgt_NotStarted = False
-            else:
-                self.pluginconf.enablegroupmanagement = 0
-                Domoticz.Error("Cannot start Group Management due to low firmware level. Need >= 3.0f")
+                if self.pluginconf.blueLedOff:
+                    Domoticz.Status("Switch Blue Led off")
+                    sendZigateCmd(self, "0018","00")
+     
+                if self.pluginconf.TXpower:
+                    Domoticz.Status("Zigate switch to High Power Mode")
+                    sendZigateCmd(self, "0806","01")
+
+                if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
+                    # Check if we are with Firmware above 30f
+                    Domoticz.Log("Start Group Management")
+                    self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
+                        self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                    self.groupmgt_NotStarted = False
+
+        if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
+            if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
+                sendZigateCmd(self, "0009","")
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
             sendZigateCmd(self, "0009","")
 
-        if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
-                sendZigateCmd(self, "0009","")
         
         prevLenDevices = len(Devices)
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
