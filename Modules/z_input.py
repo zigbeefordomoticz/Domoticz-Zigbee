@@ -1684,7 +1684,19 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
     #  ( 0x06, 0x0008 ) - Up Click
     #  ( 0x07, 0x0008 ) - Up Release 
 
+    TYPE_ACTIONS = {
+            '01':'hold_down',
+            '02':'click_down',
+            '03':'release_down',
+            '05':'hold_up',
+            '06':'click_up',
+            '07':'release_up'
+            }
     if MsgClusterId == '0008':
+        if MsgCmd in TYPE_ACTIONS:
+            selector = TYPE_ACTIONS[MsgCmd]
+            Domoticz.Log("Decode8085 - Selector: %s" %selector)
+
         if MsgCmd == '01': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
         if MsgCmd == '02': 
@@ -1738,11 +1750,27 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     #  ( 0x07, 0x00, 0005 )  Click right button
     #  ( 0x07, 0x01, 0005 )  Click left button
 
+    TYPE_ACTIONS = {
+            '07':'click',
+            '08':'hold',
+            '09':'release'
+            }
+    TYPE_DIRECTIONS = {
+            '00':'right',
+            '01':'left',
+            '02':'middle'
+            }
+
     if MsgClusterId == '0005':
+        if MsgCmd in TYPE_ACTIONS and MsgDirection in TYPE_DIRECTIONS:
+            selector = TYPE_DIRECTIONS[MsgDirection] + '_' + TYPE_ACTIONS[MsgCmd]
+            Domoticz.Log("Decode80A7 - selector: %s" %selector)
+
         if MsgCmd == '07' and MsgDirection == '00':
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'right_click' )
         if MsgCmd == '07' and MsgDirection == '01':
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'left_click' )
+
 
 
 
