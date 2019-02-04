@@ -533,6 +533,23 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Toggle|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release", \
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
     # for Ep
     Domoticz.Log("GlobalType: %s" %(str(GlobalType)))
     if len(GlobalType) != 0:
@@ -1109,6 +1126,11 @@ def GetType(self, Addr, Ep):
         Domoticz.Debug("GetType - Model not found in DeviceConf : " + str(
             self.ListOfDevices[Addr]['Model']) + " Let's go for Cluster search")
         Type = ""
+
+        # Check ProfileID/ZDeviceD
+        if self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830':
+            return "Ikea_Round_5b"
+
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
             if Type != "" and Type[:1] != "/":
@@ -1132,8 +1154,11 @@ def GetType(self, Addr, Ep):
     return Type
 
 
-def TypeFromCluster(cluster, create_=False):
-    if cluster == "0006": TypeFromCluster = "Switch"
+def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
+
+    if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':
+        TypeFromCluster = 'Ikea_Round_5b'
+    elif cluster == "0006": TypeFromCluster = "Switch"
     elif cluster == "0008": TypeFromCluster = "LvlControl"
     elif cluster == "000c" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0012" and not create_: TypeFromCluster = "XCube"
