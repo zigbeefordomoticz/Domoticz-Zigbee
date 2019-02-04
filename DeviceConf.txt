@@ -32,6 +32,7 @@
 'TRADFRI bulb E27 WS clear 950lm':{'Ep':{'01':{'0000':'','0003':'','0004':'','0005':'','0006':'','0008':'','0300':'','0b05':'','1000':'','Type':'ColorControl','ColorMode':'2'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0220','NickName':'LED1546G12'},
 'TRADFRI control outlet':{'Ep':{'02':{'1000':'','0021':''},'01':{'0006':'','fc7c':'','0004':'','0000':'','0003':'','0008':'','0005':''}},'Type':'Plug','ProfileID':'c05e','ZDeviceID':'010a'},
 'TRADFRI on/off switch':{'Ep':{'01':{'0001':'','fc7c':'','0009':'','1000':'','0102':'','0000':'','0003':'','Type':'Switch'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0820'},
+'TRADFRI remote control':{'Ep':{'01':{'0000':'','0001':'','0003':'','0009':'','0b05':'','1000':'','0004':'','0005':'','0006':'','0008':'','0019':'','Type':'Ikea_Round_5b'}},'Type':'','ProfileID':'c05e','ZDeviceID':'0830'},
 'SPE600':{'Ep':{'09':{'0000':'','0001':'','0003':'','0004':'','0005':'','0006':'','0402':'','0702':'','fc01':'','Type':'Plug/Power/Meter/Voltage/Temp'}},'Type':'','ProfileID':'0104','ZDeviceID':'0051'},
 'shutter.Profalux':{'Ep':{'01':{'0006','0008'}},'Type':'LvlControl','ProfileID':'0104','ZDeviceID':'0200'},
 'PST03A-v2.2.5':{'Ep':{'01':{'0406':'','0500':'','0400':'','0402':'','Type':'Door/Switch/Lux/Temp'},'02':{'0500':'','Type':'Motion'}},'Type':''},
