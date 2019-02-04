@@ -230,11 +230,6 @@ def ZigateRead(self, Devices, Data):
         self.groupmgt.addGroupResponse( MsgData )
         return
 
-    elif str(MsgType)=="80a7":
-        Domoticz.Log("ZigateRead - MsgType 80a7 - Reception Zone status change notification : " + Data)
-        Decode80A7(self, Devices, MsgData)
-        return
-
 
     elif str(MsgType)=="8061":  #
         Domoticz.Debug("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
@@ -252,13 +247,13 @@ def ZigateRead(self, Devices, Data):
         return
 
     elif str(MsgType)=="8085":
-        Domoticz.Log("ZigateRead - MsgType 8085 - Reception Zone status change notification : " + Data)
-        Decode8085(self, Devices, MsgData)
+        Domoticz.Debug("ZigateRead - MsgType 8085 - Reception Remote command : " + Data)
+        Decode8085(self, Devices, MsgData, MsgRSSI)
         return
 
     elif str(MsgType)=="8095":
-        Domoticz.Log("ZigateRead - MsgType 8085 - Reception Zone status change notification : " + Data)
-        Decode8085(self, Devices, MsgData)
+        Domoticz.Debug("ZigateRead - MsgType 8095 - Reception Remote command : " + Data)
+        Decode8095(self, Devices, MsgData, MsgRSSI)
         return
 
     elif str(MsgType)=="80a0":  #
@@ -284,6 +279,11 @@ def ZigateRead(self, Devices, Data):
     elif str(MsgType)=="80a6":  #
         Domoticz.Log("ZigateRead - MsgType 80a6 - Reception Scene membership response : " + Data)
         return
+    elif str(MsgType)=="80a7":
+        Domoticz.Debug("ZigateRead - MsgType 80a7 - Reception Remote command : " + Data)
+        Decode80A7(self, Devices, MsgData, MsgRSSI)
+        return
+
 
     elif str(MsgType)=="8100":  #
         Domoticz.Debug("ZigateRead - MsgType 8100 - Reception Real individual attribute response : " + Data)
@@ -1663,59 +1663,87 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     
     return
 
-
-
-
 def Decode8085(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed'
 
+    Domoticz.Log("Decode8085 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
-    MsgSrcAddr = MsgData[8:12]
-    MsgCmd = MsgData[12:14]
+    unknown_ = MsgData[8:10]
+    MsgSrcAddr = MsgData[10:14]
+    MsgCmd = MsgData[14:16]
+    Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
-    _PRESS_TYPE = {2: 'Click', 1: 'Hold', 3: 'Release'}
-    if MsgCmd in ( '01', '02', '03'):
-        # Action Down
-        _command = _PRESS_TYPE[MsgCmd]
-        Domoticz.Log("Decode8085 - Remote button pressed Down %s" %_command)
-    elif MsgCmd in ( '05', '06', '07'):
-        # Action Up
-        _command = _PRESS_TYPE[str(int(MsgCmd) - 4)]
-        Domoticz.Log("Decode8085 - Remote button pressed Up %s" %_command)
+    # Ikea Remote 5 buttons round.
+    #  ( cmd, cluster )
+    #  ( 0x01, 0x0008 ) - Down Push 
+    #  ( 0x02, 0x0008 ) - Down Click
+    #  ( 0x03, 0x0008 ) - Down Release 
+    #  ( 0x05, 0x0008 ) - Up Push 
+    #  ( 0x06, 0x0008 ) - Up Click
+    #  ( 0x07, 0x0008 ) - Up Release 
+
+    if MsgClusterId == '0008':
+        if MsgCmd == '01': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
+        if MsgCmd == '02': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_click' )
+        if MsgCmd == '03': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_release' )
+        if MsgCmd == '05': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_push' )
+        if MsgCmd == '06': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_click' )
+        if MsgCmd == '07': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_release' )
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed ON/OFF'
 
+    # Ikea Remote 5 buttons round.
+    #  ( cmd, directioni, cluster )
+    #  ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
+
+    Domoticz.Log("Decode8095 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
-    MsgSrcAddr = MsgData[8:12]
-    MsgCmd = MsgData[12:14]
+    unknown_ = MsgData[8:10]
+    MsgSrcAddr = MsgData[10:14]
+    MsgCmd = MsgData[14:16]
+    Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
-    _PRESS_TYPE = {2: 'Click'}
-    _command = _PRESS_TYPE[MsgCmd]
-    Domoticz.Log("Decode8095 - Remote button pressed ON/OFF %s" %_command)
+    if MsgClusterId == '0006':
+        if MsgCmd == '02': 
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed (LEFT/RIGHT)'
 
+    Domoticz.Log("Decode80A7 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
-    MsgSrcAddr = MsgData[8:12]
-    MsgCmd = MsgData[12:14]
-    MsgDirection = MsgData[14:16]
+    MsgCmd = MsgData[8:10]
+    MsgDirection = MsgData[10:12]
+    unkown_ = MsgData[12:18]
+    MsgSrcAddr = MsgData[18:22]
+    Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
+
+    # Ikea Remote 5 buttons round.
+    #  ( cmd, directioni, cluster )
+    #  ( 0x07, 0x00, 0005 )  Click right button
+    #  ( 0x07, 0x01, 0005 )  Click left button
+
+    if MsgClusterId == '0005':
+        if MsgCmd == '07' and MsgDirection == '00':
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'right_click' )
+        if MsgCmd == '07' and MsgDirection == '01':
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'left_click' )
 
 
-    _PRESS_TYPE = {7: 'Click', 8: 'Hold', 9: 'Release'}
-    _DIRECTIONS = {0: 'Right', 1: 'Left', 2: 'Middle'}
-    _type = _PRESS_TYPE[MsgCmd]
-    _button = _DIRECTIONS[MsgDirection]
-
-    Domoticz.Log("Decode80A7 - Remote button pressed %s %s" %(_type, _button))
 
 
