@@ -587,6 +587,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if 'ClusterType' in self.ListOfDevices[NWKID]:
                 # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
+                if str(ID) not in self.ListOfDevices[NWKID]['ClusterType']:
+                    Domoticz.Error("MajDomoDevice - inconsistency on ClusterType. Id: %s not found in %s" \
+                            %( str(ID), str(self.ListOfDevices[NWKID]['ClusterType'])))
+                    return
                 Domoticz.Debug("MajDomoDevice - search ClusterType in : " + str(
                     self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID))
                 DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
