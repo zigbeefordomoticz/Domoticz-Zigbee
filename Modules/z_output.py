@@ -146,7 +146,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         weight = 1
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == '86':
+            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
                 Domoticz.Debug("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                          %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                 return
@@ -504,7 +504,7 @@ def processConfigureReporting( self, NWKID=None ):
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
                     if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
                         if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != '00' and \
+                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
                                 continue
                         else:
