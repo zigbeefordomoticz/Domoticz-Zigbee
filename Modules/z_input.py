@@ -636,6 +636,7 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
 
     self.IEEE2NWK[extaddr] = addr
     self.ListOfDevices[addr] = {}
+    self.ListOfDevices[addr]['version'] = '3'
     self.ListOfDevices[addr]['IEEE'] = extaddr
     self.ListOfDevices[addr]['Ep'] = {}
     self.ListOfDevices[addr]['Ep']['01'] = {}
