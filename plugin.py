@@ -342,6 +342,8 @@ class BasePlugin:
                     Domoticz.Log("Start Group Management")
                     self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
                         self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                    #self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, Parameters["HomeFolder"], 
+                    #    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
@@ -387,51 +389,51 @@ class BasePlugin:
 
         # Hearbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
-        if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
-            Domoticz.Debug("Ping")
-            if self.Ping['Rx Message']: # 'Rx Message' is set to 0 when receiving a Message.
-                                        # Looks like we didn't receive messages
-                if  self.Ping['Rx Message'] > ( 60 //  HEARTBEAT ):
-                    Domoticz.Log("Ping - We didn't receive any messages since 60s")
-                    # This is now about 1' or more that we didn't receive any messages.
-                    # Let's try to ping Zigate in order to force a message
-                    now = time.time()
-                    if 'Status' in self.Ping:
-                        if self.Ping['Status'] == 'Sent':
-                            delta = now - self.Ping['TimeStamps']
-                            Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
-                            if delta > 60: # Seems that we have lost the Zigate communication
-                                Domoticz.Log("Ping - no Heartbeat with Zigate")
-                                updateNotificationWidget( self, Devices, 'Ping: Connection with Zigate Lost')
-                                self.connectionState = 0
-                                self.ZigateComm.reConn()
-                            #else:
-                            #    if self.connectionState == 0:
-                            #        updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-                            #        self.connectionState = 1
+        if self.pluginconf.Ping:
+            if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
+                Domoticz.Log("Ping")
+                if self.Ping['Rx Message']: # 'Rx Message' is set to 0 when receiving a Message.
+                                            # Looks like we didn't receive messages
+                    if  self.Ping['Rx Message'] > ( 60 //  HEARTBEAT ):
+                        Domoticz.Log("Ping - We didn't receive any messages since 60s")
+                        # This is now about 1' or more that we didn't receive any messages.
+                        # Let's try to ping Zigate in order to force a message
+                        now = time.time()
+                        if 'Status' in self.Ping:
+                            if self.Ping['Status'] == 'Sent':
+                                delta = now - self.Ping['TimeStamps']
+                                Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
+                                if delta > 60: # Seems that we have lost the Zigate communication
+                                    Domoticz.Log("Ping - no Heartbeat with Zigate")
+                                    updateNotificationWidget( self, Devices, 'Ping: Connection with Zigate Lost')
+                                    self.connectionState = 0
+                                    self.ZigateComm.reConn()
+                                #else:
+                                #    if self.connectionState == 0:
+                                #        updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+                                #        self.connectionState = 1
+                            else:
+                                #if self.connectionState == 0:
+                                #    updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+                                Domoticz.Log("Ping - Send a Ping")
+                                sendZigateCmd( self, "0014", "" ) # Request status
+                                self.connectionState = 1
+                                self.Ping['Status'] = 'Sent'
+                                self.Ping['TimeStamps'] = now
                         else:
-                            #if self.connectionState == 0:
-                            #    updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
                             Domoticz.Log("Ping - Send a Ping")
                             sendZigateCmd( self, "0014", "" ) # Request status
-                            self.connectionState = 1
                             self.Ping['Status'] = 'Sent'
                             self.Ping['TimeStamps'] = now
                     else:
-                        Domoticz.Log("Ping - Send a Ping")
-                        sendZigateCmd( self, "0014", "" ) # Request status
-                        self.Ping['Status'] = 'Sent'
-                        self.Ping['TimeStamps'] = now
+                        # We receive a message less than a minute ago
+                        Domoticz.Debug("Ping - We have receive a message less than 1' ago ")
                 else:
-                    # We receive a message less than a minute ago
-                    Domoticz.Debug("Ping - We have receive a message less than 1' ago ")
-                    pass
-            else:
-                # We receive a message inside the HEARTBEAT
-                Domoticz.Debug("Ping - We have receive a message in between 2 Heartbeat")
-                pass
+                    # We receive a message inside the HEARTBEAT
+                    Domoticz.Debug("Ping - We have receive a message in between 2 Heartbeat")
 
-        self.Ping['Rx Message'] += 1
+            self.Ping['Rx Message'] += 1
+        # Endif Ping enabled
 
         if busy_:
             updateStatusWidget( self, Devices, 'Busy')

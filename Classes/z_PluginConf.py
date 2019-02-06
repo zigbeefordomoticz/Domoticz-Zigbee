@@ -43,6 +43,7 @@ class PluginConf:
         self.zTimeOut = 2  # 2'' Tiemout to get Ack and Data
         self.CrcCheck = 1
         self.sendDelay = 0
+        self.Ping = 1
 
         # Plugin Directories
         self.pluginHome = homedir
@@ -116,6 +117,10 @@ class PluginConf:
         if self.PluginConf.get('sendDelay') and \
                 self.PluginConf.get('sendDelay').isdigit():
             self.sendDelay = int(self.PluginConf['sendDelay'], 10)
+
+        if self.PluginConf.get('Ping') and \
+                self.PluginConf.get('Ping').isdigit():
+            self.Ping = int(self.PluginConf['Ping'], 10)
 
         if self.PluginConf.get('allowStoreDiscoveryFrames') and \
                 self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
@@ -195,6 +200,7 @@ class PluginConf:
         Domoticz.Log(" -zTimeOut: %s" %self.zTimeOut)
         Domoticz.Log(" -CrcCheck: %s" %self.CrcCheck)
         Domoticz.Log(" -sendDelay: %s" %self.sendDelay)
+        Domoticz.Log(" -Ping: %s" %self.Ping)
 
         Domoticz.Log("Plugin Directories")
         Domoticz.Log(" -pluginHome: %s" %self.pluginHome)
