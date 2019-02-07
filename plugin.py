@@ -62,7 +62,7 @@ from Modules.command import mgtCommand
 from Modules.LQI import LQIdiscovery
 from Modules.consts import HEARTBEAT
 from Modules.adminWidget import updateStatusWidget, initializeZigateWidgets, handleCommand, updateNotificationWidget
-from Modules.webGui import CheckForUpdate
+#from Modules.webGui import CheckForUpdate
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
@@ -103,6 +103,7 @@ class BasePlugin:
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
         self.FirmwareVersion = None
+        self.FirmwareMajorVersion = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # Allow to force devices even if they are not in the Plugin Database. Could be usefull after the Firmware update where you have your devices in domoticz
 
@@ -183,7 +184,7 @@ class BasePlugin:
         self.statistics = TransportStatistics()
 
         # Check update for web GUI
-        CheckForUpdate( self )
+        # CheckForUpdate( self )
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
@@ -204,7 +205,7 @@ class BasePlugin:
     def onStop(self):
         Domoticz.Status("onStop called")
         #self.ZigateComm.closeConn()
-        WriteDeviceList(self, Parameters["HomeFolder"], 0)
+        WriteDeviceList(self, 0)
         self.statistics.printSummary()
         updateStatusWidget( self, Devices, 'No Communication')
 
@@ -328,7 +329,7 @@ class BasePlugin:
         if self.FirmwareVersion and not self.initdone:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
-            if self.FirmwareVersion >= '030f':
+            if self.FirmwareVersion >= '030f' and self.FirmwareMajorVersion > '0002':
                 if self.pluginconf.blueLedOff:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
@@ -368,9 +369,9 @@ class BasePlugin:
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) != prevLenDevices:
             Domoticz.Log("Devices size has changed , let's write ListOfDevices on disk")
-            WriteDeviceList(self, Parameters["HomeFolder"], 0)       # write immediatly
+            WriteDeviceList(self, 0)       # write immediatly
         else:
-            WriteDeviceList(self, Parameters["HomeFolder"], ( 90 * 5) )
+            WriteDeviceList(self, ( 90 * 5) )
 
         if self.CommiSSionning:
             updateStatusWidget( self, Devices, 'Enrollment')

@@ -91,7 +91,7 @@ def LoadDeviceList( self ):
     return res
 
 
-def WriteDeviceList(self, Folder, count):
+def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
         _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
