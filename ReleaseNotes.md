@@ -27,6 +27,7 @@
 - [Enhacement] Aqara Cube will get 2 Widgets , one Switch selector and one Text widget. The Text widget will get the Cube rotation Angle notification.
 - [Technical] Implement TX Power feature from firmware 3.0f.
 - [Technical] Implement the possibility to switch off the Blue led from firmware 3.0f.
+- [Hardware] Manage IKEA Tradfri Remote controller. Create a selector switch for the device and then capture remote event (if Zigate associated to the group)
 
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random
