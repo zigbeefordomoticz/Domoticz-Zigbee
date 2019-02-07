@@ -52,23 +52,23 @@ import json
 import queue
 import sys
 
-from Modules.z_tools import removeDeviceInList
-from Modules.z_output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice
-from Modules.z_input import ZigateRead
-from Modules.z_heartbeat import processListOfDevices
-from Modules.z_database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
-from Modules.z_domoticz import ResetDevice
-from Modules.z_command import mgtCommand
-from Modules.z_LQI import LQIdiscovery
-from Modules.z_consts import HEARTBEAT
-from Modules.z_adminWidget import updateStatusWidget, initializeZigateWidgets, handleCommand, updateNotificationWidget
-from Modules.z_WebGui import CheckForUpdate
+from Modules.tools import removeDeviceInList
+from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice
+from Modules.input import ZigateRead
+from Modules.heartbeat import processListOfDevices
+from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
+from Modules.domoticz import ResetDevice
+from Modules.command import mgtCommand
+from Modules.LQI import LQIdiscovery
+from Modules.consts import HEARTBEAT
+from Modules.adminWidget import updateStatusWidget, initializeZigateWidgets, handleCommand, updateNotificationWidget
+from Modules.webGui import CheckForUpdate
 
-from Classes.z_IAS import IAS_Zone_Management
-from Classes.z_PluginConf import PluginConf
-from Classes.z_Transport import ZigateTransport
-from Classes.z_TransportStats import TransportStatistics
-from Classes.z_GroupMgt import GroupsManagement
+from Classes.IAS import IAS_Zone_Management
+from Classes.PluginConf import PluginConf
+from Classes.Transport import ZigateTransport
+from Classes.TransportStats import TransportStatistics
+from Classes.GroupMgt import GroupsManagement
 
 class BasePlugin:
     enabled = False

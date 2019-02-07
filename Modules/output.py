@@ -19,8 +19,8 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.z_consts import ZLL_DEVICES
-from Modules.z_tools import getClusterListforEP
+from Modules.consts import ZLL_DEVICES
+from Modules.tools import getClusterListforEP
 
 
 def ZigateConf_light(self, discover ):

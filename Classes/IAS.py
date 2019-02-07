@@ -13,7 +13,7 @@
 
 import Domoticz
 
-from Modules.z_output import *
+from Modules.output import *
 
 
 ZONE_TYPE = { 0x0000: 'standard',

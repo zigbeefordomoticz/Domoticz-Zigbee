@@ -18,9 +18,9 @@ import json
 import queue
 import string
 
-from Modules.z_domoticz import MajDomoDevice
-from Modules.z_tools import DeviceExist, getEPforClusterType
-from Modules.z_output import ReadAttributeRequest_Ack
+from Modules.domoticz import MajDomoDevice
+from Modules.tools import DeviceExist, getEPforClusterType
+from Modules.output import ReadAttributeRequest_Ack
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4

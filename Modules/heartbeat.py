@@ -18,18 +18,18 @@ import struct
 import json
 import queue
 
-from Modules.z_output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
+from Modules.output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
         ReadAttributeRequest_0008, ReadAttributeRequest_000C, ReadAttributeRequest_0006, ReadAttributeRequest_0001, \
         ReadAttributeRequest_0300, processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
         ReadAttributeRequest_0201
-from Modules.z_tools import removeNwkInList
-from Modules.z_domoticz import CreateDomoDevice
-from Modules.z_LQI import LQIcontinueScan
-from Modules.z_consts import HEARTBEAT
-from Modules.z_adminWidget import updateNotificationWidget
+from Modules.tools import removeNwkInList
+from Modules.domoticz import CreateDomoDevice
+from Modules.LQI import LQIcontinueScan
+from Modules.consts import HEARTBEAT
+from Modules.adminWidget import updateNotificationWidget
 
-from Classes.z_IAS import IAS_Zone_Management
-from Classes.z_Transport import ZigateTransport
+from Classes.IAS import IAS_Zone_Management
+from Classes.Transport import ZigateTransport
 
 
 def processKnownDevices( self, Devices, NWKID ):

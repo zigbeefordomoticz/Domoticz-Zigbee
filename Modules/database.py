@@ -15,7 +15,7 @@ import os.path
 import datetime
 import json
 
-from Modules.z_tools import CheckDeviceList
+from Modules.tools import CheckDeviceList
 
 def _copyfile( source, dest ):
     copy_buffer =''

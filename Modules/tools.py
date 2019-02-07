@@ -16,7 +16,7 @@ import json
 
 import Domoticz
 
-from Modules.z_adminWidget import updateNotificationWidget
+from Modules.adminWidget import updateNotificationWidget
 
 def returnlen(taille , value) :
     while len(value)<taille:

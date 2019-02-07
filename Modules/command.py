@@ -16,9 +16,9 @@ import time
 import struct
 import json
 
-from Modules.z_tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.z_output import sendZigateCmd, thermostat_Setpoint
-from Modules.z_domoticz import UpdateDevice_v2
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.output import sendZigateCmd, thermostat_Setpoint
+from Modules.domoticz import UpdateDevice_v2
 
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :

@@ -14,9 +14,6 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 import Domoticz
 import os.path
 
-PLUGINCONF_FILENAME = "PluginConf.txt"
-
-
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
@@ -48,9 +45,9 @@ class PluginConf:
         # Plugin Directories
         self.pluginHome = homedir
         self.homedirectory = homedir
-        self.pluginData = self.pluginHome + './'
+        self.pluginData = self.pluginHome + './Data/'
         self.pluginZData = self.pluginHome + './Zdatas/'
-        self.pluginConfig = self.pluginHome + './'
+        self.pluginConfig = self.pluginHome + './Conf/'
         self.pluginWWW = self.pluginHome + '../../www/templates/'
         self.pluginReports = self.pluginWWW + 'zigate/reports/'
 
@@ -71,9 +68,9 @@ class PluginConf:
         # Zigate
 
         # Import PluginConf.txt
-        self.filename = self.homedirectory + "PluginConf-%02d.txt" %hardwareid
+        self.filename = self.pluginConfig + "PluginConf-%02d.txt" %hardwareid
         if not os.path.isfile(self.filename) :
-            self.filename = self.homedirectory + "PluginConf.txt"
+            self.filename = self.pluginConfig + "PluginConf.txt"
 
         Domoticz.Status("PluginConf: %s" %self.filename)
         tmpPluginConf = ""

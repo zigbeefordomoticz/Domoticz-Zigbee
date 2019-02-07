@@ -28,6 +28,8 @@
 - [Technical] Implement TX Power feature from firmware 3.0f.
 - [Technical] Implement the possibility to switch off the Blue led from firmware 3.0f.
 - [Hardware] Manage IKEA Tradfri Remote controller. Create a selector switch for the device and then capture remote event (if Zigate associated to the group)
+- [Technical] Move config file to Conf directory
+- [Technical] Live data as DeviceList and GroupList will be in Data folder
 
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random

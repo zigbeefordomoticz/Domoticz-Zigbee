@@ -19,16 +19,15 @@ import queue
 import time
 import json
 
-from Modules.z_domoticz import MajDomoDevice
-from Modules.z_tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
-from Modules.z_output import sendZigateCmd, leaveMgtReJoin
-from Modules.z_status import DisplayStatusCode
-from Modules.z_readClusters import ReadCluster
-from Modules.z_LQI import mgtLQIresp
-from Modules.z_adminWidget import updateNotificationWidget, updateStatusWidget
+from Modules.domoticz import MajDomoDevice
+from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
+from Modules.output import sendZigateCmd, leaveMgtReJoin
+from Modules.status import DisplayStatusCode
+from Modules.readClusters import ReadCluster
+from Modules.LQI import mgtLQIresp
+from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
-
-from Classes.z_IAS import IAS_Zone_Management
+from Classes.IAS import IAS_Zone_Management
 
 def ZigateRead(self, Devices, Data):
     Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )

@@ -18,8 +18,8 @@ import os.path
 import json
 
 import Domoticz
-from Modules.z_output import sendZigateCmd
-from Modules.z_adminWidget import updateNotificationWidget
+from Modules.output import sendZigateCmd
+from Modules.adminWidget import updateNotificationWidget
 
 def LQIdiscovery(self):
     """
