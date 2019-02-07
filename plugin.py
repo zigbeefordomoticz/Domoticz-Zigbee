@@ -320,13 +320,20 @@ class BasePlugin:
 
     def onHeartbeat(self):
         
-        if  not self.connectionState:
+        if not self.connectionState:
             Domoticz.Log("onHeartbeat receive, but no connection to Zigate")
             return
 
         self.HeartbeatCount += 1
 
-        if self.FirmwareVersion and not self.initdone:
+        if self.FirmwareVersion is None:
+            Domoticz.Log("FirmwareVersion not ready")
+            if self.HeartbeatCount in ( 2, 6 ): # Try to get Firmware version once more time.
+                Domoticz.Log("Try to get Firmware version once more %s" %self.HeartbeatCount)
+                sendZigateCmd(self, "0010", "") # Get Firmware version
+            return
+
+        if not self.initdone:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
             if self.FirmwareVersion >= '030f' and self.FirmwareMajorVersion >= '0002':
@@ -339,13 +346,12 @@ class BasePlugin:
                     sendZigateCmd(self, "0806","01")
 
                 if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
-                    # Check if we are with Firmware above 30f
-                    Domoticz.Log("Start Group Management")
-                    #self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
-                    #    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                    Domoticz.Status("Start Group Management")
                     self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, Parameters["HomeFolder"], 
                         self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
+
+            Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
             if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
@@ -355,8 +361,9 @@ class BasePlugin:
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
             sendZigateCmd(self, "0009","")
 
-        
+        # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
+
         # Manage all entries in  ListOfDevices (existing and up-coming devices)
         processListOfDevices( self , Devices )
 
