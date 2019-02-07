@@ -1698,18 +1698,18 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             selector = TYPE_ACTIONS[MsgCmd]
             Domoticz.Log("Decode8085 - Selector: %s" %selector)
 
-        if MsgCmd == '01': 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
+        #if MsgCmd == '01': 
+        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
         if MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_click' )
-        if MsgCmd == '03': 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_release' )
-        if MsgCmd == '05': 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_push' )
+        #if MsgCmd == '03': 
+        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_release' )
+        #if MsgCmd == '05': 
+        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_push' )
         if MsgCmd == '06': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_click' )
-        if MsgCmd == '07': 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_release' )
+        #if MsgCmd == '07': 
+        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_release' )
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
