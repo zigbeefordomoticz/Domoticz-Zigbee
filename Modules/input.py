@@ -14,7 +14,6 @@ import Domoticz
 import binascii
 import time
 import struct
-import json
 import queue
 import time
 import json
@@ -906,6 +905,10 @@ def Decode8042(self, MsgData) : # Node Descriptor response
 
     Domoticz.Debug("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
+    if addr not in self.ListOfDevices:
+        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %saddr)
+        return
+
     mac_capability = int(mac_capability,16)
     AltPAN      =   ( mac_capability & 0x00000001 )
     DeviceType  =   ( mac_capability >> 1 ) & 1
@@ -940,14 +943,14 @@ def Decode8042(self, MsgData) : # Node Descriptor response
     Domoticz.Debug("Decode8042 - bit_field = " +str(bit_fieldL) +" : "+str(bit_fieldH) )
     Domoticz.Debug("Decode8042 - Logical Type = " +str(LogicalType) )
 
-    if self.ListOfDevices[addr]['Status']!="inDB" :
-        if self.pluginconf.allowStoreDiscoveryFrames == 1 and addr in self.DiscoveryDevices :
-            self.DiscoveryDevices[addr]['Manufacturer']=manufacturer
-            self.DiscoveryDevices[addr]['8042']=MsgData
-            self.DiscoveryDevices[addr]['DeviceType']=str(DeviceType)
-            self.DiscoveryDevices[addr]['LogicalType']=str(LogicalType)
-            self.DiscoveryDevices[addr]['PowerSource']=str(PowerSource)
-            self.DiscoveryDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
+    if self.ListOfDevices[addr]['Status'] != "inDB" :
+        if self.pluginconf.allowStoreDiscoveryFrames and addr in self.DiscoveryDevices :
+            self.DiscoveryDevices[addr]['Manufacturer'] = manufacturer
+            self.DiscoveryDevices[addr]['8042'] = MsgData
+            self.DiscoveryDevices[addr]['DeviceType'] = str(DeviceType)
+            self.DiscoveryDevices[addr]['LogicalType'] = str(LogicalType)
+            self.DiscoveryDevices[addr]['PowerSource'] = str(PowerSource)
+            self.DiscoveryDevices[addr]['ReceiveOnIdle'] = str(ReceiveonIdle)
 
     self.ListOfDevices[addr]['Manufacturer']=manufacturer
     self.ListOfDevices[addr]['DeviceType']=str(DeviceType)
@@ -1036,9 +1039,9 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
             MsgDataCluster=""
             i=i+1
 
-    if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
-        self.DiscoveryDevices[MsgDataShAddr]['ProfileID']=MsgDataProfile
-        self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID']=MsgDataDeviceId
+    if self.pluginconf.allowStoreDiscoveryFrames and MsgDataShAddr in self.DiscoveryDevices :
+        self.DiscoveryDevices[MsgDataShAddr]['ProfileID'][MsgDataProfile] = MsgDataEp
+        self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID'][MsgDataDeviceId] = MsgDataEp
         if self.DiscoveryDevices[MsgDataShAddr].get('8043') :
             self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
@@ -1047,12 +1050,17 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
             self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
         
-        with open( self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".txt", 'a') as file:
-            file.write(MsgDataShAddr + " : " + str(self.DiscoveryDevices[MsgDataShAddr]) + "\n")
+        if 'IEEE' in self.ListOfDevices[MsgDataShAddr]:
+            _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgDataShAddr]['IEEE']) + ".json"
+        else:
+            _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
 
-    if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
-        self.ListOfDevices[MsgDataShAddr]['Status']="8043"
-        self.ListOfDevices[MsgDataShAddr]['Heartbeat']="0"
+        with open ( _jsonFilename, 'wt') as json_file:
+            json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file)
+
+    if self.ListOfDevices[MsgDataShAddr]['Status'] != "inDB" :
+        self.ListOfDevices[MsgDataShAddr]['Status'] = "8043"
+        self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
     else :
         updSQN( self, MsgDataShAddr, MsgDataSQN)
 
@@ -1117,7 +1125,7 @@ def Decode8045(self, Devices, MsgData) : # Reception Active endpoint response
 
         Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
-        if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgDataShAddr in self.DiscoveryDevices :
+        if self.pluginconf.allowStoreDiscoveryFrames and MsgDataShAddr in self.DiscoveryDevices :
             self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
 
@@ -1647,7 +1655,7 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
-    if self.pluginconf.allowStoreDiscoveryFrames == 1 :
+    if self.pluginconf.allowStoreDiscoveryFrames:
         self.DiscoveryDevices[MsgSrcAddr] = {}
         self.DiscoveryDevices[MsgSrcAddr]['004d']={}
         self.DiscoveryDevices[MsgSrcAddr]['8043']={}
