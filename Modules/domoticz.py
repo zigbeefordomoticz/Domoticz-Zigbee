@@ -97,7 +97,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         for iterType in Type:
             if iterType not in GlobalType and iterType != '': 
-                Domoticz.Log("adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)))
+                Domoticz.Debug("adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)))
                 GlobalType.append(iterType)
 
         Domoticz.Debug("CreateDomoDevice - Creating devices based on Type: %s" % Type)
@@ -551,7 +551,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
 
     # for Ep
-    Domoticz.Log("GlobalType: %s" %(str(GlobalType)))
+    Domoticz.Debug("GlobalType: %s" %(str(GlobalType)))
     if len(GlobalType) != 0:
         self.ListOfDevices[NWKID]['Type'] = ''
         for iterType in GlobalType:
@@ -559,7 +559,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Type'] = iterType 
             else:
                 self.ListOfDevices[NWKID]['Type'] = self.ListOfDevices[NWKID]['Type'] + '/' + iterType 
-        Domoticz.Log("CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'])
+        Domoticz.Debug("CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'])
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
     '''
@@ -1154,16 +1154,16 @@ def GetType(self, Addr, Ep):
 
         if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
             if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
+                Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
                     self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
                 Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
                 Type = str(Type)
         else:
-            Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
+            Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
-        Domoticz.Debug("GetType - Model not found in DeviceConf : " + str(
+        Domoticz.Log("GetType - Model not found in DeviceConf : " + str(
             self.ListOfDevices[Addr]['Model']) + " Let's go for Cluster search")
         Type = ""
 
