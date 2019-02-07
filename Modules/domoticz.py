@@ -534,6 +534,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == 'Ikea_Round_OnOff': # Ikea On/off Remote
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                          Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Down_click", \
@@ -1020,6 +1033,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if value == "00":
                     UpdateDevice_v2(Devices, x, "0", str("Off"), BatteryLevel, SignalLevel)
 
+            if ClusterType == DeviceType == "Ikea_Round_OnOff": # IKEA Remote On/Off
+                nValue = 0
+                sValue = 0
+                if value == "00":
+                    nValue = 0
+                    sValue = 0
+                    pass
+                elif value == "toggle": # Toggle
+                    nValue = 1
+                    sValue = '10'
+                UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
+
             if ClusterType == DeviceType == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 nValue = 0
                 sValue = 0
@@ -1170,6 +1195,8 @@ def GetType(self, Addr, Ep):
         # Check ProfileID/ZDeviceD
         if self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830':
             return "Ikea_Round_5b"
+        elif self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0820':
+            return "Ikea_Round_OnOff"
 
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
@@ -1198,6 +1225,8 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
     if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':
         TypeFromCluster = 'Ikea_Round_5b'
+    elif ProfileID_ == 'c05e' and ZDeviceID_ == '0820':
+        TypeFromCluster = 'Ikea_Round_OnOff'
     elif cluster == "0001": TypeFromCluster = "Voltage"
     elif cluster == "0006": TypeFromCluster = "Switch"
     elif cluster == "0008": TypeFromCluster = "LvlControl"
