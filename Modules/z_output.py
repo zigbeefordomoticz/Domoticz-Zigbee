@@ -539,7 +539,10 @@ def processConfigureReporting( self, NWKID=None ):
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round
 
-                    bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    # Issue #323 - The bind could reset the Flex Led
+                    if 'Model' in self.ListOfDevices[key]:
+                        if self.ListOfDevices[key]['Model'] != 'LIGHTIFY Outdoor Flex RGBW':
+                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
