@@ -340,10 +340,10 @@ class BasePlugin:
                 if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
                     # Check if we are with Firmware above 30f
                     Domoticz.Log("Start Group Management")
-                    self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
-                        self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
-                    #self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, Parameters["HomeFolder"], 
+                    #self.groupmgt = GroupsManagement( self.ZigateComm, Parameters["HomeFolder"], 
                     #    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                    self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, Parameters["HomeFolder"], 
+                        self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
         if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
@@ -390,8 +390,8 @@ class BasePlugin:
         # Hearbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.Ping:
-            if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
-                Domoticz.Debug("Ping")
+            if ( self.HeartbeatCount % ( (5 * 60) // HEARTBEAT)) == 0 :
+                Domoticz.Log("Ping")
                 if self.Ping['Rx Message']: # 'Rx Message' is set to 0 when receiving a Message.
                                             # Looks like we didn't receive messages
                     if  self.Ping['Rx Message'] > ( 60 //  HEARTBEAT ):
