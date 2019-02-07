@@ -116,6 +116,7 @@ def importDeviceConf( self ) :
     with open( self.pluginconf.pluginConfig  + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
     self.DeviceConf=eval(tmpread)
+    Domoticz.Status("DeviceConf loaded")
 
 def checkListOfDevice2Devices( self, Devices ) :
 
