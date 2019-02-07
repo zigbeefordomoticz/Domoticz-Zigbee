@@ -536,7 +536,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release", \
+                Options = {"LevelActions": "|||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Down_click", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
@@ -1054,7 +1054,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == "down_release": # Down Release
                     nValue = 9
                     sValue = '90'
-                UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
 
 
 def ResetDevice(self, Devices, ClusterType, HbCount):
