@@ -19,8 +19,8 @@ import os.path
 
 from time import time
 
-from Modules.z_tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.z_consts import ADDRESS_MODE
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.consts import ADDRESS_MODE
 
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
 MAX_LOAD = 2
@@ -29,7 +29,7 @@ MAX_CYCLE = 3
 
 class GroupsManagement(object):
 
-    def __init__( self, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
         Domoticz.Debug("GroupsManagement __init__")
         self.StartupPhase = 'init'
         self.ListOfGroups = {}      # Data structutre to store all groups
@@ -45,8 +45,8 @@ class GroupsManagement(object):
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
 
         self.homeDirectory = HomeDirectory
-        self.groupListFileName = HomeDirectory + "/GroupsList-%02d" %hardwareID + ".pck"
-        self.groupsConfigFilename = HomeDirectory + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
+        self.groupListFileName = self.pluginconf.pluginData + "/GroupsList-%02d" %hardwareID + ".pck"
+        self.groupsConfigFilename = self.pluginconf.pluginData + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
         return
 
     def load_ZigateGroupConfiguration(self):
