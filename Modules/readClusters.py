@@ -732,26 +732,26 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     elif modelName in self.DeviceConf:
                         self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
 
-                if not self.pluginconf.allowStoreDiscoveryFrames:
-                    # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
-               	    if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:                 # If the model exist in DeviceConf.txt
-                        modelName = self.ListOfDevices[MsgSrcAddr]['Model']
-                        Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
-                        if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
-                            self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
-                        for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
-                            if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
-                                self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
-                            for cluster in self.DeviceConf[modelName]['Ep'][Ep]:                   # For each cluster discribe in DeviceConf.txt
-                                if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]:        # If this cluster doesn't exist in database
-                                    self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}           # create it.
-                            if 'Type' in self.DeviceConf[modelName]['Ep'][Ep]:                     # If type exist at EP level : copy it
-                                self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[modelName]['Ep'][Ep]['Type']
-                            if 'ColorMode' in self.DeviceConf[modelName]['Ep'][Ep]:
-                                if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
-                                    self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
-                                if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
-                                    self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
+                # Let's see if this model is known in DeviceConf. If so then we will retreive already the Eps
+                if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:                 # If the model exist in DeviceConf.txt
+                    modelName = self.ListOfDevices[MsgSrcAddr]['Model']
+                    Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
+                    self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
+                    if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
+                        self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
+                    for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
+                        if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
+                            self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
+                        for cluster in self.DeviceConf[modelName]['Ep'][Ep]:                   # For each cluster discribe in DeviceConf.txt
+                            if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]:        # If this cluster doesn't exist in database
+                                self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}           # create it.
+                        if 'Type' in self.DeviceConf[modelName]['Ep'][Ep]:                     # If type exist at EP level : copy it
+                            self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[modelName]['Ep'][Ep]['Type']
+                        if 'ColorMode' in self.DeviceConf[modelName]['Ep'][Ep]:
+                            if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
+                                self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
+                            if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
+                                self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
 
                 if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
                     self.DiscoveryDevices[MsgSrcAddr]['Model'] = modelName

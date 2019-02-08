@@ -983,6 +983,10 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     MsgDataBField=MsgData[20:22]
     MsgDataInClusterCount=MsgData[22:24]
 
+    if MsgDataShAddr not in self.ListOfDevices:
+        Domoticz.Log("Decode8043 - receive message for non existing device")
+        return
+
     if int(MsgDataProfile,16) == 0xC05E and int(MsgDataDeviceId,16) == 0xE15E:
         # ZLL Commissioning EndPoint / Jaiwel
         Domoticz.Log("Decode8043 - Received ProfileID: %s, ZDeviceID: %s - skip" %(MsgDataProfile, MsgDataDeviceId))
@@ -1016,8 +1020,12 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     if int(MsgDataInClusterCount,16)>0 :
         while i <= int(MsgDataInClusterCount,16) :
             MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
-            if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+            if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
+                if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] != 'DeviceConf':
+                    if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
+                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+                else:
+                    Domoticz.Log("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
@@ -1034,8 +1042,12 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     if int(MsgDataOutClusterCount,16)>0 :
         while i <= int(MsgDataOutClusterCount,16) :
             MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
-            if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+            if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
+                if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] != 'DeviceConf':
+                    if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
+                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+                else:
+                    Domoticz.Log("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
