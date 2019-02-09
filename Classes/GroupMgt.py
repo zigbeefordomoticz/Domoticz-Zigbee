@@ -44,6 +44,7 @@ class GroupsManagement(object):
 
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
 
+        self.pluginconf = PluginConf
         self.homeDirectory = HomeDirectory
         self.groupListFileName = self.pluginconf.pluginData + "/GroupsList-%02d" %hardwareID + ".pck"
         self.groupsConfigFilename = self.pluginconf.pluginData + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
