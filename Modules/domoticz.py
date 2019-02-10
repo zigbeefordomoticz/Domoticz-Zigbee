@@ -1215,6 +1215,8 @@ def GetType(self, Addr, Ep):
             Type = Type[:-1]
         if Type[0:] == "/":
             Type = Type[1:]
+
+        Domoticz.Log("GetType - ClusterSearch return : %s" %Type)
     return Type
 
 
