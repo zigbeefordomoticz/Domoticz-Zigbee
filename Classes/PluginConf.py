@@ -49,7 +49,8 @@ class PluginConf:
         self.pluginZData = self.pluginHome + './Zdatas/'
         self.pluginConfig = self.pluginHome + './Conf/'
         self.pluginWWW = self.pluginHome + '../../www/templates/'
-        self.pluginReports = self.pluginWWW + 'zigate/reports/'
+        #self.pluginReports = self.pluginWWW + 'zigate/reports/'
+        self.pluginReports = self.pluginHome + 'www/zigate/reports/'
 
         self.filename = None
 
