@@ -1172,24 +1172,21 @@ def GetType(self, Addr, Ep):
     Domoticz.Debug("GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']))
 
-    if self.ListOfDevices[Addr]['Model'] != {} and \
-            self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf and \
-            Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:  
+    if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-
-        if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
-            if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
-                    self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
-                Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
-                Type = str(Type)
+        if Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:
+            if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
+                if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
+                    Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
+                        self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
+                    Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+                    Type = str(Type)
         else:
             Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
-        Domoticz.Log("GetType - Model not found in DeviceConf : " + str(
-            self.ListOfDevices[Addr]['Model']) + " Let's go for Cluster search")
+        Domoticz.Log("GetType - Model %s not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep)) 
         Type = ""
 
         # Check ProfileID/ZDeviceD
