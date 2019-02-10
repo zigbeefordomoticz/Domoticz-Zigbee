@@ -213,7 +213,7 @@ class GroupsManagement(object):
     def addGroupResponse(self, MsgData):
         ' decoding 0x8060 '
 
-        Domoticz.Debug("addGroupResponse - MsgData: %s (%s)" %(MsgData,len(MsgData)))
+        Domoticz.Log("addGroupResponse - MsgData: %s (%s)" %(MsgData,len(MsgData)))
         # search for the Group/dev
         if len(MsgData) == 14:  # Firmware < 030f
             MsgSrcAddr = None
@@ -328,7 +328,7 @@ class GroupsManagement(object):
         MsgListOfGroup=MsgData[12:lenMsgData-4]
         MsgSourceAddress = MsgData[lenMsgData-4:lenMsgData]
 
-        Domoticz.Debug("getGroupMembershipResponse - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Log("getGroupMembershipResponse - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
@@ -757,20 +757,21 @@ class GroupsManagement(object):
                 last_update_GroupList = modification_date( self.groupListFileName )
                 Domoticz.Log("Last Update of GroupList: %s" %last_update_GroupList)
 
-                if os.path.isfile( self.groupsConfigFilename ):
-                    Domoticz.Log("Config file exists")
-                    last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                    Domoticz.Log("Last Update of Config File: %s" %last_update_ConfigFile)
-                    if last_update_GroupList > last_update_ConfigFile :
-                        # GroupList is newer , just reload the file and exit
+                if self.groupsConfigFilename:
+                    if os.path.isfile( self.groupsConfigFilename ):
+                        Domoticz.Log("Config file exists")
+                        last_update_ConfigFile = modification_date( self.groupsConfigFilename )
+                        Domoticz.Log("Last Update of Config File: %s" %last_update_ConfigFile)
+                        if last_update_GroupList > last_update_ConfigFile :
+                            # GroupList is newer , just reload the file and exit
+                            Domoticz.Debug("switch to end of Group Startup")
+                            self.StartupPhase = 'end of group startup'
+                            self._load_GroupList()
+                    else:   # No config file, so let's move on
+                        Domoticz.Debug("No Config file, let's use the GroupList")
                         Domoticz.Debug("switch to end of Group Startup")
-                        self.StartupPhase = 'end of group startup'
                         self._load_GroupList()
-                else:   # No config file, so let's move on
-                    Domoticz.Debug("No Config file, let's use the GroupList")
-                    Domoticz.Debug("switch to end of Group Startup")
-                    self._load_GroupList()
-                    self.StartupPhase = 'end of group startup'
+                        self.StartupPhase = 'end of group startup'
 
         elif self.StartupPhase == 'discovery':
             # We will send a Request for Group memebership to each active device
@@ -1042,7 +1043,7 @@ class GroupsManagement(object):
                             if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] in ( 'OK-Membership', 'TimmeOut'):
                                 continue
                             if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] not in ( 'DEL-Membership' ,'ADD-Membership' ):
-                                Domoticz.Log("Unexpected phase for %s/%s in group %s : phase!: %s"
+                                Domoticz.Debug("Unexpected phase for %s/%s in group %s : phase!: %s"
                                 %( iterDev, iterEp, iterGrp,  str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
                                 continue
                             if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] + TIMEOUT > now:
