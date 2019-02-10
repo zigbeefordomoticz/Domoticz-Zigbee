@@ -89,8 +89,11 @@ def processKnownDevices( self, Devices, NWKID ):
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
 
+                #if 'PowerSource' in self.ListOfDevices[NWKID]:
+                #    if ((self.ListOfDevices[NWKID]['PowerSource']) != 'Main') and ( Cluster not in ( '0001', '0201' )):
+                #        continue
                 if 'PowerSource' in self.ListOfDevices[NWKID]:
-                    if ((self.ListOfDevices[NWKID]['PowerSource']) != 'Main') and ( Cluster not in ( '0001', '0201' )):
+                    if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
                         continue
 
                 if self.busy  or len(self.ZigateComm._normalQueue) > 2:
@@ -174,8 +177,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             #IAS Zone
             if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" \
-                        %( RIA, NWKID, int(status,16)))
+                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                        %( RIA, NWKID, status))
                 self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
