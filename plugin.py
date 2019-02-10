@@ -256,13 +256,13 @@ class BasePlugin:
                 ################### ZiGate - ErasePD ##################
                 Domoticz.Status("Erase Zigate PDM")
                 sendZigateCmd(self, "0012", "")
-                Domoticz.Status("Software reset")
-                sendZigateCmd(self, "0011", "") # Software Reset
+                #Domoticz.Status("Software reset")
+                #sendZigateCmd(self, "0011", "") # Software Reset
                 ZigateConf(self, Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
-                    Domoticz.Status("Software reset")
-                    sendZigateCmd(self, "0011", "" ) # Software Reset
+                    #Domoticz.Status("Software reset")
+                    #sendZigateCmd(self, "0011", "" ) # Software Reset
                     ZigateConf(self, Parameters["Mode2"])
                 else:
                     ZigateConf_light(self, Parameters["Mode2"])
