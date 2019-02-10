@@ -336,7 +336,7 @@ class BasePlugin:
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
-            if self.FirmwareVersion >= '030f' and self.FirmwareMajorVersion >= '0002':
+            if self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003':
                 if self.pluginconf.blueLedOff:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
