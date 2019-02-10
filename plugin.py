@@ -336,6 +336,17 @@ class BasePlugin:
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
+            # Ceck Firmware version
+
+            if self.FirmwareVersion.lower() < '030f':
+                Domoticz.Status("You are not on the latest firmware version, please consider to upgrae")
+
+            if self.FirmwareVersion.lower() == '030e':
+                Domoticz.Status("You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
+
+            if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
+                Domoticz.Status("You are not running on the Official 3.0f version (it was a pre-3.0f)")
+
             if self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003':
                 if self.pluginconf.blueLedOff:
                     Domoticz.Status("Switch Blue Led off")
@@ -353,9 +364,9 @@ class BasePlugin:
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
 
-        if self.FirmwareVersion == "030d" or self.FirmwareVersion == "030e":
-            if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
-                sendZigateCmd(self, "0009","")
+            if self.FirmwareVersion >= "030d":
+                if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
+                    sendZigateCmd(self, "0009","")
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
