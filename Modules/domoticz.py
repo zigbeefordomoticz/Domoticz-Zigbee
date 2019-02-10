@@ -581,6 +581,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     Update domoticz device accordingly to Type found in EP and value/Color provided
     '''
 
+    if NWKID not in self.ListOfDevices:
+        Domoticz.Error("MajDomoDevice - %s not known" %NWKID)
+        return
+    if 'IEEE' not in self.ListOfDevices[NWKID]:
+        Domoticz.Error("MajDomoDevice - no IEEE for %s" %NWKID)
+        return
+
     DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
     Domoticz.Debug(
         "MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(
