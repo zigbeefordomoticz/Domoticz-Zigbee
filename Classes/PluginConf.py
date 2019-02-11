@@ -17,6 +17,13 @@ import os.path
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
+        def is_hex(s):
+            hex_digits = set("0123456789abcdef")
+            for char in s:
+                if not (char in hex_digits):
+                    return False
+            return True
+
         self.logFORMAT = 0
 
         # Device Management
@@ -33,6 +40,7 @@ class PluginConf:
         self.eraseZigatePDM = 0
         self.blueLedOff = 0
         self.TXpower = 0
+        self.TXpower_set = 0x80
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -160,9 +168,14 @@ class PluginConf:
                 self.PluginConf.get('blueLedOff').isdigit():
             self.blueLedOff = int(self.PluginConf.get('blueLedOff'))
 
-        if self.PluginConf.get('TXpower') and \
-                self.PluginConf.get('TXpower').isdigit():
-            self.TXpower = int(self.PluginConf.get('TXpower'))
+        if self.PluginConf.get('TXpower'):
+            self.TXpower_set = self.PluginConf.get('TXpower')
+            if is_hex(self.TXpower_set):
+                self.TXpower = 1
+                self.TXpower_set = int(self.PluginConf.get('TXpower'), 16)
+            else: 
+                self.TXpower = self.TXpower_set = 0
+
 
         if self.PluginConf.get('zmode'):
             if self.PluginConf.get('zmode') == 'Agressive':
@@ -190,7 +203,7 @@ class PluginConf:
         Domoticz.Log(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
         Domoticz.Log(" -eraseZigatePDM: %s" %self.eraseZigatePDM)
         Domoticz.Log(" -blueLedOff: %s" %self.blueLedOff)
-        Domoticz.Log(" -TXpower: %s" %self.TXpower)
+        Domoticz.Log(" -TXpower: %s" %self.TXpower_set)
 
         Domoticz.Log("Plugin Transport")
         Domoticz.Log(" -zmode: %s" %self.zmode)
