@@ -1025,7 +1025,7 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
                     if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
-                    Domoticz.Log("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
+                    Domoticz.Debug("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
@@ -1492,7 +1492,8 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     RemainData = MsgData[12:len(MsgData)]
-    Domoticz.Log("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, RemainData))
+
+    Domoticz.Log("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s, RemainData: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, RemainData))
 
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)

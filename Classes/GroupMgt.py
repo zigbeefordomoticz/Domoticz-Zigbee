@@ -501,7 +501,6 @@ class GroupsManagement(object):
             if self.Devices[unit].DeviceID == group_nwkid:
                 break
         else:
-            Domoticz.Error("updateDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
             return
 
         # If one device is on, then the group is on. If all devices are off, then the group is off
@@ -797,7 +796,7 @@ class GroupsManagement(object):
                             if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
                                 Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                                 Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
-                                Domoticz.Log("too busy, will try again ...")
+                                Domoticz.Log("too busy, will try again ...%s" %len(self.ZigateComm._normalQueue))
                                 _workcompleted = False
                                 break # will continue in the next cycle
 

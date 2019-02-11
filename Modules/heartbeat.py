@@ -90,9 +90,6 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue    # Just does it at plugin start
 
                 if 'PowerSource' in self.ListOfDevices[NWKID]:
-                    if ((self.ListOfDevices[NWKID]['PowerSource']) != 'Main'):
-                        continue
-                if 'PowerSource' in self.ListOfDevices[NWKID]:
                     if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
                         continue
 
