@@ -1,5 +1,7 @@
 # IMPORTANT - 
 
+If you were running version 4.0 or 4.1-beta of the plugin, you must follow this.
+
 ## New Directory Structutre
 after the update , you have a new directory structure 
 https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Plugin-directory-structure :
