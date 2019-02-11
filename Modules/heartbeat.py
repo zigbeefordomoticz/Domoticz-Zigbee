@@ -89,9 +89,9 @@ def processKnownDevices( self, Devices, NWKID ):
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
 
-                #if 'PowerSource' in self.ListOfDevices[NWKID]:
-                #    if ((self.ListOfDevices[NWKID]['PowerSource']) != 'Main') and ( Cluster not in ( '0001', '0201' )):
-                #        continue
+                if 'PowerSource' in self.ListOfDevices[NWKID]:
+                    if ((self.ListOfDevices[NWKID]['PowerSource']) != 'Main'):
+                        continue
                 if 'PowerSource' in self.ListOfDevices[NWKID]:
                     if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
                         continue
