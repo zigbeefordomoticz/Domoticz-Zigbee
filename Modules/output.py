@@ -432,11 +432,13 @@ def processConfigureReporting( self, NWKID=None ):
         #'000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         # Thermostat
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '4003': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+                                 '4001': {'DataType': '20', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '4003': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '4008': {'DataType': '24', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0003': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -799,8 +801,6 @@ def setExtendedPANID(self, extPANID):
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
 
-
-
 def leaveMgtReJoin( self, saddr, ieee):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
@@ -814,6 +814,27 @@ def leaveMgtReJoin( self, saddr, ieee):
     datas = saddr + ieee + '01' + '00'
     sendZigateCmd(self, "0047", datas )
 
+def thermostat_Setpoint_SPZB(  self, key, setpoint):
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    Hattribute = "%04x" %0x4003
+    data_type = "29" # Int16
+    Domoticz.Log("setpoint: %s" %setpoint)
+    setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
+    Domoticz.Log("setpoint: %s" %setpoint)
+    Hdata = "%04x" %setpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    Domoticz.Log("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type))
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
 def thermostat_Setpoint( self, key, setpoint):
 
     manuf_id = "0000"
@@ -821,7 +842,9 @@ def thermostat_Setpoint( self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
-    setpoint = round(( setpoint * 2 ) / 2, 1)   # Round to 0.5 degrees
+    Domoticz.Log("setpoint: %s" %setpoint)
+    setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
+    Domoticz.Log("setpoint: %s" %setpoint)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -831,6 +854,34 @@ def thermostat_Setpoint( self, key, setpoint):
     Domoticz.Log("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type))
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+def thermostat_eurotronic_hostflag( self, key, action):
+
+    HOSTFLAG_ACTION = {
+            'turn_display':0x000002,
+            'boost':       0x000004,
+            'clear_off':   0x000010,
+            'set_off_mode':0x000020,
+            'child_lock':  0x000080
+            }
+
+    if action not in HOSTFLAG_ACTION:
+        Domoticz.Log("thermostat_eurotronic_hostflag - unknown action %s" %action)
+        return
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    attribute = "%04x" %0x4008
+    data_type = "22" # U24
+    data = "%06x" %HOSTFLAG_ACTION[action]
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    Domoticz.Log("thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
+            %(key,data,cluster_id,attribute,data_type, action))
 
 def thermostat_Calibration( self, key, calibration):
 
@@ -847,6 +898,10 @@ def thermostat_Calibration( self, key, calibration):
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
     Domoticz.Log("thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type))
+
+def configHeatSetpoint( self, key ):
+
+    ddhostflags = 0xFFFFEB
 
 def thermostat_Mode( self, key, mode ):
 

@@ -601,7 +601,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
     Domoticz.Debug(
         "MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(
-            clusterID) + " - Value : " + str(value) + " - Hue : " + str(Color_))
+            clusterID) + " - Value : " + str(value) + " - Hue : " + str(Color_) + "  - Attribute_ : " +str(Attribute_))
 
     ClusterType = TypeFromCluster(clusterID)
     Domoticz.Debug("MajDomoDevice - Type = " + str(ClusterType))
@@ -698,10 +698,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 Domoticz.Debug("MajDomoDevice Voltage : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
-            if 'ThermoSetpoint' in ClusterType and ( Attribute_ == '4003' or Attribute_ == '0012'):
+            if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint':
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
-                Domoticz.Debug("MajDomoDevice Setpoint : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
@@ -1196,16 +1195,16 @@ def GetType(self, Addr, Ep):
         if Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:
             if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
                 if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                    Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
+                    Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
                         self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
                     Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
                     Type = str(Type)
         else:
-            Domoticz.Log("GetType - Found Type in DeviceConf : " + str(
+            Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
-        Domoticz.Log("GetType - Model %s not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep)) 
+        Domoticz.Debug("GetType - Model %s not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep)) 
         Type = ""
 
         # Check ProfileID/ZDeviceD
@@ -1235,7 +1234,7 @@ def GetType(self, Addr, Ep):
         if Type[0:] == "/":
             Type = Type[1:]
 
-        Domoticz.Log("GetType - ClusterSearch return : %s" %Type)
+        Domoticz.Debug("GetType - ClusterSearch return : %s" %Type)
     return Type
 
 
@@ -1255,7 +1254,7 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
     elif cluster == "0012" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0101": TypeFromCluster = "Vibration"
     elif cluster == "0102": TypeFromCluster = "WindowCovering"
-    elif cluster == "0201": TypeFromCluster = "Temp/ThermSetPoint"
+    elif cluster == "0201": TypeFromCluster = "Temp/ThermoSetpoint"
     elif cluster == "0300": TypeFromCluster = "ColorControl"
     elif cluster == "0400": TypeFromCluster = "Lux"
     elif cluster == "0402": TypeFromCluster = "Temp"

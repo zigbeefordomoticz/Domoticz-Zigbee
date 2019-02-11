@@ -224,6 +224,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) )
 
     elif MsgAttrID == "0031": # Battery Size
+        # 0x03 stand for AA
         Domoticz.Log("readCluster 0001 - %s Battery size: %s " %(MsgSrcAddr, value) )
 
     elif MsgAttrID == "0033": # Battery Quantity
@@ -758,6 +759,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0007": # Power Source
         Domoticz.Debug("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        # 0x03 stand for Battery
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['PowerSource'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
@@ -836,7 +838,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if len(oldValue) != 6:
         oldValue = '0;0;0;0;0;0'.split(';')
 
-    Domoticz.Log("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+    Domoticz.Debug("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     value = decodeAttribute( MsgAttType, MsgClusterData)
@@ -887,19 +889,27 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == '4001': # Valve position
         Domoticz.Log("ReadCluster 0201 - Valve position: %s" %value)
 
-    elif MsgAttrID == '4002': # Valve position
+    elif MsgAttrID == '4002': # Erreors
         Domoticz.Log("ReadCluster 0201 - Errors: %s" %value)
 
     elif MsgAttrID == '4003': # Current Temperature Set point
         ValueTemp = round(int(value)/100,1)
         Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
-        if ValueTemp != int(oldValue[3]):
+        if ValueTemp != float(oldValue[3]):
             # Seems that there is a local setpoint
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp, Attribute_=MsgAttrID)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
 
     elif MsgAttrID == '4008': # Host Flags
+        HOST_FLAGS = {
+                0x000002:'Display Flipped',
+                0x000004:'Boost mode',
+                0x000010:'disable off mode',
+                0x000020:'enable off mode',
+                0x000080:'child lock'
+                }
         Domoticz.Log("ReadCluster 0201 - Host Flags: %s" %value)
+
         
     else:
         Domoticz.Log("ReadCluster 0201 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))

@@ -1491,7 +1491,8 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
-    Domoticz.Log("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId))
+    RemainData = MsgData[12:len(MsgData)]
+    Domoticz.Log("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, RemainData))
 
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)

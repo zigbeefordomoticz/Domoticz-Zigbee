@@ -21,7 +21,7 @@ import queue
 from Modules.output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
         ReadAttributeRequest_0008, ReadAttributeRequest_000C, ReadAttributeRequest_0006, ReadAttributeRequest_0001, \
         ReadAttributeRequest_0300, processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
-        ReadAttributeRequest_0201
+        ReadAttributeRequest_0201, bindDevice
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
 from Modules.LQI import LQIcontinueScan
@@ -232,7 +232,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if self.ListOfDevices[NWKID]['RIA'] > '2' and status != 'UNKNOW':  # We have done several retry
+    if self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW':  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
@@ -243,14 +243,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         self.CommiSSionning = False
         return
 
-    # https://github.com/sasu-drooz/Domoticz-Zigate/wiki/ProfileID---ZDeviceID
-
-    #if ( not waitForDomoDeviceCreation and  self.pluginconf.allowStoreDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or \
-    #        ( not waitForDomoDeviceCreation and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
-    #    if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ):
-    # If we are in status = 0x8043 we have received EPs descriptors
-    # If we have Model we might be able to identify the device with it's model
-    # In case where self.pluginconf.storeDiscoveryFrames is set (1) then we force the full process and so wait for 0x8043
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
         Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
@@ -274,7 +266,19 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             CreateDomoDevice(self, Devices, NWKID)
             # Post creation widget
 
-            # 1 Enable Configure Reporting for any applicable cluster/attributes
+            # Binding devices
+            BINDING_MATRIX = ( '0001', '0006', '0008', '0201', '0300', 
+                    '0400', '0402', '0403', '0405', '0500', '0702', 'ff01', 'ff02', 'fc00', 'fc01' )
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                Domoticz.Log('looking for bind ep: %s' %iterEp)
+                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    if iterCluster in ( 'Type', 'ClusterType'): continue
+                    Domoticz.Log('looking for bind ep: %s cluster: %s' %(iterEp, iterCluster))
+                    if iterCluster in BINDING_MATRIX:
+                        Domoticz.Log('Finaly Request a Bind for %s/%s - %s' %(NWKID, iterEp, iterCluster))
+                        bindDevice( self,  self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
+
+            # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
 
             # Identify for ZLL compatible devices
