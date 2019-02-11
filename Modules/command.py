@@ -71,7 +71,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType =="LvlControl" :
             ClusterSearch="0008"
             DeviceType = tmpDeviceType
-        if tmpDeviceType =="ColorControl" :
+        if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'ThermoSetpoint':

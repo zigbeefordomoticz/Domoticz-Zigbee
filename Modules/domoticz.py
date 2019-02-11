@@ -478,10 +478,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                         else:
                             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "ColorControl":  # variateur de couleur/luminosite/on-off
+            if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 
+                      'ColorControlFull', 'ColorControl'):  # variateur de couleur/luminosite/on-off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
 
-                Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                if t == 'ColorControlRGB': 
+                    Subtype_ = 0x02 # RGB color palette / Dimable
+                elif t == 'ColorControlRGBWW': 
+                    Subtype_ = 0x04  # RGB + WW / Dimable
+                elif t == 'ColorControlFull': 
+                    Subtype_ = 0x07  # 3 Color palettes widget
+                elif t == 'ColorControlWW': 
+                    Subtype_ = 0x08  # White color palette / Dimable
+                else:
+                    Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
                         self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
 
                 unit = FreeUnit(self, Devices)
@@ -905,7 +915,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
 
-                elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
+                elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
                             %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
                     if Devices[x].SwitchType == 16:
@@ -956,7 +966,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             nValue = 2
                             UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
-                elif DeviceType == "ColorControl":
+                elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                         pass
                     else:
@@ -964,7 +974,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         sValue = round((int(value, 16) / 255) * 100)
                         UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
-            if ClusterType == DeviceType == "ColorControl":
+            if ClusterType in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
+                    ClusterType == DeviceType:
                 nValue = 1
                 sValue = round((int(value, 16) / 255) * 100)
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
@@ -1230,6 +1241,9 @@ def GetType(self, Addr, Ep):
 
 def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
+    Domoticz.Debug("ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
+
+    TypeFromCluster = ''
     if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':
         TypeFromCluster = 'Ikea_Round_5b'
     elif ProfileID_ == 'c05e' and ZDeviceID_ == '0820':
@@ -1253,8 +1267,7 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
     # Propriatory Cluster. Plugin Cluster
     elif cluster == "rmt1": TypeFromCluster = "Ikea_Round_5b"
-    else:
-        TypeFromCluster = ""
+
     return TypeFromCluster
 
 def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, ColorInfos):
@@ -1269,15 +1282,19 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
         # The test should be done in an other way ( ProfileID for instance )
         # default: SubType sTypeColor_RGB_CW_WW_Z 0x07 // Like RGBWW, # but allows combining RGB and white
 
-    Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - Model: %s, ProfileID: %s, ZDeviceID: %s ColorInfos: %s" %(Model, ProfileID, ZDeviceID, ColorInfos))
+    ColorControlRGB   = 0x02 # RGB color palette / Dimable
+    ColorControlRGBWW = 0x04  # RGB + WW
+    ColorControlFull  = 0x07  # 3 Color palettes widget
+    ColorControlWW    = 0x08  # WW
 
+
+    Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - Model: %s, ProfileID: %s, ZDeviceID: %s ColorInfos: %s" %(Model, ProfileID, ZDeviceID, ColorInfos))
     Subtype = None
     ZLL_Commissioning = False
 
     ColorMode = 0
     if 'ColorMode' in ColorInfos:
         ColorMode = ColorInfos['ColorMode']
-
     for iterEp in EndPoints:
         if '1000' in  iterEp:
             ZLL_Commissioning = True
@@ -1286,50 +1303,47 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     # Device specifics section
     if Model:
         if Model == 'lumi.light.aqcn02':    # Aqara Bulb White Dim
-            Subtype = 8
+            Subtype = ColorControlWC
 
     # Philipps Hue
     if Subtype is None and ProfileID == "a1e0": 
         if ZDeviceID == "0061":
-            Subtype = 4
+            Subtype = ColorControlRGBWW
 
     # ZLL LightLink
     if Subtype is None and  ProfileID == 'c05e': 
         # We should Check that ZLL Commissioning is also there. Cluster 0x1000
         if ZDeviceID == '0100': # LED1622G12.Tradfri ou phillips hue white
             pass
-        
         elif ZDeviceID == '0200': # ampoule Tradfri LED1624G9
-            Subtype = 7
-
+            Subtype = ColorControlFull
         elif ZDeviceID == '0210': # 
-            Subtype = 4
-
+            Subtype = ColorControlRGBWW
         elif ZDeviceID == '0220': # ampoule Tradfi LED1545G12.Tradfri
-            Subtype = 8
+            Subtype = ColorControlWC
             pass
 
     # Home Automation / ZHA
     if Subtype is None and ProfileID == '0104': # Home Automation
         if ZLL_Commissioning and ZDeviceID == '0100': # Most likely IKEA Tradfri bulb LED1622G12
-            Subtype = 8
+            Subtype = ColorControlWC
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
         elif ZdeviceID == '0101': # Dimable light
             pass
         elif ZDeviceID == '0102': # Color dimable light
-            Subtype = 7
+            Subtype = ColorControlFull
             pass
 
 
     if Subtype is None and ColorInfos:
         if ColorMode == 2:
-            Subtype = 8
+            Subtype = ColorControlWC
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         elif ColorMode == 1:
-            Subtype = 2        
+            Subtype = ColorControlRGB2
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         else:
-            Subtype = 7
+            Subtype = ColorControlFull
 
     Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
     return Subtype
