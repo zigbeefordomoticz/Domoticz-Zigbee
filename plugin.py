@@ -309,7 +309,7 @@ class BasePlugin:
             self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
             Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
 
-        elif Devices[Unit].Name.find('Zigate-01-'):
+        elif Devices[Unit].DeviceID.find('Zigate-01-'):
             Domoticz.Log("onCommand - Command adminWidget: %s " %Command)
             handleCommand( self, Command)
 
