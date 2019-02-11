@@ -106,12 +106,13 @@ def LQIcontinueScan(self, Devices):
         storeLQI = {}
         storeLQI[int(time.time())] = self.LQI
 
-        if os.path.isdir( self.pluginconf.pluginReports ) :
-            Domoticz.Status("LQI report save on " +str(_filename))
-            with open(_filename , 'at') as file:
-                for key in storeLQI:
-                    file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
-            self.pluginconf.logLQI = 0
+        self.pluginconf.logLQI = 0
+        if os.path.isdir( self.pluginconf.pluginReports ):
+            #Domoticz.Status("LQI report save on " +str(_filename))
+            #with open(_filename , 'at') as file:
+            #    for key in storeLQI:
+            #        file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
+            #self.pluginconf.logLQI = 0
 
             json_filename = _filename + ".json"
             with open( json_filename, 'at') as json_file:
@@ -120,8 +121,6 @@ def LQIcontinueScan(self, Devices):
             updateNotificationWidget( self, Devices, 'A new LQI report is available')
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
-            self.pluginconf.logLQI = 0
-            return 
 
 
 def mgtLQIreq(self, nwkid='0000', index=0):
