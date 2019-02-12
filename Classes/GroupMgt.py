@@ -300,7 +300,7 @@ class GroupsManagement(object):
                     group_list_ += "%04x" %(x)
             datas += "%02.x" %(lenGrpLst) + group_list_
 
-        Domoticz.Debug("_getGroupMembership - Addr: %s Ep: %s to Group: %s" %(device_addr, device_ep, group_list))
+        Domoticz.Log("_getGroupMembership - Addr: %s Ep: %s to Group: %s" %(device_addr, device_ep, group_list))
         Domoticz.Debug("_getGroupMembership - 0062/%s" %datas)
         self.ZigateComm.sendData( "0062", datas)
         return
@@ -333,14 +333,7 @@ class GroupsManagement(object):
 
         idx =  0
         while idx < int(MsgGroupCount,16):
-            #groupID = MsgData[16+(idx*4):16+(4+(idx*4))]
             groupID = MsgData[12+(idx*4):12+(4+(idx*4))]
-
-            #if groupID in ( '0000' , 'ffff'): 
-            #    idx += 1
-            #    continue
-            #if groupID == 'ffff':
-            #    groupID = '0000'
 
             if groupID not in self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP]:
                 self.ListOfDevices[MsgSourceAddress]['GroupMgt'][MsgEP][groupID] = {}
@@ -759,6 +752,12 @@ class GroupsManagement(object):
                         Domoticz.Debug("switch to end of Group Startup")
                         self._load_GroupList()
                         self.StartupPhase = 'end of group startup'
+                else:   # GroupList exist but no config file
+                    Domoticz.Debug("No Config file, let's use the GroupList")
+                    Domoticz.Debug("switch to end of Group Startup")
+                    self._load_GroupList()
+                    self.StartupPhase = 'end of group startup'
+
 
         elif self.StartupPhase == 'discovery':
             # We will send a Request for Group memebership to each active device
