@@ -1076,8 +1076,8 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
         else:
             _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
 
-        with open ( _jsonFilename, 'wt') as json_file:
-            json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file)
+        with open ( _jsonFilename, 'at') as json_file:
+            json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file, indent=4, sort_keys=True)
 
     if self.ListOfDevices[MsgDataShAddr]['Status'] != "inDB" :
         self.ListOfDevices[MsgDataShAddr]['Status'] = "8043"
@@ -1588,8 +1588,8 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
                 _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgSrcAddr]['IEEE']) + ".json"
             else:
                 _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgSrcAddr) + ".json"
-            with open ( _jsonFilename, 'wt') as json_file:
-                json.dump(self.DiscoveryDevices[MsgSrcAddr],json_file)
+            with open ( _jsonFilename, 'at') as json_file:
+                json.dump(self.DiscoveryDevices[MsgSrcAddr],json_file, indent=4, sort_keys=True)
 
     return
 
