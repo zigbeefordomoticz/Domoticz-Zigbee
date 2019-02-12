@@ -238,7 +238,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
         Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
-        self.adminWidgets.updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
+        self.adminWidgets.updateNotificationWidget( Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
         self.CommiSSionning = False
         return
 
@@ -297,7 +297,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         %(NWKID, self.pluginconf.vibrationAqarasensitivity))
                  setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
-            self.adminWidgets.updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
+            self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
             self.CommiSSionning = False
 

@@ -119,7 +119,7 @@ def LQIcontinueScan(self, Devices):
             with open( json_filename, 'at') as json_file:
                 json_file.write('\n')
                 json.dump( storeLQI, json_file)
-            self.adminWidgets.updateNotificationWidget( self, Devices, 'A new LQI report is available')
+            self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
 

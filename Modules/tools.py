@@ -129,7 +129,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     if Devices[x].DeviceID == existingIEEEkey:
                         devName = Devices[x].Name
 
-                self.adminWidgets.updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
+                self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
 
                 # We will also reset ReadAttributes
                 if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
@@ -205,7 +205,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
 
-            self.adminWidgets.updateNotificationWidget( self, Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
+            self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
 
 
