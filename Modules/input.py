@@ -760,8 +760,6 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
     Domoticz.Status("Decode8024 - Network joined / formed - IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
             %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
 
-    #Domoticz.Status("ZigateRead - MsgType 8024 - Network joined / formed, Status : " + DisplayStatusCode( MsgDataStatus ) + " Short Address : " + MsgShortAddress + " IEEE : " + MsgExtendedAddress + " Channel : " + MsgChannel)
-
 def Decode8028(self, MsgData) : # Authenticate response
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8028 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
@@ -1544,14 +1542,44 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     MsgAttType=MsgData[2:4]
     MsgAttID=MsgData[4:8]
     
-
     if len(MsgData) > 8:
-        Domoticz.Log("Decode8140 - Geting more data than expected. New firmware" )
+        MsgSrcAddr = MsgData[8:12]
+        MsgSrcEp = MsgData[12:14]
+        MsgClusterID = MsgData[14:18]
 
-    # We need to identify to which NetworkId and which ClusterId this is coming from. This is in response to 0x0140
-    # When MsgComplete == 01, we have received all Attribute/AttributeType
+        if MsgComplete == '01':
+            Domoticz.Log("Decode8140 - Receiving last Message")
+        Domoticz.Log("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s"
+            %( MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType))
 
-    Domoticz.Debug("Decode8140 - Attribute Discovery response - complete : " + MsgComplete + " Attribute Type : " + MsgAttType + " Attribut ID : " + MsgAttID)
+        if 'Attributes List' not in  self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Attributes List'] = {}
+        if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep']:
+            self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp] = {}
+        if MsgClusterID not in  self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp]:
+            self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID] = {}
+        if MsgAttID not in self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID]:
+            self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
+
+        if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices :
+            if 'Attribute Discovery' not in  self.DiscoveryDevices[MsgSrcAddr]:
+                self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery'] = {}
+                self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'] = {}
+            if MsgSrcEp not in  self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep']:
+                self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp] = {}
+            if MsgClusterID not in self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp]:
+                self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID] = {}
+            if MsgAttID not in self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID]:
+                self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID] = {}
+                self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
+
+            if 'IEEE' in self.ListOfDevices[MsgDataShAddr]:
+                _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgDataShAddr]['IEEE']) + ".json"
+            else:
+                _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
+            with open ( _jsonFilename, 'wt') as json_file:
+                json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file)
+
     return
 
 # OTA and Remote decoding kindly authorized by https://github.com/ISO-B
@@ -1697,15 +1725,6 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
     MsgCmd = MsgData[14:16]
     Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
-    # Ikea Remote 5 buttons round.
-    #  ( cmd, cluster )
-    #  ( 0x01, 0x0008 ) - Down Push 
-    #  ( 0x02, 0x0008 ) - Down Click
-    #  ( 0x03, 0x0008 ) - Down Release 
-    #  ( 0x05, 0x0008 ) - Up Push 
-    #  ( 0x06, 0x0008 ) - Up Click
-    #  ( 0x07, 0x0008 ) - Up Release 
-
     TYPE_ACTIONS = {
             '01':'hold_down',
             '02':'click_down',
@@ -1714,33 +1733,57 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             '06':'click_up',
             '07':'release_up'
             }
-    if MsgClusterId == '0008':
-        if MsgCmd in TYPE_ACTIONS:
-            selector = TYPE_ACTIONS[MsgCmd]
-            Domoticz.Log("Decode8085 - Selector: %s" %selector)
 
-        #if MsgCmd == '01': 
-        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
-        if MsgCmd == '02': 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_click' )
-        #if MsgCmd == '03': 
-        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_release' )
-        #if MsgCmd == '05': 
-        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_push' )
-        if MsgCmd == '06': 
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_click' )
-        #if MsgCmd == '07': 
-        #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_release' )
+    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
+        """
+        Ikea Remote 5 buttons round.
+            ( cmd, cluster )
+            ( 0x01, 0x0008 ) - Down Push 
+            ( 0x02, 0x0008 ) - Down Click
+            ( 0x03, 0x0008 ) - Down Release 
+            ( 0x05, 0x0008 ) - Up Push 
+            ( 0x06, 0x0008 ) - Up Click
+            ( 0x07, 0x0008 ) - Up Release 
+        """
+        if MsgClusterId == '0008':
+            if MsgCmd in TYPE_ACTIONS:
+                selector = TYPE_ACTIONS[MsgCmd]
+                Domoticz.Log("Decode8085 - Selector: %s" %selector)
+    
+            #if MsgCmd == '01': 
+            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
+            if MsgCmd == '02': 
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_click' )
+            #if MsgCmd == '03': 
+            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_release' )
+            #if MsgCmd == '05': 
+            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_push' )
+            if MsgCmd == '06': 
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_click' )
+            #if MsgCmd == '07': 
+            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_release' )
 
+    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'RWL021':
+        """
+         HUE Remote
+            0x02, 0x02, 0x0008 ->  +++
+            0x02, 0x02, 0x0008 -> -
+            0x03, 0x02, 0x0008 -> Release -
+            0x03, 0x02, 0x0008 -> Release +
+        """
+        if MsgClusterId == '0008':
+            if MsgCmd in TYPE_ACTIONS:
+                selector = TYPE_ACTIONS[MsgCmd]
+                Domoticz.Log("Decode8085 - Selector: %s" %selector)
+            if MsgCmd == '02': 
+                value = int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId],16) - 1
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] = '%02x' %value
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, value)
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed ON/OFF'
 
-    # Ikea Remote 5 buttons round.
-    #  ( cmd, directioni, cluster )
-    #  ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
-
-    Domoticz.Log("Decode8095 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
+    Domoticz.Debug("Decode8095 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
@@ -1749,9 +1792,26 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgCmd = MsgData[14:16]
     Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
-    if MsgClusterId == '0006':
-        if MsgCmd == '02': 
+    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
+        """
+            Ikea Remote 5 buttons round.
+             ( cmd, directioni, cluster )
+             ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
+        """
+        if MsgClusterId == '0006' and MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
+
+    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'RWL021':
+        """
+            HUE Remote
+             0x01, 0x02, 0006 -> ON
+             0x40, 0x02, 0006 -> OFF
+        """
+        if MsgClusterId == '0006' and MsgCmd == '01': # On
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, '01' )
+        
+        if MsgClusterId == '0006' and MsgCmd == '40': # Off
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, '00' )
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
@@ -1772,15 +1832,15 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     #  ( 0x07, 0x00, 0005 )  Click right button
     #  ( 0x07, 0x01, 0005 )  Click left button
 
-    TYPE_ACTIONS = {
-            '07':'click',
-            '08':'hold',
-            '09':'release'
-            }
     TYPE_DIRECTIONS = {
             '00':'right',
             '01':'left',
             '02':'middle'
+            }
+    TYPE_ACTIONS = {
+            '07':'click',
+            '08':'hold',
+            '09':'release'
             }
 
     if MsgClusterId == '0005':
