@@ -19,7 +19,8 @@ import json
 
 import Domoticz
 from Modules.output import sendZigateCmd
-from Modules.adminWidget import updateNotificationWidget
+
+from Classes.AdminWidgets import AdminWidgets
 
 def LQIdiscovery(self):
     """
@@ -118,7 +119,7 @@ def LQIcontinueScan(self, Devices):
             with open( json_filename, 'at') as json_file:
                 json_file.write('\n')
                 json.dump( storeLQI, json_file)
-            updateNotificationWidget( self, Devices, 'A new LQI report is available')
+            self.adminWidgets.updateNotificationWidget( self, Devices, 'A new LQI report is available')
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
 
