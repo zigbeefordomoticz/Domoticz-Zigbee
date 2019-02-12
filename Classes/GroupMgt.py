@@ -409,11 +409,11 @@ class GroupsManagement(object):
                         if MsgGroupID in self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]:
                             del  self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP][MsgGroupID]
 
-                Domoticz.Log("removeGroupResponse - Devices: %s" %(str(self.ListOfGroups[MsgGroupID]['Devices'])))
-
-                if (MsgSrcAddr, MsgEP) in self.ListOfGroups[MsgGroupID]['Devices']:
-                    Domoticz.Log("removeGroupResponse - removing %s from %s" %( str(( MsgSrcAddr, MsgEP)), str(self.ListOfGroups[MsgGroupID]['Devices'])))
-                    self.ListOfGroups[MsgGroupID]['Devices'].remove( ( MsgSrcAddr, MsgEP) )
+                Domoticz.Log("Decode8063 - self.ListOfGroups: %s" %str(self.ListOfGroups))
+                if MsgGroupID in self.ListOfGroups:
+                    if (MsgSrcAddr, MsgEP) in self.ListOfGroups[MsgGroupID]['Devices']:
+                        Domoticz.Log("removeGroupResponse - removing %s from %s" %( str(( MsgSrcAddr, MsgEP)), str(self.ListOfGroups[MsgGroupID]['Devices'])))
+                        self.ListOfGroups[MsgGroupID]['Devices'].remove( ( MsgSrcAddr, MsgEP) )
             else: # < 3.0e should not happen
                 Domoticz.Log("Group Member removed from unknown device")
                 unique = 0
@@ -1026,10 +1026,10 @@ class GroupsManagement(object):
                 if 'Ep' in self.ListOfDevices[iterDev]:
                     for iterEp in self.ListOfDevices[iterDev]['GroupMgt']:
                         for iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
-                            if iterDev == '0000' and iterGrp in ( '0000' ):
+                            #if iterDev == '0000' and iterGrp in ( '0000' ):
                                 #Adding Zigate to group 0x0000 or 0xffff
                                 # We do not get any response
-                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'OK-Membership'
+                            #    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'OK-Membership'
 
                             if iterGrp == 'XXXX': continue
 
