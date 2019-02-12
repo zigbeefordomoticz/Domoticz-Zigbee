@@ -1788,9 +1788,14 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                 selector = TYPE_ACTIONS[MsgCmd]
                 Domoticz.Log("Decode8085 - Selector: %s" %selector)
             if MsgCmd == '02': 
-                value = int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId],16) - 1
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] = '%02x' %value
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, value)
+                if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep']:
+                    if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] != {}:
+                        value = int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId],16) - 1
+                        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] = '%02x' %value
+                        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, value)
+                    else: 
+                        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] = 'ff'
+
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed ON/OFF'
