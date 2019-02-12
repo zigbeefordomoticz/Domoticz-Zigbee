@@ -21,7 +21,7 @@ import queue
 from Modules.output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
         ReadAttributeRequest_0008, ReadAttributeRequest_000C, ReadAttributeRequest_0006, ReadAttributeRequest_0001, \
         ReadAttributeRequest_0300, processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
-        ReadAttributeRequest_0201, bindDevice
+        ReadAttributeRequest_0201, bindDevice, getListofAttribute
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
 from Modules.LQI import LQIcontinueScan
@@ -86,6 +86,8 @@ def processKnownDevices( self, Devices, NWKID ):
             for Cluster in READ_ATTRIBUTES_REQUEST:
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
+
+
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
 
@@ -261,6 +263,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if IsCreated == False:
             Domoticz.Debug("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
             CreateDomoDevice(self, Devices, NWKID)
+
             # Post creation widget
 
             # Binding devices
@@ -275,6 +278,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         Domoticz.Log('Finaly Request a Bind for %s/%s - %s' %(NWKID, iterEp, iterCluster))
                         bindDevice( self,  self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
 
+                        getListofAttribute( self, NWKID, iterEp, Cluster)
+
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
 
@@ -282,7 +287,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # Search for EP to be used 
             ep = '01'
             for ep in self.ListOfDevices[NWKID]['Ep']:
-                if ep in ( '01', '03', '09' ):
+                if ep in ( '01', '03', '06', '09' ):
                     break
             identifyEffect( self, NWKID, ep , effect='Blink' )
 
