@@ -1564,6 +1564,7 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
 
         if 'Attributes List' not in  self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['Attributes List'] = {}
+            self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'] = {}
         if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep']:
             self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp] = {}
         if MsgClusterID not in  self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp]:
@@ -1583,12 +1584,12 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID] = {}
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
 
-            if 'IEEE' in self.ListOfDevices[MsgDataShAddr]:
-                _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgDataShAddr]['IEEE']) + ".json"
+            if 'IEEE' in self.ListOfDevices[MsgSrcAddr]:
+                _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgSrcAddr]['IEEE']) + ".json"
             else:
-                _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
+                _jsonFilename = self.pluginconf.pluginZData + "/DiscoveryDevice-" + str(MsgSrcAddr) + ".json"
             with open ( _jsonFilename, 'wt') as json_file:
-                json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file)
+                json.dump(self.DiscoveryDevices[MsgSrcAddr],json_file)
 
     return
 

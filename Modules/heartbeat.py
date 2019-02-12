@@ -278,7 +278,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         Domoticz.Log('Finaly Request a Bind for %s/%s - %s' %(NWKID, iterEp, iterCluster))
                         bindDevice( self,  self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
 
-                        getListofAttribute( self, NWKID, iterEp, Cluster)
+                        getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
