@@ -1267,12 +1267,13 @@ def Decode804A(self, Devices, MsgData) : # Management Network Update response
         Domoticz.Status("Decode804A -     Channel: %s Interference: : %s " %(chan, int(inter,16)))
 
     # Write the report onto file
-    #_filename =  self.pluginconf.pluginReports + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
+    _filename =  self.pluginconf.pluginReports + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
     #Domoticz.Status("Network Scan report save on " +str(_filename))
     #with open(_filename , 'at') as file:
     #    for key in nwkscan:
     #        file.write(str(key) + ": " + str(nwkscan[key]) + "\n")
 
+    _filename =  self.pluginconf.pluginReports + 'Network_scan-' + '%02d' %self.HardwareID 
     json_filename = _filename + ".json"
     with open( json_filename , 'at') as json_file:
         json_file.write('\n')
