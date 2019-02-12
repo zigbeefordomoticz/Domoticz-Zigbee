@@ -23,6 +23,9 @@ from time import time
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.consts import ADDRESS_MODE
 
+from Classes.AdminWidgets import AdminWidgets
+
+
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
 MAX_LOAD = 2
 TIMEOUT = 12
@@ -30,7 +33,7 @@ MAX_CYCLE = 3
 
 class GroupsManagement(object):
 
-    def __init__( self, PluginConf, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
         Domoticz.Debug("GroupsManagement __init__")
         self.StartupPhase = 'init'
         self.ListOfGroups = {}      # Data structutre to store all groups
@@ -43,6 +46,7 @@ class GroupsManagement(object):
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
         self.Devices = Devices              # Point to the List of Domoticz Devices
+        self.adminWidgets = adminWidgets
 
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
 
@@ -476,6 +480,8 @@ class GroupsManagement(object):
         ID = myDev.ID
         if myDev.ID == -1 :
             Domoticz.Log("CreateDomoGroupDevice - failed to create Group device.")
+        else:
+            self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s created' %groupname)
 
     def updateDomoGroupDevice( self, group_nwkid):
         """ 
@@ -551,6 +557,7 @@ class GroupsManagement(object):
             return
         Domoticz.Debug("_removeDomoGroupDevice - removing Domoticz Widget %s" %self.Devices[unit].Name)
         self.Devices[unit].Delete()
+        self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %groupname)
         
 
     # Group Management methods
@@ -953,6 +960,7 @@ class GroupsManagement(object):
                 self._write_GroupList()
                 for iterGroup in self.UpdatedGroups:
                     self._identifyEffect( iterGroup, '01', effect='Okay' )
+                    self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s operational' %iterGroup)
             else:
                 self.StartupPhase = 'perform command'
 
@@ -1091,6 +1099,7 @@ class GroupsManagement(object):
                         Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
 
             Domoticz.Log("Ready for working")
+            self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
             self.StartupPhase = 'ready'
             self.stillWIP = False
         return

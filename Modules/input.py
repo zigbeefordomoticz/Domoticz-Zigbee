@@ -24,9 +24,11 @@ from Modules.output import sendZigateCmd, leaveMgtReJoin
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
-from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
+#from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
 from Classes.IAS import IAS_Zone_Management
+from Classes.AdminWidgets import  AdminWidgets
+
 
 def ZigateRead(self, Devices, Data):
     Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
@@ -627,7 +629,7 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
 
     
     if self.ZigateIEEE != extaddr:
-        updateNotificationWidget( self, Devices, 'Zigate IEEE: %s' %extaddr)
+        self.adminWidgets.updateNotificationWidget( Devices, 'Zigate IEEE: %s' %extaddr)
 
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
@@ -644,7 +646,7 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
     self.ListOfDevices[addr]['PowerSource'] = 'Main'
 
     if self.currentChannel != int(Channel,16):
-        updateNotificationWidget( self, Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
+        self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
     self.currentChannel = int(Channel,16)
 
     self.iaszonemgt.setZigateIEEE( extaddr )
@@ -654,8 +656,8 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
     # from https://github.com/fairecasoimeme/ZiGate/issues/15 , if PanID == 0 -> Network is done
     if str(PanID) == "0" : 
         Domoticz.Status("Decode8009 : Network state DOWN ! " )
-        updateNotificationWidget( self, Devices, 'Network down PanID = 0' )
-        updateStatusWidget( self, Devices, 'No Connection')
+        self.adminWidgets.updateNotificationWidget( Devices, 'Network down PanID = 0' )
+        self.adminWidgets.updateStatusWidget( Devices, 'No Connection')
     else :
         Domoticz.Status("Decode8009 - Network state UP, PANID: %s extPANID: 0x%s Channel: %s" \
                 %( PanID, extPanID, int(Channel,16) ))
@@ -1024,6 +1026,11 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
                     Domoticz.Debug("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
+            else: # Not 'ConfigSource'
+                self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
+                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
+                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
@@ -1031,10 +1038,8 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
     # Decoding Cluster Out
     idx = 24 + int(MsgDataInClusterCount,16) *4
     MsgDataOutClusterCount=MsgData[idx:idx+2]
-    Domoticz.Status("[%s] NEW OBJECT: %s Cluster OUT Count: %s" %('-', MsgDataShAddr, MsgDataOutClusterCount))
 
-    
-    print("Cluster Out: %s" %MsgDataOutClusterCount)
+    Domoticz.Status("[%s] NEW OBJECT: %s Cluster OUT Count: %s" %('-', MsgDataShAddr, MsgDataOutClusterCount))
     idx += 2
     i=1
     if int(MsgDataOutClusterCount,16)>0 :
@@ -1046,6 +1051,11 @@ def Decode8043(self, MsgData) : # Reception Simple descriptor response
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
                     Domoticz.Log("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
+            else: # Not 'ConfigSource'
+                self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
+                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
+                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+
             Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
@@ -1181,7 +1191,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         if Devices[x].DeviceID == MsgExtAddress:
             devName = Devices[x].Name
             break
-    updateNotificationWidget( self, Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
+    self.adminWidgets.updateNotificationWidget( Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
 
     if ( self.pluginconf.logFORMAT == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
@@ -1268,7 +1278,7 @@ def Decode804A(self, Devices, MsgData) : # Management Network Update response
         json_file.write('\n')
         json.dump( nwkscan, json_file)
 
-    updateNotificationWidget( self, Devices, 'A new Network Scan report is available' )
+    self.adminWidgets.updateNotificationWidget( Devices, 'A new Network Scan report is available' )
 
     return
 
