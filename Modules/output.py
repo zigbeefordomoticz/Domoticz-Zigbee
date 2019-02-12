@@ -199,6 +199,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
+        ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
     else:
         for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -398,7 +399,7 @@ def removeZigateDevice( self, IEEE ):
 def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
-    Domoticz.Debug("attribute_discovery_request - " +str(datas) )
+    Domoticz.Log("attribute_discovery_request - " +str(datas) )
     sendZigateCmd(self, "0140", datas )
 
 
