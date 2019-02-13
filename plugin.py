@@ -357,7 +357,7 @@ class BasePlugin:
                 if self.pluginconf.TXpower:
                     attr_tx_power = '%02x' %self.pluginconf.TXpower_set
                     sendZigateCmd(self, "0806", attr_tx_power)
-                    Domoticz.Status("Zigate switch to High Power Mode value: 0x%s" %attr_tx_power)
+                    Domoticz.Status("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
 
                 if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
                     Domoticz.Status("Start Group Management")
