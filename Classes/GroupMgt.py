@@ -518,6 +518,7 @@ class GroupsManagement(object):
                 'ColorControlFull':5 }
 
         code = 0
+        color_widget = None
         widget = ( 241, 7,7 )
         for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
             Domoticz.Log("bestGroupWidget - processing %s" %devNwkid)
@@ -531,11 +532,21 @@ class GroupsManagement(object):
                         if code == 1: widget = ( 244, 73, 0 )
                         elif code == 2: widget = ( 244, 73, 16 )
                         elif code == 3 :
-                            if devwidget == 'ColorControlWW': widget = ( 241, 8, 7 )
-                            elif devwidget == 'ColorControlRGB': widget = ( 241, 2, 7 )
+                            if color_widget is None:
+                                if devwidget == 'ColorControlWW': widget = ( 241, 8, 7 )
+                                elif devwidget == 'ColorControlRGB': widget = ( 241, 2, 7 )
+                            elif color_widget == devwidget:
+                                continue
+                            elif (devwidget == 'ColorControlWW' and color_widget == 'ColorControlRGB') or \
+                                    ( color_widget == 'ColorControlWW' and devwidget == 'ColorControlRGB' ) :
+                                code = 4
+                                color_widget = 'ColorControlRGBWW'
+                                widget = ( 241, 4, 7)
                         elif code == 4: widget = ( 241, 4, 7)
                         elif code == 5: widget = ( 241, 7, 7)
+                    pre_code = code
 
+        Domoticz.Log("_bestGroupWidget - Code: %s, Color_Widget: %s, widget: %s" %( code, color_widget, widget))
         return widget
 
     def updateDomoGroupDevice( self, group_nwkid):
