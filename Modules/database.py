@@ -55,7 +55,13 @@ def LoadDeviceList( self ):
             key = key.replace("'","")
 
             if key in  ( 'ffff', '0000'): continue
-            dlVal=eval(val)
+
+            try:
+                dlVal=eval(val)
+            except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+                Domoticz.Error("LoadDeviceList failed on %s" %val)
+                continue
+
             Domoticz.Debug("LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) )
 
             if not dlVal.get('Version') :
@@ -115,7 +121,11 @@ def importDeviceConf( self ) :
     tmpread=""
     with open( self.pluginconf.pluginConfig  + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
-    self.DeviceConf=eval(tmpread)
+        try:
+            self.DeviceConf=eval(tmpread)
+        except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConfig, tmpread))
+
     Domoticz.Status("DeviceConf loaded")
 
 def checkListOfDevice2Devices( self, Devices ) :
