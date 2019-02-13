@@ -101,17 +101,17 @@ def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
         _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
-        Domoticz.Debug("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+        Domoticz.Log("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open( _DeviceListFileName , 'wt') as file:
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
 
         # To be written in the Reporting folder
-        json_filename = self.pluginconf.pluginReports + self.DeviceListName + '.json'
-        Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
+        json_filename = self.pluginconf.pluginReports + self.DeviceListName.replace('.txt','.json') 
+        Domoticz.Log("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
-            json.dump(self.ListOfDevices, json_file)
+            json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
     else :
         Domoticz.Debug("HB count = " + str(self.HBcount))
         self.HBcount=self.HBcount+1
