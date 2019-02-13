@@ -671,6 +671,17 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     sendZigateCmd(self, "00E0", datas )
     
 
+def initiateTouchLink( self):
+
+    Domoticz.Status("initiate Touch Link")
+    sendZigateCmd(self, "00D0", '' )
+
+def factoryresetTouchLink( self):
+
+    Domoticz.Status("Factory Reset Touch Link Over The Air")
+    sendZigateCmd(self, "00D2", '' )
+
+
 def identifySend( self, nwkid, ep, duration=0):
 
     datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration) 
