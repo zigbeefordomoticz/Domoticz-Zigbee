@@ -473,7 +473,7 @@ class GroupsManagement(object):
                 Domoticz.Log("_createDomoGroupDevice - existing group %s" %(self.Devices[x].Name))
                 return
 
-        Type_, Subtype_, SwitchType_ = self.bestGroupWidget( group_nwkid)
+        Type_, Subtype_, SwitchType_ = self._bestGroupWidget( group_nwkid)
 
         unit = self.FreeUnit( self.Devices )
         Domoticz.Debug("_createDomoGroupDevice - Unit: %s" %unit)
@@ -486,7 +486,26 @@ class GroupsManagement(object):
         else:
             self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s created' %groupname)
 
-    def bestGroupWidget( self, group_nwkid):
+    def _updateDomoGroupDeviceWidget( self, groupname, group_nwkid ):
+
+        if groupname == '' or group_nwkid == '':
+            Domoticz.Log("_updateDomoGroupDeviceWidget - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
+
+        unit = 0
+        for x in self.Devices:
+            if self.Devices[x].DeviceID == group_nwkid:
+                unit = x
+                break
+        else:
+            Domoticz.Log("_updateDomoGroupDeviceWidget - Group doesn't exist %s / %s" %(groupname, group_nwkid))
+
+        Type_, Subtype_, SwitchType_ = self._bestGroupWidget( group_nwkid)
+
+        if Type_ != self.Devices[unit].Type or Subtype_ != self.Devices[unit].SubType or SwitchType_ != self.Devices[unit].SwitchType :
+            Domoticz.Log("_updateDomoGroupDeviceWidget - Update Type:%s, Subtype:%s, Switchtype:%s" %(Type_, Subtype_, SwitchType_))
+            self.Devices[unit].Update( 0, 'Off', Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_)
+
+    def _bestGroupWidget( self, group_nwkid):
 
         WIDGETS = {
                 'Plug':1,
@@ -578,7 +597,7 @@ class GroupsManagement(object):
 
 
     def _removeDomoGroupDevice(self, group_nwkid):
-        ' User has remove dthe Domoticz Device corresponding to this group'
+        ' User has removed the Domoticz Device corresponding to this group'
 
         if group_nwkid not in self.ListOfGroups:
             Domoticz.Error("_removeDomoGroupDevice - unknown group: %s" %group_nwkid)
@@ -1114,6 +1133,8 @@ class GroupsManagement(object):
                             del self.ListOfGroups[iterGrp] 
                         else:
                             self.ListOfGroups[iterGrp]['Name'] = self.Devices[x].Name
+                            # Check if we need to update the Widget
+                            self._updateDomoGroupDeviceWidget(self.ListOfGroups[iterGrp]['Name'], iterGrp)
                         break
                 else:
                     # Unknown group in Domoticz. Create it
