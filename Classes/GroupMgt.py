@@ -1166,7 +1166,7 @@ class GroupsManagement(object):
                     if iterDev in self.ListOfDevices:
                         Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
 
-            Domoticz.Log("Ready for working")
+            Domoticz.Status("Group startup done")
             self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
             self.StartupPhase = 'ready'
             self.stillWIP = False

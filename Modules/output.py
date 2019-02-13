@@ -399,7 +399,7 @@ def removeZigateDevice( self, IEEE ):
 def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
-    Domoticz.Log("attribute_discovery_request - " +str(datas) )
+    Domoticz.Debug("attribute_discovery_request - " +str(datas) )
     sendZigateCmd(self, "0140", datas )
 
 
