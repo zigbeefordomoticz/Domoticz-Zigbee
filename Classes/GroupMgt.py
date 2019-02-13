@@ -473,15 +473,51 @@ class GroupsManagement(object):
                 Domoticz.Log("_createDomoGroupDevice - existing group %s" %(self.Devices[x].Name))
                 return
 
+        Type_, Subtype_, SwitchType_ = self.bestGroupWidget( group_nwkid)
+
         unit = self.FreeUnit( self.Devices )
         Domoticz.Debug("_createDomoGroupDevice - Unit: %s" %unit)
-        myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=241, Subtype=7, Switchtype=7)
+        #myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=241, Subtype=7, Switchtype=7)
+        myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_)
         myDev.Create()
         ID = myDev.ID
         if myDev.ID == -1 :
             Domoticz.Log("CreateDomoGroupDevice - failed to create Group device.")
         else:
             self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s created' %groupname)
+
+    def bestGroupWidget( self, group_nwkid):
+
+        WIDGETS = {
+                'Plug':1,
+                'Switch':1,
+                'LvlControl':2,
+                'ColorControlWW':3,
+                'ColorControlRGB':3,
+                'ColorControlRGBWW':4,
+                'ColorControl':5,
+                'ColorControlFull':5 }
+
+        code = 0
+        widget = ( 241, 7,7 )
+        for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
+            Domoticz.Log("bestGroupWidget - processing %s" %devNwkid)
+            if 'ClusterType' not in self.ListOfDevices[devNwkid]['Ep'][devEp]:
+                continue
+            for iterClusterType in self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType']:
+                if self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType'][iterClusterType] in WIDGETS:
+                    devwidget = self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType'][iterClusterType]
+                    if code <= WIDGETS[devwidget]:
+                        code = WIDGETS[devwidget]
+                        if code == 1: widget = ( 244, 73, 0 )
+                        elif code == 2: widget = ( 244, 73, 16 )
+                        elif code == 3 :
+                            if devwidget == 'ColorControlWW': widget = ( 241, 8, 7 )
+                            elif devwidget == 'ColorControlRGB': widget = ( 241, 2, 7 )
+                        elif code == 4: widget = ( 241, 4, 7)
+                        elif code == 5: widget = ( 241, 7, 7)
+
+        return widget
 
     def updateDomoGroupDevice( self, group_nwkid):
         """ 
