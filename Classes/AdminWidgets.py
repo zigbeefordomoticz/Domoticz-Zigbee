@@ -82,7 +82,7 @@ class AdminWidgets:
         for x in Devices:
             if Devices[x].DeviceID == deviceid_status_widget:
                 unit = x
-                Domoticz.Log("createStatusWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
+                Domoticz.Debug("createStatusWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
                 break
         if unit != 0:
             return
@@ -107,7 +107,7 @@ class AdminWidgets:
         for x in Devices:
             if Devices[x].DeviceID == deviceid_txt_widget:
                 unit = x
-                Domoticz.Log("createNotificationWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
+                Domoticz.Debug("createNotificationWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
                 break
         if unit != 0:
             return
@@ -156,13 +156,13 @@ class AdminWidgets:
                 unit = x
                 break
         if unit == 0: 
-            Domoticz.Log("updateNotificationWidget - didn't find the Widget: %s" %deviceid_status_widget)
+            Domoticz.Debug("updateNotificationWidget - didn't find the Widget: %s" %deviceid_status_widget)
             return
 
         nValue = STATUS_WIDGET[statusType]
         sValue = str(statusType)
         if sValue != Devices[unit].sValue:
-            Domoticz.Log("updateNotificationWidget - %s nValue: %s, sValue: %s/%s" 
+            Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s" 
                     %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
             Devices[unit].Update( nValue =nValue , sValue=sValue)
 
@@ -177,13 +177,13 @@ class AdminWidgets:
                 unit = x
                 break
         if unit == 0:
-            Domoticz.Log("updateNotificationWidget - didn't find the Widget: %s" %deviceid_txt_widget)
+            Domoticz.Debug("updateNotificationWidget - didn't find the Widget: %s" %deviceid_txt_widget)
             return
 
         nValue = 0
         sValue = str(notification)
         if sValue != Devices[unit].sValue:
-            Domoticz.Log("updateNotificationWidget - %s nValue: %s, sValue: %s/%s"
+            Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s"
                     %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
             Devices[unit].Update( nValue =nValue , sValue=sValue)
 
