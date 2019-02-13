@@ -37,7 +37,6 @@ class AdminWidgets:
         FreeUnit
         Look for a Free Unit number.
         '''
-        FreeUnit = ""
         for x in range(1, 255):
             if x not in Devices:
                 Domoticz.Debug("FreeUnit - device " + str(x) + " available")
@@ -66,7 +65,7 @@ class AdminWidgets:
                    "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrolmennt|Perm. Enrollment|Interf Scan|LQI Report",
                    "LevelOffHidden": "true", "SelectorStyle": "0"}
 
-        unit = FreeUnit(self, Devices)
+        unit = self.FreeUnit(Devices)
         widget_name = DEVICEID_ADMIN_WIDGET_TXT+ " %02s" %self.HardwareID
         myDev = Domoticz.Device(DeviceID=deviceid_admin_widget, Name=widget_name,
                         Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
@@ -88,7 +87,7 @@ class AdminWidgets:
         if unit != 0:
             return
 
-        unit = FreeUnit(self, Devices)
+        unit = self.FreeUnit(Devices)
         widget_name = DEVICEID_STATUS_WIDGET_TXT + " %02s" %self.HardwareID
         myDev = Domoticz.Device(DeviceID=deviceid_status_widget, Name=widget_name,
                         Unit=unit, Type=243, Subtype=22, Switchtype=0)
@@ -113,7 +112,7 @@ class AdminWidgets:
         if unit != 0:
             return
 
-        unit = FreeUnit(self, Devices)
+        unit = self.FreeUnit(Devices)
         widget_name = DEVICEID_TXT_WIDGET_TXT + " %02s" %self.HardwareID
         myDev = Domoticz.Device(DeviceID=deviceid_txt_widget, Name=widget_name,
                         Unit=unit, Type=243, Subtype=19, Switchtype=0)
