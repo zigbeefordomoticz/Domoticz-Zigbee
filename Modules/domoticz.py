@@ -1214,6 +1214,7 @@ def GetType(self, Addr, Ep):
             return "Ikea_Round_OnOff"
 
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
+            if cluster in ('Type', 'ClusterType', 'ColorMode'): continue
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
             if Type != "" and Type[:1] != "/":
                 Type += "/"

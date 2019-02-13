@@ -63,6 +63,15 @@ def processKnownDevices( self, Devices, NWKID ):
                                                             # available, let's request a Node Descriptor
             sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
+    if  self.HeartbeatCount == ( 56 // HEARTBEAT):
+        if 'PowerSource' in self.ListOfDevices[NWKID]:
+            if (self.ListOfDevices[NWKID]['PowerSource']) == 'Main':
+                if 'Attributes List' not in  self.ListOfDevices[NWKID]:
+                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                        for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                            if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                            getListofAttribute( self, NWKID, iterEp, iterCluster)
+
     # Ping each device, even the battery one. It will make at least the route up-to-date
     #if ( intHB % ( 3000 // HEARTBEAT)) == 0:
     #    ReadAttributeRequest_Ack(self, NWKID)
@@ -272,7 +281,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 Domoticz.Log('looking for bind ep: %s' %iterEp)
                 for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType'): continue
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
                     Domoticz.Log('looking for bind ep: %s cluster: %s' %(iterEp, iterCluster))
                     if iterCluster in BINDING_MATRIX:
                         Domoticz.Log('Finaly Request a Bind for %s/%s - %s' %(NWKID, iterEp, iterCluster))

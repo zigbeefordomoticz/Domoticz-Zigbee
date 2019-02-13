@@ -69,7 +69,7 @@ def getClusterListforEP( self, NWKID, Ep ) :
     ClusterList = []
     if self.ListOfDevices[NWKID]['Ep'][Ep] :
         for cluster in self.ListOfDevices[NWKID]['Ep'][Ep] :
-            if cluster != "ClusterType" :
+            if cluster not in  ('ClusterType', 'Type', 'ColorMode'):
                 ClusterList.append(cluster)
     return ClusterList
 
@@ -417,7 +417,7 @@ def getListofClusterbyModel( self, Model , InOut ) :
             for ep in self.DeviceConf[Model][InOut] :
                 seen = ''
                 for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
-                    if cluster == 'Type' or  cluster == seen :
+                    if cluster in ( 'ClusterType', 'Type', 'ColorMode') or  cluster == seen :
                         continue
                     listofCluster.append( cluster )
                     seen = cluster
