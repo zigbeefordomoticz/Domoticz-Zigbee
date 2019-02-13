@@ -530,7 +530,7 @@ class GroupsManagement(object):
                     if code <= WIDGETS[devwidget]:
                         code = WIDGETS[devwidget]
                         if code == 1: widget = ( 244, 73, 0 )
-                        elif code == 2: widget = ( 244, 73, 16 )
+                        elif code == 2: widget = ( 244, 73, 7 )
                         elif code == 3 :
                             if color_widget is None:
                                 if devwidget == 'ColorControlWW': widget = ( 241, 8, 7 )
