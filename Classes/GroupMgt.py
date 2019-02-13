@@ -974,7 +974,7 @@ class GroupsManagement(object):
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
-                    Domoticz.Log("Too buys, will come back later")
+                    Domoticz.Log("Too busy, will come back later")
                     break # will continue in the next cycle
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'DEL-Membership'
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
@@ -987,7 +987,7 @@ class GroupsManagement(object):
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
-                    Domoticz.Log("Too buys, will come back later")
+                    Domoticz.Log("Too busy, will come back later")
                     break # will continue in the next cycle
 
                 if 'GroupMgt' not in self.ListOfDevices[iterDev]:
