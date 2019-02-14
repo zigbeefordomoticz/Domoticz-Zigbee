@@ -262,7 +262,8 @@ class BasePlugin:
             self.Ping['Rx Message'] = 1
 
             if Parameters["Mode3"] == "True":
-                self.domoticzdb_Hardware.disablePermitToJoin()
+                if self.domoticzdb_Hardware:
+                    self.domoticzdb_Hardware.disablePermitToJoin()
                 ################### ZiGate - ErasePD ##################
                 Domoticz.Status("Erase Zigate PDM")
                 sendZigateCmd(self, "0012", "")
