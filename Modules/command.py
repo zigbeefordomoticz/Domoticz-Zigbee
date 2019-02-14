@@ -250,6 +250,7 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     if devunit == 'Left': timing_value = '0001'
     else: timing_value = '0002'
 
+    Domoticz.Log("livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value))
     sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
 
 
