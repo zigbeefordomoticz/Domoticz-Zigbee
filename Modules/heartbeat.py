@@ -279,17 +279,23 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Binding devices
             BINDING_MATRIX = ( '0001', '0006', '0008', '0201', '0300', 
-                    '0400', '0402', '0403', '0405', '0500', '0702', 'ff01', 'ff02', 'fc00', 'fc01' )
+                    '0400', '0402', '0403', '0405', '0500', '0702', 'ff01', 'ff02', 'fc01' , 'fc00' )
+
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                Domoticz.Log('looking for bind ep: %s' %iterEp)
+                Domoticz.Debug('looking for bind ep: %s' %iterEp)
                 for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                    Domoticz.Log('looking for bind ep: %s cluster: %s' %(iterEp, iterCluster))
+                    Domoticz.Debug('looking for bind ep: %s cluster: %s' %(iterEp, iterCluster))
                     if iterCluster in BINDING_MATRIX:
-                        Domoticz.Log('Finaly Request a Bind for %s/%s - %s' %(NWKID, iterEp, iterCluster))
-                        bindDevice( self,  self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
+                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterCluster))
+                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
 
-                        getListofAttribute( self, NWKID, iterEp, iterCluster)
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                Domoticz.Debug('looking for List of Attributes ep: %s' %iterEp)
+                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                        continue
+                    getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  

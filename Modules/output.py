@@ -484,6 +484,7 @@ def processConfigureReporting( self, NWKID=None ):
         if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
         else: continue
+
         # We reach here because we have either a NWKID (we are pairing phase and we have a window to talk to the device even on battery mode
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
@@ -501,7 +502,7 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 15)
             clusterList = getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
-                if cluster in ( 'Type', 'ColorMode'):
+                if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
 
                 if 'ConfigureReporting' in self.ListOfDevices[key]:

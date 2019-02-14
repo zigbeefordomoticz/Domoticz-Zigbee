@@ -141,6 +141,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         for t in Type:
             Domoticz.Debug("CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t))
+
             if t == "ThermoSetpoint":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -211,6 +212,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=73, Switchtype=8)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "LivoloSW2":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Left_Off|Left_On|Right_Off|Right_On",
+                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -850,6 +866,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "00":
                         state = "Off"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                elif DeviceType == "LivoloSW2":
+                    value = int(value)
+                    if value == 1: state = "00" # Left Off
+                    elif value == 2: state = "10" # Left On
+                    elif value == 3: state = "20" # Right Off
+                    elif value == 4: state = "30" # Right On
+                    else:
+                        return  # Simply return and don't process any other values than the above
+                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
                     if value == 1: state = "00"
