@@ -14,6 +14,8 @@ import time
 import struct
 import json
 
+from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -632,6 +634,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             DeviceType = ""
             Domoticz.Debug("MajDomoDevice - " + str(self.ListOfDevices[NWKID]['Ep'][Ep]))
 
+
             if 'ClusterType' in self.ListOfDevices[NWKID]:
                 # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
                 if str(ID) not in self.ListOfDevices[NWKID]['ClusterType']:
@@ -720,6 +723,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
+                if self.domoticzdb_DeviceStatus:
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue( Devices[x].ID),1)
+                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
+                    value = value + adjvalue
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':

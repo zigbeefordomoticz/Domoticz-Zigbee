@@ -17,12 +17,11 @@ import os.path
 DOMOTICZ_DB = "domoticz.db"
 
 
-class DomoticzDictionnary:
+class DomoticzDB_Dictionnary:
 
-    def __init__(self, startupfolder):
+    def __init__(self, database):
         self.preferences = {}
         dbConn = None
-        database = startupfolder + DOMOTICZ_DB
         
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
@@ -36,14 +35,13 @@ class DomoticzDictionnary:
         dbConn.close()
 
 
-class DeviceDictionnary:
+class DomoticzDB_DeviceStatus:
 
-    def __init__(self, startupfolder, hardwareID ):
+    def __init__(self, database, hardwareID ):
         self.Devices = {}
         self.dbConn = None
         self.dbCursor = None
         self.HardwareID = hardwareID
-        database = startupfolder + DOMOTICZ_DB
 
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
@@ -64,10 +62,10 @@ class DeviceDictionnary:
 
 if __name__ == '__main__':
 
-    domoDico = DomoticzDictionnary( "/var/lib/domoticz/")
+    domoDico = DomoticzDB_Dictionnary( "/var/lib/domoticz/domoticz.db")
     for key, value in  domoDico.preferences.items():
         print( "%s = %s" %(key,value))
 
-    tstdevice = DeviceDictionnary("/var/lib/domoticz/", "35")
+    tstdevice = DomoticzDB_DeviceStatus("/var/lib/domoticz/domoticz.db", "35")
 
-    print(tstdevice.AddjValue("620"))
+    print(tstdevice.retreiveAddjValue("35"))

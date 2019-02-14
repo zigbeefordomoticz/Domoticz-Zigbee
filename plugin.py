@@ -70,6 +70,7 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
+from Classes.DomoticzDB import DomoticzDB_DeviceStatus
 
 class BasePlugin:
     enabled = False
@@ -98,6 +99,7 @@ class BasePlugin:
         self.adminWidgets = None   # Manage AdminWidgets object
         self.statistics = None
         self.iaszonemgt = None      # Object to manage IAS Zone
+        self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB
         self.Key = ''
         self.HBcount=0
         self.HeartbeatCount = 0
@@ -145,6 +147,9 @@ class BasePlugin:
             Domoticz.Status("Web Root Folder: %s" %Parameters["WebRoot"])
             Domoticz.Status("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
+
+            Domoticz.Status("Opening DomoticzDB in raw")
+            self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Database"], self.HardwareID  )
 
 
         Domoticz.Status("load PluginConf" )
