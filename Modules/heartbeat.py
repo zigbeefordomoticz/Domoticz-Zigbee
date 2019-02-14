@@ -151,9 +151,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if self.ListOfDevices[NWKID]['Model'] != {}:
             Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
             # Let's check if this Model is known
-            if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                if not self.pluginconf.allowStoreDiscoveryFrames:
-                    status = 'createDB' # Fast track
+            if 'Model' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                    if not self.pluginconf.allowStoreDiscoveryFrames:
+                        status = 'createDB' # Fast track
     else:
         return
 
@@ -210,7 +211,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
             ReadAttributeRequest_0300(self, NWKID )
-            return
+            if  self.ListOfDevices[NWKID]['RIA'] < '2':
+                return
     # end if status== "8043"
 
     # Timeout management
@@ -240,7 +242,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW':  # We have done several retry
+    if self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
