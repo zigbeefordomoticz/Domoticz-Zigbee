@@ -107,6 +107,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+        if EPout == '06': # Mostlikely a Livolo Device
+            livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "01")
@@ -120,6 +123,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+
+        if EPout == '06': # Mostlikely a Livolo Device
+            livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "09")
@@ -223,6 +230,28 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         #Update Device
         UpdateDevice_v2(Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
+
+
+def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
+    """
+    Levolo On/Off command are based on Level Control cluster
+    Level: 108  -> On
+    Level: 1 -> Off
+    Left Unit: Timing 1
+    Right Unit: Timing 2
+    """
+
+    if onoff not in ( 'On', 'Off'): return
+    if devunit not in ( 'Left', 'Right'): return
+
+    if onoff == 'On': level_value = '%02x' %108
+    else: level_value = '01'
+
+    if devunit == 'Left': timing_value = '0001'
+    else: timing_value = '0002'
+
+    sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+
 
 
 
