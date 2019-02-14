@@ -1191,7 +1191,8 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
     if (Unit in Devices):
         if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
             ( Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_:
-            Domoticz.Log("Update v2 Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
+            Domoticz.Log("Update Domoticz - %4s/%20s (%s)" %( nValue, sValue, Devices[Unit].Name ))
+            Domoticz.Debug("Update Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
                 Unit].Name + ")")
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi),
