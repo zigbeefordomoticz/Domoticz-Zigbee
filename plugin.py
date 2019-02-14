@@ -341,7 +341,7 @@ class BasePlugin:
             # Ceck Firmware version
 
             if self.FirmwareVersion.lower() < '030f':
-                Domoticz.Status("You are not on the latest firmware version, please consider to upgrae")
+                Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
 
             if self.FirmwareVersion.lower() == '030e':
                 Domoticz.Status("You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
