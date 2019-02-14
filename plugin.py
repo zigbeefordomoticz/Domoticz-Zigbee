@@ -413,7 +413,7 @@ class BasePlugin:
         # If fails then try to reConnect
         if self.pluginconf.Ping:
             if ( self.HeartbeatCount % ( (5 * 60) // HEARTBEAT)) == 0 :
-                Domoticz.Log("Ping")
+                Domoticz.Debug("Ping")
                 if self.Ping['Rx Message']: # 'Rx Message' is set to 0 when receiving a Message.
                                             # Looks like we didn't receive messages
                     if  self.Ping['Rx Message'] > ( 60 //  HEARTBEAT ):
