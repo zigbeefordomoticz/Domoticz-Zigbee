@@ -101,7 +101,7 @@ def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
         _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
-        Domoticz.Log("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+        Domoticz.Debug("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open( _DeviceListFileName , 'wt') as file:
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
@@ -109,7 +109,7 @@ def WriteDeviceList(self, count):
 
         # To be written in the Reporting folder
         json_filename = self.pluginconf.pluginReports + self.DeviceListName.replace('.txt','.json') 
-        Domoticz.Log("Write " + json_filename + " = " + str(self.ListOfDevices))
+        Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
             json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
     else :
@@ -119,12 +119,14 @@ def WriteDeviceList(self, count):
 def importDeviceConf( self ) :
     #Import DeviceConf.txt
     tmpread=""
+    self.DeviceConf = {}
     with open( self.pluginconf.pluginConfig  + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
         try:
             self.DeviceConf=eval(tmpread)
         except (SyntaxError, NameError, TypeError, ZeroDivisionError):
             Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConfig, tmpread))
+            return
 
     Domoticz.Status("DeviceConf loaded")
 

@@ -1320,13 +1320,13 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
         elif ZDeviceID == '0210': # 
             Subtype = ColorControlRGBWW
         elif ZDeviceID == '0220': # ampoule Tradfi LED1545G12.Tradfri
-            Subtype = ColorControlWC
+            Subtype = ColorControlWW
             pass
 
     # Home Automation / ZHA
     if Subtype is None and ProfileID == '0104': # Home Automation
         if ZLL_Commissioning and ZDeviceID == '0100': # Most likely IKEA Tradfri bulb LED1622G12
-            Subtype = ColorControlWC
+            Subtype = ColorControlWW
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
         elif ZdeviceID == '0101': # Dimable light
             pass
@@ -1337,10 +1337,10 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
 
     if Subtype is None and ColorInfos:
         if ColorMode == 2:
-            Subtype = ColorControlWC
+            Subtype = ColorControlWW
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         elif ColorMode == 1:
-            Subtype = ColorControlRGB2
+            Subtype = ColorControlRGB
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         else:
             Subtype = ColorControlFull
