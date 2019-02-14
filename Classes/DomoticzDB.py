@@ -27,13 +27,35 @@ class DomoticzDB_Dictionnary:
         if not os.path.isfile( database ) :
             return 
         dbConn = sqlite3.connect(database)
+
+
+    def retreiveDictionary( self ):
         for Key, nValue, sValue in dbConn.execute("SELECT Key, nValue, sValue FROM Preferences"):
             if not sValue:
                 self.preferences[str(Key)] = str(nValue)
             else:
                 self.preferences[str(Key)] = str(sValue)
-        dbConn.close()
 
+
+class DomoticzDB_Hardware:
+
+    def __init__(self, database, hardwareID ):
+        self.Devices = {}
+        self.dbConn = None
+        self.dbCursor = None
+        self.HardwareID = hardwareID
+
+        # Check if we have access to the database, if not Error and return
+        if not os.path.isfile( database ) :
+            return
+        self.dbConn = sqlite3.connect(database)
+        self.dbCursor = self.dbConn.cursor()
+
+    def disablePermitToJoin( self):
+
+        # Permit to Join is stored in Mode3
+        self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'True' Where ID = '%s' " %self.HardwareID)
+        self.dbConn.commit()
 
 class DomoticzDB_DeviceStatus:
 
@@ -69,3 +91,7 @@ if __name__ == '__main__':
     tstdevice = DomoticzDB_DeviceStatus("/var/lib/domoticz/domoticz.db", "35")
 
     print(tstdevice.retreiveAddjValue("35"))
+
+
+    hardwaretable = DomoticzDB_Hardware("/var/lib/domoticz/domoticz.db", "35")
+    hardwaretable.disablePermitToJoin()

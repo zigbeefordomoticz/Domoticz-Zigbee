@@ -70,7 +70,7 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
-from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware
 
 class BasePlugin:
     enabled = False
@@ -99,7 +99,8 @@ class BasePlugin:
         self.adminWidgets = None   # Manage AdminWidgets object
         self.statistics = None
         self.iaszonemgt = None      # Object to manage IAS Zone
-        self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB
+        self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
+        self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
         self.Key = ''
         self.HBcount=0
         self.HeartbeatCount = 0
@@ -150,6 +151,7 @@ class BasePlugin:
 
             Domoticz.Status("Opening DomoticzDB in raw")
             self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Database"], self.HardwareID  )
+            self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Database"], self.HardwareID  )
 
 
         Domoticz.Status("load PluginConf" )
@@ -260,15 +262,16 @@ class BasePlugin:
             self.Ping['Rx Message'] = 1
 
             if Parameters["Mode3"] == "True":
+                self.domoticzdb_Hardware.disablePermitToJoin()
                 ################### ZiGate - ErasePD ##################
                 Domoticz.Status("Erase Zigate PDM")
                 sendZigateCmd(self, "0012", "")
-                #Domoticz.Status("Software reset")
+                Domoticz.Status("Software reset")
                 #sendZigateCmd(self, "0011", "") # Software Reset
                 ZigateConf(self, Parameters["Mode2"])
             else :
                 if Parameters["Mode4"] == "True":
-                    #Domoticz.Status("Software reset")
+                    Domoticz.Status("Software reset")
                     #sendZigateCmd(self, "0011", "" ) # Software Reset
                     ZigateConf(self, Parameters["Mode2"])
                 else:
@@ -279,6 +282,7 @@ class BasePlugin:
             self.connectionState = 0
             self.ZigateComm.reConn()
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
+
 
 
         # Create IAS Zone object
