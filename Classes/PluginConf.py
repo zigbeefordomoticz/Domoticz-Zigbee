@@ -83,6 +83,7 @@ class PluginConf:
 
         Domoticz.Status("PluginConf: %s" %self.filename)
         tmpPluginConf = ""
+        self.PluginConf = {}
         with open( self.filename, 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
