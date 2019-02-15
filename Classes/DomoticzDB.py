@@ -11,11 +11,8 @@
 """
 
 import sqlite3
-#import Domoticz
+import Domoticz
 import os.path
-
-DOMOTICZ_DB = "domoticz.db"
-
 
 class DomoticzDB_Dictionnary:
 
@@ -26,6 +23,7 @@ class DomoticzDB_Dictionnary:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return 
+        Domoticz.Log("Opening %s" %database)
         dbConn = sqlite3.connect(database)
 
 
@@ -48,6 +46,7 @@ class DomoticzDB_Hardware:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
+        Domoticz.Log("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
@@ -68,11 +67,21 @@ class DomoticzDB_DeviceStatus:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
+        Domoticz.Log("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
 
-    def retreiveAddjValue( self, ID):
+    def retreiveAddjValue_baro( self, ID):
+        """
+        Retreive the AddjValue of Device.ID
+        """
+
+        self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
+        value = self.dbCursor.fetchone()
+        return value[0]
+
+    def retreiveAddjValue_temp( self, ID):
         """
         Retreive the AddjValue of Device.ID
         """
