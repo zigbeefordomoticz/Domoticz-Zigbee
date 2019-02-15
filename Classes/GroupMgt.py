@@ -409,7 +409,7 @@ class GroupsManagement(object):
                         if MsgGroupID in self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP]:
                             del  self.ListOfDevices[MsgSrcAddr]['GroupMgt'][MsgEP][MsgGroupID]
 
-                Domoticz.Log("Decode8063 - self.ListOfGroups: %s" %str(self.ListOfGroups))
+                Domoticz.Debug("Decode8063 - self.ListOfGroups: %s" %str(self.ListOfGroups))
                 if MsgGroupID in self.ListOfGroups:
                     if (MsgSrcAddr, MsgEP) in self.ListOfGroups[MsgGroupID]['Devices']:
                         Domoticz.Log("removeGroupResponse - removing %s from %s" %( str(( MsgSrcAddr, MsgEP)), str(self.ListOfGroups[MsgGroupID]['Devices'])))
@@ -602,7 +602,7 @@ class GroupsManagement(object):
             sValue = "Off"
         Domoticz.Debug("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
-            Domoticz.Log("UpdateDeviceGroup Values %s:%s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
+            Domoticz.Log("UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
             self.Devices[unit].Update( nValue, sValue)
 
 
@@ -622,7 +622,7 @@ class GroupsManagement(object):
             return
         Domoticz.Debug("_removeDomoGroupDevice - removing Domoticz Widget %s" %self.Devices[unit].Name)
         self.Devices[unit].Delete()
-        self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %groupname)
+        self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %self.Devices[unit].Name)
         
 
     # Group Management methods
