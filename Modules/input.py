@@ -699,7 +699,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
     self.Ping['TimeStamp'] = time.time()
     self.Ping['Status'] = 'Receive'
-    Domoticz.Log("Ping - received")
+    Domoticz.Debug("Ping - received")
 
     return
 
@@ -1502,7 +1502,7 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     MsgClusterId=MsgData[8:12]
     RemainData = MsgData[12:len(MsgData)]
 
-    Domoticz.Log("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s, RemainData: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, RemainData))
+    Domoticz.Debug("Decode8120 - SQN: %s, SrcAddr: %s, SrcEP: %s, ClusterID: %s, RemainData: %s" %(MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, RemainData))
 
     if len(MsgData) < 14:
         Domoticz.Error("Decode8120 - uncomplet message %s " %MsgData)
@@ -1517,10 +1517,10 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
             MsgAttribute.append( MsgData[(12+(idx*4)):(12+(idx*4))+4] )
             idx += 1
         Domoticz.Debug("nbAttribute: %s, idx: %s" %(nbattribute, idx))
-        Domoticz.Log("Decode8120 - Attributes : %s " %(str(MsgAttribute)))
         MsgDataStatus = MsgData[(12+(nbattribute*4)):(12+(nbattribute*4)+2)]
+        Domoticz.Debug("Decode8120 - Attributes : %s status: %s " %(str(MsgAttribute), MsgDataStatus))
 
-    Domoticz.Log("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
+    Domoticz.Debug("Decode8120 - Configure Reporting response - ClusterID: %s, MsgSrcAddr: %s, MsgSrcEp:%s , Status: %s - %s" \
        %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus) ))
 
     timeStamped( self, MsgSrcAddr , 0x8120)
