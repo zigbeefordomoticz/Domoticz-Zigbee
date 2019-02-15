@@ -311,7 +311,7 @@ def ZigateRead(self, Devices, Data):
         return
 
     elif str(MsgType)=="8140":  #
-        Domoticz.Log("ZigateRead - MsgType 8140 - Reception Attribute discovery response : " + Data)
+        Domoticz.Debug("ZigateRead - MsgType 8140 - Reception Attribute discovery response : " + Data)
         Decode8140( self, MsgData)
         return
 
@@ -1553,13 +1553,13 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     MsgAttType=MsgData[2:4]
     MsgAttID=MsgData[4:8]
     
+    if MsgComplete == '01':
+        Domoticz.Log("Decode8140 - Receiving last Message")
+
     if len(MsgData) > 8:
         MsgSrcAddr = MsgData[8:12]
         MsgSrcEp = MsgData[12:14]
         MsgClusterID = MsgData[14:18]
-
-        if MsgComplete == '01':
-            Domoticz.Log("Decode8140 - Receiving last Message")
 
         Domoticz.Debug("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s"
             %( MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType))
