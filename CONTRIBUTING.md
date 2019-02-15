@@ -11,7 +11,13 @@ Contributors will help in developping/contributing to the plugin documentation, 
 The current stage of the plugin, doesn't provide any User Interface, nor Admin Interface.
 We feel that is an importat area, which will enhanced drastically the User Experience.
 
-You have JavaScript, Python3 knowledge, you want to develop web pages in order to Administrate, Interact with the plugin data, let us known.
+Technology to be used:
+- html 
+- Javascript 
+- jquery
+- css
+
+You want to develop web pages in order to Administrate, Interact with the plugin data, let us known.
 
 ## Plugin core
 The plugin is written in Python3. The integration with Domoticz is done over the 'Python Plugin Framework' provided by domoticz.
