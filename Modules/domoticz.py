@@ -578,7 +578,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Down_click", \
+                Options = {"LevelActions": "|||||||||||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
@@ -1101,7 +1101,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if value == "00":
                     nValue = 0
                     sValue = 0
-                    pass
                 elif value == "toggle": # Toggle
                     nValue = 1
                     sValue = '10'
@@ -1111,24 +1110,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == "right_click": # Right Click
                     nValue = 3
                     sValue = '30'
-                elif value == "up_click": # Up Click
+                elif value == "click_up": # Up Click
                     nValue = 4
                     sValue = '40'
-                elif value == "up_push": # Up Push
+                elif value == "hold_up": # Up Push
                     nValue = 5
                     sValue = '50'
-                elif value == "up_release": # Up Release
+                elif value == "release_up": # Up Release
                     nValue = 6
                     sValue = '60'
-                elif value == "down_click": # Down Click
+                elif value == "click_down": # Down Click
                     nValue = 7
                     sValue = '70'
-                elif value == "down_push": # Down Push
+                elif value == "hold_down": # Down Push
                     nValue = 8
                     sValue = '80'
-                elif value == "down_release": # Down Release
+                elif value == "release_down": # Down Release
                     nValue = 9
                     sValue = '90'
+                elif value == "right_hold": # 
+                    nValue = 10
+                    sValue = '100'
+                elif value == "release_down": # Down Release
+                    nValue = 11
+                    sValue = '110'
+                elif value == "left_hold": # Down Release
+                    nValue = 12
+                    sValue = '120'
+                elif value == "release_down": # Down Release
+                    nValue = 13
+                    sValue = '130'
                 UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
 
 
@@ -1199,7 +1210,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
         if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
             ( Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_:
 
-            Domoticz.Log("Update Domoticz - (%-12.12s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
+            Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
 
             Domoticz.Debug("Update Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
                 Unit].Name + ")")

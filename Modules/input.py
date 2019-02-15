@@ -1560,7 +1560,8 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
 
         if MsgComplete == '01':
             Domoticz.Log("Decode8140 - Receiving last Message")
-        Domoticz.Log("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s"
+
+        Domoticz.Debug("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s"
             %( MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType))
 
         if 'Attributes List' not in  self.ListOfDevices[MsgSrcAddr]:
@@ -1728,14 +1729,12 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 def Decode8085(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed'
 
-    Domoticz.Log("Decode8085 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
     unknown_ = MsgData[8:10]
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
-    Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
     TYPE_ACTIONS = {
             '01':'hold_down',
@@ -1760,54 +1759,25 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         if MsgClusterId == '0008':
             if MsgCmd in TYPE_ACTIONS:
                 selector = TYPE_ACTIONS[MsgCmd]
-                Domoticz.Log("Decode8085 - Selector: %s" %selector)
-    
-            #if MsgCmd == '01': 
-            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_push' )
-            if MsgCmd == '02': 
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_click' )
-            #if MsgCmd == '03': 
-            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'down_release' )
-            #if MsgCmd == '05': 
-            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_push' )
-            if MsgCmd == '06': 
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_click' )
-            #if MsgCmd == '07': 
-            #    MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'up_release' )
-
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'RWL021':
-        """
-         HUE Remote
-            0x02, 0x02, 0x0008 ->  +++
-            0x02, 0x02, 0x0008 -> -
-            0x03, 0x02, 0x0008 -> Release -
-            0x03, 0x02, 0x0008 -> Release +
-        """
-        if MsgClusterId == '0008':
-            if MsgCmd in TYPE_ACTIONS:
-                selector = TYPE_ACTIONS[MsgCmd]
-                Domoticz.Log("Decode8085 - Selector: %s" %selector)
-            if MsgCmd == '02': 
-                if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['Ep']:
-                    if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] != {}:
-                        value = int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId],16) - 1
-                        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] = '%02x' %value
-                        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, value)
-                    else: 
-                        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgClusterId] = 'ff'
+                Domoticz.Debug("Decode8085 - Selector: %s" %selector)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
+            else:
+                Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
+                        %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+        else:
+            Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
+                    %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed ON/OFF'
 
-    Domoticz.Debug("Decode8095 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
     unknown_ = MsgData[8:10]
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
-    Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
     if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
         """
@@ -1817,24 +1787,15 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         """
         if MsgClusterId == '0006' and MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
-
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'RWL021':
-        """
-            HUE Remote
-             0x01, 0x02, 0006 -> ON
-             0x40, 0x02, 0006 -> OFF
-        """
-        if MsgClusterId == '0006' and MsgCmd == '01': # On
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, '01' )
-        
-        if MsgClusterId == '0006' and MsgCmd == '40': # Off
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, '00' )
+        else:
+            Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    else:
+       Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     'Remote button pressed (LEFT/RIGHT)'
 
-    Domoticz.Log("Decode80A7 - MsgData: %s len: %s" %(MsgData, len(MsgData)))
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
     MsgClusterId = MsgData[4:8]
@@ -1842,7 +1803,6 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     MsgDirection = MsgData[10:12]
     unkown_ = MsgData[12:18]
     MsgSrcAddr = MsgData[18:22]
-    Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
 
     # Ikea Remote 5 buttons round.
     #  ( cmd, directioni, cluster )
@@ -1860,16 +1820,24 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             '09':'release'
             }
 
+
     if MsgClusterId == '0005':
-        if MsgCmd in TYPE_ACTIONS and MsgDirection in TYPE_DIRECTIONS:
+        if MsgDirection not in TYPE_DIRECTIONS:
+            # Might be in the case of Release Left or Right
+            Domoticz.Log("Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+                    %(MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
+
+        elif MsgCmd in TYPE_ACTIONS and MsgDirection in TYPE_DIRECTIONS:
             selector = TYPE_DIRECTIONS[MsgDirection] + '_' + TYPE_ACTIONS[MsgCmd]
-            Domoticz.Log("Decode80A7 - selector: %s" %selector)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
+            Domoticz.Debug("Decode80A7 - selector: %s" %selector)
 
-        if MsgCmd == '07' and MsgDirection == '00':
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'right_click' )
-        if MsgCmd == '07' and MsgDirection == '01':
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'left_click' )
-
+        else:
+            Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+                    %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
+    else:
+        Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+                %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
 
 
 
