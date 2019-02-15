@@ -310,6 +310,9 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['ReadAttributes']=DeviceListVal['ReadAttributes']
         if 'IAS' in DeviceListVal :
             self.ListOfDevices[key]['IAS']=DeviceListVal['IAS']
+        if 'Attributes List' in DeviceListVal :
+            self.ListOfDevices[key]['Attributes List']=DeviceListVal['Attributes List']
+
         self.ListOfDevices[key]['Heartbeat'] = DeviceListVal['Heartbeat']
 
 
