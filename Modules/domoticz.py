@@ -783,6 +783,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Baro":  # barometre
+                if self.domoticzdb_DeviceStatus:
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue( Devices[x].ID),1)
+                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
+                    value = value + adjvalue
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
