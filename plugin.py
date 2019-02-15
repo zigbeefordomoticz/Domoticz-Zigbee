@@ -89,11 +89,11 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
-        self.LQISource = ''
-        self.DeviceListName = ''
-        self.homedirectory = ''
-        self.HardwareID = ''
-        self.transport = ''         # USB or Wifi
+        self.LQISource = None
+        self.DeviceListName = None
+        self.homedirectory = None
+        self.HardwareID = None
+        self.transport = None         # USB or Wifi
         self.initdone = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
         self.adminWidgets = None   # Manage AdminWidgets object
@@ -102,9 +102,10 @@ class BasePlugin:
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
         self.Key = ''
-        self.HBcount=0
+        self.HBcount = 0
         self.HeartbeatCount = 0
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
+        self.StartupFolder = None
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
         self.FirmwareVersion = None
@@ -115,13 +116,14 @@ class BasePlugin:
         return
 
     def onStart(self):
+
         Domoticz.Status("onStart called - Zigate plugin pre 4.1.x")
         self.busy = True
-        Domoticz.Status("Python Version - %s" %sys.version)
 
+        Domoticz.Status("Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
 
-
+        Domoticz.Status("Switching Hearbeat to %s s interval" %HEARTBEAT)
         Domoticz.Heartbeat( HEARTBEAT )
 
         if Parameters["Mode6"] != "0":
@@ -137,20 +139,23 @@ class BasePlugin:
         Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
         Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
         self.DomoticzVersion = Parameters["DomoticzVersion"]
+
         # Import PluginConf.txt
         major, minor = Parameters["DomoticzVersion"].split('.')
         major = int(major)
         minor = int(minor)
         if major > 4 or ( major == 4 and minor >= 10355):
-            Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
+            Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("User Data Folder: %s" %Parameters["UserDataFolder"])
             Domoticz.Status("Web Root Folder: %s" %Parameters["WebRoot"])
             Domoticz.Status("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
 
             Domoticz.Status("Opening DomoticzDB in raw")
+            Domoticz.Status("   - DeviceStatus table")
             self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Database"], self.HardwareID  )
+            Domoticz.Status("   - Hardware table")
             self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Database"], self.HardwareID  )
 
 
