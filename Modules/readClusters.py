@@ -888,7 +888,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
-        Domoticz.Log("ReadCluster 0201 - Unoccupied Heating:  %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Unoccupied Heating:  %s" %value)
 
     elif MsgAttrID == '0015':   # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp=round(int(value)/100,1)
@@ -907,11 +907,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0201 - Valve position: %s" %value)
 
     elif MsgAttrID == '4002': # Erreors
-        Domoticz.Log("ReadCluster 0201 - Status: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Status: %s" %value)
 
     elif MsgAttrID == '4003': # Current Temperature Set point
         ValueTemp = round(int(value)/100,1)
-        Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
+        Domoticz.Debug("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
         if ValueTemp != float(oldValue[3]):
             # Seems that there is a local setpoint
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
@@ -925,7 +925,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 0x000020:'enable off mode',
                 0x000080:'child lock'
                 }
-        Domoticz.Log("ReadCluster 0201 - Host Flags: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Host Flags: %s" %value)
 
         
     else:
