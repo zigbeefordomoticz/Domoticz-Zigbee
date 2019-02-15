@@ -1700,13 +1700,23 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
                 Domoticz.Log("Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
-
         # We will request immediatly the List of EndPoints
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
 
         Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
+
+    else:
+        # Device exist
+        # We will also reset ReadAttributes
+        if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
+            del self.ListOfDevices[MsgSrcAddr]['ReadAttributes']
+    
+        if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
+            del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
+            self.ListOfDevices[MsgSrcAddr]['Hearbeat'] = 0
+
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
