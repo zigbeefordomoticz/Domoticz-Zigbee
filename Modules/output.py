@@ -194,6 +194,11 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         listAttributes.append(0x0010)        # Battery
         listAttributes.append(0x000A)        # Product Code
 
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'].find('lumi') != -1:
+             listAttributes.append(0xff01)
+             listAttributes.append(0xff02)
+
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
