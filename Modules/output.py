@@ -195,7 +195,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         listAttributes.append(0x000A)        # Product Code
 
     if 'Model' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['Model'].find('lumi') != -1:
+        if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
              listAttributes.append(0xff01)
              listAttributes.append(0xff02)
 
