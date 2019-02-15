@@ -39,6 +39,7 @@ class IAS_Zone_Management:
     def __init__( self , ZigateComm, ListOfDevices, ZigateIEEE = None):
         self.devices = {}
         self.ListOfDevices = ListOfDevices
+        self.tryHB = 0
         self.wip = False
         self.HB = 0
         self.ZigateComm = ZigateComm
@@ -277,16 +278,24 @@ class IAS_Zone_Management:
                 self.IASZone_attributes( iterKey, iterEp)
 
             elif self.HB > 1 and self.devices[iterKey]['Step'] == 4:
+                self.tryHB += self.tryHB
                 self.HB = 0
                 self.wip = True
                 iterEp = self.devices[iterKey]['Ep']
                 Domoticz.Log("IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
+                if self.tryHB > 3:
+                    self.tryHB = 0
+                    self.devices[iterKey]['Step'] = 5
 
             elif self.HB > 1 and self.devices[iterKey]['Step'] == 6:
+                self.tryHB += self.tryHB
                 self.HB = 0
                 iterEp = self.devices[iterKey]['Ep']
                 self.readConfirmEnroll(iterKey, iterEp)
                 Domoticz.Log("IAS_heartbeat - TO restart self.readConfirmEnroll")
+                if self.tryHB > 3:
+                    self.tryHB = 0
+                    self.devices[iterKey]['Step'] = 7
 
             elif self.devices[iterKey]['Step'] == 7: # Receive Confirming Enrollement
                 self.HB = 0
