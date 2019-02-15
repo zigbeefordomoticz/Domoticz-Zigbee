@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-4.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="pre-4.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <params>
         <param field="Mode1" label="Model" width="75px">
             <options>
@@ -115,7 +115,7 @@ class BasePlugin:
         return
 
     def onStart(self):
-        Domoticz.Status("onStart called - Zigate plugin Beta 4.1.x")
+        Domoticz.Status("onStart called - Zigate plugin pre 4.1.x")
         self.busy = True
         Domoticz.Status("Python Version - %s" %sys.version)
 
