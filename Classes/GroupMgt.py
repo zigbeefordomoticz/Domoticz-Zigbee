@@ -477,7 +477,6 @@ class GroupsManagement(object):
 
         unit = self.FreeUnit( self.Devices )
         Domoticz.Debug("_createDomoGroupDevice - Unit: %s" %unit)
-        #myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=241, Subtype=7, Switchtype=7)
         myDev = Domoticz.Device(DeviceID=str(group_nwkid), Name=str(groupname), Unit=unit, Type=Type_, Subtype=Subtype_, Switchtype=SwitchType_)
         myDev.Create()
         ID = myDev.ID
@@ -508,14 +507,14 @@ class GroupsManagement(object):
     def _bestGroupWidget( self, group_nwkid):
 
         WIDGETS = {
-                'Plug':1,
-                'Switch':1,
-                'LvlControl':2,
-                'ColorControlWW':3,
-                'ColorControlRGB':3,
-                'ColorControlRGBWW':4,
-                'ColorControl':5,
-                'ColorControlFull':5 }
+                'Plug':1,                 # ( 244, 73, 0)
+                'Switch':1,               # ( 244, 73, 0)
+                'LvlControl':2,           # ( 244, 73, 7)
+                'ColorControlWW':3,       # ( 241, 8, 7) - Cold white + warm white
+                'ColorControlRGB':3,      # ( 241, 2, 7) - RGB
+                'ColorControlRGBWW':4,    # ( 241, 4, 7) - RGB + cold white + warm white, either RGB or white can be lit
+                'ColorControl':5,         # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
+                'ColorControlFull':5 }    # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
 
         code = 0
         color_widget = None
