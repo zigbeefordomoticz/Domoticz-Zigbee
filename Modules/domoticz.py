@@ -161,7 +161,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                                Unit=unit, Type=243, Subtype=1)
+                                Unit=unit, Type=243, Subtype=20)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -984,7 +984,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Domoticz.Log("LvlControl - update - value: %s" %value)
 
                     nValue = None
-                    sValue = round((int(value, 16) / 255) * 100)
+                    sValue = round((int(value, 16) * 100) / 255)
+                    if sValue == 0 and Devices[x].SwitchType != 16:
+                        sValue = 1 #Avoid to get a Dimmer Off
                     if sValue == 0:
                         nValue = 0
                         if Devices[x].SwitchType == 16:
