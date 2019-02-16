@@ -1007,9 +1007,9 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             Domoticz.Log("Clusterfc00 - unknown attribute value: %s" %MsgClusterData)
             return
 
-        Domoticz.Log("ReadCluster - %s - %s/%s - Duration: before decoding %s" %duration)
+        Domoticz.Log("ReadCluster - %s - %s/%s - Duration: before decoding %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, duration))
         duration = int(decodeAttribute( uint16, duration))
-        Domoticz.Log("ReadCluster - %s - %s/%s - Duration: after decoding %s" %duration)
+        Domoticz.Log("ReadCluster - %s - %s/%s - Duration: after decoding %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, duration))
 
         Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
         if action in ( '00', '02' ):
@@ -1032,8 +1032,13 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if lvlValue > 255: lvlValue = 255
     if lvlValue <= 0: lvlValue = 0
 
-    if onoffValue == 0: value = '00'
-    else:  value = str(lvlValue)
+    if onoffValue == 0: 
+        value = '00'
+    else:  
+        if lvlValue == 0:
+           value = '128' 
+        else:
+            value = str(lvlValue)
 
     Domoticz.Log("ReadCluster - %s - %s/%s - new OnOff: %s, Lvl: %s => Value for Domo: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue, value))
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s:%s' %(onoffValue, lvlValue)
