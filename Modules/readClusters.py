@@ -855,7 +855,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if len(oldValue) != 6:
         oldValue = '0;0;0;0;0;0'.split(';')
 
-    Domoticz.Debug("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+    Domoticz.Log("ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     value = decodeAttribute( MsgAttType, MsgClusterData)
@@ -866,38 +866,38 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = str(ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(localTemp, oldValue[1], oldValue[2], oldValue[3], oldValue[4],oldValue[5])
-        Domoticz.Debug("ReadCluster 0201 - Local Temp: %s" %ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Local Temp: %s" %ValueTemp)
 
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
-        Domoticz.Debug("ReadCluster 0201 - Heating demand: %s" %value)
+        Domoticz.Log("ReadCluster 0201 - Heating demand: %s" %value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], value, oldValue[2], oldValue[3], oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0010':   # Calibration / Adjustement
         value = value / 10 
-        Domoticz.Debug("ReadCluster 0201 - Calibration: %s" %value)
+        Domoticz.Log("ReadCluster 0201 - Calibration: %s" %value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], value, oldValue[2], oldValue[3], oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0011':   # Cooling Setpoint (Zinte16)
         ValueTemp=round(int(value)/100,1)
-        Domoticz.Debug("ReadCluster 0201 - Cooling Setpoint: %s" %ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Cooling Setpoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], ValueTemp, oldValue[3], oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
         ValueTemp=round(int(value)/100,1)
-        Domoticz.Debug("ReadCluster 0201 - Heating Setpoint: %s" %ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Heating Setpoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
-        Domoticz.Debug("ReadCluster 0201 - Unoccupied Heating:  %s" %value)
+        Domoticz.Log("ReadCluster 0201 - Unoccupied Heating:  %s" %value)
 
     elif MsgAttrID == '0015':   # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp=round(int(value)/100,1)
-        Domoticz.Debug("ReadCluster 0201 - Min SetPoint: %s" %ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Min SetPoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], oldValue[3], ValueTemp, oldValue[5])
 
     elif MsgAttrID == '0016':   # MAX_HEAT_SETPOINT_LIMIT
         ValueTemp=round(int(value)/100,1)
-        Domoticz.Debug("ReadCluster 0201 - Max SetPoint: %s" %ValueTemp)
+        Domoticz.Log("ReadCluster 0201 - Max SetPoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], oldValue[3], oldValue[4], ValueTemp)
 
     elif MsgAttrID == '4000': # TRV Mode
@@ -907,11 +907,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0201 - Valve position: %s" %value)
 
     elif MsgAttrID == '4002': # Erreors
-        Domoticz.Debug("ReadCluster 0201 - Status: %s" %value)
+        Domoticz.Log("ReadCluster 0201 - Status: %s" %value)
 
     elif MsgAttrID == '4003': # Current Temperature Set point
         ValueTemp = round(int(value)/100,1)
-        Domoticz.Debug("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
+        Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
         if ValueTemp != float(oldValue[3]):
             # Seems that there is a local setpoint
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
@@ -925,7 +925,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 0x000020:'enable off mode',
                 0x000080:'child lock'
                 }
-        Domoticz.Debug("ReadCluster 0201 - Host Flags: %s" %value)
+        Domoticz.Log("ReadCluster 0201 - Host Flags: %s" %value)
 
         
     else:
@@ -934,5 +934,64 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    DIMMER_STEP = 5
+    DIMMER_DURATION_MAX = 10
+
     Domoticz.Log("ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+
+    if MsgAttrID not in ( '0001', '0002', '0003', '0004'):
+        Domoticz.Log("ReadCluster - %s - %s/%s unknown MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+            %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+        return
+
+    oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
+    if len(oldValue) != 3:
+        oldValue = '0;0'.split(';')
+    onoffValue = int(oldValue[0])
+    lvlValue = int(oldValue[1])
+
+    Domoticz.Log("ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
+    if MsgAttrID == '0001': #On button
+        Domoticz.Log("ReadCluster - %s - %s/%s - ON Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        onoffValue = 1
+
+    elif MsgAttrID == '0004': # Off  Button
+        Domoticz.Log("ReadCluster - %s - %s/%s - ON Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        onoffValue = 0
+
+    elif MsgAttrID in  ( '0002', '0003' ): # Dim+ / 0002 is +, 0003 is -
+        Domoticz.Log("ReadCluster - %s - %s/%s - DIM Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        enum = MsgClusterData[0:2]
+        action = MsgClusterData[2:4]
+        uint16 = MsgClusterData[4:6]
+        duration = MsgClusterData[6:10]
+        if enum != '30' and uint16 != '21':
+            Domoticz.Log("Clusterfc00 - unknown attribute value: %s" %MsgClusterData)
+            return
+
+        Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
+        if action in ( '00', '02' ):
+            # Short press/Release - Make one step   , we just report the press
+            if MsgAttrID == '0002': 
+                lvlValue = lvlValue + DIMMER_STEP
+            elif MsgAttrID == '0003':
+                lvlValue = lvlValue - DIMMER_STEP
+
+        elif action in ( '01', '03'):
+            # Long press, we report only the press
+            # We got the duration. 
+            move = ( duration * 255 ) // DIMMER_DURATION_MAX
+            if MsgAttrID == '0002':  # +
+                lvlValue = lvlValue + move
+            elif MsgAttrID == '0003':
+                lvlValue = lvlValue - move
+
+        Domoticz.Log("ReadCluster - %s - %s/%s - Calculated Move: %s , Level: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, move, lvlValue))
+
+    if lvlValue > 255: lvlValue = 255
+    if lvlValue <= 0: lvlValue = 0
+
+    Domoticz.Log("ReadCluster - %s - %s/%s - new OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s:%s' %(onoffValue, lvlValue)
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,'01',Attribute_=MsgAttrID)
