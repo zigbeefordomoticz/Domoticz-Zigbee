@@ -959,7 +959,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                             ForceUpdate_=True)
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
-                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
+                    Domoticz.Log("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
                             %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
                     if Devices[x].SwitchType == 16:
                         if value == "00":
@@ -981,6 +981,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if DeviceType == "LvlControl":
                     # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
+                    Domoticz.Log("LvlControl - update - value: %s" %value)
 
                     nValue = None
                     sValue = round((int(value, 16) / 255) * 100)
