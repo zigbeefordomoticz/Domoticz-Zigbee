@@ -971,7 +971,7 @@ def ReadAttributeRequest_0201(self, key):
     listAttributes.append(0x0014)        # Unoccupied Heating Setpoint 0x29
     #listAttributes.append(0x0015)        # MIN HEATING / 0x29
     #listAttributes.append(0x0016)        # MAX HEATING / 0x29
-    if self.ListOfDevices[key]['Model'].find('SPZB') == 0:
+    if str(self.ListOfDevices[key]['Model']).find('SPZB') == 0:
         Domoticz.Log("- req 0x4003 Current Set Point Eurotronic")
         listAttributes.append(0x4000)        # TRV Mode
         listAttributes.append(0x4001)        # Set Valve Position
