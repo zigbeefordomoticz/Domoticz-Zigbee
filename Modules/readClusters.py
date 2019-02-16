@@ -947,7 +947,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
     if len(oldValue) != 3:
-        oldValue = '0;0'.split(';')
+        oldValue = '0;10'.split(';')
     onoffValue = int(oldValue[0])
     lvlValue = int(oldValue[1])
 
@@ -992,6 +992,9 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if lvlValue > 255: lvlValue = 255
     if lvlValue <= 0: lvlValue = 0
 
-    Domoticz.Log("ReadCluster - %s - %s/%s - new OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
+    if onoffValue == 0: value = '00'
+    else:  value = str(lvlValue)
+
+    Domoticz.Log("ReadCluster - %s - %s/%s - new OnOff: %s, Lvl: %s => Value for Domo: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue, value))
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s:%s' %(onoffValue, lvlValue)
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,'01',Attribute_=MsgAttrID)
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
