@@ -888,7 +888,8 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
             # In case it is not a Eurotronic, let's Update heatPoint
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp)
+            Domoticz.Log("ReadCluster 0201 - Request update on Domoticz")
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
@@ -903,6 +904,23 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         ValueTemp=round(int(value)/100,1)
         Domoticz.Log("ReadCluster 0201 - Max SetPoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], oldValue[3], oldValue[4], ValueTemp)
+
+    elif MsgAttrID == '001b':
+        Domoticz.Log("ReadCluster 0201 - Attribute 1B: %s" %value)
+
+    elif MsgAttrID == '001c':
+        Domoticz.Log("ReadCluster 0201 - Attribute 1C: %s" %value)
+
+    elif MsgAttrID == '0403':
+        Domoticz.Log("ReadCluster 0201 - Attribute 403: %s" %value)
+
+    elif MsgAttrID == '0408':
+        value = int(decodeAttribute( MsgAttType, MsgClusterData))
+        Domoticz.Log("ReadCluster 0201 - Attribute 408: %s" %value)
+
+    elif MsgAttrID == '0409':
+        value = int(decodeAttribute( MsgAttType, MsgClusterData))
+        Domoticz.Log("ReadCluster 0201 - Attribute 409: %s" %value)
 
     elif MsgAttrID == '4000': # TRV Mode
         Domoticz.Log("ReadCluster 0201 - TRV Mode: %s" %value)
@@ -977,7 +995,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             return
 
         Domoticz.Log("ReadCluster - %s - %s/%s - Duration: before decoding %s" %duration)
-        duration = int(decodeAttribute( uint16, duration),16)
+        duration = int(decodeAttribute( uint16, duration))
         Domoticz.Log("ReadCluster - %s - %s/%s - Duration: after decoding %s" %duration)
 
         Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
