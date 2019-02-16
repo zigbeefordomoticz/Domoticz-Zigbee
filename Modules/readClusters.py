@@ -886,6 +886,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         ValueTemp=round(int(value)/100,1)
         Domoticz.Log("ReadCluster 0201 - Heating Setpoint: %s" %ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
+        if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
+            # In case it is not a Eurotronic, let's Update heatPoint
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], ValueTemp, oldValue[4],oldValue[5])
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
         Domoticz.Log("ReadCluster 0201 - Unoccupied Heating:  %s" %value)
