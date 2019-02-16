@@ -43,6 +43,6 @@
 'ZHA-CSW':{'Ep':{'01':{'0000':'','0003':'','0500':'','ffff':'','0001':'','Type':'Smoke'}},'Type':'' },
 'SmokeSensor-N':{'Ep':{'01':{'0000':'','0003':'','0500':'','ffff':'','0001':'','Type':'Smoke'}},'Type':'' },
 'plug.Celiane.Legrand':{'Ep':{'01':{'0004','0006','0005','fc01'}},'Type':'Switch','ProfileID':'0104','ZDeviceID':'010a'},
-'Super TR':{'Ep':{'01':{'0003':{},'0201':'','0402':'24.7','0000','Type':'Temp/ThermoSetpoint'}},'Type':''},
+'Super TR':{'Ep':{'01':{'0003':'','0201':'','0402':'','0000':'','Type':'Temp/ThermoSetpoint'}},'Type':''},
 'SPZB0001':{'Ep':{'01':{'0000':'','0001':'','0003':'','0201':'','0019':'','000a':'','0004':'','Type':'Temp/ThermoSetpoint'}},'Type':''}
 }
