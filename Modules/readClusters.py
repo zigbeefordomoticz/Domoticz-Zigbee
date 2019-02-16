@@ -909,7 +909,20 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0201 - Attribute 1B: %s" %value)
 
     elif MsgAttrID == '001c':
-        Domoticz.Log("ReadCluster 0201 - Attribute 1C: %s" %value)
+        SYSTEM_MODE = { 0x00: 'Off' ,
+                0x01: 'Auto' ,
+                0x02: 'Reserved' ,
+                0x03: 'Cool',
+                0x04: 'Heat' ,
+                0x05: 'Emergency Heating',
+                0x06: 'Pre-cooling',
+                0x07: 'Fan only'  }
+
+        if int(value) in SYSTEM_MODE:
+            Domoticz.Log("ReadCluster 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]))
+        else:
+            Domoticz.Log("ReadCluster 0201 - Attribute 1C: %s" %value)
+
 
     elif MsgAttrID == '0403':
         Domoticz.Log("ReadCluster 0201 - Attribute 403: %s" %value)
