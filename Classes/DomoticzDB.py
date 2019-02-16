@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
     tstdevice = DomoticzDB_DeviceStatus("/var/lib/domoticz/domoticz.db", "35")
 
-    print(tstdevice.retreiveAddjValue("35"))
+    print(tstdevice.retreiveAddjValue_temp("35"))
 
 
     hardwaretable = DomoticzDB_Hardware("/var/lib/domoticz/domoticz.db", "35")
