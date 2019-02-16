@@ -948,6 +948,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
     if len(oldValue) != 3:
         oldValue = '0;10'.split(';')
+    move = None
     onoffValue = int(oldValue[0])
     lvlValue = int(oldValue[1])
 
@@ -966,9 +967,14 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         action = MsgClusterData[2:4]
         uint16 = MsgClusterData[4:6]
         duration = MsgClusterData[6:10]
+
         if enum != '30' and uint16 != '21':
             Domoticz.Log("Clusterfc00 - unknown attribute value: %s" %MsgClusterData)
             return
+
+        Domoticz.Log("ReadCluster - %s - %s/%s - Duration: before decoding %s" %duration)
+        duration = int(decodeAttribute( uint16, duration),16)
+        Domoticz.Log("ReadCluster - %s - %s/%s - Duration: after decoding %s" %duration)
 
         Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
         if action in ( '00', '02' ):
@@ -986,8 +992,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 lvlValue = lvlValue + move
             elif MsgAttrID == '0003':
                 lvlValue = lvlValue - move
-
-        Domoticz.Log("ReadCluster - %s - %s/%s - Calculated Move: %s , Level: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, move, lvlValue))
+            Domoticz.Log("ReadCluster - %s - %s/%s - Calculated Move: %s , Level: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, move, lvlValue))
 
     if lvlValue > 255: lvlValue = 255
     if lvlValue <= 0: lvlValue = 0
