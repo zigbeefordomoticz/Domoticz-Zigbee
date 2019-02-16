@@ -77,68 +77,67 @@ class BasePlugin:
 
     def __init__(self):
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
+        self.DiscoveryDevices = {}
+        self.IEEE2NWK = {}
+        self.LQI = {}
+
         self.ZigateComm = None
+        self.transport = None         # USB or Wifi
         self._ReqRcv = bytearray()
         self.permitTojoin = None
         self.groupmgt = None
         self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
+
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
-        self.Ping = {}
-        self.connectionState = None
-        self.DiscoveryDevices = {}
-        self.IEEE2NWK = {}
-        self.LQI = {}
-        self.LQISource = None
-        self.DeviceListName = None
         self.homedirectory = None
         self.HardwareID = None
-        self.transport = None         # USB or Wifi
-        self.initdone = None
-        self.pluginconf = None     # PlugConf object / all configuration parameters
-        self.adminWidgets = None   # Manage AdminWidgets object
-        self.statistics = None
-        self.iaszonemgt = None      # Object to manage IAS Zone
+        self.Key = None
+        self.DomoticzVersion = None
+        self.StartupFolder = None
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
-        self.Key = ''
+        self.adminWidgets = None   # Manage AdminWidgets object
+        self.DeviceListName = None
+        self.pluginconf = None     # PlugConf object / all configuration parameters
+
+        self.Ping = {}
+        self.connectionState = None
+        self.LQISource = None
+        self.initdone = None
+        self.statistics = None
+        self.iaszonemgt = None      # Object to manage IAS Zone
         self.HBcount = 0
         self.HeartbeatCount = 0
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
-        self.StartupFolder = None
         self.ZigateIEEE = None       # Zigate IEEE. Set in CDecode8009/Decode8024
         self.ZigateNWKID = None       # Zigate NWKID. Set in CDecode8009/Decode8024
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
-        self.ForceCreationDevice = None   # Allow to force devices even if they are not in the Plugin Database. Could be usefull after the Firmware update where you have your devices in domoticz
+        self.ForceCreationDevice = None   # 
 
         return
 
     def onStart(self):
 
-        Domoticz.Status("onStart called - Zigate plugin pre 4.1.x")
-        self.busy = True
+        Domoticz.Status("Zigate plugin (pre 4.1.x) started")
 
+        self.busy = True
         Domoticz.Status("Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
 
         Domoticz.Status("Switching Hearbeat to %s s interval" %HEARTBEAT)
         Domoticz.Heartbeat( HEARTBEAT )
 
-        if Parameters["Mode6"] != "0":
-            Domoticz.Debugging(int(Parameters["Mode6"]))
-            DumpConfigToLog()
-        
-        self.homedirectory = Parameters["HomeFolder"]
-        self.HardwareID = (Parameters["HardwareID"])
-        self.Key = (Parameters["Key"])
-        self.transport = Parameters["Mode1"]
-
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
         Domoticz.Status("DomoticzHash: %s" %Parameters["DomoticzHash"])
         Domoticz.Status("DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
         self.DomoticzVersion = Parameters["DomoticzVersion"]
+        self.homedirectory = Parameters["HomeFolder"]
+        self.HardwareID = (Parameters["HardwareID"])
+        self.Key = (Parameters["Key"])
+        self.transport = Parameters["Mode1"]
 
         # Import PluginConf.txt
         major, minor = Parameters["DomoticzVersion"].split('.')
@@ -157,7 +156,6 @@ class BasePlugin:
             self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Database"], self.HardwareID  )
             Domoticz.Status("   - Hardware table")
             self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Database"], self.HardwareID  )
-
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
