@@ -62,7 +62,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     ClusterSearch = ''
     DeviceType = ''
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSW2'):
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
         if tmpDeviceType == "WindowCovering":
@@ -108,7 +108,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
         if EPout == '06': # Mostlikely a Livolo Device
-            livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+            if DeviceType == 'LivoloSWL':
+                livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+            elif DeviceType == 'LivoloSWR':
+                livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -125,7 +128,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
 
         if EPout == '06': # Mostlikely a Livolo Device
-            livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+            if DeviceType == 'LivoloSWL':
+                livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+            elif DeviceType == 'LivoloSWR':
+                livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
