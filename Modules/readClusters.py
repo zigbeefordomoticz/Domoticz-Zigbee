@@ -980,7 +980,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         onoffValue = 1
 
     elif MsgAttrID == '0004': # Off  Button
-        Domoticz.Log("ReadCluster - %s - %s/%s - ON Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        Domoticz.Log("ReadCluster - %s - %s/%s - OFF Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
         onoffValue = 0
 
     elif MsgAttrID in  ( '0002', '0003' ): # Dim+ / 0002 is +, 0003 is -
