@@ -621,8 +621,8 @@ class GroupsManagement(object):
             Domoticz.Error("_removeDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
             return
         Domoticz.Debug("_removeDomoGroupDevice - removing Domoticz Widget %s" %self.Devices[unit].Name)
-        self.Devices[unit].Delete()
         self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %self.Devices[unit].Name)
+        self.Devices[unit].Delete()
         
 
     # Group Management methods
