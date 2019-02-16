@@ -53,7 +53,7 @@ class DomoticzDB_Hardware:
     def disablePermitToJoin( self):
 
         # Permit to Join is stored in Mode3
-        self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'True' Where ID = '%s' " %self.HardwareID)
+        self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'False' Where ID = '%s' " %self.HardwareID)
         self.dbConn.commit()
 
 class DomoticzDB_DeviceStatus:
