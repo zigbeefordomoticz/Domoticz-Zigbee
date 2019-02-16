@@ -738,7 +738,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if self.domoticzdb_DeviceStatus:
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
                     Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
-                    value = value + adjvalue
+                    value = round(value + adjvalue,1)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -798,7 +798,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if self.domoticzdb_DeviceStatus:
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
                     Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
-                    value = value + adjvalue
+                    value = round(value + adjvalue,1)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
