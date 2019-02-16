@@ -62,7 +62,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     ClusterSearch = ''
     DeviceType = ''
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton"):
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSW2'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
         if tmpDeviceType == "WindowCovering":
