@@ -1257,10 +1257,15 @@ def GetType(self, Addr, Ep):
         Type = ""
 
         # Check ProfileID/ZDeviceD
-        if self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830':
-            return "Ikea_Round_5b"
-        elif self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0820':
-            return "Ikea_Round_OnOff"
+        if 'Manufacturer' in self.ListOfDevices[Addr]:
+            if self.ListOfDevices[Addr]['Manufacturer'] == '117c': # Ikea
+                if ( self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830') :
+                    return "Ikea_Round_5b"
+                elif self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0820':
+                    return "Ikea_Round_OnOff"
+            elif self.ListOfDevices[Addr]['Manufacturer'] == '100b': # Philipps Hue
+                if ( self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830') :
+                    return "LvlControl"
 
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
             if cluster in ('Type', 'ClusterType', 'ColorMode'): continue
