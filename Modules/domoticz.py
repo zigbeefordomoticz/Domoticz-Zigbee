@@ -1017,13 +1017,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         pass
                     else:
                         nValue = 1
-                        sValue = round((int(value, 16) / 255) * 100)
+                        sValue = round((int(value, 16) * 100) / 255)
                         UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
                     ClusterType == DeviceType:
                 nValue = 1
-                sValue = round((int(value, 16) / 255) * 100)
+                sValue = round((int(value, 16) * 100) / 255)
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "02":  # Magic Cube Acara
