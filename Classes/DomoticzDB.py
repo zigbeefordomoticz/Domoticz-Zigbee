@@ -50,7 +50,7 @@ class DomoticzDB_Hardware:
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
-    def disablePermitToJoin( self):
+    def disableErasePDM( self):
 
         # Permit to Join is stored in Mode3
         self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'False' Where ID = '%s' " %self.HardwareID)

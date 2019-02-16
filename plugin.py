@@ -266,7 +266,7 @@ class BasePlugin:
 
             if Parameters["Mode3"] == "True":
                 if self.domoticzdb_Hardware:
-                    self.domoticzdb_Hardware.disablePermitToJoin()
+                    self.domoticzdb_Hardware.disableErasePDM()
                 ################### ZiGate - ErasePD ##################
                 Domoticz.Status("Erase Zigate PDM")
                 sendZigateCmd(self, "0012", "")
