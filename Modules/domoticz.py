@@ -1093,7 +1093,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if value == "00":
                     nValue = 0
                     sValue = 0
-                    pass
                 elif value == "toggle": # Toggle
                     nValue = 1
                     sValue = '10'
@@ -1314,6 +1313,8 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
     elif cluster == "0406": TypeFromCluster = "Motion"
     elif cluster == "0702": TypeFromCluster = "Power/Meter"
     elif cluster == "0500": TypeFromCluster = "Door"
+
+    elif cluster == "fc00" : TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
 
     # Propriatory Cluster. Plugin Cluster
     elif cluster == "rmt1": TypeFromCluster = "Ikea_Round_5b"
