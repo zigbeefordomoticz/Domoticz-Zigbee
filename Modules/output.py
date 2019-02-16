@@ -966,18 +966,30 @@ def ReadAttributeRequest_0201(self, key):
     listAttributes.append(0x0000)        # Local Temp / 0x29
     listAttributes.append(0x0008)        # Pi Heating Demand (valve position %)
     listAttributes.append(0x0010)        # Calibration / 0x28
-    listAttributes.append(0x0011)        # COOLING_SETPOINT / 0x29
+    #listAttributes.append(0x0011)        # COOLING_SETPOINT / 0x29
     listAttributes.append(0x0012)        # HEATING_SETPOINT / 0x29
     listAttributes.append(0x0014)        # Unoccupied Heating Setpoint 0x29
     #listAttributes.append(0x0015)        # MIN HEATING / 0x29
     #listAttributes.append(0x0016)        # MAX HEATING / 0x29
+    listAttributes.append(0x001B)        # Control sequence
+    listAttributes.append(0x001C)        # System Mode
+    listAttributes.append(0x001F)        # Set Mode
+    Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+    ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
+
+    listAttributes = []
     if str(self.ListOfDevices[key]['Model']).find('SPZB') == 0:
-        Domoticz.Log("- req 0x4003 Current Set Point Eurotronic")
+        Domoticz.Log("- req Attributes for Eurotronic")
         listAttributes.append(0x4000)        # TRV Mode
         listAttributes.append(0x4001)        # Set Valve Position
         listAttributes.append(0x4002)        # Errors
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
         listAttributes.append(0x4008)        # HOst Flag
-
-    Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
-    ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
+    elif str(self.ListOfDevices[key]['Model']).find('Super TR') == 0:
+        Domoticz.Log("- req Attributes for  Super TR")
+        listAttributes.append(0x0403)    
+        listAttributes.append(0x0408)   
+        listAttributes.append(0x0409)  
+    if len(listAttributes) > 0:
+        Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+        ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
