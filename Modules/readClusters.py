@@ -1035,7 +1035,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if lvlValue > 255: lvlValue = 255
         if lvlValue <= 0: lvlValue = 0
     
-        value = '%02x' lvlValue
+        value = '%02x' %lvlValue
     
         Domoticz.Log("ReadCluster - %s - %s/%s - new OnOff: %s, Lvl: %s => Value for Domo: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue, value))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s:%s' %(onoffValue, lvlValue)
