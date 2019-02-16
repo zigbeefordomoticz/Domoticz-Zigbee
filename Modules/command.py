@@ -148,6 +148,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             thermostat_Setpoint( self, NWKID, value )
             return
 
+        if DeviceType == 'ThermoMode':
+            Domoticz.Log("ThermoMode - requested value: %s" %value)
+            #'Off' : 0x00 ,
+            #'Auto' : 0x01 ,
+            #'Reserved' : 0x02,
+            #'Cool' : 0x03,
+            #'Heat' :  0x04,
+            #'Emergency Heating' : 0x05,
+            #'Pre-cooling' : 0x06,
+            #'Fan only' : 0x07 
+            if value == 0:
+                value = 'off'
+                thermostat_Mode( self, NWKID, value)
+
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             value=Hex_Format(2,round(Level*255/100)) 
