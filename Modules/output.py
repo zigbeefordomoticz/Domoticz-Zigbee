@@ -440,9 +440,10 @@ def processConfigureReporting( self, NWKID=None ):
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '4001': {'DataType': '20', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '4003': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '4008': {'DataType': '24', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+                                 '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0014': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '001B': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '001C': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
         '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -939,7 +940,7 @@ def thermostat_Mode( self, key, mode ):
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201
-    attribute = "%04x" %0x001F
+    attribute = "%04x" %0x001C
     data_type = "30" # Enum8
     data = "%02x" %SYSTEM_MODE[mode]
 
