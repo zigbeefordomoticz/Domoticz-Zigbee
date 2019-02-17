@@ -1032,13 +1032,13 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     #Update Domo
     sValue = '%02x' %onoffValue
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s:%s' %(onoffValue, lvlValue)
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s' %(onoffValue, lvlValue)
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', sValue)
     Domoticz.Log("ReadCluster %s - %s/%s - updateing self.ListOfDevices[%s]['Ep'][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]))
 
     sValue = '%02x' %lvlValue
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s:%s' %(onoffValue, lvlValue)
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s' %(onoffValue, lvlValue)
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, sValue)
     Domoticz.Log("ReadCluster %s - %s/%s - updateing self.ListOfDevices[%s]['Ep'][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]))
