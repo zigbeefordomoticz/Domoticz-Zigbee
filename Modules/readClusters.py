@@ -980,10 +980,10 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     prev_Value = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
-    if len(prev_Value) != 3:
-        prev_Value = '0;10'.split(';')
+    if len(prev_Value) != 2:
+        prev_Value = '0;80'.split(';')
     move = None
-    onoffValue = int(prev_Value[0])
+    onoffValue = int(prev_Value[0],16)
     lvlValue = int(prev_Value[1],16)
 
     Domoticz.Log("ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
@@ -1023,7 +1023,8 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 lvlValue -= DIMMER_STEP
 
         else:
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s not processed" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
+            Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Action: %s not processed" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
+            return
 
         if lvlValue > 255: lvlValue = 255
         if lvlValue <= 0: lvlValue = 0
