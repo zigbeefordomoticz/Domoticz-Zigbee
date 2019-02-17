@@ -207,7 +207,7 @@ class BasePlugin:
             Domoticz.Error("Unknown Transport comunication protocol : "+str(self.transport) )
             return
 
-        Domoticz.Log("Establish Zigate connection" )
+        Domoticz.Debug("Establish Zigate connection" )
         self.ZigateComm.openConn()
         self.busy = False
         return
@@ -249,7 +249,7 @@ class BasePlugin:
         self.busy = True
 
         if Status == 0:
-            Domoticz.Log("Connected successfully")
+            Domoticz.Debug("Connected successfully")
 
             if self.connectionState is None:
                 self.adminWidgets.updateStatusWidget( Devices, 'Starting the plugin up')
@@ -334,7 +334,7 @@ class BasePlugin:
     def onHeartbeat(self):
         
         if not self.connectionState:
-            Domoticz.Log("onHeartbeat receive, but no connection to Zigate")
+            Domoticz.Error("onHeartbeat receive, but no connection to Zigate")
             return
 
         self.HeartbeatCount += 1
@@ -404,7 +404,7 @@ class BasePlugin:
 
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
         if len(Devices) != prevLenDevices:
-            Domoticz.Log("Devices size has changed , let's write ListOfDevices on disk")
+            Domoticz.Debug("Devices size has changed , let's write ListOfDevices on disk")
             WriteDeviceList(self, 0)       # write immediatly
         else:
             WriteDeviceList(self, ( 90 * 5) )
