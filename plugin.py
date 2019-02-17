@@ -179,8 +179,8 @@ class BasePlugin:
             Domoticz.Error("Please cross-check your log ... You must be on V3 of the DeviceList and all DeviceID in Domoticz converted to IEEE")
             return            
         
-        Domoticz.Log("ListOfDevices : " )
-        for e in self.ListOfDevices.items(): Domoticz.Log(" "+str(e))
+        Domoticz.Debug("ListOfDevices : " )
+        for e in self.ListOfDevices.items(): Domoticz.Debug(" "+str(e))
         Domoticz.Debug("IEEE2NWK      : " )
         for e in self.IEEE2NWK.items(): Domoticz.Debug("  "+str(e))
 
