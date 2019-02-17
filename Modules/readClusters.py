@@ -969,7 +969,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    DIMMER_STEP = (255//100)
+    DIMMER_STEP = 3
 
     Domoticz.Log("ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
@@ -985,8 +985,8 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if len(prev_Value) != 2:
         prev_Value = '0;80'.split(';')
     move = None
-    onoffValue = int(prev_Value[0],16)
-    lvlValue = int(prev_Value[1],16)
+    prev_onoffvalue = onoffValue = int(prev_Value[0],16)
+    prev_lvlValue = lvlValue = int(prev_Value[1],16)
 
     Domoticz.Log("ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
     if MsgAttrID == '0001': #On button
@@ -1026,8 +1026,9 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         else:
             Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Action: %s not processed" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
-            return
+            return   # No need to update
 
+        # Check if we reach the limits Min and Max
         if lvlValue > 255: lvlValue = 255
         if lvlValue <= 0: lvlValue = 0
         Domoticz.Log("ReadCluster - %s - %s/%s - Level: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, lvlValue))
@@ -1036,7 +1037,10 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     sonoffValue = '%02x' %onoffValue
     slvlValue = '%02x' %lvlValue
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s' %(sonoffValue, slvlValue)
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', sonoffValue)
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
-    Domoticz.Log("ReadCluster %s - %s/%s - updateing self.ListOfDevices[%s]['Ep'][%s][%s] = %s" \
+    Domoticz.Log("ReadCluster %s - %s/%s - updating self.ListOfDevices[%s]['Ep'][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]))
+
+    if prev_onoffvalue != onoffValue:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', sonoffValue)
+    if prev_lvlValue != lvlValue:
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
