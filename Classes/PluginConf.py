@@ -41,6 +41,7 @@ class PluginConf:
         self.blueLedOff = 0
         self.TXpower = 0
         self.TXpower_set = 0x80
+        self.Certification = 0  # 1- CE; 2- FCC
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -184,6 +185,14 @@ class PluginConf:
                 else: 
                     self.TXpower = self.TXpower_set = 0
 
+            if self.PluginConf.get('Certification'):
+                if self.PluginConf.get('Certification') == 'CE':
+                    self.Certification = 0x01
+                elif self.PluginConf.get('Certification') == 'FCC':
+                    self.Certification = 0x02
+                else:
+                    self.Certification = 0
+
 
             if self.PluginConf.get('zmode'):
                 if self.PluginConf.get('zmode') == 'Agressive':
@@ -212,6 +221,7 @@ class PluginConf:
         Domoticz.Log(" -eraseZigatePDM: %s" %self.eraseZigatePDM)
         Domoticz.Log(" -blueLedOff: %s" %self.blueLedOff)
         Domoticz.Log(" -TXpower: %s" %self.TXpower_set)
+        Domoticz.Log(" -Certification: %s" %self.Certification)
 
         Domoticz.Log("Plugin Transport")
         Domoticz.Log(" -zmode: %s" %self.zmode)

@@ -1,5 +1,6 @@
 {
 'channel':'11,15,16,21,22',
+'Certification':'CE',
 'Ping':'1',
 'self.eraseZigatePDM':'0',
 'vibrationAqarasensitivity':'medium',

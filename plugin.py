@@ -60,9 +60,7 @@ from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.LQI import LQIdiscovery
-from Modules.consts import HEARTBEAT
-#from Modules.adminWidget import updateStatusWidget, initializeZigateWidgets, handleCommand, updateNotificationWidget
-#from Modules.webGui import CheckForUpdate
+from Modules.consts import HEARTBEAT, CERTIFICATION
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
@@ -371,6 +369,10 @@ class BasePlugin:
                     attr_tx_power = '%02x' %self.pluginconf.TXpower_set
                     sendZigateCmd(self, "0806", attr_tx_power)
                     Domoticz.Status("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
+
+                if self.pluginconf.Certification in CERTIFICATION:
+                    Domoticz.Status("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.Certification])
+                    sendZigateCmd(self, '0019', '%02x' %self.pluginconf.Certification)
 
                 if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
                     Domoticz.Status("Start Group Management")
