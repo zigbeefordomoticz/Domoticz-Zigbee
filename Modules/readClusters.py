@@ -1000,10 +1000,6 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         action = MsgClusterData[2:4]
         duration = MsgClusterData[6:8]
 
-        if enum != '30' and uint16 != '21':
-            Domoticz.Log("Clusterfc00 - unknown attribute value: %s" %MsgClusterData)
-            return
-
         duration = int(duration,16)
         Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
         if action == '00': #Short press
