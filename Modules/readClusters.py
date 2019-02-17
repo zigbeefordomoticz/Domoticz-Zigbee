@@ -971,7 +971,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     DIMMER_STEP = (255//100)
 
-    Domoticz.Debug("ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+    Domoticz.Log("ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     if MsgAttrID not in ( '0001', '0002', '0003', '0004'):
@@ -1001,17 +1001,29 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         duration = MsgClusterData[6:8]
 
         duration = int(duration,16)
-        Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
-        if action == '00': #Short press
+        if action in ('00'): #Short press
+            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
             onoffValue = 1
             # Short press/Release - Make one step   , we just report the press
-            if MsgAttrID == '0002': lvlValue += DIMMER_STEP
-            elif MsgAttrID == '0003': lvlValue -= DIMMER_STEP
+            if MsgAttrID == '0002': 
+                Domoticz.Log("DIM +")
+                lvlValue += DIMMER_STEP
+            elif MsgAttrID == '0003': 
+                Domoticz.Log("DIM -")
+                lvlValue -= DIMMER_STEP
 
-        elif action == '01': # Long press
+        elif action in ('01') : # Long press
+            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
             onoffValue = 1
-            if MsgAttrID == '0002':   lvlValue += DIMMER_STEP
-            elif MsgAttrID == '0003': lvlValue -= DIMMER_STEP
+            if MsgAttrID == '0002':
+                Domoticz.Log("DIM +++")
+                lvlValue += DIMMER_STEP
+            elif MsgAttrID == '0003': 
+                Domoticz.Log("DIM ---")
+                lvlValue -= DIMMER_STEP
+
+        else:
+            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s not processed" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
 
         if lvlValue > 255: lvlValue = 255
         if lvlValue <= 0: lvlValue = 0
