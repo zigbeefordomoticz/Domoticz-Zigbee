@@ -959,8 +959,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                             ForceUpdate_=True)
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
+
                     Domoticz.Log("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
                             %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
+
                     if Devices[x].SwitchType == 16:
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
@@ -985,26 +987,31 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                     nValue = None
                     sValue = round((int(value, 16) * 100) / 255)
-                    if sValue == 0 and Devices[x].SwitchType != 16:
-                        sValue = 1 #Avoid to get a Dimmer Off
+
+                    Domoticz.Log("LvlControl - update - sValue: %s" %sValue)
+                    # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
+
                     if sValue == 0:
                         nValue = 0
-                        if Devices[x].SwitchType == 16:
+                        if Devices[x].SwitchType == 16:  # Shutter
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
-                                UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                                #UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+
                     elif sValue == 100:
                         nValue = 1
-                        if Devices[x].SwitchType == 16:
+                        if Devices[x].SwitchType == 16:  # Shutter
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
-                                UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                                #UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else:
                         if Devices[x].SwitchType != 16 and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                             pass
