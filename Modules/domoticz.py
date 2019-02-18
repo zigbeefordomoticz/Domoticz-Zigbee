@@ -1283,7 +1283,11 @@ def GetType(self, Addr, Ep):
                     return "Ikea_Round_OnOff"
             elif self.ListOfDevices[Addr]['Manufacturer'] == '100b': # Philipps Hue
                 pass
+            elif str(self.ListOfDevices[Addr]['Manufacturer']).find('LIVOLO') != -1:
+                Domoticz.Log("GetType - Found Livolo based on Manufacturer")
+                return 'LivoloSWL/LivoloSWR'
 
+        # Finaly Chec on Cluster
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
             if cluster in ('Type', 'ClusterType', 'ColorMode'): continue
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
