@@ -736,12 +736,26 @@ def Decode8015(self, Devices, MsgData) : # Get device list ( following request d
 
 def Decode8024(self, MsgData, Data) : # Network joined / formed
     MsgLen=len(MsgData)
+    MsgDataStatus=MsgData[0:2]
 
+
+    if MsgDataStatus != '00':
+        if MsgDataStatus == "00": 
+            Status = "Joined existing network"
+        elif MsgDataStatus == "01": 
+            Status = "Formed new network"
+        elif MsgDataStatus == "04":
+            Status = "Busy Node"
+        else: 
+            Status = DisplayStatusCode( MsgDataStatus )
+
+        Domoticz.Status("Network joined / formed Status: %s: %s" %(MsgDataStatus, Status) )
+        return
+    
     if MsgLen != 24:
         Domoticz.Debug("Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<" %(MsgData, MsgLen, Data) )
         return
 
-    MsgDataStatus=MsgData[0:2]
     MsgShortAddress=MsgData[2:6]
     MsgExtendedAddress=MsgData[6:22]
     MsgChannel=MsgData[22:24]
@@ -752,13 +766,6 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
         self.ZigateNWKID = MsgShortAddress
         self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
 
-    if MsgDataStatus == "00": 
-        Status = "Joined existing network"
-    elif MsgDataStatus == "01": 
-        Status = "Formed new network"
-    else: 
-        Status = DisplayStatusCode( MsgDataStatus )
-    
     Domoticz.Status("Network joined / formed - IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
             %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
 
