@@ -400,7 +400,7 @@ class BasePlugin:
         else:
             # Init done, let's do the recurring stuff
 
-            if  ( self.HeartbeatCount % ( 60 // HEARTBEAT ) ) == 0:
+            if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
                 Domoticz.Log("Check if we have enable Accept new Hardware Devices)")
                 PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
                 Domoticz.Log("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
