@@ -17,14 +17,14 @@ import os.path
 class DomoticzDB_Preferences:
 
     def __init__(self, database):
-        dbConn = None
+        self.dbConn = None
         self.dbCursor = None
         
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return 
         Domoticz.Log("Opening %s" %database)
-        dbConn = sqlite3.connect(database)
+        self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
     def retreiveAcceptNewHardware( self):

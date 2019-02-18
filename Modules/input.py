@@ -687,6 +687,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
     Domoticz.Debug("Decode8014 - MsgData lenght is : " +MsgData + "len: "+ str(MsgLen) + " out of 2")
 
     Status=MsgData[0:2]
+    Domoticz.Log("Permit Join status: %s" %Status)
     if Status == "00": 
         if self.Ping['Permit'] is None:
             Domoticz.Status("Permit Join is Off")
