@@ -969,7 +969,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    DIMMER_STEP = 3
+    DIMMER_STEP = 1
 
     Domoticz.Debug("ReadCluster - %s - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
@@ -982,11 +982,12 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     Domoticz.Debug("ReadCluster %s - %s/%s - reading self.ListOfDevices[%s]['Ep'][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]))
     prev_Value = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
-    if len(prev_Value) != 2:
-        prev_Value = '0;80'.split(';')
+    if len(prev_Value) != 3:
+        prev_Value = '0;80;0'.split(';')
     move = None
     prev_onoffvalue = onoffValue = int(prev_Value[0],16)
     prev_lvlValue = lvlValue = int(prev_Value[1],16)
+    prev_duration = duration = int(prev_Value[2],16)
 
     Domoticz.Debug("ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
     if MsgAttrID == '0001': #On button
@@ -1004,7 +1005,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         duration = struct.unpack('H',struct.pack('>H',int(duration,16)))[0]
 
         if action in ('00'): #Short press
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
+            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
             onoffValue = 1
             # Short press/Release - Make one step   , we just report the press
             if MsgAttrID == '0002': 
@@ -1013,15 +1014,16 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 lvlValue -= DIMMER_STEP
 
         elif action in ('01') : # Long press
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, duration))
+            delta = duration - prev_duration  # Time press since last message
+            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, delta))
             onoffValue = 1
             if MsgAttrID == '0002':
-                lvlValue += 4 * DIMMER_STEP
+                lvlValue += round( delta /10) * DIMMER_STEP
             elif MsgAttrID == '0003': 
-                lvlValue -= 4 * DIMMER_STEP
+                lvlValue -= round( delta / 10 )  * DIMMER_STEP
 
         elif action in ('03') : # Release after Long Press
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Release after %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, duration))
+            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Release after %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, round(duration/10)))
 
         else:
             Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Action: %s not processed" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
@@ -1035,7 +1037,8 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     #Update Domo
     sonoffValue = '%02x' %onoffValue
     slvlValue = '%02x' %lvlValue
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s' %(sonoffValue, slvlValue)
+    sduration = '%02x' %duration
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s' %(sonoffValue, slvlValue, sduration)
     Domoticz.Debug("ReadCluster %s - %s/%s - updating self.ListOfDevices[%s]['Ep'][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]))
 
