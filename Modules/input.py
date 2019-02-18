@@ -1842,6 +1842,10 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             '09':'release'
             }
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
 
     if MsgClusterId == '0005':
         if MsgDirection not in TYPE_DIRECTIONS:

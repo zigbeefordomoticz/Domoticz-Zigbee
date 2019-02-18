@@ -996,21 +996,22 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     Domoticz.Debug("ReadCluster - %s - %s/%s - past OnOff: %s, Lvl: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, onoffValue, lvlValue))
     if MsgAttrID == '0001': #On button
-        Domoticz.Log("ReadCluster - %s - %s/%s - ON Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        Domoticz.Debug("ReadCluster - %s - %s/%s - ON Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
         onoffValue = 1
 
     elif MsgAttrID == '0004': # Off  Button
-        Domoticz.Log("ReadCluster - %s - %s/%s - OFF Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        Domoticz.Debug("ReadCluster - %s - %s/%s - OFF Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
         onoffValue = 0
 
     elif MsgAttrID in  ( '0002', '0003' ): # Dim+ / 0002 is +, 0003 is -
-        Domoticz.Log("ReadCluster - %s - %s/%s - DIM Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
+        Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Button detected" %(MsgClusterId, MsgSrcAddr, MsgSrcEp))
         action = MsgClusterData[2:4]
         duration = MsgClusterData[6:10]
         duration = struct.unpack('H',struct.pack('>H',int(duration,16)))[0]
 
+
         if action in ('00'): #Short press
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
+            Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Action: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))
             onoffValue = 1
             # Short press/Release - Make one step   , we just report the press
             if MsgAttrID == '0002': 
@@ -1020,7 +1021,6 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         elif action in ('01') : # Long press
             delta = duration - prev_duration  # Time press since last message
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Action: %s, Duration: %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action, delta))
             onoffValue = 1
             if MsgAttrID == '0002':
                 lvlValue += round( delta /10) * DIMMER_STEP
