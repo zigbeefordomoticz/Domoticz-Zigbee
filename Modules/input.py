@@ -1796,6 +1796,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
     if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
         """
             Ikea Remote 5 buttons round.
