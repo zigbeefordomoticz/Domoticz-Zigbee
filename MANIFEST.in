@@ -1,8 +1,12 @@
 include LICENSE.txt
 include ReleaseNotes.md
 include readme.md
-include *.py
-include PluginConf.txt
-include DeviceConf.txt
-include Zdatas/
-include Compatible-Hardware.md
+include Classes
+include Conf
+include Data
+include Modules
+include plugin.py
+include ReleaseNotes.md
+include Tools
+include www
+include Zdatas
