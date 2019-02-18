@@ -1023,9 +1023,9 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             delta = duration - prev_duration  # Time press since last message
             onoffValue = 1
             if MsgAttrID == '0002':
-                lvlValue += round( delta /10) * DIMMER_STEP
+                lvlValue += round( delta * DIMMER_STEP)
             elif MsgAttrID == '0003': 
-                lvlValue -= round( delta / 10 )  * DIMMER_STEP
+                lvlValue -= round( delta * DIMMER_STEP)
 
         elif action in ('03') : # Release after Long Press
             Domoticz.Log("ReadCluster - %s - %s/%s - DIM Release after %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, round(duration/10)))
