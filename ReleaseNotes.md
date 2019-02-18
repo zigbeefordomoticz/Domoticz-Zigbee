@@ -1,6 +1,6 @@
 # Release Notes 
 
-## 07 January 2019 - Version Beta 4.1.x
+## 07 January 2019 - Version pre-4.1
 
 - [Technical] Full refactor of Discovery and Enrolement process
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
@@ -15,7 +15,7 @@
 - [Technical] At startup when loading the ListOfDevice, do not load UNKNOW devices.
 - [Enhacement] Zigate Notification Widget (measures section) to display plugin notification
 - [Technical] Configurable plugin folders ( Data, Zdata, reports, www/templates )
-- [Technical] Confirgure by default the ZigBee Channels (recommended for Europe
+- [Technical] Configure by default the ZigBee Channels (recommended for Europe
 - [Hardware] Improve 2018 Xiaomi wireless sitches with 3 states per button ( lumi.remote.b286acn01, lumi.remote.b186acn01) 
 - [Technical] Remove the use of random
 - [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
@@ -25,9 +25,18 @@
 - [Technical] Profile the possibility to configure the location of Data, Config and Report files. See PluginConf Documentation on Wiki
 - [Hardware] Implementation of Thermostat in order to handle Eurotronic Spirit Zigbee ( Temp sensor, Setpoint )
 - [Enhacement] Aqara Cube will get 2 Widgets , one Switch selector and one Text widget. The Text widget will get the Cube rotation Angle notification.
+- [Enhacement] Aqara Cube improvement in terms of responsivness
 - [Technical] Implement TX Power feature from firmware 3.0f.
 - [Technical] Implement the possibility to switch off the Blue led from firmware 3.0f.
 - [Hardware] Manage IKEA Tradfri Remote controller. Create a selector switch for the device and then capture remote event (if Zigate associated to the group)
+- [Technical] Move config file to Conf directory
+- [Technical] Live data as DeviceList and GroupList will be in Data folder
+- [Enhacement] Workaround the domoticz issue as regards to Temperature and Baro sensor adjustement and make it happen
+- [Issue] #348 - Status of Tradfri/Hue bulbs after Main power Off/on
+- [Technical] - Allow the possibility to set the Certification compliance between CE and FCC
+
+## 14 January 2019 - Version 4.0.7
+- [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
 
 ## 03 January 2019 - Version 4.0.6
 - [Isssue] Remove usage of random

@@ -16,7 +16,7 @@ import json
 
 import Domoticz
 
-from Modules.z_adminWidget import updateNotificationWidget
+from Classes.AdminWidgets import AdminWidgets
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -69,7 +69,7 @@ def getClusterListforEP( self, NWKID, Ep ) :
     ClusterList = []
     if self.ListOfDevices[NWKID]['Ep'][Ep] :
         for cluster in self.ListOfDevices[NWKID]['Ep'][Ep] :
-            if cluster != "ClusterType" :
+            if cluster not in  ('ClusterType', 'Type', 'ColorMode'):
                 ClusterList.append(cluster)
     return ClusterList
 
@@ -129,7 +129,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     if Devices[x].DeviceID == existingIEEEkey:
                         devName = Devices[x].Name
 
-                updateNotificationWidget( self, Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
+                self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
 
                 # We will also reset ReadAttributes
                 if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
@@ -205,7 +205,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
 
-            updateNotificationWidget( self, Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
+            self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
 
 
@@ -260,12 +260,12 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['MacCapa']=DeviceListVal['MacCapa']
         if 'IEEE' in DeviceListVal :
             self.ListOfDevices[key]['IEEE']=DeviceListVal['IEEE']
-            Domoticz.Log("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
+            Domoticz.Debug("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
             if  DeviceListVal['IEEE'] :
                 IEEE = DeviceListVal['IEEE']
                 self.IEEE2NWK[IEEE] = key
             else :
-                Domoticz.Log("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
+                Domoticz.Debug("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
         if 'ProfileID' in DeviceListVal :
             self.ListOfDevices[key]['ProfileID']=DeviceListVal['ProfileID']
         if 'ZDeviceID' in DeviceListVal :
@@ -310,6 +310,9 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['ReadAttributes']=DeviceListVal['ReadAttributes']
         if 'IAS' in DeviceListVal :
             self.ListOfDevices[key]['IAS']=DeviceListVal['IAS']
+        if 'Attributes List' in DeviceListVal :
+            self.ListOfDevices[key]['Attributes List']=DeviceListVal['Attributes List']
+
         self.ListOfDevices[key]['Heartbeat'] = DeviceListVal['Heartbeat']
 
 
@@ -340,10 +343,10 @@ def updSQN_battery(self, key, newSQN):
             Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
             self.ListOfDevices[key]['SQN'] = newSQN
             if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                Domoticz.Log("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
+                Domoticz.Debug("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
                                 + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
     except:
-        Domoticz.Log("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
+        Domoticz.Debug("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
         self.ListOfDevices[key]['SQN'] = {}
     return
 
@@ -417,7 +420,7 @@ def getListofClusterbyModel( self, Model , InOut ) :
             for ep in self.DeviceConf[Model][InOut] :
                 seen = ''
                 for cluster in sorted(self.DeviceConf[Model][InOut][ep]) :
-                    if cluster == 'Type' or  cluster == seen :
+                    if cluster in ( 'ClusterType', 'Type', 'ColorMode') or  cluster == seen :
                         continue
                     listofCluster.append( cluster )
                     seen = cluster

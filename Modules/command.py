@@ -16,9 +16,9 @@ import time
 import struct
 import json
 
-from Modules.z_tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.z_output import sendZigateCmd, thermostat_Setpoint
-from Modules.z_domoticz import UpdateDevice_v2
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.output import sendZigateCmd, thermostat_Setpoint
+from Modules.domoticz import UpdateDevice_v2
 
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
@@ -62,7 +62,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     ClusterSearch = ''
     DeviceType = ''
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton"):
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
         if tmpDeviceType == "WindowCovering":
@@ -71,7 +71,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType =="LvlControl" :
             ClusterSearch="0008"
             DeviceType = tmpDeviceType
-        if tmpDeviceType =="ColorControl" :
+        if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'ThermoSetpoint':
@@ -107,6 +107,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+        if EPout == '06': # Mostlikely a Livolo Device
+            if DeviceType == 'LivoloSWL':
+                livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+            elif DeviceType == 'LivoloSWR':
+                livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
+
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "01")
@@ -120,6 +126,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+
+        if EPout == '06': # Mostlikely a Livolo Device
+            if DeviceType == 'LivoloSWL':
+                livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+            elif DeviceType == 'LivoloSWR':
+                livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
+
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "09")
@@ -140,6 +153,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
             thermostat_Setpoint( self, NWKID, value )
             return
+
+        if DeviceType == 'ThermoMode':
+            Domoticz.Log("ThermoMode - requested value: %s" %value)
+            #'Off' : 0x00 ,
+            #'Auto' : 0x01 ,
+            #'Reserved' : 0x02,
+            #'Cool' : 0x03,
+            #'Heat' :  0x04,
+            #'Emergency Heating' : 0x05,
+            #'Pre-cooling' : 0x06,
+            #'Fan only' : 0x07 
+            if value == 0:
+                value = 'off'
+                thermostat_Mode( self, NWKID, value)
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -223,6 +250,29 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         #Update Device
         UpdateDevice_v2(Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
+
+
+def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
+    """
+    Levolo On/Off command are based on Level Control cluster
+    Level: 108  -> On
+    Level: 1 -> Off
+    Left Unit: Timing 1
+    Right Unit: Timing 2
+    """
+
+    if onoff not in ( 'On', 'Off'): return
+    if devunit not in ( 'Left', 'Right'): return
+
+    if onoff == 'On': level_value = '%02x' %108
+    else: level_value = '01'
+
+    if devunit == 'Left': timing_value = '0001'
+    else: timing_value = '0002'
+
+    Domoticz.Log("livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value))
+    sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+
 
 
 

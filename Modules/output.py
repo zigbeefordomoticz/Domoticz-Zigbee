@@ -19,8 +19,8 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.z_consts import ZLL_DEVICES
-from Modules.z_tools import getClusterListforEP
+from Modules.consts import ZLL_DEVICES
+from Modules.tools import getClusterListforEP
 
 
 def ZigateConf_light(self, discover ):
@@ -194,11 +194,17 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         listAttributes.append(0x0010)        # Battery
         listAttributes.append(0x000A)        # Product Code
 
+    if 'Model' in self.ListOfDevices[key]:
+        if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+             listAttributes.append(0xff01)
+             listAttributes.append(0xff02)
+
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
+        ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
     else:
         for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -432,11 +438,14 @@ def processConfigureReporting( self, NWKID=None ):
         #'000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         # Thermostat
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '4003': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+                                 '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '0014': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '001B': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 '001C': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0003': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -481,6 +490,7 @@ def processConfigureReporting( self, NWKID=None ):
         if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
         else: continue
+
         # We reach here because we have either a NWKID (we are pairing phase and we have a window to talk to the device even on battery mode
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
@@ -498,7 +508,7 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 15)
             clusterList = getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
-                if cluster in ( 'Type', 'ColorMode'):
+                if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
 
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
@@ -668,6 +678,17 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
     sendZigateCmd(self, "00E0", datas )
     
 
+def initiateTouchLink( self):
+
+    Domoticz.Status("initiate Touch Link")
+    sendZigateCmd(self, "00D0", '' )
+
+def factoryresetTouchLink( self):
+
+    Domoticz.Status("Factory Reset Touch Link Over The Air")
+    sendZigateCmd(self, "00D2", '' )
+
+
 def identifySend( self, nwkid, ep, duration=0):
 
     datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration) 
@@ -799,8 +820,6 @@ def setExtendedPANID(self, extPANID):
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
 
-
-
 def leaveMgtReJoin( self, saddr, ieee):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
@@ -814,6 +833,27 @@ def leaveMgtReJoin( self, saddr, ieee):
     datas = saddr + ieee + '01' + '00'
     sendZigateCmd(self, "0047", datas )
 
+def thermostat_Setpoint_SPZB(  self, key, setpoint):
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    Hattribute = "%04x" %0x4003
+    data_type = "29" # Int16
+    Domoticz.Log("setpoint: %s" %setpoint)
+    setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
+    Domoticz.Log("setpoint: %s" %setpoint)
+    Hdata = "%04x" %setpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    Domoticz.Log("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type))
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
 def thermostat_Setpoint( self, key, setpoint):
 
     manuf_id = "0000"
@@ -821,7 +861,9 @@ def thermostat_Setpoint( self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
-    setpoint = round(( setpoint * 2 ) / 2, 1)   # Round to 0.5 degrees
+    Domoticz.Log("setpoint: %s" %setpoint)
+    setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
+    Domoticz.Log("setpoint: %s" %setpoint)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -831,6 +873,34 @@ def thermostat_Setpoint( self, key, setpoint):
     Domoticz.Log("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type))
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+def thermostat_eurotronic_hostflag( self, key, action):
+
+    HOSTFLAG_ACTION = {
+            'turn_display':0x000002,
+            'boost':       0x000004,
+            'clear_off':   0x000010,
+            'set_off_mode':0x000020,
+            'child_lock':  0x000080
+            }
+
+    if action not in HOSTFLAG_ACTION:
+        Domoticz.Log("thermostat_eurotronic_hostflag - unknown action %s" %action)
+        return
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    attribute = "%04x" %0x4008
+    data_type = "22" # U24
+    data = "%06x" %HOSTFLAG_ACTION[action]
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+    Domoticz.Log("thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
+            %(key,data,cluster_id,attribute,data_type, action))
 
 def thermostat_Calibration( self, key, calibration):
 
@@ -847,6 +917,10 @@ def thermostat_Calibration( self, key, calibration):
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
     Domoticz.Log("thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type))
+
+def configHeatSetpoint( self, key ):
+
+    ddhostflags = 0xFFFFEB
 
 def thermostat_Mode( self, key, mode ):
 
@@ -866,7 +940,7 @@ def thermostat_Mode( self, key, mode ):
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201
-    attribute = "%04x" %0x001F
+    attribute = "%04x" %0x001C
     data_type = "30" # Enum8
     data = "%02x" %SYSTEM_MODE[mode]
 
@@ -893,18 +967,30 @@ def ReadAttributeRequest_0201(self, key):
     listAttributes.append(0x0000)        # Local Temp / 0x29
     listAttributes.append(0x0008)        # Pi Heating Demand (valve position %)
     listAttributes.append(0x0010)        # Calibration / 0x28
-    listAttributes.append(0x0011)        # COOLING_SETPOINT / 0x29
+    #listAttributes.append(0x0011)        # COOLING_SETPOINT / 0x29
     listAttributes.append(0x0012)        # HEATING_SETPOINT / 0x29
     listAttributes.append(0x0014)        # Unoccupied Heating Setpoint 0x29
     #listAttributes.append(0x0015)        # MIN HEATING / 0x29
     #listAttributes.append(0x0016)        # MAX HEATING / 0x29
-    if self.ListOfDevices[key]['Model'].find('SPZB') == 0:
-        Domoticz.Log("- req 0x4003 Current Set Point Eurotronic")
+    listAttributes.append(0x001B)        # Control sequence
+    listAttributes.append(0x001C)        # System Mode
+    listAttributes.append(0x001F)        # Set Mode
+    Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+    ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
+
+    listAttributes = []
+    if str(self.ListOfDevices[key]['Model']).find('SPZB') == 0:
+        Domoticz.Log("- req Attributes for Eurotronic")
         listAttributes.append(0x4000)        # TRV Mode
         listAttributes.append(0x4001)        # Set Valve Position
         listAttributes.append(0x4002)        # Errors
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
         listAttributes.append(0x4008)        # HOst Flag
-
-    Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
-    ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
+    elif str(self.ListOfDevices[key]['Model']).find('Super TR') == 0:
+        Domoticz.Log("- req Attributes for  Super TR")
+        listAttributes.append(0x0403)    
+        listAttributes.append(0x0408)   
+        listAttributes.append(0x0409)  
+    if len(listAttributes) > 0:
+        Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+        ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )

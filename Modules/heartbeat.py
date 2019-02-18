@@ -18,18 +18,18 @@ import struct
 import json
 import queue
 
-from Modules.z_output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
+from Modules.output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
         ReadAttributeRequest_0008, ReadAttributeRequest_000C, ReadAttributeRequest_0006, ReadAttributeRequest_0001, \
         ReadAttributeRequest_0300, processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
-        ReadAttributeRequest_0201
-from Modules.z_tools import removeNwkInList
-from Modules.z_domoticz import CreateDomoDevice
-from Modules.z_LQI import LQIcontinueScan
-from Modules.z_consts import HEARTBEAT
-from Modules.z_adminWidget import updateNotificationWidget
+        ReadAttributeRequest_0201, bindDevice, getListofAttribute
+from Modules.tools import removeNwkInList
+from Modules.domoticz import CreateDomoDevice
+from Modules.LQI import LQIcontinueScan
+from Modules.consts import HEARTBEAT
 
-from Classes.z_IAS import IAS_Zone_Management
-from Classes.z_Transport import ZigateTransport
+from Classes.IAS import IAS_Zone_Management
+from Classes.Transport import ZigateTransport
+from Classes.AdminWidgets import AdminWidgets
 
 
 def processKnownDevices( self, Devices, NWKID ):
@@ -63,6 +63,15 @@ def processKnownDevices( self, Devices, NWKID ):
                                                             # available, let's request a Node Descriptor
             sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
+    if  self.HeartbeatCount == ( 56 // HEARTBEAT):
+        if 'PowerSource' in self.ListOfDevices[NWKID]:
+            if (self.ListOfDevices[NWKID]['PowerSource']) == 'Main':
+                if 'Attributes List' not in  self.ListOfDevices[NWKID]:
+                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                        for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                            if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                            getListofAttribute( self, NWKID, iterEp, iterCluster)
+
     # Ping each device, even the battery one. It will make at least the route up-to-date
     #if ( intHB % ( 3000 // HEARTBEAT)) == 0:
     #    ReadAttributeRequest_Ack(self, NWKID)
@@ -86,11 +95,13 @@ def processKnownDevices( self, Devices, NWKID ):
             for Cluster in READ_ATTRIBUTES_REQUEST:
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
+
+
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
 
                 if 'PowerSource' in self.ListOfDevices[NWKID]:
-                    if ((self.ListOfDevices[NWKID]['PowerSource']) != 'Main') and ( Cluster not in ( '0001', '0201' )):
+                    if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
                         continue
 
                 if self.busy  or len(self.ZigateComm._normalQueue) > 2:
@@ -140,9 +151,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if self.ListOfDevices[NWKID]['Model'] != {}:
             Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
             # Let's check if this Model is known
-            if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                if not self.pluginconf.allowStoreDiscoveryFrames:
-                    status = 'createDB' # Fast track
+            if 'Model' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                    if not self.pluginconf.allowStoreDiscoveryFrames:
+                        status = 'createDB' # Fast track
     else:
         return
 
@@ -174,8 +186,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             #IAS Zone
             if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04x - IAS Zone controler setting" \
-                        %( RIA, NWKID, int(status,16)))
+                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
+                        %( RIA, NWKID, status))
                 self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
@@ -199,7 +211,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
             ReadAttributeRequest_0300(self, NWKID )
-            return
+            if  self.ListOfDevices[NWKID]['RIA'] < '2':
+                return
     # end if status== "8043"
 
     # Timeout management
@@ -229,25 +242,17 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if self.ListOfDevices[NWKID]['RIA'] > '2' and status != 'UNKNOW':  # We have done several retry
+    if self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
         Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.allowStoreDiscoveryFrames, self.ListOfDevices[NWKID]['Model']))
         Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
-        updateNotificationWidget( self, Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
+        self.adminWidgets.updateNotificationWidget( Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
         self.CommiSSionning = False
         return
 
-    # https://github.com/sasu-drooz/Domoticz-Zigate/wiki/ProfileID---ZDeviceID
-
-    #if ( not waitForDomoDeviceCreation and  self.pluginconf.allowStoreDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP") or \
-    #        ( not waitForDomoDeviceCreation and self.pluginconf.allowStoreDiscoveryFrames == 1 and status == "8043" ):
-    #    if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} ):
-    # If we are in status = 0x8043 we have received EPs descriptors
-    # If we have Model we might be able to identify the device with it's model
-    # In case where self.pluginconf.storeDiscoveryFrames is set (1) then we force the full process and so wait for 0x8043
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
         Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
@@ -269,16 +274,37 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if IsCreated == False:
             Domoticz.Debug("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
             CreateDomoDevice(self, Devices, NWKID)
+
             # Post creation widget
 
-            # 1 Enable Configure Reporting for any applicable cluster/attributes
+            # Binding devices
+            BINDING_MATRIX = ( '0001', '0006', '0008', '0201', '0300', 
+                    '0400', '0402', '0403', '0405', '0500', '0702', 'ff01', 'ff02', 'fc01' , 'fc00' )
+
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                Domoticz.Debug('looking for bind ep: %s' %iterEp)
+                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                    Domoticz.Debug('looking for bind ep: %s cluster: %s' %(iterEp, iterCluster))
+                    if iterCluster in BINDING_MATRIX:
+                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterCluster))
+                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
+
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                Domoticz.Debug('looking for List of Attributes ep: %s' %iterEp)
+                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                        continue
+                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+
+            # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
             ep = '01'
             for ep in self.ListOfDevices[NWKID]['Ep']:
-                if ep in ( '01', '03', '09' ):
+                if ep in ( '01', '03', '06', '09' ):
                     break
             identifyEffect( self, NWKID, ep , effect='Blink' )
 
@@ -288,7 +314,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         %(NWKID, self.pluginconf.vibrationAqarasensitivity))
                  setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.vibrationAqarasensitivity)
 
-            updateNotificationWidget( self, Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
+            self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
             self.CommiSSionning = False
 

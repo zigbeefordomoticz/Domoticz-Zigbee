@@ -14,6 +14,8 @@ import time
 import struct
 import json
 
+from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -97,7 +99,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         for iterType in Type:
             if iterType not in GlobalType and iterType != '': 
-                Domoticz.Log("adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)))
+                Domoticz.Debug("adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)))
                 GlobalType.append(iterType)
 
         Domoticz.Debug("CreateDomoDevice - Creating devices based on Type: %s" % Type)
@@ -141,6 +143,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         for t in Type:
             Domoticz.Debug("CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t))
+
             if t == "ThermoSetpoint":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -153,6 +156,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "ThermoMode":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=243, Subtype=20)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
 
             if t == "Temp":  # Detecteur temp
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -211,6 +228,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=73, Switchtype=8)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t in ( "LivoloSWL", "LivoloSWR" ):
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                                Unit=unit, Type=244, Subtype=73, Switchtype=0)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -478,10 +508,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                         else:
                             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "ColorControl":  # variateur de couleur/luminosite/on-off
+            if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 
+                      'ColorControlFull', 'ColorControl'):  # variateur de couleur/luminosite/on-off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
 
-                Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
+                if t == 'ColorControlRGB': 
+                    Subtype_ = 0x02 # RGB color palette / Dimable
+                elif t == 'ColorControlRGBWW': 
+                    Subtype_ = 0x04  # RGB + WW / Dimable
+                elif t == 'ColorControlFull': 
+                    Subtype_ = 0x07  # 3 Color palettes widget
+                elif t == 'ColorControlWW': 
+                    Subtype_ = 0x08  # White color palette / Dimable
+                else:
+                    Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                        self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
 
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
@@ -534,9 +575,22 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == 'Ikea_Round_OnOff': # Ikea On/off Remote
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                          Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Down_click", \
+                Options = {"LevelActions": "|||||||||||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
@@ -551,7 +605,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
 
     # for Ep
-    Domoticz.Log("GlobalType: %s" %(str(GlobalType)))
+    Domoticz.Debug("GlobalType: %s" %(str(GlobalType)))
     if len(GlobalType) != 0:
         self.ListOfDevices[NWKID]['Type'] = ''
         for iterType in GlobalType:
@@ -559,7 +613,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Type'] = iterType 
             else:
                 self.ListOfDevices[NWKID]['Type'] = self.ListOfDevices[NWKID]['Type'] + '/' + iterType 
-        Domoticz.Log("CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'])
+        Domoticz.Debug("CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'])
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
     '''
@@ -567,10 +621,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     Update domoticz device accordingly to Type found in EP and value/Color provided
     '''
 
+    if NWKID not in self.ListOfDevices:
+        Domoticz.Error("MajDomoDevice - %s not known" %NWKID)
+        return
+    if 'IEEE' not in self.ListOfDevices[NWKID]:
+        Domoticz.Error("MajDomoDevice - no IEEE for %s" %NWKID)
+        return
+
     DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
     Domoticz.Debug(
         "MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(
-            clusterID) + " - Value : " + str(value) + " - Hue : " + str(Color_))
+            clusterID) + " - Value : " + str(value) + " - Hue : " + str(Color_) + "  - Attribute_ : " +str(Attribute_))
 
     ClusterType = TypeFromCluster(clusterID)
     Domoticz.Debug("MajDomoDevice - Type = " + str(ClusterType))
@@ -584,6 +645,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             ID = Devices[x].ID
             DeviceType = ""
             Domoticz.Debug("MajDomoDevice - " + str(self.ListOfDevices[NWKID]['Ep'][Ep]))
+
 
             if 'ClusterType' in self.ListOfDevices[NWKID]:
                 # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
@@ -667,13 +729,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 Domoticz.Debug("MajDomoDevice Voltage : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
-            if 'ThermoSetpoint' in ClusterType and ( Attribute_ == '4003' or Attribute_ == '0012'):
+            if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint':
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
-                Domoticz.Debug("MajDomoDevice Setpoint : " + sValue)
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
+                if self.domoticzdb_DeviceStatus:
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
+                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
+                    value = round(value + adjvalue,1)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -730,6 +795,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Baro":  # barometre
+                if self.domoticzdb_DeviceStatus:
+                    adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
+                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
+                    value = round(value + adjvalue,1)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -820,6 +889,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "00":
                         state = "Off"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                elif DeviceType in ( "LivoloSWL", 'LivolSWR'):
+                    value = int(value)
+                    Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
+                    #UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
                     if value == 1: state = "00"
@@ -884,9 +958,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
 
-                elif DeviceType == "LvlControl" or DeviceType == "ColorControl":
-                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
+                elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
+
+                    Domoticz.Log("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
                             %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
+
                     if Devices[x].SwitchType == 16:
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
@@ -907,27 +983,35 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if DeviceType == "LvlControl":
                     # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
+                    Domoticz.Log("LvlControl - update - value: %s" %value)
 
                     nValue = None
-                    sValue = round((int(value, 16) / 255) * 100)
+                    sValue = round((int(value, 16) * 100) / 255)
+
+                    Domoticz.Log("LvlControl - update - sValue: %s" %sValue)
+                    # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
+
                     if sValue == 0:
                         nValue = 0
-                        if Devices[x].SwitchType == 16:
+                        if Devices[x].SwitchType == 16:  # Shutter
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
-                                UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                                #UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+
                     elif sValue == 100:
                         nValue = 1
-                        if Devices[x].SwitchType == 16:
+                        if Devices[x].SwitchType == 16:  # Shutter
                             UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
-                                UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                                #UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else:
                         if Devices[x].SwitchType != 16 and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                             pass
@@ -935,17 +1019,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             nValue = 2
                             UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
-                elif DeviceType == "ColorControl":
+                elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                         pass
                     else:
                         nValue = 1
-                        sValue = round((int(value, 16) / 255) * 100)
+                        sValue = round((int(value, 16) * 100) / 255)
                         UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
-            if ClusterType == DeviceType == "ColorControl":
+            if ClusterType in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
+                    ClusterType == DeviceType:
                 nValue = 1
-                sValue = round((int(value, 16) / 255) * 100)
+                sValue = round((int(value, 16) * 100) / 255)
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "02":  # Magic Cube Acara
@@ -1020,13 +1105,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if value == "00":
                     UpdateDevice_v2(Devices, x, "0", str("Off"), BatteryLevel, SignalLevel)
 
+            if ClusterType == DeviceType == "Ikea_Round_OnOff": # IKEA Remote On/Off
+                nValue = 0
+                sValue = 0
+                if value == "00":
+                    nValue = 0
+                    sValue = 0
+                elif value == "toggle": # Toggle
+                    nValue = 1
+                    sValue = '10'
+                UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
+
             if ClusterType == DeviceType == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 nValue = 0
                 sValue = 0
                 if value == "00":
                     nValue = 0
                     sValue = 0
-                    pass
                 elif value == "toggle": # Toggle
                     nValue = 1
                     sValue = '10'
@@ -1036,24 +1131,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == "right_click": # Right Click
                     nValue = 3
                     sValue = '30'
-                elif value == "up_click": # Up Click
+                elif value == "click_up": # Up Click
                     nValue = 4
                     sValue = '40'
-                elif value == "up_push": # Up Push
+                elif value == "hold_up": # Up Push
                     nValue = 5
                     sValue = '50'
-                elif value == "up_release": # Up Release
+                elif value == "release_up": # Up Release
                     nValue = 6
                     sValue = '60'
-                elif value == "down_click": # Down Click
+                elif value == "click_down": # Down Click
                     nValue = 7
                     sValue = '70'
-                elif value == "down_push": # Down Push
+                elif value == "hold_down": # Down Push
                     nValue = 8
                     sValue = '80'
-                elif value == "down_release": # Down Release
+                elif value == "release_down": # Down Release
                     nValue = 9
                     sValue = '90'
+                elif value == "right_hold": # 
+                    nValue = 10
+                    sValue = '100'
+                elif value == "release_down": # Down Release
+                    nValue = 11
+                    sValue = '110'
+                elif value == "left_hold": # Down Release
+                    nValue = 12
+                    sValue = '120'
+                elif value == "release_down": # Down Release
+                    nValue = 13
+                    sValue = '130'
                 UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
 
 
@@ -1123,7 +1230,10 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
     if (Unit in Devices):
         if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
             ( Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_:
-            Domoticz.Log("Update v2 Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
+
+            Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
+
+            Domoticz.Debug("Update Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[
                 Unit].Name + ")")
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi),
@@ -1147,31 +1257,39 @@ def GetType(self, Addr, Ep):
     Domoticz.Debug("GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']))
 
-    if self.ListOfDevices[Addr]['Model'] != {} and \
-            self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf and \
-            Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:  
+    if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-
-        if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
-            if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
-                    self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
-                Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
-                Type = str(Type)
+        if Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:
+            if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
+                if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
+                    Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
+                        self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
+                    Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+                    Type = str(Type)
         else:
             Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
-        Domoticz.Debug("GetType - Model not found in DeviceConf : " + str(
-            self.ListOfDevices[Addr]['Model']) + " Let's go for Cluster search")
+        Domoticz.Debug("GetType - Model %s not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep)) 
         Type = ""
 
         # Check ProfileID/ZDeviceD
-        if self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830':
-            return "Ikea_Round_5b"
+        if 'Manufacturer' in self.ListOfDevices[Addr]:
+            if self.ListOfDevices[Addr]['Manufacturer'] == '117c': # Ikea
+                if ( self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830') :
+                    return "Ikea_Round_5b"
+                elif self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0820':
+                    return "Ikea_Round_OnOff"
+            elif self.ListOfDevices[Addr]['Manufacturer'] == '100b': # Philipps Hue
+                pass
+            elif str(self.ListOfDevices[Addr]['Manufacturer']).find('LIVOLO') != -1:
+                Domoticz.Log("GetType - Found Livolo based on Manufacturer")
+                return 'LivoloSWL/LivoloSWR'
 
+        # Finaly Chec on Cluster
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
+            if cluster in ('Type', 'ClusterType', 'ColorMode'): continue
             Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
             if Type != "" and Type[:1] != "/":
                 Type += "/"
@@ -1191,13 +1309,20 @@ def GetType(self, Addr, Ep):
             Type = Type[:-1]
         if Type[0:] == "/":
             Type = Type[1:]
+
+        Domoticz.Debug("GetType - ClusterSearch return : %s" %Type)
     return Type
 
 
 def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
+    Domoticz.Debug("ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
+
+    TypeFromCluster = ''
     if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':
         TypeFromCluster = 'Ikea_Round_5b'
+    elif ProfileID_ == 'c05e' and ZDeviceID_ == '0820':
+        TypeFromCluster = 'Ikea_Round_OnOff'
     elif cluster == "0001": TypeFromCluster = "Voltage"
     elif cluster == "0006": TypeFromCluster = "Switch"
     elif cluster == "0008": TypeFromCluster = "LvlControl"
@@ -1205,7 +1330,7 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
     elif cluster == "0012" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0101": TypeFromCluster = "Vibration"
     elif cluster == "0102": TypeFromCluster = "WindowCovering"
-    elif cluster == "0201": TypeFromCluster = "Temp/ThermSetPoint"
+    elif cluster == "0201": TypeFromCluster = "Temp/ThermoSetpoint/ThermoMode"
     elif cluster == "0300": TypeFromCluster = "ColorControl"
     elif cluster == "0400": TypeFromCluster = "Lux"
     elif cluster == "0402": TypeFromCluster = "Temp"
@@ -1215,13 +1340,14 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
     elif cluster == "0702": TypeFromCluster = "Power/Meter"
     elif cluster == "0500": TypeFromCluster = "Door"
 
+    elif cluster == "fc00" : TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
+
     # Propriatory Cluster. Plugin Cluster
     elif cluster == "rmt1": TypeFromCluster = "Ikea_Round_5b"
-    else:
-        TypeFromCluster = ""
+
     return TypeFromCluster
 
-def subtypeRGB_FromProfile_Device_IDs( EndPoints, ProfileID, ZDeviceID, ColorInfos):
+def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, ColorInfos):
 
         # Type 0xF1    pTypeColorSwitch
         # Switchtype 7 STYPE_Dimmer
@@ -1231,62 +1357,70 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, ProfileID, ZDeviceID, ColorInf
         # SubType sTypeColor_LivCol               0x05
         # SubType sTypeColor_RGB_W_Z              0x06 // Like RGBW, but allows combining RGB and white
         # The test should be done in an other way ( ProfileID for instance )
-
         # default: SubType sTypeColor_RGB_CW_WW_Z 0x07 // Like RGBWW, # but allows combining RGB and white
 
-    Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s, ZDeviceID: %s ColorInfos: %s" %(ProfileID, ZDeviceID, ColorInfos))
+    ColorControlRGB   = 0x02 # RGB color palette / Dimable
+    ColorControlRGBWW = 0x04  # RGB + WW
+    ColorControlFull  = 0x07  # 3 Color palettes widget
+    ColorControlWW    = 0x08  # WW
 
+
+    Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - Model: %s, ProfileID: %s, ZDeviceID: %s ColorInfos: %s" %(Model, ProfileID, ZDeviceID, ColorInfos))
     Subtype = None
     ZLL_Commissioning = False
 
     ColorMode = 0
     if 'ColorMode' in ColorInfos:
         ColorMode = ColorInfos['ColorMode']
-
     for iterEp in EndPoints:
         if '1000' in  iterEp:
             ZLL_Commissioning = True
             break
 
-    if ProfileID == '0104': # Home Automation
-        if ZLL_Commissioning and ZDeviceID == '0100': # Most likely IKEA Tradfri bulb LED1622G12
-            Subtype_ = 8
-            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
-        if ZDeviceID == '0102':
-            pass
-        if ZDeviceID == '0105':
-            pass
+    # Device specifics section
+    if Model:
+        if Model == 'lumi.light.aqcn02':    # Aqara Bulb White Dim
+            Subtype = ColorControlWC
 
-    if ProfileID == "a1e0": #Philips Hue
+    # Philipps Hue
+    if Subtype is None and ProfileID == "a1e0": 
         if ZDeviceID == "0061":
-            Subtype = 4
-            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+            Subtype = ColorControlRGBWW
 
-    if ProfileID == 'c05e': # ZLL ZigBee LightLink
+    # ZLL LightLink
+    if Subtype is None and  ProfileID == 'c05e': 
         # We should Check that ZLL Commissioning is also there. Cluster 0x1000
-
         if ZDeviceID == '0100': # LED1622G12.Tradfri ou phillips hue white
             pass
-        
-        if ZDeviceID == '0200': # ampoule Tradfri LED1624G9
-            Subtype = 7
-            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
-
-        if ZDeviceID == '0210': # 
-            Subtype = 4
-            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
-
-        if ZDeviceID == '0220': # ampoule Tradfi LED1545G12.Tradfri
+        elif ZDeviceID == '0200': # ampoule Tradfri LED1624G9
+            Subtype = ColorControlFull
+        elif ZDeviceID == '0210': # 
+            Subtype = ColorControlRGBWW
+        elif ZDeviceID == '0220': # ampoule Tradfi LED1545G12.Tradfri
+            Subtype = ColorControlWW
             pass
+
+    # Home Automation / ZHA
+    if Subtype is None and ProfileID == '0104': # Home Automation
+        if ZLL_Commissioning and ZDeviceID == '0100': # Most likely IKEA Tradfri bulb LED1622G12
+            Subtype = ColorControlWW
+            Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+        elif ZdeviceID == '0101': # Dimable light
+            pass
+        elif ZDeviceID == '0102': # Color dimable light
+            Subtype = ColorControlFull
+            pass
+
 
     if Subtype is None and ColorInfos:
         if ColorMode == 2:
-            Subtype = 8
+            Subtype = ColorControlWW
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         elif ColorMode == 1:
-            Subtype = 2        
+            Subtype = ColorControlRGB
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         else:
-            Subtype = 7
+            Subtype = ColorControlFull
 
+    Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
     return Subtype

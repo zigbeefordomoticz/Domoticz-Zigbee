@@ -15,7 +15,7 @@ import os.path
 import datetime
 import json
 
-from Modules.z_tools import CheckDeviceList
+from Modules.tools import CheckDeviceList
 
 def _copyfile( source, dest ):
     copy_buffer =''
@@ -55,7 +55,13 @@ def LoadDeviceList( self ):
             key = key.replace("'","")
 
             if key in  ( 'ffff', '0000'): continue
-            dlVal=eval(val)
+
+            try:
+                dlVal=eval(val)
+            except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+                Domoticz.Error("LoadDeviceList failed on %s" %val)
+                continue
+
             Domoticz.Debug("LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) )
 
             if not dlVal.get('Version') :
@@ -91,7 +97,7 @@ def LoadDeviceList( self ):
     return res
 
 
-def WriteDeviceList(self, Folder, count):
+def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
         _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
@@ -102,10 +108,10 @@ def WriteDeviceList(self, Folder, count):
         self.HBcount=0
 
         # To be written in the Reporting folder
-        json_filename = self.pluginconf.pluginReports + self.DeviceListName + '.json'
+        json_filename = self.pluginconf.pluginReports + self.DeviceListName.replace('.txt','.json') 
         Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
-            json.dump(self.ListOfDevices, json_file)
+            json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
     else :
         Domoticz.Debug("HB count = " + str(self.HBcount))
         self.HBcount=self.HBcount+1
@@ -113,9 +119,16 @@ def WriteDeviceList(self, Folder, count):
 def importDeviceConf( self ) :
     #Import DeviceConf.txt
     tmpread=""
+    self.DeviceConf = {}
     with open( self.pluginconf.pluginConfig  + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
-    self.DeviceConf=eval(tmpread)
+        try:
+            self.DeviceConf=eval(tmpread)
+        except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConfig, tmpread))
+            return
+
+    Domoticz.Status("DeviceConf loaded")
 
 def checkListOfDevice2Devices( self, Devices ) :
 

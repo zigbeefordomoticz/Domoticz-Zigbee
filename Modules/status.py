@@ -21,6 +21,8 @@ def DisplayStatusCode( StatusCode ) :
     elif str(StatusCode) == "04" : StatusMsg ="Busy"
     elif str(StatusCode) == "05" : StatusMsg ="Stack Already Started"
     
+# ZCL return status code
+    
 #NWK CODES    
     elif str(StatusCode)=="c1" : StatusMsg="An invalid or out-of-range parameter has been passed"
     elif str(StatusCode)=="c2" : StatusMsg="Request cannot be processed"
