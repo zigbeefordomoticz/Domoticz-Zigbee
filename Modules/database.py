@@ -128,6 +128,14 @@ def importDeviceConf( self ) :
             Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConfig, tmpread))
             return
 
+    # Remove comments
+    for iterDevType in list(self.DeviceConf):
+        if iterDevType == '':
+            del self.DeviceConf[iterDevType]
+            
+    #for iterDevType in list(self.DeviceConf):
+    #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
+
     Domoticz.Status("DeviceConf loaded")
 
 def checkListOfDevice2Devices( self, Devices ) :
