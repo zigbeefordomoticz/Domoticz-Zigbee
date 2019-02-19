@@ -145,8 +145,7 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
-    if self.pluginconf.debugReadCluster == 1:
-        Domoticz.Debug("ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
+    Domoticz.Log("ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData))
 
         
@@ -218,14 +217,14 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         battRemainVolt = value
         newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], battRemainVolt, oldValue[3])
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
-        Domoticz.Debug("readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) )
+        Domoticz.Log("readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) )
 
     elif MsgAttrID == "0021": # Battery %
         battRemainPer = value
         newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], battRemainPer)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         self.ListOfDevices[MsgSrcAddr]['Battery'] = value
-        Domoticz.Debug("readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) )
+        Domoticz.Log("readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) )
 
     elif MsgAttrID == "0031": # Battery Size
         # 0x03 stand for AA
@@ -528,14 +527,14 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: Occupancy Sensing)
 
-    Domoticz.Debug("ReadCluster - ClusterId=0406 - reception Occupancy Sensor: " + str(MsgClusterData) )
+    Domoticz.Log("ReadCluster - ClusterId=0406 - reception Occupancy Sensor: " + str(MsgClusterData) )
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: LUX)
 
-    Domoticz.Debug("ReadCluster - ClusterId=0400 - reception LUX Sensor: " + str(int(MsgClusterData,16)) )
+    Domoticz.Log("ReadCluster - ClusterId=0400 - reception LUX Sensor: " + str(int(MsgClusterData,16)) )
     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(int(MsgClusterData,16) ))
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=int(MsgClusterData,16)
 
@@ -791,7 +790,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 %( MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     else:
-        Domoticz.Debug("ReadCluster 0x0000 - Message attribut inconnu: " + str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        Domoticz.Log("ReadCluster 0x0000 - Message attribut inconnu: " + str(decodeAttribute( MsgAttType, MsgClusterData) ))
     
 
 def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):

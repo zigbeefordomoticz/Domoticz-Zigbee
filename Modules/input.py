@@ -1561,9 +1561,6 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
     MsgAttType=MsgData[2:4]
     MsgAttID=MsgData[4:8]
     
-    if MsgComplete == '01':
-        Domoticz.Log("Decode8140 - Receiving last Message")
-
     if len(MsgData) > 8:
         MsgSrcAddr = MsgData[8:12]
         MsgSrcEp = MsgData[12:14]
