@@ -213,10 +213,15 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
              listAttributes.append(0xff01)
              listAttributes.append(0xff02)
 
+        if self.ListOfDevices[key]['Model'] == 'SML00':
+             listAttributes.append(0x0032)
+             #listAttributes.append(0x0033)
+
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
+        ReadAttributeReq( self, key, EPin, "02", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
@@ -255,11 +260,9 @@ def ReadAttributeRequest_0001(self, key):
                     EPout=tmpEp
     listAttributes = []
     listAttributes.append(0x0000)        # Mains information
-    listAttributes.append(0x0010)        # Battery Voltage
     listAttributes.append(0x0020)        # Battery Voltage
     listAttributes.append(0x0021)        # Battery BatteryPercentageRemaining
-    listAttributes.append(0x0031)        # Battery Battery Size
-    listAttributes.append(0x0033)        # Battery Battery Quantity
+    listAttributes.append(0x0035)        # Battery Alarm
 
     Domoticz.Debug("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
@@ -354,6 +357,95 @@ def ReadAttributeRequest_000C(self, key):
                     EPout=tmpEp
     Domoticz.Debug("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
+
+def ReadAttributeRequest_fc00(self, key):
+
+    listAttributes = []
+
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] == 'RWL02': # Hue dimmer Switch
+            listAttributes.append(0x0000)
+
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "fc00" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    Domoticz.Debug("Request 0xfc00 info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, "01", EPout, "fc00", listAttributes)
+
+def ReadAttributeRequest_0400(self, key):
+
+    Domoticz.Log("ReadAttributeRequest_0400 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "040à" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Log("Illuminance info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
+
+def ReadAttributeRequest_0402(self, key):
+
+    Domoticz.Log("ReadAttributeRequest_0402 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Log("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
+
+def ReadAttributeRequest_0403(self, key):
+
+    Domoticz.Log("ReadAttributeRequest_0403 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0403" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Log("Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0403", listAttributes)
+
+def ReadAttributeRequest_0405(self, key):
+
+    Domoticz.Log("ReadAttributeRequest_0405 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0405" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Log("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0405", listAttributes)
+
+def ReadAttributeRequest_0406(self, key):
+
+    Domoticz.Log("ReadAttributeRequest_0406 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0406" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Log("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
 
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
@@ -475,13 +567,13 @@ def processConfigureReporting( self, NWKID=None ):
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
-        #'0406': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        '0406': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
+                                 '0030': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+
         # IAS ZOne
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
-        # Occupancy Sensing
-
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'003C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
