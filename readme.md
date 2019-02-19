@@ -10,7 +10,7 @@
 [Zigate](https://zigate.fr "Python Plugin for Domoticz home automation.")
 
 For information around the Zigate Plugin, please refer to :
-* https://github.com/sasu-drooz/Domoticz-Zigate/wiki for informations 
+* https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md for informations 
 
 ## Support
 

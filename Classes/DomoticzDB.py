@@ -14,25 +14,35 @@ import sqlite3
 import Domoticz
 import os.path
 
-class DomoticzDB_Dictionnary:
+class DomoticzDB_Preferences:
 
     def __init__(self, database):
-        self.preferences = {}
-        dbConn = None
+        self.dbConn = None
+        self.dbCursor = None
         
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return 
         Domoticz.Log("Opening %s" %database)
-        dbConn = sqlite3.connect(database)
+        self.dbConn = sqlite3.connect(database)
+        self.dbCursor = self.dbConn.cursor()
+
+    def retreiveAcceptNewHardware( self):
+
+        self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'" )
+        value = self.dbCursor.fetchone()
+        return value[0]
 
 
-    def retreiveDictionary( self ):
-        for Key, nValue, sValue in dbConn.execute("SELECT Key, nValue, sValue FROM Preferences"):
-            if not sValue:
-                self.preferences[str(Key)] = str(nValue)
-            else:
-                self.preferences[str(Key)] = str(sValue)
+    def unsetAcceptNewHardware( self):
+
+        self.dbCursor.execute("UPDATE Preferences Set nValue = '0' Where Key = 'AcceptNewHardware' " )
+        self.dbConn.commit()
+
+    def setAcceptNewHardware( self):
+
+        self.dbCursor.execute("UPDATE Preferences Set nValue = '1' Where Key = 'AcceptNewHardware' " )
+        self.dbConn.commit()
 
 
 class DomoticzDB_Hardware:
@@ -93,12 +103,8 @@ class DomoticzDB_DeviceStatus:
 
 if __name__ == '__main__':
 
-    domoDico = DomoticzDB_Dictionnary( "/var/lib/domoticz/domoticz.db")
-    for key, value in  domoDico.preferences.items():
-        print( "%s = %s" %(key,value))
 
     tstdevice = DomoticzDB_DeviceStatus("/var/lib/domoticz/domoticz.db", "35")
-
     print(tstdevice.retreiveAddjValue_temp("35"))
 
 

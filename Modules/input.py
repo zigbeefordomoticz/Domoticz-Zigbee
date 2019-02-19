@@ -687,6 +687,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
     Domoticz.Debug("Decode8014 - MsgData lenght is : " +MsgData + "len: "+ str(MsgLen) + " out of 2")
 
     Status=MsgData[0:2]
+    Domoticz.Log("Permit Join status: %s" %Status)
     if Status == "00": 
         if self.Ping['Permit'] is None:
             Domoticz.Status("Permit Join is Off")
@@ -736,12 +737,26 @@ def Decode8015(self, Devices, MsgData) : # Get device list ( following request d
 
 def Decode8024(self, MsgData, Data) : # Network joined / formed
     MsgLen=len(MsgData)
+    MsgDataStatus=MsgData[0:2]
 
+
+    if MsgDataStatus != '00':
+        if MsgDataStatus == "00": 
+            Status = "Joined existing network"
+        elif MsgDataStatus == "01": 
+            Status = "Formed new network"
+        elif MsgDataStatus == "04":
+            Status = "Busy Node"
+        else: 
+            Status = DisplayStatusCode( MsgDataStatus )
+
+        Domoticz.Status("Network joined / formed Status: %s: %s" %(MsgDataStatus, Status) )
+        return
+    
     if MsgLen != 24:
         Domoticz.Debug("Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<" %(MsgData, MsgLen, Data) )
         return
 
-    MsgDataStatus=MsgData[0:2]
     MsgShortAddress=MsgData[2:6]
     MsgExtendedAddress=MsgData[6:22]
     MsgChannel=MsgData[22:24]
@@ -752,13 +767,6 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
         self.ZigateNWKID = MsgShortAddress
         self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
 
-    if MsgDataStatus == "00": 
-        Status = "Joined existing network"
-    elif MsgDataStatus == "01": 
-        Status = "Formed new network"
-    else: 
-        Status = DisplayStatusCode( MsgDataStatus )
-    
     Domoticz.Status("Network joined / formed - IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
             %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
 
@@ -1789,6 +1797,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
     if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
         """
             Ikea Remote 5 buttons round.
@@ -1830,6 +1843,10 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             '09':'release'
             }
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
 
     if MsgClusterId == '0005':
         if MsgDirection not in TYPE_DIRECTIONS:
