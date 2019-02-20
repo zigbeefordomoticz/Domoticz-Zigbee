@@ -310,11 +310,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     '0405' : ( ReadAttributeRequest_0405, 900 ),
                     }
 #
-#            for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
-#                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-#                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-#                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
-#                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+            for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  

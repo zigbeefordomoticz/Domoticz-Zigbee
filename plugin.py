@@ -271,15 +271,15 @@ class BasePlugin:
                 Domoticz.Status("Erase Zigate PDM")
                 sendZigateCmd(self, "0012", "")
                 Domoticz.Status("Software reset")
-                #sendZigateCmd(self, "0011", "") # Software Reset
-                ZigateConf(self, '00')
+                sendZigateCmd(self, "0011", "") # Software Reset
+                ZigateConf(self)
             else :
                 if Parameters["Mode4"] == "True":
                     Domoticz.Status("Software reset")
-                    #sendZigateCmd(self, "0011", "" ) # Software Reset
-                    ZigateConf(self, '00')
+                    sendZigateCmd(self, "0011", "" ) # Software Reset
+                    ZigateConf(self)
                 else:
-                    ZigateConf_light(self, '00')
+                    ZigateConf_light(self)
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)

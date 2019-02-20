@@ -37,7 +37,7 @@ def ZigatePermitToJoin( self, permit ):
         sendZigateCmd( self, "0014", "" ) # Request status
 
 
-def ZigateConf_light(self, discover ):
+def ZigateConf_light(self ):
     '''
     It is called for normal startup
     '''
@@ -63,25 +63,8 @@ def ZigateConf_light(self, discover ):
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" )   # Start Network
 
-    if not str(discover).isdigit() :
-        discover = 0
-    else:
-        discover = "%02.X" %int(discover)
-    if discover == "FF":
-        Domoticz.Status("Zigate enter in discover mode for ever")
-        self.permitTojoin = 0xff
-    else: 
-        Domoticz.Status("Zigate enter in discover mode for %s Secs" %(int(discover,16)))
-        self.permitTojoin = int(discover,16)
 
-    if discover != "00":    # In order to avoid Devices's noise
-        sendZigateCmd(self, "0049","FFFC" + discover + "00")
-
-    Domoticz.Debug("Request Permit Join Status")
-    sendZigateCmd( self, "0014", "" ) # Request status
-
-
-def ZigateConf(self, discover ):
+def ZigateConf(self ):
     '''
     Called after Erase and Software Reset
     '''
@@ -96,6 +79,14 @@ def ZigateConf(self, discover ):
     Domoticz.Log("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
 
+    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
+    # Page 263
+    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+    sendZigateCmd(self, "0016", str(UTCTime) )
+
     ################### ZiGate - start network ##################
     sendZigateCmd(self, "0024","")
 
@@ -105,15 +96,6 @@ def ZigateConf(self, discover ):
     # answer is expected on message 8015. Only available since firmware 03.0b
     Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
     sendZigateCmd(self, "0015","")
-
-    ################### ZiGate - discover mode 255 sec Max ##################
-    #### Set discover mode only if requested - so != 0                  #####
-    if str(discover) != "0":
-        if str(discover)=="255": 
-            Domoticz.Status("Zigate enter in discover mode for ever")
-        else: 
-            Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
-        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
 
     Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "" ) # Request status
@@ -632,14 +614,19 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
 
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
-                    if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
-                        if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
-                                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                                continue
+                    if 'Ep' in self.ListOfDevices[key]['ConfigureReporting']:
+                        if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
+                            if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
+                                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
+                                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
+                                    continue
+                            else:
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                         else:
+                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
                             self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                     else:
+                        self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                 else:
