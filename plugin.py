@@ -121,6 +121,11 @@ class BasePlugin:
 
         Domoticz.Status("Zigate plugin (pre 4.1.x) started")
 
+        Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
+        if Parameters["Mode6"] != "0":
+            Domoticz.Debugging(int(Parameters["Mode6"]))
+            DumpConfigToLog()
+
         self.busy = True
         Domoticz.Status("Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
@@ -230,8 +235,9 @@ class BasePlugin:
             removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
             if self.pluginconf.allowRemoveZigateDevice == 1:
-                Domoticz.Log("onDeviceRemoved - removing Device in Zigate -Not Implemented")
-            #    removeZigateDevice( self, IEEE )
+                IEEE = Devices[Unit].DeviceID
+                removeZigateDevice( self, IEEE )
+                Domoticz.Log("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
