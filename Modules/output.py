@@ -27,12 +27,12 @@ def ZigatePermitToJoin( self, permit ):
 
     if permit:
         self.permitTojoin = 0xff
-        Domoticz.Status("Zigate enter in discovery mode for ever")
+        Domoticz.Debug("Zigate enter in discovery mode for ever")
         sendZigateCmd(self, "0049","FFFC" + 'ff' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
     else: 
         self.permitTojoin = 0x01
-        Domoticz.Status("Zigate stop discovery mode")
+        Domoticz.Debug("Zigate stop discovery mode")
         sendZigateCmd(self, "0049","FFFC" + '00' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 

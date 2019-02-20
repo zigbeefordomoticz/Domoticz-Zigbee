@@ -368,12 +368,14 @@ class BasePlugin:
                     sendZigateCmd(self, "0018","00")
 
                 PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Log("   - Permit to Join : %s" %PermitToJoin)
+                Domoticz.Debug("   - Permit to Join : %s" %PermitToJoin)
      
                 if PermitToJoin:
+                    Domoticz.Status("Enable Permit To Join")
                     self.Ping['Permit'] = None
                     ZigatePermitToJoin(self, True)
                 else: 
+                    Domoticz.Status("Disable Permit To Join")
                     self.Ping['Permit'] = None
                     ZigatePermitToJoin(self, False)
 
