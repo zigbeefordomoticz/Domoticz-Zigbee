@@ -1535,16 +1535,20 @@ def Decode8120(self, MsgData) :  # Configure Reporting response
     updSQN( self, MsgSrcAddr, MsgSQN)
 
     if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
-        if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep']:
-            if str(MsgClusterId) in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp]:
-                pass
+        if 'Ep' in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']:
+            if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep']:
+                if str(MsgClusterId) not in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp]:
+                    self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][str(MsgClusterId)] = {}
             else:
+                self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp] = {}
                 self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][str(MsgClusterId)] = {}
         else:
+            self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'] = {}
             self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp] = {}
             self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][str(MsgClusterId)] = {}
     else:
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting'] = {}
+        self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'] = {}
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp] = {}
         self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep'][MsgSrcEp][str(MsgClusterId)] = {}
 
