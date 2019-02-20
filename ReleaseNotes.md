@@ -32,8 +32,11 @@
 - [Technical] Move config file to Conf directory
 - [Technical] Live data as DeviceList and GroupList will be in Data folder
 - [Enhacement] Workaround the domoticz issue as regards to Temperature and Baro sensor adjustement and make it happen
-- [Issue] #348 - Status of Tradfri/Hue bulbs after Main power Off/on
+- [Issue] - #348 Status of Tradfri/Hue bulbs after Main power Off/on
 - [Technical] - Allow the possibility to set the Certification compliance between CE and FCC
+- [Issue] - #275 User Domoticz Accept New Hardware to set Zigate in Permit to join or not
+- [technical] - Make DeviceConf json compliant
+- [Hardware] - Accept Philips Motion sensor
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
