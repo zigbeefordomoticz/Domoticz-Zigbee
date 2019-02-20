@@ -480,11 +480,18 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: LUX)
+    # Input on Lux calculation is coming from PhilipsHue / Domoticz integration.
 
-    value = decodeAttribute( MsgAttType, MsgClusterData)
-    Domoticz.Log("ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, value))
-    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
+    value = int(decodeAttribute( MsgAttType, MsgClusterData))
+    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+        if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('lumi.sensor') != -1:
+            # In case of Xiaomi, we got direct value
+            lux = value
+        else:
+            lux = int(pow( 10, ((value -1) / 10000.00)))
+    Domoticz.Log("ReadCluster - %s - %s/%s - LUX Sensor: %s/%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, lux))
+    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(lux))
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(lux)
 
 
 def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
