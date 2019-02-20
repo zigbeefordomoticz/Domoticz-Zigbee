@@ -85,8 +85,8 @@ def processKnownDevices( self, Devices, NWKID ):
         # Cluster : ( ReadAttribute function, Frequency )
         '0000' : ( ReadAttributeRequest_0000, 43200 ),
         '0001' : ( ReadAttributeRequest_0001, 43200 ),
-        '0006' : ( ReadAttributeRequest_0006, 900 ),
-        '0008' : ( ReadAttributeRequest_0008, 900 ),
+        '0006' : ( ReadAttributeRequest_0006, 120 ),
+        '0008' : ( ReadAttributeRequest_0008, 120 ),
         '000C' : ( ReadAttributeRequest_000C, 3600 ),
         '0201' : ( ReadAttributeRequest_0201, 900 ),
         '0300' : ( ReadAttributeRequest_0300, 900 ),
@@ -109,13 +109,13 @@ def processKnownDevices( self, Devices, NWKID ):
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
 
-                if 'PowerSource' in self.ListOfDevices[NWKID]:
-                    if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
-                        continue
+                #if 'PowerSource' in self.ListOfDevices[NWKID]:
+                #    if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
+                #        continue
 
-                if 'MacCapa' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['MacCapa'] != '8e': # Not a Main Powered 
-                        continue
+                #if 'MacCapa' in self.ListOfDevices[NWKID]:
+                #    if self.ListOfDevices[NWKID]['MacCapa'] != '8e': # Not a Main Powered 
+                #        continue
 
                 if self.busy  or len(self.ZigateComm._normalQueue) > 2:
                     Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
