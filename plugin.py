@@ -121,6 +121,11 @@ class BasePlugin:
 
         Domoticz.Status("Zigate plugin (pre 4.1.x) started")
 
+        Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
+        if Parameters["Mode6"] != "0":
+            Domoticz.Debugging(int(Parameters["Mode6"]))
+            DumpConfigToLog()
+
         self.busy = True
         Domoticz.Status("Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
@@ -230,8 +235,9 @@ class BasePlugin:
             removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
             if self.pluginconf.allowRemoveZigateDevice == 1:
-                Domoticz.Log("onDeviceRemoved - removing Device in Zigate -Not Implemented")
-            #    removeZigateDevice( self, IEEE )
+                IEEE = Devices[Unit].DeviceID
+                removeZigateDevice( self, IEEE )
+                Domoticz.Log("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
@@ -271,15 +277,15 @@ class BasePlugin:
                 Domoticz.Status("Erase Zigate PDM")
                 sendZigateCmd(self, "0012", "")
                 Domoticz.Status("Software reset")
-                #sendZigateCmd(self, "0011", "") # Software Reset
-                ZigateConf(self, '00')
+                sendZigateCmd(self, "0011", "") # Software Reset
+                ZigateConf(self)
             else :
                 if Parameters["Mode4"] == "True":
                     Domoticz.Status("Software reset")
-                    #sendZigateCmd(self, "0011", "" ) # Software Reset
-                    ZigateConf(self, '00')
+                    sendZigateCmd(self, "0011", "" ) # Software Reset
+                    ZigateConf(self)
                 else:
-                    ZigateConf_light(self, '00')
+                    ZigateConf_light(self)
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
@@ -368,12 +374,14 @@ class BasePlugin:
                     sendZigateCmd(self, "0018","00")
 
                 PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Log("   - Permit to Join : %s" %PermitToJoin)
+                Domoticz.Debug("   - Permit to Join : %s" %PermitToJoin)
      
                 if PermitToJoin:
+                    Domoticz.Status("Enable Permit To Join")
                     self.Ping['Permit'] = None
                     ZigatePermitToJoin(self, True)
                 else: 
+                    Domoticz.Status("Disable Permit To Join")
                     self.Ping['Permit'] = None
                     ZigatePermitToJoin(self, False)
 

@@ -963,7 +963,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
 
-                    Domoticz.Log("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
+                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
                             %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
 
                     if Devices[x].SwitchType == 16:
@@ -1253,7 +1253,7 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
 
 def GetType(self, Addr, Ep):
     Type = ""
-    Domoticz.Debug("GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
+    Domoticz.Log("GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']))
 
     if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
@@ -1270,7 +1270,7 @@ def GetType(self, Addr, Ep):
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
-        Domoticz.Debug("GetType - Model %s not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep)) 
+        Domoticz.Log("GetType - Model %s not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep)) 
         Type = ""
 
         # Check ProfileID/ZDeviceD
@@ -1309,7 +1309,7 @@ def GetType(self, Addr, Ep):
         if Type[0:] == "/":
             Type = Type[1:]
 
-        Domoticz.Debug("GetType - ClusterSearch return : %s" %Type)
+        Domoticz.Log("GetType - ClusterSearch return : %s" %Type)
     return Type
 
 

@@ -27,17 +27,17 @@ def ZigatePermitToJoin( self, permit ):
 
     if permit:
         self.permitTojoin = 0xff
-        Domoticz.Status("Zigate enter in discovery mode for ever")
+        Domoticz.Debug("Zigate enter in discovery mode for ever")
         sendZigateCmd(self, "0049","FFFC" + 'ff' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
     else: 
         self.permitTojoin = 0x01
-        Domoticz.Status("Zigate stop discovery mode")
+        Domoticz.Debug("Zigate stop discovery mode")
         sendZigateCmd(self, "0049","FFFC" + '00' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 
 
-def ZigateConf_light(self, discover ):
+def ZigateConf_light(self ):
     '''
     It is called for normal startup
     '''
@@ -63,25 +63,8 @@ def ZigateConf_light(self, discover ):
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" )   # Start Network
 
-    if not str(discover).isdigit() :
-        discover = 0
-    else:
-        discover = "%02.X" %int(discover)
-    if discover == "FF":
-        Domoticz.Status("Zigate enter in discover mode for ever")
-        self.permitTojoin = 0xff
-    else: 
-        Domoticz.Status("Zigate enter in discover mode for %s Secs" %(int(discover,16)))
-        self.permitTojoin = int(discover,16)
 
-    if discover != "00":    # In order to avoid Devices's noise
-        sendZigateCmd(self, "0049","FFFC" + discover + "00")
-
-    Domoticz.Debug("Request Permit Join Status")
-    sendZigateCmd( self, "0014", "" ) # Request status
-
-
-def ZigateConf(self, discover ):
+def ZigateConf(self ):
     '''
     Called after Erase and Software Reset
     '''
@@ -93,8 +76,16 @@ def ZigateConf(self, discover ):
     sendZigateCmd(self, "0023","00")
 
     ################### ZiGate - set channel ##################
-    Domoticz.Log("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
+    Domoticz.Status("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
+
+    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
+    # Page 263
+    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+    sendZigateCmd(self, "0016", str(UTCTime) )
 
     ################### ZiGate - start network ##################
     sendZigateCmd(self, "0024","")
@@ -105,15 +96,6 @@ def ZigateConf(self, discover ):
     # answer is expected on message 8015. Only available since firmware 03.0b
     Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
     sendZigateCmd(self, "0015","")
-
-    ################### ZiGate - discover mode 255 sec Max ##################
-    #### Set discover mode only if requested - so != 0                  #####
-    if str(discover) != "0":
-        if str(discover)=="255": 
-            Domoticz.Status("Zigate enter in discover mode for ever")
-        else: 
-            Domoticz.Status("Zigate enter in discover mode for " + str(discover) + " Secs" )
-        sendZigateCmd(self, "0049","FFFC" + hex(int(discover))[2:4] + "00")
 
     Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "" ) # Request status
@@ -202,21 +184,27 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     listAttributes.append(0x0000)        # ZCL Version
     listAttributes.append(0x0005)        # Model Identifier
 
+    if 'Model' in self.ListOfDevices[key]:
+        if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+             listAttributes.append(0xff01)
+             listAttributes.append(0xff02)
+
+        if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
+             listAttributes.append(0x0032)
+             listAttributes.append(0x0033)
+
     if fullScope:
         listAttributes.append(0x0004)        # Manufacturer Name
         listAttributes.append(0x0007)        # Power Source
         listAttributes.append(0x0010)        # Battery
         listAttributes.append(0x000A)        # Product Code
 
-    if 'Model' in self.ListOfDevices[key]:
-        if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
-             listAttributes.append(0xff01)
-             listAttributes.append(0xff02)
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
+        ReadAttributeReq( self, key, EPin, "02", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
@@ -224,7 +212,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
-        Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + EPout )
+        Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
         ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_Ack(self, key):
@@ -255,11 +243,9 @@ def ReadAttributeRequest_0001(self, key):
                     EPout=tmpEp
     listAttributes = []
     listAttributes.append(0x0000)        # Mains information
-    listAttributes.append(0x0010)        # Battery Voltage
     listAttributes.append(0x0020)        # Battery Voltage
     listAttributes.append(0x0021)        # Battery BatteryPercentageRemaining
-    listAttributes.append(0x0031)        # Battery Battery Size
-    listAttributes.append(0x0033)        # Battery Battery Quantity
+    listAttributes.append(0x0035)        # Battery Alarm
 
     Domoticz.Debug("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
@@ -355,6 +341,99 @@ def ReadAttributeRequest_000C(self, key):
     Domoticz.Debug("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
+def ReadAttributeRequest_fc00(self, key):
+
+    listAttributes = []
+
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] == 'RWL02': # Hue dimmer Switch
+            listAttributes.append(0x0000)
+
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "fc00" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    Domoticz.Debug("Request 0xfc00 info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, "01", EPout, "fc00", listAttributes)
+
+def ReadAttributeRequest_0400(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0400 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "040à" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Debug("Illuminance info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0400", listAttributes)
+
+def ReadAttributeRequest_0402(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0402 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Debug("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
+
+def ReadAttributeRequest_0403(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0403 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0403" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Debug("Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0403", listAttributes)
+
+def ReadAttributeRequest_0405(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0405 - Key: %s " %key)
+    listAttributes = []
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0405" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Debug("Humidity info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0405", listAttributes)
+
+def ReadAttributeRequest_0406(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0406 - Key: %s " %key)
+    listAttributes = []
+
+    if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
+         listAttributes.append(0x0030)
+         #listAttributes.append(0x0033)
+    listAttributes.append(0x0000) # 
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0406" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    Domoticz.Debug("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
+
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
 
@@ -441,12 +520,18 @@ def processConfigureReporting( self, NWKID=None ):
             # 0x0384 - 15'
             # 0x012C - 5'
             # 0x003C - 1'
+        # Basic Cluster
+        '0000': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
+                                 '0032': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
+                                 '0033': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
+
+        # Power Cluster
         '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
                                  '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        # On/Off
+        # On/Off Cluster
         '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
-        # Level Control
+        # Level Control Cluster
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
         # Binary Input 
         #'000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
@@ -466,22 +551,25 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0004': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0008': {'DataType': '30', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Illuminance Measurement
-        '0400': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
+        '0400': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
         # Temperature
-        '0402': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        '0402': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         # Pression Atmo
         '0403': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
-        #'0406': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        '0406': {'Attributes': { '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
+                                 '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+
+        #'0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'FF'},
+        #                         '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
+
         # IAS ZOne
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
-        # Occupancy Sensing
-
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'003C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
@@ -494,16 +582,16 @@ def processConfigureReporting( self, NWKID=None ):
                   %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
             return # Will do at the next round
         target = self.ListOfDevices
+        clusterlist = None
     else:
-        target = NWKID
-        Domoticz.Debug("configureReporting for device : %s => %s" %(NWKID, self.ListOfDevices[NWKID]))
+        target = []
+        target.append(NWKID)
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         if key == '0000': continue
-        if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
-            if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
-        else: continue
+        #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
+        #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
 
         # We reach here because we have either a NWKID (we are pairing phase and we have a window to talk to the device even on battery mode
 
@@ -526,14 +614,19 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
 
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
-                    if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
-                        if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                            if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
-                                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                                continue
+                    if 'Ep' in self.ListOfDevices[key]['ConfigureReporting']:
+                        if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
+                            if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
+                                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
+                                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
+                                    continue
+                            else:
+                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                         else:
+                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
                             self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                     else:
+                        self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
                 else:
@@ -556,9 +649,7 @@ def processConfigureReporting( self, NWKID=None ):
                          continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
-                    Domoticz.Debug('Processing configureReporting for %s cluuster: %s' %(key,cluster))
-
-                    if self.busy or len(self.ZigateComm._normalQueue) > 2:
+                    if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > 2):
                         Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round

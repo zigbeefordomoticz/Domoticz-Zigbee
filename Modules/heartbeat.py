@@ -18,10 +18,15 @@ import struct
 import json
 import queue
 
-from Modules.output import ReadAttributeRequest_0000, sendZigateCmd, ReadAttributeRequest_Ack, ReadAttributeRequest_0702, \
-        ReadAttributeRequest_0008, ReadAttributeRequest_000C, ReadAttributeRequest_0006, ReadAttributeRequest_0001, \
-        ReadAttributeRequest_0300, processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
-        ReadAttributeRequest_0201, bindDevice, getListofAttribute
+from Modules.output import  sendZigateCmd,  \
+        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
+        bindDevice, getListofAttribute, \
+        ReadAttributeRequest_Ack,  \
+        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
+        ReadAttributeRequest_000C, ReadAttributeRequest_0201, ReadAttributeRequest_0300,  \
+        ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
+        ReadAttributeRequest_0406, ReadAttributeRequest_0702
+
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
 from Modules.LQI import LQIcontinueScan
@@ -85,6 +90,11 @@ def processKnownDevices( self, Devices, NWKID ):
         '000C' : ( ReadAttributeRequest_000C, 3600 ),
         '0201' : ( ReadAttributeRequest_0201, 900 ),
         '0300' : ( ReadAttributeRequest_0300, 900 ),
+        '0400' : ( ReadAttributeRequest_0400, 900 ),
+        '0402' : ( ReadAttributeRequest_0402, 900 ),
+        '0403' : ( ReadAttributeRequest_0403, 900 ),
+        '0405' : ( ReadAttributeRequest_0405, 900 ),
+        '0406' : ( ReadAttributeRequest_0406, 900 ),
         '0702' : ( ReadAttributeRequest_0702, 900 ),
         }
 
@@ -96,12 +106,15 @@ def processKnownDevices( self, Devices, NWKID ):
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
 
-
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
 
                 if 'PowerSource' in self.ListOfDevices[NWKID]:
                     if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
+                        continue
+
+                if 'MacCapa' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['MacCapa'] != '8e': # Not a Main Powered 
                         continue
 
                 if self.busy  or len(self.ZigateComm._normalQueue) > 2:
@@ -255,6 +268,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
+
+        if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
+            Domoticz.Log("Too early, let's try to get the Model")
+            return
+
         Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
 
         IsCreated=False
@@ -276,29 +294,35 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             CreateDomoDevice(self, Devices, NWKID)
 
             # Post creation widget
+            Domoticz.Log("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
-            BINDING_MATRIX = ( '0001', '0006', '0008', '0201', '0300', 
-                    '0400', '0402', '0403', '0405', '0500', '0702', 'ff01', 'ff02', 'fc01' , 'fc00' )
+            CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
+                    '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000' ]
 
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                Domoticz.Debug('looking for bind ep: %s' %iterEp)
-                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                    Domoticz.Debug('looking for bind ep: %s cluster: %s' %(iterEp, iterCluster))
-                    if iterCluster in BINDING_MATRIX:
-                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterCluster))
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterCluster)
-
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                Domoticz.Debug('looking for List of Attributes ep: %s' %iterEp)
-                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
-                        continue
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+            READ_ATTRIBUTES_MATRIX = {
+                    # Cluster : ( ReadAttribute function, Frequency )
+                    '0406' : ( ReadAttributeRequest_0406, 900 ),
+                    '0402' : ( ReadAttributeRequest_0402, 900 ),
+                    '0400' : ( ReadAttributeRequest_0400, 900 ),
+                    '0001' : ( ReadAttributeRequest_0001, 900 ),
+                    '0403' : ( ReadAttributeRequest_0403, 900 ),
+                    '0405' : ( ReadAttributeRequest_0405, 900 ),
+                    }
+#
+            for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
+
+            for iterReadAttrCluster in CLUSTERS_LIST:
+                if iterReadAttrCluster in READ_ATTRIBUTES_MATRIX:
+                    func = READ_ATTRIBUTES_MATRIX[iterReadAttrCluster][0]
+                    func( self, NWKID)
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
@@ -307,6 +331,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 if ep in ( '01', '03', '06', '09' ):
                     break
             identifyEffect( self, NWKID, ep , effect='Blink' )
+
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                Domoticz.Debug('looking for List of Attributes ep: %s' %iterEp)
+                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                        continue
+                    getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
@@ -363,6 +394,8 @@ def processListOfDevices( self , Devices ):
                 else: #We browse the all Devices and didn't find any IEEE.
                     if 'IEEE' in self.ListOfDevices[NWKID]:
                         Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s/%s" %( NWKID, str(self.ListOfDevices[NWKID]['IEEE'])))
+                    else:
+                        Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s" %( NWKID))
                     fnd = False
 
                 if not fnd:
