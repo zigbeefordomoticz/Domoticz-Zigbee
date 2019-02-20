@@ -963,7 +963,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
 
-                    Domoticz.Log("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
+                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
                             %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
 
                     if Devices[x].SwitchType == 16:

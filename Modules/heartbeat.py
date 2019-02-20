@@ -394,6 +394,8 @@ def processListOfDevices( self , Devices ):
                 else: #We browse the all Devices and didn't find any IEEE.
                     if 'IEEE' in self.ListOfDevices[NWKID]:
                         Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s/%s" %( NWKID, str(self.ListOfDevices[NWKID]['IEEE'])))
+                    else:
+                        Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s" %( NWKID))
                     fnd = False
 
                 if not fnd:

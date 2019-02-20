@@ -76,7 +76,7 @@ def ZigateConf(self ):
     sendZigateCmd(self, "0023","00")
 
     ################### ZiGate - set channel ##################
-    Domoticz.Log("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
+    Domoticz.Status("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
 
     # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
@@ -212,7 +212,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
-        Domoticz.Log("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
+        Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
         ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_Ack(self, key):
@@ -357,7 +357,7 @@ def ReadAttributeRequest_fc00(self, key):
 
 def ReadAttributeRequest_0400(self, key):
 
-    Domoticz.Log("ReadAttributeRequest_0400 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0400 - Key: %s " %key)
     listAttributes = []
     listAttributes.append(0x0000) # 
 
@@ -367,12 +367,12 @@ def ReadAttributeRequest_0400(self, key):
             if "040à" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
 
-    Domoticz.Log("Illuminance info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Illuminance info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0400", listAttributes)
 
 def ReadAttributeRequest_0402(self, key):
 
-    Domoticz.Log("ReadAttributeRequest_0402 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0402 - Key: %s " %key)
     listAttributes = []
     listAttributes.append(0x0000) # 
 
@@ -382,12 +382,12 @@ def ReadAttributeRequest_0402(self, key):
             if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
 
-    Domoticz.Log("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
 
 def ReadAttributeRequest_0403(self, key):
 
-    Domoticz.Log("ReadAttributeRequest_0403 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0403 - Key: %s " %key)
     listAttributes = []
     listAttributes.append(0x0000) # 
 
@@ -397,12 +397,12 @@ def ReadAttributeRequest_0403(self, key):
             if "0403" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
 
-    Domoticz.Log("Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0403", listAttributes)
 
 def ReadAttributeRequest_0405(self, key):
 
-    Domoticz.Log("ReadAttributeRequest_0405 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0405 - Key: %s " %key)
     listAttributes = []
     listAttributes.append(0x0000) # 
 
@@ -412,12 +412,12 @@ def ReadAttributeRequest_0405(self, key):
             if "0405" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
 
-    Domoticz.Log("Humidity info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Humidity info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0405", listAttributes)
 
 def ReadAttributeRequest_0406(self, key):
 
-    Domoticz.Log("ReadAttributeRequest_0406 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0406 - Key: %s " %key)
     listAttributes = []
 
     if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
@@ -431,7 +431,7 @@ def ReadAttributeRequest_0406(self, key):
             if "0406" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
 
-    Domoticz.Log("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
 
 def ReadAttributeRequest_0702(self, key):
@@ -650,7 +650,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
                     if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > 2):
-                        Domoticz.Log("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                        Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round
 
@@ -685,7 +685,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                     datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                     datas +=  "%02x" %(attrLen) + attrList
-                    Domoticz.Log("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
+                    Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
                     sendZigateCmd(self, "0120", datas )
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
