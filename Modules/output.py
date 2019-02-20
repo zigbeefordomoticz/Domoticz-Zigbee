@@ -441,8 +441,7 @@ def ReadAttributeRequest_0406(self, key):
     if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
          listAttributes.append(0x0030)
          #listAttributes.append(0x0033)
-    else:
-        listAttributes.append(0x0000) # 
+    listAttributes.append(0x0000) # 
 
     EPin = "01"
     EPout= "01"
@@ -579,7 +578,9 @@ def processConfigureReporting( self, NWKID=None ):
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
-        '0406': {'Attributes': { '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
+        '0406': {'Attributes': { '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
+                                 '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+
         #'0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'FF'},
         #                         '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
 

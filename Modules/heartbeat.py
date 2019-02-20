@@ -297,30 +297,31 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             Domoticz.Log("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
-            BINDING_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
+            CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
                     '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000' ]
 
-            READ_ATTRIBUTES_REQUEST = {
+            READ_ATTRIBUTES_MATRIX = {
                     # Cluster : ( ReadAttribute function, Frequency )
-                    '0001' : ( ReadAttributeRequest_0001, 900 ),
-                    '0400' : ( ReadAttributeRequest_0400, 900 ),
+                    '0406' : ( ReadAttributeRequest_0406, 900 ),
                     '0402' : ( ReadAttributeRequest_0402, 900 ),
+                    '0400' : ( ReadAttributeRequest_0400, 900 ),
+                    '0001' : ( ReadAttributeRequest_0001, 900 ),
                     '0403' : ( ReadAttributeRequest_0403, 900 ),
                     '0405' : ( ReadAttributeRequest_0405, 900 ),
-                    '0406' : ( ReadAttributeRequest_0406, 900 ),
                     }
-
-            for iterBindCluster in BINDING_LIST:      # Bining order is important
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+#
+#            for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
+#                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+#                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+#                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+#                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             processConfigureReporting( self, NWKID )  
 
-            for iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
-                    func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
+            for iterReadAttrCluster in CLUSTERS_LIST:
+                if iterReadAttrCluster in READ_ATTRIBUTES_MATRIX:
+                    func = READ_ATTRIBUTES_MATRIX[iterReadAttrCluster][0]
                     func( self, NWKID)
 
             # Identify for ZLL compatible devices
