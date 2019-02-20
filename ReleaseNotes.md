@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 20 February 2019 - Version 4.0.8
+- [Issue] Fix #354 - Python error when in Left device.
+
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
 

@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.0.7" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.0.8" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <params>
         <param field="Mode1" label="Model" width="75px">
             <options>
@@ -95,7 +95,7 @@ class BasePlugin:
         return
 
     def onStart(self):
-        Domoticz.Status("onStart called - Zigate plugin V 4.0.7")
+        Domoticz.Status("onStart called - Zigate plugin V 4.0.8")
 
         Domoticz.Heartbeat( HEARBEAT_VALUE )
 
@@ -203,6 +203,9 @@ class BasePlugin:
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
+
+        Domoticz.Status("ZLL Touch Link Reset")
+        z_output.sendZigateCmd(self, "00D2", "" ) # ZLL Touch Link Reset
 
         if (self.pluginconf).logLQI != 0 :
             z_LQI.LQIdiscovery( self ) 
