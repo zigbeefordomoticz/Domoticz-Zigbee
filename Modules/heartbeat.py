@@ -268,6 +268,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
+
+        if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '2':     # Let's take one more chance to get Model
+            Domoticz.Log("Too early, let's try to get the Model")
+            return
+
         Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
 
         IsCreated=False
