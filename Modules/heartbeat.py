@@ -299,7 +299,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Binding devices
             CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
-                    '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000' ]
+                    '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000' ]
 
             READ_ATTRIBUTES_MATRIX = {
                     # Cluster : ( ReadAttribute function, Frequency )
@@ -309,6 +309,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     '0001' : ( ReadAttributeRequest_0001, 900 ),
                     '0403' : ( ReadAttributeRequest_0403, 900 ),
                     '0405' : ( ReadAttributeRequest_0405, 900 ),
+                    '0102' : ( ReadAttributeRequest_0405, 900 ),
                     }
 #
             for iterBindCluster in CLUSTERS_LIST:      # Bining order is important

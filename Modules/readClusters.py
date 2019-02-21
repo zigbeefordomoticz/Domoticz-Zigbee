@@ -491,6 +491,40 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     Domoticz.Log("ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
 
 
+    if MsgAttrID == "0001":
+        Domoticz.Log("Window Covering Type")
+
+    elif  MsgAttrID == "0001":
+        Domoticz.Log("Physical close limit lift cm")
+
+    elif MsgAttrID == "0003":
+        Domoticz.Log("Cuurent positiojn in cm")
+
+    elif MsgAttrID == "0007":
+        Domoticz.Log("Status")
+
+    elif MsgAttrID == "0008":
+        Domoticz.Log("Current position lift ")
+
+    elif MsgAttrID == "0009":
+        Domoticz.Log("Current position tilt") 
+
+    elif MsgAttrID == "000a":
+        Domoticz.Log("Open limit lift cm")
+
+    elif MsgAttrID == "000b":
+        Domoticz.Log("Closed limit lift cm")
+
+    elif MsgAttrID == "000e":
+        Domoticz.Log("Velocity")
+
+    elif MsgAttrID == "0011":
+        Domoticz.Log("Windows Covering mode")
+    else:
+        Domoticz.Log("Unknown Attribute : %s " %MsgAttrID)
+
+
+
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: LUX)
     # Input on Lux calculation is coming from PhilipsHue / Domoticz integration.
