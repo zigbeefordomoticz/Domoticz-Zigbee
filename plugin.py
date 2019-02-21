@@ -77,6 +77,7 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
+        self.zigatedata = {}
 
         self.ZigateComm = None
         self.transport = None         # USB or Wifi
