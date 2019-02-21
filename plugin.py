@@ -77,6 +77,7 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
+        self.zigatedata = {}
 
         self.ZigateComm = None
         self.transport = None         # USB or Wifi
@@ -153,14 +154,21 @@ class BasePlugin:
             Domoticz.Status("Web Root Folder: %s" %Parameters["WebRoot"])
             Domoticz.Status("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
+            _dbfilename = Parameters["Database"]
+        else:
+            Domoticz.Status("The current Domoticz version doesn't support the plugin to enable a number of features")
+            Domoticz.Status(" switching to Domoticz V 4.10355 and above would help")
+            _dbfilename = Parameters["HomeFolder"] + '../../domoticz.db'
 
-            Domoticz.Status("Opening DomoticzDB in raw")
-            Domoticz.Status("   - DeviceStatus table")
-            self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( Parameters["Database"], self.HardwareID  )
-            Domoticz.Status("   - Hardware table")
-            self.domoticzdb_Hardware = DomoticzDB_Hardware( Parameters["Database"], self.HardwareID  )
-            Domoticz.Status("   - Preference table")
-            self.domoticzdb_Preferences = DomoticzDB_Preferences( Parameters["Database"]  )
+        Domoticz.Status("Opening DomoticzDB in raw")
+        Domoticz.Status("   - DeviceStatus table")
+        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
+        Domoticz.Status("   - Hardware table")
+        self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
+        Domoticz.Status("   - Preference table")
+        self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename  )
+        Domoticz.Status("   - Preference table")
+        self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
@@ -357,8 +365,14 @@ class BasePlugin:
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
-            # Ceck Firmware version
 
+            if self.domoticzdb_Preferences:
+                PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
+                Domoticz.Debug("   - Permit to Join : %s" %PermitToJoin)
+            else:
+                Domoticz.Error("Unable to set Permit to Join. Unitialized object")
+     
+            # Ceck Firmware version
             if self.FirmwareVersion.lower() < '030f':
                 Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
 
@@ -373,9 +387,6 @@ class BasePlugin:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
-                PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Debug("   - Permit to Join : %s" %PermitToJoin)
-     
                 if PermitToJoin:
                     Domoticz.Status("Enable Permit To Join")
                     self.Ping['Permit'] = None
@@ -409,9 +420,9 @@ class BasePlugin:
             # Init done, let's do the recurring stuff
 
             if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
-                Domoticz.Log("Check if we have enable Accept new Hardware Devices)")
+                Domoticz.Debug("Check if we have enable Accept new Hardware Devices)")
                 PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Log("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
+                Domoticz.Debug("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
                 if PermitToJoin and self.Ping['Permit'] == 'Off':
                     self.Ping['Permit'] = None
                     ZigatePermitToJoin(self, True)

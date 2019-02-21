@@ -168,4 +168,9 @@ def checkListOfDevice2Devices( self, Devices ) :
             else :
                 Domoticz.Error("loadListOfDevices -  : " +Devices[x].Name +" with IEEE = " +str(ID) +" not found in Zigate plugin Database!" )
 
+def saveZigateNetworkData( self, nkwdata ):
 
+        json_filename = self.pluginconf.pluginData + "/Zigate.json" 
+        Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
+        with open (json_filename, 'wt') as json_file:
+            json.dump(nkwdata, json_file, indent=4, sort_keys=True)

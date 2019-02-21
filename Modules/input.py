@@ -24,6 +24,8 @@ from Modules.output import sendZigateCmd, leaveMgtReJoin
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
+from Modules.database import saveZigateNetworkData
+
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
 from Classes.IAS import IAS_Zone_Management
@@ -561,6 +563,7 @@ def Decode8003(self, MsgData) : # Device cluster list
         clusterLst.append(MsgClusterID[idx:idx+4] )
         idx += 4
     
+    self.zigatedata['Cluster List'] = clusterLst
     Domoticz.Status("Device Cluster list, EP source : " + MsgSourceEP + \
             " ProfileID : " + MsgProfileID + " Cluster List : " + str(clusterLst) )
     return
@@ -580,6 +583,7 @@ def Decode8004(self, MsgData) : # Device attribut list
         attributeLst.append(MsgAttributList[idx:idx+4] )
         idx += 4
 
+    self.zigatedata['Device Attributs List'] = attributeLst
     Domoticz.Status("Device Attribut list, EP source : " + MsgSourceEP + \
             " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Attribut List : " + str(attributeLst) )
     return
@@ -599,6 +603,7 @@ def Decode8005(self, MsgData) : # Command list
         commandLst.append(MsgCommandList[idx:idx+4] )
         idx += 4
 
+    self.zigatedata['Device Attributs List'] = commandLst
     Domoticz.Status("Command list, EP source : " + MsgSourceEP + \
             " ProfileID : " + MsgProfileID + " ClusterID : " + MsgClusterID + " Command List : " + str( commandLst ))
     return
@@ -662,6 +667,13 @@ def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
         Domoticz.Status("Network state UP, PANID: %s extPANID: 0x%s Channel: %s" \
                 %( PanID, extPanID, int(Channel,16) ))
 
+    self.zigatedata['IEEE'] = extaddr
+    self.zigatedata['Short Address'] = addr
+    self.zigatedata['Channel'] = Channel
+    self.zigatedata['PANID'] = PanID
+    self.zigatedata['Extended PANID'] = extPanID
+    saveZigateNetworkData( self , self.zigatedata )
+
     return
 
 def Decode8010(self,MsgData) : # Reception Version list
@@ -676,9 +688,10 @@ def Decode8010(self,MsgData) : # Reception Version list
         Domoticz.Status("Installer Version Number: " + InstaVersNum )
     except :
         Domoticz.Error("Decode8010 - Reception Version list : " + MsgData)
-    else :
-         self.FirmwareVersion = str(InstaVersNum)
-         self.FirmwareMajorVersion = str(MajorVersNum)
+    else:
+        self.FirmwareVersion = str(InstaVersNum)
+        self.FirmwareMajorVersion = str(MajorVersNum)
+        self.zigatedata['Firmware Version'] =  str(MajorVersNum) + ' - ' +str(InstaVersNum)
 
     return
 

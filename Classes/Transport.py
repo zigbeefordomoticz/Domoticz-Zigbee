@@ -134,7 +134,6 @@ class ZigateTransport(object):
         """
         send data to Zigate via the communication transport
         """
-        Domoticz.Debug("_sendData %s" % cmd)
 
         if datas == "":
             length = "0000"
@@ -330,7 +329,6 @@ class ZigateTransport(object):
         MsgLength = frame[6:10]
         MsgCRC = frame[10:12]
 
-        Domoticz.Debug("receiveData - MsgType: %s" % MsgType)
         if MsgType == "8000":  # We are receiving a Status
             if len(frame) > 12:
                 # We have Payload : data + rssi
@@ -345,7 +343,6 @@ class ZigateTransport(object):
             Status = MsgData[0:2]
             SEQ = MsgData[2:4]
             PacketType = MsgData[4:8]
-            Domoticz.Debug("receivedData - MsgType: %s PacketType: %s" % (MsgType, PacketType))
 
             # We have receive a Status code in response to a command.
             self.receiveStatusCmd(Status, PacketType, frame)
@@ -362,7 +359,6 @@ class ZigateTransport(object):
 
     def receiveDataCmd(self, MsgType):
         self.statistics._data += 1
-        Domoticz.Debug("receiveDataCmd - MsgType: %s" % MsgType)
         # There is a probability that we get an ASYNC message, which is not related to a Command request.
         # In that case we should just process this message.
 
@@ -371,8 +367,6 @@ class ZigateTransport(object):
                 return
 
         expResponse, cmd, datas, pTime, reTx = self.nextDataInWait()
-        Domoticz.Debug("receiveDataCmd   - waitQ: %s dataQ: %s normalQ: %s" \
-                       % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
 
         # If we have Still commands in the queue and the WaitforStatus+Data are free
         if len(self._normalQueue) != 0 \
@@ -390,8 +384,6 @@ class ZigateTransport(object):
                 expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()
                 Domoticz.Debug("waitForData - unlock waitForData due to command %s failed, remove %s/%s" %(PacketType, expResponse, pCmd))
 
-        Domoticz.Debug("receiveStatusCmd - waitQ: %s dataQ: %s normalQ: %s" \
-                       % (len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         if PacketType == '':
             Domoticz.Debug("receiveStatusCmd - Empty PacketType: %s" % frame)
         else:
@@ -466,7 +458,7 @@ class ZigateTransport(object):
 
 
 def ZigateEncode(Data):  # ajoute le transcodage
-    Domoticz.Debug("ZigateEncode - Encodind data: " + Data)
+
     Out = ""
     Outtmp = ""
     for c in Data:
@@ -483,9 +475,7 @@ def ZigateEncode(Data):  # ajoute le transcodage
             else:
                 Out += Outtmp
             Outtmp = ""
-    Domoticz.Debug("Encode in: " + str(Data) + "  / out:" + str(Out))
     return Out
-
 
 def getChecksum(msgtype, length, datas):
     temp = 0 ^ int(msgtype[0:2], 16)
@@ -496,7 +486,6 @@ def getChecksum(msgtype, length, datas):
         temp ^= int(datas[i:i + 2], 16)
         chk = hex(temp)
     return chk[2:4]
-
 
 def returnlen(taille, value):
     while len(value) < taille:
