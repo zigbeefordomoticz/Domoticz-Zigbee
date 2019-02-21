@@ -341,6 +341,30 @@ def ReadAttributeRequest_000C(self, key):
     Domoticz.Debug("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
+def ReadAttributeRequest_0102(self, key):
+
+    Domoticz.Log("Request Windows Covering status Read Attribute request: " + key + " EPout = " + EPout )
+    listAttributes = []
+
+    listAttributes.append(0x0000) # Window Covering Type
+    listAttributes.append(0x0001) # Physical close limit lift cm
+
+    listAttributes.append(0x0003) # Cuurent positiojn in cm
+    listAttributes.append(0x0007) # Status
+    listAttributes.append(0x0008) # Current position lift %
+    listAttributes.append(0x0009) # Current position tilt %
+    listAttributes.append(0x000A) # Open limit lift cm
+    listAttributes.append(0x000B) # Closed limit lift cm
+    #listAttributes.append(0x000E) # Velocity
+    listAttributes.append(0x0011) # Windows Covering mode 
+
+
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    Domoticz.Debug("Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout )
+    ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
+
 def ReadAttributeRequest_fc00(self, key):
 
     listAttributes = []

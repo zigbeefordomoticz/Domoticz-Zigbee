@@ -88,6 +88,7 @@ def processKnownDevices( self, Devices, NWKID ):
         '0006' : ( ReadAttributeRequest_0006, 900 ),
         '0008' : ( ReadAttributeRequest_0008, 900 ),
         '000C' : ( ReadAttributeRequest_000C, 3600 ),
+        '0102' : ( ReadAttributeRequest_0201, 300 ),
         '0201' : ( ReadAttributeRequest_0201, 900 ),
         '0300' : ( ReadAttributeRequest_0300, 900 ),
         '0400' : ( ReadAttributeRequest_0400, 900 ),
