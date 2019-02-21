@@ -420,9 +420,9 @@ class BasePlugin:
             # Init done, let's do the recurring stuff
 
             if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
-                Domoticz.Log("Check if we have enable Accept new Hardware Devices)")
+                Domoticz.Debug("Check if we have enable Accept new Hardware Devices)")
                 PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Log("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
+                Domoticz.Debug("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
                 if PermitToJoin and self.Ping['Permit'] == 'Off':
                     self.Ping['Permit'] = None
                     ZigatePermitToJoin(self, True)
