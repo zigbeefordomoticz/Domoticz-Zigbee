@@ -77,6 +77,7 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
     elif int(AttType,16) == 0x39:  # Xiaomi Float
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x42:  # CharacterString
+        decode = ''
         try:
             decode = binascii.unhexlify(Attribute).decode('utf-8')
         except:
@@ -86,6 +87,10 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
                 Domoticz.Debug("decodeAttribute - seems errors, returning with errors ignore")
+
+        # Cleaning
+        decode = decode.strip('\x00')
+        decode = decode.strip()
         return decode
     else:
         Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
@@ -164,6 +169,8 @@ def ReadCluster(self, Devices, MsgData):
     elif MsgClusterId=="000c": Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0101": Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
+            MsgAttType, MsgAttSize, MsgClusterData )
+    elif MsgClusterId=="0102": Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
     elif MsgClusterId=="0201": Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
@@ -489,6 +496,46 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         Domoticz.Debug("ReadCluster 0101 - unknown AtttrID: %s Attribute: %s" %(MsgAttrID, MsgClusterData) )
         
+def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+    # Windows Covering / Shutter
+    value = decodeAttribute(MsgAttType, MsgClusterData)
+    Domoticz.Log("ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
+
+
+    if MsgAttrID == "0001":
+        Domoticz.Log("Window Covering Type")
+
+    elif  MsgAttrID == "0001":
+        Domoticz.Log("Physical close limit lift cm")
+
+    elif MsgAttrID == "0003":
+        Domoticz.Log("Cuurent positiojn in cm")
+
+    elif MsgAttrID == "0007":
+        Domoticz.Log("Status")
+
+    elif MsgAttrID == "0008":
+        Domoticz.Log("Current position lift ")
+
+    elif MsgAttrID == "0009":
+        Domoticz.Log("Current position tilt") 
+
+    elif MsgAttrID == "000a":
+        Domoticz.Log("Open limit lift cm")
+
+    elif MsgAttrID == "000b":
+        Domoticz.Log("Closed limit lift cm")
+
+    elif MsgAttrID == "000e":
+        Domoticz.Log("Velocity")
+
+    elif MsgAttrID == "0011":
+        Domoticz.Log("Windows Covering mode")
+    else:
+        Domoticz.Log("Unknown Attribute : %s " %MsgAttrID)
+
+
+
 def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: LUX)
     # Input on Lux calculation is coming from PhilipsHue / Domoticz integration.
@@ -674,7 +721,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
             modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
-            Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
+            Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
             if modelName != '':
                 # It has been decoded !
                 Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
@@ -722,7 +769,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID=="ff01" and self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":  # xiaomi battery lvl
+    elif MsgAttrID == "ff01":
+        
+        if self.ListOfDevices[MsgSrcAddr]['Status'] != "inDB":  # xiaomi battery lvl
+            return
 
         ReadAttributeRequest_Ack(self, MsgSrcAddr)         # Ping Xiaomi devices
 
@@ -801,10 +851,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # 4602 --
             Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
-    elif MsgAttrID=="ff02" and self.ListOfDevices[MsgSrcAddr]['Status']=="inDB":  # 
+    elif MsgAttrID=="ff02":
         Domoticz.Log("ReadCluster - %s/%s MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
                 %( MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
-
     else:
         Domoticz.Log("ReadCluster 0x0000 - Message attribut inconnu: " + str(decodeAttribute( MsgAttType, MsgClusterData) ))
     

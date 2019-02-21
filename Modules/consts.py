@@ -29,6 +29,16 @@ ADDRESS_MODE = { 'bound':0x00,
         'ieee':0x03 # IEEE
         }
 
+PROFILE_ID = {
+        0xc05e : 'ZLL', # ZigBee Light Link
+        0x104  : 'ZHA', # ZigBee Home Automation
+        0x105  : 'ZBA', # ZigBee Building Automation
+        0x107  : 'ZTS', # ZigBee Telecom Services
+        0x108  : 'ZHC', # ZigBee Health Care
+        0x109  : 'ZSE', # ZigBee Smart Energy
+        0x10A  : 'ZRS'  # ZigBee Retail Services
+        }
+
 # Used maninly for Attributes Read/Write
 
 ZHA_DATA_TYPE = {
@@ -93,8 +103,15 @@ ZLL_DEVICES = {
 ZHA_DEVICES = {
         # Generic Devices
         0x0000: 'On/Off Switch',
+        0x0001: 'levelControlSwitch',
         0x0002: 'On/Off Output',
+        0x0003: 'levelControllableOutput',
+        0x0004: 'sceneSelector',
+        0x0005: 'configurationTool',
         0x0006: 'Remote Control',
+        0x0007: 'configurationTool',
+        0x0008: 'rangeExtender',
+        0x0009: 'mainsPowerOutlet',
         0x000A: 'Door Lock',
         0x000B: 'Door Lock Controller',
         0x000C: 'Smart Plug',
