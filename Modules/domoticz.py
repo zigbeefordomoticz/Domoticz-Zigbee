@@ -896,9 +896,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif DeviceType == "LivoloSWL":
                     Domoticz.Log("Livolo - Value: %s" %value)
                     value = int(value)
+                    state = 'Off'
                     if value == '01': # On Left
                         state = 'On'
-                    else value == '00': # Off left
+                    elif value == '00': # Off left
                         state = 'Off'
                     Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
                     UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
@@ -906,6 +907,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif DeviceType == 'LivolSWR':
                     Domoticz.Log("Livolo - Value: %s" %value)
                     value = int(value)
+                    state = 'Off'
                     if value == '03': # On Right
                         state = 'On'
                     elif value == '02': # Off Right
