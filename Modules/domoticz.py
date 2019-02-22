@@ -987,8 +987,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
                     nValue = None
-                    sValue = ((int(value, 16) * 100) // 255)
-                    if sValue > 100: sValue = 100
+
+                    analogValue = int(value, 16)
+                    if analogValue >= 255:
+                        sValue = 100
+                    else:
+                        sValue = ((int(value, 16) * 100) // 255)
+                        if sValue > 100: sValue = 100
+                        if sValue == 0 and analogValue > 0:
+                            sValue = 1
 
                     # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
                     if sValue == 0:
@@ -1019,20 +1026,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             nValue = 2
                             UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
-                elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
+                elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                         pass
                     else:
                         nValue = 1
-                        sValue = ((int(value, 16) * 100) // 255)
-                        if sValue > 100: sValue = 100
+
+                        analogValue = int(value, 16)
+                        if analogValue >= 255:
+                            sValue = 100
+                        else:
+                            sValue = ((int(value, 16) * 100) // 255)
+                            if sValue > 100: sValue = 100
+                            if sValue == 0 and analogValue > 0:
+                                sValue = 1
+
                         UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
-            if ClusterType in ( 'ColorControlRGB', 'ColorControlWC', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
+            if ClusterType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
                     ClusterType == DeviceType:
                 nValue = 1
-                sValue = ((int(value, 16) * 100) // 255)
-                if sValue > 100: sValue = 100
+
+                analogValue = int(value, 16)
+                if analogValue >= 255:
+                    sValue = 100
+                else:
+                    sValue = ((int(value, 16) * 100) // 255)
+                    if sValue > 100: sValue = 100
+                    if sValue == 0 and analogValue > 0:
+                        sValue = 1
+
                 UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "02":  # Magic Cube Acara
@@ -1382,7 +1405,7 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     # Device specifics section
     if Model:
         if Model == 'lumi.light.aqcn02':    # Aqara Bulb White Dim
-            Subtype = ColorControlWC
+            Subtype = ColorControlWW
 
     # Philipps Hue
     if Subtype is None and ProfileID == "a1e0": 
