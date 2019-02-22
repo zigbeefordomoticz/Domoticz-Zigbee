@@ -48,7 +48,7 @@
     "Shutter switch with neutral":{"Ep":{"01":{"0000":"", "0003":"", "0004":"", "0005":"", "0102":"", "Type":"WindowCovering"}},"Type":""},
 
 "":"Livolo section",
-    "TI0001          ":{"Ep":{"06":{"0000":"", "0003":"","0006":"","0008":"","Type":"LivoloSWL/LivoloSWR"}},"Type":""},
+    "TI0001":{"Ep":{"06":{"0000":"", "0003":"","0006":"","0008":"","Type":"LivoloSWL/LivoloSWR"}},"Type":""},
 
 "":"OSRAM",
     "plug.Osram":{"Ep":{"03":{"0006":""}},"Type":"Plug","ProfileID":"c05e","ZDeviceID":"0010"},
@@ -57,7 +57,6 @@
     "SPE600":{"Ep":{"09":{"0000":"","0001":"","0003":"","0004":"","0005":"","0006":"","0402":"","0702":"","fc01":"","Type":"Plug/Power/Meter/Voltage/Temp"}},"Type":"","ProfileID":"0104","ZDeviceID":"0051"},
 
 "":"Miscaleneous",
-    "shutter.Profalux":{"Ep":{"01":{"0006":"","0008":""}},"Type":"LvlControl","ProfileID":"0104","ZDeviceID":"0200"},
     "PST03A-v2.2.5":{"Ep":{"01":{"0406":"","0500":"","0400":"","0402":"","Type":"Door/Switch/Lux/Temp"},"02":{"0500":"","Type":"Motion"}},"Type":""},
     "ZHA-CSW":{"Ep":{"01":{"0000":"","0003":"","0500":"","ffff":"","0001":"","Type":"Smoke"}},"Type":"" },
     "SmokeSensor-N":{"Ep":{"01":{"0000":"","0003":"","0500":"","ffff":"","0001":"","Type":"Smoke"}},"Type":"" },
