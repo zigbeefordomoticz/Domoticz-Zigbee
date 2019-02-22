@@ -178,7 +178,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         else:
             OnOff = '01' # 00 = off, 01 = on
-            value=Hex_Format(2,(Level*255)//100)
+            if Level == 100: 
+                value = 255
+            elif Level == 0: 
+                value = 0
+            else:
+                value = (Level*255)//100
+                if Level > 0 and value == 0: 
+                    value = 1
+
+            value=Hex_Format(2, value)
             sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
 
         if Devices[Unit].SwitchType == 16 :
