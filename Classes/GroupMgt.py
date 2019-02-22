@@ -594,7 +594,15 @@ class GroupsManagement(object):
             Domoticz.Debug("updateDomoGroupDevice - OnOff: %s, Level: %s" %( nValue, level))
                                 
         if level:
-            sValue = str(int((level*100)//255))
+            analogValue = level
+            if analogValue >= 255:
+                sValue = 100
+            else:
+                sValue = ((level * 100) // 255)
+                if sValue > 100: sValue = 100
+                if sValue == 0 and analogValue > 0:
+                    sValue = 1
+            sValue = str(sValue)
             # Let's check if this is Shutter or a Color Bulb (as for Color Bulb we need nValue = 1
             if nValue == 1 and self.Devices[unit].SwitchType == 16:
                 nValue = 2
@@ -690,7 +698,7 @@ class GroupsManagement(object):
         elif Command == 'Set Level':
             zigate_cmd = "0081"
             OnOff = "01"
-            value=int(Level*255/100)
+            value=int(Level*255//100)
             zigate_param = OnOff + "%02x" %value + "0010"
             nValue = '1'
             sValue = str(Level)

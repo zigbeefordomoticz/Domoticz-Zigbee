@@ -115,10 +115,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            Domoticz.Log("WindowCovering - OFF Command requested - %s/%s - %s" %(NWKID, EPout, "OFF"))
-            sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "01")
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
         else:
-            sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "00")
+            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
 
         if Devices[Unit].SwitchType == "16" :
             UpdateDevice_v2(Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
@@ -136,10 +135,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            Domoticz.Log("WindowCovering - ON Command requested - %s/%s %s" %(NWKID, EPout, "ON"))
-            sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "00")
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
         else:
-            sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "01")
+            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
         if Devices[Unit].SwitchType == "16" :
             UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:
@@ -172,13 +170,24 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            value=Hex_Format(2,round(Level*255/100)) 
-            Domoticz.Log("WindowCovering - ON Command requested - %s/%s Level: %s" %(NWKID, EPout, value))
-            sendZigateCmd(self, "00FA","02" + NWKID + EPin + EPout + "08" + value)
+            value = '02x' %Level
+            Domoticz.Log("WindowCovering - Go To Tilt Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "08" + value)
+            #Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            #sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         else:
             OnOff = '01' # 00 = off, 01 = on
-            value=Hex_Format(2,(Level*255)//100)
+            if Level == 100: 
+                value = 255
+            elif Level == 0: 
+                value = 0
+            else:
+                value = (Level*255)//100
+                if Level > 0 and value == 0: 
+                    value = 1
+
+            value=Hex_Format(2, value)
             sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
 
         if Devices[Unit].SwitchType == 16 :
