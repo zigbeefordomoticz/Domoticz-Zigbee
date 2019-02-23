@@ -67,7 +67,6 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
-from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
 class BasePlugin:
     enabled = False
@@ -148,6 +147,8 @@ class BasePlugin:
         major = int(major)
         minor = int(minor)
         if major > 4 or ( major == 4 and minor >= 10355):
+            from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
+
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
             Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("User Data Folder: %s" %Parameters["UserDataFolder"])
@@ -155,20 +156,18 @@ class BasePlugin:
             Domoticz.Status("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
             _dbfilename = Parameters["Database"]
+            Domoticz.Status("Opening DomoticzDB in raw")
+            Domoticz.Status("   - DeviceStatus table")
+            self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
+            Domoticz.Status("   - Hardware table")
+            self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
+            Domoticz.Status("   - Preference table")
+            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename  )
+            Domoticz.Status("   - Preference table")
+            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
         else:
             Domoticz.Status("The current Domoticz version doesn't support the plugin to enable a number of features")
             Domoticz.Status(" switching to Domoticz V 4.10355 and above would help")
-            _dbfilename = Parameters["HomeFolder"] + '../../domoticz.db'
-
-        Domoticz.Status("Opening DomoticzDB in raw")
-        Domoticz.Status("   - DeviceStatus table")
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
-        Domoticz.Status("   - Hardware table")
-        self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
-        Domoticz.Status("   - Preference table")
-        self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename  )
-        Domoticz.Status("   - Preference table")
-        self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
@@ -371,6 +370,7 @@ class BasePlugin:
                 Domoticz.Debug("   - Permit to Join : %s" %PermitToJoin)
             else:
                 Domoticz.Error("Unable to set Permit to Join. Unitialized object")
+                PermitToJoin = None
      
             # Ceck Firmware version
             if self.FirmwareVersion.lower() < '030f':
@@ -421,7 +421,7 @@ class BasePlugin:
 
             if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
                 Domoticz.Debug("Check if we have enable Accept new Hardware Devices)")
-                PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
+                #PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
                 Domoticz.Debug("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
                 if PermitToJoin and self.Ping['Permit'] == 'Off':
                     self.Ping['Permit'] = None
