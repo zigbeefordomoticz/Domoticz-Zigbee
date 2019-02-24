@@ -446,7 +446,7 @@ class BasePlugin:
         else:
             # Init done, let's do the recurring stuff
 
-            if  ( self.HeartbeatCount % ( 60 // HEARTBEAT ) ) == 0:
+            if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
                 Domoticz.Debug("Check if we have enable Accept new Hardware Devices)")
 
                 if self.domoticzdb_Preferences:
