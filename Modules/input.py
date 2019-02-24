@@ -1687,12 +1687,14 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
         MsgDataSrcEp=MsgData[2:4]
         MsgDataDestEp=MsgData[4:6]
         MsgDataDestMode=MsgData[6:8]
-        MsgDataDestAddr=MsgData[8:12]
-        MsgDataSQN=MsgData[12:14]
+        MsgDataDestAddr=MsgData[8:24]
+        MsgDataSQN=MsgData[24:26]
 
         timeStamped( self, MsgDataDestAddr , 0x8702)
         updSQN( self, MsgDataDestAddr, MsgDataSQN)
-        Domoticz.Debug("Decode 8702 - " +  DisplayStatusCode( MsgDataStatus )  + ", SrcEp : " + MsgDataSrcEp + ", DestEp : " + MsgDataDestEp + ", DestMode : " + MsgDataDestMode + ", DestAddr : " + MsgDataDestAddr + ", SQN : " + MsgDataSQN)
+        Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+
         return
 
 #Device Announce
