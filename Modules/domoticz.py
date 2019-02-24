@@ -14,7 +14,6 @@ import time
 import struct
 import json
 
-from Classes.DomoticzDB import DomoticzDB_DeviceStatus
 
 def CreateDomoDevice(self, Devices, NWKID):
     """
@@ -739,6 +738,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == "Temp":  # temperature
                 if self.domoticzdb_DeviceStatus:
+
+                    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
                     Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                     value = round(value + adjvalue,1)
@@ -799,6 +801,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == "Baro":  # barometre
                 if self.domoticzdb_DeviceStatus:
+                    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
                     Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                     value = round(value + adjvalue,1)
