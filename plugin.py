@@ -6,6 +6,18 @@
 
 """
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="pre-4.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+    <description>
+        <h2> Plugin Zigate for Domoticz </h2><br/>
+        This plugin allow Domoticz to access to the Zigate (Zigbee) worlds of devices.<br/>
+        You can use the following parameter to interact with the Zigate:<br/>
+        - Model: USB , Wifi or RPI, based on the Zigate model<br/>
+        - IP : For Wifi Zigate, the IP address. <br/>
+        - Port: For Wifi Zigate,  port number. <br/>
+        - Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)<br/>
+        - Software Reset: This allow you to do a soft reset of the Zigate (no lost of data). Can be use if have change the Channel number in PluginConf.txt<br/>
+        - Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. ATTENTION, this is valid only for the Domoticz Stable version and Beta below 4.10355. For Domoticz above 4.10355 the plugin automatically use the Accept New Hardware from settings<br/>
+        - Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.<br/>
+    </description>
     <params>
         <param field="Mode1" label="Model" width="75px">
             <options>
@@ -22,6 +34,8 @@
                 <option label="False" value="False" default="true" />
             </options>
         </param>
+        <param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="254" />
+
         <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
             <options>
                 <option label="True" value="True"/>
@@ -67,7 +81,6 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
-from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
 class BasePlugin:
     enabled = False
@@ -148,6 +161,8 @@ class BasePlugin:
         major = int(major)
         minor = int(minor)
         if major > 4 or ( major == 4 and minor >= 10355):
+            from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
+
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
             Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
             Domoticz.Status("User Data Folder: %s" %Parameters["UserDataFolder"])
@@ -155,20 +170,24 @@ class BasePlugin:
             Domoticz.Status("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
             _dbfilename = Parameters["Database"]
+            Domoticz.Status("Opening DomoticzDB in raw")
+            Domoticz.Status("   - DeviceStatus table")
+            self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
+            Domoticz.Status("   - Hardware table")
+            self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
+            Domoticz.Status("   - Preference table")
+            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename  )
+            Domoticz.Status("   - Preference table")
+            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
         else:
             Domoticz.Status("The current Domoticz version doesn't support the plugin to enable a number of features")
             Domoticz.Status(" switching to Domoticz V 4.10355 and above would help")
-            _dbfilename = Parameters["HomeFolder"] + '../../domoticz.db'
 
-        Domoticz.Status("Opening DomoticzDB in raw")
-        Domoticz.Status("   - DeviceStatus table")
-        self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
-        Domoticz.Status("   - Hardware table")
-        self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
-        Domoticz.Status("   - Preference table")
-        self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename  )
-        Domoticz.Status("   - Preference table")
-        self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
+        if Parameters['Mode2'].isdigit():
+            self.permitToJoin = int(Parameters['Mode2'])
+        else:
+            self.permitToJoin = 0
+
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
@@ -368,9 +387,11 @@ class BasePlugin:
 
             if self.domoticzdb_Preferences:
                 PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Debug("   - Permit to Join : %s" %PermitToJoin)
+                self.permitToJoin = 255 * int(PermitToJoin)
+                Domoticz.Log("   - Permit to Join : %s" %(PermitToJoin))
             else:
-                Domoticz.Error("Unable to set Permit to Join. Unitialized object")
+                Domoticz.Log("Unable to get Domoticz info. Use plugin parameter ")
+                PermitToJoin = (self.permitToJoin is not None)
      
             # Ceck Firmware version
             if self.FirmwareVersion.lower() < '030f':
@@ -388,13 +409,13 @@ class BasePlugin:
                     sendZigateCmd(self, "0018","00")
 
                 if PermitToJoin:
-                    Domoticz.Status("Enable Permit To Join")
+                    Domoticz.Log("Configure Permit To Join")
                     self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, True)
+                    ZigatePermitToJoin(self, self.permitToJoin)
                 else: 
                     Domoticz.Status("Disable Permit To Join")
                     self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, False)
+                    ZigatePermitToJoin(self, 0)
 
                 if self.pluginconf.TXpower:
                     attr_tx_power = '%02x' %self.pluginconf.TXpower_set
@@ -419,16 +440,20 @@ class BasePlugin:
         else:
             # Init done, let's do the recurring stuff
 
-            if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
+            if  ( self.HeartbeatCount % ( 60 // HEARTBEAT ) ) == 0:
                 Domoticz.Debug("Check if we have enable Accept new Hardware Devices)")
-                PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                Domoticz.Debug("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
-                if PermitToJoin and self.Ping['Permit'] == 'Off':
-                    self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, True)
-                if not PermitToJoin and self.Ping['Permit'] == 'On':
-                    self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, False)
+
+                if self.domoticzdb_Preferences:
+                    PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
+                    self.permitToJoin = 255 * int(PermitToJoin)
+
+                    Domoticz.Debug("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
+                    if PermitToJoin and self.Ping['Permit'] == 'Off':
+                        self.Ping['Permit'] = None
+                        ZigatePermitToJoin(self, self.permitToJoin)
+                    if not PermitToJoin and self.Ping['Permit'] == 'On':
+                        self.Ping['Permit'] = None
+                        ZigatePermitToJoin(self, 0)
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
