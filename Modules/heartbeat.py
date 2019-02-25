@@ -376,7 +376,7 @@ def processListOfDevices( self , Devices ):
             entriesToBeRemoved.append( NWKID )
 
         ########## Known Devices 
-        if status == "inDB": 
+        if status == "inDB" and not self.busy: 
             processKnownDevices( self , Devices, NWKID )
 
         if status == "Left":
@@ -416,7 +416,8 @@ def processListOfDevices( self , Devices ):
     for iter in entriesToBeRemoved:
         del self.ListOfDevices[iter]
 
-    if self.CommiSSionning:
+    if self.CommiSSionning or self.busy:
+        Domoticz.Log("Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     # LQI Scanner
