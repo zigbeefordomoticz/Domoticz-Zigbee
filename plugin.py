@@ -517,7 +517,6 @@ class BasePlugin:
         # Endif Ping enabled
 
         if len(self.ZigateComm._normalQueue) > 3:
-            Domoticz.Log("Seting to busy due to number of cmd in queue %s" %len(self.ZigateComm._normalQueue))
             busy_ = True
 
         if busy_:
