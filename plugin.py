@@ -379,6 +379,7 @@ class BasePlugin:
     def onHeartbeat(self):
         
         busy_ = False
+        Domoticz.Debug("onHeartbeat - busy = %s" %self.busy)
 
         if not self.connectionState:
             Domoticz.Error("onHeartbeat receive, but no connection to Zigate")
@@ -467,9 +468,6 @@ class BasePlugin:
             if self.groupmgt.stillWIP:
                 busy_ = True
             
-        if self.busy  or len(self.ZigateComm._normalQueue) > 3:
-            busy_ = True
-
         # Hearbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.Ping:
@@ -518,6 +516,10 @@ class BasePlugin:
             self.Ping['Rx Message'] += 1
         # Endif Ping enabled
 
+        if len(self.ZigateComm._normalQueue) > 3:
+            Domoticz.Log("Seting to busy due to number of cmd in queue %s" %len(self.ZigateComm._normalQueue))
+            busy_ = True
+
         if busy_:
             self.adminWidgets.updateStatusWidget( Devices, 'Busy')
         elif not self.connectionState:
@@ -525,7 +527,7 @@ class BasePlugin:
         else:
             self.adminWidgets.updateStatusWidget( Devices, 'Ready')
 
-        self.busy = False
+        self.busy = busy_
         return True
 
 
