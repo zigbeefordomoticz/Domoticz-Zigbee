@@ -31,12 +31,13 @@
 - [Hardware] Manage IKEA Tradfri Remote controller. Create a selector switch for the device and then capture remote event (if Zigate associated to the group)
 - [Technical] Move config file to Conf directory
 - [Technical] Live data as DeviceList and GroupList will be in Data folder
-- [Enhacement] Workaround the domoticz issue as regards to Temperature and Baro sensor adjustement and make it happen
+- [Enhacement] Workaround the domoticz issue as regards to Temperature and Baro sensor adjustement and make it happen (only for Domoticz version > 10355)
 - [Issue] - #348 Status of Tradfri/Hue bulbs after Main power Off/on
 - [Technical] - Allow the possibility to set the Certification compliance between CE and FCC
-- [Issue] - #275 User Domoticz Accept New Hardware to set Zigate in Permit to join or not
+- [Issue] - #275 User Domoticz Accept New Hardware to set Zigate in Permit to join or not (only for Domoticz version > 10355)
 - [technical] - Make DeviceConf json compliant
 - [Hardware] - Accept Philips Motion sensor
+- [Technical] - Make 4.1 compatible with Stable 4.9700 and Beta > 10355. This makes 4.9700 got some limitations. ( No Temp/Baro adjustement, old fashon Permit To Join)
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug

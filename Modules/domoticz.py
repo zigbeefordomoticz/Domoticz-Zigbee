@@ -14,7 +14,6 @@ import time
 import struct
 import json
 
-from Classes.DomoticzDB import DomoticzDB_DeviceStatus
 
 def CreateDomoDevice(self, Devices, NWKID):
     """
@@ -739,6 +738,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == "Temp":  # temperature
                 if self.domoticzdb_DeviceStatus:
+
+                    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
                     Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                     value = round(value + adjvalue,1)
@@ -799,6 +801,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == "Baro":  # barometre
                 if self.domoticzdb_DeviceStatus:
+                    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
                     Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                     value = round(value + adjvalue,1)
@@ -963,8 +967,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
 
-                    Domoticz.Debug("SwitchType: %s Update value: %s from nValue: %s sValue: %s" \
-                            %(Devices[x].SwitchType, value, Devices[x].nValue, Devices[x].sValue))
 
                     if Devices[x].SwitchType == 16:
                         if value == "00":
@@ -993,9 +995,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         sValue = 100
                     else:
                         sValue = ((int(value, 16) * 100) // 255)
-                        if sValue > 100: sValue = 100
+                        if sValue > 100: 
+                            sValue = 100
                         if sValue == 0 and analogValue > 0:
                             sValue = 1
+                        # Looks like in the case of the Profalux shutter, we never get 0 or 100
+                        if Devices[x].SwitchType == 16:
+                            if sValue == 1 and analogValue == 1:
+                                sValue = 0
+                            if sValue == 99 and analogValue == 254:
+                                sValue = 100
 
                     # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
                     if sValue == 0:
@@ -1031,7 +1040,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         pass
                     else:
                         nValue = 1
-
                         analogValue = int(value, 16)
                         if analogValue >= 255:
                             sValue = 100
