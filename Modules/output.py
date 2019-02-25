@@ -689,9 +689,10 @@ def processConfigureReporting( self, NWKID=None ):
                         return # Will do at the next round
 
                     # Issue #323 - The bind could reset the Flex Led
-                    if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] != 'LIGHTIFY Outdoor Flex RGBW':
-                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    # Disable bind in Configure Reporting as it is done during the pairing process
+                    #if 'Model' in self.ListOfDevices[key]:
+                    #    if self.ListOfDevices[key]['Model'] != 'LIGHTIFY Outdoor Flex RGBW':
+                    #        bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 

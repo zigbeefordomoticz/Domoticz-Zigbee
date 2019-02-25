@@ -106,12 +106,17 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 if existingNWKkey == newNWKID :        #Check that I'm not myself
                     continue
 
-                if 'Status' in self.ListOfDevices[existingNWKkey]:
-                    Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: %s"
-                        %( newNWKID, IEEE, existingNWKkey, self.ListOfDevices[existingNWKkey]['Status']))
+                if existingNWKkey in self.ListOfDevices:
+                    if 'Status' in self.ListOfDevices[existingNWKkey]:
+                        Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: %s"
+                            %( newNWKID, IEEE, existingNWKkey, self.ListOfDevices[existingNWKkey]['Status']))
+                    else:
+                        Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: unknown"
+                            %( newNWKID, IEEE, existingNWKkey))
                 else:
-                    Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: unknown"
-                        %( newNWKID, IEEE, existingNWKkey))
+                    # In fact this device doesn't really exist ... The cleanup was not correctly done in IEEE2NWK
+                    del self.IEEE2NWK[IEEE]
+                    found = False
 
                 # Make sure this device is valid 
                 if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):
