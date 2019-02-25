@@ -691,9 +691,10 @@ def processConfigureReporting( self, NWKID=None ):
                     # Issue #323 - The bind could reset the Flex Led
                     if 'Model' in self.ListOfDevices[key]:
                         if self.ListOfDevices[key]['Model'] != 'LIGHTIFY Outdoor Flex RGBW'  or self.ListOfDevices[key]['Model'] != 'Plug 01':
+                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                        else:
                             Domoticz.Log('For now, no configureporting for this device %s Model: %s' %(key, self.ListOfDevices[key]['Model']))
                             return
-                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
