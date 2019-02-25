@@ -18,7 +18,7 @@
         	<li> Port: For Wifi Zigate,  port number. </li>
         	<li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
         	<li> Software Reset: This allow you to do a soft reset of the Zigate (no lost of data). Can be use if have change the Channel number in PluginConf.txt</li>
-        	<li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. ATTENTION, this is valid only for the Domoticz Stable version and Beta below 4.10355. For Domoticz above 4.10355 the plugin automatically use the Accept New Hardware from settings</li>
+        	<li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
         	<li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
 	</ul>
 	<h3> Support </h3>
@@ -114,7 +114,6 @@ class BasePlugin:
         self.StartupFolder = None
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
-        self.domoticzdb_Preferences = None         # Object allowing direct access to Domoticz DB Preferences
         self.adminWidgets = None   # Manage AdminWidgets object
         self.DeviceListName = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
@@ -167,6 +166,7 @@ class BasePlugin:
         major = int(major)
         minor = int(minor)
         if major > 4 or ( major == 4 and minor >= 10355):
+            # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
             Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
@@ -181,19 +181,9 @@ class BasePlugin:
             self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
             Domoticz.Status("   - Hardware table")
             self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
-            Domoticz.Status("   - Preference table")
-            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename  )
-            Domoticz.Status("   - Preference table")
-            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
         else:
             Domoticz.Status("The current Domoticz version doesn't support the plugin to enable a number of features")
             Domoticz.Status(" switching to Domoticz V 4.10355 and above would help")
-
-        if Parameters['Mode2'].isdigit():
-            self.permitToJoin = int(Parameters['Mode2'])
-        else:
-            self.permitToJoin = 0
-
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
@@ -319,13 +309,27 @@ class BasePlugin:
                     ZigateConf(self)
                 else:
                     ZigateConf_light(self)
+
+            if Parameters['Mode2'].isdigit():
+                self.permitToJoin = int(Parameters['Mode2'])
+                if self.permitToJoin != 0:
+                    Domoticz.Log("Configure Permit To Join")
+                    self.Ping['Permit'] = None
+                    ZigatePermitToJoin(self, self.permitToJoin)
+                else:
+                    self.permitToJoin = 0
+                    self.Ping['Permit'] = None
+                    ZigatePermitToJoin(self, 0)
+            else:
+                self.permitToJoin = 0
+                self.Ping['Permit'] = None
+                ZigatePermitToJoin(self, 0)
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
             self.ZigateComm.reConn()
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
-
 
 
         # Create IAS Zone object
@@ -374,6 +378,8 @@ class BasePlugin:
 
     def onHeartbeat(self):
         
+        busy_ = False
+
         if not self.connectionState:
             Domoticz.Error("onHeartbeat receive, but no connection to Zigate")
             return
@@ -391,14 +397,6 @@ class BasePlugin:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
 
-            if self.domoticzdb_Preferences:
-                PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                self.permitToJoin = 255 * int(PermitToJoin)
-                Domoticz.Log("   - Permit to Join : %s" %(PermitToJoin))
-            else:
-                Domoticz.Log("Unable to get Domoticz info. Use plugin parameter ")
-                PermitToJoin = (self.permitToJoin is not None)
-     
             # Ceck Firmware version
             if self.FirmwareVersion.lower() < '030f':
                 Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
@@ -413,15 +411,6 @@ class BasePlugin:
                 if self.pluginconf.blueLedOff:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
-
-                if PermitToJoin:
-                    Domoticz.Log("Configure Permit To Join")
-                    self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, self.permitToJoin)
-                else: 
-                    Domoticz.Status("Disable Permit To Join")
-                    self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, 0)
 
                 if self.pluginconf.TXpower:
                     attr_tx_power = '%02x' %self.pluginconf.TXpower_set
@@ -443,23 +432,7 @@ class BasePlugin:
             if self.FirmwareVersion >= "030d":
                 if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
                     sendZigateCmd(self, "0009","")
-        else:
-            # Init done, let's do the recurring stuff
 
-            if  ( self.HeartbeatCount % ( 300 // HEARTBEAT ) ) == 0:
-                Domoticz.Debug("Check if we have enable Accept new Hardware Devices)")
-
-                if self.domoticzdb_Preferences:
-                    PermitToJoin = self.domoticzdb_Preferences.retreiveAcceptNewHardware()
-                    self.permitToJoin = 255 * int(PermitToJoin)
-
-                    Domoticz.Debug("   - Permit to Join : %s , status is: %s" %(PermitToJoin, self.Ping['Permit']))
-                    if PermitToJoin and self.Ping['Permit'] == 'Off':
-                        self.Ping['Permit'] = None
-                        ZigatePermitToJoin(self, self.permitToJoin)
-                    if not PermitToJoin and self.Ping['Permit'] == 'On':
-                        self.Ping['Permit'] = None
-                        ZigatePermitToJoin(self, 0)
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
@@ -488,9 +461,7 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
             return
 
-        busy_ = False
         # Group Management
-        
         if self.groupmgt: 
             self.groupmgt.hearbeatGroupMgt()
             if self.groupmgt.stillWIP:
