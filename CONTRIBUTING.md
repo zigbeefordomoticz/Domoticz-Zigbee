@@ -37,7 +37,8 @@ create a branch with a descriptive name. Make sure to select the right branch ( 
 
 A good branch name would be (where issue #325 is the ticket you're working on):
 
-```sh
+```
+sh
 git checkout -b 325-add-chipolo-plug
 ```
 
@@ -63,14 +64,16 @@ everyone is a beginner at first :smile_cat:
 At this point, you should switch back to your master branch and make sure it's
 up to date with Domoticz-Zigate's stable/beta branch (stable or betat, depending where you start the fork) :
 
-```sh
+```
+sh
 git remote add upstream <gitusername>@github.com:sasu-drooz/Domoticz-Zigate.git
 git checkout stable
 git pull upstream stable
-``
+```
 Then update your feature branch from your local copy of stable, and push it!
 
-```sh
+```
+sh
 git checkout 325-add-chipolo-plug
 git rebase stable
 git push --set-upstream origin 325-add-chipolo-plug
@@ -86,7 +89,8 @@ has changed, and that you need to update your branch so it's easier to merge.
 To learn more about rebasing in Git, there are a lot of [good][git rebasing]
 [resources][interactive rebase] but here's the suggested workflow:
 
-```sh
+```
+sh
 git checkout 325-add-chipolo-plug
 git pull --rebase upstream master
 git push --force-with-lease 325-add-chipolo-plug
