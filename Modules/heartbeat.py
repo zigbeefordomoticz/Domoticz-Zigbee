@@ -299,7 +299,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Binding devices
             CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
-                    '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000' ]
+                    '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
+                    'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+                    'ff02'  # Used by Xiaomi devices for battery informations.
+                    ]
 
             READ_ATTRIBUTES_MATRIX = {
                     # Cluster : ( ReadAttribute function, Frequency )
@@ -420,7 +423,7 @@ def processListOfDevices( self , Devices ):
         del self.ListOfDevices[iter]
 
     if self.CommiSSionning or self.busy:
-        Domoticz.Log("Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
+        Domoticz.Debug("Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     # LQI Scanner

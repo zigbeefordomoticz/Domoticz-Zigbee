@@ -727,9 +727,14 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:                 # If the model exist in DeviceConf.txt
                     modelName = self.ListOfDevices[MsgSrcAddr]['Model']
                     Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
-                    self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
                     if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
+                        self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
                         self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
+                        if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
+                            Domoticz.Log("Removing existing received Ep")
+                            del self.ListOfDevices[MsgSrcAddr]['Ep']                           # It has been prepopulated by some 0x8043 message, let's remove them.
+                            self.ListOfDevices[MsgSrcAddr]['Ep'] = {}                          # It has been prepopulated by some 0x8043 message, let's remove them.
+
                     for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
                         if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
                             self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
@@ -743,6 +748,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
                             if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
+                    Domoticz.Log("Result based on DeviceConf is: %s" %str(self.ListOfDevices[MsgSrcAddr]))
 
                 if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
                     self.DiscoveryDevices[MsgSrcAddr]['Model'] = modelName
