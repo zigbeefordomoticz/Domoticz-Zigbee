@@ -966,8 +966,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                             ForceUpdate_=True)
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
-
-
                     if Devices[x].SwitchType == 16:
                         if value == "00":
                             UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
@@ -983,6 +981,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             if Devices[x].sValue == "Off":
                                 # We do update only if this is a On/off
                                 UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+
+            elif ClusterType == 'WindowCovering' and DeviceType == "LvlControl":
+                Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
+                value = int(value,16)
+                if value == 0:
+                    nValue = 0
+                else:
+                    nValue = 1
+                UpdateDevice_v2(Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":

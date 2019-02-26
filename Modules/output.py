@@ -33,7 +33,7 @@ def ZigatePermitToJoin( self, permit ):
     else: 
         self.permitTojoin = 0x00
         Domoticz.Log("Zigate stop discovery mode")
-        sendZigateCmd(self, "0049","FFFC" + '00' + "00")
+        #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 
 
@@ -627,8 +627,6 @@ def processConfigureReporting( self, NWKID=None ):
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
 
-        # We reach here because we have either a NWKID (we are pairing phase and we have a window to talk to the device even on battery mode
-
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']
         #    manufacturer_spec = "01"
@@ -679,19 +677,14 @@ def processConfigureReporting( self, NWKID=None ):
                         self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != {}:
-                     if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
-                         continue
+                     #if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
+                     continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
                     if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > 2):
                         Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round
-
-                    # Issue #323 - The bind could reset the Flex Led
-                    if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] != 'LIGHTIFY Outdoor Flex RGBW':
-                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
@@ -706,16 +699,10 @@ def processConfigureReporting( self, NWKID=None ):
                         timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
                         attrList = attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-                        #attrLen = 1
 
                         attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen += 1
                         attrDisp.append(attr)
-
-                        #datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                        #datas +=  "%02x" %(attrLen) + attrList
-                        #Domoticz.Debug("configureReporting - for [%s] - cluster: %s on Attribute: %s " %(key, cluster, attr) )
-                        #sendZigateCmd(self, "0120", datas )
 
                     datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                     datas +=  "%02x" %(attrLen) + attrList

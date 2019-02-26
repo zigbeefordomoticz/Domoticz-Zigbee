@@ -414,6 +414,9 @@ def processListOfDevices( self , Devices ):
     #end for key in ListOfDevices
     
     for iter in entriesToBeRemoved:
+        if 'IEEE' in self.self.ListOfDevices[iter]['IEEE']:
+            _ieee = self.self.ListOfDevices[iter]['IEEE']
+            del _ieee
         del self.ListOfDevices[iter]
 
     if self.CommiSSionning or self.busy:
