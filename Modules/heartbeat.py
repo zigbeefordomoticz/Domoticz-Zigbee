@@ -417,7 +417,7 @@ def processListOfDevices( self , Devices ):
     #end for key in ListOfDevices
     
     for iter in entriesToBeRemoved:
-        if 'IEEE' in self.self.ListOfDevices[iter]['IEEE']:
+        if 'IEEE' in self.self.ListOfDevices[iter]:
             _ieee = self.self.ListOfDevices[iter]['IEEE']
             del _ieee
         del self.ListOfDevices[iter]
