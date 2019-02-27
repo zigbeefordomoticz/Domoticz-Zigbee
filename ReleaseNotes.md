@@ -38,6 +38,7 @@
 - [technical] - Make DeviceConf json compliant
 - [Hardware] - Accept Philips Motion sensor
 - [Technical] - Make 4.1 compatible with Stable 4.9700 and Beta > 10355. This makes 4.9700 got some limitations. ( No Temp/Baro adjustement, old fashon Permit To Join)
+- [Enhacement] - Use the Domoticz device Off Delay for motion sensor.
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
