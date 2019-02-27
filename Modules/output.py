@@ -623,6 +623,7 @@ def processConfigureReporting( self, NWKID=None ):
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
+        Domoticz.Debug("configurereporting - processing %s" %key)
         if key == '0000': continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
@@ -640,17 +641,20 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 0)
             #else:
             #    identifySend( self, key, Ep, 15)
+            Domoticz.Debug("Configurereporting - processing %s/%s" %(key,Ep))
             clusterList = getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
 
+                Domoticz.Debug("Configurereporting - processing %s/%s - %s" %(key,Ep,cluster))
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
                     if 'Ep' in self.ListOfDevices[key]['ConfigureReporting']:
                         if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
                             if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
                                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
+                                    Domoticz.Debug("configurereporting - skiping due to existing past")
                                     continue
                             else:
                                 self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
@@ -676,7 +680,7 @@ def processConfigureReporting( self, NWKID=None ):
                     if _idx not in self.ListOfDevices[key]['ConfigureReporting']['TimeStamps']:
                         self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
 
-                if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != {}:
+                if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      #if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
                      continue
 
