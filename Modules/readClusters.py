@@ -721,10 +721,15 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
             modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
-            Domoticz.Log("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
+            Domoticz.Log("ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName))
             if modelName != '':
-                # It has been decoded !
-                Domoticz.Debug("ReadCluster - ClusterId=0000 - MsgAttrID=0005 - reception Model de Device: " + modelName)
+
+                if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] == modelName and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:
+                        Domoticz.Log("ReadCluster - %s / %s - no action" %(MsgClusterId, MsgAttrID))
+                        return
+                else:
+                    self.ListOfDevices[MsgSrcAddr]['Model'] = {}
 
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == '' or self.ListOfDevices[MsgSrcAddr]['Model'] == {}:
                     self.ListOfDevices[MsgSrcAddr]['Model'] = modelName
