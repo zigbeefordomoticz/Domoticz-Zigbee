@@ -488,7 +488,7 @@ class BasePlugin:
                 if self.Ping['Rx Message']: # 'Rx Message' is set to 0 when receiving a Message.
                                             # Looks like we didn't receive messages
                     if  self.Ping['Rx Message'] > ( 60 //  HEARTBEAT ):
-                        Domoticz.Log("Ping - We didn't receive any messages since 60s")
+                        Domoticz.Debug("Ping - We didn't receive any messages since 60s")
                         # This is now about 1' or more that we didn't receive any messages.
                         # Let's try to ping Zigate in order to force a message
                         now = time.time()
@@ -497,7 +497,7 @@ class BasePlugin:
                                 delta = now - self.Ping['TimeStamps']
                                 Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
                                 if delta > 60: # Seems that we have lost the Zigate communication
-                                    Domoticz.Log("Ping - no Heartbeat with Zigate")
+                                    Domoticz.Error("Ping - no Heartbeat with Zigate")
                                     self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
                                     self.connectionState = 0
                                     self.ZigateComm.reConn()
@@ -508,13 +508,13 @@ class BasePlugin:
                             else:
                                 #if self.connectionState == 0:
                                 #    self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-                                Domoticz.Log("Ping - Send a Ping")
+                                Domoticz.Debug("Ping - Send a Ping")
                                 sendZigateCmd( self, "0014", "" ) # Request status
                                 self.connectionState = 1
                                 self.Ping['Status'] = 'Sent'
                                 self.Ping['TimeStamps'] = now
                         else:
-                            Domoticz.Log("Ping - Send a Ping")
+                            Domoticz.Debug("Ping - Send a Ping")
                             sendZigateCmd( self, "0014", "" ) # Request status
                             self.Ping['Status'] = 'Sent'
                             self.Ping['TimeStamps'] = now
