@@ -896,10 +896,28 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "00":
                         state = "Off"
                         UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
-                elif DeviceType in ( "LivoloSWL", 'LivolSWR'):
+                elif DeviceType == "LivoloSWL":
+                    Domoticz.Log("Livolo Left - Value: %s" %value)
                     value = int(value)
+                    state = 'Off'
+                    if value == '01': # On Left
+                        state = 'On'
+                    elif value == '00': # Off left
+                        state = 'Off'
+                    Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
+                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+
+                elif DeviceType == 'LivolSWR':
+                    Domoticz.Log("Livolo Right - Value: %s" %value)
+                    value = int(value)
+                    state = 'Off'
+                    if value == '03': # On Right
+                        state = 'On'
+                    elif value == '02': # Off Right
+                        state = 'Off'
                     Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
                     #UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
@@ -1141,9 +1159,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == DeviceType == "Motion":
                 if value == "01":
-                    UpdateDevice_v2(Devices, x, "1", str("On"), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, 1, str("On"), BatteryLevel, SignalLevel)
                 if value == "00":
-                    UpdateDevice_v2(Devices, x, "0", str("Off"), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(Devices, x, 0, str("Off"), BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Ikea_Round_OnOff": # IKEA Remote On/Off
                 nValue = 0
@@ -1237,6 +1255,10 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 if 'ClusterType' in self.ListOfDevices[NWKID]:
                     if str(ID) in self.ListOfDevices[NWKID]['ClusterType']:
                         DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
+            
+            if DeviceType not in ('Motion', 'Vibration'):
+                continue
+
             # Takes the opportunity to update RSSI and Battery
             SignalLevel = ''
             BatteryLevel = ''
@@ -1245,7 +1267,17 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if self.ListOfDevices[NWKID].get('Battery'):
                 BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
-            if (current - LUpdate) > self.pluginconf.resetMotiondelay and DeviceType in ('Motion', 'Vibration'):
+            _timeout = self.pluginconf.resetMotiondelay
+            resetMotionDelay = 0
+
+            if self.domoticzdb_DeviceStatus:
+                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+                resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
+
+            if resetMotionDelay > 0:
+                _timeout = resetMotionDelay
+
+            if (current - LUpdate) >= _timeout: 
                 Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
                     current) + " this was : " + str(current - LUpdate) + " secondes ago")
                 UpdateDevice_v2(Devices, x, 0, "Off", BatteryLevel, SignalLevel, SuppTrigger_=True)

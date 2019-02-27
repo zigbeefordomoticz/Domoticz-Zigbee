@@ -402,6 +402,16 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgSrcEp == '06': # Most likely Livolo
         Domoticz.Log("ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
                 %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+        if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] == '07': # Left
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+        else:    # Assuming RIght
+            if value == '01':
+                value = '03'
+            else:
+                value = '0'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+            return
+
 
     if MsgAttrID == '0000':
         Domoticz.Debug("ReadCluster - ClusterId=0008 - Level Control: " + str(MsgClusterData) )
@@ -423,6 +433,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgSrcEp == '06': # Most likely Livolo
         Domoticz.Log("ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
                 %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
 
     if MsgAttrID=="0000" or MsgAttrID=="8000":
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
@@ -727,9 +738,14 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:                 # If the model exist in DeviceConf.txt
                     modelName = self.ListOfDevices[MsgSrcAddr]['Model']
                     Domoticz.Debug("Extract all info from Model : %s" %self.DeviceConf[modelName])
-                    self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
                     if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
+                        self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
                         self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
+                        if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
+                            Domoticz.Log("Removing existing received Ep")
+                            del self.ListOfDevices[MsgSrcAddr]['Ep']                           # It has been prepopulated by some 0x8043 message, let's remove them.
+                            self.ListOfDevices[MsgSrcAddr]['Ep'] = {}                          # It has been prepopulated by some 0x8043 message, let's remove them.
+
                     for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
                         if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
                             self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
@@ -743,6 +759,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
                             if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
+                    Domoticz.Log("Result based on DeviceConf is: %s" %str(self.ListOfDevices[MsgSrcAddr]))
 
                 if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
                     self.DiscoveryDevices[MsgSrcAddr]['Model'] = modelName

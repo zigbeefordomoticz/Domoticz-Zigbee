@@ -91,6 +91,15 @@ class DomoticzDB_DeviceStatus:
         value = self.dbCursor.fetchone()
         return value[0]
 
+    def retreiveTimeOut_Motion( self, ID):
+        """
+        Retreive the TmeeOut Motion value of Device.ID
+        """
+
+        self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
+        value = self.dbCursor.fetchone()
+        return value[0]
+
     def retreiveAddjValue_temp( self, ID):
         """
         Retreive the AddjValue of Device.ID

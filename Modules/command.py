@@ -273,8 +273,10 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     Right Unit: Timing 2
     """
 
-    if onoff not in ( 'On', 'Off'): return
-    if devunit not in ( 'Left', 'Right'): return
+    if onoff not in ( 'On', 'Off'): 
+        return
+    if devunit not in ( 'Left', 'Right'): 
+        return
 
     if onoff == 'On': level_value = '%02x' %108
     else: level_value = '01'
