@@ -391,7 +391,7 @@ def updSQN( self, key, newSQN) :
             updSQN_battery( self, key, newSQN)
         else:
             self.ListOfDevices[key]['SQN'] = {}
-            Domoticz.Log("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['MacCapa'] )
+            Domoticz.Debug("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['MacCapa'] )
 
 
 #### Those functions will be use with the new DeviceConf structutre
