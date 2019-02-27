@@ -33,7 +33,7 @@ MAX_CYCLE = 3
 
 class GroupsManagement(object):
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, ScanGroupMembership, Devices, ListOfDevices, IEEE2NWK ):
         Domoticz.Debug("GroupsManagement __init__")
         self.StartupPhase = 'init'
         self.ListOfGroups = {}      # Data structutre to store all groups
@@ -47,6 +47,8 @@ class GroupsManagement(object):
         self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
         self.Devices = Devices              # Point to the List of Domoticz Devices
         self.adminWidgets = adminWidgets
+
+        self.ScanGroupMembership = ScanGroupMembership
 
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
 
@@ -287,7 +289,7 @@ class GroupsManagement(object):
 
     def _getGroupMembership(self, device_addr, device_ep, group_list=None):
 
-        Domoticz.Debug("_getGroupMembership - %s/%s from %s" %(device_addr, device_ep, group_list))
+        Domoticz.Log("_getGroupMembership - %s/%s from %s" %(device_addr, device_ep, group_list))
         datas = "02" + device_addr + "01" + device_ep 
 
         if not group_list:
@@ -323,7 +325,7 @@ class GroupsManagement(object):
         MsgListOfGroup=MsgData[12:lenMsgData-4]
         MsgSourceAddress = MsgData[lenMsgData-4:lenMsgData]
 
-        Domoticz.Debug("getGroupMembershipResponse - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
+        Domoticz.Log("getGroupMembershipResponse - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
                 %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
 
         if MsgSourceAddress not in self.ListOfDevices:
@@ -838,6 +840,9 @@ class GroupsManagement(object):
                     self._load_GroupList()
                     self.StartupPhase = 'end of group startup'
 
+            if self.ScanGroupMembership == 'True':
+                self.StartupPhase = 'discovery'
+                Domoticz.Status("Going for a full group membership discovery. (User Request)")
 
         elif self.StartupPhase == 'discovery':
             # We will send a Request for Group memebership to each active device
@@ -882,7 +887,7 @@ class GroupsManagement(object):
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] = 'REQ-Membership'
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase-Stamp'] = int(time())
                             self._getGroupMembership(iterDev, iterEp)   # We request MemberShip List
-                            Domoticz.Debug(" - request group membership for %s/%s" %(iterDev, iterEp))
+                            Domoticz.Log(" - request group membership for %s/%s" %(iterDev, iterEp))
             else:
                 if _workcompleted:
                     Domoticz.Log("hearbeatGroupMgt - Finish Discovery Phase" )
@@ -904,7 +909,7 @@ class GroupsManagement(object):
                             if 'Phase' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
                                 continue
 
-                            Domoticz.Debug('Checking if process is done for %s/%s - %s -> %s' 
+                            Domoticz.Log('Checking if process is done for %s/%s - %s -> %s' 
                                     %(iterDev,iterEp,iterGrp,str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
 
                             if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
