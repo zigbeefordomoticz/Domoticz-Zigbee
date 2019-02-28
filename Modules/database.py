@@ -76,7 +76,7 @@ def LoadDeviceList( self ):
                 CheckDeviceList( self, key, val )
 
     for addr in self.ListOfDevices:
-        if self.pluginconf.forceReadAttributes:
+        if self.pluginconf.resetReadAttributes:
             Domoticz.Log("ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             self.ListOfDevices[addr]['ReadAttributes'] = {}
             self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
@@ -84,7 +84,7 @@ def LoadDeviceList( self ):
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
                 self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
 
-        if self.pluginconf.forceConfigureReporting:
+        if self.pluginconf.resetConfigureReporting:
             Domoticz.Log("Reset ConfigureReporting data %s" %addr)
             self.ListOfDevices[addr]['ConfigureReporting'] = {}
             self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}

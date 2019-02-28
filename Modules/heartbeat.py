@@ -100,7 +100,7 @@ def processKnownDevices( self, Devices, NWKID ):
         }
 
     now = int(time.time())   # Will be used to trigger ReadAttributes
-    if ( intHB % (30 // HEARTBEAT)) == 0 :
+    if ( self.pluginconf.enableReadAttributes or  self.pluginconf.resetReadAttributes ) and ( intHB % (30 // HEARTBEAT)) == 0 :
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
             if tmpEp == 'ClusterType': continue
             for Cluster in READ_ATTRIBUTES_REQUEST:
@@ -135,7 +135,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                 %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now > (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                                Domoticz.Debug("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                Domoticz.Log("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
                                 func(self, NWKID )
                         else:
                             Domoticz.Debug("processKnownDevices - 1: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
