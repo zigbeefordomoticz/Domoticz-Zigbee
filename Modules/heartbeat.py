@@ -20,7 +20,7 @@ import queue
 
 from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
-        bindDevice, getListofAttribute, \
+        bindDevice, rebind_Clusters, getListofAttribute, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0201, ReadAttributeRequest_0300,  \
