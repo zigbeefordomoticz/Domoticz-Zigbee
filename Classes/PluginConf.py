@@ -29,8 +29,9 @@ class PluginConf:
         # Device Management
         self.allowStoreDiscoveryFrames = 0
         self.allowForceCreationDomoDevice = 0
-        self.forceConfigureReporting = 0 # Allow to reset the Configure Reporting record
-        self.forceReadAttributes = 0 # Allow to reset the ReadAttribute
+        self.resetConfigureReporting = 0 # Allow to reset the Configure Reporting record
+        self.resetReadAttributes = 0 # Allow to reset the ReadAttribute
+        self.enableReadAttributes = 0 # Enable the plugin to poll information from the devices.
         self.resetMotiondelay = 30
         self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
 
@@ -141,13 +142,17 @@ class PluginConf:
                     self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
                 self.allowStoreDiscoveryFrames = int(self.PluginConf['allowStoreDiscoveryFrames'], 10)
 
-            if self.PluginConf.get('forceConfigureReporting') and \
-                    self.PluginConf.get('forceConfigureReporting').isdigit():
-                self.forceConfigureReporting = int(self.PluginConf['forceConfigureReporting'], 10)
+            if self.PluginConf.get('resetConfigureReporting') and \
+                    self.PluginConf.get('resetConfigureReporting').isdigit():
+                self.resetConfigureReporting = int(self.PluginConf['resetConfigureReporting'], 10)
 
-            if self.PluginConf.get('forceReadAttributes') and \
-                    self.PluginConf.get('forceReadAttributes').isdigit():
-                self.forceReadAttributes = int(self.PluginConf['forceReadAttributes'], 10)
+            if self.PluginConf.get('resetReadAttributes') and \
+                    self.PluginConf.get('resetReadAttributes').isdigit():
+                self.resetReadAttributes = int(self.PluginConf['resetReadAttributes'], 10)
+
+            if self.PluginConf.get('enableReadAttributes') and \
+                    self.PluginConf.get('enableReadAttributes').isdigit():
+                self.enableReadAttributes = int(self.PluginConf['enableReadAttributes'], 10)
 
             if self.PluginConf.get('logFORMAT') and \
                     self.PluginConf.get('logFORMAT').isdigit():
@@ -210,8 +215,9 @@ class PluginConf:
         Domoticz.Log("Device Management:")
         Domoticz.Log(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
         Domoticz.Log(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
-        Domoticz.Log(" -forceConfigureReporting: %s" %self.forceConfigureReporting)
-        Domoticz.Log(" -forceReadAttributes: %s" %self.forceReadAttributes)
+        Domoticz.Log(" -resetConfigureReporting: %s" %self.resetConfigureReporting)
+        Domoticz.Log(" -resetReadAttributes: %s" %self.resetReadAttributes)
+        Domoticz.Log(" -enableReadAttributes: %s" %self.enableReadAttributes)
         Domoticz.Log(" -resetMotiondelay: %s" %self.resetMotiondelay)
         Domoticz.Log(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
 
