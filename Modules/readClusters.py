@@ -724,6 +724,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             Domoticz.Log("ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName))
             if modelName != '':
 
+                if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
+                    for iterEp in self.ListOfDevices[MsgSrcAddr]['Ep']:
+                        if 'ClusterType' in self.ListOfDevices[MsgSrcAddr]['Ep'][iterEp]:
+                            Domoticz.Log("ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" \
+                                    %(MsgClusterId, MsgAttrID, MsgSrcAddr, modelName))
+                            return
+
                 if 'Model' in self.ListOfDevices[MsgSrcAddr]:
                     if self.ListOfDevices[MsgSrcAddr]['Model'] == modelName and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:
                         Domoticz.Log("ReadCluster - %s / %s - no action" %(MsgClusterId, MsgAttrID))
@@ -866,7 +873,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster - %s/%s MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
                 %( MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
     else:
-        Domoticz.Log("ReadCluster 0x0000 - Message attribut inconnu: " + str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))
     
 
 def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
