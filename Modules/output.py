@@ -710,7 +710,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                     datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                     datas +=  "%02x" %(attrLen) + attrList
-                    Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
+                    Domoticz.Log("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
                     sendZigateCmd(self, "0120", datas )
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
@@ -755,6 +755,23 @@ def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
     '''
 
     return
+
+
+def rebind_Clusters( self, NWKID):
+
+    # Binding devices
+    CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001',
+            '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
+            'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+            'ff02'  # Used by Xiaomi devices for battery informations.
+            ]
+
+    for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+
 
 def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
