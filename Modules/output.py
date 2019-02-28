@@ -682,6 +682,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      #if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
+                     # Basically , we will do configure reporting only when we have reset the ConfigureReporting data structuure
                      continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
