@@ -553,10 +553,15 @@ def processConfigureReporting( self, NWKID=None ):
         '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
                                  '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+
         # On/Off Cluster
         '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        #'0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0003', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'00'}}},
+
         # Level Control Cluster
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
+        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0003', 'MaxInterval':'0000', 'TimeOut':'0FFF','Change':'00'}}},
+
         # Windows Covering
         '0102': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'},
                                  '0003': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -771,6 +776,7 @@ def rebind_Clusters( self, NWKID):
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                del self.ListOfDevices[NWKID]['Bind']
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
