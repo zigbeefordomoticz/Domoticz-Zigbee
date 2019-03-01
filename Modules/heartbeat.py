@@ -23,7 +23,7 @@ from Modules.output import  sendZigateCmd,  \
         bindDevice, rebind_Clusters, getListofAttribute, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
-        ReadAttributeRequest_000C, ReadAttributeRequest_0201, ReadAttributeRequest_0300,  \
+        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0702
 
@@ -37,6 +37,42 @@ from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 
 
+READ_ATTRIBUTES_REQUEST = {
+    # Cluster : ( ReadAttribute function, Frequency )
+    '0000' : ( ReadAttributeRequest_0000, 43200 ),
+    '0001' : ( ReadAttributeRequest_0001, 43200 ),
+    '0006' : ( ReadAttributeRequest_0006, 900 ),
+    '0008' : ( ReadAttributeRequest_0008, 900 ),
+    '000C' : ( ReadAttributeRequest_000C, 3600 ),
+    '0102' : ( ReadAttributeRequest_0102, 300 ),
+    '0201' : ( ReadAttributeRequest_0201, 900 ),
+    '0300' : ( ReadAttributeRequest_0300, 900 ),
+    '0400' : ( ReadAttributeRequest_0400, 900 ),
+    '0402' : ( ReadAttributeRequest_0402, 900 ),
+    '0403' : ( ReadAttributeRequest_0403, 900 ),
+    '0405' : ( ReadAttributeRequest_0405, 900 ),
+    '0406' : ( ReadAttributeRequest_0406, 900 ),
+    '0702' : ( ReadAttributeRequest_0702, 900 ),
+    }
+
+# Ordered List - Important for binding
+CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
+        '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
+        'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+        'ff02'  # Used by Xiaomi devices for battery informations.
+        ]
+
+#READ_ATTRIBUTES_MATRIX = {
+#    # Cluster : ( ReadAttribute function, Frequency )
+#    '0406' : ( ReadAttributeRequest_0406, 900 ),
+#    '0402' : ( ReadAttributeRequest_0402, 900 ),
+#    '0400' : ( ReadAttributeRequest_0400, 900 ),
+#    '0001' : ( ReadAttributeRequest_0001, 900 ),
+#    '0403' : ( ReadAttributeRequest_0403, 900 ),
+#    '0405' : ( ReadAttributeRequest_0405, 900 ),
+#    '0102' : ( ReadAttributeRequest_0405, 900 ),
+#    }
+#
 def processKnownDevices( self, Devices, NWKID ):
 
     if self.CommiSSionning: # We have a commission in progress, skip it.
@@ -63,44 +99,21 @@ def processKnownDevices( self, Devices, NWKID ):
     # Ping each device, even the battery one. It will make at least the route up-to-date
     #if ( intHB % ( 3000 // HEARTBEAT)) == 0:
     #    ReadAttributeRequest_Ack(self, NWKID)
-
-    READ_ATTRIBUTES_REQUEST = {  
-        # Cluster : ( ReadAttribute function, Frequency )
-        '0000' : ( ReadAttributeRequest_0000, 43200 ),
-        '0001' : ( ReadAttributeRequest_0001, 43200 ),
-        '0006' : ( ReadAttributeRequest_0006, 900 ),
-        '0008' : ( ReadAttributeRequest_0008, 900 ),
-        '000C' : ( ReadAttributeRequest_000C, 3600 ),
-        '0102' : ( ReadAttributeRequest_0201, 300 ),
-        '0201' : ( ReadAttributeRequest_0201, 900 ),
-        '0300' : ( ReadAttributeRequest_0300, 900 ),
-        '0400' : ( ReadAttributeRequest_0400, 900 ),
-        '0402' : ( ReadAttributeRequest_0402, 900 ),
-        '0403' : ( ReadAttributeRequest_0403, 900 ),
-        '0405' : ( ReadAttributeRequest_0405, 900 ),
-        '0406' : ( ReadAttributeRequest_0406, 900 ),
-        '0702' : ( ReadAttributeRequest_0702, 900 ),
-        }
-
-    now = int(time.time())   # Will be used to trigger ReadAttributes
     if ( self.pluginconf.enableReadAttributes or  self.pluginconf.resetReadAttributes ) and ( intHB % (30 // HEARTBEAT)) == 0 :
+        now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
             if tmpEp == 'ClusterType': continue
             for Cluster in READ_ATTRIBUTES_REQUEST:
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
-
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
-
                 if 'PowerSource' in self.ListOfDevices[NWKID]:
                     if (self.ListOfDevices[NWKID]['PowerSource']) != 'Main':
                         continue
-
                 if 'MacCapa' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['MacCapa'] != '8e': # Not a Main Powered 
                         continue
-
                 if self.busy  or len(self.ZigateComm._normalQueue) > 2:
                     Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                             %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
@@ -165,7 +178,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
-                                                                    # And wait 1 cycle
+                                                           # And wait 1 cycle
             else: 
                 Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
                 # Let's check if this Model is known
@@ -252,13 +265,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     if status in ( 'createDB', '8043' ):
         #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-
         if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
             Domoticz.Log("Too early, let's try to get the Model")
             return
-
         Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
-
         IsCreated=False
         # Let's check if the IEEE is not known in Domoticz
         for x in Devices:
@@ -281,23 +291,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             Domoticz.Log("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
-            CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
-                    '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
-                    'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-                    'ff02'  # Used by Xiaomi devices for battery informations.
-                    ]
-
-            READ_ATTRIBUTES_MATRIX = {
-                    # Cluster : ( ReadAttribute function, Frequency )
-                    '0406' : ( ReadAttributeRequest_0406, 900 ),
-                    '0402' : ( ReadAttributeRequest_0402, 900 ),
-                    '0400' : ( ReadAttributeRequest_0400, 900 ),
-                    '0001' : ( ReadAttributeRequest_0001, 900 ),
-                    '0403' : ( ReadAttributeRequest_0403, 900 ),
-                    '0405' : ( ReadAttributeRequest_0405, 900 ),
-                    '0102' : ( ReadAttributeRequest_0405, 900 ),
-                    }
-#
             for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
@@ -308,9 +301,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             processConfigureReporting( self, NWKID )  
 
             for iterReadAttrCluster in CLUSTERS_LIST:
-                if iterReadAttrCluster in READ_ATTRIBUTES_MATRIX:
-                    func = READ_ATTRIBUTES_MATRIX[iterReadAttrCluster][0]
-                    func( self, NWKID)
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
+                            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
+                            func( self, NWKID)
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
