@@ -29,6 +29,7 @@ class PluginConf:
         # Device Management
         self.allowStoreDiscoveryFrames = 0
         self.allowForceCreationDomoDevice = 0
+        self.allowReBindingClusters = 1  # When receiving a Device Annouced, allow rebinding on clustered.
         self.resetConfigureReporting = 0 # Allow to reset the Configure Reporting record
         self.resetReadAttributes = 0 # Allow to reset the ReadAttribute
         self.enableReadAttributes = 0 # Enable the plugin to poll information from the devices.
@@ -142,6 +143,10 @@ class PluginConf:
                     self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
                 self.allowStoreDiscoveryFrames = int(self.PluginConf['allowStoreDiscoveryFrames'], 10)
 
+            if self.PluginConf.get('allowReBindingClusters') and \
+                    self.PluginConf.get('allowReBindingClusters').isdigit():
+                self.allowReBindingClusters = int(self.PluginConf['allowReBindingClusters'], 10)
+
             if self.PluginConf.get('resetConfigureReporting') and \
                     self.PluginConf.get('resetConfigureReporting').isdigit():
                 self.resetConfigureReporting = int(self.PluginConf['resetConfigureReporting'], 10)
@@ -215,6 +220,7 @@ class PluginConf:
         Domoticz.Log("Device Management:")
         Domoticz.Log(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
         Domoticz.Log(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
+        Domoticz.Log(" -allowReBindingClusters: %s" %self.allowReBindingClusters)
         Domoticz.Log(" -resetConfigureReporting: %s" %self.resetConfigureReporting)
         Domoticz.Log(" -resetReadAttributes: %s" %self.resetReadAttributes)
         Domoticz.Log(" -enableReadAttributes: %s" %self.enableReadAttributes)

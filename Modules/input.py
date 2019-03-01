@@ -20,7 +20,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
-from Modules.output import sendZigateCmd, leaveMgtReJoin
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
@@ -1734,12 +1734,17 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     else:
         # Device exist
         # We will also reset ReadAttributes
+        if self.pluginconf.allowReBindingClusters:
+            Domoticz.Log("Decode004d - rebind clusters for %s" %MsgSrcAddr)
+            rebind_Clusters( self, MsgSrcAddr)
+
         if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
             del self.ListOfDevices[MsgSrcAddr]['ReadAttributes']
     
         if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
             del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
             self.ListOfDevices[MsgSrcAddr]['Hearbeat'] = 0
+
 
 
     timeStamped( self, MsgSrcAddr , 0x004d)

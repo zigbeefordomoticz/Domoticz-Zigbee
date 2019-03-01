@@ -7,6 +7,7 @@
 'resetMotiondelay':'30',
 'enableReadAttributes':'0',
 'enablegroupmanagement':'0',
+'allowReBindingClusters':'0',
 'resetConfigureReporting':'0',
 'resetReadAttributes':'0',
 'allowRemoveZigateDevice':'0',
