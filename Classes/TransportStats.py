@@ -99,22 +99,24 @@ class TransportStatistics:
 
     def writeReport(self):
 
+        timing = int(time())
         stats = {}
-        stats['crcErrors'] = self._crcErrors
-        stats['frameErrors'] = self._frameErrors
-        stats['sent'] = self._sent
-        stats['received'] = self._received
-        stats['ack'] = self._ack
-        stats['ackKO'] = self._ackKO
-        stats['data'] = self._data
-        stats['TOstatus'] = self._TOstatus
-        stats['TOdata'] = self._TOdata
-        stats['clusterOK'] = self._clusterOK
-        stats['clusterKO'] = self._clusterKO
-        stats['reTx'] = self._reTx
-        stats['MaxLoad'] = self._MaxLoad
-        stats['start'] = self._start
-        stats['stop'] = int(time())
+        stats[timing] = {}
+        stats[timing]['crcErrors'] = self._crcErrors
+        stats[timing]['frameErrors'] = self._frameErrors
+        stats[timing]['sent'] = self._sent
+        stats[timing]['received'] = self._received
+        stats[timing]['ack'] = self._ack
+        stats[timing]['ackKO'] = self._ackKO
+        stats[timing]['data'] = self._data
+        stats[timing]['TOstatus'] = self._TOstatus
+        stats[timing]['TOdata'] = self._TOdata
+        stats[timing]['clusterOK'] = self._clusterOK
+        stats[timing]['clusterKO'] = self._clusterKO
+        stats[timing]['reTx'] = self._reTx
+        stats[timing]['MaxLoad'] = self._MaxLoad
+        stats[timing]['start'] = self._start
+        stats[timing]['stop'] = timing
 
         json_filename = self.pluginconf.pluginReports + 'Transport-stats.json'
         with open( json_filename, 'at') as json_file:

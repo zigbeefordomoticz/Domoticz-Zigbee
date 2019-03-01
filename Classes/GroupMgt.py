@@ -840,14 +840,14 @@ class GroupsManagement(object):
                     self._load_GroupList()
                     self.StartupPhase = 'end of group startup'
 
-            if self.ScanGroupMembership == 'True':
+            if self.ScanGroupMembership == 'True' and self.StartupPhase != 'discovery':
                 self.StartupPhase = 'discovery'
                 Domoticz.Status("Going for a full group membership discovery. (User Request)")
 
         elif self.StartupPhase == 'discovery':
             # We will send a Request for Group memebership to each active device
             # In case a device doesn't belo,ng to any group, no response is provided.
-            Domoticz.Log("Group Management - Discovery mode - Searching for Group Membership")
+            Domoticz.Log("Group Management - Discovery mode - Searching for Group Membership (or continue)")
             self.stillWIP = True
             _workcompleted = True
             listofdevices = list(self.ListOfDevices)
@@ -880,14 +880,14 @@ class GroupsManagement(object):
                             if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
                                 Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                                 Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
-                                Domoticz.Log("too busy, will try again ...%s" %len(self.ZigateComm._normalQueue))
+                                Domoticz.Debug("too busy, will try again ...%s" %len(self.ZigateComm._normalQueue))
                                 _workcompleted = False
                                 break # will continue in the next cycle
 
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] = 'REQ-Membership'
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase-Stamp'] = int(time())
                             self._getGroupMembership(iterDev, iterEp)   # We request MemberShip List
-                            Domoticz.Log(" - request group membership for %s/%s" %(iterDev, iterEp))
+                            Domoticz.Debug(" - request group membership for %s/%s" %(iterDev, iterEp))
             else:
                 if _workcompleted:
                     Domoticz.Log("hearbeatGroupMgt - Finish Discovery Phase" )
@@ -909,7 +909,7 @@ class GroupsManagement(object):
                             if 'Phase' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
                                 continue
 
-                            Domoticz.Log('Checking if process is done for %s/%s - %s -> %s' 
+                            Domoticz.Debug('Checking if process is done for %s/%s - %s -> %s' 
                                     %(iterDev,iterEp,iterGrp,str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
 
                             if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
@@ -1177,6 +1177,12 @@ class GroupsManagement(object):
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
                     if iterDev in self.ListOfDevices:
                         Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
+
+            # Store Group in report under json format
+            json_filename = self.pluginconf.pluginReports + 'GroupList.json'
+            with open( json_filename, 'wt') as json_file:
+                json_file.write('\n')
+                json.dump( self.ListOfGroups, json_file, indent=4, sort_keys=True)
 
             Domoticz.Status("Group Management - startup done")
             self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
