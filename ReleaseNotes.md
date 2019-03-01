@@ -35,10 +35,20 @@
 - [Issue] - #348 Status of Tradfri/Hue bulbs after Main power Off/on
 - [Technical] - Allow the possibility to set the Certification compliance between CE and FCC
 - [Issue] - #275 User Domoticz Accept New Hardware to set Zigate in Permit to join or not (only for Domoticz version > 10355)
-- [technical] - Make DeviceConf json compliant
-- [Hardware] - Accept Philips Motion sensor
+- [Technical] - Make DeviceConf json compliant
+- [Hardware] - Accept Philips Motion sensor (indoor and outdoor models)
 - [Technical] - Make 4.1 compatible with Stable 4.9700 and Beta > 10355. This makes 4.9700 got some limitations. ( No Temp/Baro adjustement, old fashon Permit To Join)
 - [Enhacement] - Use the Domoticz device Off Delay for motion sensor.
+- [Enhacement] - Allow from the plugin menu to force a Group scan/discovery
+- [Enhacement] - Disable by default the polling information. You need to set enableReadAttributes to 1 in PluginConf.txt to for the polling.
+- [Technical] - Rename forceReadAttributes and forceConfigureReporting into resetReadAttributes and resetConfigureReporting
+- [Hardware] - Certify the OSRAM SMart Plug device
+- [Hardware] - Able to recognize Livolo double switch and be able to command it. (more test to be done on the state reporting). Also firmware must handle the Livolo Zigbee implementation to get stability.
+- [Hardware] - First phase implementation of Legrand shutter/Window covering. ( On and Off command works).
+- [Technical] - Lux calculation for non-Xiaomi devices.
+- [Technical] - Transport statistics are now stored on a reporting file, for further analysis.
+- [Technical] - When groups are ready report into GroupList-xx.json
+- [Technical] - if allowed rebind_clusters when receiving a Device Annoucement
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug

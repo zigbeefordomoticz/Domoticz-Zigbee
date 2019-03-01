@@ -69,7 +69,7 @@ class ZigateTransport(object):
     """
 
     def __init__(self, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
-        Domoticz.Debug("Setting Transport object")
+        ##DEBUG Domoticz.Debug("Setting Transport object")
 
         self._checkTO_flag = None
         self._connection = None  # connection handle
@@ -191,12 +191,13 @@ class ZigateTransport(object):
                 Domoticz.Debug("onMessage : we have probably lost some datas, zero1 = " + str(Zero1))
 
             # uncode the frame
+            #### DEBUG ###_uncoded = str(self._ReqRcv[Zero1:Zero3]) + ''
             BinMsg = bytearray()
             iterReqRcv = iter(self._ReqRcv[Zero1:Zero3])
 
             for iByte in iterReqRcv:  # for each received byte
-                if iByte == 2:  # Coded flag ?
-                    iByte = next(iterReqRcv) ^ 16  # then uncode the next value
+                if iByte == 0x02:  # Coded flag ?
+                    iByte = next(iterReqRcv) ^ 0x10  # then uncode the next value
                 BinMsg.append(iByte)  # copy
 
             self._ReqRcv = self._ReqRcv[Zero3:]  # What is after 0x03 has to be reworked.
@@ -210,6 +211,8 @@ class ZigateTransport(object):
                 self.statistics._frameErrors += 1
                 Domoticz.Error("onMessage : Frame size is bad, computed = " + \
                                str(ComputedLength) + " received = " + str(ReceveidLength))
+                ###DEBUG Domoticz.Error("Bad frame is uncoded msg: %s" %str(_uncoded))
+                ###DEBUG Domoticz.Error("Bad frame is decoded msg: %s" %str(BinMsg))
 
             # Compute checksum
             ComputedChecksum = 0
@@ -221,6 +224,8 @@ class ZigateTransport(object):
                 self.statistics._crcErrors += 1
                 Domoticz.Error("onMessage : Frame CRC is bad, computed = " + str(ComputedChecksum) + \
                                " received = " + str(ReceivedChecksum))
+                ###DEBUG Domoticz.Error("Bad frame is uncoded msg: %s" %str(_uncoded))
+                ###DEBUG Domoticz.Error("Bad frame is decoded msg: %s" %str(BinMsg))
 
             if FrameIsKo == 0:
                 AsciiMsg = binascii.hexlify(BinMsg).decode('utf-8')
@@ -240,7 +245,7 @@ class ZigateTransport(object):
     def addCmdToSend(self, cmd, data, reTransmit=0):
         """add a command to the waiting list"""
         timestamp = int(time.time())
-        Domoticz.Debug("addCmdToSend: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
+        ##DEBUG Domoticz.Debug("addCmdToSend: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
         self._normalQueue.append((cmd, data, timestamp, reTransmit))
         if len(self._normalQueue) > self.statistics._MaxLoad:
             self.statistics._MaxLoad = len(self._normalQueue)
@@ -290,8 +295,7 @@ class ZigateTransport(object):
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
         '''
         # Check if normalQueue is empty. If yes we can send the command straight
-        Domoticz.Debug("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \
-                       % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+        ##DEBUG Domoticz.Debug("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \ % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         if len(self._waitForStatus) != 0:
             Domoticz.Debug("sendData - waitQ: %04.X" % (int(self._waitForStatus[0][0], 16)))
         if len(self._waitForData) != 0:
@@ -321,7 +325,7 @@ class ZigateTransport(object):
         in case the message contains several frame, receiveData will be recall
         '''
 
-        Domoticz.Debug("receiveData - new Data coming")
+        ##DEBUG  Domoticz.Debug("receiveData - new Data coming")
         if frame == '' or frame is None:
             return
 
@@ -410,13 +414,12 @@ class ZigateTransport(object):
             Domoticz.Debug("checkTOwaitFor already ongoing")
             return
         self._checkTO_flag = True
-        Domoticz.Debug("checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \
-                     % (0x0000, len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+        ##DEBUG  Domoticz.Debug("checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \ % (0x0000, len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         # Check waitForStatus
         if len(self._waitForStatus) > 0:
             now = int(time.time())
             pCmd, pDatas, pTime, reTx = self._waitForStatus[0]
-            Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" % (int(pCmd, 16), pTime, now - pTime))
+            ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" % (int(pCmd, 16), pTime, now - pTime))
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOstatus += 1
                 entry = self.nextStatusInWait()
@@ -427,7 +430,7 @@ class ZigateTransport(object):
         if len(self._waitForData) > 0:
             now = int(time.time())
             expResponse, pCmd, pData, pTime, reTx = self._waitForData[0]
-            Domoticz.Debug("checkTOwaitForStatus - %04.xs enter at: %s delta: %s" % (expResponse, pTime, now - pTime))
+            ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.xs enter at: %s delta: %s" % (expResponse, pTime, now - pTime))
             if (now - pTime) > self.zTimeOut:
                 self.statistics._TOdata += 1
                 expResponse, pCmd, pData, pTime, reTx =  self.nextDataInWait()

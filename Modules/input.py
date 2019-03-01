@@ -20,7 +20,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
-from Modules.output import sendZigateCmd, leaveMgtReJoin
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
@@ -1734,12 +1734,17 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     else:
         # Device exist
         # We will also reset ReadAttributes
+        if self.pluginconf.allowReBindingClusters:
+            Domoticz.Log("Decode004d - rebind clusters for %s" %MsgSrcAddr)
+            rebind_Clusters( self, MsgSrcAddr)
+
         if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
             del self.ListOfDevices[MsgSrcAddr]['ReadAttributes']
     
         if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
             del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
             self.ListOfDevices[MsgSrcAddr]['Hearbeat'] = 0
+
 
 
     timeStamped( self, MsgSrcAddr , 0x004d)
@@ -1796,10 +1801,10 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                 Domoticz.Debug("Decode8085 - Selector: %s" %selector)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
             else:
-                Domoticz.Debug("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
+                Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                         %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
         else:
-            Domoticz.Debug("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
+            Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
@@ -1827,9 +1832,9 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         if MsgClusterId == '0006' and MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
         else:
-            Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+            Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
     else:
-       Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+       Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
@@ -1876,10 +1881,10 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             Domoticz.Debug("Decode80A7 - selector: %s" %selector)
 
         else:
-            Domoticz.Debug("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+            Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
     else:
-        Domoticz.Debug("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+        Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                 %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
 
 

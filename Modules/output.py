@@ -512,7 +512,7 @@ def removeZigateDevice( self, IEEE ):
     # extended address is ieee address
     if self.ZigateIEEE != None:
         Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
-        sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
+        #sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
     else:
         Domoticz.Log("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
 
@@ -553,10 +553,15 @@ def processConfigureReporting( self, NWKID=None ):
         '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
                                  '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+
         # On/Off Cluster
         '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        #'0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0003', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'00'}}},
+
         # Level Control Cluster
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
+        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0003', 'MaxInterval':'0000', 'TimeOut':'0FFF','Change':'00'}}},
+
         # Windows Covering
         '0102': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'},
                                  '0003': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -682,6 +687,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      #if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
+                     # Basically , we will do configure reporting only when we have reset the ConfigureReporting data structuure
                      continue
 
                 if cluster in ATTRIBUTESbyCLUSTERS:
@@ -755,6 +761,24 @@ def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
     '''
 
     return
+
+
+def rebind_Clusters( self, NWKID):
+
+    # Binding devices
+    CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001',
+            '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
+            'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+            'ff02'  # Used by Xiaomi devices for battery informations.
+            ]
+
+    for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                del self.ListOfDevices[NWKID]['Bind']
+                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+
 
 def identifyEffect( self, nwkid, ep, effect='Blink' ):
 

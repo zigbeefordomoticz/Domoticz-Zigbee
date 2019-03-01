@@ -23,6 +23,7 @@
         	    <li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
         	<li> Software Reset: This allow you to do a soft reset of the Zigate (no lost of data). Can be use if have change the Channel number in PluginConf.txt</li>
+                <li> Rescan for Group Membership. In case you have added a new device, or remove some, you might want to have the plugin re-scanning the all devices for Group membership.</li>
         	<li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
         	<li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
 	</ul>
@@ -40,6 +41,12 @@
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
         <param field="Mode4" label="Software Reset" width="75px" required="true" default="False" >
+            <options>
+                <option label="True" value="True"/>
+                <option label="False" value="False" default="true" />
+            </options>
+        </param>
+        <param field="Mode5" label="Rescann for group membership" width="75px" required="true" default="False" >
             <options>
                 <option label="True" value="True"/>
                 <option label="False" value="False" default="true" />
@@ -226,7 +233,7 @@ class BasePlugin:
         Domoticz.Debug("IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
 
         # Create Statistics object
-        self.statistics = TransportStatistics()
+        self.statistics = TransportStatistics(self.pluginconf)
 
         # Check update for web GUI
         # CheckForUpdate( self )
@@ -252,6 +259,7 @@ class BasePlugin:
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, 0)
         self.statistics.printSummary()
+        self.statistics.writeReport()
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :
@@ -430,7 +438,7 @@ class BasePlugin:
                 if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
                     Domoticz.Status("Start Group Management")
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
-                        self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+                            self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
@@ -481,7 +489,7 @@ class BasePlugin:
                 if self.Ping['Rx Message']: # 'Rx Message' is set to 0 when receiving a Message.
                                             # Looks like we didn't receive messages
                     if  self.Ping['Rx Message'] > ( 60 //  HEARTBEAT ):
-                        Domoticz.Log("Ping - We didn't receive any messages since 60s")
+                        Domoticz.Debug("Ping - We didn't receive any messages since 60s")
                         # This is now about 1' or more that we didn't receive any messages.
                         # Let's try to ping Zigate in order to force a message
                         now = time.time()
@@ -490,7 +498,7 @@ class BasePlugin:
                                 delta = now - self.Ping['TimeStamps']
                                 Domoticz.Debug("processKnownDevices - Ping: %s" %delta)
                                 if delta > 60: # Seems that we have lost the Zigate communication
-                                    Domoticz.Log("Ping - no Heartbeat with Zigate")
+                                    Domoticz.Error("Ping - no Heartbeat with Zigate")
                                     self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
                                     self.connectionState = 0
                                     self.ZigateComm.reConn()
@@ -501,13 +509,13 @@ class BasePlugin:
                             else:
                                 #if self.connectionState == 0:
                                 #    self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-                                Domoticz.Log("Ping - Send a Ping")
+                                Domoticz.Debug("Ping - Send a Ping")
                                 sendZigateCmd( self, "0014", "" ) # Request status
                                 self.connectionState = 1
                                 self.Ping['Status'] = 'Sent'
                                 self.Ping['TimeStamps'] = now
                         else:
-                            Domoticz.Log("Ping - Send a Ping")
+                            Domoticz.Debug("Ping - Send a Ping")
                             sendZigateCmd( self, "0014", "" ) # Request status
                             self.Ping['Status'] = 'Sent'
                             self.Ping['TimeStamps'] = now

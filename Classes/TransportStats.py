@@ -5,12 +5,13 @@
 #
 
 import Domoticz
+import json
 from time import time
 
 
 class TransportStatistics:
 
-    def __init__(self):
+    def __init__(self, pluginconf):
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
         self._sent = 0  # count of sent messages
@@ -25,6 +26,7 @@ class TransportStatistics:
         self._reTx = 0
         self._MaxLoad = 0
         self._start = int(time())
+        self.pluginconf = pluginconf
 
     # Statistics methods 
     def starttime(self):
@@ -90,7 +92,40 @@ class TransportStatistics:
         Domoticz.Status("   RX clusters KO   : %s" % (self.clusterKO()))
         t0 = self.starttime()
         t1 = int(time())
-        hours = (t1 - t0) // 3600
-        min = (t1 - t0) // 60
-        sec = (t1 - t0) % 60
-        Domoticz.Status("Operating time      : %s Hours %s Mins %s Secs" % (hours, min, sec))
+        _days = 0
+        _duration = t1 -t0
+        _hours = _duration // 3600
+        _duration = _duration % 3600
+        if _hours >= 24:
+            _days = _hours // 24
+            _hours = _hours % 24
+        _min = _duration // 60
+        _duration = _duration % 60
+        _sec =  _duration % 60
+        print("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
+
+    def writeReport(self):
+
+        timing = int(time())
+        stats = {}
+        stats[timing] = {}
+        stats[timing]['crcErrors'] = self._crcErrors
+        stats[timing]['frameErrors'] = self._frameErrors
+        stats[timing]['sent'] = self._sent
+        stats[timing]['received'] = self._received
+        stats[timing]['ack'] = self._ack
+        stats[timing]['ackKO'] = self._ackKO
+        stats[timing]['data'] = self._data
+        stats[timing]['TOstatus'] = self._TOstatus
+        stats[timing]['TOdata'] = self._TOdata
+        stats[timing]['clusterOK'] = self._clusterOK
+        stats[timing]['clusterKO'] = self._clusterKO
+        stats[timing]['reTx'] = self._reTx
+        stats[timing]['MaxLoad'] = self._MaxLoad
+        stats[timing]['start'] = self._start
+        stats[timing]['stop'] = timing
+
+        json_filename = self.pluginconf.pluginReports + 'Transport-stats.json'
+        with open( json_filename, 'at') as json_file:
+            json_file.write('\n')
+            json.dump( stats, json_file)
