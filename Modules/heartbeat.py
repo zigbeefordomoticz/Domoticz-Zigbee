@@ -56,10 +56,23 @@ READ_ATTRIBUTES_REQUEST = {
     }
 
 # Ordered List - Important for binding
-CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001', 
-        '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
-        'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-        'ff02'  # Used by Xiaomi devices for battery informations.
+CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
+        '0500',            # IAS Zone
+        '0406',            # Occupancy Sensing
+        '0402',            # Temperature Measurement
+        '0400',            # Illuminance Measurement
+        '0001',            # Power Configuration
+        '0102',            # Windows Covering / SHutter
+        '0403',            # Measurement: Pression atmospherique
+        '0405',            # Relative Humidity Measurement
+        '0702',            # Smart Energy Metering
+        '0006',            # On/Off
+        '0008',            # Level Control
+        '0201',            # Thermostat
+        '0300',            # Colour Control
+        '0000',            # Basic
+        'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+        'ff02'             # Used by Xiaomi devices for battery informations.
         ]
 
 #READ_ATTRIBUTES_MATRIX = {
