@@ -776,7 +776,8 @@ def rebind_Clusters( self, NWKID):
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
-                del self.ListOfDevices[NWKID]['Bind']
+                if 'Bind' in self.ListOfDevices[NWKID]:
+                    del self.ListOfDevices[NWKID]['Bind']
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
