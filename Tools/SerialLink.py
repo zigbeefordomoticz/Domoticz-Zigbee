@@ -161,6 +161,7 @@ E_SL_MSG_PDM_HOST_AVAILABLE_RESPONSE    =   0x8300
 
 # Global flag to the threads
 bRunning = True
+oCB = None
 
 class cPDMFunctionality(threading.Thread):
     """Class implementing the binary serial protrocol to the control bridge node"""
@@ -469,8 +470,7 @@ class cSerialLink(threading.Thread):
                         self.logger.info("Module: : %s",  logMessage)
                     
                     if(eMessageType == E_SL_MSG_NODE_CLUSTER_LIST):
-                        stringme= (':'.join(x.encode('hex') for x in sData))
-                        self.logger.info("Node->Host: Cluster List Received %s",stringme)
+                        self.logger.info("Node->Host: Cluster List Received")
                     if(eMessageType == E_SL_MSG_NODE_ATTRIBUTE_LIST):
                         self.logger.info("Node->Host: Attribute List ")
 
