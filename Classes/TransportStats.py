@@ -5,12 +5,13 @@
 #
 
 import Domoticz
+import json
 from time import time
 
 
 class TransportStatistics:
 
-    def __init__(self):
+    def __init__(self, pluginconf):
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
         self._sent = 0  # count of sent messages
@@ -25,6 +26,7 @@ class TransportStatistics:
         self._reTx = 0
         self._MaxLoad = 0
         self._start = int(time())
+        self.pluginconf = pluginconf
 
     # Statistics methods 
     def starttime(self):
@@ -94,3 +96,27 @@ class TransportStatistics:
         min = (t1 - t0) // 60
         sec = (t1 - t0) % 60
         Domoticz.Status("Operating time      : %s Hours %s Mins %s Secs" % (hours, min, sec))
+
+    def writeReport(self):
+
+        stats = {}
+        stats['crcErrors'] = self._crcErrors
+        stats['frameErrors'] = self._frameErrors
+        stats['sent'] = self._sent
+        stats['received'] = self._received
+        stats['ack'] = self._ack
+        stats['ackKO'] = self._ackKO
+        stats['data'] = self._data
+        stats['TOstatus'] = self._TOstatus
+        stats['TOdata'] = self._TOdata
+        stats['clusterOK'] = self._clusterOK
+        stats['clusterKO'] = self._clusterKO
+        stats['reTx'] = self._reTx
+        stats['MaxLoad'] = self._MaxLoad
+        stats['start'] = self._start
+        stats['stop'] = int(time())
+
+        json_filename = self.pluginconf.pluginReports + 'Transport-stats.json'
+        with open( json_filename, 'at') as json_file:
+            json_file.write('\n')
+            json.dump( stats, json_file)

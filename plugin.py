@@ -233,7 +233,7 @@ class BasePlugin:
         Domoticz.Debug("IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )
 
         # Create Statistics object
-        self.statistics = TransportStatistics()
+        self.statistics = TransportStatistics(self.pluginconf)
 
         # Check update for web GUI
         # CheckForUpdate( self )
@@ -259,6 +259,7 @@ class BasePlugin:
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, 0)
         self.statistics.printSummary()
+        self.statistics.writeReport()
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :

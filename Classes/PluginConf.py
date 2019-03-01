@@ -55,10 +55,10 @@ class PluginConf:
         # Plugin Directories
         self.pluginHome = homedir
         self.homedirectory = homedir
-        self.pluginData = self.pluginHome + './Data/'
-        self.pluginZData = self.pluginHome + './Zdatas/'
-        self.pluginConfig = self.pluginHome + './Conf/'
-        self.pluginWWW = self.pluginHome + '../../www/templates/'
+        self.pluginData = self.pluginHome + '/Data/'
+        self.pluginZData = self.pluginHome + '/Zdatas/'
+        self.pluginConfig = self.pluginHome + '/Conf/'
+        self.pluginWWW = self.pluginHome + '/www/'
         #self.pluginReports = self.pluginWWW + 'zigate/reports/'
         self.pluginReports = self.pluginHome + 'www/zigate/reports/'
 
