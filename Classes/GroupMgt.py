@@ -64,7 +64,8 @@ class GroupsManagement(object):
                 Domoticz.Debug("No Groups Configuration File")
                 self.groupsConfigFilename = None
 
-        self.groupListFileName = self.pluginconf.pluginData + "/GroupsList-%02d" %hardwareID + ".pck"
+        self.groupListFileName = self.pluginconf.pluginData + "/GroupsList-%02d.pck" %hardwareID 
+        self.groupListReport = self.pluginconf.pluginReports + "GroupList-%02d.json" %hardwareID
 
 
         return
@@ -1179,7 +1180,7 @@ class GroupsManagement(object):
                         Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
 
             # Store Group in report under json format
-            json_filename = self.pluginconf.pluginReports + 'GroupList.json'
+            json_filename = self.groupListReport
             with open( json_filename, 'wt') as json_file:
                 json_file.write('\n')
                 json.dump( self.ListOfGroups, json_file, indent=4, sort_keys=True)

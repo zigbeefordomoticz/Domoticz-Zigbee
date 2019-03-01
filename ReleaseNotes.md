@@ -47,7 +47,7 @@
 - [Hardware] - First phase implementation of Legrand shutter/Window covering. ( On and Off command works).
 - [Technical] - Lux calculation for non-Xiaomi devices.
 - [Technical] - Transport statistics are now stored on a reporting file, for further analysis.
-
+- [Technical] - When groups are ready report into GroupList-xx.json
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
