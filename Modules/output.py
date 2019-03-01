@@ -512,7 +512,7 @@ def removeZigateDevice( self, IEEE ):
     # extended address is ieee address
     if self.ZigateIEEE != None:
         Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
-        sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
+        #sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
     else:
         Domoticz.Log("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
 
