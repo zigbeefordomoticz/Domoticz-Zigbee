@@ -574,28 +574,19 @@ class GroupsManagement(object):
         nValue = 0
         level = None
         for dev_nwkid, dev_ep in self.ListOfGroups[group_nwkid]['Devices']:
-            Domoticz.Debug("updateDomoGroupDevice - %s, %s" %(dev_nwkid, dev_ep))
             if dev_nwkid in self.ListOfDevices:
                 if 'Ep' in  self.ListOfDevices[dev_nwkid]:
                     if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
                         if '0006' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
                             if str(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']).isdigit():
                                 if int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']) != 0:
-                                    Domoticz.Debug("updateDomoGroupDevice - Device: %s OnOff: %s" \
-                                            %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006'])))
                                     nValue = 1
                         if '0008' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
-                            Domoticz.Debug("updateDomoGroupDevice - Cluster 0008 value: %s" %self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])
                             if self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'] != '' and self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'] != {}:
                                 if level is None:
                                     level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
                                 else:
                                     level = ( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) // 2
-                                Domoticz.Debug("updateDomoGroupDevice - Device: %s level: %s" \
-                                        %(dev_nwkid, (self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'])))
-
-            Domoticz.Debug("updateDomoGroupDevice - OnOff: %s, Level: %s" %( nValue, level))
-                                
         if level:
             analogValue = level
             if analogValue >= 255:
@@ -611,7 +602,7 @@ class GroupsManagement(object):
                 nValue = 2
         else:
             sValue = "Off"
-        Domoticz.Debug("UpdateDeviceGroup Values %s : %s '(%s)'" %(nValue, sValue, self.Devices[unit].Name))
+
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
             Domoticz.Log("UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
             self.Devices[unit].Update( nValue, sValue)

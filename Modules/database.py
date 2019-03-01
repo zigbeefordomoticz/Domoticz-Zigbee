@@ -113,7 +113,6 @@ def WriteDeviceList(self, count):
         with open (json_filename, 'wt') as json_file:
             json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
     else :
-        Domoticz.Debug("HB count = " + str(self.HBcount))
         self.HBcount=self.HBcount+1
 
 def importDeviceConf( self ) :
