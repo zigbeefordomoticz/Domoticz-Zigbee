@@ -48,6 +48,7 @@
 - [Technical] - Lux calculation for non-Xiaomi devices.
 - [Technical] - Transport statistics are now stored on a reporting file, for further analysis.
 - [Technical] - When groups are ready report into GroupList-xx.json
+- [Technical] - if allowed rebind_clusters when receiving a Device Annoucement
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
