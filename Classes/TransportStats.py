@@ -92,10 +92,17 @@ class TransportStatistics:
         Domoticz.Status("   RX clusters KO   : %s" % (self.clusterKO()))
         t0 = self.starttime()
         t1 = int(time())
-        hours = (t1 - t0) // 3600
-        min = (t1 - t0) // 60
-        sec = (t1 - t0) % 60
-        Domoticz.Status("Operating time      : %s Hours %s Mins %s Secs" % (hours, min, sec))
+        _days = 0
+        _duration = t1 -t0
+        _hours = _duration // 3600
+        _duration = _duration % 3600
+        if _hours >= 24:
+            _days = _hours // 24
+            _hours = _hours % 24
+        _min = _duration // 60
+        _duration = _duration % 60
+        _sec =  _duration % 60
+        print("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
 
     def writeReport(self):
 
