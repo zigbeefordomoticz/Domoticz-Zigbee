@@ -1233,6 +1233,11 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             # No need to spend time as it is already in the state we want, go to next device
             continue
 
+        if self.domoticzdb_DeviceStatus:
+            from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
+                return
+
         LUpdate = Devices[x].LastUpdate
         _tmpDeviceID_IEEE = Devices[x].DeviceID
         LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
@@ -1268,14 +1273,14 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
             _timeout = self.pluginconf.resetMotiondelay
-            resetMotionDelay = 0
+            #resetMotionDelay = 0
 
-            if self.domoticzdb_DeviceStatus:
-                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-                resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
+            #if self.domoticzdb_DeviceStatus:
+            #    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+            #    resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
 
-            if resetMotionDelay > 0:
-                _timeout = resetMotionDelay
+            #if resetMotionDelay > 0:
+            #    _timeout = resetMotionDelay
 
             if (current - LUpdate) >= _timeout: 
                 Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(

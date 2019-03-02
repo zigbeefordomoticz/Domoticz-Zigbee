@@ -77,13 +77,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType == 'ThermoSetpoint':
             ClusterSearch = '0201'
             DeviceType = tmpDeviceType
+        if tmpDeviceType == 'Motion':
+            ClusterSearch = '0406'
+            DeviceType = tmpDeviceType
+
+
 
     if DeviceType == '': 
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
     Domoticz.Debug("mgtCommand - DeviceType : " +str(DeviceType) )
-
 
     # A ce stade ClusterSearch est connu
     EPin="01"
