@@ -661,7 +661,11 @@ class GroupsManagement(object):
             return
         for iterDev, iterEp in self.ListOfGroups[nwkid]['Devices']:
             Domoticz.Debug('processCommand - reset heartbeat for device : %s' %iterDev)
-            self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+            if iterDev in self.ListOfDevices:
+                if 'Heartbeat' in self.ListOfDevices[iterDev]:
+                    self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+            else:
+                Domoticz.Error("processCommand - Looks like device %s does not exist anymore and you expect to be part of group %s" %(iterDev, nwkid))
 
         EPin = EPout = '01'
 
