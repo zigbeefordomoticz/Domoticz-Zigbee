@@ -1002,7 +1002,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             elif ClusterType == 'WindowCovering' and DeviceType == "LvlControl":
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
-                value = int(value,16)
+                
                 if value == 0:
                     nValue = 0
                 else:
