@@ -204,9 +204,6 @@ class BasePlugin:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
 
-        Domoticz.Status("ZLL Touch Link Reset")
-        z_output.sendZigateCmd(self, "00D2", "" ) # ZLL Touch Link Reset
-
         if (self.pluginconf).logLQI != 0 :
             z_LQI.LQIdiscovery( self ) 
 
