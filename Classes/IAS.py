@@ -200,14 +200,16 @@ class IAS_Zone_Management:
         if  step == 3:  # Receive Write Attribute Message
             Domoticz.Log("receiveIASmessages - Write rAttribute Response: %s" %value)
             self.HB = 0
-            self.devices[nwkid]['Step'] = 4
+            if self.devices[nwkid]['Step'] <= 4:
+                self.devices[nwkid]['Step'] = 4
             self.readConfirmEnroll(nwkid, iterEp)
             self.IASZone_attributes( nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
 
         elif step == 5: # Receive Attribute 0x0001 and 0x0002
             self.HB = 0
-            self.devices[nwkid]['Step'] = 7
+            if self.devices[nwkid]['Step'] <= 7:
+                self.devices[nwkid]['Step'] = 7
             self.IASZone_attributes( nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
             self.readConfirmEnroll(nwkid, iterEp)
@@ -298,6 +300,7 @@ class IAS_Zone_Management:
                     self.devices[iterKey]['Step'] = 7
 
             elif self.devices[iterKey]['Step'] == 7: # Receive Confirming Enrollement
+                Domoticz.Log("IAS_heartbeat - Enrollment confirmed/completed")
                 self.HB = 0
                 self.wip = False
                 self.devices[iterKey]['Step'] = 0
