@@ -325,6 +325,8 @@ def ReadAttributeRequest_000C(self, key):
      Attribute Type: 39 Attribut ID: 0106
     """
 
+    EPin = "01"
+    EPout= "01"
     Domoticz.Debug("Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout )
     listAttributes = []
     listAttributes.append(0x41)
@@ -343,7 +345,9 @@ def ReadAttributeRequest_000C(self, key):
 
 def ReadAttributeRequest_0102(self, key):
 
-    Domoticz.Log("Request Windows Covering status Read Attribute request: " + key + " EPout = " + EPout )
+    EPin = "01"
+    EPout= "01"
+    Domoticz.Log("Request Windows Covering status Read Attribute request: " + key )
     listAttributes = []
 
     listAttributes.append(0x0000) # Window Covering Type
@@ -362,11 +366,14 @@ def ReadAttributeRequest_0102(self, key):
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+
     Domoticz.Debug("Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_fc00(self, key):
 
+    EPin = "01"
+    EPout= "01"
     listAttributes = []
 
     if 'Model' in self.ListOfDevices[key]:
