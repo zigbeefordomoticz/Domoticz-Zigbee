@@ -1235,7 +1235,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         if self.domoticzdb_DeviceStatus:
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus
             if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
-                return
+                continue
 
         LUpdate = Devices[x].LastUpdate
         _tmpDeviceID_IEEE = Devices[x].DeviceID
