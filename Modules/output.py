@@ -762,10 +762,24 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     return
 
 
-def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
+def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
     unbind
     '''
+
+    mode = "03"     # IEEE
+    if not destaddr:
+        #destaddr = self.ieee # Let's grab the IEEE of Zigate
+        if self.ZigateIEEE != None and self.ZigateIEEE != '':
+            destaddr = self.ZigateIEEE
+            destep = "01"
+        else:
+            Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
+            return
+
+    Domoticz.Debug("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
+    sendZigateCmd(self, "0031", datas )
 
     return
 
@@ -785,6 +799,7 @@ def rebind_Clusters( self, NWKID):
                 Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
                 if 'Bind' in self.ListOfDevices[NWKID]:
                     del self.ListOfDevices[NWKID]['Bind']
+                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
