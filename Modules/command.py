@@ -175,10 +175,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             value = '%02x' %Level
-            Domoticz.Log("WindowCovering - Go To Tilt Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "08" + value)
-            #Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
-            #sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         else:
             OnOff = '01' # 00 = off, 01 = on
