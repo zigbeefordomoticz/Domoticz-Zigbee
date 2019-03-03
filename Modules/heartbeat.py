@@ -167,10 +167,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
     Domoticz.Debug("processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
-    Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+    if self.ListOfDevices[NWKID]['Model'] != {}:
+        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
 
     if status in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
-        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
         if self.ListOfDevices[NWKID]['Model'] != {}:
             Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
             # Let's check if this Model is known
@@ -281,7 +281,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
             Domoticz.Log("Too early, let's try to get the Model")
             return
-        Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
+        Domoticz.Debug("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
         IsCreated=False
         # Let's check if the IEEE is not known in Domoticz
         for x in Devices:
@@ -301,7 +301,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             CreateDomoDevice(self, Devices, NWKID)
 
             # Post creation widget
-            Domoticz.Log("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
+            Domoticz.Debug("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
             for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
