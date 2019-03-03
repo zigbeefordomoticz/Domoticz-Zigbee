@@ -515,7 +515,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("Status")
 
     elif MsgAttrID == "0008":
-        Domoticz.Log("Current position lift %s " %svalue)
+        Domoticz.Log("Current position lift %s " %value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
 
