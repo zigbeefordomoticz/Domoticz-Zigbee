@@ -44,6 +44,7 @@ class PluginConf:
         self.TXpower = 0
         self.TXpower_set = 0x80
         self.Certification = 0  # 1- CE; 2- FCC
+        self.enableAPSFailureLoging = 0
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -182,6 +183,10 @@ class PluginConf:
                 self.channel = self.PluginConf.get('channel')
                 self.channel = [c.strip() for c in self.channel.split(',')]
 
+
+            if self.PluginConf.get('enableAPSFailureLoging') and \
+                    self.PluginConf.get('enableAPSFailureLoging').isdigit():
+                self.enableAPSFailureLoging = int(self.PluginConf.get('enableAPSFailureLoging'))
 
             if self.PluginConf.get('blueLedOff') and \
                     self.PluginConf.get('blueLedOff').isdigit():
