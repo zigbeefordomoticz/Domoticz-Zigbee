@@ -402,10 +402,19 @@ class BasePlugin:
 
         if self.FirmwareVersion is None:
             Domoticz.Log("FirmwareVersion not ready")
-            if self.HeartbeatCount in ( 2, 6 ): # Try to get Firmware version once more time.
+            if self.HeartbeatCount in ( 4, 8 ): # Try to get Firmware version once more time.
                 Domoticz.Log("Try to get Firmware version once more %s" %self.HeartbeatCount)
                 sendZigateCmd(self, "0010", "") # Get Firmware version
+            elif self.HeartbeatCount > 10:
+                Domoticz.Error("Plugin is not started ...")
+                Domoticz.Error(" - Communication issue with the Zigate")
+                Domoticz.Error(" - restart once the plugin, and if this remain the same")
+                Domoticz.Error(" - unplug/plug the zigate")
             return
+
+        # Ig ZigateIEEE not known, try to get it during the first 10 HB
+        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
+            sendZigateCmd(self, "0009","")
 
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
@@ -448,9 +457,7 @@ class BasePlugin:
                     sendZigateCmd(self, "0009","")
 
 
-        # Ig ZigateIEEE not known, try to get it during the first 10 HB
-        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
-            sendZigateCmd(self, "0009","")
+
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
