@@ -675,10 +675,10 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
 
         else:
-            Domoticz.Log("ReadCluster0500 - Device: %s empty data: %s" %(MsgSrcAddr, MsgClusterData))
+            Domoticz.Debug("ReadCluster0500 - Device: %s empty data: %s" %(MsgSrcAddr, MsgClusterData))
 
     elif MsgAttrID == "0010":
-        Domoticz.Log("ReadCluster0500 - receiving attribute 0x0010: %s" %MsgClusterData)
+        Domoticz.Debug("ReadCluster0500 - receiving attribute 0x0010: %s" %MsgClusterData)
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 7, MsgClusterData)
 
     Domoticz.Debug("ReadCluster0500 - Device: %s Data: %s" %(MsgSrcAddr, MsgClusterData))
@@ -756,7 +756,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
                         self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
                         if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
-                            Domoticz.Log("Removing existing received Ep")
+                            Domoticz.Debug("Removing existing received Ep")
                             del self.ListOfDevices[MsgSrcAddr]['Ep']                           # It has been prepopulated by some 0x8043 message, let's remove them.
                             self.ListOfDevices[MsgSrcAddr]['Ep'] = {}                          # It has been prepopulated by some 0x8043 message, let's remove them.
 
@@ -773,7 +773,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
                             if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
-                    Domoticz.Log("Result based on DeviceConf is: %s" %str(self.ListOfDevices[MsgSrcAddr]))
+                    Domoticz.Debug("Result based on DeviceConf is: %s" %str(self.ListOfDevices[MsgSrcAddr]))
 
                 if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
                     self.DiscoveryDevices[MsgSrcAddr]['Model'] = modelName
