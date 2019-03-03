@@ -1000,7 +1000,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                 # We do update only if this is a On/off
                                 UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
-            elif ClusterType == 'WindowCovering' and DeviceType == "LvlControl":
+            elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
                 
                 if value == 0: nValue = 0
