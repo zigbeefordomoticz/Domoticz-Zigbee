@@ -737,13 +737,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
+                adjvalue = 0
                 if self.domoticzdb_DeviceStatus:
-
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
-                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
-                    value = round(value + adjvalue,1)
+                Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -753,18 +751,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewNvalue = 0
                 NewSvalue = ''
                 if DeviceType == "Temp":
-                    NewNvalue = value
-                    NewSvalue = str(value)
+                    NewNvalue = round(value + adjvalue,1)
+                    NewSvalue = str(round(value + adjvalue,1))
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":
                     NewNvalue = 0
-                    NewSvalue = '%s;%s;%s' % (value, SplitData[1], SplitData[2])
+                    NewSvalue = '%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2])
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
                     NewNvalue = 0
-                    NewSvalue = '%s;%s;%s;%s;%s' % (value, SplitData[1], SplitData[2], SplitData[3], SplitData[4])
+                    NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Humi":  # humidite
@@ -800,12 +798,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Baro":  # barometre
+                adjvalue = 0
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
-                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
-                    value = round(value + adjvalue,1)
+                Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -825,11 +822,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Bar_forecast = 1
 
                 if DeviceType == "Baro":
-                    NewSvalue = '%s;%s' % (value, Bar_forecast)
+                    NewSvalue = '%s;%s' %(round(value + adjvalue,1), Bar_forecast)
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":
-                    NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], value, Bar_forecast)
+                    NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], round(value + adjvalue,1), Bar_forecast)
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Door" and DeviceType == "Door":  # Door / Window
