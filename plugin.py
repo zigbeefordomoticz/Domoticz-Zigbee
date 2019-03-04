@@ -334,10 +334,12 @@ class BasePlugin:
                 self.domoticzdb_Hardware.disableErasePDM()
             Domoticz.Status("Erase Zigate PDM")
             sendZigateCmd(self, "0012", "")
+            start_Zigate( self )
 
         if Parameters["Mode4"] == "True": # Software Non-Factory Reseet
             Domoticz.Status("Software reset")
             sendZigateCmd(self, "0011", "" ) # Software Reset
+            start_Zigate( self )
 
         if Parameters['Mode2'].isdigit(): # Permit to join
             self.permitToJoin = int(Parameters['Mode2'])
