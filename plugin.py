@@ -18,7 +18,7 @@
         	    <li> IP : For Wifi Zigate, the IP address. </li>
         	    <li> Port: For Wifi Zigate,  port number. </li>
                 </ul>
-                <li> Model USB or Rpi:</li>
+                <li> Model USB or PI:</li>
 	        <ul style="list-style-type:square">
         	    <li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
@@ -34,6 +34,7 @@
         <param field="Mode1" label="Model" width="75px">
             <options>
                 <option label="USB" value="USB" default="true" />
+                <option label="PI" value="USB" default="true" />
                 <option label="Wifi" value="Wifi"/>
             </options>
         </param>
@@ -84,7 +85,7 @@ import queue
 import sys
 
 from Modules.tools import removeDeviceInList
-from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin
+from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin, start_Zigate
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -242,6 +243,9 @@ class BasePlugin:
         if  self.transport == "USB":
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
+        elif  self.transport == "PI":
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+                    serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
@@ -256,6 +260,16 @@ class BasePlugin:
 
     def onStop(self):
         Domoticz.Status("onStop called")
+
+        major, minor = Parameters["DomoticzVersion"].split('.')
+        major = int(major)
+        minor = int(minor)
+        if major > 4 or ( major == 4 and minor >= 10355):
+            import threading
+            for thread in threading.enumerate():
+                if (thread.name != threading.current_thread().name):
+                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, 0)
         self.statistics.printSummary()
@@ -292,58 +306,54 @@ class BasePlugin:
         Domoticz.Debug("onConnect called with status: %s" %Status)
         self.busy = True
 
-        if Status == 0:
-            Domoticz.Debug("Connected successfully")
-
-            if self.connectionState is None:
-                self.adminWidgets.updateStatusWidget( Devices, 'Starting the plugin up')
-            elif self.connectionState == 0:
-                Domoticz.Status("Reconnected after failure")
-                self.adminWidgets.updateStatusWidget( Devices, 'Reconnected after failure')
-            self.connectionState = 1
-            self.Ping['Status'] = None
-            self.Ping['TimeStamp'] = None
-            self.Ping['Permit'] = None
-            self.Ping['Rx Message'] = 1
-
-            if Parameters["Mode3"] == "True":
-                if self.domoticzdb_Hardware:
-                    self.domoticzdb_Hardware.disableErasePDM()
-                ################### ZiGate - ErasePD ##################
-                Domoticz.Status("Erase Zigate PDM")
-                sendZigateCmd(self, "0012", "")
-                Domoticz.Status("Software reset")
-                sendZigateCmd(self, "0011", "") # Software Reset
-                ZigateConf(self)
-            else :
-                if Parameters["Mode4"] == "True":
-                    Domoticz.Status("Software reset")
-                    sendZigateCmd(self, "0011", "" ) # Software Reset
-                    ZigateConf(self)
-                else:
-                    ZigateConf_light(self)
-
-            if Parameters['Mode2'].isdigit():
-                self.permitToJoin = int(Parameters['Mode2'])
-                if self.permitToJoin != 0:
-                    Domoticz.Log("Configure Permit To Join")
-                    self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, self.permitToJoin)
-                else:
-                    self.permitToJoin = 0
-                    self.Ping['Permit'] = None
-                    ZigatePermitToJoin(self, 0)
-            else:
-                self.permitToJoin = 0
-                self.Ping['Permit'] = None
-                ZigatePermitToJoin(self, 0)
-        else:
+        if Status != 0:
             Domoticz.Error("Failed to connect ("+str(Status)+")")
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
             self.ZigateComm.reConn()
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
+            return
 
+        Domoticz.Debug("Connected successfully")
+        if self.connectionState is None:
+            self.adminWidgets.updateStatusWidget( Devices, 'Starting the plugin up')
+        elif self.connectionState == 0:
+            Domoticz.Status("Reconnected after failure")
+            self.adminWidgets.updateStatusWidget( Devices, 'Reconnected after failure')
+
+        self.connectionState = 1
+        self.Ping['Status'] = None
+        self.Ping['TimeStamp'] = None
+        self.Ping['Permit'] = None
+        self.Ping['Rx Message'] = 1
+
+        sendZigateCmd(self, "0010", "") # Get Firmware version
+
+        if Parameters["Mode3"] == "True": # Erase PDM
+            if self.domoticzdb_Hardware:
+                self.domoticzdb_Hardware.disableErasePDM()
+            Domoticz.Status("Erase Zigate PDM")
+            sendZigateCmd(self, "0012", "")
+            start_Zigate( self )
+
+        if Parameters["Mode4"] == "True": # Software Non-Factory Reseet
+            Domoticz.Status("Software reset")
+            sendZigateCmd(self, "0011", "" ) # Software Reset
+            start_Zigate( self )
+
+        if Parameters['Mode2'].isdigit(): # Permit to join
+            self.permitToJoin = int(Parameters['Mode2'])
+            if self.permitToJoin != 0:
+                Domoticz.Log("Configure Permit To Join")
+                self.Ping['Permit'] = None
+                ZigatePermitToJoin(self, self.permitToJoin)
+            else:
+                self.permitToJoin = 0
+                self.Ping['Permit'] = None
+                ZigatePermitToJoin(self, 0)
+
+        sendZigateCmd(self, "0009", "") # Request Network state
+        sendZigateCmd(self, "0015", "") # Request List of Active Device
 
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
@@ -365,6 +375,7 @@ class BasePlugin:
 
     def onCommand(self, Unit, Command, Level, Color):
 
+        Domoticz.Debug("onCommand - unit: %s, command: %s, level: %s, color: %s" %(Unit, Command, Level, Color))
         if  not self.connectionState:
             Domoticz.Error("onCommand receive, but no connection to Zigate")
             return
@@ -377,12 +388,18 @@ class BasePlugin:
         elif self.pluginconf.enablegroupmanagement and self.groupmgt:
             #if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
-            self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
             Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+            self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
 
-        elif Devices[Unit].DeviceID.find('Zigate-01-'):
+        elif Devices[Unit].DeviceID.find('Zigate-01-') != -1:
             Domoticz.Log("onCommand - Command adminWidget: %s " %Command)
             self.adminWidgets.handleCommand( self, Command)
+
+        else:
+            Domoticz.Error("onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" \
+                    %(Devices[Unit].Name, Unit, Devices[Unit].DeviceID))
+
+        return
 
     def onDisconnect(self, Connection):
         self.connectionState = 0
@@ -400,12 +417,25 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
+        # Ig ZigateIEEE not known, try to get it during the first 10 HB
+        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4):   
+            sendZigateCmd(self, "0009","")
+        elif self.ZigateIEEE is None and self.HeartbeatCount == 5:
+            start_Zigate( self )
+            return
+
         if self.FirmwareVersion is None:
             Domoticz.Log("FirmwareVersion not ready")
-            if self.HeartbeatCount in ( 2, 6 ): # Try to get Firmware version once more time.
+            if self.HeartbeatCount in ( 4, 8 ): # Try to get Firmware version once more time.
                 Domoticz.Log("Try to get Firmware version once more %s" %self.HeartbeatCount)
                 sendZigateCmd(self, "0010", "") # Get Firmware version
+            elif self.HeartbeatCount > 10:
+                Domoticz.Error("Plugin is not started ...")
+                Domoticz.Error(" - Communication issue with the Zigate")
+                Domoticz.Error(" - restart once the plugin, and if this remain the same")
+                Domoticz.Error(" - unplug/plug the zigate")
             return
+
 
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
@@ -448,9 +478,7 @@ class BasePlugin:
                     sendZigateCmd(self, "0009","")
 
 
-        # Ig ZigateIEEE not known, try to get it during the first 10 HB
-        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4, 6, 8, 10):   
-            sendZigateCmd(self, "0009","")
+
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)

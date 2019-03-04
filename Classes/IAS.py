@@ -91,7 +91,7 @@ class IAS_Zone_Management:
 
     def setIASzoneControlerIEEE( self, key, Epout ):
 
-        Domoticz.Log("setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
+        Domoticz.Debug("setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
         manuf_id = "0000"
         if 'Manufacturer' in self.ListOfDevices[key]:
             manuf_id = self.ListOfDevices[key]['Manufacturer']
@@ -126,7 +126,7 @@ class IAS_Zone_Management:
             Domoticz.Log("IASZone_enroll_response - while not yet started")
             return
 
-        Domoticz.Log("IASZone_enroll_response for %s" %nwkid)
+        Domoticz.Debug("IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
@@ -145,7 +145,7 @@ class IAS_Zone_Management:
             Domoticz.Log("IASZone_enroll_response_zoneID - while not yet started")
             return
 
-        Domoticz.Log("IASZone_enroll_response for %s" %nwkid)
+        Domoticz.Debug("IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
@@ -170,7 +170,7 @@ class IAS_Zone_Management:
 
     def IASZone_triggerenrollement( self, nwkid, Epout):
 
-        Domoticz.Log("IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
+        Domoticz.Debug("IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
         if not self.ZigateIEEE:
             Domoticz.Log("IASZone_triggerenrollement - Zigate IEEE not yet known")
             return
@@ -186,7 +186,7 @@ class IAS_Zone_Management:
 
     def receiveIASmessages(self, nwkid , step, value):
 
-        Domoticz.Log("receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
+        Domoticz.Debug("receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
 
         if not self.ZigateIEEE:
             Domoticz.Log("receiveIASmessages - Zigate IEEE not yet known")
@@ -198,16 +198,18 @@ class IAS_Zone_Management:
         iterEp = self.devices[nwkid]['Ep']
 
         if  step == 3:  # Receive Write Attribute Message
-            Domoticz.Log("receiveIASmessages - Write rAttribute Response: %s" %value)
+            Domoticz.Debug("receiveIASmessages - Write rAttribute Response: %s" %value)
             self.HB = 0
-            self.devices[nwkid]['Step'] = 4
+            if self.devices[nwkid]['Step'] <= 4:
+                self.devices[nwkid]['Step'] = 4
             self.readConfirmEnroll(nwkid, iterEp)
             self.IASZone_attributes( nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
 
         elif step == 5: # Receive Attribute 0x0001 and 0x0002
             self.HB = 0
-            self.devices[nwkid]['Step'] = 7
+            if self.devices[nwkid]['Step'] <= 7:
+                self.devices[nwkid]['Step'] = 7
             self.IASZone_attributes( nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
             self.readConfirmEnroll(nwkid, iterEp)
@@ -259,21 +261,21 @@ class IAS_Zone_Management:
 
         if not self.wip:
             return
-        Domoticz.Log("IAS_heartbeat ")
+        Domoticz.Debug("IAS_heartbeat ")
         if not self.ZigateIEEE:
             Domoticz.Log("IAS_heartbeat - Zigate IEEE not yet known")
             return
         remove_devices =[]
         for iterKey in self.devices:
             iterEp = self.devices[iterKey]['Ep']
-            Domoticz.Log("IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
+            Domoticz.Debug("IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
             if self.devices[iterKey]['Step'] == 0:
                 continue
 
             if self.HB > 1 and self.devices[iterKey]['Step'] == 2:
                 self.HB = 0
                 self.devices[iterKey]['Ep'] = iterEp
-                Domoticz.Log("IAS_heartbeat - TO restart self.IASZone_attributes")
+                Domoticz.Debug("IAS_heartbeat - TO restart self.IASZone_attributes")
                 self.IASZone_enroll_response_zoneID( iterKey, iterEp)
                 self.IASZone_attributes( iterKey, iterEp)
 
@@ -282,7 +284,7 @@ class IAS_Zone_Management:
                 self.HB = 0
                 self.wip = True
                 iterEp = self.devices[iterKey]['Ep']
-                Domoticz.Log("IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
+                Domoticz.Debug("IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
                 if self.tryHB > 3:
                     self.tryHB = 0
                     self.devices[iterKey]['Step'] = 5
@@ -292,12 +294,13 @@ class IAS_Zone_Management:
                 self.HB = 0
                 iterEp = self.devices[iterKey]['Ep']
                 self.readConfirmEnroll(iterKey, iterEp)
-                Domoticz.Log("IAS_heartbeat - TO restart self.readConfirmEnroll")
+                Domoticz.Debug("IAS_heartbeat - TO restart self.readConfirmEnroll")
                 if self.tryHB > 3:
                     self.tryHB = 0
                     self.devices[iterKey]['Step'] = 7
 
             elif self.devices[iterKey]['Step'] == 7: # Receive Confirming Enrollement
+                Domoticz.Debug("IAS_heartbeat - Enrollment confirmed/completed")
                 self.HB = 0
                 self.wip = False
                 self.devices[iterKey]['Step'] = 0

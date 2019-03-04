@@ -737,13 +737,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
+                adjvalue = 0
                 if self.domoticzdb_DeviceStatus:
-
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
-                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
-                    value = round(value + adjvalue,1)
+                Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -753,18 +751,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewNvalue = 0
                 NewSvalue = ''
                 if DeviceType == "Temp":
-                    NewNvalue = value
-                    NewSvalue = str(value)
+                    NewNvalue = round(value + adjvalue,1)
+                    NewSvalue = str(round(value + adjvalue,1))
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":
                     NewNvalue = 0
-                    NewSvalue = '%s;%s;%s' % (value, SplitData[1], SplitData[2])
+                    NewSvalue = '%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2])
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
                     NewNvalue = 0
-                    NewSvalue = '%s;%s;%s;%s;%s' % (value, SplitData[1], SplitData[2], SplitData[3], SplitData[4])
+                    NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Humi":  # humidite
@@ -800,12 +798,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Baro":  # barometre
+                adjvalue = 0
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
-                    Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
-                    value = round(value + adjvalue,1)
+                Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -825,11 +822,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Bar_forecast = 1
 
                 if DeviceType == "Baro":
-                    NewSvalue = '%s;%s' % (value, Bar_forecast)
+                    NewSvalue = '%s;%s' %(round(value + adjvalue,1), Bar_forecast)
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":
-                    NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], value, Bar_forecast)
+                    NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], round(value + adjvalue,1), Bar_forecast)
                     UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Door" and DeviceType == "Door":  # Door / Window
@@ -1000,13 +997,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                 # We do update only if this is a On/off
                                 UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
-            elif ClusterType == 'WindowCovering' and DeviceType == "LvlControl":
+            elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
-                value = int(value,16)
-                if value == 0:
-                    nValue = 0
-                else:
-                    nValue = 1
+                
+                if value == 0: nValue = 0
+                elif value == 100: nValue = 1
+                else: nValue = 2
                 UpdateDevice_v2(Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
@@ -1233,6 +1229,11 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             # No need to spend time as it is already in the state we want, go to next device
             continue
 
+        if self.domoticzdb_DeviceStatus:
+            from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
+                continue
+
         LUpdate = Devices[x].LastUpdate
         _tmpDeviceID_IEEE = Devices[x].DeviceID
         LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
@@ -1268,17 +1269,17 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
             _timeout = self.pluginconf.resetMotiondelay
-            resetMotionDelay = 0
+            #resetMotionDelay = 0
 
-            if self.domoticzdb_DeviceStatus:
-                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-                resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
+            #if self.domoticzdb_DeviceStatus:
+            #    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+            #    resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
 
-            if resetMotionDelay > 0:
-                _timeout = resetMotionDelay
+            #if resetMotionDelay > 0:
+            #    _timeout = resetMotionDelay
 
             if (current - LUpdate) >= _timeout: 
-                Domoticz.Log("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
+                Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
                     current) + " this was : " + str(current - LUpdate) + " secondes ago")
                 UpdateDevice_v2(Devices, x, 0, "Off", BatteryLevel, SignalLevel, SuppTrigger_=True)
     return

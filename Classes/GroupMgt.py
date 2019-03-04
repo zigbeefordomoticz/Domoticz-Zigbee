@@ -661,7 +661,11 @@ class GroupsManagement(object):
             return
         for iterDev, iterEp in self.ListOfGroups[nwkid]['Devices']:
             Domoticz.Debug('processCommand - reset heartbeat for device : %s' %iterDev)
-            self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+            if iterDev in self.ListOfDevices:
+                if 'Heartbeat' in self.ListOfDevices[iterDev]:
+                    self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+            else:
+                Domoticz.Error("processCommand - Looks like device %s does not exist anymore and you expect to be part of group %s" %(iterDev, nwkid))
 
         EPin = EPout = '01'
 
@@ -1044,7 +1048,7 @@ class GroupsManagement(object):
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
-                    Domoticz.Log("Too busy, will come back later")
+                    Domoticz.Debug("Too busy, will come back later")
                     break # will continue in the next cycle
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'DEL-Membership'
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
@@ -1057,7 +1061,7 @@ class GroupsManagement(object):
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
-                    Domoticz.Log("Too busy, will come back later")
+                    Domoticz.Debug("Too busy, will come back later")
                     break # will continue in the next cycle
 
                 if 'GroupMgt' not in self.ListOfDevices[iterDev]:

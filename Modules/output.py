@@ -36,6 +36,35 @@ def ZigatePermitToJoin( self, permit ):
         #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 
+def start_Zigate(self):
+    """
+    Purpose is to run the start sequence for the Zigate
+    it is call when Network is not started.
+
+    2- Set the channel 
+    3- Set the Mode : Coordinator
+    4- Start network ( 0x0024)
+    """
+
+    Domoticz.Status("Set Zigate as a Coordinator")
+    sendZigateCmd(self, "0023","00")
+
+    Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
+            %self.pluginconf.channel)
+    setChannel(self, self.pluginconf.channel)
+
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+    sendZigateCmd(self, "0016", str(UTCTime) )
+
+    Domoticz.Status("Start network")
+    sendZigateCmd(self, "0024", "" )   # Start Network
+
+    Domoticz.Debug("Request network Status")
+    sendZigateCmd( self, "0014", "" ) # Request status
+    sendZigateCmd( self, "0009", "" ) # Request status
+
 
 def ZigateConf_light(self ):
     '''
@@ -181,8 +210,24 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # General
     listAttributes = []
     # By default only request attribute 0x0005 to get the model Identifier
-    listAttributes.append(0x0000)        # ZCL Version
+    if fullScope:
+        listAttributes.append(0x0000)        # ZCL Version
+        listAttributes.append(0x0001)        # APPLICATION_VERSION
+        listAttributes.append(0x0002)        # STACK_VERSION
+        listAttributes.append(0x0003)        # HARDWARE_VERSION
+        listAttributes.append(0x0004)        # MANUFACTURER_NAME
+
     listAttributes.append(0x0005)        # Model Identifier
+
+    if fullScope:
+        listAttributes.append(0x0006)        # DATE_CODE
+        listAttributes.append(0x0007)        # PowerSource
+
+    if fullScope:
+        listAttributes.append(0x000A)        # LOCATION_DESCRIPTION
+        listAttributes.append(0x000F)        # SW_BUILD_ID
+        listAttributes.append(0x0010)        # LOCATION_DESCRIPTION
+        listAttributes.append(0x0015)        # SW_BUILD_ID
 
     if 'Model' in self.ListOfDevices[key]:
         if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
@@ -192,13 +237,6 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
              listAttributes.append(0x0032)
              listAttributes.append(0x0033)
-
-    if fullScope:
-        listAttributes.append(0x0004)        # Manufacturer Name
-        listAttributes.append(0x0007)        # Power Source
-        listAttributes.append(0x0010)        # Battery
-        listAttributes.append(0x000A)        # Product Code
-
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
@@ -212,8 +250,22 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
-        Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
-        ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+
+        listAttr1 = listAttr2 = None
+        if len(listAttributes) > 9:
+            # We can send only 10 attributes at a time, we need to split into 2 packs
+            listAttr1 = listAttributes[:len(listAttributes)//2]
+            listAttr2 = listAttributes[len(listAttributes)//2:]
+
+        if listAttr1 == listAttr2 == None:
+            Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+        else:
+            Domoticz.Log("Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)))
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr1 )
+            Domoticz.Log("Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)))
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr2 )
+
 
 def ReadAttributeRequest_Ack(self, key):
 
@@ -325,6 +377,8 @@ def ReadAttributeRequest_000C(self, key):
      Attribute Type: 39 Attribut ID: 0106
     """
 
+    EPin = "01"
+    EPout= "01"
     Domoticz.Debug("Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout )
     listAttributes = []
     listAttributes.append(0x41)
@@ -343,7 +397,9 @@ def ReadAttributeRequest_000C(self, key):
 
 def ReadAttributeRequest_0102(self, key):
 
-    Domoticz.Log("Request Windows Covering status Read Attribute request: " + key + " EPout = " + EPout )
+    EPin = "01"
+    EPout= "01"
+    Domoticz.Log("Request Windows Covering status Read Attribute request: " + key )
     listAttributes = []
 
     listAttributes.append(0x0000) # Window Covering Type
@@ -362,11 +418,14 @@ def ReadAttributeRequest_0102(self, key):
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+
     Domoticz.Debug("Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_fc00(self, key):
 
+    EPin = "01"
+    EPout= "01"
     listAttributes = []
 
     if 'Model' in self.ListOfDevices[key]:
@@ -755,10 +814,24 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     return
 
 
-def unbindDevice( self, ieee, ep, cluster, addmode, destaddr=None, destep="01"):
+def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
     unbind
     '''
+
+    mode = "03"     # IEEE
+    if not destaddr:
+        #destaddr = self.ieee # Let's grab the IEEE of Zigate
+        if self.ZigateIEEE != None and self.ZigateIEEE != '':
+            destaddr = self.ZigateIEEE
+            destep = "01"
+        else:
+            Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
+            return
+
+    Domoticz.Debug("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
+    sendZigateCmd(self, "0031", datas )
 
     return
 
@@ -776,7 +849,9 @@ def rebind_Clusters( self, NWKID):
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
-                del self.ListOfDevices[NWKID]['Bind']
+                if 'Bind' in self.ListOfDevices[NWKID]:
+                    del self.ListOfDevices[NWKID]['Bind']
+                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 

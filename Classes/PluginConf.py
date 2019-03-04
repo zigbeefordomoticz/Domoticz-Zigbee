@@ -44,6 +44,7 @@ class PluginConf:
         self.TXpower = 0
         self.TXpower_set = 0x80
         self.Certification = 0  # 1- CE; 2- FCC
+        self.enableAPSFailureLoging = 0
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -56,10 +57,10 @@ class PluginConf:
         # Plugin Directories
         self.pluginHome = homedir
         self.homedirectory = homedir
-        self.pluginData = self.pluginHome + '/Data/'
-        self.pluginZData = self.pluginHome + '/Zdatas/'
-        self.pluginConfig = self.pluginHome + '/Conf/'
-        self.pluginWWW = self.pluginHome + '/www/'
+        self.pluginData = self.pluginHome + 'Data/'
+        self.pluginZData = self.pluginHome + 'Zdatas/'
+        self.pluginConfig = self.pluginHome + 'Conf/'
+        self.pluginWWW = self.pluginHome + 'www/'
         #self.pluginReports = self.pluginWWW + 'zigate/reports/'
         self.pluginReports = self.pluginHome + 'www/zigate/reports/'
 
@@ -182,6 +183,9 @@ class PluginConf:
                 self.channel = self.PluginConf.get('channel')
                 self.channel = [c.strip() for c in self.channel.split(',')]
 
+            if self.PluginConf.get('enableAPSFailureLoging') and \
+                    self.PluginConf.get('enableAPSFailureLoging').isdigit():
+                self.enableAPSFailureLoging = int(self.PluginConf.get('enableAPSFailureLoging'))
 
             if self.PluginConf.get('blueLedOff') and \
                     self.PluginConf.get('blueLedOff').isdigit():
@@ -203,7 +207,6 @@ class PluginConf:
                 else:
                     self.Certification = 0
 
-
             if self.PluginConf.get('zmode'):
                 if self.PluginConf.get('zmode') == 'Agressive':
                     self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
@@ -215,7 +218,6 @@ class PluginConf:
             if self.PluginConf.get('zTimeOut') and \
                     self.PluginConf.get('zTimeOut').isdigit():
                 self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
-
 
         Domoticz.Log("Device Management:")
         Domoticz.Log(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)

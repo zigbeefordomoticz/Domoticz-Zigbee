@@ -102,7 +102,7 @@ class TransportStatistics:
         _min = _duration // 60
         _duration = _duration % 60
         _sec =  _duration % 60
-        print("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
+        Domoticz.Status("Operating time      : %s Hours %s Mins %s Secs" % (_hours, _min, _sec))
 
     def writeReport(self):
 

@@ -77,13 +77,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType == 'ThermoSetpoint':
             ClusterSearch = '0201'
             DeviceType = tmpDeviceType
+        if tmpDeviceType == 'Motion':
+            ClusterSearch = '0406'
+            DeviceType = tmpDeviceType
+
+
 
     if DeviceType == '': 
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
     Domoticz.Debug("mgtCommand - DeviceType : " +str(DeviceType) )
-
 
     # A ce stade ClusterSearch est connu
     EPin="01"
@@ -170,11 +174,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            value = '02x' %Level
-            Domoticz.Log("WindowCovering - Go To Tilt Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "08" + value)
-            #Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
-            #sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+            value = '%02x' %Level
+            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         else:
             OnOff = '01' # 00 = off, 01 = on

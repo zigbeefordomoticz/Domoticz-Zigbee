@@ -148,7 +148,9 @@ def checkListOfDevice2Devices( self, Devices ) :
         if (len(str(ID)) == 4 ):
             # This is a Group Id (short address)
             continue
-        elif Devices[x].Name.find('Zigate-01-'):
+        elif ID.find('Zigate-01-') != -1 or \
+                ID.find('Zigate-02-') != -1 or \
+                ID.find('Zigate-03-') != -1:
             continue # This is a Widget ID
         else:
             # Let's check if this is End Node

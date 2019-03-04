@@ -39,8 +39,8 @@ from Classes.AdminWidgets import AdminWidgets
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
-    '0000' : ( ReadAttributeRequest_0000, 43200 ),
-    '0001' : ( ReadAttributeRequest_0001, 43200 ),
+    '0000' : ( ReadAttributeRequest_0000, 86400 ),
+    '0001' : ( ReadAttributeRequest_0001, 86400 ),
     '0006' : ( ReadAttributeRequest_0006, 900 ),
     '0008' : ( ReadAttributeRequest_0008, 900 ),
     '000C' : ( ReadAttributeRequest_000C, 3600 ),
@@ -75,17 +75,6 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         'ff02'             # Used by Xiaomi devices for battery informations.
         ]
 
-#READ_ATTRIBUTES_MATRIX = {
-#    # Cluster : ( ReadAttribute function, Frequency )
-#    '0406' : ( ReadAttributeRequest_0406, 900 ),
-#    '0402' : ( ReadAttributeRequest_0402, 900 ),
-#    '0400' : ( ReadAttributeRequest_0400, 900 ),
-#    '0001' : ( ReadAttributeRequest_0001, 900 ),
-#    '0403' : ( ReadAttributeRequest_0403, 900 ),
-#    '0405' : ( ReadAttributeRequest_0405, 900 ),
-#    '0102' : ( ReadAttributeRequest_0405, 900 ),
-#    }
-#
 def processKnownDevices( self, Devices, NWKID ):
 
     if self.CommiSSionning: # We have a commission in progress, skip it.
@@ -144,7 +133,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                 %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now > (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                                Domoticz.Log("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                Domoticz.Log("%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ))
                                 func(self, NWKID )
                         else:
                             Domoticz.Debug("processKnownDevices - 1: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
@@ -167,10 +156,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
     Domoticz.Debug("processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
-    Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
+    if self.ListOfDevices[NWKID]['Model'] != {}:
+        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
 
     if status in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
-        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
         if self.ListOfDevices[NWKID]['Model'] != {}:
             Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
             # Let's check if this Model is known
@@ -281,7 +270,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
             Domoticz.Log("Too early, let's try to get the Model")
             return
-        Domoticz.Status("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
+        Domoticz.Debug("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
         IsCreated=False
         # Let's check if the IEEE is not known in Domoticz
         for x in Devices:
@@ -301,7 +290,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             CreateDomoDevice(self, Devices, NWKID)
 
             # Post creation widget
-            Domoticz.Log("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
+            Domoticz.Debug("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
             for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
