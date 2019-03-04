@@ -44,7 +44,7 @@
 - [Technical] - Rename forceReadAttributes and forceConfigureReporting into resetReadAttributes and resetConfigureReporting
 - [Hardware] - Certify the OSRAM SMart Plug device
 - [Hardware] - Able to recognize Livolo double switch and be able to command it. (more test to be done on the state reporting). Also firmware must handle the Livolo Zigbee implementation to get stability.
-- [Hardware] - First phase implementation of Legrand shutter/Window covering. ( On and Off command works).
+- [Hardware] - Implementation of Legrand shutter/Window covering. ( On and Off command works).
 - [Technical] - Lux calculation for non-Xiaomi devices.
 - [Technical] - Transport statistics are now stored on a reporting file, for further analysis.
 - [Technical] - When groups are ready report into GroupList-xx.json
