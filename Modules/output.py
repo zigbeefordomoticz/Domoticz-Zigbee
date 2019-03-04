@@ -63,6 +63,7 @@ def start_Zigate(self):
 
     Domoticz.Debug("Request network Status")
     sendZigateCmd( self, "0014", "" ) # Request status
+    sendZigateCmd( self, "0009", "" ) # Request status
 
 
 def ZigateConf_light(self ):

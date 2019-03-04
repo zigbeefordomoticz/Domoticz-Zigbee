@@ -85,7 +85,7 @@ import queue
 import sys
 
 from Modules.tools import removeDeviceInList
-from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin
+from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin, start_Zigate
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -335,8 +335,6 @@ class BasePlugin:
             Domoticz.Status("Erase Zigate PDM")
             sendZigateCmd(self, "0012", "")
 
-        sendZigateCmd(self, "0015", "") # Request List of Active Device
-
         if Parameters["Mode4"] == "True": # Software Non-Factory Reseet
             Domoticz.Status("Software reset")
             sendZigateCmd(self, "0011", "" ) # Software Reset
@@ -353,6 +351,7 @@ class BasePlugin:
                 ZigatePermitToJoin(self, 0)
 
         sendZigateCmd(self, "0009", "") # Request Network state
+        sendZigateCmd(self, "0015", "") # Request List of Active Device
 
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
