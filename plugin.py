@@ -375,6 +375,7 @@ class BasePlugin:
 
     def onCommand(self, Unit, Command, Level, Color):
 
+        Domoticz.Debug("onCommand - unit: %s, command: %s, level: %s, color: %s" %(Unit, Command, Level, Color))
         if  not self.connectionState:
             Domoticz.Error("onCommand receive, but no connection to Zigate")
             return
@@ -387,12 +388,18 @@ class BasePlugin:
         elif self.pluginconf.enablegroupmanagement and self.groupmgt:
             #if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
-            self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
             Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+            self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
 
-        elif Devices[Unit].DeviceID.find('Zigate-01-'):
+        elif Devices[Unit].DeviceID.find('Zigate-01-') != -1:
             Domoticz.Log("onCommand - Command adminWidget: %s " %Command)
             self.adminWidgets.handleCommand( self, Command)
+
+        else:
+            Domoticz.Error("onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" \
+                    %(Devices[Unit].Name, Unit, Devices[Unit].DeviceID))
+
+        return
 
     def onDisconnect(self, Connection):
         self.connectionState = 0
