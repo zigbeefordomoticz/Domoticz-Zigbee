@@ -181,8 +181,24 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # General
     listAttributes = []
     # By default only request attribute 0x0005 to get the model Identifier
-    listAttributes.append(0x0000)        # ZCL Version
+    if fullScope:
+        listAttributes.append(0x0000)        # ZCL Version
+        listAttributes.append(0x0001)        # APPLICATION_VERSION
+        listAttributes.append(0x0002)        # STACK_VERSION
+        listAttributes.append(0x0003)        # HARDWARE_VERSION
+        listAttributes.append(0x0004)        # MANUFACTURER_NAME
+
     listAttributes.append(0x0005)        # Model Identifier
+
+    if fullScope:
+        listAttributes.append(0x0006)        # DATE_CODE
+        listAttributes.append(0x0007)        # PowerSource
+
+    if fullScope:
+        listAttributes.append(0x000A)        # LOCATION_DESCRIPTION
+        listAttributes.append(0x000F)        # SW_BUILD_ID
+        listAttributes.append(0x0010)        # LOCATION_DESCRIPTION
+        listAttributes.append(0x0015)        # SW_BUILD_ID
 
     if 'Model' in self.ListOfDevices[key]:
         if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
@@ -192,13 +208,6 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
              listAttributes.append(0x0032)
              listAttributes.append(0x0033)
-
-    if fullScope:
-        listAttributes.append(0x0004)        # Manufacturer Name
-        listAttributes.append(0x0007)        # Power Source
-        listAttributes.append(0x0010)        # Battery
-        listAttributes.append(0x000A)        # Product Code
-
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
@@ -212,8 +221,22 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
-        Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
-        ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+
+        listAttr1 = listAttr2 = None
+        if len(listAttributes) > 9:
+            # We can send only 10 attributes at a time, we need to split into 2 packs
+            listAttr1 = listAttributes[:len(listAttributes)//2]
+            listAttr2 = listAttributes[len(listAttributes)//2:]
+
+        if listAttr1 == listAttr2 == None:
+            Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+        else:
+            Domoticz.Log("Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)))
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr1 )
+            Domoticz.Log("Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)))
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr2 )
+
 
 def ReadAttributeRequest_Ack(self, key):
 

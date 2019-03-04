@@ -39,8 +39,8 @@ from Classes.AdminWidgets import AdminWidgets
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
-    '0000' : ( ReadAttributeRequest_0000, 43200 ),
-    '0001' : ( ReadAttributeRequest_0001, 43200 ),
+    '0000' : ( ReadAttributeRequest_0000, 86400 ),
+    '0001' : ( ReadAttributeRequest_0001, 86400 ),
     '0006' : ( ReadAttributeRequest_0006, 900 ),
     '0008' : ( ReadAttributeRequest_0008, 900 ),
     '000C' : ( ReadAttributeRequest_000C, 3600 ),
@@ -75,17 +75,6 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         'ff02'             # Used by Xiaomi devices for battery informations.
         ]
 
-#READ_ATTRIBUTES_MATRIX = {
-#    # Cluster : ( ReadAttribute function, Frequency )
-#    '0406' : ( ReadAttributeRequest_0406, 900 ),
-#    '0402' : ( ReadAttributeRequest_0402, 900 ),
-#    '0400' : ( ReadAttributeRequest_0400, 900 ),
-#    '0001' : ( ReadAttributeRequest_0001, 900 ),
-#    '0403' : ( ReadAttributeRequest_0403, 900 ),
-#    '0405' : ( ReadAttributeRequest_0405, 900 ),
-#    '0102' : ( ReadAttributeRequest_0405, 900 ),
-#    }
-#
 def processKnownDevices( self, Devices, NWKID ):
 
     if self.CommiSSionning: # We have a commission in progress, skip it.
@@ -144,7 +133,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                 %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now > (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                                Domoticz.Log("processKnownDevices - %s It's time to Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))
+                                Domoticz.Log("%s/%e It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ))
                                 func(self, NWKID )
                         else:
                             Domoticz.Debug("processKnownDevices - 1: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))

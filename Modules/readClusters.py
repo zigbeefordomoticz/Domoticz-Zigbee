@@ -694,6 +694,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if MsgAttrID == "0000": # ZCL Version
         Domoticz.Debug("ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['ZCL Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ZCL_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
@@ -717,6 +718,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0004": # Manufacturer
         Domoticz.Debug("ReadCluster - 0x0000 - Manufacturer: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Manufacturer']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
@@ -778,14 +780,25 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
                     self.DiscoveryDevices[MsgSrcAddr]['Model'] = modelName
 
+    elif MsgAttrID == '0006': # CLD_BAS_ATTR_DATE_CODE
+        # 20151006091b090
+        self.ListOfDevices[MsgSrcAddr]['Date Code'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
     elif MsgAttrID == "0007": # Power Source
         Domoticz.Debug("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         # 0x03 stand for Battery
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['PowerSource'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '0010': # LOCATION_DESCRIPTION
+        Domoticz.Debug("ReadCluster - 0x0000 - Attribut 0010: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == '0015': # SW_BUILD_ID
+        Domoticz.Debug("ReadCluster - 0x0000 - Attribut 0015: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
     elif MsgAttrID == "0016": # Battery
-        Domoticz.Debug("ReadCluster - 0x0000 - Battery: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        Domoticz.Debug("ReadCluster - 0x0000 - Attribut 0016 : " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
