@@ -619,7 +619,6 @@ def Decode8006(self,MsgData) : # Non “Factory new” Restart
         Status = "NFN_START"
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
-
     Domoticz.Status("Non 'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData) : # Network State response (Firm v3.0d)
@@ -752,18 +751,16 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
     MsgLen=len(MsgData)
     MsgDataStatus=MsgData[0:2]
 
-
     if MsgDataStatus != '00':
         if MsgDataStatus == "00": 
-            Status = "Joined existing network"
+            Domoticz.Status("Joined existing network")
         elif MsgDataStatus == "01": 
-            Status = "Formed new network"
+            Domoticz.Status("Formed new network")
         elif MsgDataStatus == "04":
-            Status = "Busy Node"
+            Domoticz.Status("Busy Node")
         else: 
             Status = DisplayStatusCode( MsgDataStatus )
-
-        Domoticz.Status("Network joined / formed Status: %s: %s" %(MsgDataStatus, Status) )
+            Domoticz.Log("Network joined / formed Status: %s: %s" %(MsgDataStatus, Status) )
         return
     
     if MsgLen != 24:
@@ -780,7 +777,7 @@ def Decode8024(self, MsgData, Data) : # Network joined / formed
         self.ZigateNWKID = MsgShortAddress
         self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
 
-    Domoticz.Status("Network joined / formed - IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
+    Domoticz.Status("Zigate details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
             %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
 
 def Decode8028(self, MsgData) : # Authenticate response
@@ -1688,7 +1685,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 #Réponses APS
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
     MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8702 - MsgLen = " + str(MsgLen))
+    Domoticz.Log("Decode8702 - MsgLen = %s out of 26" %str(MsgLen))
     if MsgLen==0 : 
         return
     else:
