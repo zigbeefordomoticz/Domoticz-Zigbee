@@ -183,7 +183,6 @@ class PluginConf:
                 self.channel = self.PluginConf.get('channel')
                 self.channel = [c.strip() for c in self.channel.split(',')]
 
-
             if self.PluginConf.get('enableAPSFailureLoging') and \
                     self.PluginConf.get('enableAPSFailureLoging').isdigit():
                 self.enableAPSFailureLoging = int(self.PluginConf.get('enableAPSFailureLoging'))
@@ -208,7 +207,6 @@ class PluginConf:
                 else:
                     self.Certification = 0
 
-
             if self.PluginConf.get('zmode'):
                 if self.PluginConf.get('zmode') == 'Agressive':
                     self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
@@ -220,7 +218,6 @@ class PluginConf:
             if self.PluginConf.get('zTimeOut') and \
                     self.PluginConf.get('zTimeOut').isdigit():
                 self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
-
 
         Domoticz.Log("Device Management:")
         Domoticz.Log(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
