@@ -36,6 +36,34 @@ def ZigatePermitToJoin( self, permit ):
         #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 
+def start_Zigate(self):
+    """
+    Purpose is to run the start sequence for the Zigate
+    it is call when Network is not started.
+
+    2- Set the channel 
+    3- Set the Mode : Coordinator
+    4- Start network ( 0x0024)
+    """
+
+    Domoticz.Status("Set Zigate as a Coordinator")
+    sendZigateCmd(self, "0023","00")
+
+    Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
+            %self.pluginconf.channel)
+    setChannel(self, self.pluginconf.channel)
+
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+    sendZigateCmd(self, "0016", str(UTCTime) )
+
+    Domoticz.Status("Start network")
+    sendZigateCmd(self, "0024", "" )   # Start Network
+
+    Domoticz.Debug("Request network Status")
+    sendZigateCmd( self, "0014", "" ) # Request status
+
 
 def ZigateConf_light(self ):
     '''
