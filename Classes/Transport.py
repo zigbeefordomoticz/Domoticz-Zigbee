@@ -97,6 +97,11 @@ class ZigateTransport(object):
             self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+        elif str(transport) == "PI":
+            self._transp = "PI"
+            self._serialPort = serialPort
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                                                   Address=self._serialPort, Baud=115200)
         elif str(transport) == "Wifi":
             self._transp = "Wifi"
             self._wifiAddress = wifiAddress
@@ -123,6 +128,11 @@ class ZigateTransport(object):
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
             self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                          Address=self._serialPort, Baud=115200)
+        elif self._transp == "PI":
+            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                         Address=self._serialPort, Baud=115200)
+
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
