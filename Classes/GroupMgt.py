@@ -179,8 +179,19 @@ class GroupsManagement(object):
                             # Check if this is not the Zigate itself
                             Domoticz.Error("load_ZigateGroupConfiguration - Unknown address %s to be imported" %_ieee )
                             continue
-                        # Let's check if we don't have the EP included as well
-                        self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
+                        # Finaly, let's check if this is not an IKEA Tradfri Remote
+                        nwkid = self.IEEE2NWK[_ieee]
+                        if 'Type' in self.ListOfDevices[nwkid]:
+                            if  self.ListOfDevices[nwkid]['Type'] == 'Ikea_Round_5b':
+                                # We should not process it through the group.
+                                 Domoticz.Log("load_ZigateGroupConfiguration - not processing this %s as it is an Ikea Tradfri Remote" %_ieee)
+                                 self.ListOfGroups[group_id]['Tradfri Remote'] = nwkid
+                            else:
+                                # Let's check if we don't have the EP included as well
+                                self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
+                        else:
+                            # Let's check if we don't have the EP included as well
+                            self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
 
                     Domoticz.Debug(" )> Group Imported: %s" %group_name)
             if group_id :
@@ -520,6 +531,7 @@ class GroupsManagement(object):
                 'ColorControlFull':5 }    # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
 
         code = 0
+        _ikea_colormode = None
         color_widget = None
         widget = ( 241, 7,7 )
         for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
@@ -531,12 +543,18 @@ class GroupsManagement(object):
                     devwidget = self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType'][iterClusterType]
                     if code <= WIDGETS[devwidget]:
                         code = WIDGETS[devwidget]
-                        if code == 1: widget = ( 244, 73, 0 )
-                        elif code == 2: widget = ( 244, 73, 7 )
+                        if code == 1: 
+                            widget = ( 244, 73, 0 )
+                        elif code == 2: 
+                            widget = ( 244, 73, 7 )
                         elif code == 3 :
                             if color_widget is None:
-                                if devwidget == 'ColorControlWW': widget = ( 241, 8, 7 )
-                                elif devwidget == 'ColorControlRGB': widget = ( 241, 2, 7 )
+                                if devwidget == 'ColorControlWW': 
+                                    widget = ( 241, 8, 7 )
+                                    _ikea_colormode = devwidget
+                                elif devwidget == 'ColorControlRGB': 
+                                    widget = ( 241, 2, 7 )
+                                    _ikea_colormode = devwidget
                             elif color_widget == devwidget:
                                 continue
                             elif (devwidget == 'ColorControlWW' and color_widget == 'ColorControlRGB') or \
@@ -544,9 +562,16 @@ class GroupsManagement(object):
                                 code = 4
                                 color_widget = 'ColorControlRGBWW'
                                 widget = ( 241, 4, 7)
+                                _ikea_colormode = color_widget
                         elif code == 4: widget = ( 241, 4, 7)
                         elif code == 5: widget = ( 241, 7, 7)
                     pre_code = code
+
+
+        # This will be used when receiving left/right click , to know if it is RGB or WW
+        if 'Tradfri Remote' in self.ListOfGroups[group_nwkid]:
+            _nwkid = self.ListOfGroups[group_nwkid]['Tradfri Remote']
+            self.ListOfDevices[_nwkid]['Tradfri Color Control'] = _ikea_colormode
 
         Domoticz.Debug("_bestGroupWidget - Code: %s, Color_Widget: %s, widget: %s" %( code, color_widget, widget))
         return widget
@@ -1154,6 +1179,10 @@ class GroupsManagement(object):
                             self.ListOfGroups[iterGrp]['Name'] = self.Devices[x].Name
                             # Check if we need to update the Widget
                             self._updateDomoGroupDeviceWidget(self.ListOfGroups[iterGrp]['Name'], iterGrp)
+                            Domoticz.Log("hearbeatGroupMgt - _updateDomoGroup done")
+                            if 'Tradfri Remote' in self.ListOfGroups[iterGrp]:
+                                _nwkid = self.ListOfGroups[iterGrp]['Tradfri Remote']
+                                self.ListOfDevices[_nwkid]['Tradfri Group Control'] = iterGrp
                         break
                 else:
                     # Unknown group in Domoticz. Create it
@@ -1164,6 +1193,10 @@ class GroupsManagement(object):
                         self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
                     Domoticz.Log("hearbeatGroupMgt - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                     self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
+                    if 'Tradfri Remote' in self.ListOfGroups[iterGrp]:
+                        _nwkid = self.ListOfGroups[iterGrp]['Tradfri Remote']
+                        self.ListOfDevices[_nwkid]['Tradfri Group Control'] = iterGrp
+
             self.StartupPhase = 'end of group startup'
 
         elif self.StartupPhase == 'end of group startup':
