@@ -25,11 +25,13 @@ from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
 from Modules.database import saveZigateNetworkData
+from Modules.consts import ADDRESS_MODE
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
+from Classes.GroupMgt import GroupsManagement
 
 
 def ZigateRead(self, Devices, Data):
@@ -1885,6 +1887,9 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
             Domoticz.Debug("Decode80A7 - selector: %s" %selector)
 
+            if self.groupmgt:
+                if TYPE_DIRECTIONS[MsgDirection] in ( 'right', 'left'):
+                    self.groupmgt.manageIkeaTradfriRemoteLeftRight( MsgSrcAddr, TYPE_DIRECTIONS[MsgDirection])
         else:
             Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))

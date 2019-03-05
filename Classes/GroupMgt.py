@@ -8,6 +8,7 @@
 ListOfGroups[group id]['Name']    - Group Name as it will be created in Domoticz
 ListOfGroups[group id]['Devices'] - List of Devices associed to this group on Zigate
 ListOfGroups[group id]['Imported']- List of Devices to be associated to the group. We might have some removal, or some addiional from previous run
+ListOfGroups[group id]['Tradfri Remote']- Manage the Tradfri Remote
 
 self.ListOfDevices[nwkid]['GroupMgt'][Ep][GroupID]['Phase'] = 'OK-Membership' / 'REQ-Membership' / 'DEL-Membership'
 self.ListOfDevices[nwkid]['GroupMgt'][Ep][GroupID]['Phase-Stamp'] = time()
@@ -184,8 +185,8 @@ class GroupsManagement(object):
                         if 'Type' in self.ListOfDevices[nwkid]:
                             if  self.ListOfDevices[nwkid]['Type'] == 'Ikea_Round_5b':
                                 # We should not process it through the group.
-                                 Domoticz.Log("load_ZigateGroupConfiguration - not processing this %s as it is an Ikea Tradfri Remote" %_ieee)
-                                 self.ListOfGroups[group_id]['Tradfri Remote'] = nwkid
+                                 self.ListOfGroups[group_id]['Tradfri Remote'] = {}
+                                 self.ListOfGroups[group_id]['Tradfri Remote']['Device Addr'] = nwkid
                             else:
                                 # Let's check if we don't have the EP included as well
                                 self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
@@ -570,8 +571,7 @@ class GroupsManagement(object):
 
         # This will be used when receiving left/right click , to know if it is RGB or WW
         if 'Tradfri Remote' in self.ListOfGroups[group_nwkid]:
-            _nwkid = self.ListOfGroups[group_nwkid]['Tradfri Remote']
-            self.ListOfDevices[_nwkid]['Tradfri Color Control'] = _ikea_colormode
+            self.ListOfGroups[group_nwkid]['Tradfri Remote']['Color Mode'] = _ikea_colormode
 
         Domoticz.Debug("_bestGroupWidget - Code: %s, Color_Widget: %s, widget: %s" %( code, color_widget, widget))
         return widget
@@ -678,6 +678,34 @@ class GroupsManagement(object):
 
         return
 
+    def set_Kelvin_Color( self, mode, addr, EPin, EPout, t):
+        #Value is in mireds (not kelvin)
+        #Correct values are from 153 (6500K) up to 588 (1700K)
+        # t is 0 > 255
+
+        TempKelvin = int(((255 - int(t))*(6500-1700)/255)+1700)
+        TempMired = 1000000 // TempKelvin
+        zigate_cmd = "00C0"
+        zigate_param = Hex_Format(4,TempMired) + "0000"
+        datas = "%02d" %mode + addr + EPin + EPout + zigate_param
+        Domoticz.Log("set_KelvinColor %s kelvin: %s" %(t, TempKelvin ))
+        Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+        self.ZigateComm.sendData( zigate_cmd, datas)
+
+    def set_RGB_color( self, mode, addr, EPin, EPout, r, g, b):
+
+        x, y = rgb_to_xy((int(r),int(g),int(b)))
+        #Convert 0>1 to 0>FFFF
+        x = int(x*65536)
+        y = int(y*65536)
+        strxy = Hex_Format(4,x) + Hex_Format(4,y)
+        zigate_cmd = "00B7"
+        zigate_param = strxy + "0000"
+        datas = "%02d" %mode + addr + EPin + EPout + zigate_param
+        Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
+        self.ZigateComm.sendData( zigate_cmd, datas)
+
+
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
 
         Domoticz.Debug("processCommand - unit: %s, nwkid: %s, cmd: %s, level: %s, color: %s" %(unit, nwkid, Command, Level, Color_))
@@ -749,29 +777,13 @@ class GroupsManagement(object):
                 Domoticz.Debug("Not implemented device color 1")
             #ColorModeTemp = 2   // White with color temperature. Valid fields: t
             if Hue_List['m'] == 2:
-                #Value is in mireds (not kelvin)
-                #Correct values are from 153 (6500K) up to 588 (1700K)
-                # t is 0 > 255
-                TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
-                TempMired = 1000000 // TempKelvin
-                zigate_cmd = "00C0"
-                zigate_param = Hex_Format(4,TempMired) + "0000"
-                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-                Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
-                self.ZigateComm.sendData( zigate_cmd, datas)
+                self.set_Kelvin_Color( ADDRESS_MODE['group'], nwkid, EPin, EPout, int(Hue_List['t']))
 
             #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
             elif Hue_List['m'] == 3:
-                x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
-                #Convert 0>1 to 0>FFFF
-                x = int(x*65536)
-                y = int(y*65536)
-                strxy = Hex_Format(4,x) + Hex_Format(4,y)
-                zigate_cmd = "00B7"
-                zigate_param = strxy + "0000"
-                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
-                Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
-                self.ZigateComm.sendData( zigate_cmd, datas)
+
+                self.set_RGB_color( ADDRESS_MODE['group'], nwkid, EPin, EPout, \
+                        int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b']))
 
             #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
             elif Hue_List['m'] == 4:
@@ -807,6 +819,45 @@ class GroupsManagement(object):
                 sValue = str(value)
                 self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
                 return
+
+    def manageIkeaTradfriRemoteLeftRight( self, addr, type_dir):
+
+        for iterGrp in self.ListOfGroups:
+            if 'Tradfri Remote' not in self.ListOfGroups[iterGrp]:
+                continue
+            Domoticz.Log(" %s" %(self.ListOfGroups[iterGrp]['Tradfri Remote']['Device Addr']))
+            if addr != self.ListOfGroups[iterGrp]['Tradfri Remote']['Device Addr']:
+                continue
+            _grpid = iterGrp
+            break
+        else:
+            _ieee = self.ListOfDevices[addr]['IEEE']
+            Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" %_ieee)
+            return
+            
+        _widgetColor = self.ListOfGroups[_grpid]['Tradfri Remote']['Color Mode'] 
+        Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Color model : %s" %_widgetColor)
+
+        if _widgetColor in ('ColorControlWW'): # Will work in Kelvin
+            if 'Actual T' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
+                t = 128
+            else:
+                t = self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T']
+
+            if type_dir == 'left':
+                t -= 75
+                if t < 0: t = 0
+            elif type_dir == 'right':
+                t += 75
+                if t > 255: t = 255
+                
+            self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T'] = t
+            self.set_Kelvin_Color( ADDRESS_MODE['group'], _grpid, '01', '01', t)
+
+        elif _widgetColor == ('ColorControlRGB','ColorControlRGBWW', 'ColorControl', 'ColorControlFull'): # Work in RGB
+            pass
+
+
 
     def hearbeatGroupMgt( self ):
         ' hearbeat to process Group Management actions '
@@ -1180,9 +1231,6 @@ class GroupsManagement(object):
                             # Check if we need to update the Widget
                             self._updateDomoGroupDeviceWidget(self.ListOfGroups[iterGrp]['Name'], iterGrp)
                             Domoticz.Log("hearbeatGroupMgt - _updateDomoGroup done")
-                            if 'Tradfri Remote' in self.ListOfGroups[iterGrp]:
-                                _nwkid = self.ListOfGroups[iterGrp]['Tradfri Remote']
-                                self.ListOfDevices[_nwkid]['Tradfri Group Control'] = iterGrp
                         break
                 else:
                     # Unknown group in Domoticz. Create it
@@ -1193,11 +1241,9 @@ class GroupsManagement(object):
                         self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
                     Domoticz.Log("hearbeatGroupMgt - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                     self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
-                    if 'Tradfri Remote' in self.ListOfGroups[iterGrp]:
-                        _nwkid = self.ListOfGroups[iterGrp]['Tradfri Remote']
-                        self.ListOfDevices[_nwkid]['Tradfri Group Control'] = iterGrp
 
             self.StartupPhase = 'end of group startup'
+            self._write_GroupList()
 
         elif self.StartupPhase == 'end of group startup':
             for iterGrp in self.ListOfGroups:

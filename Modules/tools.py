@@ -510,6 +510,31 @@ def rgb_to_xy(rgb):
         cy = Y / (X + Y + Z)
     return (cx, cy)
 
+def xy_to_rgb(x, y, brightness=1):
+
+    x = 0.313
+    y = 0.329
+
+    x = float(x);
+    y = float(y);
+    z = 1.0 - x - y;
+
+    Y = brightness;
+    X = (Y / y) * x;
+    Z = (Y / y) * z;
+
+    r =  X * 1.656492 - Y * 0.354851 - Z * 0.255038;
+    g = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
+    b =  X * 0.051713 - Y * 0.121364 + Z * 1.011530;
+
+    r = 12.92 * r if r <= 0.0031308 else (1.0 + 0.055) * pow(r, (1.0 / 2.4)) - 0.055
+    g = 12.92 * g if g <= 0.0031308 else (1.0 + 0.055) * pow(g, (1.0 / 2.4)) - 0.055
+    b = 12.92 * b if b <= 0.0031308 else (1.0 + 0.055) * pow(b, (1.0 / 2.4)) - 0.055
+
+    return {'r': round(r * 255, 3), 'g': round(g * 255, 3), 'b': round(b * 255, 3)}
+
+
+
 def rgb_to_hsl(rgb):
     ''' convert rgb tuple to hls tuple '''
     r, g, b = rgb
