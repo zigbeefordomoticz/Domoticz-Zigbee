@@ -1318,8 +1318,10 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
                                      BatteryLevel=int(BatteryLvl))
 
-        elif (Devices[Unit].BatteryLevel != BatteryLvl and BatteryLvl != 255) or (
-                Devices[Unit].SignalLevel != rssi):  # In that case we do update, but do not trigger any notification.
+        #elif (Devices[Unit].BatteryLevel != BatteryLvl and BatteryLvl != 255) or (
+        #        Devices[Unit].SignalLevel != rssi):  # In that case we do update, but do not trigger any notification.
+        else:
+            Domoticz.Debug("UpdateDevice - (%15s) seen - Update  Battery %s, Signal %s" %( Devices[Unit].Name, BatteryLvl, rssi ))
             Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
                                  BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
     return
