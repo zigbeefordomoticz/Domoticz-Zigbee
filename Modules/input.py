@@ -615,6 +615,8 @@ def Decode8006(self,MsgData) : # Non “Factory new” Restart
     Status = MsgData[0:2]
     if MsgData[0:2] == "00":
         Status = "STARTUP"
+    elif MsgData[0:2] == "01":
+        Status = "RUNNING"
     elif MsgData[0:2] == "02":
         Status = "NFN_START"
     elif MsgData[0:2] == "06":
