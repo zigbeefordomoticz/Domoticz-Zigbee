@@ -182,15 +182,19 @@ class GroupsManagement(object):
                             continue
                         # Finaly, let's check if this is not an IKEA Tradfri Remote
                         nwkid = self.IEEE2NWK[_ieee]
-                        if 'Type' in self.ListOfDevices[nwkid]:
-                            if  self.ListOfDevices[nwkid]['Type'] == 'Ikea_Round_5b':
-                                # We should not process it through the group.
-                                 self.ListOfGroups[group_id]['Tradfri Remote'] = {}
-                                 self.ListOfGroups[group_id]['Tradfri Remote']['Device Addr'] = nwkid
-                            else:
-                                # Let's check if we don't have the EP included as well
-                                self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
-                        else:
+                        _tradfri_remote = False
+                        if 'Ep' in self.ListOfDevices[nwkid]:
+                            if '01' in self.ListOfDevices[nwkid]['Ep']:
+                                if 'ClusterType' in self.ListOfDevices[nwkid]['Ep']['01']:
+                                    for iterDev in self.ListOfDevices[nwkid]['Ep']['01']['ClusterType']:
+                                        if self.ListOfDevices[nwkid]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
+                                            # We should not process it through the group.
+                                            Domoticz.Log("Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
+                                            self.ListOfGroups[group_id]['Tradfri Remote'] = {}
+                                            self.ListOfGroups[group_id]['Tradfri Remote']['Device Addr'] = nwkid
+                                            self.ListOfGroups[group_id]['Tradfri Remote']['Device Id'] = iterDev
+                                            _tradfri_remote = True
+                        if not _tradfri_remote:
                             # Let's check if we don't have the EP included as well
                             self.ListOfGroups[group_id]['Imported'].append( (_ieee, _ieeeEp) )
 
