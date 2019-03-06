@@ -851,12 +851,62 @@ class GroupsManagement(object):
                 t += 75
                 if t > 255: t = 255
                 
-            self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T'] = t
+            Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
             self.set_Kelvin_Color( ADDRESS_MODE['group'], _grpid, '01', '01', t)
+            self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T'] = t
 
         elif _widgetColor == ('ColorControlRGB','ColorControlRGBWW', 'ColorControl', 'ColorControlFull'): # Work in RGB
-            pass
+            # Here we will scroll R, G and B 
+            """
+            green  : 0, 255, 0
+            red    : 255, 0, 0
+            blue   : 0,0, 255
+            yellow : 255, 255, 0
+            purpule: 80, 0, 80
+            aqua   : 0, 255, 255
+            """
 
+            if 'Actual RGB' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB'] = {}
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = 0
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = 255
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B'] = 0
+
+            r = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R']
+            g = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G']
+            b = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B']
+
+            if type_dir == 'left':
+                if r < 75:
+                    if g < 75:
+                        if b < 75:
+                            # We are at min
+                            pass
+                        else:
+                            b -= 75
+                    else:
+                        g -= 75
+                else:
+                    r -= 75
+
+            elif type_dir == 'right':
+                if r < 180:
+                    if g < 180:
+                        if b < 180:
+                            # We are at max
+                            pass
+                        else:
+                            b += 75
+                    else:
+                        g += 75
+                else:
+                    r += 75
+
+            Domoticz.Log("manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
+            self.set_RGB_color( ADDRESS_MODE['group'], _grpid, '01', '01', r, g, b)
+            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = r
+            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = g
+            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B'] = b
 
 
     def hearbeatGroupMgt( self ):
