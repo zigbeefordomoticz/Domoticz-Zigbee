@@ -697,8 +697,7 @@ class GroupsManagement(object):
         zigate_cmd = "00C0"
         zigate_param = Hex_Format(4,TempMired) + transit
         datas = "%02d" %mode + addr + EPin + EPout + zigate_param
-        Domoticz.Log("set_KelvinColor %s kelvin: %s" %(t, TempKelvin ))
-        Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
+        Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
 
     def set_RGB_color( self, mode, addr, EPin, EPout, r, g, b, transit=None):
@@ -838,7 +837,6 @@ class GroupsManagement(object):
         for iterGrp in self.ListOfGroups:
             if 'Tradfri Remote' not in self.ListOfGroups[iterGrp]:
                 continue
-            Domoticz.Log(" %s" %(self.ListOfGroups[iterGrp]['Tradfri Remote']['Device Addr']))
             if addr != self.ListOfGroups[iterGrp]['Tradfri Remote']['Device Addr']:
                 continue
             _grpid = iterGrp
