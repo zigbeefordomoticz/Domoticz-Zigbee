@@ -735,7 +735,7 @@ def Decode8015(self, Devices, MsgData) : # Get device list ( following request d
         rssi=MsgData[idx+24:idx+26]
 
         if DeviceExist(self, Devices, saddr, ieee):
-            Domoticz.Status("[{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " LQI = {:03n}".format((int(rssi,16))) + " Power = " + power + " HB = {:02n}".format(int(self.ListOfDevices[saddr]['Heartbeat'])) + " found in ListOfDevices")
+            Domoticz.Debug("[{:02n}".format((round(idx/26))) + "] DevID = " + DevID + " Network addr = " + saddr + " IEEE = " + ieee + " LQI = {:03n}".format((int(rssi,16))) + " Power = " + power + " HB = {:02n}".format(int(self.ListOfDevices[saddr]['Heartbeat'])) + " found in ListOfDevices")
 
             if rssi !="00" :
                 self.ListOfDevices[saddr]['RSSI']= int(rssi,16)
