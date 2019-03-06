@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="pre-4.1" wikilink="http://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="pre-4.1" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
 	<h3> Short description </h3>
@@ -182,17 +182,17 @@ class BasePlugin:
             # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
-            Domoticz.Status("Startup Folder: %s" %Parameters["StartupFolder"])
-            Domoticz.Status("Home Folder: %s" %Parameters["HomeFolder"])
-            Domoticz.Status("User Data Folder: %s" %Parameters["UserDataFolder"])
-            Domoticz.Status("Web Root Folder: %s" %Parameters["WebRoot"])
-            Domoticz.Status("Database: %s" %Parameters["Database"])
+            Domoticz.Debug("Startup Folder: %s" %Parameters["StartupFolder"])
+            Domoticz.Debug("Home Folder: %s" %Parameters["HomeFolder"])
+            Domoticz.Debug("User Data Folder: %s" %Parameters["UserDataFolder"])
+            Domoticz.Debug("Web Root Folder: %s" %Parameters["WebRoot"])
+            Domoticz.Debug("Database: %s" %Parameters["Database"])
             self.StartupFolder = Parameters["StartupFolder"]
             _dbfilename = Parameters["Database"]
             Domoticz.Status("Opening DomoticzDB in raw")
-            Domoticz.Status("   - DeviceStatus table")
+            Domoticz.Debug("   - DeviceStatus table")
             self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
-            Domoticz.Status("   - Hardware table")
+            Domoticz.Debug("   - Hardware table")
             self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
         else:
             Domoticz.Status("The current Domoticz version doesn't support the plugin to enable a number of features")
@@ -277,7 +277,7 @@ class BasePlugin:
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :
-        Domoticz.Status("onDeviceRemoved called" )
+        Domoticz.Debug("onDeviceRemoved called" )
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
@@ -454,20 +454,20 @@ class BasePlugin:
                 Domoticz.Status("You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
 
             if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
-                Domoticz.Status("You are not running on the Official 3.0f version (it was a pre-3.0f)")
+                Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
 
             if self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003':
                 if self.pluginconf.blueLedOff:
-                    Domoticz.Status("Switch Blue Led off")
+                    Domoticz.Log("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
                 if self.pluginconf.TXpower:
                     attr_tx_power = '%02x' %self.pluginconf.TXpower_set
                     sendZigateCmd(self, "0806", attr_tx_power)
-                    Domoticz.Status("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
+                    Domoticz.Log("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
 
                 if self.pluginconf.Certification in CERTIFICATION:
-                    Domoticz.Status("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.Certification])
+                    Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.Certification])
                     sendZigateCmd(self, '0019', '%02x' %self.pluginconf.Certification)
 
                 if self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
