@@ -855,7 +855,7 @@ class GroupsManagement(object):
             self.set_Kelvin_Color( ADDRESS_MODE['group'], _grpid, '01', '01', t)
             self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T'] = t
 
-        elif _widgetColor == ('ColorControlRGB','ColorControlRGBWW', 'ColorControl', 'ColorControlFull'): # Work in RGB
+        elif _widgetColor in ('ColorControlRGB','ColorControlRGBWW', 'ColorControl', 'ColorControlFull'): # Work in RGB
             # Here we will scroll R, G and B 
             """
             green  : 0, 255, 0
@@ -866,41 +866,39 @@ class GroupsManagement(object):
             aqua   : 0, 255, 255
             """
 
-            if 'Actual RGB' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
+            if 'RGB' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
                 self.ListOfGroups[_grpid]['Tradfri Remote']['RGB'] = {}
                 self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = 0
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = 255
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = 180
                 self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B'] = 0
 
             r = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R']
             g = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G']
             b = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B']
 
+            _act = False
             if type_dir == 'left':
-                if r < 75:
-                    if g < 75:
-                        if b < 75:
-                            # We are at min
-                            pass
-                        else:
-                            b -= 75
-                    else:
-                        g -= 75
-                else:
+                Domoticz.Log('left action')
+                if not _act and g >= 75:
+                    g -= 75
+                    _act = True
+                if not _act and r >= 75:
                     r -= 75
+                    _act = True
+                if not _act and b >= 75:
+                    b -= 75
+                    _act = True
 
             elif type_dir == 'right':
-                if r < 180:
-                    if g < 180:
-                        if b < 180:
-                            # We are at max
-                            pass
-                        else:
-                            b += 75
-                    else:
-                        g += 75
-                else:
+                if not _act and g <= 180:
+                    g += 75
+                    _act = True
+                if not _act and r <= 180:
                     r += 75
+                    _act = True
+                if not _act and b <= 180:
+                    b += 75
+                    _act = True
 
             Domoticz.Log("manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
             self.set_RGB_color( ADDRESS_MODE['group'], _grpid, '01', '01', r, g, b)
