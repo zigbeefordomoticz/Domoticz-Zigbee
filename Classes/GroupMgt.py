@@ -684,7 +684,7 @@ class GroupsManagement(object):
         # t is 0 > 255
     
         if transit is None:
-            transit = '0005'
+            transit = '0001'
         else:
             transit = '%04x' %transit
 
@@ -700,7 +700,7 @@ class GroupsManagement(object):
     def set_RGB_color( self, mode, addr, EPin, EPout, r, g, b, transit=None):
 
         if transit is None:
-            transit = '0005'
+            transit = '0001'
         else:
             transit = '%04x' %transit
         x, y = rgb_to_xy((int(r),int(g),int(b)))
@@ -866,60 +866,34 @@ class GroupsManagement(object):
 
         elif _widgetColor in ('ColorControlRGB','ColorControlRGBWW', 'ColorControl', 'ColorControlFull'): # Work in RGB
             # Here we will scroll R, G and B 
-            """
-            green  : 0, 255, 0
-            red    : 255, 0, 0
-            blue   : 0,0, 255
-            yellow : 255, 255, 0
-            purpule: 80, 0, 80
-            aqua   : 0, 255, 255
-            """
+
+            PRESET_COLOR = (  
+                              (  10,  10,  10), # 
+                              ( 255,   0,   0), # Red
+                              (   0, 255,   0), # Green
+                              (   0,   0, 255), # Blue
+                              ( 255, 255,   0), # Yello
+                              (   0, 255, 255), # Aqua
+                              ( 255,   0, 255), # 
+                              ( 255, 255, 255)  # Whhite
+                           )
 
             if 'RGB' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB'] = {}
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = 255
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = 0
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B'] = 0
+                seq_idx = 0
+            else:
+                seq_idx = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']
 
-            r = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R']
-            g = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G']
-            b = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B']
+            r, g, b = PRESET_COLOR[seq_idx]
 
-            _act = False
-            if type_dir == 'left':
-                Domoticz.Log('left action')
-                if r == g == 0 and b == 255 or \
-                        r == b == 0 and g == 255 or \
-                        b == g == 0 and r == 255:
-                    Domoticz.Log("Cannot go lower")
-                    return
-                if not _act and r >= 51:
-                    r -= 51
-                    _act = True
-                if not _act and g >= 51:
-                    g -= 51
-                    _act = True
-                if not _act and b >= 51:
-                    b -= 51
-                    _act = True
+            if type_dir == 'left': seq_idx -= 1
+            elif type_dir == 'right': seq_idx += 1
 
-            elif type_dir == 'right':
-                if not _act and r <= 204:
-                    r += 51
-                    _act = True
-                if not _act and g <= 204:
-                    g += 51
-                    _act = True
-                if not _act and b <= 204:
-                    b += 51
-                    _act = True
+            if seq_idx >= len(PRESET_COLOR): seq_idx = 0
+            if seq_idx < 0: seq_idx = len(PRESET_COLOR) - 1
 
             Domoticz.Log("manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
             self.set_RGB_color( ADDRESS_MODE['group'], _grpid, '01', '01', r, g, b)
-            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = r
-            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = g
-            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B'] = b
-
+            self.ListOfGroups[_grpid]['Tradfri Remote']['RGB'] = seq_idx
 
     def hearbeatGroupMgt( self ):
         ' hearbeat to process Group Management actions '
