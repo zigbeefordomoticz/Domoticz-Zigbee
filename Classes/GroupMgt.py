@@ -678,29 +678,38 @@ class GroupsManagement(object):
 
         return
 
-    def set_Kelvin_Color( self, mode, addr, EPin, EPout, t):
+    def set_Kelvin_Color( self, mode, addr, EPin, EPout, t, transit=None):
         #Value is in mireds (not kelvin)
         #Correct values are from 153 (6500K) up to 588 (1700K)
         # t is 0 > 255
+    
+        if transit is None:
+            transit = '0005'
+        else:
+            transit = '%04x' %transit
 
         TempKelvin = int(((255 - int(t))*(6500-1700)/255)+1700)
         TempMired = 1000000 // TempKelvin
         zigate_cmd = "00C0"
-        zigate_param = Hex_Format(4,TempMired) + "0000"
+        zigate_param = Hex_Format(4,TempMired) + transit
         datas = "%02d" %mode + addr + EPin + EPout + zigate_param
         Domoticz.Log("set_KelvinColor %s kelvin: %s" %(t, TempKelvin ))
         Domoticz.Log("Command: %s - data: %s" %(zigate_cmd,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
 
-    def set_RGB_color( self, mode, addr, EPin, EPout, r, g, b):
+    def set_RGB_color( self, mode, addr, EPin, EPout, r, g, b, transit=None):
 
+        if transit is None:
+            transit = '0005'
+        else:
+            transit = '%04x' %transit
         x, y = rgb_to_xy((int(r),int(g),int(b)))
         #Convert 0>1 to 0>FFFF
         x = int(x*65536)
         y = int(y*65536)
         strxy = Hex_Format(4,x) + Hex_Format(4,y)
         zigate_cmd = "00B7"
-        zigate_param = strxy + "0000"
+        zigate_param = strxy + transit
         datas = "%02d" %mode + addr + EPin + EPout + zigate_param
         Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
@@ -868,8 +877,8 @@ class GroupsManagement(object):
 
             if 'RGB' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
                 self.ListOfGroups[_grpid]['Tradfri Remote']['RGB'] = {}
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = 0
-                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = 180
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R'] = 255
+                self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['G'] = 0
                 self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['B'] = 0
 
             r = self.ListOfGroups[_grpid]['Tradfri Remote']['RGB']['R']
@@ -879,25 +888,30 @@ class GroupsManagement(object):
             _act = False
             if type_dir == 'left':
                 Domoticz.Log('left action')
-                if not _act and g >= 75:
-                    g -= 75
+                if r == g == 0 and b == 255 or \
+                        r == b == 0 and g == 255 or \
+                        b == g == 0 and r == 255:
+                    Domoticz.Log("Cannot go lower")
+                    return
+                if not _act and r >= 51:
+                    r -= 51
                     _act = True
-                if not _act and r >= 75:
-                    r -= 75
+                if not _act and g >= 51:
+                    g -= 51
                     _act = True
-                if not _act and b >= 75:
-                    b -= 75
+                if not _act and b >= 51:
+                    b -= 51
                     _act = True
 
             elif type_dir == 'right':
-                if not _act and g <= 180:
-                    g += 75
+                if not _act and r <= 204:
+                    r += 51
                     _act = True
-                if not _act and r <= 180:
-                    r += 75
+                if not _act and g <= 204:
+                    g += 51
                     _act = True
-                if not _act and b <= 180:
-                    b += 75
+                if not _act and b <= 204:
+                    b += 51
                     _act = True
 
             Domoticz.Log("manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
