@@ -367,6 +367,11 @@ class BasePlugin:
 
     def onMessage(self, Connection, Data):
         #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
+        if isinstance(Data, dict):
+            Domoticz.Log("onMessage - unExpected for now")
+            DumpHTTPResponseToLog(Data)
+            return
+
         self.Ping['Rx Message'] = 0
         self.ZigateComm.onMessage(Data)
 
@@ -623,3 +628,13 @@ def DumpConfigToLog():
     return
 
 
+def DumpHTTPResponseToLog(httpDict):
+    if isinstance(httpDict, dict):
+        Domoticz.Log("HTTP Details ("+str(len(httpDict))+"):")
+        for x in httpDict:
+            if isinstance(httpDict[x], dict):
+                Domoticz.Log("--->'"+x+" ("+str(len(httpDict[x]))+"):")
+                for y in httpDict[x]:
+                    Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
+            else:
+                Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
