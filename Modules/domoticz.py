@@ -1313,8 +1313,6 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             else:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
                                      BatteryLevel=int(BatteryLvl))
-        else:
-            lastSeenUpdate( self, Devices, Unit=Unit)
     return
 
 
