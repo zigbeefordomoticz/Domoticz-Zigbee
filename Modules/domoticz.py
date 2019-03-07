@@ -1315,12 +1315,32 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
                                      BatteryLevel=int(BatteryLvl))
         else:
-            # Purpose is here just to touch the device and update the Last Seen
-            # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
-            if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10545):
-                Domoticz.Log("Touch unit %s" %( Devices[Unit].Name ))
-                Devices[Unit].Touch()
+            lastSeenUpdate( self, Devices, Unit=Unit)
     return
+
+
+def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
+
+    # Purpose is here just to touch the device and update the Last Seen
+    # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
+    if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10545):
+        Domoticz.Log("Not the good Domoticz level for Touch")
+        return
+
+    if Unit:
+        Domoticz.Log("Touch unit %s" %( Devices[Unit].Name ))
+        Devices[Unit].Touch()
+
+    elif NwkId:
+        if NwkId not in self.ListOfDevices:
+            return
+        if 'IEEE' not in self.ListOfDevices[NwkId]:
+            return
+        _IEEE = self.ListOfDevices[NwkId]['IEEE']
+        for x in Devices:
+            if Devices[x].DeviceID == _IEEE:
+                Domoticz.Log("Touch unit %s" %( Devices[x].Name ))
+                Devices[x].Touch()
 
 
 def GetType(self, Addr, Ep):

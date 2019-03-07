@@ -18,7 +18,7 @@ import queue
 import time
 import json
 
-from Modules.domoticz import MajDomoDevice
+from Modules.domoticz import MajDomoDevice, lastSeenUpdate
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
 from Modules.status import DisplayStatusCode
@@ -1438,6 +1438,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     except : 
         self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     updSQN( self, MsgSrcAddr, MsgSQN)
     ReadCluster(self, Devices, MsgData) 
 
@@ -1482,6 +1483,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
+        lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         ReadCluster(self, Devices, MsgData) 
