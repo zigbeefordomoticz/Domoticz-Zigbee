@@ -715,7 +715,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue = round(float(value),2)
                 sValue = value
                 Domoticz.Debug("MajDomoDevice Power : " + sValue)
-                UpdateDevice_v2(Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel)
 
                 # if DeviceType=="Meter" and clusterID == "000c": # kWh
             if ('Meter' in ClusterType and DeviceType == "Meter") or \
@@ -723,18 +723,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue = round(float(value),2)
                 sValue = "%s;%s" % (nValue, nValue)
                 Domoticz.Debug("MajDomoDevice Meter : " + sValue)
-                UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Voltage":  # Volts
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
                 Domoticz.Debug("MajDomoDevice Voltage : " + sValue)
-                UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint':
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
-                UpdateDevice_v2(Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
                 adjvalue = 0
@@ -753,17 +753,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if DeviceType == "Temp":
                     NewNvalue = round(value + adjvalue,1)
                     NewSvalue = str(round(value + adjvalue,1))
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":
                     NewNvalue = 0
                     NewSvalue = '%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2])
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
                     NewNvalue = 0
                     NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Humi":  # humidite
                 CurrentnValue = Devices[x].nValue
@@ -785,17 +785,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if DeviceType == "Humi":
                     NewNvalue = value
                     NewSvalue = "0"
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":  # temp+hum xiaomi
                     NewNvalue = 0
                     NewSvalue = '%s;%s;%s' % (SplitData[0], value, humiStatus)
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
                     NewNvalue = 0
                     NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Baro":  # barometre
                 adjvalue = 0
@@ -823,46 +823,46 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 if DeviceType == "Baro":
                     NewSvalue = '%s;%s' %(round(value + adjvalue,1), Bar_forecast)
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":
                     NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], round(value + adjvalue,1), Bar_forecast)
-                    UpdateDevice_v2(Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Door" and DeviceType == "Door":  # Door / Window
                 if value == "01":
                     state = "Open"
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif value == "00":
                     state = "Closed"
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
             if ClusterType == "Switch":
                 if DeviceType == "Plug":
                     if value == "01":
-                        UpdateDevice_v2(Devices, x, 1, "On", BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, 1, "On", BatteryLevel, SignalLevel)
                     elif value == "00":
                         state = "Off"
-                        UpdateDevice_v2(Devices, x, 0, "Off", BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
                 elif DeviceType == "Door":  # porte / fenetre
                     if value == "01":
                         state = "Open"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                     elif value == "00":
                         state = "Closed"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "Switch":  # Switch
                     state = ''
                     if value == "01":
                         state = "On"
                     elif value == "00":
                         state = "Off"
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "Button":  # boutton simple
                     state = ''
                     if int(value) == 1:
                         state = "On"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
                                         ForceUpdate_=True)
                 elif DeviceType == "Button_3":  # boutton simple 3 states
                     state = ''
@@ -875,24 +875,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     else:
                         value = 0
                         state = '00'
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
                                     ForceUpdate_=True)
                 elif DeviceType == "Water":  # detecteur d eau
                     state = ''
                     if value == "01":
                         state = "On"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                     elif value == "00":
                         state = "Off"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "Smoke":  # detecteur de fume
                     state = ''
                     if value == "01":
                         state = "On"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                     elif value == "00":
                         state = "Off"
-                        UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "LivoloSWL":
                     Domoticz.Log("Livolo Left - Value: %s" %value)
                     value = int(value)
@@ -902,7 +902,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == '00': # Off left
                         state = 'Off'
                     Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == 'LivolSWR':
                     Domoticz.Log("Livolo Right - Value: %s" %value)
@@ -914,7 +914,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         state = 'Off'
                     Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
                     #UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
@@ -924,7 +924,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == 4: state = "30"
                     else:
                         return  # Simply return and don't process any other values than the above
-                    UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                 elif DeviceType == "DSwitch":
                     # double switch avec EP different 
                     value = int(value)
@@ -932,29 +932,29 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         if value == 1 or value == 0:
                             state = "10"
                             data = "01"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                     elif Ep == "02":
                         if value == 1 or value == 0:
                             state = "20"
                             data = "02"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
                     elif Ep == "03":
                         if value == 1 or value == 0:
                             state = "30"
                             data = "03"
-                            UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "DButton":
                     # double bouttons avec EP different lumi.sensor_86sw2 
                     value = int(value)
                     if Ep == "01":
-                        if value == 1: state = "10"; data = "01"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+                        if value == 1: state = "10"; data = "01"; UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                     elif Ep == "02":
                         if value == 1:
-                            state = "20"; data = "02"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+                            state = "20"; data = "02"; UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
                     elif Ep == "03":
                         if value == 1:
-                            state = "30"; data = "03"; UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+                            state = "30"; data = "03"; UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "DButton_3":
                     # double bouttons avec EP different lumi.sensor_86sw2 
@@ -965,37 +965,37 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         if value == 1: state = "10"; data = "01"
                         elif value == 2: state = "20"; data = "02"
                         elif value == 3: state = "30"; data = "03"
-                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                        UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
                     elif Ep == "02":
                         if value == 1: state = "40"; data = "04"
                         elif value == 2: state = "50"; data = "05"
                         elif value == 3: state = "60"; data = "06"
-                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                        UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
                     elif Ep == "03":
                         if value == 1: state = "70"; data = "07"
                         elif value == 2: state = "80"; data = "08"
                         elif value == 3: state = "90"; data = "09"
-                        UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
+                        UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel,
                                             ForceUpdate_=True)
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     if Devices[x].SwitchType == 16:
                         if value == "00":
-                            UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             # We are in the case of a Shutter/Blind inverse. If we receieve a Read Attribute telling it is On, great
                             # We only update if the shutter was off before, otherwise we will keep its Level.
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
-                                UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else:
                         if value == "00":
-                            UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].sValue == "Off":
                                 # We do update only if this is a On/off
-                                UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
             elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
@@ -1003,7 +1003,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if value == 0: nValue = 0
                 elif value == 100: nValue = 1
                 else: nValue = 2
-                UpdateDevice_v2(Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
@@ -1031,30 +1031,30 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if sValue == 0:
                         nValue = 0
                         if Devices[x].SwitchType == 16:  # Shutter
-                            UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
                                 #UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
-                                UpdateDevice_v2(Devices, x, 0, '0', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
 
                     elif sValue == 100:
                         nValue = 1
                         if Devices[x].SwitchType == 16:  # Shutter
-                            UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
                                 #UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
-                                UpdateDevice_v2(Devices, x, 1, '100', BatteryLevel, SignalLevel)
+                                UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else:
                         if Devices[x].SwitchType != 16 and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                             pass
                         else:
                             nValue = 2
-                            UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
                 elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -1070,7 +1070,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             if sValue == 0 and analogValue > 0:
                                 sValue = 1
 
-                        UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
+                        UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
                     ClusterType == DeviceType:
@@ -1085,16 +1085,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if sValue == 0 and analogValue > 0:
                         sValue = 1
 
-                UpdateDevice_v2(Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
+                UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "02":  # Magic Cube Acara
                 Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value))
-                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "03":  # Magic Cube Acara Rotation
                 if Attribute_ == '0055': # Rotation Angle
                     # Update Text widget ( unit + 1 )
-                    UpdateDevice_v2(Devices, x + 1, 0 , value, BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x + 1, 0 , value, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
                 else:
                     state = value
@@ -1104,33 +1104,33 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "90":
                         data = 9
                     Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
-                    UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == DeviceType == "XCube" and Ep == "02":  # cube xiaomi
                 if value == "0000":  # shake
                     state = "10"
                     data = "01"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value in ( "0204", "0200", "0203", "0201", "0202", "0205" ):
                     state = "50"
                     data = "05"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value in ( "0103", "0100", "0104", "0101", "0102", "0105"): # Slide/M%ove
                     state = "20"
                     data = "02"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value == "0003":  # Free Fall
                     state = "70"
                     data = "07"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif "0004" <= value <= "0059":  # 90°
                     state = "30"
                     data = "03"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
                 elif value >= "0060":  # 180°
                     state = "90"
                     data = "09"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == DeviceType == "Vibration":
                     if value =="00":
@@ -1148,16 +1148,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     else:
                         data = 0
                         state = "00"
-                    UpdateDevice_v2(Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+                    UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
             if ClusterType == DeviceType == "Lux":
-                UpdateDevice_v2(Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Motion":
                 if value == "01":
-                    UpdateDevice_v2(Devices, x, 1, str("On"), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, 1, str("On"), BatteryLevel, SignalLevel)
                 if value == "00":
-                    UpdateDevice_v2(Devices, x, 0, str("Off"), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, 0, str("Off"), BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Ikea_Round_OnOff": # IKEA Remote On/Off
                 nValue = 0
@@ -1168,7 +1168,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == "toggle": # Toggle
                     nValue = 1
                     sValue = '10'
-                UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
 
             if ClusterType == DeviceType == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
                 nValue = 0
@@ -1215,7 +1215,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == "release_down": # Down Release
                     nValue = 13
                     sValue = '130'
-                UpdateDevice_v2(Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_=True )
 
 
 def ResetDevice(self, Devices, ClusterType, HbCount):
@@ -1281,11 +1281,11 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if (current - LUpdate) >= _timeout: 
                 Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
                     current) + " this was : " + str(current - LUpdate) + " secondes ago")
-                UpdateDevice_v2(Devices, x, 0, "Off", BatteryLevel, SignalLevel, SuppTrigger_=True)
+                UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel, SuppTrigger_=True)
     return
 
 
-def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', SuppTrigger_=False,
+def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', SuppTrigger_=False,
                     ForceUpdate_=False):
     Domoticz.Debug(
         "UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(
@@ -1312,18 +1312,14 @@ def UpdateDevice_v2(Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi),
                                      BatteryLevel=int(BatteryLvl))
             else:
-                # SO far, SuppressTrigger is not enforced due to the fact that Domoticz doesn't behave correctly.
-                # Issue will be reported to Domoticz as if SuppressTriggers is set to True, then there is no update of the Database at all!
-                # Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue) , SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), SuppressTriggers=SuppTrigger_ )
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
                                      BatteryLevel=int(BatteryLvl))
-
-        #elif (Devices[Unit].BatteryLevel != BatteryLvl and BatteryLvl != 255) or (
-        #        Devices[Unit].SignalLevel != rssi):  # In that case we do update, but do not trigger any notification.
         else:
-            Domoticz.Debug("UpdateDevice - (%15s) seen - Update  Battery %s, Signal %s" %( Devices[Unit].Name, BatteryLvl, rssi ))
-            Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
-                                 BatteryLevel=int(BatteryLvl), SuppressTriggers=True)
+            # Purpose is here just to touch the device and update the Last Seen
+            # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
+            if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10545):
+                Domoticz.Log("Touch unit %s" %( Devices[Unit].Name ))
+                Devices[Unit].Touch()
     return
 
 
