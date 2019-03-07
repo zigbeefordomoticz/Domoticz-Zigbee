@@ -1688,25 +1688,36 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 
 #Réponses APS
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
+
     MsgLen=len(MsgData)
-    Domoticz.Log("Decode8702 - MsgLen = %s out of 26" %str(MsgLen))
-    if MsgLen==0 : 
+    if MsgLen==0: 
         return
-    else:
-        MsgDataStatus=MsgData[0:2]
-        MsgDataSrcEp=MsgData[2:4]
-        MsgDataDestEp=MsgData[4:6]
-        MsgDataDestMode=MsgData[6:8]
+
+    MsgDataStatus=MsgData[0:2]
+    MsgDataSrcEp=MsgData[2:4]
+    MsgDataDestEp=MsgData[4:6]
+    MsgDataDestMode=MsgData[6:8]
+
+    if self.FirmwareVersion.lower() <= '030f':
         MsgDataDestAddr=MsgData[8:24]
         MsgDataSQN=MsgData[24:26]
+    else:    # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
+        if MsgDataDestMode == ADDRESS_MODE['short']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+            MsgDataDestAddr=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+        else:
+            Domoticz.Error("Decode8702 - Unexpected addmode %s for data %s" %(MsgDataDestMode, MsgData))
+            return
 
-        timeStamped( self, MsgDataDestAddr , 0x8702)
-        updSQN( self, MsgDataDestAddr, MsgDataSQN)
-        if self.pluginconf.enableAPSFailureLoging:
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-
-        return
+    timeStamped( self, MsgDataDestAddr , 0x8702)
+    updSQN( self, MsgDataDestAddr, MsgDataSQN)
+    if self.pluginconf.enableAPSFailureLoging:
+        Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+            %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+    return
 
 #Device Announce
 def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
