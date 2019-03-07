@@ -710,7 +710,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
         self.Ping['Permit'] = 'Off'
     elif Status == "01" : 
         if self.Ping['Permit'] is None:
-            Domoticz.Status("Permit Join: On")
+            Domoticz.Status("Zigate in Permit Join: On")
         self.Ping['Permit'] = 'On'
     else: 
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
