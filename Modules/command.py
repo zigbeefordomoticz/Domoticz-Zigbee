@@ -185,7 +185,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             elif Level == 0: 
                 value = 0
             else:
-                value = (Level*255)//100
+                value = round( (Level*255)/100)
                 if Level > 0 and value == 0: 
                     value = 1
 

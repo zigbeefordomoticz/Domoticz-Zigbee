@@ -1015,7 +1015,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if analogValue >= 255:
                         sValue = 100
                     else:
-                        sValue = ((int(value, 16) * 100) // 255)
+                        sValue = round( ((int(value, 16) * 100) / 255))
                         if sValue > 100: 
                             sValue = 100
                         if sValue == 0 and analogValue > 0:
@@ -1065,7 +1065,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         if analogValue >= 255:
                             sValue = 100
                         else:
-                            sValue = ((int(value, 16) * 100) // 255)
+                            sValue = round(((int(value, 16) * 100) / 255))
                             if sValue > 100: sValue = 100
                             if sValue == 0 and analogValue > 0:
                                 sValue = 1
@@ -1080,7 +1080,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if analogValue >= 255:
                     sValue = 100
                 else:
-                    sValue = ((int(value, 16) * 100) // 255)
+                    sValue = round(((int(value, 16) * 100) / 255))
                     if sValue > 100: sValue = 100
                     if sValue == 0 and analogValue > 0:
                         sValue = 1
