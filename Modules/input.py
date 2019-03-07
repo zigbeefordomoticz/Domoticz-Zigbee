@@ -831,6 +831,17 @@ def Decode8030(self, MsgData) : # Bind response
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
     
+    if MsgLen > 4:
+        # Firmware 3.1a
+        MsgSrcEp = MsgData[4:6]
+        MsgSrcAddrMode = MsgData[6:8]
+        if MsgDataDestMode == ADDRESS_MODE['short']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+            MsgDataDestAddr=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
@@ -843,6 +854,18 @@ def Decode8031(self, MsgData) : # Unbind response
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
+
+    if MsgLen > 4:
+        # Firmware 3.1a
+        MsgSrcEp = MsgData[4:6]
+        MsgSrcAddrMode = MsgData[6:8]
+        if MsgDataDestMode == ADDRESS_MODE['short']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+            MsgDataDestAddr=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+
     if MsgDataStatus != '00':
         Domoticz.Debug("Decode8031 - Unbind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
     
