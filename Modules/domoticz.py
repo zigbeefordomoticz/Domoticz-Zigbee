@@ -1281,12 +1281,11 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if (current - LUpdate) >= _timeout: 
                 Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
                     current) + " this was : " + str(current - LUpdate) + " secondes ago")
-                UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel, SuppTrigger_=True)
+                UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
     return
 
 
-def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', SuppTrigger_=False,
-                    ForceUpdate_=False):
+def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
     Domoticz.Debug(
         "UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(
             SignalLvl))
