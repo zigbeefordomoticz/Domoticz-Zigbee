@@ -856,11 +856,11 @@ class GroupsManagement(object):
                 t = self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T']
 
             if type_dir == 'left':
-                t -= 75
-                if t < 0: t = 0
+                t -= self.pluginconf.TradfriKelvinStep
+                if t < 0: t = 255
             elif type_dir == 'right':
-                t += 75
-                if t > 255: t = 255
+                t += self.pluginconf.TradfriKelvinStep
+                if t > 255: t = 0
                 
             Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
             self.set_Kelvin_Color( ADDRESS_MODE['group'], _grpid, '01', '01', t)

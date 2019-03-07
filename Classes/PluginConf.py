@@ -35,6 +35,7 @@ class PluginConf:
         self.enableReadAttributes = 0 # Enable the plugin to poll information from the devices.
         self.resetMotiondelay = 30
         self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
+        self.TradfriKelvinStep = 51
 
         # Zigate Configuration
         self.channel = 0
@@ -108,6 +109,12 @@ class PluginConf:
             if self.PluginConf.get('vibrationAqarasensitivity'):
                 self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
                 Domoticz.Status(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
+
+            if self.PluginConf.get('TradfriKelvinStep') and \
+                    self.PluginConf.get('TradfriKelvinStep').isdigit():
+                self.TradfriKelvinStep = int(self.PluginConf['TradfriKelvinStep'], 10)
+                if self.TradfriKelvinStep < 0 or self.TradfriKelvinStep > 255:
+                    self.TradfriKelvinStep = 75
 
             if self.PluginConf.get('pluginData'):
                 self.pluginData = self.PluginConf['pluginData']
