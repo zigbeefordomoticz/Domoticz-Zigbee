@@ -455,6 +455,9 @@ class BasePlugin:
 
             if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
                 Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
+        
+            if self.FirmwareVersion.lower() > '030f':
+                Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
             if self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003':
                 if self.pluginconf.blueLedOff:
