@@ -926,21 +926,22 @@ def identifySend( self, nwkid, ep, duration=0):
     sendZigateCmd(self, "0070", datas )
 
 def maskChannel( channel ):
+
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
-            12: 0x00001000,
-            13: 0x00002000,
-            14: 0x00004000,
+            #12: 0x00001000,
+            #13: 0x00002000,
+            #14: 0x00004000,
             15: 0x00008000,
-            16: 0x00010000,
-            17: 0x00020000,
-            18: 0x00040000,
+            #16: 0x00010000,
+            #17: 0x00020000,
+            #18: 0x00040000,
             19: 0x00080000,
             20: 0x00100000,
-            21: 0x00200000,
-            22: 0x00400000,
-            23: 0x00800000,
-            24: 0x01000000,
+            #21: 0x00200000,
+            #22: 0x00400000,
+            #23: 0x00800000,
+            #24: 0x01000000,
             25: 0x02000000,
             26: 0x04000000 }
 
@@ -949,7 +950,7 @@ def maskChannel( channel ):
     if isinstance(channel, list):
         for c in channel:
             if c.isdigit():
-                if c in ( '0', '11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'):
+                if c in CHANNELS:
                     mask += CHANNELS[int(c)]
             else:
                 Domoticz.Error("maskChannel - invalid channel %s" %c)

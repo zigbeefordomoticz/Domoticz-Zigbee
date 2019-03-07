@@ -1,5 +1,5 @@
 {
-'channel':'11,15,16,21,22',
+'channel':'11,15,19,20,25,26',
 'Certification':'CE',
 'Ping':'1',
 'self.eraseZigatePDM':'0',
