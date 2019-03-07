@@ -1049,17 +1049,20 @@ def setExtendedPANID(self, extPANID):
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
 
-def leaveMgtReJoin( self, saddr, ieee):
+def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     ' in case of receiving a leave, and that is not related to an explicit remove '
-
-    if self.permitTojoin != 0xff:
-        Domoticz.Log("Switch to Permit to Join for 30s")
-        discover = "%02.X" %int(30)
-        sendZigateCmd(self, "0049","FFFC" + discover + "00")
 
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
     # Request a Re-Join and Do not remove children
-    datas = saddr + ieee + '01' + '00'
+    if rejoin:
+        if self.permitTojoin != 0xff:
+            Domoticz.Log("Switch to Permit to Join for 30s, to allow rejoin")
+            discover = "%02.X" %int(30)
+            sendZigateCmd(self, "0049","FFFC" + discover + "00")
+        datas = saddr + ieee + '01' + '00'
+    else:
+        datas = saddr + ieee + '00' + '00'
+
     sendZigateCmd(self, "0047", datas )
 
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
