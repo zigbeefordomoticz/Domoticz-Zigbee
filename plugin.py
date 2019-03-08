@@ -147,6 +147,9 @@ class BasePlugin:
         self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # 
 
+        self.DomoticzMajor = None
+        self.DomoticzMinor = None
+
         return
 
     def onStart(self):
@@ -176,9 +179,9 @@ class BasePlugin:
 
         # Import PluginConf.txt
         major, minor = Parameters["DomoticzVersion"].split('.')
-        major = int(major)
-        minor = int(minor)
-        if major > 4 or ( major == 4 and minor >= 10355):
+        self.DomoticzMajor = int(major)
+        self.DomoticzMinor = int(minor)
+        if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355):
             # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
@@ -367,6 +370,11 @@ class BasePlugin:
 
     def onMessage(self, Connection, Data):
         #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
+        if isinstance(Data, dict):
+            Domoticz.Log("onMessage - unExpected for now")
+            DumpHTTPResponseToLog(Data)
+            return
+
         self.Ping['Rx Message'] = 0
         self.ZigateComm.onMessage(Data)
 
@@ -450,6 +458,9 @@ class BasePlugin:
 
             if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
                 Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
+        
+            if self.FirmwareVersion.lower() > '030f':
+                Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
             if self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003':
                 if self.pluginconf.blueLedOff:
@@ -623,3 +634,13 @@ def DumpConfigToLog():
     return
 
 
+def DumpHTTPResponseToLog(httpDict):
+    if isinstance(httpDict, dict):
+        Domoticz.Log("HTTP Details ("+str(len(httpDict))+"):")
+        for x in httpDict:
+            if isinstance(httpDict[x], dict):
+                Domoticz.Log("--->'"+x+" ("+str(len(httpDict[x]))+"):")
+                for y in httpDict[x]:
+                    Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
+            else:
+                Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")

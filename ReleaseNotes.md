@@ -49,6 +49,7 @@
 - [Technical] - Transport statistics are now stored on a reporting file, for further analysis.
 - [Technical] - When groups are ready report into GroupList-xx.json
 - [Technical] - if allowed rebind_clusters when receiving a Device Annoucement
+- [Technical] - #347 If you add the Tradfri remote 5 buttons (which was previously paired with Touchlink) to the group, the Left and Right buttons will then be activated.
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug

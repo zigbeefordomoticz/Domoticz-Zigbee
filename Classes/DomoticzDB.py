@@ -23,7 +23,7 @@ class DomoticzDB_Preferences:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return 
-        Domoticz.Log("Opening %s" %database)
+        Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
@@ -56,7 +56,7 @@ class DomoticzDB_Hardware:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
-        Domoticz.Log("Opening %s" %database)
+        Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
@@ -77,7 +77,7 @@ class DomoticzDB_DeviceStatus:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
-        Domoticz.Log("Opening %s" %database)
+        Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 

@@ -124,9 +124,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
 
         if Devices[Unit].SwitchType == "16" :
-            UpdateDevice_v2(Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
         else :
-            UpdateDevice_v2(Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
 
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
@@ -143,9 +143,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
         if Devices[Unit].SwitchType == "16" :
-            UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:
-            UpdateDevice_v2(Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
 
     if Command == "Set Level" :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
@@ -185,7 +185,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             elif Level == 0: 
                 value = 0
             else:
-                value = (Level*255)//100
+                value = round( (Level*255)/100)
                 if Level > 0 and value == 0: 
                     value = 1
 
@@ -193,10 +193,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
 
         if Devices[Unit].SwitchType == 16 :
-            UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
+            UpdateDevice_v2(self, Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
         else:
             # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
-            UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
+            UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
 
     if Command == "Set Color" :
         Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
@@ -263,7 +263,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
 
         #Update Device
-        UpdateDevice_v2(Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
+        UpdateDevice_v2(self, Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
 
 
 def livolo_OnOff( self, nwkid , EPout, devunit, onoff):

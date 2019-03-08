@@ -18,18 +18,20 @@ import queue
 import time
 import json
 
-from Modules.domoticz import MajDomoDevice
+from Modules.domoticz import MajDomoDevice, lastSeenUpdate
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
 from Modules.database import saveZigateNetworkData
+from Modules.consts import ADDRESS_MODE
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
+from Classes.GroupMgt import GroupsManagement
 
 
 def ZigateRead(self, Devices, Data):
@@ -374,6 +376,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddrMode)
     timeStamped( self, MsgSrcAddr , 0x8401)
     updSQN( self, MsgSrcAddr, MsgSQN)
 
@@ -708,7 +711,7 @@ def Decode8014(self,MsgData) : # "Permit Join" status response
         self.Ping['Permit'] = 'Off'
     elif Status == "01" : 
         if self.Ping['Permit'] is None:
-            Domoticz.Status("Permit Join: On")
+            Domoticz.Status("Zigate in Permit Join: On")
         self.Ping['Permit'] = 'On'
     else: 
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
@@ -829,6 +832,17 @@ def Decode8030(self, MsgData) : # Bind response
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
     
+    if MsgLen > 4:
+        # Firmware 3.1a
+        MsgSrcEp = MsgData[4:6]
+        MsgSrcAddrMode = MsgData[6:8]
+        if MsgDataDestMode == ADDRESS_MODE['short']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+            MsgDataDestAddr=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
@@ -841,6 +855,18 @@ def Decode8031(self, MsgData) : # Unbind response
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
+
+    if MsgLen > 4:
+        # Firmware 3.1a
+        MsgSrcEp = MsgData[4:6]
+        MsgSrcAddrMode = MsgData[6:8]
+        if MsgDataDestMode == ADDRESS_MODE['short']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+            MsgDataDestAddr=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+
     if MsgDataStatus != '00':
         Domoticz.Debug("Decode8031 - Unbind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
     
@@ -1436,6 +1462,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     except : 
         self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     updSQN( self, MsgSrcAddr, MsgSQN)
     ReadCluster(self, Devices, MsgData) 
 
@@ -1480,6 +1507,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         Domoticz.Debug("Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
+        lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         ReadCluster(self, Devices, MsgData) 
@@ -1686,31 +1714,47 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 
 #Réponses APS
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
+
     MsgLen=len(MsgData)
-    Domoticz.Log("Decode8702 - MsgLen = %s out of 26" %str(MsgLen))
-    if MsgLen==0 : 
+    if MsgLen==0: 
         return
-    else:
-        MsgDataStatus=MsgData[0:2]
-        MsgDataSrcEp=MsgData[2:4]
-        MsgDataDestEp=MsgData[4:6]
-        MsgDataDestMode=MsgData[6:8]
+
+    MsgDataStatus=MsgData[0:2]
+    MsgDataSrcEp=MsgData[2:4]
+    MsgDataDestEp=MsgData[4:6]
+    MsgDataDestMode=MsgData[6:8]
+
+    if self.FirmwareVersion.lower() <= '030f':
         MsgDataDestAddr=MsgData[8:24]
         MsgDataSQN=MsgData[24:26]
+    else:    # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
+        if MsgDataDestMode == ADDRESS_MODE['short']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+            MsgDataDestAddr=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+        else:
+            Domoticz.Error("Decode8702 - Unexpected addmode %s for data %s" %(MsgDataDestMode, MsgData))
+            return
 
-        timeStamped( self, MsgDataDestAddr , 0x8702)
-        updSQN( self, MsgDataDestAddr, MsgDataSQN)
-        if self.pluginconf.enableAPSFailureLoging:
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-
-        return
+    timeStamped( self, MsgDataDestAddr , 0x8702)
+    updSQN( self, MsgDataDestAddr, MsgDataSQN)
+    if self.pluginconf.enableAPSFailureLoging:
+        Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+            %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+    return
 
 #Device Announce
 def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
+
+    if MsgSrcAddr in self.ListOfDevices:
+        if self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
+            # Let's skip it has this is a duplicate message from the device
+            return
 
     Domoticz.Status("Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
 
@@ -1887,6 +1931,9 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
             Domoticz.Debug("Decode80A7 - selector: %s" %selector)
 
+            if self.groupmgt:
+                if TYPE_DIRECTIONS[MsgDirection] in ( 'right', 'left'):
+                    self.groupmgt.manageIkeaTradfriRemoteLeftRight( MsgSrcAddr, TYPE_DIRECTIONS[MsgDirection])
         else:
             Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))

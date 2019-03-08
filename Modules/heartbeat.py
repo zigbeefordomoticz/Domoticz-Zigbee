@@ -133,7 +133,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                 %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now > (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                                Domoticz.Log("%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ))
+                                Domoticz.Debug("%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ))
                                 func(self, NWKID )
                         else:
                             Domoticz.Debug("processKnownDevices - 1: %s Request ReadAttribute for %s/%s" %( NWKID, tmpEp, Cluster ))

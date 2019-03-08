@@ -731,7 +731,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
                     for iterEp in self.ListOfDevices[MsgSrcAddr]['Ep']:
                         if 'ClusterType' in self.ListOfDevices[MsgSrcAddr]['Ep'][iterEp]:
-                            Domoticz.Log("ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" \
+                            Domoticz.Debug("ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" \
                                     %(MsgClusterId, MsgAttrID, MsgSrcAddr, modelName))
                             return
 
@@ -783,6 +783,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == '0006': # CLD_BAS_ATTR_DATE_CODE
         # 20151006091b090
         self.ListOfDevices[MsgSrcAddr]['Date Code'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == '000a': # Product Code
+        Domoticz.Debug("ReadCluster - Product Code: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
 
     elif MsgAttrID == "0007": # Power Source
         Domoticz.Debug("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
@@ -882,7 +886,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if stag10 != '':
             # f400 --
             # 4602 --
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
     elif MsgAttrID=="ff02":
         Domoticz.Log("ReadCluster - %s/%s MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
