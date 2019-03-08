@@ -376,6 +376,7 @@ def Decode8401(self, Devices, MsgData) : # Reception Zone status change notifica
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddrMode)
     timeStamped( self, MsgSrcAddr , 0x8401)
     updSQN( self, MsgSrcAddr, MsgSQN)
 
@@ -1749,6 +1750,11 @@ def Decode004d(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
+
+    if MsgSrcAddr in self.ListOfDevices:
+        if self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
+            # Let's skip it has this is a duplicate message from the device
+            return
 
     Domoticz.Status("Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
 
