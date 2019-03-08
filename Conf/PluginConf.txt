@@ -1,17 +1,8 @@
 {
 'channel':'11,15,19,20,25,26',
-'Certification':'CE',
-'Ping':'1',
-'self.eraseZigatePDM':'0',
 'vibrationAqarasensitivity':'medium',
 'resetMotiondelay':'30',
-'enableReadAttributes':'0',
 'enablegroupmanagement':'0',
-'allowReBindingClusters':'0',
-'resetConfigureReporting':'0',
-'resetReadAttributes':'0',
-'allowRemoveZigateDevice':'0',
-'allowStoreDiscoveryFrames':'0',
 'logLQI':'0',
 'logFORMAT':'0'
 }
