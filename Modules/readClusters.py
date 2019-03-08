@@ -731,7 +731,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
                     for iterEp in self.ListOfDevices[MsgSrcAddr]['Ep']:
                         if 'ClusterType' in self.ListOfDevices[MsgSrcAddr]['Ep'][iterEp]:
-                            Domoticz.Log("ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" \
+                            Domoticz.Debug("ReadCluster - %s / %s - %s %s is already provisioned in Domoticz" \
                                     %(MsgClusterId, MsgAttrID, MsgSrcAddr, modelName))
                             return
 
@@ -882,7 +882,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if stag10 != '':
             # f400 --
             # 4602 --
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
     elif MsgAttrID=="ff02":
         Domoticz.Log("ReadCluster - %s/%s MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
@@ -973,6 +973,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
         Domoticz.Debug("ReadCluster 0201 - Heating demand: %s" %value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], value, oldValue[2], oldValue[3], oldValue[4],oldValue[5])
+
+    elif MsgAttrID == '000a':   #  
+        Domoticz.Debug("ReadCluster 0201 - Product Code: %s" %value)
 
     elif MsgAttrID == '0010':   # Calibration / Adjustement
         value = value / 10 
