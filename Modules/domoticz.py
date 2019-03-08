@@ -1011,6 +1011,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
                     nValue = None
 
+                    # Normalize sValue vs. analog value coomming from a ReadATtribute
                     analogValue = int(value, 16)
                     if analogValue >= 255:
                         sValue = 100
@@ -1049,11 +1050,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             else:
                                 #UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
                                 UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
-                    else:
-                        if Devices[x].SwitchType != 16 and Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                    else: # sValue != 0 and sValue != 100
+                        if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
+                            # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
                             pass
-                        else:
+                        elif Devices[x].SwitchType == 16:
                             nValue = 2
+                            UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
+                        else:
+                            nValue = 1
                             UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
                 elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
