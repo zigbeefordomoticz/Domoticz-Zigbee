@@ -1326,7 +1326,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
     # Purpose is here just to touch the device and update the Last Seen
     # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
     if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
-        Domoticz.Log("Not the good Domoticz level for Touch")
+        Domoticz.Debug("Not the good Domoticz level for Touch")
         return
 
     if Unit:
