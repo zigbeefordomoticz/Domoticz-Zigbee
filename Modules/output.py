@@ -1187,7 +1187,7 @@ def thermostat_Mode( self, key, mode ):
 
 def ReadAttributeRequest_0201(self, key):
 
-    Domoticz.Log("ReadAttributeRequest_0201 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0201 - Key: %s " %key)
     # Power Config
     EPin = "01"
     EPout= "01"
@@ -1213,7 +1213,7 @@ def ReadAttributeRequest_0201(self, key):
 
     listAttributes = []
     if str(self.ListOfDevices[key]['Model']).find('SPZB') == 0:
-        Domoticz.Log("- req Attributes for Eurotronic")
+        Domoticz.Debug("- req Attributes for Eurotronic")
         listAttributes.append(0x4000)        # TRV Mode
         listAttributes.append(0x4001)        # Set Valve Position
         listAttributes.append(0x4002)        # Errors

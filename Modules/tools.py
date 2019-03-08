@@ -188,10 +188,10 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
                 del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
         else :
             for tmpEp in self.ListOfDevices[key]['Ep'] : 
-                Domoticz.Log("removeDeviceInList - searching Ep " +str(tmpEp) )
+                Domoticz.Debug("removeDeviceInList - searching Ep " +str(tmpEp) )
                 # Search this DeviceID in ClusterType
                 if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
-                    Domoticz.Log("removeDeviceInList - searching ClusterType " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
+                    Domoticz.Debug("removeDeviceInList - searching ClusterType " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
                     if str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] :
                         Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
                         del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
@@ -201,13 +201,13 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
         if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
             Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
             if self.ListOfDevices[key]['ClusterType'] != {}:
-                Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe' not empty")
+                Domoticz.Debug("removeDeviceInList - exitsing Global 'ClusterTpe' not empty")
                 emptyCT = 0
         for tmpEp in self.ListOfDevices[key]['Ep'] : 
             if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
                 Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
                 if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
-                    Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe' not empty")
+                    Domoticz.Debug("removeDeviceInList - exitsing Ep 'ClusterTpe' not empty")
                     emptyCT = 0
         
         if emptyCT == 1 :     # There is still something in the ClusterType either Global or at Ep level

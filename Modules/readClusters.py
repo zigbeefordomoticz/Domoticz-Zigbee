@@ -784,6 +784,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 20151006091b090
         self.ListOfDevices[MsgSrcAddr]['Date Code'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '000a': # Product Code
+        Domoticz.Debug("ReadCluster - Product Code: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
+
     elif MsgAttrID == "0007": # Power Source
         Domoticz.Debug("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         # 0x03 stand for Battery
@@ -973,9 +977,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
         Domoticz.Debug("ReadCluster 0201 - Heating demand: %s" %value)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '%s;%s;%s;%s;%s;%s' %(oldValue[0], value, oldValue[2], oldValue[3], oldValue[4],oldValue[5])
-
-    elif MsgAttrID == '000a':   #  
-        Domoticz.Debug("ReadCluster 0201 - Product Code: %s" %value)
 
     elif MsgAttrID == '0010':   # Calibration / Adjustement
         value = value / 10 
