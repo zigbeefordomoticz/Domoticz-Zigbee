@@ -261,9 +261,9 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
         else:
-            Domoticz.Log("Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)))
+            Domoticz.Debug("Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)))
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr1 )
-            Domoticz.Log("Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)))
+            Domoticz.Debug("Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)))
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr2 )
 
 
@@ -399,7 +399,7 @@ def ReadAttributeRequest_0102(self, key):
 
     EPin = "01"
     EPout= "01"
-    Domoticz.Log("Request Windows Covering status Read Attribute request: " + key )
+    Domoticz.Debug("Request Windows Covering status Read Attribute request: " + key )
     listAttributes = []
 
     listAttributes.append(0x0000) # Window Covering Type
@@ -573,7 +573,7 @@ def removeZigateDevice( self, IEEE ):
         Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
         #sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
     else:
-        Domoticz.Log("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
+        Domoticz.Error("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
 
     return
 
@@ -614,7 +614,7 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
 
         # On/Off Cluster
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         #'0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0003', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'00'}}},
 
         # Level Control Cluster
@@ -642,12 +642,12 @@ def processConfigureReporting( self, NWKID=None ):
                                  '001B': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '001C': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0001': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0003': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0004': {'DataType': '21', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 '0008': {'DataType': '30', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
+        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color Temp
+                                 #'0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
+                                 #'0001': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, 
+                                 '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color X
+                                 '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color Y
+                                 '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}, # Color Mode
         # Illuminance Measurement
         '0400': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
         # Temperature
@@ -670,7 +670,7 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'003C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
+                                 '0400': {'DataType': '2a', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     now = int(time())
