@@ -14,8 +14,6 @@ import time
 import struct
 import json
 
-from Modules.loggin import zigatedebug
-
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
