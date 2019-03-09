@@ -1728,10 +1728,13 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
         MsgDataDestAddr=MsgData[8:24]
         MsgDataSQN=MsgData[24:26]
     else:    # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
-        if MsgDataDestMode == ADDRESS_MODE['short']:
+        if int(MsgDataDestMode,16) == ADDRESS_MODE['short']:
             MsgDataDestAddr=MsgData[8:12]
             MsgDataSQN=MsgData[12:14]
-        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+        elif int(MsgDataDestMode,16) == ADDRESS_MODE['group']:
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif int(MsgDataDestMode,16) == ADDRESS_MODE['ieee']:
             MsgDataDestAddr=MsgData[8:24]
             MsgDataSQN=MsgData[24:26]
         else:
