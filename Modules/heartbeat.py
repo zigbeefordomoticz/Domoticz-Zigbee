@@ -98,12 +98,6 @@ def processKnownDevices( self, Devices, NWKID ):
                             if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
 
-    # Check for dead device ( no messages since 3 hours )
-    if 'Stamp' in self.ListOfDevices[NWKID]:
-        if 'LastSeen' in self.ListOfDevices[NWKID]['Stamp']:
-            if time.time() > self.ListOfDevices[NWKID]['Stamp']['LastSeen']  + 3 * 60:
-                Domoticz.Log("WARNING: Device : %s with IEEE %s not seen since more than 3 hours" %(NWKID, self.ListOfDevices[NWKID]['IEEE']))
-
     # Ping each device, even the battery one. It will make at least the route up-to-date
     #if ( intHB % ( 3000 // HEARTBEAT)) == 0:
     #    ReadAttributeRequest_Ack(self, NWKID)
