@@ -50,6 +50,8 @@
 - [Technical] - When groups are ready report into GroupList-xx.json
 - [Technical] - if allowed rebind_clusters when receiving a Device Annoucement
 - [Technical] - #347 If you add the Tradfri remote 5 buttons (which was previously paired with Touchlink) to the group, the Left and Right buttons will then be activated.
+- [Technical] - Use the new Domoticz API requested by us, to update on every incoming message the Device Last Seen in Domoticz.
+- [Technical] - Reduce the LastSeen update to every 5' in order to avoid too much load on the IO
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug

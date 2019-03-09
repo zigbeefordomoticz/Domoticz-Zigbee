@@ -14,6 +14,7 @@ import time
 import struct
 import json
 
+from Modules.loggin import zigatedebug
 
 def CreateDomoDevice(self, Devices, NWKID):
     """
@@ -1338,10 +1339,24 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             return
         if 'IEEE' not in self.ListOfDevices[NwkId]:
             return
+        if 'Stamp' not in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[NwkId]['Stamp'] = {}
+            self.ListOfDevices[NwkId]['Stamp']['Time'] = {}
+            self.ListOfDevices[NwkId]['Stamp']['MsgType'] = {}
+            self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+        if 'LastSeen' not in self.ListOfDevices[NwkId]['Stamp']:
+            self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+
+        if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
+            Domoticz.Debug("Too early for a new update of LastSeen %s" %NwkId)
+            return
+
+        self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
+
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                Domoticz.Debug("Touch unit %s" %( Devices[x].Name ))
+                Domoticz.Debug( "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
                 Devices[x].Touch()
 
 
