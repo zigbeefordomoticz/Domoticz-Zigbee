@@ -568,8 +568,19 @@ class GroupsManagement(object):
                                 color_widget = 'ColorControlRGBWW'
                                 widget = ( 241, 4, 7)
                                 _ikea_colormode = color_widget
-                        elif code == 4: widget = ( 241, 4, 7)
-                        elif code == 5: widget = ( 241, 7, 7)
+                            elif devwidget == 'ColorControl':
+                                code = 5
+                                color_widget = 'ColorControlFull'
+                                widget = ( 241, 7, 7)
+                                _ikea_colormode = color_widget
+                        elif code == 4: 
+                            color_widget = 'ColorControlRGBWW'
+                            widget = ( 241, 4, 7)
+                            _ikea_colormode = color_widget
+                        elif code == 5:
+                            color_widget = 'ColorControlFull'
+                            widget = ( 241, 7, 7)
+                            _ikea_colormode = color_widget
                     pre_code = code
 
 
@@ -847,6 +858,10 @@ class GroupsManagement(object):
             return
             
         _widgetColor = self.ListOfGroups[_grpid]['Tradfri Remote']['Color Mode'] 
+        if _widgetColor == None:
+            Domoticz.Error("manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" %_widgetColor)
+            return
+
         Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Color model : %s" %_widgetColor)
 
         if _widgetColor in ('ColorControlWW'): # Will work in Kelvin
@@ -1097,7 +1112,7 @@ class GroupsManagement(object):
                     if removeNKWID not in self.ListOfDevices:
                         Domoticz.Error("Unknown IEEE to be removed %s" %removeNKWID)
                         continue
-                    Domoticz.Log("Adding %s/%s to be removed from %s" 
+                    Domoticz.Debug("Adding %s/%s to be removed from %s" 
                             %(removeNKWID, iterEp, iterGrp))
                     self.TobeRemoved.append( ( removeNKWID, iterEp, iterGrp ) )
 
