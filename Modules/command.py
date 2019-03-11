@@ -123,7 +123,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
 
-        if Devices[Unit].SwitchType == "16" :
+        if Devices[Unit].SwitchType == 16 :
             UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
         else :
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
@@ -142,7 +142,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
-        if Devices[Unit].SwitchType == "16" :
+        Domoticz.Log(
+        if Devices[Unit].SwitchType == 16 :
             UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
