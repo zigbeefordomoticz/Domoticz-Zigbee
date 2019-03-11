@@ -1,0 +1,9 @@
+Conf/PluginConf-*
+Conf/ZigateGroupsConfig-*
+Data/DeviceList-*
+Data/GroupsList-*
+Data/Zigate.json
+www/zigate/reports/*
+Zdatas/DiscoveryDevice*
+__pycache__/
+*/__pycache__
