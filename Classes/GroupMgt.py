@@ -626,13 +626,13 @@ class GroupsManagement(object):
                                 if level is None:
                                     level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
                                 else:
-                                    level = ( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) // 2
+                                    level = round(( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) / 2)
         if level:
             analogValue = level
             if analogValue >= 255:
                 sValue = 100
             else:
-                sValue = ((level * 100) // 255)
+                sValue = round((level * 100) / 255)
                 if sValue > 100: sValue = 100
                 if sValue == 0 and analogValue > 0:
                     sValue = 1
