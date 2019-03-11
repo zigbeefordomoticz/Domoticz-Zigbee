@@ -35,20 +35,20 @@ mv DeviceList* Data/
 Here is what the ..../plugins/Domoticz-Zigate`should look like
 
 `ls -l`
-
-`-rw-rw-r-- 1 domoticz domoticz  1016 Mar 11 19:38 00-UPGRADE-FROM-STABLE-4.0`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Classes`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Conf`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Data`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 images`
-`-rw-rw-r-- 1 domoticz domoticz 35144 Mar  2 20:57 LICENSE.txt`
-`-rw-rw-r-- 1 domoticz domoticz   203 Mar 11 19:38 MANIFEST.in`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Modules`
-`-rw-rw-r-- 1 domoticz domoticz 29686 Mar 11 19:38 plugin.py`
-`-rw-rw-r-- 1 domoticz domoticz  2415 Mar 11 19:38 readme.md`
-`-rw-rw-r-- 1 domoticz domoticz 12322 Mar 11 19:38 ReleaseNotes.md`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Tools`
-`drwxrwxr-x 3 domoticz domoticz  4096 Mar 11 19:38 www`
-`drwxrwxr-x 2 domoticz domoticz  4096 Mar  2 20:57 Zdatas`
-
+```bash
+-rw-rw-r-- 1 domoticz domoticz  1016 Mar 11 19:38 00-UPGRADE-FROM-STABLE-4.0
+drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Classes
+drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Conf
+drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Data
+drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 images
+-rw-rw-r-- 1 domoticz domoticz 35144 Mar  2 20:57 LICENSE.txt
+-rw-rw-r-- 1 domoticz domoticz   203 Mar 11 19:38 MANIFEST.in
+drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Modules
+-rw-rw-r-- 1 domoticz domoticz 29686 Mar 11 19:38 plugin.py
+-rw-rw-r-- 1 domoticz domoticz  2415 Mar 11 19:38 readme.md
+-rw-rw-r-- 1 domoticz domoticz 12322 Mar 11 19:38 ReleaseNotes.md
+drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Tools
+drwxrwxr-x 3 domoticz domoticz  4096 Mar 11 19:38 www
+drwxrwxr-x 2 domoticz domoticz  4096 Mar  2 20:57 Zdatas
+```
 
