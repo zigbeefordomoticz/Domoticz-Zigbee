@@ -755,6 +755,9 @@ def processConfigureReporting( self, NWKID=None ):
                             %(self.busy, len(self.ZigateComm._normalQueue), key))
                         return # Will do at the next round
 
+                    if self.pluginconf.allowReBindingClusters:
+                        bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
                     attrDisp = []   # Used only for printing purposes
