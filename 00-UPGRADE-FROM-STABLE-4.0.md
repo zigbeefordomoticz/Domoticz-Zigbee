@@ -17,8 +17,38 @@ https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Plugin-directory-structure :
  - Zdatas
 
 * you MUST move your plugin database ( file DeviceList-xx.txt ) to the Data directory, otherwise when you'll start the plugin it will start with an empty plugin database
-* if you want to ustomize the PluginConf.txt, it is now available on Conf/PluginConf.txt. We also recommend to avoid any further overwrite to create a PluginCon-xx.txt (where xx is equal to the same number as DeviceList-xx.txt )
-* The ZigateGroupsConfig-xx.txt or ZigateGroupsConfig.txt you might have created MUST be move to Conf
+* if you want to customize the PluginConf.txt, it is now available on Conf/PluginConf.txt. 
 
-## Group Management
-If you plan to use Group Management, you MUST have flashed the latest Zigate firmware 3.0f
+### For example:
+
+1. Stop domoticz
+Upgrade to the lasted version
+assuming you are on `..../plugins/Domoticz-Zigate`
+
+`git pull`
+
+1. Move the files
+assuming you are still on `..../plugins/Domoticz-Zigate`
+
+mv DeviceList* Data/
+
+Here is what the ..../plugins/Domoticz-Zigate`should look like
+
+`ls -l`
+
+`-rw-rw-r-- 1 domoticz domoticz  1016 Mar 11 19:38 00-UPGRADE-FROM-STABLE-4.0`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Classes`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Conf`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Data`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 images`
+`-rw-rw-r-- 1 domoticz domoticz 35144 Mar  2 20:57 LICENSE.txt`
+`-rw-rw-r-- 1 domoticz domoticz   203 Mar 11 19:38 MANIFEST.in`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Modules`
+`-rw-rw-r-- 1 domoticz domoticz 29686 Mar 11 19:38 plugin.py`
+`-rw-rw-r-- 1 domoticz domoticz  2415 Mar 11 19:38 readme.md`
+`-rw-rw-r-- 1 domoticz domoticz 12322 Mar 11 19:38 ReleaseNotes.md`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar 11 19:38 Tools`
+`drwxrwxr-x 3 domoticz domoticz  4096 Mar 11 19:38 www`
+`drwxrwxr-x 2 domoticz domoticz  4096 Mar  2 20:57 Zdatas`
+
+
