@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="pre-4.1" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.1.0" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
 	<h3> Short description </h3>
@@ -154,7 +154,7 @@ class BasePlugin:
 
     def onStart(self):
 
-        Domoticz.Status("Zigate plugin (pre 4.1.x) started")
+        Domoticz.Status("Zigate plugin 4.1.0 started")
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":

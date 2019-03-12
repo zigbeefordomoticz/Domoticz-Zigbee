@@ -1,6 +1,6 @@
 # Release Notes 
 
-## 07 January 2019 - Version pre-4.1
+## 12 Mars 2019 - 4.1
 
 - [Technical] Full refactor of Discovery and Enrolement process
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
