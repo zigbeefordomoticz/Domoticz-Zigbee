@@ -22,7 +22,7 @@ https://github.com/sasu-drooz/Domoticz-Zigate/wiki/Plugin-directory-structure :
 ### For example:
 
 1. Stop domoticz
-   Upgrade to the lasted version
+1. Upgrade to the lasted version
    assuming you are on 
    `..../plugins/Domoticz-Zigate`
    `git pull`
