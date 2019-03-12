@@ -636,10 +636,15 @@ class GroupsManagement(object):
                 if sValue > 100: sValue = 100
                 if sValue == 0 and analogValue > 0:
                     sValue = 1
-            sValue = str(sValue)
             # Let's check if this is Shutter or a Color Bulb (as for Color Bulb we need nValue = 1
-            if nValue == 1 and self.Devices[unit].SwitchType == 16:
-                nValue = 2
+            if self.Devices[unit].SwitchType == 16:
+                if sValue == 0:
+                    nValue = 0
+                elif sValue > 0 and sValue < 100:
+                    nValue = 2
+                else:
+                    nValue = 1
+            sValue = str(sValue)
         else:
             sValue = "Off"
 
