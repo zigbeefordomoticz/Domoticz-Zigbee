@@ -13,10 +13,14 @@
 
 import queue
 import datetime
+import time
+import os.path
+import json
 
 import Domoticz
-import z_output
-import z_var
+from Modules.output import sendZigateCmd
+
+from Classes.AdminWidgets import AdminWidgets
 
 def LQIdiscovery(self):
     """
@@ -25,11 +29,11 @@ def LQIdiscovery(self):
     the information in the LQI dictionary, will will trigger one new request on an non-scanned Network address
     """
 
-    z_var.LQISource = queue.Queue()
+    self.LQISource = queue.Queue()
     self.LQI = {}
     mgtLQIreq(self)    # We start and by default, it will be on 0x0000 , Index 0
 
-def LQIcontinueScan(self):
+def LQIcontinueScan(self, Devices):
 
     LQIfound = False
     LODfound = False
@@ -90,18 +94,35 @@ def LQIcontinueScan(self):
         Domoticz.Log("LQI Results:")
         for src in self.LQI:
             for child in self.LQI[src]:
-                Domoticz.Log(" Node {:>4}".format(src) + " child {:>4}".format(child) +\
-                            " relation {:>7}".format(self.LQI[src][child]['_relationshp']) + " type {:>11}".format(self.LQI[src][child]['_devicetype']) + \
-                            " deepth {:2n}".format((int(self.LQI[src][child]['_depth'], 16))) + " linkQty {:3n}".format((int(self.LQI[src][child]['_lnkqty'], 16))) +\
-                            " Rx-Idl {:>6}".format(self.LQI[src][child]['_rxonwhenidl']) ) 
+                try:
+                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
+                        %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], int(self.LQI[src][child]['_depth'], 16), int(self.LQI[src][child]['_lnkqty'], 16), self.LQI[src][child]['_rxonwhenidl']))
+                except:
+                    Domoticz.Log(" linkQty: " +str(self.LQI[src][child]['_lnkqty']))
+                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2s linkQty     Rx-Idl %6s" \
+                            %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
 
         # Write the report onto file
-        _filename =  self.homedirectory + "LQI_report-" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
-        Domoticz.Status("LQI report save on " +str(_filename))
-        with open(_filename , 'wt') as file:
-            for key in self.LQI:
-                file.write(key + ": " + str(self.LQI[key]) + "\n")
+        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
+        storeLQI = {}
+        storeLQI[int(time.time())] = self.LQI
+
         self.pluginconf.logLQI = 0
+        if os.path.isdir( self.pluginconf.pluginReports ):
+            #Domoticz.Status("LQI report save on " +str(_filename))
+            #with open(_filename , 'at') as file:
+            #    for key in storeLQI:
+            #        file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
+            #self.pluginconf.logLQI = 0
+
+            json_filename = _filename + ".json"
+            with open( json_filename, 'at') as json_file:
+                json_file.write('\n')
+                json.dump( storeLQI, json_file)
+            self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
+        else:
+            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
+
 
 def mgtLQIreq(self, nwkid='0000', index=0):
     """
@@ -113,10 +134,10 @@ def mgtLQIreq(self, nwkid='0000', index=0):
      <Start Index: uint8_t>
     """
 
-    z_var.LQISource.put(str(nwkid))
+    self.LQISource.put(str(nwkid))
     datas = str(nwkid) + "{:02n}".format(index)
     Domoticz.Debug("mgtLQIreq: from Nwkid: " +str(nwkid) + " index: "+str(index))
-    z_output.sendZigateCmd(self, "004E",datas)    
+    sendZigateCmd(self, "004E",datas)    
 
     return
 
@@ -164,7 +185,7 @@ def mgtLQIresp(self, MsgData):
         Domoticz.Debug("mgtLQIresp -  No element in that list ")
         return
 
-    NwkIdSource = z_var.LQISource.get()
+    NwkIdSource = self.LQISource.get()
     # Let's not overwrite
     if NwkIdSource in self.LQI:                 # Source record exists
         Domoticz.Debug("mgtLQIresp - " +str(NwkIdSource) + " found LQI["+str(NwkIdSource)+"] " + str(self.LQI[NwkIdSource]))
@@ -176,16 +197,15 @@ def mgtLQIresp(self, MsgData):
         _nwkid    = ListOfEntries[n:n+4]
         _extPANID = ListOfEntries[n+4:n+20]
         _ieee     = ListOfEntries[n+20:n+36]
-        _depth    = ListOfEntries[n+36:n+38]
-        _lnkqty   = ListOfEntries[n+38:n+40]
-        try:
+
+        _depth = _lnkqty = _bitmap = 0
+        if ListOfEntries[n+36:n+38] != '':
+            _depth    = ListOfEntries[n+36:n+38]
+        if ListOfEntries[n+38:n+40] != '':
+            _lnkqty   = ListOfEntries[n+38:n+40]
+        if ListOfEntries[n+40:n+42] != '':
             _bitmap   = int(ListOfEntries[n+40:n+42], 16)
-        except:
 
-            Domoticz.Log("mgtLQIresp - wrong bitmap :%s " %ListOfEntries[n+40:n+42])
-            _bitmap = 0
-
-        Domoticz.Debug("mgtLQIresp - error on _bitmap {0:b}".format(_bitmap))
         _devicetype   = _bitmap & 0b00000011
         _permitjnt    = (_bitmap & 0b00001100) >> 2
         _relationshp  = (_bitmap & 0b00110000) >> 4

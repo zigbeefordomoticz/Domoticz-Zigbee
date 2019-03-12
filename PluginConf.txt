@@ -1,6 +1,0 @@
-{
-'channel':'0',
-'allowRemoveZigateDevice':'0',
-'allowStoreDiscoveryFrames':'0',
-'logFORMAT':'0'
-}

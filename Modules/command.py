@@ -16,10 +16,9 @@ import time
 import struct
 import json
 
-import z_var          # Global variables
-import z_tools
-import z_output
-import z_domoticz
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.output import sendZigateCmd, thermostat_Setpoint
+from Modules.domoticz import UpdateDevice_v2
 
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
@@ -63,22 +62,32 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     ClusterSearch = ''
     DeviceType = ''
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType =="Switch" or tmpDeviceType =="Plug" or tmpDeviceType =="SwitchAQ2" or tmpDeviceType =="Smoke" or tmpDeviceType =="DSwitch" or tmpDeviceType =="Button" or tmpDeviceType =="DButton":
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR'):
             ClusterSearch="0006"
+            DeviceType = tmpDeviceType
+        if tmpDeviceType == "WindowCovering":
+            ClusterSearch = '0102'
             DeviceType = tmpDeviceType
         if tmpDeviceType =="LvlControl" :
             ClusterSearch="0008"
             DeviceType = tmpDeviceType
-        if tmpDeviceType =="ColorControl" :
+        if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
+        if tmpDeviceType == 'ThermoSetpoint':
+            ClusterSearch = '0201'
+            DeviceType = tmpDeviceType
+        if tmpDeviceType == 'Motion':
+            ClusterSearch = '0406'
+            DeviceType = tmpDeviceType
+
+
 
     if DeviceType == '': 
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
     Domoticz.Debug("mgtCommand - DeviceType : " +str(DeviceType) )
-
 
     # A ce stade ClusterSearch est connu
     EPin="01"
@@ -102,32 +111,92 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-        z_output.sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "00")
-        if Devices[Unit].SwitchType == "16" :
-            z_domoticz.UpdateDevice_v2(Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
+        if EPout == '06': # Mostlikely a Livolo Device
+            if DeviceType == 'LivoloSWL':
+                livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+            elif DeviceType == 'LivoloSWR':
+                livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
+
+        if DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
+        else:
+            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
+
+        if Devices[Unit].SwitchType == 16 :
+            UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
         else :
-            z_domoticz.UpdateDevice_v2(Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
 
     if Command == "On" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-        z_output.sendZigateCmd(self, "0092","02" + NWKID + EPin + EPout + "01")
-        if Devices[Unit].SwitchType == "16" :
-            z_domoticz.UpdateDevice_v2(Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
+
+        if EPout == '06': # Mostlikely a Livolo Device
+            if DeviceType == 'LivoloSWL':
+                livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+            elif DeviceType == 'LivoloSWR':
+                livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
+
+        if DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
         else:
-            z_domoticz.UpdateDevice_v2(Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
+            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
+        if Devices[Unit].SwitchType == 16 :
+            UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
+        else:
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
 
     if Command == "Set Level" :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
         
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
-        OnOff = '01' # 00 = off, 01 = on
-        value=z_tools.Hex_Format(2,round(Level*255/100)) #To prevent off state with dimmer, only available with switch
-        z_output.sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
-        if Devices[Unit].SwitchType == 16 :
-            z_domoticz.UpdateDevice_v2(Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
+        if DeviceType == 'ThermoSetpoint':
+            value = int(float(Level)*100)
+            Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
+            thermostat_Setpoint( self, NWKID, value )
+            return
+
+        elif DeviceType == 'ThermoMode':
+            Domoticz.Log("ThermoMode - requested value: %s" %value)
+            #'Off' : 0x00 ,
+            #'Auto' : 0x01 ,
+            #'Reserved' : 0x02,
+            #'Cool' : 0x03,
+            #'Heat' :  0x04,
+            #'Emergency Heating' : 0x05,
+            #'Pre-cooling' : 0x06,
+            #'Fan only' : 0x07 
+            if value == 0:
+                value = 'off'
+                thermostat_Mode( self, NWKID, value)
+
+        elif  DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            value = '%02x' %Level
+            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+
         else:
-            z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
+            OnOff = '01' # 00 = off, 01 = on
+            if Level == 100: 
+                value = 255
+            elif Level == 0: 
+                value = 0
+            else:
+                value = round( (Level*255)/100)
+                if Level > 0 and value == 0: 
+                    value = 1
+
+            value=Hex_Format(2, value)
+            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
+
+        if Devices[Unit].SwitchType == 16 :
+            UpdateDevice_v2(self, Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
+        else:
+            # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
+            UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
 
     if Command == "Set Color" :
         Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
@@ -148,8 +217,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         #First manage level
         OnOff = '01' # 00 = off, 01 = on
-        value=z_tools.Hex_Format(2,round(1+Level*254/100)) #To prevent off state
-        z_output.sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
+        value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+        sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
 
         #Now color
         #ColorModeNone = 0   // Illegal
@@ -165,36 +234,61 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             # t is 0 > 255
             TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
             TempMired = 1000000 // TempKelvin
-            z_output.sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + z_tools.Hex_Format(4,TempMired) + "0000")
+            sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
-            x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             #Convert 0>1 to 0>FFFF
             x = int(x*65536)
             y = int(y*65536)
-            strxy = z_tools.Hex_Format(4,x) + z_tools.Hex_Format(4,y)
-            z_output.sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
+            strxy = Hex_Format(4,x) + Hex_Format(4,y)
+            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List['m'] == 4:
             ww = int(Hue_List['ww'])
             cw = int(Hue_List['cw'])
-            x, y = z_tools.rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
+            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
             #TODO, Pas trouve de device avec ca encore ...
             Domoticz.Debug("Not implemented device color 2")
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
-            h,l,s = z_tools.rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
             saturation = s * 100   #0 > 100
             hue = h *360           #0 > 360
             hue = int(hue*254//360)
             saturation = int(saturation*254//100)
             value = int(l * 254//100)
             OnOff = '01'
-            z_output.sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + z_tools.Hex_Format(2,hue) + z_tools.Hex_Format(2,saturation) + "0000")
-            z_output.sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + z_tools.Hex_Format(2,value) + "0010")
+            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
 
         #Update Device
-        z_domoticz.UpdateDevice_v2(Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
+        UpdateDevice_v2(self, Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
+
+
+def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
+    """
+    Levolo On/Off command are based on Level Control cluster
+    Level: 108  -> On
+    Level: 1 -> Off
+    Left Unit: Timing 1
+    Right Unit: Timing 2
+    """
+
+    if onoff not in ( 'On', 'Off'): 
+        return
+    if devunit not in ( 'Left', 'Right'): 
+        return
+
+    if onoff == 'On': level_value = '%02x' %108
+    else: level_value = '01'
+
+    if devunit == 'Left': timing_value = '0001'
+    else: timing_value = '0002'
+
+    Domoticz.Log("livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value))
+    sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+
 
 
 

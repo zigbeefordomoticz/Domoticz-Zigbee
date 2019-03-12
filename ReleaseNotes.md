@@ -1,7 +1,57 @@
 # Release Notes 
 
-## 20 February 2019 - Version 4.0.8
-- [Issue] Fix #354 - Python error when in Left device.
+## 12 Mars 2019 - 4.1
+
+- [Technical] Full refactor of Discovery and Enrolement process
+- [Issue] Make the possibility to use a PluginConf per HardwareID #271
+- [Issue] Make Motion Resetdevice customizable via a PluginConf parameter #270
+- [Enhancement] Add Clock and Anti-clokc rotation tabs for XCube. This will require a remove and re-inclusion of the device #282, #281
+- [Enhancement] Discover group membership from each main powered devices which also have cluster 0x0004
+- [Hardware] NEXBANG Wireless Door Windows sensor Alarm Home WIFI Security Door (#287)
+- [Hardware] ZIPATO smoke detector
+- [Hardware] IAS Zone enrollement
+- [Enhacement] Group Management (auto-discovery of existing group set via remote controller)
+- [Enhacement] Zigate Status Widget (Measure section) ( Ready, Enrollement, Busy )
+- [Technical] At startup when loading the ListOfDevice, do not load UNKNOW devices.
+- [Enhacement] Zigate Notification Widget (measures section) to display plugin notification
+- [Technical] Configurable plugin folders ( Data, Zdata, reports, www/templates )
+- [Technical] Configure by default the ZigBee Channels (recommended for Europe
+- [Hardware] Improve 2018 Xiaomi wireless sitches with 3 states per button ( lumi.remote.b286acn01, lumi.remote.b186acn01) 
+- [Technical] Remove the use of random
+- [Technical] Ping <-> Zigate. In case of connectivity failure, reConnect
+- [Technical] re-factor the ReadAttributes request in Hearbeat in order to avoid peak of load.
+- [Technical] Restructure python modules and classes, in order to have a much cleaner plugin home directory
+- [Technical] re-factor the ConfigureReporting in order to avoid peak of laod
+- [Technical] Profile the possibility to configure the location of Data, Config and Report files. See PluginConf Documentation on Wiki
+- [Hardware] Implementation of Thermostat in order to handle Eurotronic Spirit Zigbee ( Temp sensor, Setpoint )
+- [Enhacement] Aqara Cube will get 2 Widgets , one Switch selector and one Text widget. The Text widget will get the Cube rotation Angle notification.
+- [Enhacement] Aqara Cube improvement in terms of responsivness
+- [Technical] Implement TX Power feature from firmware 3.0f.
+- [Technical] Implement the possibility to switch off the Blue led from firmware 3.0f.
+- [Hardware] Manage IKEA Tradfri Remote controller. Create a selector switch for the device and then capture remote event (if Zigate associated to the group)
+- [Technical] Move config file to Conf directory
+- [Technical] Live data as DeviceList and GroupList will be in Data folder
+- [Enhacement] Workaround the domoticz issue as regards to Temperature and Baro sensor adjustement and make it happen (only for Domoticz version > 10355)
+- [Issue] - #348 Status of Tradfri/Hue bulbs after Main power Off/on
+- [Technical] - Allow the possibility to set the Certification compliance between CE and FCC
+- [Issue] - #275 User Domoticz Accept New Hardware to set Zigate in Permit to join or not (only for Domoticz version > 10355)
+- [Technical] - Make DeviceConf json compliant
+- [Hardware] - Accept Philips Motion sensor (indoor and outdoor models)
+- [Technical] - Make 4.1 compatible with Stable 4.9700 and Beta > 10355. This makes 4.9700 got some limitations. ( No Temp/Baro adjustement, old fashon Permit To Join)
+- [Enhacement] - Use the Domoticz device Off Delay for motion sensor.
+- [Enhacement] - Allow from the plugin menu to force a Group scan/discovery
+- [Enhacement] - Disable by default the polling information. You need to set enableReadAttributes to 1 in PluginConf.txt to for the polling.
+- [Technical] - Rename forceReadAttributes and forceConfigureReporting into resetReadAttributes and resetConfigureReporting
+- [Hardware] - Certify the OSRAM SMart Plug device
+- [Hardware] - Able to recognize Livolo double switch and be able to command it. (more test to be done on the state reporting). Also firmware must handle the Livolo Zigbee implementation to get stability.
+- [Hardware] - Implementation of Legrand shutter/Window covering. ( On and Off command works).
+- [Technical] - Lux calculation for non-Xiaomi devices.
+- [Technical] - Transport statistics are now stored on a reporting file, for further analysis.
+- [Technical] - When groups are ready report into GroupList-xx.json
+- [Technical] - if allowed rebind_clusters when receiving a Device Annoucement
+- [Technical] - #347 If you add the Tradfri remote 5 buttons (which was previously paired with Touchlink) to the group, the Left and Right buttons will then be activated.
+- [Technical] - Use the new Domoticz API requested by us, to update on every incoming message the Device Last Seen in Domoticz.
+- [Technical] - Reduce the LastSeen update to every 5' in order to avoid too much load on the IO
 
 ## 14 January 2019 - Version 4.0.7
 - [Issue] Fix #322 / Power/Meter reporting not working for Xiaomi Smart Plug
@@ -31,24 +81,24 @@
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
 - [Technical] Refactor the inclusion/discovery and domoticz widget creation
-- [Enhacement] Automaticaly handle Bulbe ColorMode in order to create the corresponding Widget WW, RGB or LED
+- [Enhancement] Automaticaly handle Bulbe ColorMode in order to create the corresponding Widget WW, RGB or LED
 - [Technical] Manage ConfigureReporting and ReadAttributes errors in the way that we do not ask anymore.
 - [Hardware] Salus SP600 plug (power reporting will required a firmware update of Zigate)
 - [Hardware] WXKG03LM Aqara wireles switch single button (using Cluster 0x0012)
-- [Enhacement] Improve stats report at plugin exit
+- [Enhancement] Improve stats report at plugin exit
 - [Hardware] Adding more IKEA Tradfri bulbes
 - [Enhancement] Adding one more parameter in DeviceConf 'ColorMode' to define the type of Bulbe colormode. 
 - [Enhancement] When commissioning is over and the Domoticz device is created, ZLL device will blink
 - [Issue] In case the Domoticz widget creation failed, plugin test the return of the Create() and in case of error report in the log
 - [Issue] Fix some potential problem when receiveing and empty EP
 - [Issue] Fix a potential issue when requetsing a Configure reporting on an non-ready cluster
-- [Enhacement] Introducing a PluginConf parameter for tracking readCluster incoming message
+- [Enhancement] Introducing a PluginConf parameter for tracking readCluster incoming message
 - [Technical] reducing log level, and reducing Debug level
-- [Enhacement] Elaborate the correct Color widget based on Color Mode and ProfileID/ZDeviceID
+- [Enhancement] Elaborate the correct Color widget based on Color Mode and ProfileID/ZDeviceID
 - [Technical] Filtering out Commissiong ProfileID/ZDeviceID
 - [Hardware] Certification (@d2e2n2o) of XCube, lumi.sensor_switch.aq2, lumi.sensor_86sw1, lumi.sensor_86sw2, lumi.ctrl_ln2, TRADFRI bulb E27 WS opal 950lm, TRADFRI control outlet
 - [Technical] Set the frequency of Network test to hourly
-- [Enhacement] When stoping the Plugin , Transmission statistics will be print out
+- [Enhancement] When stoping the Plugin , Transmission statistics will be print out
 - [Technical] Introduce a Constants file.
 - [Enhancement] #266 send identify message when completing the commissioning and get devices created.
 - [Enhancement] Get async status of switches and plug 
@@ -65,9 +115,9 @@
 - [Technical] Randomize the time when Read Attribute Req will be sent. This will distribute the load of those recurring tasks.
 - [Technical] Implementation of Configure Reporting
 - [Technical] Implementation of bind and unbind commands ( needed for Configure reporting)
-- [Enhacement] Configure Reporting enabled by default on Clsuter 0x0006 , 0x0008, 0x0702
+- [Enhancement] Configure Reporting enabled by default on Clsuter 0x0006 , 0x0008, 0x0702
 - [Technical] Implementation of Send Signal to get the Device visible. (if available)
-- [Enhacement] Implement Software Reset of Zigate - Called at startup if enable in the Plugin menu
+- [Enhancement] Implement Software Reset of Zigate - Called at startup if enable in the Plugin menu
 - [Hardware] Xiaomi Plug - enabling power and meter reporting
 - [Technical] control of Command versus status response
 - [Technical] control of SQN on messages from battery powered devices. In case of out of sequence a message is logged
