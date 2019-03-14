@@ -84,7 +84,9 @@ class PluginConf:
         # Import PluginConf.txt
         self.filename = self.pluginConfig + "PluginConf-%02d.txt" %hardwareid
         if not os.path.isfile(self.filename) :
-            self.filename = self.pluginConfig + "PluginConf.txt"
+            self.filename = self.pluginConfig + "PluginConf-%d.txt" %hardwareid
+            if not os.path.isfile(self.filename) :
+                self.filename = self.pluginConfig + "PluginConf.txt"
 
         Domoticz.Status("PluginConf: %s" %self.filename)
         tmpPluginConf = ""
