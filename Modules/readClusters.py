@@ -806,41 +806,38 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID == "ff01":
+    elif MsgAttrID in ( 'ff01', 'ff02'):
         
         if self.ListOfDevices[MsgSrcAddr]['Status'] != "inDB":  # xiaomi battery lvl
             return
 
         ReadAttributeRequest_Ack(self, MsgSrcAddr)         # Ping Xiaomi devices
 
-        Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " ClusterData : " + str(MsgClusterData) )
+        Domoticz.Debug("ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData))
         # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
         # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
         sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-        sTemp2 = retreive4Tag( "0328", MsgClusterData )   # Device Temperature
-        sTemp = retreive4Tag( "6429", MsgClusterData )
-        sOnOff = retreive4Tag( "6410", MsgClusterData )[0:2]
-        sHumid = retreive4Tag( "6521", MsgClusterData )
-        sHumid2 = retreive4Tag( "6529", MsgClusterData )
-        sPress = retreive8Tag( "662b", MsgClusterData )
-
+        #stag04 = retreive4Tag( '0424', MsgClusterData )
+        #stag05 = retreive4Tag( '0521', MsgClusterData )
+        #stag06 = retreive4Tag( '0620', MsgClusterData )
+        sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
+        sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
         sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb
-        sLevel = retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
-        stag10 = retreive4Tag( "6621", MsgClusterData )
-
-        #MAX_VOLTS = 3.0
-        #MIN_VOLTS = 2.5
+        sTemp =   retreive4Tag( "6429", MsgClusterData )
+        sHumid =  retreive4Tag( "6521", MsgClusterData )
+        sHumid2 = retreive4Tag( "6529", MsgClusterData )
+        sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
+        stag10 =  retreive4Tag( "6621", MsgClusterData )
+        sPress =  retreive8Tag( "662b", MsgClusterData )
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             BatteryLvl = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2])) 
 
             ValueBattery=round(int(BatteryLvl,16)/10/3.3)
-
-            #battery_percent = ( (ValueBattery - MIN_VOLTS) / (MAX_VOLTS - MIN_VOLTS)) * 100
-            #Domoticz.Log("ReadCluster 0000/ff01 Saddr: %s - Volts: %s Battery %s" %(MsgSrcAddr, ValueBattery, battery_percent))
-            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Battery : " + str(ValueBattery) )
-            self.ListOfDevices[MsgSrcAddr]['Battery']=ValueBattery
+           
+            Domoticz.Debug("ReadCluster - %s/%s Saddr: %s Battery: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery))
+            self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
 
         if sTemp != '':
             Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
@@ -888,9 +885,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # 4602 --
             Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
-    elif MsgAttrID=="ff02":
-        Domoticz.Log("ReadCluster - %s/%s MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
-                %( MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
     else:
         Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))
     
