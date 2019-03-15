@@ -98,6 +98,26 @@ def processKnownDevices( self, Devices, NWKID ):
                             if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
 
+    # Checking current state of the this Nwk
+    if 'Health' not in self.ListOfDevices[NWKID]:
+        self.ListOfDevices[NWKID]['Health'] = ''
+    if 'Stamp' not in self.ListOfDevices[NWKID]:
+        self.ListOfDevices[NWKID]['Stamp'] = {}
+    if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
+        self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
+
+    if self.ListOfDevices[NWKID]['Stamp']['LastSeen'] == 0:
+        self.ListOfDevices[NWKID]['Health'] = 'unknown'
+
+    else:
+        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 86400) :
+            if self.ListOfDevices[NWKID]['Health'] != 'Not seen last 24hours':
+                Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
+                    %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
+                self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
+        else:
+            self.ListOfDevices[NWKID]['Health'] = 'Live'
+
     # Ping each device, even the battery one. It will make at least the route up-to-date
     #if ( intHB % ( 3000 // HEARTBEAT)) == 0:
     #    ReadAttributeRequest_Ack(self, NWKID)
