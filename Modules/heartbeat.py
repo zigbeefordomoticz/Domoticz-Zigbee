@@ -103,15 +103,15 @@ def processKnownDevices( self, Devices, NWKID ):
         self.ListOfDevices[NWKID]['Health'] = ''
     if 'Stamp' not in self.ListOfDevices[NWKID]:
         self.ListOfDevices[NWKID]['Stamp'] = {}
+        self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
+        self.ListOfDevices[NWKID]['Health'] = 'unknown'
     if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
         self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
-
-    if self.ListOfDevices[NWKID]['Stamp']['LastSeen'] == 0:
         self.ListOfDevices[NWKID]['Health'] = 'unknown'
 
     else:
-        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 86400) :
-            if self.ListOfDevices[NWKID]['Health'] != 'Not seen last 24hours':
+        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 86400) : # Age is above 24 hours
+            if self.ListOfDevices[NWKID]['Health'] == 'Live':
                 Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
                     %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
                 self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
