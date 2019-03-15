@@ -1715,6 +1715,11 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
 #Réponses APS
 def Decode8702(self, MsgData) : # Reception APS Data confirm fail
 
+    """
+    Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
+    Status: e9 - No acknowledgement received when expected
+    """
+
     MsgLen=len(MsgData)
     if MsgLen==0: 
         return
@@ -1727,6 +1732,8 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
     if self.FirmwareVersion.lower() <= '030f':
         MsgDataDestAddr=MsgData[8:24]
         MsgDataSQN=MsgData[24:26]
+        if int(MsgDataDestAddr,16) == ( int(MsgDataDestAddr,16) & 0xffff000000000000):
+            MsgDataDestAddr = MsgDataDestAddr[0:4]
     else:    # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
         if int(MsgDataDestMode,16) == ADDRESS_MODE['short']:
             MsgDataDestAddr=MsgData[8:12]
@@ -1740,6 +1747,37 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
         else:
             Domoticz.Error("Decode8702 - Unexpected addmode %s for data %s" %(MsgDataDestMode, MsgData))
             return
+
+    NWKID = None
+    IEEE = None
+    if int(MsgDataDestMode,16) == ADDRESS_MODE['ieee']:
+        if MsgDataDestAddr in self.IEEE2NWK:
+            NWKID = self.IEEE2NWK[MsgDataDestAddr]
+            IEEE = MsgDataDestAddr
+    else:
+        if MsgDataDestAddr in self.ListOfDevices:
+            NWKID = MsgDataDestAddr
+            IEEE = self.ListOfDevices[MsgDataDestAddr]['IEEE']
+    if NWKID == None or IEEE == None:
+        Domoticz.Log("Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
+        return
+
+    if MsgDataStatus in ('d4', 'e9'): # High probability that this device is not connected to the network anymore
+        if 'Health' not in self.ListOfDevices[NWKID]:
+            self.ListOfDevices[NWKID]['Health'] = ''
+        if 'Stamp' not in self.ListOfDevices[NWKID]:
+            self.ListOfDevices[NWKID]['Stamp'] = {}
+        if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
+            self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
+
+        if 'MacCapa' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
+                Domoticz.Error("Trying to send a message to device %s %s not reachable. Maybe powered Off!" %(NWKID, IEEE))
+                self.ListOfDevices[NWKID]['Health'] = 'out of network'
+        elif 'PowerSource' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
+                Domoticz.Error("Trying to send a message to device %s %s not reachable. Maybe powered Off!" %(NWKID, IEEE))
+                self.ListOfDevices[NWKID]['Health'] = 'out of network'
 
     timeStamped( self, MsgDataDestAddr , 0x8702)
     updSQN( self, MsgDataDestAddr, MsgDataSQN)
