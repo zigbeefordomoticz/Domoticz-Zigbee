@@ -1762,22 +1762,19 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
         Domoticz.Log("Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
         return
 
-    if MsgDataStatus in ('d4', 'e9'): # High probability that this device is not connected to the network anymore
-        if 'Health' not in self.ListOfDevices[NWKID]:
-            self.ListOfDevices[NWKID]['Health'] = ''
-        if 'Stamp' not in self.ListOfDevices[NWKID]:
-            self.ListOfDevices[NWKID]['Stamp'] = {}
-        if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
-            self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
+    if 'APS Failure' not in self.ListOfDevices[NWKID]:
+        self.ListOfDevices[NWKID]['APS Failure'] = {}
 
-        if 'MacCapa' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
-                Domoticz.Error("Trying to send a message to device %s %s not reachable. Maybe powered Off!" %(NWKID, IEEE))
-                self.ListOfDevices[NWKID]['Health'] = 'out of network'
-        elif 'PowerSource' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
-                Domoticz.Error("Trying to send a message to device %s %s not reachable. Maybe powered Off!" %(NWKID, IEEE))
-                self.ListOfDevices[NWKID]['Health'] = 'out of network'
+    self.ListOfDevices[NWKID]['APS Failure']['Stamp'] = int(time.time())
+    self.ListOfDevices[NWKID]['APS Failure']['Status Code'] = MsgDataStatus
+    self.ListOfDevices[NWKID]['APS Failure']['Status Msg'] = DisplayStatusCode( MsgDataStatus )
+
+    if 'MacCapa' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
+            Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+    elif 'PowerSource' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
+            Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
 
     timeStamped( self, MsgDataDestAddr , 0x8702)
     updSQN( self, MsgDataDestAddr, MsgDataSQN)
