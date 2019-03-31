@@ -756,6 +756,7 @@ def processConfigureReporting( self, NWKID=None ):
                         return # Will do at the next round
 
                     if self.pluginconf.allowReBindingClusters:
+                        del self.ListOfDevices[key]['Bind']
                         bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
@@ -770,7 +771,6 @@ def processConfigureReporting( self, NWKID=None ):
                         maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
                         timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
-                        attrList = attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
 
                         attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen += 1
