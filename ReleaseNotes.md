@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 30 Mars 2019 - 4.1.2
+- [Issue] #390 and #389 - Integrate those 2 Pull Requests
+
 ##    Mars 2019 - 4.1.1
 - [Issue] #383 - fixing and allowing index on one digit.
 - [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
