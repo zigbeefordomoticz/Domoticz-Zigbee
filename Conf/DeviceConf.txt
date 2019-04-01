@@ -6,6 +6,7 @@
     "lumi.sensor_magnet":{"Ep":{"01":{"0006":""}},"Type":"Door"},
     "lumi.sensor_motion":{"Ep":{"01":{"0006":""}},"Type":"Motion"},
     "lumi.sensor_switch.aq2":{"Ep":{"01":{"0006":""}},"Type":"SwitchAQ2"},
+    "lumi.remote.b1acn01":{"Ep":{"01":{"0006"}},"Type":"SwitchAQ2"},
     "lumi.sensor_switch":{"Ep":{"01":{"0006":""}},"Type":"SwitchAQ2"},
     "lumi.sensor_86sw2":{"Ep":{"01":{"0006":""},"02":{"0006":""}},"Type":"DButton"},
     "lumi.remote.b286acn01":{"Ep":{"01":{"0006":""},"02":{"0006":""}},"Type":"DButton_3"},
