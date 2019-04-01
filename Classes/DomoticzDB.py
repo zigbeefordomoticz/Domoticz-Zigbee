@@ -23,9 +23,19 @@ class DomoticzDB_Preferences:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return 
+        self._openDB( database )
+
+
+    def _openDB( self, database):
+
         Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
+
+    def closeDB( self ):
+
+        self.dbConn.close()
+
 
     def retreiveAcceptNewHardware( self):
 
@@ -56,9 +66,17 @@ class DomoticzDB_Hardware:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
+        self._openDB( database )
+
+    def _openDB( self, database):
+
         Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
+
+    def closeDB( self ):
+
+        self.dbConn.close()
 
     def disableErasePDM( self):
 
@@ -77,9 +95,17 @@ class DomoticzDB_DeviceStatus:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
+        self._openDB( database )
+
+    def _openDB( self, database):
+
         Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
+
+    def closeDB( self ):
+
+        self.dbConn.close()
 
 
     def retreiveAddjValue_baro( self, ID):
