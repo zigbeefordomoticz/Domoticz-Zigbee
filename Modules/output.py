@@ -614,12 +614,10 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
 
         # On/Off Cluster
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
-        #'0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0003', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'00'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
 
         # Level Control Cluster
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
-        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0003', 'MaxInterval':'0000', 'TimeOut':'0FFF','Change':'00'}}},
 
         # Windows Covering
         '0102': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'},
@@ -688,7 +686,7 @@ def processConfigureReporting( self, NWKID=None ):
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         Domoticz.Debug("configurereporting - processing %s" %key)
-        if key == '0000': continue
+        if key in ( '0000', 'ffff'): continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
 
@@ -756,6 +754,7 @@ def processConfigureReporting( self, NWKID=None ):
                         return # Will do at the next round
 
                     if self.pluginconf.allowReBindingClusters:
+                        del self.ListOfDevices[key]['Bind'] 
                         bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
@@ -770,7 +769,6 @@ def processConfigureReporting( self, NWKID=None ):
                         maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
                         timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
                         chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
-                        attrList = attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
 
                         attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
                         attrLen += 1
@@ -832,7 +830,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
             return
 
-    Domoticz.Debug("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    Domoticz.Log("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
     sendZigateCmd(self, "0031", datas )
 
@@ -1055,6 +1053,7 @@ def setExtendedPANID(self, extPANID):
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
+    return
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
     # Request a Re-Join and Do not remove children
     if rejoin:
