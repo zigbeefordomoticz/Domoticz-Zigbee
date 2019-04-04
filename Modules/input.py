@@ -18,7 +18,7 @@ import queue
 import time
 import json
 
-from Modules.domoticz import MajDomoDevice, lastSeenUpdate
+from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
 from Modules.status import DisplayStatusCode
@@ -1772,9 +1772,11 @@ def Decode8702(self, MsgData) : # Reception APS Data confirm fail
     if 'MacCapa' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+            timedOutDevice( self, Devices, NwkId = NWKID)
     elif 'PowerSource' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+            timedOutDevice( self, Devices, NwkId = NWKID)
 
     timeStamped( self, MsgDataDestAddr , 0x8702)
     updSQN( self, MsgDataDestAddr, MsgDataSQN)

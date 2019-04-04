@@ -920,6 +920,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if value == 1: state = "00"
                     elif value == 2: state = "10"
                     elif value == 3: state = "20"
+                    elif value == 4: state = "30"
                     elif value == 255: state = "30"
                     else:
                         return  # Simply return and don't process any other values than the above
@@ -1306,17 +1307,42 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
     if (Unit in Devices):
         if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
             ( Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_ or \
-            Devices[Unit].BatteryLevel != int(BatteryLvl):
+            Devices[Unit].BatteryLevel != int(BatteryLvl) or \
+            Devices[Unit].TimedOut:
 
             Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
             Domoticz.Debug("Update Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[Unit].Name + ")")
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi),
-                                     BatteryLevel=int(BatteryLvl))
+                                     BatteryLevel=int(BatteryLvl), TimedOut=0)
             else:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), SignalLevel=int(rssi),
-                                     BatteryLevel=int(BatteryLvl))
+                                     BatteryLevel=int(BatteryLvl), TimedOut=0)
     return
+
+
+def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
+ 
+    _Unit = _nValue = _sValue = None
+    if Unit:
+        Domoticz.Debug("timeOutDevice unit %s" %( Devices[Unit].Name ))
+        _nValue = Devices[Unit].nValue
+        _sValue = Devices[Unit].sValue
+        _Unit = Unit
+        Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
+    elif NwkId:
+        if NwkId not in self.ListOfDevices:
+            return
+        if 'IEEE' not in self.ListOfDevices[NwkId]:
+            return
+        _IEEE = self.ListOfDevices[NwkId]['IEEE']
+        for x in Devices:
+            if Devices[x].DeviceID == _IEEE:
+                Domoticz.Debug( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
+                _nValue = Devices[x].nValue
+                _sValue = Devices[x].sValue
+                _Unit = x
+                Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
@@ -1329,7 +1355,10 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     if Unit:
         Domoticz.Debug("Touch unit %s" %( Devices[Unit].Name ))
-        Devices[Unit].Touch()
+        if Devices[Unit].TimedOut == 1:
+            timedOutDevice( self, Devices, Unit=Unit, TO=0)
+        else:
+            Devices[Unit].Touch()
 
     elif NwkId:
         if NwkId not in self.ListOfDevices:
@@ -1354,7 +1383,10 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
                 Domoticz.Debug( "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
-                Devices[x].Touch()
+                if Devices[x].TimedOut == 1:
+                    timedOutDevice( self, Devices, Unit=x, TO=0)
+                else:
+                    Devices[x].Touch()
 
 
 def GetType(self, Addr, Ep):
