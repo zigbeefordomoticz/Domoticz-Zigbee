@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 04 April 2019 - 4.1.3
+- [Issue] Strange error in heartbeat self.self ...
+
 ## 30 Mars 2019 - 4.1.2
 - [Issue] #390 and #389 - Integrate those 2 Pull Requests
 
