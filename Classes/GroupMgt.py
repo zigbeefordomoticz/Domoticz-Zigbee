@@ -1089,6 +1089,8 @@ class GroupsManagement(object):
                 Domoticz.Debug(" - %s" %self.ListOfGroups[iterGrp]['Imported'])
 
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                    if 'IEEE' not in self.ListOfDevices[iterDev]:
+                        break
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
 
                     Domoticz.Debug("    - checking device: %s / %s to be removed " %(iterDev, iterEp))
