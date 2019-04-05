@@ -454,13 +454,13 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
         if value == '' or value is None:
             return value
-        if   value == "0001": return '20' # Take/Vibrate
-        elif value == "0002": return '10' # we will most-likely receive 0x0503/0x0054 after
+        if   value == "0001": return '20' # Take/Vibrate/Shake
+        elif value == "0002": return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
         elif value == "0003": return '30' #Drop
         return '00'
 
-    Domoticz.Log("ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, Attribute: %s" \
-            %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData))
+    Domoticz.Log("ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s" \
+            %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     if MsgAttrID == "0000":          # Lockstate
         Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
@@ -472,23 +472,38 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData))
 
     elif MsgAttrID ==  "0055":   # Aqara Vibration
-        Domoticz.Log("ReadCluster 0101 - Aqara Vibration - Attribute: %s" %(MsgClusterData) )
+        Domoticz.Log("ReadCluster %s/%s - Aqara Vibration - Event: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
         # "LevelNames": "Off|Tilt|Vibrate|Free Fall"
         state = decode_vibr( MsgClusterData )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
-    elif MsgAttrID == "0503":   # Aqara Vibration
+    elif MsgAttrID == "0503":   # Bed activties
+        Domoticz.Log("ReadCluster %s/%s -  Vibration Angle - Attribute: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
+
         if MsgClusterData == "0054": # Following Tilt
             state = "10"
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
-    elif MsgAttrID == "0505":   # Aqara Vibration
-        if MsgClusterData == "00CA0000":
-            pass
+    elif MsgAttrID == "0505":   # Vibration Strenght
+        Domoticz.Log("ReadCluster %s/%s -  Vibration Strenght - Attribute: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
 
-    elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode 
+    elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode / Orientation
+        x = int(MsgClusterData, 16) & 0xffff
+        y = int(MsgClusterData, 16)  >> 16 & 0xffff
+        z = int(MsgClusterData, 16)  >> 32 & 0xffff
+
+        if  z+y != 0 and x+z != 0 and x+y != 0:
+            from math import atan, sqrt, pi
+            x2 = x*x; y2 = y*y; z2 = z*z
+            angleX = round( atan(x/sqrt(z2+y2)) * 180 / pi)
+            angleY = round( atan(y/sqrt(x2+z2)) * 180 / pi)
+            angleZ = round( atan(z/sqrt(x2+y2)) * 180 / pi)
+
+            Domoticz.Log("ReadCluster %s/%s -  Vibration Orientation - 0x%16x - x=%d, y=%d, z=%d" \
+                    %(MsgClusterId, MsgAttrID, int(MsgClusterData,16), x, y, z) )
+
         state = "00"
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
@@ -782,7 +797,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0006': # CLD_BAS_ATTR_DATE_CODE
         # 20151006091b090
-        self.ListOfDevices[MsgSrcAddr]['Date Code'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_1'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '000a': # Product Code
         Domoticz.Debug("ReadCluster - Product Code: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
@@ -800,11 +815,16 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0015': # SW_BUILD_ID
         Domoticz.Debug("ReadCluster - 0x0000 - Attribut 0015: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_2'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0016": # Battery
         Domoticz.Debug("ReadCluster - 0x0000 - Attribut 0016 : " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "4000": # 
+        Domoticz.Debug("ReadCluster - 0x0000 - Attribut 4000: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID in ( 'ff01', 'ff02'):
         
