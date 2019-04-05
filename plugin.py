@@ -34,7 +34,7 @@
         <param field="Mode1" label="Model" width="75px">
             <options>
                 <option label="USB" value="USB" default="true" />
-                <option label="PI" value="USB" default="true" />
+                <option label="PI" value="PI" />
                 <option label="Wifi" value="Wifi"/>
             </options>
         </param>
@@ -100,6 +100,8 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
+from Classes.OTA import OTAManagement
+
 
 class BasePlugin:
     enabled = False
@@ -130,6 +132,8 @@ class BasePlugin:
         self.adminWidgets = None   # Manage AdminWidgets object
         self.DeviceListName = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
+
+        self.OTA = None
 
         self.Ping = {}
         self.connectionState = None
@@ -483,13 +487,13 @@ class BasePlugin:
                     self.groupmgt_NotStarted = False
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
+            if self.pluginconf.allowOTA:
+                self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
+                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK)
 
             if self.FirmwareVersion >= "030d":
                 if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
                     sendZigateCmd(self, "0009","")
-
-
-
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
@@ -519,6 +523,10 @@ class BasePlugin:
             self.groupmgt.hearbeatGroupMgt()
             if self.groupmgt.stillWIP:
                 busy_ = True
+
+        # OTA upgrade
+        if self.OTA:
+            self.OTA.heartbeat()
             
         # Hearbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
