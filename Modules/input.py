@@ -341,7 +341,7 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="8702":  # APS Data Confirm Fail
         Domoticz.Debug("ZigateRead - MsgType 8702 -  Reception APS Data confirm fail : " + Data)
-        Decode8702(self, MsgData)
+        Decode8702(self, Devices, MsgData)
         return
 
     else: # unknow or not dev function
@@ -1713,7 +1713,7 @@ def Decode8701(self, MsgData) : # Reception Router Disovery Confirm Status
     return
 
 #Réponses APS
-def Decode8702(self, MsgData) : # Reception APS Data confirm fail
+def Decode8702(self, Devices, MsgData) : # Reception APS Data confirm fail
 
     """
     Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
