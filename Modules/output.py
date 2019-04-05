@@ -203,7 +203,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
+    Domoticz.Log("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
 
@@ -220,14 +220,15 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     listAttributes.append(0x0005)        # Model Identifier
 
     if fullScope:
-        listAttributes.append(0x0006)        # DATE_CODE
+        listAttributes.append(0x0006)        # DATE_CODE ( Sw Build )
         listAttributes.append(0x0007)        # PowerSource
 
     if fullScope:
         listAttributes.append(0x000A)        # LOCATION_DESCRIPTION
         listAttributes.append(0x000F)        # SW_BUILD_ID
         listAttributes.append(0x0010)        # LOCATION_DESCRIPTION
-        listAttributes.append(0x0015)        # SW_BUILD_ID
+        listAttributes.append(0x0015)        # 
+        listAttributes.append(0x4000)        # 
 
     if 'Model' in self.ListOfDevices[key]:
         if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
@@ -686,7 +687,7 @@ def processConfigureReporting( self, NWKID=None ):
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         Domoticz.Debug("configurereporting - processing %s" %key)
-        if key in ( '0000', 'ffff'): continue
+        if key == '0000': continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
 
@@ -830,7 +831,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
             return
 
-    Domoticz.Log("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    Domoticz.Debug("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
     sendZigateCmd(self, "0031", datas )
 
@@ -849,7 +850,7 @@ def rebind_Clusters( self, NWKID):
     for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                Domoticz.Log('Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
                 if 'Bind' in self.ListOfDevices[NWKID]:
                     del self.ListOfDevices[NWKID]['Bind']
                 unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
@@ -1006,7 +1007,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     elif mode == 'update':
         scanDuration = 0xFF # Update stored radui
     else:
-        Domoticz.Log("NwkMgtUpdReq Unknown mode %s" %mode)
+        Domoticz.Error("NwkMgtUpdReq Unknown mode %s" %mode)
         return
 
     scanCount = 1
@@ -1074,16 +1075,16 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x4003
     data_type = "29" # Int16
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Log("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    Domoticz.Debug("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type))
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -1095,16 +1096,16 @@ def thermostat_Setpoint( self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Log("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    Domoticz.Debug("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type))
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
