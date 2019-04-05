@@ -1329,7 +1329,8 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
         _nValue = Devices[Unit].nValue
         _sValue = Devices[Unit].sValue
         _Unit = Unit
-        Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
+        if not Devices[_Unit].TimedOut:
+            Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
     elif NwkId:
         if NwkId not in self.ListOfDevices:
             return
@@ -1342,7 +1343,8 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
                 _nValue = Devices[x].nValue
                 _sValue = Devices[x].sValue
                 _Unit = x
-                Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
+                if not Devices[_Unit].TimedOut:
+                    Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
