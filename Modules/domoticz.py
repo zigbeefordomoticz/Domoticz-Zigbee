@@ -1343,7 +1343,7 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
                 _nValue = Devices[x].nValue
                 _sValue = Devices[x].sValue
                 _Unit = x
-                if not Devices[_Unit].TimedOut:
+                if not  Devices[_Unit].TimedOut:
                     Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 
@@ -1357,7 +1357,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     if Unit:
         Domoticz.Debug("Touch unit %s" %( Devices[Unit].Name ))
-        if Devices[Unit].TimedOut == 1:
+        if Devices[Unit].TimedOut:
             timedOutDevice( self, Devices, Unit=Unit, TO=0)
         else:
             Devices[Unit].Touch()
@@ -1385,7 +1385,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
                 Domoticz.Debug( "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
-                if Devices[x].TimedOut == 1:
+                if Devices[x].TimedOut:
                     timedOutDevice( self, Devices, Unit=x, TO=0)
                 else:
                     Devices[x].Touch()
