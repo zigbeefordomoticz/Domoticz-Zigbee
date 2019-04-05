@@ -32,7 +32,7 @@ from Modules.consts import ADDRESS_MODE
 from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
 from Classes.GroupMgt import GroupsManagement
-
+from Classes.OTA import OTAManagement
 
 def ZigateRead(self, Devices, Data):
     Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
@@ -111,7 +111,6 @@ def ZigateRead(self, Devices, Data):
         Domoticz.Debug("ZigateRead - MsgType 8009 - Network State response : " + Data)
         Decode8009( self, Devices, MsgData)
         return
-
 
     elif str(MsgType)=="8010":  # Version
         Domoticz.Debug("ZigateRead - MsgType 8010 - Reception Version list : " + Data)
@@ -234,7 +233,6 @@ def ZigateRead(self, Devices, Data):
         self.groupmgt.addGroupResponse( MsgData )
         return
 
-
     elif str(MsgType)=="8061":  #
         Domoticz.Debug("ZigateRead - MsgType 8061 - Reception Viex group response : " + Data)
         self.groupmgt.viewGroupResponse( MsgData )
@@ -283,11 +281,11 @@ def ZigateRead(self, Devices, Data):
     elif str(MsgType)=="80a6":  #
         Domoticz.Log("ZigateRead - MsgType 80a6 - Reception Scene membership response : " + Data)
         return
+
     elif str(MsgType)=="80a7":
         Domoticz.Debug("ZigateRead - MsgType 80a7 - Reception Remote command : " + Data)
         Decode80A7(self, Devices, MsgData, MsgRSSI)
         return
-
 
     elif str(MsgType)=="8100":  #
         Domoticz.Debug("ZigateRead - MsgType 8100 - Reception Real individual attribute response : " + Data)
@@ -326,12 +324,16 @@ def ZigateRead(self, Devices, Data):
 
     elif str(MsgType)=="8501":
         Domoticz.Log("ZigateRead - MsgType 8501 - Reception Zone status change notification : " + Data)
-        Decode8501(self, Devices, MsgData)
+        #Decode8501(self, Devices, MsgData)
+        if self.OTA:
+            self.OTA.ota_request_firmware( MsgData )
         return
 
     elif str(MsgType)=="8503":
         Domoticz.Log("ZigateRead - MsgType 8503 - Reception Zone status change notification : " + Data)
-        Decode8503(self, Devices, MsgData)
+        #Decode8503(self, Devices, MsgData)
+        if self.OTA:
+            self.OTA.ota_request_firmware_completed( MsgData )
         return
 
     elif str(MsgType)=="8701":  # 
@@ -344,10 +346,7 @@ def ZigateRead(self, Devices, Data):
         Decode8702(self, Devices, MsgData)
         return
 
-    else: # unknow or not dev function
-        Domoticz.Log("ZigateRead - Unknow Message Type %s  - %s " %(MsgType, MsgData))
-        return
-    
+    Domoticz.Log("ZigateRead - Unknow Message Type %s  - %s " %(MsgType, MsgData))
     return
 
 #IAS Zone
@@ -501,7 +500,7 @@ def Decode8000_v2(self, MsgData) : # Status
         self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        Domoticz.Debug("Decode8000 - PacketType: %s Status: [%s] - %s" \
+        Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
     return
@@ -1655,6 +1654,7 @@ def Decode8140(self, MsgData) :  # Attribute Discovery response
 
 # OTA and Remote decoding kindly authorized by https://github.com/ISO-B
 def Decode8501(self, Devices, MsgData, MsgRSSI) : # OTA image block request
+    'BLOCK_REQUEST  0x8501  ZiGate will receive this command when device asks OTA firmware'
 
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
@@ -1673,11 +1673,12 @@ def Decode8501(self, Devices, MsgData, MsgRSSI) : # OTA image block request
     Domoticz.Log("Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %s Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
 
+    self.OTA.ota_request_firmware( MsgData )
 
     return
 
 def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
-    'OTA upgrade request'
+    #'UPGRADE_END_REQUEST    0x8503  Device will send this when it has received last part of firmware'
 
     MsgSQN = MsgData[0:2]
     MsgEP = MsgData[2:4]
@@ -1772,11 +1773,11 @@ def Decode8702(self, Devices, MsgData) : # Reception APS Data confirm fail
     if 'MacCapa' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-            timedOutDevice( self, Devices, NwkId = NWKID)
+            timedOutDevice( self, Devices, NwkId = NWKID) 
     elif 'PowerSource' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-            timedOutDevice( self, Devices, NwkId = NWKID)
+            timedOutDevice( self, Devices, NwkId = NWKID) 
 
     timeStamped( self, MsgDataDestAddr , 0x8702)
     updSQN( self, MsgDataDestAddr, MsgDataSQN)
