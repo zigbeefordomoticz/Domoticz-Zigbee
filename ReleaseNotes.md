@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 05 April 2019 - 4.1.4
+- [Issue] #395 - PI doesn't stay as Model .
+
 ## 04 April 2019 - 4.1.3
 - [Issue] Strange error in heartbeat self.self ...
 
