@@ -46,6 +46,7 @@ class PluginConf:
         self.TXpower_set = 0x80
         self.Certification = 0  # 1- CE; 2- FCC
         self.enableAPSFailureLoging = 0
+        self.allowOTA = 0
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -64,6 +65,7 @@ class PluginConf:
         self.pluginWWW = self.pluginHome + 'www/'
         #self.pluginReports = self.pluginWWW + 'zigate/reports/'
         self.pluginReports = self.pluginHome + 'www/zigate/reports/'
+        self.pluginOTAFirmware = self.pluginHome + 'OTAFirmware/'
 
         self.filename = None
 
@@ -128,6 +130,10 @@ class PluginConf:
             if self.PluginConf.get('pluginReports'):
                 self.pluginReports = self.PluginConf['pluginReports']
                 Domoticz.Status(" -pluginReports: %s" %self.pluginReports)
+
+            if self.PluginConf.get('pluginOTAFirmware'):
+                self.pluginOTAFirmware = self.PluginConf['pluginOTAFirmware']
+                Domoticz.Status(" -pluginOTAFirmware: %s" %self.pluginOTAFirmware)
 
             if self.PluginConf.get('pluginConfig'):
                 self.pluginConfig = self.PluginConf['pluginConfig']
@@ -234,6 +240,11 @@ class PluginConf:
                     self.TXpower = self.TXpower_set = 0
                 Domoticz.Status(" -TXpower: %s" %self.TXpower_set)
 
+            if self.PluginConf.get('allowOTA') and \
+                    self.PluginConf.get('allowOTA').isdigit():
+                self.allowOTA = int(self.PluginConf.get('allowOTA'))
+                Domoticz.Status(" -allowOTA: %s" %self.allowOTA)
+
             if self.PluginConf.get('Certification'):
                 if self.PluginConf.get('Certification') == 'CE':
                     self.Certification = 0x01
@@ -275,6 +286,7 @@ class PluginConf:
         Domoticz.Debug(" -blueLedOff: %s" %self.blueLedOff)
         Domoticz.Debug(" -TXpower: %s" %self.TXpower_set)
         Domoticz.Debug(" -Certification: %s" %self.Certification)
+        Domoticz.Debug(" -allowOTA: %s" %self.allowOTA)
 
         Domoticz.Debug("Plugin Transport")
         Domoticz.Debug(" -zmode: %s" %self.zmode)
@@ -315,3 +327,5 @@ class PluginConf:
             Domoticz.Error( "Cannot access pluginWWW: %s" %self.pluginWWW)
         if not os.path.exists( self.pluginReports ):
             Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginReports)
+        if not os.path.exists( self.pluginOTAFirmware ):
+            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginOTAFirmware)
