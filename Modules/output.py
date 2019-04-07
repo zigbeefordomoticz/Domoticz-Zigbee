@@ -756,7 +756,8 @@ def processConfigureReporting( self, NWKID=None ):
                         return # Will do at the next round
 
                     if self.pluginconf.allowReBindingClusters:
-                        del self.ListOfDevices[key]['Bind']
+                        if 'Bind' in self.ListOfDevices[key]:
+                            del self.ListOfDevices[key]['Bind']
                         bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
