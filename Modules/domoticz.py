@@ -1160,7 +1160,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if ClusterType == DeviceType == "Motion":
                 if value == "01":
-                    UpdateDevice_v2(self, Devices, x, 1, str("On"), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, 1, str("On"), BatteryLevel, SignalLevel, ForceUpdate_=True)
                 if value == "00":
                     UpdateDevice_v2(self, Devices, x, 0, str("Off"), BatteryLevel, SignalLevel)
 
