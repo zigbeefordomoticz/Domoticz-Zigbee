@@ -688,6 +688,7 @@ def processConfigureReporting( self, NWKID=None ):
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         Domoticz.Debug("configurereporting - processing %s" %key)
         if key == '0000': continue
+        if self.ListOfDevices[key]['Status'] != 'inDB': continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
 
@@ -755,8 +756,12 @@ def processConfigureReporting( self, NWKID=None ):
                         return # Will do at the next round
 
                     if self.pluginconf.allowReBindingClusters:
-                        del self.ListOfDevices[key]['Bind'] 
-                        bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                        if 'Bind' in self.ListOfDevices[key]:
+                            del self.ListOfDevices[key]['Bind'] 
+                        if 'IEEE' in self.ListOfDevices[key]:
+                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                        else:
+                            Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
