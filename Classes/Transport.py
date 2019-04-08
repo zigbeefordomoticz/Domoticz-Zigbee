@@ -94,13 +94,15 @@ class ZigateTransport(object):
         if str(transport) == "USB":
             self._transp = "USB"
             self._serialPort = serialPort
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if serialPort.find('/dev/') != -1:
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
         elif str(transport) == "PI":
             self._transp = "PI"
             self._serialPort = serialPort
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if serialPort.find('/dev/') != -1:
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
         elif str(transport) == "Wifi":
             self._transp = "Wifi"
