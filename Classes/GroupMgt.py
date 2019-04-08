@@ -627,26 +627,42 @@ class GroupsManagement(object):
                                     level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
                                 else:
                                     level = round(( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) / 2)
+        # At that stage
+        # nValue == 0 if Off
+        # nValue == 1 if Open/On
+        # level is None, so we use nValue/sValue
+        # level is not None; so we have a LvlControl
         if level:
-            analogValue = level
-            if analogValue >= 255:
-                sValue = 100
-            else:
-                sValue = round((level * 100) / 255)
-                if sValue > 100: sValue = 100
-                if sValue == 0 and analogValue > 0:
-                    sValue = 1
-            # Let's check if this is Shutter or a Color Bulb (as for Color Bulb we need nValue = 1
-            if self.Devices[unit].SwitchType == 16:
-                if sValue == 0:
-                    nValue = 0
-                elif sValue > 0 and sValue < 100:
-                    nValue = 2
+            if self.Devices[unit].SwitchType != 16:
+                # Not a Shutter/Blind
+                analogValue = level
+                if analogValue >= 255:
+                    sValue = 100
                 else:
-                    nValue = 1
+                    sValue = round((level * 100) / 255)
+                    if sValue > 100: sValue = 100
+                    if sValue == 0 and analogValue > 0:
+                        sValue = 1
+            else:
+                # Shutter/blind
+                if nValue == 0: # we are in an Off mode
+                    sValue = 0
+                else:
+                    # We are on either full or not
+                    sValue = round((level * 100) / 255)
+                    if sValue >= 100: 
+                        sValue = 100
+                        nValue = 1
+                    elif sValue > 0 and sValue < 100:
+                        nValue = 2
+                    else:
+                        nValue = 0
             sValue = str(sValue)
         else:
-            sValue = "Off"
+            if nValue == 0:
+                sValue = 'Off'
+            else:
+                sValue = 'On'
 
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
             Domoticz.Log("UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
