@@ -1428,42 +1428,16 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
 def Decode8501(self, Devices, MsgData, MsgRSSI) : # OTA image block request
     'BLOCK_REQUEST  0x8501  ZiGate will receive this command when device asks OTA firmware'
 
-    MsgSQN = MsgData[0:2]
-    MsgEP = MsgData[2:4]
-    MsgClusterId = MsgData[4:8]
-    MsgaddrMode = MsgData[8:10]
-    MsgIEEE = MsgData[10:26]
-    MsgSrcAddr = MsgData[26:30]
-    MsgFileOffset = MsgData[30:34]
-    MsgImageVersion = MsgData[34:38]
-    MsgImageType = MsgData[38:42]
-    MsgManufCode = MsgData[42:46]
-    MsgBlockRequestDelay = MsgData[46:50]
-    MsgMaxDataSize = MsgData[50:52]
-    MsgFieldControl = MsgData[52:54]
-
-    Domoticz.Log("Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %s Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
-            %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
-
-    self.OTA.ota_request_firmware( MsgData )
-
+    if self.OTA:
+        self.OTA.ota_request_firmware( MsgData )
     return
 
 def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
     #'UPGRADE_END_REQUEST    0x8503  Device will send this when it has received last part of firmware'
 
-    MsgSQN = MsgData[0:2]
-    MsgEP = MsgData[2:4]
-    MsgClusterId = MsgData[4:8]
-    MsgSrcAddr = MsgData[8:12]
-    MsgImageVersion = MsgData[12:16]
-    MsgImageType = MsgData[16:20]
-    MsgManufCode = MsgData[20:24]
-    MsgStatus = MsgData[24:26]
-
-    Domoticz.Log("Decode8503 - OTA upgrade request - %s/%s %s Version: %s Type: %s Code: %s Status: %s"
-            %(MsgSrcAddr, MsgEP, MsgClusterId, MsgImageVersion, MsgImageType, MsgManufCode, MsgStatus))
-    self.OTA.ota_request_firmware_completed( MsgData ),
+    if self.OTA:
+        self.OTA.ota_request_firmware_completed( MsgData ),
+    return
 
 #Router Discover
 def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Confirm Status
