@@ -47,6 +47,7 @@ class PluginConf:
         self.Certification = 0  # 1- CE; 2- FCC
         self.enableAPSFailureLoging = 0
         self.allowOTA = 0
+        self.waitingOTA = 3600
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -244,6 +245,11 @@ class PluginConf:
                     self.PluginConf.get('allowOTA').isdigit():
                 self.allowOTA = int(self.PluginConf.get('allowOTA'))
                 Domoticz.Status(" -allowOTA: %s" %self.allowOTA)
+
+            if self.PluginConf.get('waitingOTA') and \
+                    self.PluginConf.get('waitingOTA').isdigit():
+                self.waitingOTA = int(self.PluginConf.get('waitingOTA'))
+                Domoticz.Status(" -waitingOTA: %s" %self.waitingOTA)
 
             if self.PluginConf.get('Certification'):
                 if self.PluginConf.get('Certification') == 'CE':
