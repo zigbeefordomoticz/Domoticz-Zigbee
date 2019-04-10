@@ -961,15 +961,15 @@ class GroupsManagement(object):
             Domoticz.Log("Group Management - Init phase")
             self.StartupPhase = 'discovery'
             if os.path.isfile( self.groupListFileName ) :
-                Domoticz.Log("GroupList.pck exists")
+                Domoticz.Debug("GroupList.pck exists")
                 last_update_GroupList = modification_date( self.groupListFileName )
-                Domoticz.Log("Last Update of GroupList: %s" %last_update_GroupList)
+                Domoticz.Debug("Last Update of GroupList: %s" %last_update_GroupList)
 
                 if self.groupsConfigFilename:
                     if os.path.isfile( self.groupsConfigFilename ):
-                        Domoticz.Log("Config file exists")
+                        Domoticz.Debug("Config file exists")
                         last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                        Domoticz.Log("Last Update of Config File: %s" %last_update_ConfigFile)
+                        Domoticz.Debug("Last Update of Config File: %s" %last_update_ConfigFile)
                         if last_update_GroupList > last_update_ConfigFile :
                             # GroupList is newer , just reload the file and exit
                             Domoticz.Status("No update of Groups needed")
