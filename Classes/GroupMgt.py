@@ -1080,6 +1080,15 @@ class GroupsManagement(object):
                         Domoticz.Log("Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                         Domoticz.Debug("Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
                         for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                            if iterDev not in self.ListOfDevices:
+                                Domoticz.Error("Group Management - seems that Group %s is refering to a non-existing device %s/%s" \
+                                        %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
+                                continue
+                            if 'IEEE' not in self.ListOfDevices[iterDev]:
+                                Domoticz.Error("Group Management - seems that Group %s is refering to a device %s/%s with an unknown IEEE" \
+                                        %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
+                                continue
+
                             Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
                     Domoticz.Log("Group Management - Discovery Completed" )
                     self.StartupPhase = 'load config'
