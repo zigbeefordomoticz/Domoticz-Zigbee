@@ -268,6 +268,12 @@ class BasePlugin:
     def onStop(self):
         Domoticz.Status("onStop called")
 
+        if self.domoticzdb_DeviceStatus:
+            self.domoticzdb_DeviceStatus.closeDB()
+
+        if self.domoticzdb_Hardware:
+            self.domoticzdb_Hardware.closeDB()
+ 
         major, minor = Parameters["DomoticzVersion"].split('.')
         major = int(major)
         minor = int(minor)
