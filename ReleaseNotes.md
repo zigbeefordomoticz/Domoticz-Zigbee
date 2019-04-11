@@ -18,6 +18,7 @@
 - [Issue] Correct Group Level calculation for shutter/blinds
 - [Issue] #383 - fixing and allowing index on one digit.
 - [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
+- [Technical] Refactor readClusters dispatch
 
 ## 12 Mars 2019 - 4.1
 
