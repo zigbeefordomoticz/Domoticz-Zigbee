@@ -132,7 +132,7 @@ class OTAManagement(object):
         # For DEV only in order to force Upgrade
         # Domoticz.Log('Force Image Version to +10 - MUST BE REMOVED BEFORE PRODUCTION')
         # Domoticz.Log("patching Image Version from %s to %s " \
-        #         %( headers['image_version'], headers['image_version'] ))
+        #          %( headers['image_version'], headers['image_version'] ))
         # headers['image_version'] += 20
 
         key = headers['image_type']
@@ -212,8 +212,15 @@ class OTAManagement(object):
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
             return
 
+        if MsgImageType in self.OTA['Images']:
+            _size = self.OTA['Images'][MsgImageType]['Decoded Header']['size']
+            _completion = round(((int(MsgFileOffset,16) / _size ) * 100),1)
+
         self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Block Requested'
-        Domoticz.Log("ota_request_firmware - Block Request for %s/%s Image Type: 0x%X Image Version: %s Seq: %s Offset: %s Size: %s FieldCtrl: %s" \
+        if (_completion % 5) == 0:
+            Domoticz.Log("Firmware transfert for %s/%s - Progress: %4s %%" %(MsgSrcAddr, MsgEP, _completion))
+
+        Domoticz.Debug("ota_request_firmware - Block Request for %s/%s Image Type: 0x%X Image Version: %s Seq: %s Offset: %s Size: %s FieldCtrl: %s" \
             %(MsgSrcAddr, block_request['ReqEp'], block_request['ImageType'], \
             block_request['ImageVersion'], MsgSQN, block_request['Offset'], 
                block_request['MaxDataSize'], block_request['FieldControl']))
@@ -221,7 +228,7 @@ class OTAManagement(object):
         if 'Start Time' not in self.OTA['Upgraded Device'][MsgSrcAddr]:
             # Starting Process
             self.upgradeDone = True
-            Domoticz.Status("ota_request_firmware - Starting firmware progress on %s/%s" %(MsgSrcAddr, MsgEP))
+            Domoticz.Status("Starting firmware process on %s/%s" %(MsgSrcAddr, MsgEP))
             self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time'] = time()
 
             _ieee = self.ListOfDevices[MsgSrcAddr]['IEEE']
@@ -534,8 +541,17 @@ class OTAManagement(object):
         else:
             _lenUpgrade = len(self.upgradableDev)
                 
-        Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
-                %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+        if self.upgradeInProgress:
+            if self.upgradeInProgress in self.OTA['Upgraded Device']:
+                if  self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] not in ( 'Block Requested', 'Transfer Progress' ):
+                    Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
+                            %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+            else:
+                Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
+                    %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+        else:
+            Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
+             %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
 
         if self.upgradableDev is None: 
             self.upgradableDev = []
