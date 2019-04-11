@@ -121,7 +121,7 @@ class OTAManagement(object):
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
 
-        Domoticz.Log("ota_decode_new_image - Decoding: %s - Type: %s/0x%X - Version: %s " \
+        Domoticz.Log("ota_decode_new_image - Decoding: %s - Type: %s/0x%X - Version: %X " \
                 %(image, headers['image_type'],  headers['image_type'], headers['image_version']))
         for x in header_headers:
             if x == 'header_str':
@@ -194,7 +194,7 @@ class OTAManagement(object):
         MsgMaxDataSize = MsgData[58:60]
         MsgFieldControl = int(MsgData[60:62],16)
 
-        Domoticz.Debug("Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %s Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
+        Domoticz.Debug("Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
 
         block_request = {}
