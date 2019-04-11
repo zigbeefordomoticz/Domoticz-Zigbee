@@ -43,8 +43,7 @@ from Classes.AdminWidgets import AdminWidgets
 
 OTA_CLUSTER_ID = '0019'
 MAX_LOAD = 2          # No more than 2 commands in the Zigate queue
-OTA_CYLCLE = 300      # We check Firmware upgrade every 5 minutes
-#OTA_CYLCLE = 21600   # We check Firmware upgrade every 6 hours 
+OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
 TO_TRANSFER = 1800    # Time before timed out for Transfer
 TO_NOTIFICATION = 15  # Time before timed out for Notfication
 WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
