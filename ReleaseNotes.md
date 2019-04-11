@@ -1,6 +1,21 @@
 # Release Notes 
 
-##    Mars 2019 - 4.1.1
+##              - 4.2-beta
+- [Issue] #395 - PI doesn't stay as Model .
+- [Issue] Strange error in heartbeat self.self ...
+- [Issue] #390 and #389 - Integrate those 2 Pull Requests
+- [Issue] #383 - fixing and allowing index on one digit.
+- [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
+- [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
+- [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
+- [Enhancement] Update device only in case of batterly level changes and not SignalLevel in order to reduce the notification system.
+- [Technical] Start using 0x8702 messages
+- [Hardware] #392 - Handle long press release on Aqara remote switch (Small square one with one round button)
+- [Technical] 0xffff reserved short address
+- [Technical] refactor ZigateRead code.
+- [Technical] Add few more attributes for cluster 0x0000 (read attribute)
+- [Enhacement] Allow Domoticz device update for Motion sensor if motion is detected.
+- [Issue] Correct Group Level calculation for shutter/blinds
 - [Issue] #383 - fixing and allowing index on one digit.
 - [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
 
