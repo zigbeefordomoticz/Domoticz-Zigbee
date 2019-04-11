@@ -127,7 +127,10 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
     # 5a 02 0500 02 0ffd 0010 00 ff 0001
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
-    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddrMode)
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
+
     timeStamped( self, MsgSrcAddr , 0x8401)
     updSQN( self, MsgSrcAddr, MsgSQN)
 
@@ -1234,6 +1237,8 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+        self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     updSQN( self, MsgSrcAddr, MsgSQN)
     ReadCluster(self, Devices, MsgData) 
 
@@ -1279,6 +1284,8 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) )
 
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         ReadCluster(self, Devices, MsgData) 
@@ -1521,10 +1528,14 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
             timedOutDevice( self, Devices, NwkId = NWKID) 
+            if 'Health' in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
     elif 'PowerSource' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
             timedOutDevice( self, Devices, NwkId = NWKID) 
+            if 'Health' in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
 
     timeStamped( self, MsgDataDestAddr , 0x8702)
     updSQN( self, MsgDataDestAddr, MsgDataSQN)
