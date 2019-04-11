@@ -153,46 +153,32 @@ def ReadCluster(self, Devices, MsgData):
     Domoticz.Debug("ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData))
 
-        
-    if   MsgClusterId=="0000": Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0001": Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0005": Cluster0005( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0006": Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0008": Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0012": Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="000c": Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0101": Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0102": Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0201": Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0300": Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0400": Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0402": Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0403": Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0405": Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0406": Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0500": Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0702":  Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="0b04": Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
-            MsgAttType, MsgAttSize, MsgClusterData )
-    elif MsgClusterId=="fc00": Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
+    DECODE_CLUSTER = {
+            "0000": Cluster0000,
+            "0001": Cluster0001,
+            "0005": Cluster0005,
+            "0006": Cluster0006,
+            "0008": Cluster0008,
+            "0012": Cluster0012,
+            "000c": Cluster000c,
+            "0101": Cluster0101,
+            "0102": Cluster0102,
+            "0201": Cluster0201,
+            "0300": Cluster0300,
+            "0400": Cluster0400,
+            "0402": Cluster0402,
+            "0403": Cluster0403,
+            "0405": Cluster0405,
+            "0406": Cluster0406,
+            "0500": Cluster0500,
+            "0702": Cluster0702,
+            "0b04": Cluster0b04,
+            "fc00": Clusterfc00
+            }
+
+    if MsgClusterId in DECODE_CLUSTER:
+        _func = DECODE_CLUSTER[ MsgClusterId ]
+        _func(  self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, \
             MsgAttType, MsgAttSize, MsgClusterData )
     else:
         Domoticz.Error("ReadCluster - Error/unknow Cluster Message: " + MsgClusterId + " for Device = " + str(MsgSrcAddr) + " Ep = " + MsgSrcEp )
