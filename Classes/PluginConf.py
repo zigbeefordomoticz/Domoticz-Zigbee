@@ -42,8 +42,7 @@ class PluginConf:
         self.allowRemoveZigateDevice = 0
         self.eraseZigatePDM = 0
         self.blueLedOff = 0
-        self.TXpower = 0
-        self.TXpower_set = 0x80
+        self.TXpower_set = 0
         self.Certification = 0  # 1- CE; 2- FCC
         self.enableAPSFailureLoging = 0
         self.allowOTA = 0
@@ -232,13 +231,9 @@ class PluginConf:
                 self.blueLedOff = int(self.PluginConf.get('blueLedOff'))
                 Domoticz.Status(" -blueLedOff: %s" %self.blueLedOff)
 
-            if self.PluginConf.get('TXpower'):
-                self.TXpower_set = self.PluginConf.get('TXpower')
-                if is_hex(self.TXpower_set):
-                    self.TXpower = 1
-                    self.TXpower_set = int(self.PluginConf.get('TXpower'), 16)
-                else: 
-                    self.TXpower = self.TXpower_set = 0
+            if self.PluginConf.get('TXpower') and \
+                    self.PluginConf.get('TXpower').isdigit():
+                self.TXpower_set = int(self.PluginConf.get('TXpower'))
                 Domoticz.Status(" -TXpower: %s" %self.TXpower_set)
 
             if self.PluginConf.get('allowOTA') and \

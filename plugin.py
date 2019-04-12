@@ -93,6 +93,7 @@ from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.LQI import LQIdiscovery
 from Modules.consts import HEARTBEAT, CERTIFICATION
+from Modules.txPower import set_TxPower
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
@@ -477,10 +478,8 @@ class BasePlugin:
                     Domoticz.Log("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
-                if self.pluginconf.TXpower:
-                    attr_tx_power = '%02x' %self.pluginconf.TXpower_set
-                    sendZigateCmd(self, "0806", attr_tx_power)
-                    Domoticz.Log("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
+                if self.pluginconf.TXpower_set:
+                    set_TxPower( self, self.pluginconf.TXpower_set )
 
                 if self.pluginconf.Certification in CERTIFICATION:
                     Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.Certification])
