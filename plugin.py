@@ -85,7 +85,7 @@ import queue
 import sys
 
 from Modules.tools import removeDeviceInList
-from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin, start_Zigate
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -348,6 +348,10 @@ class BasePlugin:
                 self.domoticzdb_Hardware.disableErasePDM()
             Domoticz.Status("Erase Zigate PDM")
             sendZigateCmd(self, "0012", "")
+            if self.pluginconf.extendedPANID is not None:
+                Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.extendedPANID) )
+                setExtendedPANID(self, self.pluginconf.extendedPANID)
+
             start_Zigate( self )
 
         if Parameters["Mode4"] == "True": # Software Non-Factory Reseet

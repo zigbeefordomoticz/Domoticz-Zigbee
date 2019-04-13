@@ -47,6 +47,7 @@ class PluginConf:
         self.enableAPSFailureLoging = 0
         self.allowOTA = 0
         self.waitingOTA = 3600
+        self.extendedPANID = None
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -269,6 +270,14 @@ class PluginConf:
                     self.PluginConf.get('zTimeOut').isdigit():
                 self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
                 Domoticz.Status(" -zTimeOut: %s" %self.zTimeOut)
+
+            if self.PluginConf.get('extendedPANID'):
+                if is_hex( self.PluginConf.get('extendedPANID') ):
+                    self.extendedPANID = int(self.PluginConf.get('extendedPANID'), 16)
+                    Domoticz.Status(" -extendedPANID: 0x%x" %self.extendedPANID)
+                else:
+                    Domoticz.Error("PluginConf - wrong parameter extendedPANID must be hex. %s" \
+                            %self.PluginConf.get('extendedPANID'))
 
         Domoticz.Debug("Device Management:")
         Domoticz.Debug(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)

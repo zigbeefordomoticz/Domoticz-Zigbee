@@ -41,23 +41,23 @@ def start_Zigate(self):
     Purpose is to run the start sequence for the Zigate
     it is call when Network is not started.
 
-    2- Set the channel 
-    3- Set the Mode : Coordinator
-    4- Start network ( 0x0024)
     """
-
-    Domoticz.Status("Set Zigate as a Coordinator")
-    sendZigateCmd(self, "0023","00")
 
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
             %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
 
+    #3
+    Domoticz.Status("Set Zigate as a Coordinator")
+    sendZigateCmd(self, "0023","00")
+
+    #2
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
     Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
     sendZigateCmd(self, "0016", str(UTCTime) )
 
+    #5
     Domoticz.Status("Start network")
     sendZigateCmd(self, "0024", "" )   # Start Network
 
@@ -65,73 +65,8 @@ def start_Zigate(self):
     sendZigateCmd( self, "0014", "" ) # Request status
     sendZigateCmd( self, "0009", "" ) # Request status
 
-
-def ZigateConf_light(self ):
-    '''
-    It is called for normal startup
-    '''
-    sendZigateCmd(self, "0010", "") # Get Firmware version
-
-    Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
-    sendZigateCmd(self, "0015", "")
-
-    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
-    # Page 263
-    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
-    EPOCTime = datetime(2000,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-    sendZigateCmd(self, "0016", str(UTCTime) )
-
-    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
-
-    #Domoticz.Status("Start network scan")
-    #sendZigateCmd(self, "0025", "" )   # Start Network Scan ( Network Formation )
-
-    Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "" )   # Start Network
-
-
-def ZigateConf(self ):
-    '''
-    Called after Erase and Software Reset
-    '''
-    ################### ZiGate - get Firmware version #############
-    # answer is expected on message 8010
-    sendZigateCmd(self, "0010","")
-
-    ################### ZiGate - Set Type COORDINATOR #################
-    sendZigateCmd(self, "0023","00")
-
-    ################### ZiGate - set channel ##################
-    Domoticz.Status("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
-    setChannel(self, self.pluginconf.channel)
-
-    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
-    # Page 263
-    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
-    EPOCTime = datetime(2000,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-    sendZigateCmd(self, "0016", str(UTCTime) )
-
-    ################### ZiGate - start network ##################
-    sendZigateCmd(self, "0024","")
-
-    sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
-
-    ################### ZiGate - Request Device List #############
-    # answer is expected on message 8015. Only available since firmware 03.0b
-    Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
-    sendZigateCmd(self, "0015","")
-
-    Domoticz.Debug("Request network Status")
-    sendZigateCmd( self, "0014", "" ) # Request status
-        
 def sendZigateCmd(self, cmd,datas ):
     self.ZigateComm.sendData( cmd, datas )
-
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
@@ -1051,8 +986,8 @@ def setExtendedPANID(self, extPANID):
     ZigBee communicates using the shorter 16-bit PAN ID for all communication except one.
     '''
 
-    datas = "%016.x" %(extPANID)
-    Domoticz.Log("set ExtendedPANID - %16.x "\
+    datas = "%016x" %extPANID
+    Domoticz.Debug("set ExtendedPANID - %016x "\
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
 
