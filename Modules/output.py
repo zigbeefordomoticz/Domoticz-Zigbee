@@ -627,7 +627,7 @@ def processConfigureReporting( self, NWKID=None ):
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         Domoticz.Debug("configurereporting - processing %s" %key)
         if key == '0000': continue
-        if key not in self.ListOfDevices[key]:
+        if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
