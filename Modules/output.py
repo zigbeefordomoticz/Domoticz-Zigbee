@@ -36,34 +36,38 @@ def ZigatePermitToJoin( self, permit ):
         #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 
-def start_Zigate(self):
+def start_Zigate(self, Mode='Controller'):
     """
     Purpose is to run the start sequence for the Zigate
     it is call when Network is not started.
 
     """
 
+    ZIGATE_MODE = ( 'Controller', 'Router' )
+
+    if Mode not in ZIGATE_MODE:
+        Domoticz.Error("start_Zigate - Unknown mode: %s" %Mode)
+        return
+
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
             %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
+    
+    if Mode == 'Controller':
+        Domoticz.Status("Set Zigate as a Coordinator")
+        sendZigateCmd(self, "0023","00")
 
-    #3
-    Domoticz.Status("Set Zigate as a Coordinator")
-    sendZigateCmd(self, "0023","00")
+        EPOCTime = datetime(2000,1,1)
+        UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+        Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+        sendZigateCmd(self, "0016", str(UTCTime) )
 
-    #2
-    EPOCTime = datetime(2000,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-    sendZigateCmd(self, "0016", str(UTCTime) )
-
-    #5
-    Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "" )   # Start Network
-
-    Domoticz.Debug("Request network Status")
-    sendZigateCmd( self, "0014", "" ) # Request status
-    sendZigateCmd( self, "0009", "" ) # Request status
+        Domoticz.Status("Start network")
+        sendZigateCmd(self, "0024", "" )   # Start Network
+    
+        Domoticz.Debug("Request network Status")
+        sendZigateCmd( self, "0014", "" ) # Request status
+        sendZigateCmd( self, "0009", "" ) # Request status
 
 def sendZigateCmd(self, cmd,datas ):
     self.ZigateComm.sendData( cmd, datas )
@@ -623,6 +627,9 @@ def processConfigureReporting( self, NWKID=None ):
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         Domoticz.Debug("configurereporting - processing %s" %key)
         if key == '0000': continue
+        if key not in self.ListOfDevices[key]:
+            Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
+            continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
