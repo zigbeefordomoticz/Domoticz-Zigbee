@@ -306,6 +306,22 @@ class ZigateTransport(object):
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
         '''
+        def is_hex(s):
+            hex_digits = set("0123456789abcdef")
+            for char in s:
+                if not (char in hex_digits):
+                    return False
+            return True
+
+        # Before to anything, let's check that the cmd and datas are HEXA information.
+        if not is_hex( cmd):
+            Domoticz.Error("sendData - receiving a non hexa Command: 0x%s" %cmd)
+            return
+        if datas != '':
+            if not is_hex( datas):
+                Domoticz.Error("sendData - receiving a non hexa Data: 0x%s" %datas)
+                return
+
         # Check if normalQueue is empty. If yes we can send the command straight
         ##DEBUG Domoticz.Debug("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \ % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         if len(self._waitForStatus) != 0:
