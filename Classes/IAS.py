@@ -66,8 +66,8 @@ class IAS_Zone_Management:
         manufacturer = '0000'
         if addr not in self.ListOfDevices:
             return
-        if 'Manufacturer' in self.ListOfDevices[addr]:
-            manufacturer = self.ListOfDevices[addr]['Manufacturer']
+        #if 'Manufacturer' in self.ListOfDevices[addr]:
+        #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
         if not isinstance(ListOfAttributes, list):
             # We received only 1 attribute
             Attr = "%04x" %(ListOfAttributes)
