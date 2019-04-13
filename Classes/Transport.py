@@ -308,7 +308,7 @@ class ZigateTransport(object):
         '''
         def is_hex(s):
             hex_digits = set("0123456789abcdef")
-            for char in s:
+            for char in s.lower():
                 if not (char in hex_digits):
                     return False
             return True
