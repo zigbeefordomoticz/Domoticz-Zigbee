@@ -85,7 +85,7 @@ import queue
 import sys
 
 from Modules.tools import removeDeviceInList
-from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin, start_Zigate
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
