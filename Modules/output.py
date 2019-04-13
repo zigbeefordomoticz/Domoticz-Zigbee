@@ -41,22 +41,11 @@ def start_Zigate(self):
     Purpose is to run the start sequence for the Zigate
     it is call when Network is not started.
 
-    1- Set the channel 
-    2- Set Timeserver
-    3- Set the Mode : Coordinator
-    4- Set Extended PANID (if existing )
-    5- Start network ( 0x0024)
     """
 
-    #1
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
             %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
-
-    #4
-    if self.pluginconf.extendedPANID:
-        Domoticz.Status("ZigateConf - Setting extPANID : 0x%x" %( self.pluginconf.extendedPANID) )
-        setExtendedPANID(self, self.pluginconf.extendedPANID)
 
     #3
     Domoticz.Status("Set Zigate as a Coordinator")
@@ -998,9 +987,8 @@ def setExtendedPANID(self, extPANID):
     '''
 
     datas = "%016x" %extPANID
-    Domoticz.Log("set ExtendedPANID - %016x "\
+    Domoticz.Debug("set ExtendedPANID - %016x "\
             %( extPANID) )
-    Domoticz.Log("setExtendedPANID - datas: %s" %datas)
     sendZigateCmd(self, "0020", datas )
 
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
