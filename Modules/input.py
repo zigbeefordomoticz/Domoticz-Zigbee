@@ -1473,7 +1473,12 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     """
     Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
     Status: e9 - No acknowledgement received when expected
+    Status: f0 - Pending transaction has expired and data discarded
+    Status: cf - Attempt at route discovery has failed due to lack of table spac
     """
+
+    WARNING_CODE = ( 'd4' )
+    FAILURE_CODE = ( 'e9', 'f0' )
 
     MsgLen=len(MsgData)
     if MsgLen==0: 
@@ -1524,28 +1529,32 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     self.ListOfDevices[NWKID]['APS Failure']['Status Code'] = MsgDataStatus
     self.ListOfDevices[NWKID]['APS Failure']['Status Msg'] = DisplayStatusCode( MsgDataStatus )
 
+    _mainPowered = False
     if 'MacCapa' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
-            Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-            timedOutDevice( self, Devices, NwkId = NWKID) 
-            if 'Health' in self.ListOfDevices[NWKID]:
-                self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
+            _mainPowered = True
     elif 'PowerSource' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
-            Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+            _mainPowered = True
+
+    if _mainPowered and MsgDataStatus in FAILURE_CODE:
+            Domoticz.Error("Communication error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
             timedOutDevice( self, Devices, NwkId = NWKID) 
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+            Domoticz.Error("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
                 %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
             if 'Health' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
+    elif _mainPowered and MsgDataStatus in WARNING_CODE:
+            Domoticz.Log("Recoverable error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+    elif self.pluginconf.enableAPSFailureLoging:
+            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
 
     timeStamped( self, MsgDataDestAddr , 0x8702)
     updSQN( self, MsgDataDestAddr, MsgDataSQN)
-    if self.pluginconf.enableAPSFailureLoging:
-        Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-            %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+
     return
 
 #Device Announce
