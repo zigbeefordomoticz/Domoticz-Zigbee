@@ -212,6 +212,10 @@ class ZigateTransport(object):
                     iByte = next(iterReqRcv) ^ 0x10  # then uncode the next value
                 BinMsg.append(iByte)  # copy
 
+            if len(BinMsg) <= 6:
+                Domoticz.Error("onMessage error - processing an uncomplet message: %s" %BinMsg)
+                return
+
             self._ReqRcv = self._ReqRcv[Zero3:]  # What is after 0x03 has to be reworked.
 
             # Check length
