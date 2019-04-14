@@ -1527,6 +1527,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     if 'MacCapa' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
             timedOutDevice( self, Devices, NwkId = NWKID) 
             if 'Health' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
@@ -1534,6 +1536,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
             Domoticz.Error("Error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
             timedOutDevice( self, Devices, NwkId = NWKID) 
+            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
             if 'Health' in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
 
