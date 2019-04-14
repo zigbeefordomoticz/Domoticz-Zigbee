@@ -1351,12 +1351,12 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     # Purpose is here just to touch the device and update the Last Seen
     # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
-    if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
-        Domoticz.Debug("Not the good Domoticz level for Touch")
-        return
 
     if Unit:
         Domoticz.Debug("Touch unit %s" %( Devices[Unit].Name ))
+        if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
+            Domoticz.Debug("Not the good Domoticz level for Touch")
+            return
         if Devices[Unit].TimedOut:
             timedOutDevice( self, Devices, Unit=Unit, TO=0)
         else:
@@ -1382,6 +1382,9 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
 
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
+        if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
+            Domoticz.Debug("Not the good Domoticz level for Touch")
+            return
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
                 Domoticz.Debug( "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
