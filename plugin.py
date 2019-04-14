@@ -64,12 +64,13 @@
         <param field="Mode6" label="Verbors and Debuging" width="150px">
             <options>
                         <option label="None" value="0"  default="true"/>
-                        <option label="Verbose" value="2"/>
-                        <option label="Domoticz Framework - Basic" value="62"/>
-                        <option label="Domoticz Framework - Basic+Messages" value="126"/>
-                        <option label="Domoticz Framework - Connections Only" value="16"/>
-                        <option label="Domoticz Framework - Connections+Queue" value="144"/>
-                        <option label="Domoticz Framework - All" value="-1"/>
+                        <option label="Plugin Verbose" value="2"/>
+                        <option label="Domoticz Plugin" value="4"/>
+                        <option label="Domoticz Devices" value="8"/>
+                        <option label="Domoticz Connections" value="16"/>
+                        <option label="Verbose+Plugin+Devices" value="14"/>
+                        <option label="Verbose+Plugin+Devices+Connections" value="30"/>
+                        <option label="Domoticz Framework - All (useless but in case)" value="-1"/>
             </options>
         </param>
     </params>
