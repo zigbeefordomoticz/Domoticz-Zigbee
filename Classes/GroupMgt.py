@@ -465,6 +465,39 @@ class GroupsManagement(object):
         self.ZigateComm.sendData( "0065", datas)
         return
 
+
+    def deviceChangeNetworkID( self, old_nwkid, new_nwkid):
+        """
+        this method is call whenever a device get a new NetworkId.
+        We then if this device is own by a group to update the networkid.
+        """
+
+        _update = False
+        for iterGrp in self.ListOfGroups:
+            Domoticz.Log("deviceChangeNetworkID - ListOfGroups[%s]['Devices']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Devices']))
+            old_listDev = list(self.ListOfGroups[iterGrp]['Devices'])
+            new_listDev = []
+            for iterList in old_listDev:
+                if iterList[0] == old_nwkid:
+                    _update = True
+                    new_listDev.append( (new_nwkid, iterList[1] ) )
+                else:
+                    new_listDev.append( iterList )
+
+        if _update:
+            Domoticz.Log("deviceChangeNetworkID - Change from %s to %s" %( self.ListOfGroups[iterGrp]['Devices'], new_listDev))
+            del self.ListOfGroups[iterGrp]['Devices']
+            self.ListOfGroups[iterGrp]['Devices'] = new_listDev
+
+            # Store Group in report under json format
+            self._write_GroupList()
+
+            json_filename = self.groupListReport
+            with open( json_filename, 'wt') as json_file:
+                json_file.write('\n')
+                json.dump( self.ListOfGroups, json_file, indent=4, sort_keys=True)
+
+
     def FreeUnit(self, Devices):
         '''
         FreeUnit
