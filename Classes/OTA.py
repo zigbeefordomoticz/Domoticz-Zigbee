@@ -45,6 +45,7 @@ OTA_CLUSTER_ID = '0019'
 MAX_LOAD = 2          # No more than 2 commands in the Zigate queue
 OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
 TO_TRANSFER = 1800    # Time before timed out for Transfer
+TO_BATTERY_TRANSFER = 3600    # Time before timed out for Transfer
 TO_NOTIFICATION = 15  # Time before timed out for Notfication
 WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
 
@@ -215,6 +216,12 @@ class OTAManagement(object):
         if MsgImageType in self.OTA['Images']:
             _size = self.OTA['Images'][MsgImageType]['Decoded Header']['size']
             _completion = round(((int(MsgFileOffset,16) / _size ) * 100),1)
+        else:
+            Domoticz.Error("ota_request_firmware - Unexpected Image Type: %s/0x%X" %(MsgImageType, MsgImageType))
+            Domoticz.Debug("ota_request_firmware - Unexpected Image Type on Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
+                %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
+            return
+
 
         self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Block Requested'
         if (_completion % 5) == 0:
@@ -337,7 +344,7 @@ class OTAManagement(object):
 
         return
 
-    def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xFFFFFFFF, image_type = 0xFFFF, manufacturer_code = 0xFFFF ):
+    def ota_image_advertize(self, dest_addr, dest_ep, image_version = 0xFFFFFFFF, image_type = 0xFFFF, manufacturer_code = 0xFFFF, Flag_=False ):
         'IMAGE_NOTIFY 	0x0505 	Notify desired device that ota is available. After loading headers use this.'
 
         """
@@ -373,10 +380,11 @@ class OTAManagement(object):
         datas += "%02x" %JITTER_OPTION
         Domoticz.Debug("ota_image_advertize - Type: 0x%0X, Version: 0x%0X => datas: %s" %(image_type, image_version, datas))
 
-        self.OTA['Upgraded Device'][dest_addr] = {}
-        self.OTA['Upgraded Device'][dest_addr][image_type] = {}
-        self.OTA['Upgraded Device'][dest_addr]['Status'] = 'Notified'
-        self.OTA['Upgraded Device'][dest_addr]['Notified Time'] = int(time())
+        if not Flag_:
+            self.OTA['Upgraded Device'][dest_addr] = {}
+            self.OTA['Upgraded Device'][dest_addr][image_type] = {}
+            self.OTA['Upgraded Device'][dest_addr]['Status'] = 'Notified'
+            self.OTA['Upgraded Device'][dest_addr]['Notified Time'] = int(time())
 
         self.ZigateComm.sendData( "0505", datas)
         return
@@ -463,6 +471,7 @@ class OTAManagement(object):
             _textmsg = 'Device: %s has been updated with firmware %s in %s hour %s min %s sec' \
                     %(_name, self.OTA['Images'][MsgImageType]['Filename'], _transferTime_hh, _transferTime_mm, _transferTime_ss)
             Domoticz.Log( _textmsg )
+            self.upgradeInProgress = None
 
         elif MsgStatus == '95': # OTA_STATUS_ABORT The image download that is currently in progress should be cancelled
             Domoticz.Error("ota_request_firmware_completed - OTA Firmware aborted")
@@ -547,21 +556,22 @@ class OTAManagement(object):
                     Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
                             %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
             else:
-                Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
-                    %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+                Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
+                    %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
         else:
-            Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
-             %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+            Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
+                %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
 
         if self.upgradableDev is None: 
             self.upgradableDev = []
             for iterDev in self.ListOfDevices:
                 if iterDev in ( '0000', 'ffff' ): continue
-                if 'PowerSource' in self.ListOfDevices[iterDev]:
-                    if (self.ListOfDevices[iterDev]['PowerSource']) != 'Main':
+                if not self.pluginconf.batteryOTA:
+                    if 'PowerSource' in self.ListOfDevices[iterDev]:
+                        if (self.ListOfDevices[iterDev]['PowerSource']) != 'Main':
+                            continue
+                    else:
                         continue
-                else:
-                    continue
                 if 'Manufacturer' in self.ListOfDevices[iterDev]:
                     if self.ListOfDevices[iterDev]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
                         if 0x117c in self.availableManufCode:
@@ -569,11 +579,11 @@ class OTAManagement(object):
         else:
             if self.upgradeInProgress is None and len(self.upgradableDev) > 0 :
                 if self.upgradeOTAImage is None:
-                    if len(self.OTA['Images']) > 0:
-                        key = next(iter(self.OTA['Images']))
-                        Domoticz.Debug("OTA heartbeat - Image: %s" %key)
-                    else:
+                    if len(self.OTA['Images']) == 0:
                         return
+                    key = next(iter(self.OTA['Images']))
+                    Domoticz.Log("OTA heartbeat - Image: %s from file: %s" %(key, self.OTA['Images'][key]['Filename']))
+
                     # Loading Image in Zigate
                     self.upgradeOTAImage = key
                     self.ota_load_new_image( key )
@@ -611,16 +621,36 @@ class OTAManagement(object):
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None
+                    elif self.pluginconf.batteryOTA:
+                        EPout = "01"
+                        for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
+                            if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
+                                EPout = x
+                                break
+                        _key = self.upgradeOTAImage
+                        self.ota_image_advertize(self.upgradeInProgress, EPout, \
+                                self.OTA['Images'][_key]['Decoded Header']['image_version'], \
+                                self.OTA['Images'][_key]['Decoded Header']['image_type'], \
+                                self.OTA['Images'][_key]['Decoded Header']['manufacturer_code'], Flag_ = True)
 
                 elif _status in ( 'Block Requested', 'Transfer Progress' ):
-                    if int(time()) > ( _notifiedTime + TO_TRANSFER): # Tiemout after 1 hour
-                            Domoticz.Error("OTA heartbeat - Timeout for %s Upgrade notified " \
+                    _notifiedTime = self.OTA['Upgraded Device'][self.upgradeInProgress]['Notified Time']
+
+                    if 'PowerSource' in self.ListOfDevices[self.upgradeInProgress]:
+                        if (self.ListOfDevices[self.upgradeInProgress]['PowerSource']) != 'Main':
+                            _to_transfer = TO_BATTERY_TRANSFER
+                        else:
+                            _to_transfer = TO_TRANSFER
+                    if int(time()) > ( _notifiedTime + _to_transfer): # Tiemout 
+                            Domoticz.Error("OTA heartbeat - Timeout for %s Block Requested or Transfer Progress " \
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None
 
                 elif _status in ( 'Transfer Aborted', ' Transfer Completed' ):
                     self.upgradeInProgress = None
+                else:
+                    Domoticz.Log("OTA heartbeat - _status: %s , upgradeInProgress: %s" %( _status, self.upgradeInProgress))
 
         if self.upgradeInProgress is None and len(self.upgradableDev) == 0 and \
                 ((self.HB % ( WAIT_TO_NEXT_IMAGE // HEARTBEAT) ) == 0):
