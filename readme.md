@@ -1,3 +1,4 @@
+![zigate.fr](https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/Images/ZiGate.png)
 # Zigate Plugin for Domoticz
 
 [![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/sasu-drooz/Domoticz-Zigate.svg)](http://isitmaintained.com/project/sasu-drooz/Domoticz-Zigate "Average time to resolve an issue")
