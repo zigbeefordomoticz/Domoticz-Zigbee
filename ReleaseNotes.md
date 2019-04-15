@@ -19,6 +19,14 @@
 - [Issue] #383 - fixing and allowing index on one digit.
 - [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
 - [Technical] Refactor readClusters dispatch
+- [Technical] New parameter Extended PANID . After an Erase PDM, the Zigate can start on a specific Extended PANID
+- [Issue] #402 - Transport resilience, make sure that \_sendData is processing only Hexa Bytes.
+- [Issue] #408 - If the Domoticz version is not at the right level, still update lastseen information in Plugin Database.
+- [Issue] #410 - Transport resilience, make sure that we get at least 6 bytes when processing an incoming message.
+- [Hardware] #406 - add Xiaomi lumi.ctrl_ln2.aq1
+- [Issue] #405 - On a long run it might happen that device git a new ShortId, in such case, the Group table must be updated consequently.
+- [Technical] - Review the Debuging mode at plugin start, so they are only relevant.
+- [Technical] - Review and improve APS Data Failure handling (Decode8702).
 
 ## 12 Mars 2019 - 4.1
 
