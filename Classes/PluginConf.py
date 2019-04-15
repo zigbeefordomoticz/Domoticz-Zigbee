@@ -47,6 +47,7 @@ class PluginConf:
         self.enableAPSFailureLoging = 0
         self.allowOTA = 0
         self.waitingOTA = 3600
+        self.batteryOTA = 0
         self.extendedPANID = None
 
         # Plugin Transport
@@ -246,6 +247,11 @@ class PluginConf:
                     self.PluginConf.get('waitingOTA').isdigit():
                 self.waitingOTA = int(self.PluginConf.get('waitingOTA'))
                 Domoticz.Status(" -waitingOTA: %s" %self.waitingOTA)
+
+            if self.PluginConf.get('batteryOTA') and \
+                    self.PluginConf.get('batteryOTA').isdigit():
+                self.batteryOTA = int(self.PluginConf.get('batteryOTA'))
+                Domoticz.Status(" -batteryOTA: %s" %self.batteryOTA)
 
             if self.PluginConf.get('Certification'):
                 if self.PluginConf.get('Certification') == 'CE':
