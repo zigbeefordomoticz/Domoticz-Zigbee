@@ -656,7 +656,11 @@ class OTAManagement(object):
                 ((self.HB % ( WAIT_TO_NEXT_IMAGE // HEARTBEAT) ) == 0):
             # We have been through all Devices for this particular Image.
             # Let's go to the next Image
-            del self.OTA['Images'][self.upgradeOTAImage]
+            if self.upgradeOTAImage:
+                del self.OTA['Images'][self.upgradeOTAImage]
+            else:
+                Domoticz.Log("OTA heartbeat - Unexpected situation self.upgradeOTAImage: %s, self.upgradeOTAImage: %s, self.upgradableDev: %s, self.upgradeInProgress: %s" \
+                        %(self.upgradeOTAImage, self.upgradeOTAImage, self.upgradableDev, self.upgradeInProgress))
             self.upgradeOTAImage = None
             self.upgradableDev = None
             self.upgradeInProgress = None
