@@ -42,12 +42,13 @@ from Modules.consts import ADDRESS_MODE, HEARTBEAT
 from Classes.AdminWidgets import AdminWidgets
 
 OTA_CLUSTER_ID = '0019'
-MAX_LOAD = 2          # No more than 2 commands in the Zigate queue
+MAX_LOAD = 2            # No more than 2 commands in the Zigate queue
 OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
-TO_TRANSFER = 1800    # Time before timed out for Transfer
-TO_BATTERY_TRANSFER = 3600    # Time before timed out for Transfer
-TO_NOTIFICATION = 15  # Time before timed out for Notfication
+TO_TRANSFER = 60        # Time before timed out for Transfer
+TO_NOTIFICATION = 15    # Time before timed out for Notfication
 WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
+
+
 
 
 class OTAManagement(object):
@@ -122,8 +123,8 @@ class OTAManagement(object):
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
 
-        Domoticz.Log("ota_decode_new_image - Decoding: %s - Type: %s/0x%X - Version: %X " \
-                %(image, headers['image_type'],  headers['image_type'], headers['image_version']))
+        Domoticz.Log("ota_decode_new_image - Decoding: %s - Type: %s/0x%X - Version: %X - Size: %s" \
+                %(image, headers['image_type'],  headers['image_type'], headers['image_version'], headers['size']))
         for x in header_headers:
             if x == 'header_str':
                 Domoticz.Debug("ota_decode_new_image - %21s : %s " %(x,str(struct.pack('B'*32,*headers[x]))))
@@ -245,10 +246,13 @@ class OTAManagement(object):
                     _name = self.Devices[x].Name
 
             self. ota_management( MsgSrcAddr, MsgEP )
-            _textmsg = 'Firmware update started for Device: %s with %s' %(_name, self.OTA['Images'][MsgImageType]['Filename'])
+            _durhh, _durmm, _durss = convertTime( self.OTA['Images'][MsgImageType]['Decoded Header']['size'] // int(MsgMaxDataSize,16) )
+            _textmsg = 'Firmware update started for Device: %s with %s - Estimated Time: %s H %s min %s sec ' \
+                %(_name, self.OTA['Images'][MsgImageType]['Filename'], _durhh, _durmm, _durss)
             self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
             return
 
+        self.OTA['Upgraded Device'][MsgSrcAddr]['Last Block sent'] = int(time())
         self.ota_block_send( MsgSrcAddr, MsgEP, MsgImageType, block_request )
         return
 
@@ -441,12 +445,7 @@ class OTAManagement(object):
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
             return
 
-        _transferTime = int(time() - self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time'])
-        _transferTime_hh = _transferTime // 3600
-        _transferTime = _transferTime - ( _transferTime_hh * 3600)
-        _transferTime_mm = _transferTime // 60
-        _transferTime = _transferTime - ( _transferTime_mm * 60 )
-        _transferTime_ss = _transferTime 
+        _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime( int(time() - self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time']))
 
         _ieee = self.ListOfDevices[MsgSrcAddr]['IEEE']
         _name = None
@@ -634,18 +633,17 @@ class OTAManagement(object):
                                 self.OTA['Images'][_key]['Decoded Header']['manufacturer_code'], Flag_ = True)
 
                 elif _status in ( 'Block Requested', 'Transfer Progress' ):
-                    _notifiedTime = self.OTA['Upgraded Device'][self.upgradeInProgress]['Notified Time']
-
-                    if 'PowerSource' in self.ListOfDevices[self.upgradeInProgress]:
-                        if (self.ListOfDevices[self.upgradeInProgress]['PowerSource']) != 'Main':
-                            _to_transfer = TO_BATTERY_TRANSFER
-                        else:
-                            _to_transfer = TO_TRANSFER
-                    if int(time()) > ( _notifiedTime + _to_transfer): # Tiemout 
+                    if 'Last Block sent' in self.OTA['Upgraded Device'][self.upgradeInProgress]:
+                        _lastBlockTime = self.OTA['Upgraded Device'][self.upgradeInProgress]['Last Block sent']
+                        if int(time()) > ( _lastBlockTime + TO_TRANSFER): # Tiemout 
+                            Domoticz.Log("OTA heartbeat - Timeout -No new block sent in the last %s for %s" \
+                                    %( TO_TRANSFER, self.upgradeInProgress))
                             Domoticz.Error("OTA heartbeat - Timeout for %s Block Requested or Transfer Progress " \
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None
+                    else:
+                        Domoticz.Log("OTA heartbeat - Transfer not yet started")
 
                 elif _status in ( 'Transfer Aborted', ' Transfer Completed' ):
                     self.upgradeInProgress = None
@@ -672,3 +670,16 @@ class OTAManagement(object):
                 self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
                 self.stopOTA = True
                 Domoticz.Status("OTA heartbeat - Stop OTA upgrade")
+
+
+
+
+def convertTime( _timeInSec):
+
+    _timeInSec_hh = _timeInSec // 3600
+    _timeInSec = _timeInSec - ( _timeInSec_hh * 3600)
+    _timeInSec_mm = _timeInSec // 60
+    _timeInSec = _timeInSec - ( _timeInSec_mm * 60 )
+    _timeInSec_ss = _timeInSec
+    return _timeInSec_hh, _timeInSec_mm, _timeInSec_ss 
+
