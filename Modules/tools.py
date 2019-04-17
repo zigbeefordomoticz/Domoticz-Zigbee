@@ -19,7 +19,7 @@ import Domoticz
 from Classes.AdminWidgets import AdminWidgets
 
 def is_hex(s):
-    hex_digits = set("0123456789abcdef")
+    hex_digits = set("0123456789abcdefABCDEF")
     for char in s:
         if not (char in hex_digits):
             return False
