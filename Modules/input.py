@@ -1478,7 +1478,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     """
 
     WARNING_CODE = ( 'd4' )
-    FAILURE_CODE = ( 'e9', 'f0' )
+    FAILURE_CODE = ( 'e9', 'f0' , 'cf' )
 
     MsgLen=len(MsgData)
     if MsgLen==0: 
@@ -1552,8 +1552,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
             Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
                 %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
 
-    timeStamped( self, MsgDataDestAddr , 0x8702)
-    updSQN( self, MsgDataDestAddr, MsgDataSQN)
+    timeStamped( self, NWKID , 0x8702)
+    updSQN( self, NWKID, MsgDataSQN)
 
     return
 
@@ -1669,6 +1669,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         else:
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    else:
+       Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
