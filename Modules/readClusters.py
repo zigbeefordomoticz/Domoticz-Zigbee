@@ -19,7 +19,7 @@ import queue
 import string
 
 from Modules.domoticz import MajDomoDevice
-from Modules.tools import DeviceExist, getEPforClusterType
+from Modules.tools import DeviceExist, getEPforClusterType, is_hex
 from Modules.output import ReadAttributeRequest_Ack
 
 def retreive4Tag(tag,chain):
@@ -718,8 +718,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004": # Manufacturer
-        Domoticz.Debug("ReadCluster - 0x0000 - Manufacturer: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
-        self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        _manufcode = str(decodeAttribute( MsgAttType, MsgClusterData))
+        Domoticz.Debug("ReadCluster - 0x0000 - Manufacturer: " + _manufcode)
+        if is_hex(_manufcode):
+            self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode
+        else:
+            self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] = _manufcode
+
         if self.pluginconf.allowStoreDiscoveryFrames and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Manufacturer']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 

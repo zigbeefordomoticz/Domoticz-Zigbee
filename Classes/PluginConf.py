@@ -14,15 +14,11 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 import Domoticz
 import os.path
 
+from Modules.tools import is_hex
+
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
-        def is_hex(s):
-            hex_digits = set("0123456789abcdef")
-            for char in s:
-                if not (char in hex_digits):
-                    return False
-            return True
 
         self.logFORMAT = 0
 

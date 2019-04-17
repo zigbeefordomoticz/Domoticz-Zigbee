@@ -9,6 +9,8 @@ import binascii
 import struct
 import time
 
+from Modules.tools import is_hex
+
 # Standalone message. They are receive and do not belongs to a command
 STANDALONE_MESSAGE = (0x8101, 0x8102, 0x8003, 0x804, 0x8005, 0x8006, 0x8701, 0x8702, 0x004D)
 
@@ -310,13 +312,6 @@ class ZigateTransport(object):
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
         '''
-        def is_hex(s):
-            hex_digits = set("0123456789abcdef")
-            for char in s.lower():
-                if not (char in hex_digits):
-                    return False
-            return True
-
         # Before to anything, let's check that the cmd and datas are HEXA information.
         if not is_hex( cmd):
             Domoticz.Error("sendData - receiving a non hexa Command: 0x%s" %cmd)
