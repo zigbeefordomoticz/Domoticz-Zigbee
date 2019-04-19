@@ -254,12 +254,16 @@ class BasePlugin:
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
 
-            Domoticz.Log("Switch PiZigate in RUN mode")
+            Domoticz.Status("Switch PiZigate in RUN mode")
             import os
 
+            Domoticz.Log(".")
             os.system("/usr/bin/gpio mode 2 out")
+            Domoticz.Log(".")
             os.system("/usr/bin/gpio write 2 1")
+            Domoticz.Log(".")
             os.system("/usr/bin/gpio mode 0 down")
+            Domoticz.Log(".")
             os.system("/usr/bin/gpio mode 0 up")
 
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
