@@ -254,26 +254,13 @@ class BasePlugin:
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
 
-            import site
-            for site in site.getsitepackages():
-                Domoticz.Log("Adding %s to Python path" %site)
-                sys.path.append(site)
-            wiringOk = False
-            try:
-                import wiringpi
-                wiringOk = True
-            except:
-                Domoticz.Error("Missing wiringpi module, please install WiringPi Python module")
+            Domoticz.Log("Switch PiZigate in RUN mode")
+            import os
 
-            if wiringOk:
-                Domoticz.Log("Setingup GPIO for PiZigate in RUN mode")
-
-                wiringpi.wiringPiSetup()       # For sequential pin numbering
-
-                wiringpi.pinMode(2, 1)         # gpio mode 2 out
-                wiringpi.digitalWrite(2, 1)    # gpio write 2 1
-                wiringpi.pullUpDnControl(0, 1) # gpio mode 0 down
-                wiringpi.pullUpDnControl(0, 2) # gpio mode 0 up
+            os.system("gpio mode 2 out")
+            os.system("gpio write 2 1")
+            os.system("gpio mode 0 down")
+            os.system("gpio mode 0 up")
 
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
