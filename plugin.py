@@ -257,10 +257,10 @@ class BasePlugin:
             Domoticz.Log("Switch PiZigate in RUN mode")
             import os
 
-            os.system("gpio mode 2 out")
-            os.system("gpio write 2 1")
-            os.system("gpio mode 0 down")
-            os.system("gpio mode 0 up")
+            os.system("/usr/bin/gpio mode 2 out")
+            os.system("/usr/bin/gpio write 2 1")
+            os.system("/usr/bin/gpio mode 0 down")
+            os.system("/usr/bin/gpio mode 0 up")
 
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
