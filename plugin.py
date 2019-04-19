@@ -256,19 +256,25 @@ class BasePlugin:
 
             wiringOk = False
             try:
+                import site
+                for site in site.getsitepackages():
+                    sys.path.append(site)
+
                 import wiringpi
                 wiringOk = True
             except:
-                Domoticz.Error("Missing wiringpi module, please install")
+                Domoticz.Error("Missing wiringpi module, please install WiringPi Python module")
 
             if wiringOk:
                 Domoticz.Log("Setingup GPIO for PiZigate in RUN mode")
-                wiringpi.wiringPiSetup()
-                wiringpi.pinMode(2, 1) # GPIO2
 
-                wiringpi.digitalWrite(2, 1)  # GPIO2
-                wiringpi.pullUpDnControl(0, 1) # GPIO0
-                wiringpi.pullUpDnControl(0, 2) # GPIO0
+
+                wiringpi.wiringPiSetup()       # For sequential pin numbering
+
+                wiringpi.pinMode(2, 1)         # gpio mode 2 out
+                wiringpi.digitalWrite(2, 1)    # gpio write 2 1
+                wiringpi.pullUpDnControl(0, 1) # gpio mode 0 down
+                wiringpi.pullUpDnControl(0, 2) # gpio mode 0 up
 
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
