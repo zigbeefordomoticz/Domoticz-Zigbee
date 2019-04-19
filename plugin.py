@@ -253,6 +253,23 @@ class BasePlugin:
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
+
+            wiringOk = False
+            try:
+                import wiringpi
+                wiringOk = True
+            except:
+                Domoticz.Error("Missing wiringpi module, please install")
+
+            if wiringOk:
+                Domoticz.Log("Setingup GPIO for PiZigate in RUN mode")
+                wiringpi.wiringPiSetup()
+                wiringpi.pinMode(2, 1) # GPIO2
+
+                wiringpi.digitalWrite(2, 1)  # GPIO2
+                wiringpi.pullUpDnControl(0, 1) # GPIO0
+                wiringpi.pullUpDnControl(0, 2) # GPIO0
+
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
