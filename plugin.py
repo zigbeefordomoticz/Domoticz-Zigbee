@@ -254,12 +254,12 @@ class BasePlugin:
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
 
+            import site
+            for site in site.getsitepackages():
+                Domoticz.Log("Adding %s to Python path" %site)
+                sys.path.append(site)
             wiringOk = False
             try:
-                import site
-                for site in site.getsitepackages():
-                    sys.path.append(site)
-
                 import wiringpi
                 wiringOk = True
             except:
@@ -267,7 +267,6 @@ class BasePlugin:
 
             if wiringOk:
                 Domoticz.Log("Setingup GPIO for PiZigate in RUN mode")
-
 
                 wiringpi.wiringPiSetup()       # For sequential pin numbering
 
