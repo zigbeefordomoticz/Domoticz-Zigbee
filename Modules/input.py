@@ -1699,7 +1699,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
     else:
-       Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
+        Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
