@@ -27,6 +27,7 @@
 - [Issue] #405 - On a long run it might happen that device git a new ShortId, in such case, the Group table must be updated consequently.
 - [Technical] - Review the Debuging mode at plugin start, so they are only relevant.
 - [Technical] - Review and improve APS Data Failure handling (Decode8702).
+- [Hardware] - Ikea remote Switch On/Off
 
 ## 12 Mars 2019 - 4.1
 
