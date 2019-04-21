@@ -1683,8 +1683,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
+    Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
@@ -1698,9 +1701,18 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI motion sensor':
+        """
+        Ikea Motion Sensor
+        """
+        if MsgClusterId == '0006' and MsgCmd == '42':   # Motion Sensor On
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0406", '01')
+        else:
+            Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-        Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+        Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
