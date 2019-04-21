@@ -1478,7 +1478,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     """
 
     WARNING_CODE = ( 'd4' )
-    FAILURE_CODE = ( 'e9', 'f0' , 'cf' )
+    FAILURE_CODE = ( 'd4', 'e9', 'f0' , 'cf' )
 
     MsgLen=len(MsgData)
     if MsgLen==0: 
@@ -1537,18 +1537,20 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
             _mainPowered = True
 
-    if _mainPowered and MsgDataStatus in FAILURE_CODE:
-            Domoticz.Error("Communication error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-            timedOutDevice( self, Devices, NwkId = NWKID) 
-            Domoticz.Error("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-            if 'Health' in self.ListOfDevices[NWKID]:
-                self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
-    elif _mainPowered and MsgDataStatus in WARNING_CODE:
-            Domoticz.Log("Recoverable error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-    elif self.pluginconf.enableAPSFailureLoging:
+    if self.pluginconf.enableAPSFailureReporting:
+        if _mainPowered and MsgDataStatus in FAILURE_CODE:
+                Domoticz.Error("Communication error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+                timedOutDevice( self, Devices, NwkId = NWKID) 
+                Domoticz.Error("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                    %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+                if 'Health' in self.ListOfDevices[NWKID]:
+                    self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
+        elif _mainPowered and MsgDataStatus in WARNING_CODE:
+                Domoticz.Log("Recoverable error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
+                Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
+                    %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+
+    if self.pluginconf.enableAPSFailureLoging:
             Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
                 %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
 

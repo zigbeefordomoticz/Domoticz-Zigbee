@@ -41,6 +41,7 @@ class PluginConf:
         self.TXpower_set = 0
         self.Certification = 0  # 1- CE; 2- FCC
         self.enableAPSFailureLoging = 0
+        self.enableAPSFailureReporting = 1
         self.allowOTA = 0
         self.waitingOTA = 3600
         self.batteryOTA = 0
@@ -218,6 +219,11 @@ class PluginConf:
                 self.channel = self.PluginConf.get('channel')
                 self.channel = [c.strip() for c in self.channel.split(',')]
                 Domoticz.Status(" -channel: %s" %self.channel)
+
+            if self.PluginConf.get('enableAPSFailureReporting') and \
+                    self.PluginConf.get('enableAPSFailureReporting').isdigit():
+                self.enableAPSFailureReporting = int(self.PluginConf.get('enableAPSFailureReporting'))
+                Domoticz.Status(" -enableAPSFailureReporting: %s" %self.enableAPSFailureReporting)
 
             if self.PluginConf.get('enableAPSFailureLoging') and \
                     self.PluginConf.get('enableAPSFailureLoging').isdigit():
