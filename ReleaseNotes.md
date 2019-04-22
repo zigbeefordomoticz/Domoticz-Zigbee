@@ -29,6 +29,8 @@
 - [Technical] - Review and improve APS Data Failure handling (Decode8702).
 - [Hardware] - Ikea Tradfri remote Switch On/Off
 - [Hardware] - Ikea Tradfri Motion sensor
+- [Technical] - Fix several issues in group Management, when you trigger a full group scan and some devices have been removed .
+- [Issue] #318 - Use Model name or Nickname when creating a Domoticz widget.
 
 
 ## 12 Mars 2019 - 4.1
