@@ -254,17 +254,23 @@ class BasePlugin:
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
 
+
             Domoticz.Status("Switch PiZigate in RUN mode")
             import os
 
-            Domoticz.Log(".")
-            os.system("/usr/bin/gpio mode 2 out")
-            Domoticz.Log(".")
-            os.system("/usr/bin/gpio write 2 1")
-            Domoticz.Log(".")
-            os.system("/usr/bin/gpio mode 0 down")
-            Domoticz.Log(".")
-            os.system("/usr/bin/gpio mode 0 up")
+            GPIO_CMD = '/usr/bin/gpio'
+
+            if os.path.isfile( GPIO_CMD ):
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " mode 2 out")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " write 2 1")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " mode 0 down")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " mode 0 up")
+            else:
+                Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
