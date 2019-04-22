@@ -574,6 +574,8 @@ class GroupsManagement(object):
         widget = ( 241, 7,7 )
         for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
             Domoticz.Debug("bestGroupWidget - processing %s" %devNwkid)
+            if devNwkid not in self.ListOfDevices:
+                continue
             if 'ClusterType' not in self.ListOfDevices[devNwkid]['Ep'][devEp]:
                 continue
             for iterClusterType in self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType']:
@@ -1147,6 +1149,9 @@ class GroupsManagement(object):
                 Domoticz.Debug(" - %s" %self.ListOfGroups[iterGrp]['Imported'])
 
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                    if iterDev not in self.ListOfDevices:
+                        Domoticz.Error("hearbeat Group - Most likely, device %s is not paired anymore ..." %iterDev)
+                        continue
                     if 'IEEE' not in self.ListOfDevices[iterDev]:
                         break
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
@@ -1184,6 +1189,10 @@ class GroupsManagement(object):
                 Domoticz.Debug("Processing Group: %s - Checking Adding" %iterGrp)
                 # Add group membership
                 for iterIEEE, import_iterEp in self.ListOfGroups[iterGrp]['Imported']:
+                    if iterIEEE not in self.IEEE2NWK:
+                        Domoticz.Error("heartbeat Group - Unknown IEEE %s" %iterIEEE)
+                        continue
+
                     iterDev = self.IEEE2NWK[iterIEEE]
                     Domoticz.Debug("    - checking device: %s to be added " %iterDev)
                     if iterDev in self.ListOfGroups[iterGrp]['Devices']:
