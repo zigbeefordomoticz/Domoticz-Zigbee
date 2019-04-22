@@ -22,6 +22,35 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     """
 
+    def deviceName( self, NWKID, type_, IEEE_, EP_ ):
+        """
+        Return the Name of device to be created
+        """
+
+        _Model = _NickName = None
+        Domoticz.Debug("deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, type_))
+        if 'Model' in self.ListOfDevices[NWKID]:
+            _Model = self.ListOfDevices[NWKID]['Model']
+            Domoticz.Debug("deviceName - Model found: %s" %_Model)
+
+            if _Model in self.DeviceConf:
+                if 'NickName' in self.DeviceConf[_Model]:
+                    _NickName = self.DeviceConf[_Model]['NickName']
+                    Domoticz.Debug("deviceName - NickName found %s" %_NickName)
+
+        if _NickName is None and _Model is None:
+            _Model = ''
+        elif _NickName:
+            devName = _NickName + '_'
+        elif _Model:
+            devName = _Model+ '_'
+
+        devName +=  type_ + "-" + IEEE_ + "-" + EP_
+        Domoticz.Debug("deviceName - Dev Name: %s" %devName)
+
+        return devName
+
+
     def getCreatedID(self, Devices, DeviceID, Name):
         """
         getCreateID
@@ -109,7 +138,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             t = "Temp+Hum+Baro"  # Detecteur temp + Hum + Baro
             unit = FreeUnit(self, Devices)
             Domoticz.Debug("CreateDomoDevice - unit: %s" %unit)
-            myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+            myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, TypeName=t)
             myDev.Create()
             ID = myDev.ID
@@ -122,8 +151,8 @@ def CreateDomoDevice(self, Devices, NWKID):
         if "Humi" in Type and "Temp" in Type:
             t = "Temp+Hum"
             unit = FreeUnit(self, Devices)
-            myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
-                            Unit=unit, TypeName=t)
+            myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                    Unit=unit, TypeName=t)
             myDev.Create()
             ID = myDev.ID
             if myDev.ID == -1 :
@@ -145,7 +174,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "ThermoSetpoint":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=242, Subtype=1)
                 myDev.Create()
                 ID = myDev.ID
@@ -158,7 +187,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "ThermoMode":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=243, Subtype=20)
                 myDev.Create()
                 ID = myDev.ID
@@ -172,7 +201,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Temp":  # Detecteur temp
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, TypeName="Temperature")
                 myDev.Create()
                 ID = myDev.ID
@@ -185,7 +214,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Humi":  # Detecteur hum
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, TypeName="Humidity")
                 myDev.Create()
                 ID = myDev.ID
@@ -198,7 +227,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Baro":  # Detecteur Baro
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, TypeName="Barometer")
                 myDev.Create()
                 ID = myDev.ID
@@ -211,7 +240,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Door":  # capteur ouverture/fermeture xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=11)
                 myDev.Create()
                 ID = myDev.ID
@@ -224,7 +253,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Motion":  # detecteur de presence
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=8)
                 myDev.Create()
                 ID = myDev.ID
@@ -237,7 +266,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t in ( "LivoloSWL", "LivoloSWR" ):
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=0)
                 myDev.Create()
                 ID = myDev.ID
@@ -252,7 +281,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click",
                            "LevelOffHidden": "false", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -267,7 +296,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click",
                            "LevelOffHidden": "true", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -282,7 +311,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
                            "LevelOffHidden": "true", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -297,7 +326,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click",
                            "LevelOffHidden": "true", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -310,7 +339,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Smoke":  # detecteur de fumee
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=5)
                 myDev.Create()
                 ID = myDev.ID
@@ -323,7 +352,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Lux":  # Lux sensors
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=246, Subtype=1, Switchtype=0)
                 myDev.Create()
                 ID = myDev.ID
@@ -336,7 +365,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Switch":  # inter sans fils 1 touche 86sw1 xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=0)
                 myDev.Create()
                 ID = myDev.ID
@@ -349,7 +378,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Button":  # inter sans fils 1 touche 86sw1 xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=9)
                 myDev.Create()
                 ID = myDev.ID
@@ -364,7 +393,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Click|Double Click|Long Click", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -382,7 +411,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                            "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
                            "LevelOffHidden": "true", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices, nbunit_=2) # Look for 2 consecutive slots
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -393,10 +422,8 @@ def CreateDomoDevice(self, Devices, NWKID):
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
                 
                 # Create the Status (Text) Widget to report Rotation angle
-
-                widget_name = "%s - %s - %s" %(t, DeviceID_IEEE, Ep)
                 unit += 1
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=widget_name,
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=243, Subtype=19, Switchtype=0)
                 myDev.Create()
                 ID = myDev.ID
@@ -410,7 +437,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Tilt|Vibrate|Free Fall", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -423,7 +450,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Water":  # detecteur d'eau
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=0, Image=11)
                 myDev.Create()
                 ID = myDev.ID
@@ -436,7 +463,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Plug":  # prise pilote
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=0, Image=1)
                 myDev.Create()
                 ID = myDev.ID
@@ -449,7 +476,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "WindowCovering":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                         Unit=unit, Type=244, Subtype=73, Switchtype=16)
                 myDev.Create()
                 ID = myDev.ID
@@ -464,7 +491,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # variateur de luminosite + On/off
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=7)
                 myDev.Create()
                 ID = myDev.ID
@@ -483,7 +510,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
                         self.ListOfDevices[NWKID]['Status'] = "inDB"
                         unit = FreeUnit(self, Devices)
-                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=73, Switchtype=16)
                         myDev.Create()
                         ID = myDev.ID
@@ -496,7 +523,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         # variateur de luminosite + On/off
                         self.ListOfDevices[NWKID]['Status'] = "inDB"
                         unit = FreeUnit(self, Devices)
-                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                     Unit=unit, Type=244, Subtype=73, Switchtype=7)
                         myDev.Create()
                         ID = myDev.ID
@@ -526,7 +553,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         Subtype_ =  0x07
 
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=241, Subtype=Subtype_, Switchtype=7)
                 myDev.Create()
                 ID = myDev.ID
@@ -540,7 +567,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Power":  # Will display Watt real time
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, TypeName="Usage")
                 myDev.Create()
                 ID = myDev.ID
@@ -553,7 +580,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Meter":  # Will display kWh
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, TypeName="kWh")
                 myDev.Create()
                 ID = myDev.ID
@@ -566,7 +593,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Voltage":  # Will display kWh
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, TypeName="Voltage")
                 myDev.Create()
                 ID = myDev.ID
@@ -579,7 +606,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == 'Ikea_Round_OnOff': # Ikea On/off Remote
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                           Unit=unit, Type=244, Subtype=73, Switchtype=0)
                 myDev.Create()
                 ID = myDev.ID
@@ -594,7 +621,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||||||||||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep), \
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
