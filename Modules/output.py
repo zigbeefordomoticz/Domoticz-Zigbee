@@ -797,7 +797,7 @@ def rebind_Clusters( self, NWKID):
     for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                Domoticz.Log('Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                Domoticz.Debug('Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
                 if 'Bind' in self.ListOfDevices[NWKID]:
                     del self.ListOfDevices[NWKID]['Bind']
                 unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
