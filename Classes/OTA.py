@@ -119,7 +119,7 @@ class OTAManagement(object):
             # Check if we have a better Version
             _imported_header = self.OTA['Images'][headers['image_type']]['Decoded Header']
             if headers['image_version'] <= _imported_header['image_version']:
-                Domoticz.Log("ota_decode_new_image - Image %s already imported. Type: %s with better version %s versus %s" \
+                Domoticz.Log("ota_decode_new_image - Image %s already imported. Type: %s with better version %x versus %x" \
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
 
