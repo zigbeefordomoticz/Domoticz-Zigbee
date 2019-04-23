@@ -385,6 +385,8 @@ class BasePlugin:
                 Domoticz.Log("Configure Permit To Join")
                 self.Ping['Permit'] = None
                 ZigatePermitToJoin(self, self.permitToJoin)
+                if Settings["AcceptNewHardware"] != "1":
+                    Domoticz.Error("Pairing devices will most-likely failed, because Accept New Hardware in Domoticz settings is disabled!")
             else:
                 self.permitToJoin = 0
                 self.Ping['Permit'] = None
