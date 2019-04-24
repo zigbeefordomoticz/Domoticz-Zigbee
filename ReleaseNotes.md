@@ -1,11 +1,6 @@
 # Release Notes 
 
-##              - 4.2-beta
-- [Issue] #395 - PI doesn't stay as Model .
-- [Issue] Strange error in heartbeat self.self ...
-- [Issue] #390 and #389 - Integrate those 2 Pull Requests
-- [Issue] #383 - fixing and allowing index on one digit.
-- [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
+## 24 April 2019 - 4.2.0
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
 - [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
 - [Enhancement] Update device only in case of batterly level changes and not SignalLevel in order to reduce the notification system.
@@ -33,6 +28,18 @@
 - [Issue] #318 - Use Model name or Nickname when creating a Domoticz widget.
 - [Hardware] - Handle lumi.ctrl_neutral1 / QBKG04LM device
 
+## 05 April 2019 - 4.1.4
+- [Issue] #395 - PI doesn't stay as Model .
+
+## 04 April 2019 - 4.1.3
+- [Issue] Strange error in heartbeat self.self ...
+
+## 30 Mars 2019 - 4.1.2
+- [Issue] #390 and #389 - Integrate those 2 Pull Requests
+
+##    Mars 2019 - 4.1.1
+- [Issue] #383 - fixing and allowing index on one digit.
+- [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
 
 ## 12 Mars 2019 - 4.1
 
