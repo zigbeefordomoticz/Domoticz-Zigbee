@@ -27,6 +27,7 @@
 - [Technical] - Fix several issues in group Management, when you trigger a full group scan and some devices have been removed .
 - [Issue] #318 - Use Model name or Nickname when creating a Domoticz widget.
 - [Hardware] - Handle lumi.ctrl_neutral1 / QBKG04LM device
+- [Issue] #414 - Plugin will switch GPIO to RUN mode at plugin start
 
 ## 05 April 2019 - 4.1.4
 - [Issue] #395 - PI doesn't stay as Model .
