@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.1.4" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.2.0" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
 	<h3> Short description </h3>
@@ -31,7 +31,7 @@
 	Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
     </description>
     <params>
-        <param field="Mode1" label="Model" width="75px">
+        <param field="Mode1" label="Zigate Model" width="75px">
             <options>
                 <option label="USB" value="USB" default="true" />
                 <option label="PI" value="PI" />
@@ -64,12 +64,13 @@
         <param field="Mode6" label="Verbors and Debuging" width="150px">
             <options>
                         <option label="None" value="0"  default="true"/>
-                        <option label="Verbose" value="2"/>
-                        <option label="Domoticz Framework - Basic" value="62"/>
-                        <option label="Domoticz Framework - Basic+Messages" value="126"/>
-                        <option label="Domoticz Framework - Connections Only" value="16"/>
-                        <option label="Domoticz Framework - Connections+Queue" value="144"/>
-                        <option label="Domoticz Framework - All" value="-1"/>
+                        <option label="Plugin Verbose" value="2"/>
+                        <option label="Domoticz Plugin" value="4"/>
+                        <option label="Domoticz Devices" value="8"/>
+                        <option label="Domoticz Connections" value="16"/>
+                        <option label="Verbose+Plugin+Devices" value="14"/>
+                        <option label="Verbose+Plugin+Devices+Connections" value="30"/>
+                        <option label="Domoticz Framework - All (useless but in case)" value="-1"/>
             </options>
         </param>
     </params>
@@ -85,7 +86,7 @@ import queue
 import sys
 
 from Modules.tools import removeDeviceInList
-from Modules.output import sendZigateCmd, ZigateConf, ZigateConf_light, removeZigateDevice, ZigatePermitToJoin, start_Zigate
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -93,6 +94,7 @@ from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.LQI import LQIdiscovery
 from Modules.consts import HEARTBEAT, CERTIFICATION
+from Modules.txPower import set_TxPower
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
@@ -100,6 +102,8 @@ from Classes.Transport import ZigateTransport
 from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
+from Classes.OTA import OTAManagement
+
 
 class BasePlugin:
     enabled = False
@@ -131,6 +135,8 @@ class BasePlugin:
         self.DeviceListName = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
 
+        self.OTA = None
+
         self.Ping = {}
         self.connectionState = None
         self.LQISource = None
@@ -154,7 +160,7 @@ class BasePlugin:
 
     def onStart(self):
 
-        Domoticz.Status("Zigate plugin 4.1.4 started")
+        Domoticz.Status("Zigate plugin 4.2.0 started")
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
@@ -247,6 +253,25 @@ class BasePlugin:
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
+
+
+            Domoticz.Status("Switch PiZigate in RUN mode")
+            import os
+
+            GPIO_CMD = '/usr/bin/gpio'
+
+            if os.path.isfile( GPIO_CMD ):
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " mode 2 out")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " write 2 1")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " mode 0 down")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " mode 0 up")
+            else:
+                Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
+
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
@@ -264,6 +289,12 @@ class BasePlugin:
     def onStop(self):
         Domoticz.Status("onStop called")
 
+        if self.domoticzdb_DeviceStatus:
+            self.domoticzdb_DeviceStatus.closeDB()
+
+        if self.domoticzdb_Hardware:
+            self.domoticzdb_Hardware.closeDB()
+ 
         major, minor = Parameters["DomoticzVersion"].split('.')
         major = int(major)
         minor = int(minor)
@@ -337,6 +368,10 @@ class BasePlugin:
                 self.domoticzdb_Hardware.disableErasePDM()
             Domoticz.Status("Erase Zigate PDM")
             sendZigateCmd(self, "0012", "")
+            if self.pluginconf.extendedPANID is not None:
+                Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.extendedPANID) )
+                setExtendedPANID(self, self.pluginconf.extendedPANID)
+
             start_Zigate( self )
 
         if Parameters["Mode4"] == "True": # Software Non-Factory Reseet
@@ -350,6 +385,8 @@ class BasePlugin:
                 Domoticz.Log("Configure Permit To Join")
                 self.Ping['Permit'] = None
                 ZigatePermitToJoin(self, self.permitToJoin)
+                if Settings["AcceptNewHardware"] != "1":
+                    Domoticz.Error("Pairing devices will most-likely failed, because Accept New Hardware in Domoticz settings is disabled!")
             else:
                 self.permitToJoin = 0
                 self.Ping['Permit'] = None
@@ -467,10 +504,8 @@ class BasePlugin:
                     Domoticz.Log("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
-                if self.pluginconf.TXpower:
-                    attr_tx_power = '%02x' %self.pluginconf.TXpower_set
-                    sendZigateCmd(self, "0806", attr_tx_power)
-                    Domoticz.Log("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
+                if self.pluginconf.TXpower_set:
+                    set_TxPower( self, self.pluginconf.TXpower_set )
 
                 if self.pluginconf.Certification in CERTIFICATION:
                     Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.Certification])
@@ -483,13 +518,13 @@ class BasePlugin:
                     self.groupmgt_NotStarted = False
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
+            if self.pluginconf.allowOTA:
+                self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
+                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK)
 
             if self.FirmwareVersion >= "030d":
                 if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
                     sendZigateCmd(self, "0009","")
-
-
-
 
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
@@ -519,6 +554,10 @@ class BasePlugin:
             self.groupmgt.hearbeatGroupMgt()
             if self.groupmgt.stillWIP:
                 busy_ = True
+
+        # OTA upgrade
+        if self.OTA:
+            self.OTA.heartbeat()
             
         # Hearbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect

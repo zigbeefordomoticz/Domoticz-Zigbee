@@ -1,5 +1,33 @@
 # Release Notes 
 
+## 24 April 2019 - 4.2.0
+- [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
+- [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
+- [Enhancement] Update device only in case of batterly level changes and not SignalLevel in order to reduce the notification system.
+- [Technical] Start using 0x8702 messages
+- [Hardware] #392 - Handle long press release on Aqara remote switch (Small square one with one round button)
+- [Technical] 0xffff reserved short address
+- [Technical] refactor ZigateRead code.
+- [Technical] Add few more attributes for cluster 0x0000 (read attribute)
+- [Enhacement] Allow Domoticz device update for Motion sensor if motion is detected.
+- [Issue] Correct Group Level calculation for shutter/blinds
+- [Issue] #383 - fixing and allowing index on one digit.
+- [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
+- [Technical] Refactor readClusters dispatch
+- [Technical] New parameter Extended PANID . After an Erase PDM, the Zigate can start on a specific Extended PANID
+- [Issue] #402 - Transport resilience, make sure that \_sendData is processing only Hexa Bytes.
+- [Issue] #408 - If the Domoticz version is not at the right level, still update lastseen information in Plugin Database.
+- [Issue] #410 - Transport resilience, make sure that we get at least 6 bytes when processing an incoming message.
+- [Hardware] #406 - add Xiaomi lumi.ctrl_ln2.aq1
+- [Issue] #405 - On a long run it might happen that device git a new ShortId, in such case, the Group table must be updated consequently.
+- [Technical] - Review the Debuging mode at plugin start, so they are only relevant.
+- [Technical] - Review and improve APS Data Failure handling (Decode8702).
+- [Hardware] - Ikea Tradfri remote Switch On/Off
+- [Hardware] - Ikea Tradfri Motion sensor
+- [Technical] - Fix several issues in group Management, when you trigger a full group scan and some devices have been removed .
+- [Issue] #318 - Use Model name or Nickname when creating a Domoticz widget.
+- [Hardware] - Handle lumi.ctrl_neutral1 / QBKG04LM device
+
 ## 05 April 2019 - 4.1.4
 - [Issue] #395 - PI doesn't stay as Model .
 

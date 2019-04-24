@@ -14,15 +14,11 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 import Domoticz
 import os.path
 
+from Modules.tools import is_hex
+
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
-        def is_hex(s):
-            hex_digits = set("0123456789abcdef")
-            for char in s:
-                if not (char in hex_digits):
-                    return False
-            return True
 
         self.logFORMAT = 0
 
@@ -42,10 +38,14 @@ class PluginConf:
         self.allowRemoveZigateDevice = 0
         self.eraseZigatePDM = 0
         self.blueLedOff = 0
-        self.TXpower = 0
-        self.TXpower_set = 0x80
+        self.TXpower_set = 0
         self.Certification = 0  # 1- CE; 2- FCC
         self.enableAPSFailureLoging = 0
+        self.enableAPSFailureReporting = 1
+        self.allowOTA = 0
+        self.waitingOTA = 3600
+        self.batteryOTA = 0
+        self.extendedPANID = None
 
         # Plugin Transport
         self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
@@ -64,6 +64,7 @@ class PluginConf:
         self.pluginWWW = self.pluginHome + 'www/'
         #self.pluginReports = self.pluginWWW + 'zigate/reports/'
         self.pluginReports = self.pluginHome + 'www/zigate/reports/'
+        self.pluginOTAFirmware = self.pluginHome + 'OTAFirmware/'
 
         self.filename = None
 
@@ -128,6 +129,10 @@ class PluginConf:
             if self.PluginConf.get('pluginReports'):
                 self.pluginReports = self.PluginConf['pluginReports']
                 Domoticz.Status(" -pluginReports: %s" %self.pluginReports)
+
+            if self.PluginConf.get('pluginOTAFirmware'):
+                self.pluginOTAFirmware = self.PluginConf['pluginOTAFirmware']
+                Domoticz.Status(" -pluginOTAFirmware: %s" %self.pluginOTAFirmware)
 
             if self.PluginConf.get('pluginConfig'):
                 self.pluginConfig = self.PluginConf['pluginConfig']
@@ -215,6 +220,11 @@ class PluginConf:
                 self.channel = [c.strip() for c in self.channel.split(',')]
                 Domoticz.Status(" -channel: %s" %self.channel)
 
+            if self.PluginConf.get('enableAPSFailureReporting') and \
+                    self.PluginConf.get('enableAPSFailureReporting').isdigit():
+                self.enableAPSFailureReporting = int(self.PluginConf.get('enableAPSFailureReporting'))
+                Domoticz.Status(" -enableAPSFailureReporting: %s" %self.enableAPSFailureReporting)
+
             if self.PluginConf.get('enableAPSFailureLoging') and \
                     self.PluginConf.get('enableAPSFailureLoging').isdigit():
                 self.enableAPSFailureLoging = int(self.PluginConf.get('enableAPSFailureLoging'))
@@ -225,14 +235,25 @@ class PluginConf:
                 self.blueLedOff = int(self.PluginConf.get('blueLedOff'))
                 Domoticz.Status(" -blueLedOff: %s" %self.blueLedOff)
 
-            if self.PluginConf.get('TXpower'):
-                self.TXpower_set = self.PluginConf.get('TXpower')
-                if is_hex(self.TXpower_set):
-                    self.TXpower = 1
-                    self.TXpower_set = int(self.PluginConf.get('TXpower'), 16)
-                else: 
-                    self.TXpower = self.TXpower_set = 0
+            if self.PluginConf.get('TXpower') and \
+                    self.PluginConf.get('TXpower').isdigit():
+                self.TXpower_set = int(self.PluginConf.get('TXpower'))
                 Domoticz.Status(" -TXpower: %s" %self.TXpower_set)
+
+            if self.PluginConf.get('allowOTA') and \
+                    self.PluginConf.get('allowOTA').isdigit():
+                self.allowOTA = int(self.PluginConf.get('allowOTA'))
+                Domoticz.Status(" -allowOTA: %s" %self.allowOTA)
+
+            if self.PluginConf.get('waitingOTA') and \
+                    self.PluginConf.get('waitingOTA').isdigit():
+                self.waitingOTA = int(self.PluginConf.get('waitingOTA'))
+                Domoticz.Status(" -waitingOTA: %s" %self.waitingOTA)
+
+            if self.PluginConf.get('batteryOTA') and \
+                    self.PluginConf.get('batteryOTA').isdigit():
+                self.batteryOTA = int(self.PluginConf.get('batteryOTA'))
+                Domoticz.Status(" -batteryOTA: %s" %self.batteryOTA)
 
             if self.PluginConf.get('Certification'):
                 if self.PluginConf.get('Certification') == 'CE':
@@ -258,6 +279,14 @@ class PluginConf:
                 self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
                 Domoticz.Status(" -zTimeOut: %s" %self.zTimeOut)
 
+            if self.PluginConf.get('extendedPANID'):
+                if is_hex( self.PluginConf.get('extendedPANID') ):
+                    self.extendedPANID = int(self.PluginConf.get('extendedPANID'), 16)
+                    Domoticz.Status(" -extendedPANID: 0x%x" %self.extendedPANID)
+                else:
+                    Domoticz.Error("PluginConf - wrong parameter extendedPANID must be hex. %s" \
+                            %self.PluginConf.get('extendedPANID'))
+
         Domoticz.Debug("Device Management:")
         Domoticz.Debug(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
         Domoticz.Debug(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
@@ -275,6 +304,7 @@ class PluginConf:
         Domoticz.Debug(" -blueLedOff: %s" %self.blueLedOff)
         Domoticz.Debug(" -TXpower: %s" %self.TXpower_set)
         Domoticz.Debug(" -Certification: %s" %self.Certification)
+        Domoticz.Debug(" -allowOTA: %s" %self.allowOTA)
 
         Domoticz.Debug("Plugin Transport")
         Domoticz.Debug(" -zmode: %s" %self.zmode)
@@ -315,3 +345,5 @@ class PluginConf:
             Domoticz.Error( "Cannot access pluginWWW: %s" %self.pluginWWW)
         if not os.path.exists( self.pluginReports ):
             Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginReports)
+        if not os.path.exists( self.pluginOTAFirmware ):
+            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginOTAFirmware)

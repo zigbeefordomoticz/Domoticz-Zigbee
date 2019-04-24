@@ -1,0 +1,15 @@
+[Unit]
+Description=Pi Zigate run Mode
+After=network.target
+
+[Service]
+# You need to update and set the folder for your environment
+#
+ExecStart=<path to domoticz>/plugins/Domoticz-Zigate/Tools/pi-zigate.sh run
+WorkingDirectory=<path to domoticz>/plugins/Domoticz-Zigate
+StandardOutput=inherit
+StandardError=inherit
+User=pi
+
+[Install]
+WantedBy=multi-user.target

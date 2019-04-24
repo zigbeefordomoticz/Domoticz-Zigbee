@@ -9,6 +9,8 @@ import binascii
 import struct
 import time
 
+from Modules.tools import is_hex
+
 # Standalone message. They are receive and do not belongs to a command
 STANDALONE_MESSAGE = (0x8101, 0x8102, 0x8003, 0x804, 0x8005, 0x8006, 0x8701, 0x8702, 0x004D)
 
@@ -94,13 +96,15 @@ class ZigateTransport(object):
         if str(transport) == "USB":
             self._transp = "USB"
             self._serialPort = serialPort
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if serialPort.find('/dev/') != -1:
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
         elif str(transport) == "PI":
             self._transp = "PI"
             self._serialPort = serialPort
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if serialPort.find('/dev/') != -1:
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
         elif str(transport) == "Wifi":
             self._transp = "Wifi"
@@ -210,6 +214,10 @@ class ZigateTransport(object):
                     iByte = next(iterReqRcv) ^ 0x10  # then uncode the next value
                 BinMsg.append(iByte)  # copy
 
+            if len(BinMsg) <= 6:
+                Domoticz.Error("onMessage error - processing an uncomplet message: %s" %BinMsg)
+                return
+
             self._ReqRcv = self._ReqRcv[Zero3:]  # What is after 0x03 has to be reworked.
 
             # Check length
@@ -304,6 +312,15 @@ class ZigateTransport(object):
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
         '''
+        # Before to anything, let's check that the cmd and datas are HEXA information.
+        if not is_hex( cmd):
+            Domoticz.Error("sendData - receiving a non hexa Command: 0x%s" %cmd)
+            return
+        if datas != '':
+            if not is_hex( datas):
+                Domoticz.Error("sendData - receiving a non hexa Data: 0x%s" %datas)
+                return
+
         # Check if normalQueue is empty. If yes we can send the command straight
         ##DEBUG Domoticz.Debug("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \ % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         if len(self._waitForStatus) != 0:

@@ -18,6 +18,13 @@ import Domoticz
 
 from Classes.AdminWidgets import AdminWidgets
 
+def is_hex(s):
+    hex_digits = set("0123456789abcdefABCDEF")
+    for char in s:
+        if not (char in hex_digits):
+            return False
+    return True
+
 def returnlen(taille , value) :
     while len(value)<taille:
         value="0"+value
@@ -94,6 +101,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
             if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
                 found = True
                 Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
+
                 if not IEEE :
                     return True
 
@@ -139,6 +147,10 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 for x in Devices:
                     if Devices[x].DeviceID == existingIEEEkey:
                         devName = Devices[x].Name
+
+                if self.groupmgt:
+                    # We should check if this belongs to a group
+                    self.groupmgt.deviceChangeNetworkID( existingNWKkey, newNWKID)
 
                 self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
 

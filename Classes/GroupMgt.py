@@ -465,6 +465,39 @@ class GroupsManagement(object):
         self.ZigateComm.sendData( "0065", datas)
         return
 
+
+    def deviceChangeNetworkID( self, old_nwkid, new_nwkid):
+        """
+        this method is call whenever a device get a new NetworkId.
+        We then if this device is own by a group to update the networkid.
+        """
+
+        _update = False
+        for iterGrp in self.ListOfGroups:
+            Domoticz.Log("deviceChangeNetworkID - ListOfGroups[%s]['Devices']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Devices']))
+            old_listDev = list(self.ListOfGroups[iterGrp]['Devices'])
+            new_listDev = []
+            for iterList in old_listDev:
+                if iterList[0] == old_nwkid:
+                    _update = True
+                    new_listDev.append( (new_nwkid, iterList[1] ) )
+                else:
+                    new_listDev.append( iterList )
+
+        if _update:
+            Domoticz.Log("deviceChangeNetworkID - Change from %s to %s" %( self.ListOfGroups[iterGrp]['Devices'], new_listDev))
+            del self.ListOfGroups[iterGrp]['Devices']
+            self.ListOfGroups[iterGrp]['Devices'] = new_listDev
+
+            # Store Group in report under json format
+            self._write_GroupList()
+
+            json_filename = self.groupListReport
+            with open( json_filename, 'wt') as json_file:
+                json_file.write('\n')
+                json.dump( self.ListOfGroups, json_file, indent=4, sort_keys=True)
+
+
     def FreeUnit(self, Devices):
         '''
         FreeUnit
@@ -541,6 +574,8 @@ class GroupsManagement(object):
         widget = ( 241, 7,7 )
         for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
             Domoticz.Debug("bestGroupWidget - processing %s" %devNwkid)
+            if devNwkid not in self.ListOfDevices:
+                continue
             if 'ClusterType' not in self.ListOfDevices[devNwkid]['Ep'][devEp]:
                 continue
             for iterClusterType in self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType']:
@@ -627,26 +662,42 @@ class GroupsManagement(object):
                                     level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
                                 else:
                                     level = round(( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) / 2)
+        # At that stage
+        # nValue == 0 if Off
+        # nValue == 1 if Open/On
+        # level is None, so we use nValue/sValue
+        # level is not None; so we have a LvlControl
         if level:
-            analogValue = level
-            if analogValue >= 255:
-                sValue = 100
-            else:
-                sValue = round((level * 100) / 255)
-                if sValue > 100: sValue = 100
-                if sValue == 0 and analogValue > 0:
-                    sValue = 1
-            # Let's check if this is Shutter or a Color Bulb (as for Color Bulb we need nValue = 1
-            if self.Devices[unit].SwitchType == 16:
-                if sValue == 0:
-                    nValue = 0
-                elif sValue > 0 and sValue < 100:
-                    nValue = 2
+            if self.Devices[unit].SwitchType != 16:
+                # Not a Shutter/Blind
+                analogValue = level
+                if analogValue >= 255:
+                    sValue = 100
                 else:
-                    nValue = 1
+                    sValue = round((level * 100) / 255)
+                    if sValue > 100: sValue = 100
+                    if sValue == 0 and analogValue > 0:
+                        sValue = 1
+            else:
+                # Shutter/blind
+                if nValue == 0: # we are in an Off mode
+                    sValue = 0
+                else:
+                    # We are on either full or not
+                    sValue = round((level * 100) / 255)
+                    if sValue >= 100: 
+                        sValue = 100
+                        nValue = 1
+                    elif sValue > 0 and sValue < 100:
+                        nValue = 2
+                    else:
+                        nValue = 0
             sValue = str(sValue)
         else:
-            sValue = "Off"
+            if nValue == 0:
+                sValue = 'Off'
+            else:
+                sValue = 'On'
 
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
             Domoticz.Log("UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
@@ -945,15 +996,15 @@ class GroupsManagement(object):
             Domoticz.Log("Group Management - Init phase")
             self.StartupPhase = 'discovery'
             if os.path.isfile( self.groupListFileName ) :
-                Domoticz.Log("GroupList.pck exists")
+                Domoticz.Debug("GroupList.pck exists")
                 last_update_GroupList = modification_date( self.groupListFileName )
-                Domoticz.Log("Last Update of GroupList: %s" %last_update_GroupList)
+                Domoticz.Debug("Last Update of GroupList: %s" %last_update_GroupList)
 
                 if self.groupsConfigFilename:
                     if os.path.isfile( self.groupsConfigFilename ):
-                        Domoticz.Log("Config file exists")
+                        Domoticz.Debug("Config file exists")
                         last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                        Domoticz.Log("Last Update of Config File: %s" %last_update_ConfigFile)
+                        Domoticz.Debug("Last Update of Config File: %s" %last_update_ConfigFile)
                         if last_update_GroupList > last_update_ConfigFile :
                             # GroupList is newer , just reload the file and exit
                             Domoticz.Status("No update of Groups needed")
@@ -1064,6 +1115,15 @@ class GroupsManagement(object):
                         Domoticz.Log("Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                         Domoticz.Debug("Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
                         for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                            if iterDev not in self.ListOfDevices:
+                                Domoticz.Error("Group Management - seems that Group %s is refering to a non-existing device %s/%s" \
+                                        %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
+                                continue
+                            if 'IEEE' not in self.ListOfDevices[iterDev]:
+                                Domoticz.Error("Group Management - seems that Group %s is refering to a device %s/%s with an unknown IEEE" \
+                                        %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
+                                continue
+
                             Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
                     Domoticz.Log("Group Management - Discovery Completed" )
                     self.StartupPhase = 'load config'
@@ -1089,6 +1149,11 @@ class GroupsManagement(object):
                 Domoticz.Debug(" - %s" %self.ListOfGroups[iterGrp]['Imported'])
 
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                    if iterDev not in self.ListOfDevices:
+                        Domoticz.Error("hearbeat Group - Most likely, device %s is not paired anymore ..." %iterDev)
+                        continue
+                    if 'IEEE' not in self.ListOfDevices[iterDev]:
+                        break
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
 
                     Domoticz.Debug("    - checking device: %s / %s to be removed " %(iterDev, iterEp))
@@ -1124,6 +1189,10 @@ class GroupsManagement(object):
                 Domoticz.Debug("Processing Group: %s - Checking Adding" %iterGrp)
                 # Add group membership
                 for iterIEEE, import_iterEp in self.ListOfGroups[iterGrp]['Imported']:
+                    if iterIEEE not in self.IEEE2NWK:
+                        Domoticz.Error("heartbeat Group - Unknown IEEE %s" %iterIEEE)
+                        continue
+
                     iterDev = self.IEEE2NWK[iterIEEE]
                     Domoticz.Debug("    - checking device: %s to be added " %iterDev)
                     if iterDev in self.ListOfGroups[iterGrp]['Devices']:

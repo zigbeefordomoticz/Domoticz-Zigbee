@@ -36,102 +36,41 @@ def ZigatePermitToJoin( self, permit ):
         #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
 
-def start_Zigate(self):
+def start_Zigate(self, Mode='Controller'):
     """
     Purpose is to run the start sequence for the Zigate
     it is call when Network is not started.
 
-    2- Set the channel 
-    3- Set the Mode : Coordinator
-    4- Start network ( 0x0024)
     """
 
-    Domoticz.Status("Set Zigate as a Coordinator")
-    sendZigateCmd(self, "0023","00")
+    ZIGATE_MODE = ( 'Controller', 'Router' )
+
+    if Mode not in ZIGATE_MODE:
+        Domoticz.Error("start_Zigate - Unknown mode: %s" %Mode)
+        return
 
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
             %self.pluginconf.channel)
     setChannel(self, self.pluginconf.channel)
+    
+    if Mode == 'Controller':
+        Domoticz.Status("Set Zigate as a Coordinator")
+        sendZigateCmd(self, "0023","00")
 
-    EPOCTime = datetime(2000,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-    sendZigateCmd(self, "0016", str(UTCTime) )
+        EPOCTime = datetime(2000,1,1)
+        UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+        Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
+        sendZigateCmd(self, "0016", str(UTCTime) )
 
-    Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "" )   # Start Network
+        Domoticz.Status("Start network")
+        sendZigateCmd(self, "0024", "" )   # Start Network
+    
+        Domoticz.Debug("Request network Status")
+        sendZigateCmd( self, "0014", "" ) # Request status
+        sendZigateCmd( self, "0009", "" ) # Request status
 
-    Domoticz.Debug("Request network Status")
-    sendZigateCmd( self, "0014", "" ) # Request status
-    sendZigateCmd( self, "0009", "" ) # Request status
-
-
-def ZigateConf_light(self ):
-    '''
-    It is called for normal startup
-    '''
-    sendZigateCmd(self, "0010", "") # Get Firmware version
-
-    Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion))
-    sendZigateCmd(self, "0015", "")
-
-    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
-    # Page 263
-    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
-    EPOCTime = datetime(2000,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-    sendZigateCmd(self, "0016", str(UTCTime) )
-
-    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
-
-    #Domoticz.Status("Start network scan")
-    #sendZigateCmd(self, "0025", "" )   # Start Network Scan ( Network Formation )
-
-    Domoticz.Status("Start network")
-    sendZigateCmd(self, "0024", "" )   # Start Network
-
-
-def ZigateConf(self ):
-    '''
-    Called after Erase and Software Reset
-    '''
-    ################### ZiGate - get Firmware version #############
-    # answer is expected on message 8010
-    sendZigateCmd(self, "0010","")
-
-    ################### ZiGate - Set Type COORDINATOR #################
-    sendZigateCmd(self, "0023","00")
-
-    ################### ZiGate - set channel ##################
-    Domoticz.Status("ZigateConf setting Channel(s) to: %s" %self.pluginconf.channel)
-    setChannel(self, self.pluginconf.channel)
-
-    # As per https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
-    # Page 263
-    # Set Time since  0 hours, 0 minutes, 0 seconds, on the 1st of January, 2000 UTC
-    EPOCTime = datetime(2000,1,1)
-    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-    sendZigateCmd(self, "0016", str(UTCTime) )
-
-    ################### ZiGate - start network ##################
-    sendZigateCmd(self, "0024","")
-
-    sendZigateCmd(self, "0009","") # In order to get Zigate IEEE and NetworkID
-
-    ################### ZiGate - Request Device List #############
-    # answer is expected on message 8015. Only available since firmware 03.0b
-    Domoticz.Debug("ZigateConf -  Request: Get List of Device " + str(self.FirmwareVersion) )
-    sendZigateCmd(self, "0015","")
-
-    Domoticz.Debug("Request network Status")
-    sendZigateCmd( self, "0014", "" ) # Request status
-        
 def sendZigateCmd(self, cmd,datas ):
     self.ZigateComm.sendData( cmd, datas )
-
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
@@ -203,7 +142,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
+    Domoticz.Log("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
 
@@ -220,14 +159,15 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     listAttributes.append(0x0005)        # Model Identifier
 
     if fullScope:
-        listAttributes.append(0x0006)        # DATE_CODE
+        listAttributes.append(0x0006)        # DATE_CODE ( Sw Build )
         listAttributes.append(0x0007)        # PowerSource
 
     if fullScope:
         listAttributes.append(0x000A)        # LOCATION_DESCRIPTION
         listAttributes.append(0x000F)        # SW_BUILD_ID
         listAttributes.append(0x0010)        # LOCATION_DESCRIPTION
-        listAttributes.append(0x0015)        # SW_BUILD_ID
+        listAttributes.append(0x0015)        # 
+        listAttributes.append(0x4000)        # 
 
     if 'Model' in self.ListOfDevices[key]:
         if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
@@ -614,12 +554,10 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
 
         # On/Off Cluster
-        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
-        #'0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0003', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'00'}}},
+        '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
 
         # Level Control Cluster
         '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'}}},
-        #'0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0003', 'MaxInterval':'0000', 'TimeOut':'0FFF','Change':'00'}}},
 
         # Windows Covering
         '0102': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'05'},
@@ -689,6 +627,10 @@ def processConfigureReporting( self, NWKID=None ):
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         Domoticz.Debug("configurereporting - processing %s" %key)
         if key == '0000': continue
+        if key not in self.ListOfDevices:
+            Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
+            continue
+        if self.ListOfDevices[key]['Status'] != 'inDB': continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
 
@@ -757,8 +699,11 @@ def processConfigureReporting( self, NWKID=None ):
 
                     if self.pluginconf.allowReBindingClusters:
                         if 'Bind' in self.ListOfDevices[key]:
-                            del self.ListOfDevices[key]['Bind']
-                        bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                            del self.ListOfDevices[key]['Bind'] 
+                        if 'IEEE' in self.ListOfDevices[key]:
+                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                        else:
+                            Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
 
                     self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
@@ -852,7 +797,7 @@ def rebind_Clusters( self, NWKID):
     for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                Domoticz.Debug('Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
                 if 'Bind' in self.ListOfDevices[NWKID]:
                     del self.ListOfDevices[NWKID]['Bind']
                 unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
@@ -1009,7 +954,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     elif mode == 'update':
         scanDuration = 0xFF # Update stored radui
     else:
-        Domoticz.Log("NwkMgtUpdReq Unknown mode %s" %mode)
+        Domoticz.Error("NwkMgtUpdReq Unknown mode %s" %mode)
         return
 
     scanCount = 1
@@ -1048,14 +993,15 @@ def setExtendedPANID(self, extPANID):
     ZigBee communicates using the shorter 16-bit PAN ID for all communication except one.
     '''
 
-    datas = "%016.x" %(extPANID)
-    Domoticz.Log("set ExtendedPANID - %16.x "\
+    datas = "%016x" %extPANID
+    Domoticz.Debug("set ExtendedPANID - %016x "\
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
 
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
+    return
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
     # Request a Re-Join and Do not remove children
     if rejoin:
@@ -1076,16 +1022,16 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x4003
     data_type = "29" # Int16
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Log("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    Domoticz.Debug("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type))
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -1097,16 +1043,16 @@ def thermostat_Setpoint( self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    Domoticz.Log("setpoint: %s" %setpoint)
+    Domoticz.Debug("setpoint: %s" %setpoint)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Log("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    Domoticz.Debug("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type))
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
