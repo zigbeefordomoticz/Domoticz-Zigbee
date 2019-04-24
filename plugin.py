@@ -31,7 +31,7 @@
 	Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
     </description>
     <params>
-        <param field="Mode1" label="Model" width="75px">
+        <param field="Mode1" label="Zigate Model" width="75px">
             <options>
                 <option label="USB" value="USB" default="true" />
                 <option label="PI" value="PI" />
