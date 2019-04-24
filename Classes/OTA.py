@@ -123,8 +123,8 @@ class OTAManagement(object):
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
 
-        Domoticz.Log("ota_decode_new_image - Decoding: %s - Type: %s/0x%X - Version: %X - Size: %s" \
-                %(image, headers['image_type'],  headers['image_type'], headers['image_version'], headers['size']))
+        Domoticz.Status("Available Firmware  Type: %6s version: %8X - filename: %s size: %s Bytes" \
+                %( headers['image_type'], headers['image_version'], image, headers['size']))
         for x in header_headers:
             if x == 'header_str':
                 Domoticz.Debug("ota_decode_new_image - %21s : %s " %(x,str(struct.pack('B'*32,*headers[x]))))
