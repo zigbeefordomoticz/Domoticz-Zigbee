@@ -25,7 +25,7 @@ from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
 from Modules.database import saveZigateNetworkData
-from Modules.consts import ADDRESS_MODE
+from Modules.consts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
@@ -833,7 +833,10 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
-            Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+            if MsgDataCluster in ZCL_CLUSTERS_LIST:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
+            else:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
 
@@ -858,7 +861,10 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
-            Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+            if MsgDataCluster in ZCL_CLUSTERS_LIST:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
+            else:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
 

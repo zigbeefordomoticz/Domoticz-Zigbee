@@ -180,3 +180,31 @@ DOMOTICZ_COLOR_MODE = {
 }
 
 
+ZCL_CLUSTERS_LIST = {
+        '0000': 'Basic',
+        '0001': 'Power Configuration',
+        '0003': 'Identify',
+        '0004': 'Groups',
+        '0005': 'Scenes',
+        '0006': 'ON/off',
+        '0007': 'On/Of Switch Configuration',
+        '0008': 'Level Control',
+        '0009': 'Alarms',
+        '000A': 'Time',
+        '0300': 'Colour Control',
+        '1000': 'ZLL Comissioning',
+        '000F': 'Binary Input (Basic)',
+        '0015': 'Commissioning',
+        '0101': 'Door Lock',
+        '0201': 'Thermostat',
+        '0202': 'Fan Control',
+        '0204': 'Thermostat User Interface Configuration',
+        '0400': 'Illuminance Measurement',
+        '0401': 'Illuminance Level Sensing',
+        '0402': 'Temperature Measurement',
+        '0405': 'Relative Humidity Measurement',
+        '0406': 'Occupancy Sensing',
+        '0500': 'IAS Zone',
+        '0501': 'IAS ACE (Ancillary Control Equipment)',
+        '0502': 'IAS WD (Warning Device)'
+        }
