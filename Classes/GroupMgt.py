@@ -784,6 +784,32 @@ class GroupsManagement(object):
         Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
 
+    def _updateDeviceListAttribute( self, grpid, cluster, value):
+
+        if grpid not in self.ListOfGroups:
+            return
+
+        # search for all Devices in the group
+        for iterDev, iterEp in self.ListOfGroups[grpid]['Devices']:
+            if iterDev == '0000': continue
+            if iterDev not in self.ListOfDevices:
+                Domoticz.Error("_updateDeviceListAttribute - Device: %s of Group: %s not in the list anymore" %(iterDev,grpid))
+                continue
+            if iterEp not in self.ListOfDevices[iterDev]['Ep']:
+                Domoticz.Error("_updateDeviceListAttribute - Not existing Ep: %s for Device: %s in Group: %s" %(iterEp, iterDev, grpid))
+                continue
+            if 'ClusterType' not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
+                Domoticz.Error("_updateDeviceListAttribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev,iterEp,grpid))
+                continue
+            if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
+                Domoticz.Error("_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
+                continue
+
+            self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] = value
+            Domoticz.Log("_updateDeviceListAttribute - Updating Device: %s/%s of Group: %s Cluster: %s to value: %s" %(iterDev, iterEp, grpid, cluster, value))
+
+        return
+
 
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
 
@@ -807,6 +833,7 @@ class GroupsManagement(object):
             nValue = 0
             sValue = 'Off'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0006', '00')
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -819,6 +846,7 @@ class GroupsManagement(object):
             nValue = '1'
             sValue = 'On'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0006', '01')
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -833,6 +861,7 @@ class GroupsManagement(object):
             nValue = '1'
             sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0008', sValue)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
