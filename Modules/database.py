@@ -31,7 +31,6 @@ def _versionFile( source , nbversion ):
         _copyfile( source, source +  "-%02d" %1 )
     else:
         for version in range ( nbversion - 1 , 0, -1 ):
-            print("Version: %s" %version)
             _fileversion_n =  source + "-%02d" %version
             if not os.path.isfile( _fileversion_n ):
                 continue
