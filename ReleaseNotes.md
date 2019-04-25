@@ -3,6 +3,9 @@
 ##               - 4.2.1 (beta)
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
 - [Hardware] #421 - Integrate the new Aqara switch with gyroscope
+- [Hardware] - Add group management (cluster 0x0004) to Aqara Switch with Neutral
+- [Hardware] - Add Aqara Switch with Neutral (one button)
+
 
 ## 24 April 2019 - 4.2.0
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
