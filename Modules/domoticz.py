@@ -974,9 +974,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     value = int(value)
                     if value == 1: state = "00"
                     elif value == 2: state = "10"
-                    elif value == 10: state = "20"
-                    elif value == 11: state = "30"
-                    elif value == 12: state = "30"
+                    elif value == 16: state = "20"
+                    elif value == 17: state = "30"
+                    elif value == 18: state = "40"
                     else:
                         return  # Simply return and don't process any other values than the above
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
