@@ -32,6 +32,7 @@ class PluginConf:
         self.resetMotiondelay = 30
         self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
         self.TradfriKelvinStep = 51
+        self.numDeviceListVersion = 12
 
         # Zigate Configuration
         self.channel = 0
@@ -165,6 +166,11 @@ class PluginConf:
                     self.PluginConf.get('Ping').isdigit():
                 self.Ping = int(self.PluginConf['Ping'], 10)
                 Domoticz.Status(" -Ping: %s" %self.Ping)
+
+            if self.PluginConf.get('numDeviceListVersion') and \
+                    self.PluginConf.get('numDeviceListVersion').isdigit():
+                self.numDeviceListVersion = int(self.PluginConf['numDeviceListVersion'], 10)
+                Domoticz.Status(" -numDeviceListVersion : %s" %self.numDeviceListVersion)
 
             if self.PluginConf.get('allowStoreDiscoveryFrames') and \
                     self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():

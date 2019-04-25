@@ -23,6 +23,24 @@ def _copyfile( source, dest ):
         for line in src:
             dst.write(line)
 
+def _versionFile( source , nbversion ):
+
+    if nbversion == 0:
+        return
+    elif nbversion == 1:
+        _copyfile( source, source +  "-%02d" %1 )
+    else:
+        for version in range ( nbversion - 1 , 0, -1 ):
+            print("Version: %s" %version)
+            _fileversion_n =  source + "-%02d" %version
+            if not os.path.isfile( _fileversion_n ):
+                continue
+            else:
+                _fileversion_n1 =  source + "-%02d" %(version + 1)
+                _copyfile( _fileversion_n, _fileversion_n1 )
+
+        _copyfile( source, source +  "-%02d" %1 )
+
 
 def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
@@ -35,8 +53,9 @@ def LoadDeviceList( self ):
         self.ListOfDevices = {}
         return True    
 
-    _backup = _DeviceListFileName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
-    _copyfile( str(_DeviceListFileName) , str(_backup) )
+    _versionFile( _DeviceListFileName , self.pluginconf.numDeviceListVersion)
+    #_backup = _DeviceListFileName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
+    #_copyfile( str(_DeviceListFileName) , str(_backup) )
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
