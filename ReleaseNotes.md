@@ -1,5 +1,9 @@
 # Release Notes 
 
+##               - 4.2.1 (beta)
+- [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
+- [Hardware] #421 - Integrate the new Aqara switch with gyroscope
+
 ## 24 April 2019 - 4.2.0
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
 - [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
