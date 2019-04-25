@@ -291,6 +291,23 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "SwitchAQ3":  # interrupteur multi lvl lumi.sensor_switch.aq2
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "||||", "LevelNames": "Click|Double Click|Long Click|Release Click|Shake",
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
+
             if t == "DSwitch":  # interrupteur double sur EP different
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click",
@@ -952,6 +969,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     else:
                         return  # Simply return and don't process any other values than the above
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif DeviceType == "SwitchAQ3":  # Xiaomi Aqara Smart Wireless Switch Key Built In Gyro Multi-Functional 
+                    value = int(value)
+                    if value == 1: state = "00"
+                    elif value == 2: state = "10"
+                    elif value == 10: state = "20"
+                    elif value == 11: state = "30"
+                    elif value == 12: state = "30"
+                    else:
+                        return  # Simply return and don't process any other values than the above
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
                 elif DeviceType == "DSwitch":
                     # double switch avec EP different 
                     value = int(value)
