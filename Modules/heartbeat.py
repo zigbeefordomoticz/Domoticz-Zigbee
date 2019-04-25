@@ -302,7 +302,16 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             CreateDomoDevice(self, Devices, NWKID)
 
             # Post creation widget
-            Domoticz.Debug("Device: %s - Config Source: %s Ep Details: %s" %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
+            if NWKID not in self.ListOfDevices:
+                Domoticz.Error("processNotinDBDevices - %s doesn't exist in Post creation widget" %NWKID)
+                return
+            if 'Ep' not in self.ListOfDevices[NWKID]:
+                Domoticz.Error("processNotinDBDevices - %s doesn't have Ep in Post creation widget" %NWKID)
+                return
+                
+            if 'ConfigSource' in self.ListOfDevices[NWKID]:
+                Domoticz.Debug("Device: %s - Config Source: %s Ep Details: %s" \
+                        %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
             for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
