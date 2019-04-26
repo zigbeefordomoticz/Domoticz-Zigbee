@@ -652,6 +652,8 @@ def processConfigureReporting( self, NWKID=None ):
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
+                if cluster not in ATTRIBUTESbyCLUSTERS:
+                    continue
 
                 Domoticz.Debug("Configurereporting - processing %s/%s - %s" %(key,Ep,cluster))
                 if 'ConfigureReporting' in self.ListOfDevices[key]:
@@ -687,45 +689,46 @@ def processConfigureReporting( self, NWKID=None ):
                         self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = 0
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
-                     #if now <= ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (24 * 3600)):  # Do only every day
-                     # Basically , we will do configure reporting only when we have reset the ConfigureReporting data structuure
-                     continue
+                     if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
+                        continue
 
-                if cluster in ATTRIBUTESbyCLUSTERS:
-                    if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > 2):
-                        Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                            %(self.busy, len(self.ZigateComm._normalQueue), key))
-                        return # Will do at the next round
+                if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > 3):
+                    Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                        %(self.busy, len(self.ZigateComm._normalQueue), key))
+                    Domoticz.Debug("QUEUE: %s" %str(self.ZigateComm._normalQueue))
+                    return # Will do at the next round
 
-                    if self.pluginconf.allowReBindingClusters:
-                        if 'Bind' in self.ListOfDevices[key]:
-                            del self.ListOfDevices[key]['Bind'] 
-                        if 'IEEE' in self.ListOfDevices[key]:
-                            bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
-                        else:
-                            Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
+                Domoticz.Log("configureReporting - requested for device: %s on Cluster: %s" %(key, cluster))
 
-                    self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
+                if self.pluginconf.allowReBindingClusters:
+                    if 'Bind' in self.ListOfDevices[key]:
+                        del self.ListOfDevices[key]['Bind'] 
+                    if 'IEEE' in self.ListOfDevices[key]:
+                        bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
+                    else:
+                        Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
 
-                    attrDisp = []   # Used only for printing purposes
-                    attrList = ''
-                    attrLen = 0
-                    for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
-                        attrdirection = "00"
-                        attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
-                        minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
-                        maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
-                        timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
-                        chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
+                self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] = int(time())
 
-                        attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
-                        attrLen += 1
-                        attrDisp.append(attr)
+                attrDisp = []   # Used only for printing purposes
+                attrList = ''
+                attrLen = 0
+                for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
+                    attrdirection = "00"
+                    attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
+                    minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
+                    maxInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MaxInterval']
+                    timeOut = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut']
+                    chgFlag = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['Change']
 
-                    datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
-                    datas +=  "%02x" %(attrLen) + attrList
-                    Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
-                    sendZigateCmd(self, "0120", datas )
+                    attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+                    attrLen += 1
+                    attrDisp.append(attr)
+
+                datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                datas +=  "%02x" %(attrLen) + attrList
+                Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
+                sendZigateCmd(self, "0120", datas )
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -1004,16 +1007,16 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     return
     Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
     # Request a Re-Join and Do not remove children
-    if rejoin:
-        if self.permitTojoin != 0xff:
-            Domoticz.Log("Switch to Permit to Join for 30s, to allow rejoin")
-            discover = "%02.X" %int(30)
-            sendZigateCmd(self, "0049","FFFC" + discover + "00")
-        datas = saddr + ieee + '01' + '00'
-    else:
-        datas = saddr + ieee + '00' + '00'
+    #if rejoin:
+    #    if self.permitTojoin != 0xff:
+    #        Domoticz.Log("Switch to Permit to Join for 30s, to allow rejoin")
+    #        discover = "%02.X" %int(30)
+    #        sendZigateCmd(self, "0049","FFFC" + discover + "00")
+    #    datas = saddr + ieee + '01' + '00'
+    #else:
+    #    datas = saddr + ieee + '00' + '00'
 
-    sendZigateCmd(self, "0047", datas )
+    #sendZigateCmd(self, "0047", datas )
 
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
