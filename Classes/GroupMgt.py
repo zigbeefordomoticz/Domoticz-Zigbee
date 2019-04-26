@@ -834,6 +834,7 @@ class GroupsManagement(object):
             sValue = 'Off'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             self._updateDeviceListAttribute( nwkid, '0006', '00')
+            self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -847,6 +848,7 @@ class GroupsManagement(object):
             sValue = 'On'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             self._updateDeviceListAttribute( nwkid, '0006', '01')
+            self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -862,6 +864,7 @@ class GroupsManagement(object):
             sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             self._updateDeviceListAttribute( nwkid, '0008', sValue)
+            self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
