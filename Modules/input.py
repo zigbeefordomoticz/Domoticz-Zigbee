@@ -855,7 +855,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
-                    Domoticz.Log("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
+                    Domoticz.Debug("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             else: # Not 'ConfigSource'
                 self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
