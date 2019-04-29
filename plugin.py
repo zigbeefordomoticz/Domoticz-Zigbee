@@ -224,6 +224,10 @@ class BasePlugin:
         #Import DeviceConf.txt
         importDeviceConf( self ) 
 
+        if type(self.DeviceConf) is not dict:
+            Domoticz.Error("DeviceConf initialisatio failure!!! %s" %type(self.DeviceConf))
+            return
+
         #Import DeviceList.txt Filename is : DeviceListName
         Domoticz.Status("load ListOfDevice" )
         if LoadDeviceList( self ) == 'Failed' :
