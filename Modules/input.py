@@ -128,6 +128,9 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+    if MsgSrcAddr not in self.ListOfDevices:
+        Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" %sMsgSrcAddr)
+        return
     if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
 
