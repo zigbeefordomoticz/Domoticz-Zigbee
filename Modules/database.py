@@ -118,6 +118,8 @@ def LoadDeviceList( self ):
 def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
+        if self.pluginconf.pluginData is None or self.DeviceListName is None:
+            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginData: %s , self.DeviceListName: %s" %(self.pluginconf.pluginData, self.DeviceListName))
         _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
         Domoticz.Debug("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open( _DeviceListFileName , 'wt') as file:
