@@ -630,6 +630,9 @@ def processConfigureReporting( self, NWKID=None ):
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
+        if 'Status' not in self.ListOfDevices[key]:
+            Domoticz.Error("processConfigureReporting - not status for that device %s !!!" %key)
+            continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
         #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
         #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
