@@ -620,7 +620,7 @@ def pingZigate( self ):
         return
 
     if 'Status' not in self.Ping:
-        Domoticz.Log("pingZigate - Unknown Status Send a Ping")
+        Domoticz.Log("pingZigate - Unknown Status, Ticks: %s  Send a Ping" %self.Ping['Nb Ticks'])
         sendZigateCmd( self, "0014", "" ) # Request status
         self.Ping['Status'] = 'Sent'
         self.Ping['TimeStamp'] = int(time.time())
@@ -629,7 +629,7 @@ def pingZigate( self ):
     if self.Ping['Status'] == 'Receive':
         #if self.connectionState == 0:
         #    self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
-        Domoticz.Log("pingZigate - Status: %s Send a Ping" %self.Ping['Status'])
+        Domoticz.Log("pingZigate - Status: %s Send a Ping, Ticks: %s" %(self.Ping['Status'], self.Ping['Nb Ticks']))
         sendZigateCmd( self, "0014", "" ) # Request status
         self.connectionState = 1
         self.Ping['Status'] = 'Sent'
