@@ -596,7 +596,7 @@ def pingZigate( self ):
 
     PING_CHECK_FREQ =  5 * 60  
 
-    Domoticz.Log("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
+    Domoticz.Debug("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
 
     if self.Ping['Status'] == 'Sent':
