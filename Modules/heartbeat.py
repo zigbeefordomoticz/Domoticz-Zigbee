@@ -82,13 +82,6 @@ def processKnownDevices( self, Devices, NWKID ):
 
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
 
-    # Check if Node Descriptor was run ( this could not be the case on early version)
-
-    if  self.HeartbeatCount == ( 28 // HEARTBEAT):
-        if 'PowerSource' not in self.ListOfDevices[NWKID]:  # Looks like PowerSource is not 
-                                                            # available, let's request a Node Descriptor
-            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
-
     if  self.HeartbeatCount == ( 56 // HEARTBEAT):
         if 'PowerSource' in self.ListOfDevices[NWKID]:
             if (self.ListOfDevices[NWKID]['PowerSource']) == 'Main':
