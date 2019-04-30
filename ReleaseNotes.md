@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 30 April 2019 - 4.2.1
+- [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
+
 ## 24 April 2019 - 4.2.0
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
 - [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
