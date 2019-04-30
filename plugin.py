@@ -600,9 +600,9 @@ def pingZigate( self ):
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
 
     if self.Ping['Status'] == 'Sent':
-        delta = now - self.Ping['TimeStamp']
+        delta = int(time.time()) - self.Ping['TimeStamp']
         Domoticz.Log("pingZigate - Status: %s  - Ping: %s sec" %(self.Ping['Status'], delta))
-        if delta > 60: # Seems that we have lost the Zigate communication
+        if delta > 56: # Seems that we have lost the Zigate communication
             Domoticz.Error("pingZigate - no Heartbeat with Zigate")
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
             self.connectionState = 0
@@ -619,12 +619,11 @@ def pingZigate( self ):
         Domoticz.Debug("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
         return
 
-    now = int(time.time())
     if 'Status' not in self.Ping:
         Domoticz.Log("pingZigate - Unknown Status Send a Ping")
         sendZigateCmd( self, "0014", "" ) # Request status
         self.Ping['Status'] = 'Sent'
-        self.Ping['TimeStamp'] = now
+        self.Ping['TimeStamp'] = int(time.time())
         return
 
     if self.Ping['Status'] == 'Receive':
@@ -634,7 +633,7 @@ def pingZigate( self ):
         sendZigateCmd( self, "0014", "" ) # Request status
         self.connectionState = 1
         self.Ping['Status'] = 'Sent'
-        self.Ping['TimeStamp'] = now
+        self.Ping['TimeStamp'] = int(time.time())
     else:
         Domoticz.Error("pingZigate - unknown status : %s" %self.Ping['Status'])
 
