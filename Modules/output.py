@@ -728,7 +728,7 @@ def processConfigureReporting( self, NWKID=None ):
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
                                     if attr not in self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
-                                        Domoticz.debug("configureReporting: drop attribute %s" %attr)
+                                        Domoticz.Debug("configureReporting: drop attribute %s" %attr)
                                         continue
 
                     attrdirection = "00"
