@@ -572,8 +572,6 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0011': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0013': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0017': {'DataType': '16', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
-        # Binary Input 
-        #'000f': {'Attributes': { '0055': {'DataType': '39', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         # Thermostat
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                  '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -601,10 +599,6 @@ def processConfigureReporting( self, NWKID=None ):
         # Occupancy Sensing
         '0406': {'Attributes': { '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
                                  '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
-
-        #'0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'FF'},
-        #                         '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
-
         # IAS ZOne
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
@@ -637,8 +631,11 @@ def processConfigureReporting( self, NWKID=None ):
             Domoticz.Error("processConfigureReporting - not status for that device %s !!!" %key)
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
-        #if NWKID is None and 'PowerSource' in self.ListOfDevices[key]:
-        #    if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
+        if NWKID is None:
+            if 'PowerSource' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
+            if 'MacCapa' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['MacCapa'] != '8e': continue
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']
@@ -662,29 +659,19 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
 
                 Domoticz.Debug("Configurereporting - processing %s/%s - %s" %(key,Ep,cluster))
-                if 'ConfigureReporting' in self.ListOfDevices[key]:
-                    if 'Ep' in self.ListOfDevices[key]['ConfigureReporting']:
-                        if Ep in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
-                            if str(cluster) in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
-                                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
-                                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                                    Domoticz.Debug("configurereporting - skiping due to existing past")
-                                    continue
-                            else:
-                                self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
-                        else:
-                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
-                            self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
-                    else:
-                        self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
-                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
-                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
-                else:
+                if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
+                if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'] = {}
+                if Ep not in self.ListOfDevices[key]['ConfigureReporting']['Ep']:
                     self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep] = {}
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = {}
-                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] = ''
+                if cluster not in self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep]:
+                    self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][cluster] = {}
+
+                if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
+                        self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
+                    Domoticz.Debug("configurereporting - skiping due to existing past")
+                    continue
 
                 _idx = Ep + '-' + str(cluster)
                 if 'TimeStamps' not in self.ListOfDevices[key]['ConfigureReporting'] :
