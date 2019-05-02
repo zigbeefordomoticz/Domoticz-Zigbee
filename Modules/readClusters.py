@@ -323,6 +323,9 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '000f':
+        Domoticz.Debug("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
     elif MsgAttrID == '400b':
         Domoticz.Debug("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
