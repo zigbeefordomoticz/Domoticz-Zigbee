@@ -121,8 +121,6 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
             if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
                 if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' and \
                         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != {} :
-                    Domoticz.Log("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
-                         %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                     continue
                 Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]))
             Attr += Attr_
@@ -136,7 +134,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
 
-def retreive_ListOfAttributesByCluster( self, key, cluster ):
+def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
     ATTRIBUTES = { 
             '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000],
@@ -160,11 +158,13 @@ def retreive_ListOfAttributesByCluster( self, key, cluster ):
     targetAttribute = None
 
     if 'Attributes List' in self.ListOfDevices[key]:
-        if cluster in self.ListOfDevices[key]['Attributes List']:
-            targetAttribute = []
-            Domoticz.Log("retreive_ListOfAttributesByCluster: Attributes from Attributes List")
-            for attr in  self.ListOfDevices[key]['Attributes List'][cluster]:
-                targetAttribute.append( attr )
+        if 'Ep' in self.ListOfDevices[key]['Attributes List']:
+            if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
+                if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
+                    targetAttribute = []
+                    Domoticz.Log("retreive_ListOfAttributesByCluster: Attributes from Attributes List")
+                    for attr in  self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
+                        targetAttribute.append( int(attr,16) )
 
     if targetAttribute is None:
         Domoticz.Log("retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster)
@@ -190,9 +190,6 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     listAttributes = []
     # By default only request attribute 0x0005 to get the model Identifier
     listAttributes.append(0x0005)        # Model Identifier
-    if fullScope:
-        for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0000'):
-            listAttributes.append( iterAttr )
 
     if 'Model' in self.ListOfDevices[key]:
         if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
@@ -215,6 +212,10 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
+
+        if fullScope:
+            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
+                listAttributes.append( iterAttr )
 
         listAttr1 = listAttr2 = None
         if len(listAttributes) > 9:
@@ -259,7 +260,7 @@ def ReadAttributeRequest_0001(self, key):
             if "0001" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
     listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0001'):
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
         listAttributes.append( iterAttr )
 
     Domoticz.Log("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
@@ -272,12 +273,12 @@ def ReadAttributeRequest_0006(self, key):
 
     EPin = "01"
     EPout= "01"
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0006'):
-        listAttributes.append( iterAttr )
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
+        listAttributes.append( iterAttr )
     Domoticz.Debug("Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
@@ -288,12 +289,12 @@ def ReadAttributeRequest_0008(self, key):
     Domoticz.Debug("ReadAttributeRequest_0008 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0008'):
-        listAttributes.append( iterAttr )
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0008'):
+        listAttributes.append( iterAttr )
     Domoticz.Debug("Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
@@ -303,13 +304,13 @@ def ReadAttributeRequest_0300(self, key):
     Domoticz.Debug("ReadAttributeRequest_0300 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0300'):
-        listAttributes.append( iterAttr )
-
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0300" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0300'):
+        listAttributes.append( iterAttr )
+
     Domoticz.Debug("Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0300", listAttributes)
 
@@ -351,16 +352,15 @@ def ReadAttributeRequest_000C(self, key):
 
 def ReadAttributeRequest_0102(self, key):
 
+    Domoticz.Debug("Request Windows Covering status Read Attribute request: " + key )
     EPin = "01"
     EPout= "01"
-    Domoticz.Debug("Request Windows Covering status Read Attribute request: " + key )
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0102'):
-        listAttributes.append( iterAttr )
-
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
+        listAttributes.append( iterAttr )
 
     Domoticz.Debug("Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
@@ -384,15 +384,15 @@ def ReadAttributeRequest_fc00(self, key):
 def ReadAttributeRequest_0400(self, key):
 
     Domoticz.Debug("ReadAttributeRequest_0400 - Key: %s " %key)
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0400'):
-        listAttributes.append( iterAttr )
 
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0400" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0400'):
+        listAttributes.append( iterAttr )
 
     Domoticz.Debug("Illuminance info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0400", listAttributes)
@@ -400,15 +400,15 @@ def ReadAttributeRequest_0400(self, key):
 def ReadAttributeRequest_0402(self, key):
 
     Domoticz.Debug("ReadAttributeRequest_0402 - Key: %s " %key)
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0402'):
-        listAttributes.append( iterAttr )
 
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
+        listAttributes.append( iterAttr )
 
     Domoticz.Debug("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
@@ -416,15 +416,15 @@ def ReadAttributeRequest_0402(self, key):
 def ReadAttributeRequest_0403(self, key):
 
     Domoticz.Debug("ReadAttributeRequest_0403 - Key: %s " %key)
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0403'):
-        listAttributes.append( iterAttr )
 
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0403" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
+        listAttributes.append( iterAttr )
 
     Domoticz.Debug("Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0403", listAttributes)
@@ -432,15 +432,15 @@ def ReadAttributeRequest_0403(self, key):
 def ReadAttributeRequest_0405(self, key):
 
     Domoticz.Debug("ReadAttributeRequest_0405 - Key: %s " %key)
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0405'):
-        listAttributes.append( iterAttr )
 
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0405" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
+        listAttributes.append( iterAttr )
 
     Domoticz.Debug("Humidity info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0405", listAttributes)
@@ -448,18 +448,18 @@ def ReadAttributeRequest_0405(self, key):
 def ReadAttributeRequest_0406(self, key):
 
     Domoticz.Debug("ReadAttributeRequest_0406 - Key: %s " %key)
-    listAttributes = []
-    if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
-         listAttributes.append(0x0030)
-         #listAttributes.append(0x0033)
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0406'):
-        listAttributes.append( iterAttr )
-
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0406" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
+         listAttributes.append(0x0030)
+         #listAttributes.append(0x0033)
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0406'):
+        listAttributes.append( iterAttr )
+
 
     Domoticz.Debug("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
@@ -469,15 +469,14 @@ def ReadAttributeRequest_0702(self, key):
 
     Domoticz.Debug("ReadAttributeRequest_0702 - Key: %s " %key)
 
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0702'):
-        listAttributes.append( iterAttr )
-
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0702" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0702'):
+        listAttributes.append( iterAttr )
 
     Domoticz.Debug("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
