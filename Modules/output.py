@@ -107,7 +107,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
             if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-                Domoticz.Log("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                Domoticz.Debug("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                          %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                 return
             Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
@@ -182,7 +182,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    Domoticz.Log("ReadAttributeRequest_0000 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
     EPout= "01"
 
@@ -263,7 +263,7 @@ def ReadAttributeRequest_0001(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Log("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
+    Domoticz.Debug("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0006(self, key):
@@ -724,10 +724,12 @@ def processConfigureReporting( self, NWKID=None ):
                     # In case Attributes List exists, we have git the list of reported attribute.
                    
                     if 'Attributes List' in self.ListOfDevices[key]:
-                        if cluster in self.ListOfDevices[key]['Attributes List']:
-                            if attr not in self.ListOfDevices[key]['Attributes List'][cluster]:
-                                Domoticz.Log("configureReporting: Drop attribute %s" %sattr)
-                                continue
+                        if 'Ep' in self.ListOfDevices[key]['Attributes List']:
+                            if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
+                                if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
+                                    if attr not in self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
+                                        Domoticz.Log("configureReporting: Drop attribute %s" %sattr)
+                                        continue
 
                     attrdirection = "00"
                     attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
