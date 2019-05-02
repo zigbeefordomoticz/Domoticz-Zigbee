@@ -1381,7 +1381,7 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
  
     _Unit = _nValue = _sValue = None
     if Unit:
-        Domoticz.Debug("timeOutDevice unit %s" %( Devices[Unit].Name ))
+        Domoticz.Log("timeOutDevice unit %s" %( Devices[Unit].Name ))
         _nValue = Devices[Unit].nValue
         _sValue = Devices[Unit].sValue
         _Unit = Unit
@@ -1395,7 +1395,7 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                Domoticz.Debug( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
+                Domoticz.Log( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
                 _nValue = Devices[x].nValue
                 _sValue = Devices[x].sValue
                 _Unit = x
