@@ -162,18 +162,18 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
                     targetAttribute = []
-                    Domoticz.Log("retreive_ListOfAttributesByCluster: Attributes from Attributes List")
+                    Domoticz.Debug("retreive_ListOfAttributesByCluster: Attributes from Attributes List")
                     for attr in  self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
                         targetAttribute.append( int(attr,16) )
 
     if targetAttribute is None:
-        Domoticz.Log("retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster)
+        Domoticz.Debug("retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster)
         if cluster in ATTRIBUTES:
             targetAttribute = ATTRIBUTES[cluster]
         else:
             Domoticz.Log("retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" %cluster)
             targetAttribute = [ 0x0000 ]
-    Domoticz.Log("retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute))
+    Domoticz.Debug("retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute))
 
     return targetAttribute
 
