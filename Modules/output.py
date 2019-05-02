@@ -154,7 +154,7 @@ def retreive_ListOfAttributesByCluster( self, key, cluster ):
             '0403': [ 0x0000],
             '0405': [ 0x0000],
             '0406': [ 0x0000],
-            '0705': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
+            '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
             }
 
     targetAttribute = None
