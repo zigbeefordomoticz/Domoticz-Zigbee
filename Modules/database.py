@@ -128,7 +128,7 @@ def WriteDeviceList(self, count):
         self.HBcount=0
 
         # To be written in the Reporting folder
-        json_filename = self.pluginconf.pluginReports + self.DeviceListName.replace('.txt','.json') 
+        json_filename = self.pluginconf.pluginData + self.DeviceListName.replace('.txt','.json') 
         Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
             json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
