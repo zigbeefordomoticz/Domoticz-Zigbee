@@ -244,13 +244,13 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
     elif MsgAttrID == "0001":
-        Domoticz.Debug("ReadCluster0706 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0706 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "000a":
-        Domoticz.Debug("ReadCluster0706 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0706 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "000b":
-        Domoticz.Debug("ReadCluster0706 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0706 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "0301":   # Multiplier
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
@@ -294,7 +294,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0002":   
-        Domoticz.Debug("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "0003":     # CurrentX
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
@@ -324,13 +324,13 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '000f':
-        Domoticz.Debug("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == '400b':
-        Domoticz.Debug("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == '400c':
-        Domoticz.Debug("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "f000":
         # 070000df
