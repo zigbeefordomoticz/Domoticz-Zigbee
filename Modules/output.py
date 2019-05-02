@@ -83,23 +83,19 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     #if 'Manufacturer' in self.ListOfDevices[addr]:
     #    manufacturer = self.ListOfDevices[addr]['Manufacturer']
 
-    if 'ReadAttributes' in self.ListOfDevices[addr]:
-        if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-        if EpOut in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
-            if str(Cluster) not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
-                self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
-        else:
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
-        if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
-            self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
-            self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
-    else:
+    if 'ReadAttributes' not in self.ListOfDevices[addr]:
         self.ListOfDevices[addr]['ReadAttributes'] = {}
+
+    if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
         self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
+
+    if EpOut not in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
+
+    if str(Cluster) not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
+
+    if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
 
@@ -111,7 +107,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
             if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-                Domoticz.Debug("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                Domoticz.Log("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                          %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                 return
             Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
@@ -125,6 +121,8 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
             if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
                 if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' and \
                         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != {} :
+                    Domoticz.Log("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                         %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
                     continue
                 Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]))
             Attr += Attr_
@@ -133,7 +131,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if lenAttr == 0:
             return
 
-    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
+    Domoticz.Log("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -160,12 +158,14 @@ def retreive_ListOfAttributesByCluster( self, key, cluster ):
             }
 
     targetAttribute = None
+
     if 'Attributes List' in self.ListOfDevices[key]:
         if cluster in self.ListOfDevices[key]['Attributes List']:
             targetAttribute = []
             Domoticz.Log("retreive_ListOfAttributesByCluster: Attributes from Attributes List")
             for attr in  self.ListOfDevices[key]['Attributes List'][cluster]:
                 targetAttribute.append( attr )
+
     if targetAttribute is None:
         Domoticz.Log("retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster)
         if cluster in ATTRIBUTES:
@@ -721,6 +721,14 @@ def processConfigureReporting( self, NWKID=None ):
                 attrList = ''
                 attrLen = 0
                 for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
+                    # Check if the Attribute is listed in the Attributes List (provided by the Device
+                    # In case Attributes List exists, we have git the list of reported attribute.
+                   
+                    if 'Attributes List' in self.ListOfDevices[key]:
+                        if cluster in self.ListOfDevices[key]['Attributes List']:
+                            if attr not in self.ListOfDevices[key]['Attributes List'][cluster]:
+                                continue
+
                     attrdirection = "00"
                     attrType = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['DataType']
                     minInter = ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['MinInterval']
