@@ -154,9 +154,9 @@ def retreive_ListOfAttributesByCluster( self, key, cluster ):
             '0400': [ 0x0000],
             '0402': [ 0x0000],
             '0403': [ 0x0000],
-            '0400': [ 0x0000],
             '0405': [ 0x0000],
-            '0706': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
+            '0406': [ 0x0000],
+            '0705': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
             }
 
     targetAttribute = None
@@ -168,7 +168,11 @@ def retreive_ListOfAttributesByCluster( self, key, cluster ):
                 targetAttribute.append( attr )
     if targetAttribute is None:
         Domoticz.Log("retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster)
-        targetAttribute = ATTRIBUTES[cluster]
+        if cluster in ATTRIBUTES:
+            targetAttribute = ATTRIBUTES[cluster]
+        else:
+            Domoticz.Log("retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" %cluster)
+            targetAttribute = [ 0x0000 ]
     Domoticz.Log("retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute))
 
     return targetAttribute
@@ -269,7 +273,8 @@ def ReadAttributeRequest_0006(self, key):
     EPin = "01"
     EPout= "01"
     listAttributes = []
-    listAttributes.append(0x0000)
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0006'):
+        listAttributes.append( iterAttr )
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
@@ -284,7 +289,8 @@ def ReadAttributeRequest_0008(self, key):
     EPin = "01"
     EPout= "01"
     listAttributes = []
-    listAttributes.append(0x0000)
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, '0008'):
+        listAttributes.append( iterAttr )
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
