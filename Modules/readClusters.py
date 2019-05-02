@@ -294,7 +294,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0002":   
-        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s RemainingTime: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "0003":     # CurrentX
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
@@ -327,10 +327,11 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == '400b':
-        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s Color Min: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == '400c':
-        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s Color Max: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
 
     elif MsgAttrID == "f000":
         # 070000df
