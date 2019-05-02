@@ -611,11 +611,13 @@ def pingZigate( self ):
 
     if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
         self.Ping['Status'] = 'Receive'
+        self.connectionState = 1
         Domoticz.Debug("pingZigate - We have receive a message in the cycle ")
         return                     # Most likely between the cycle.
 
     # If we are more than PING_CHECK_FREQ without any messages, let's check
     if  self.Ping['Nb Ticks'] <  ( PING_CHECK_FREQ  //  HEARTBEAT):
+        self.connectionState = 1
         Domoticz.Debug("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
         return
 
