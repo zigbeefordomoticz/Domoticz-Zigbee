@@ -141,7 +141,7 @@ class GroupsManagement(object):
             for token in tmpread.split(','):
                 if group_id is None:
                     # 1st item: group id
-                    group_id = str(token)
+                    group_id = str(token).strip(' ')
                     if group_id not in self.ListOfGroups:
                         Domoticz.Debug("  - Init ListOfGroups")
                         self.ListOfGroups[group_id] = {}
@@ -1065,13 +1065,22 @@ class GroupsManagement(object):
             _workcompleted = True
             listofdevices = list(self.ListOfDevices)
             for iterDev in listofdevices:
+                _mainPowered = False
+                if 'MacCapa' in self.ListOfDevices[iterDev]:
+                    if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
+                        _mainPowered = True
                 if 'PowerSource' in self.ListOfDevices[iterDev]:
-                    if self.ListOfDevices[iterDev]['PowerSource'] != 'Main':
-                        continue
+                    if self.ListOfDevices[iterDev]['PowerSource'] == 'Main':
+                        _mainPowered = True
+                if not _mainPowered:
+                    Domoticz.Debug(" - %s not main Powered" %(iterDev))
+                    continue
+
                 if 'Ep' in self.ListOfDevices[iterDev]:
                     for iterEp in self.ListOfDevices[iterDev]['Ep']:
                         if iterEp == 'ClusterType': continue
-                        if  ( iterDev == '0000' or ( 'ClusterType' in self.ListOfDevices[iterDev] and 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
+                        if  ( iterDev == '0000' or \
+                                ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                               '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                              ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                             # As we are looking for Group Membership, we don't know to which Group it could belongs.
