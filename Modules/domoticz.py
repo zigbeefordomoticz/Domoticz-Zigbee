@@ -28,15 +28,17 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         _Model = _NickName = None
+        devName = ''
         Domoticz.Debug("deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, type_))
         if 'Model' in self.ListOfDevices[NWKID]:
-            _Model = self.ListOfDevices[NWKID]['Model']
-            Domoticz.Debug("deviceName - Model found: %s" %_Model)
-
-            if _Model in self.DeviceConf:
-                if 'NickName' in self.DeviceConf[_Model]:
-                    _NickName = self.DeviceConf[_Model]['NickName']
-                    Domoticz.Debug("deviceName - NickName found %s" %_NickName)
+            if self.ListOfDevices[NWKID]['Model'] != {}:
+                _Model = self.ListOfDevices[NWKID]['Model']
+                Domoticz.Debug("deviceName - Model found: %s" %_Model)
+    
+                if _Model in self.DeviceConf:
+                    if 'NickName' in self.DeviceConf[_Model]:
+                        _NickName = self.DeviceConf[_Model]['NickName']
+                        Domoticz.Debug("deviceName - NickName found %s" %_NickName)
 
         if _NickName is None and _Model is None:
             _Model = ''
