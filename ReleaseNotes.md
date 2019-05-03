@@ -1,11 +1,19 @@
 # Release Notes 
 
-##               - 4.2.1 (beta)
+##               - 4.3 (beta)
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
 - [Hardware] #421 - Integrate the new Aqara switch with gyroscope
 - [Hardware] - Add group management (cluster 0x0004) to Aqara Switch with Neutral
 - [Hardware] - Add Aqara Switch with Neutral (one button)
 - [Technical] - Make a configure reporting on Main powered devices on a daily basis
+- [Technical] - Ping enhacement
+- [Hardware] - Xiaomi relay ( lumi.relay.c3acn01 )
+- [Technical] - Simplify ConfigureReporting
+- [Technical] - Do ReadAttributes only for supported attributes.
+- [Hardware] - Xiaomi Aqara Switch ( lumi.ctrl_86plug.aq1)
+- [Technical] - Fancy log of Cluster during inclusion of new device
+- [Technical] - History of DeviceList limited to 12 version by default
+
 
 ## 24 April 2019 - 4.2.0
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
