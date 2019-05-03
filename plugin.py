@@ -607,6 +607,10 @@ def pingZigate( self ):
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
             self.connectionState = 0
             self.ZigateComm.reConn()
+        else:
+            if ((self.Ping['Nb Ticks'] % 3) == 0):
+                Domoticz.Log("pingZigate - Status: %s - Ping sent %s sec ago" %(self.Ping['Status'], delta))
+                sendZigateCmd( self, "0014", "" ) # Request status
         return
 
     if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
