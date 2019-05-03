@@ -1262,7 +1262,8 @@ class GroupsManagement(object):
                                 Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
                                 continue
 
-                            if  ( iterDev == '0000' or ( 'ClusterType' in self.ListOfDevices[iterDev] and 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
+                            if  ( iterDev == '0000' or \
+                                    ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                                     ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                                 Domoticz.Debug("Adding %s/%s to be added to %s"
