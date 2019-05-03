@@ -1658,17 +1658,16 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             '07':'release_up'
             }
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
-        """
-        Ikea Remote 5 buttons round.
-            ( cmd, cluster )
-            ( 0x01, 0x0008 ) - Down Push 
-            ( 0x02, 0x0008 ) - Down Click
-            ( 0x03, 0x0008 ) - Down Release 
-            ( 0x05, 0x0008 ) - Up Push 
-            ( 0x06, 0x0008 ) - Up Click
-            ( 0x07, 0x0008 ) - Up Release 
-        """
+    Domoticz.Debug("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
+    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'TRADFRI remote control', 'RC 110'):
+
         if MsgClusterId == '0008':
             if MsgCmd in TYPE_ACTIONS:
                 selector = TYPE_ACTIONS[MsgCmd]
@@ -1681,7 +1680,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
     else:
-       Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+       Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+               %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
@@ -1694,11 +1694,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
-    Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
-
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
@@ -1753,6 +1753,8 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             '09':'release'
             }
 
+    Domoticz.Debug("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+                %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
     if MsgSrcAddr not in self.ListOfDevices:
         return
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
