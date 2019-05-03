@@ -314,11 +314,11 @@ class ZigateTransport(object):
         '''
         # Before to anything, let's check that the cmd and datas are HEXA information.
         if not is_hex( cmd):
-            Domoticz.Error("sendData - receiving a non hexa Command: 0x%s" %cmd)
+            Domoticz.Error("sendData - receiving a non hexa Command: >%s<" %cmd)
             return
         if datas != '':
             if not is_hex( datas):
-                Domoticz.Error("sendData - receiving a non hexa Data: 0x%s" %datas)
+                Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)
                 return
 
         # Check if normalQueue is empty. If yes we can send the command straight
