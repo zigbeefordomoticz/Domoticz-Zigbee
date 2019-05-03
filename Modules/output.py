@@ -137,7 +137,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
     ATTRIBUTES = { 
-            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000],
+            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000],
             '0001': [ 0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0035 ],
             '0003': [ 0x0000],
             '0004': [ 0x0000],
@@ -184,38 +184,38 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 
     Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
-    EPout= "01"
-
-    # General
-    listAttributes = []
-    # By default only request attribute 0x0005 to get the model Identifier
-    listAttributes.append(0x0005)        # Model Identifier
-
-    if 'Model' in self.ListOfDevices[key]:
-        if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
-             listAttributes.append(0xff01)
-             listAttributes.append(0xff02)
-
-        if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
-             listAttributes.append(0x0032)
-             listAttributes.append(0x0033)
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
+
+        listAttributes = []
+        listAttributes.append(0x0004)        # Manufacturer
+        listAttributes.append(0x0005)        # Model Identifier
+
         Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "02", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
         ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
+
     else:
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
 
         if fullScope:
+            listAttributes = []
             for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
                 listAttributes.append( iterAttr )
+
+            if 'Model' in self.ListOfDevices[key]:
+                if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+                    listAttributes.append(0xff01)
+                    listAttributes.append(0xff02)
+                if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
+                    listAttributes.append(0x0032)
+                    listAttributes.append(0x0033)
 
         listAttr1 = listAttr2 = None
         if len(listAttributes) > 9:
