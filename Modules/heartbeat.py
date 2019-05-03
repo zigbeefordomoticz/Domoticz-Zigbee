@@ -102,6 +102,14 @@ def processKnownDevices( self, Devices, NWKID ):
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
+        if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
+                'DeviceType' not in self.ListOfDevices[NWKID] or \
+                'LogicalType' not in self.ListOfDevices[NWKID] or \
+                'PowerSource' not in self.ListOfDevices[NWKID] or \
+                'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
+            Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
+            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
+
     if _mainPowered and \
             ( self.pluginconf.enableReadAttributes or self.pluginconf.resetReadAttributes ) and ( intHB % (30 // HEARTBEAT)) == 0 :
         now = int(time.time())   # Will be used to trigger ReadAttributes

@@ -20,7 +20,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
@@ -1620,6 +1620,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
                 del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
                 self.ListOfDevices[MsgSrcAddr]['Hearbeat'] = 0
+
+            # Let's take the opportunity to trigger some request/adjustement
+            ReadAttributeRequest_0000( self,  MsgSrcAddr)
+            sendZigateCmd(self,"0042", str(MsgSrcAddr) )
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
