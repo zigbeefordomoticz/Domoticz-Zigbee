@@ -200,6 +200,27 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
         Domoticz.Debug("readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) )
 
+    elif MsgAttrID == "0001": # MAINS FREQUENCY
+                              # 0x00 indicates a DC supply, or Freq too low
+                              # 0xFE indicates AC Freq is too high
+                              # 0xFF indicates AC Freq cannot be measured
+        if int(value) == 0x00:
+            Domoticz.Log("readCluster 0001 %s Freq is DC or too  low" %MsgSrcAddr)
+        elif int(value) == 0xFE:
+            Domoticz.Log("readCluster 0001 %s Freq is too high" %MsgSrcAddr)
+        elif int(value) == 0xFF:
+            Domoticz.Log("readCluster 0001 %s Freq cannot be measured" %MsgSrcAddr)
+        else:
+            value = round(int(value)/2)  # 
+            Domoticz.Log("readCluster 0001 %s Freq %s Hz" %(MsgSrcAddr, value))
+
+    elif MsgAttrID == "0002": # MAINS ALARM MASK
+        _undervoltage = (int(value)) & 1
+        _overvoltage = (int(value) >> 1 ) & 1
+        _mainpowerlost = (int(value) >> 2 ) & 1
+        Domoticz.Log("readCluster 0001 %s Alarm Mask: UnderVoltage: %s OverVoltage: %s MainPowerLost: %s" \
+                %(MsgSrcAddr, _undervoltage, _overvoltage, _mainpowerlost))
+
     elif MsgAttrID == "0010": # Voltage
         battVolt = value
         newValue = '%s;%s;%s;%s' %(oldValue[0], battVolt, oldValue[2], oldValue[3])
@@ -294,7 +315,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0002":   
-        Domoticz.Log("ReadCluster0300 - %s/%s RemainingTime: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+        Domoticz.Log("ReadCluster0300 - %s/%s RemainingTime: %s" %(MsgSrcAddr, MsgSrcEp, value))
 
     elif MsgAttrID == "0003":     # CurrentX
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
