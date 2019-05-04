@@ -96,6 +96,7 @@ from Modules.LQI import LQIdiscovery
 from Modules.consts import HEARTBEAT, CERTIFICATION
 from Modules.txPower import set_TxPower
 
+from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
 from Classes.Transport import ZigateTransport
@@ -122,6 +123,8 @@ class BasePlugin:
         self.groupmgt = None
         self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
+
+        self.APS = None
 
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.homedirectory = None
@@ -220,6 +223,9 @@ class BasePlugin:
         plugconf = self.pluginconf
         if  plugconf.allowStoreDiscoveryFrames == 1 :
             self.DiscoveryDevices = {}
+
+        # Initialise APS Object
+        self.APS = APSManagement( self.ListOfDevices )
 
         #Import DeviceConf.txt
         importDeviceConf( self ) 
