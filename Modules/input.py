@@ -1530,6 +1530,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     if NWKID == None or IEEE == None:
         Domoticz.Log("Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
         return
+    
+    self.APS.processAPSFailure(NWKID, IEEE, MsgDataStatus)
 
     if 'APS Failure' not in self.ListOfDevices[NWKID]:
         self.ListOfDevices[NWKID]['APS Failure'] = {}
