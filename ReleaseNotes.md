@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 05 May 2019 - 4.2.2
+- [Issue] Fix a problem when creating a device and there is no Model associated.
+
 ## 30 April 2019 - 4.2.1
 - [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
 
