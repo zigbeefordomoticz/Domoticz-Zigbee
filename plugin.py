@@ -225,7 +225,7 @@ class BasePlugin:
             self.DiscoveryDevices = {}
 
         # Initialise APS Object
-        self.APS = APSManagement( self.ListOfDevices )
+        self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf)
 
         #Import DeviceConf.txt
         importDeviceConf( self ) 
@@ -260,7 +260,7 @@ class BasePlugin:
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
 
@@ -282,10 +282,10 @@ class BasePlugin:
             else:
                 Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
-            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.pluginconf, self.processFrame,\
+            self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         else :
             Domoticz.Error("Unknown Transport comunication protocol : "+str(self.transport) )

@@ -1486,9 +1486,6 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     Status: cf - Attempt at route discovery has failed due to lack of table spac
     """
 
-    WARNING_CODE = ( 'd4' )
-    FAILURE_CODE = ( 'd4', 'e9', 'f0' , 'cf' )
-
     MsgLen=len(MsgData)
     if MsgLen==0: 
         return
@@ -1531,39 +1528,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         Domoticz.Log("Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
         return
     
-    self.APS.processAPSFailure(NWKID, IEEE, MsgDataStatus)
-
-    if 'APS Failure' not in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[NWKID]['APS Failure'] = {}
-
-    self.ListOfDevices[NWKID]['APS Failure']['Stamp'] = int(time.time())
-    self.ListOfDevices[NWKID]['APS Failure']['Status Code'] = MsgDataStatus
-    self.ListOfDevices[NWKID]['APS Failure']['Status Msg'] = DisplayStatusCode( MsgDataStatus )
-
-    _mainPowered = False
-    if 'MacCapa' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
-            _mainPowered = True
-    elif 'PowerSource' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
-            _mainPowered = True
-
-    if self.pluginconf.enableAPSFailureReporting:
-        if _mainPowered and MsgDataStatus in FAILURE_CODE:
-                Domoticz.Error("Communication error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-                timedOutDevice( self, Devices, NwkId = NWKID) 
-                Domoticz.Error("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                    %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-                if 'Health' in self.ListOfDevices[NWKID]:
-                    self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
-        elif _mainPowered and MsgDataStatus in WARNING_CODE:
-                Domoticz.Log("Recoverable error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-                Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                    %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-
-    if self.pluginconf.enableAPSFailureLoging:
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+    if self.APS:
+        self.APS.processAPSFailure(NWKID, IEEE, MsgDataStatus)
 
     timeStamped( self, NWKID , 0x8702)
     updSQN( self, NWKID, MsgDataSQN)
