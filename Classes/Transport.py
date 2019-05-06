@@ -9,6 +9,7 @@ import binascii
 import struct
 import time
 
+from Classes.APS import APSManagement
 from Modules.tools import is_hex
 
 # Standalone message. They are receive and do not belongs to a command
@@ -70,7 +71,7 @@ class ZigateTransport(object):
     Managed also the Command -> Status -> Data sequence
     """
 
-    def __init__(self, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, transport, statistics, aps, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
 
         self._checkTO_flag = None
@@ -88,6 +89,7 @@ class ZigateTransport(object):
 
         self.statistics = statistics
 
+        self.APS = aps
         self.reTransmit = pluginconf.reTransmit
         self.zmode = pluginconf.zmode
         self.sendDelay = pluginconf.sendDelay
@@ -173,6 +175,8 @@ class ZigateTransport(object):
 
         self._connection.Send(bytes.fromhex(str(lineinput)), delay)
         self.statistics._sent += 1
+        if self.APS:
+            self.APS.processCMD( cmd, datas)
 
     # Transport / called by plugin 
     def onMessage(self, Data):
