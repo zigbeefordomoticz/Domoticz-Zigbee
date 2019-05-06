@@ -27,7 +27,7 @@ class APSManagement(object):
 
         Domoticz.Debug("addNewCmdtoDevice - %s %s" %(nwk, cmd))
 
-        if nkw not in self.ListOfDevices:
+        if nwk not in self.ListOfDevices:
             return
 
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
