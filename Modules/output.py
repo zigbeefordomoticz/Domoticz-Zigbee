@@ -21,7 +21,6 @@ from time import time
 
 from Modules.consts import ZLL_DEVICES
 from Modules.tools import getClusterListforEP
-from Classes.APS import APSManagement
 
 def ZigatePermitToJoin( self, permit ):
 

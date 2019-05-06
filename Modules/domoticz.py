@@ -1383,11 +1383,11 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
  
     _Unit = _nValue = _sValue = None
     if Unit:
-        Domoticz.Log("timeOutDevice unit %s" %( Devices[Unit].Name ))
         _nValue = Devices[Unit].nValue
         _sValue = Devices[Unit].sValue
         _Unit = Unit
         if not Devices[_Unit].TimedOut:
+            Domoticz.Log("timeOutDevice unit %s" %( Devices[Unit].Name ))
             Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
     elif NwkId:
         if NwkId not in self.ListOfDevices:
@@ -1397,11 +1397,11 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                Domoticz.Log( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
                 _nValue = Devices[x].nValue
                 _sValue = Devices[x].sValue
                 _Unit = x
                 if not  Devices[_Unit].TimedOut:
+                    Domoticz.Log( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
                     Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 
