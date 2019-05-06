@@ -129,7 +129,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if lenAttr == 0:
             return
 
-    Domoticz.Log("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
+    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -691,7 +691,7 @@ def processConfigureReporting( self, NWKID=None ):
                     Domoticz.Debug("QUEUE: %s" %str(self.ZigateComm._normalQueue))
                     return # Will do at the next round
 
-                Domoticz.Log("configureReporting - requested for device: %s on Cluster: %s" %(key, cluster))
+                Domoticz.Debug("configureReporting - requested for device: %s on Cluster: %s" %(key, cluster))
 
                 if self.pluginconf.allowReBindingClusters:
                     if 'Bind' in self.ListOfDevices[key]:
@@ -1088,7 +1088,7 @@ def thermostat_eurotronic_hostflag( self, key, action):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    Domoticz.Log("thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
+    Domoticz.Debug("thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
             %(key,data,cluster_id,attribute,data_type, action))
 
 def thermostat_Calibration( self, key, calibration):
@@ -1104,7 +1104,7 @@ def thermostat_Calibration( self, key, calibration):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    Domoticz.Log("thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    Domoticz.Debug("thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type))
 
 def configHeatSetpoint( self, key ):
@@ -1138,7 +1138,7 @@ def thermostat_Mode( self, key, mode ):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    Domoticz.Log("thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    Domoticz.Debug("thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,attribute,data_type))
 
 def ReadAttributeRequest_0201(self, key):
@@ -1176,7 +1176,7 @@ def ReadAttributeRequest_0201(self, key):
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
         listAttributes.append(0x4008)        # HOst Flag
     elif str(self.ListOfDevices[key]['Model']).find('Super TR') == 0:
-        Domoticz.Log("- req Attributes for  Super TR")
+        Domoticz.Debug("- req Attributes for  Super TR")
         listAttributes.append(0x0403)    
         listAttributes.append(0x0408)   
         listAttributes.append(0x0409)  
