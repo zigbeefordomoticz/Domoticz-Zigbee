@@ -25,7 +25,7 @@ class APSManagement(object):
 
         """ Add Cmd to the nwk list of Command FIFO mode """
 
-        Domoticz.Debug("addNewCmdtoDevice - %s %s %s" %(nwk, cmd))
+        Domoticz.Debug("addNewCmdtoDevice - %s %s" %(nwk, cmd))
 
         if nkw not in self.ListOfDevices:
             return
