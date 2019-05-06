@@ -73,8 +73,10 @@ class APSManagement(object):
         """ Add Cmd to the nwk list of Command FIFO mode """
 
         Domoticz.Debug("addNewCmdtoDevice - %s %s" %(nwk, cmd))
-        if nwk not in self.ListOfDevices:
+
+        if nkw not in self.ListOfDevices:
             return
+
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
             self.ListOfDevices[nwk]['Last Cmds'] = []
         if len(self.ListOfDevices[nwk]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
@@ -136,6 +138,7 @@ class APSManagement(object):
         """
 
         Domoticz.Debug("processAPSFailure - %s %s %s" %(nwk, ieee, aps_code))
+
         if nwk not in self.ListOfDevices:
             return
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
