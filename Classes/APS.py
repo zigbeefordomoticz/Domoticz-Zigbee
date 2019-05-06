@@ -15,6 +15,8 @@ MAX_CMD_PER_DEVICE = 5
 APS_TIME_WINDOW = 1.5
 MAX_APS_TRACKING_ERROR = 5
 
+APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
+
 CMD_NWK_2NDBytes = { 
         '0060':'Add Group', 
         '0061':'View group', 
@@ -71,6 +73,8 @@ class APSManagement(object):
         """ Add Cmd to the nwk list of Command FIFO mode """
 
         Domoticz.Debug("addNewCmdtoDevice - %s %s" %(nwk, cmd))
+        if nwk not in self.ListOfDevices:
+            return
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
             self.ListOfDevices[nwk]['Last Cmds'] = []
         if len(self.ListOfDevices[nwk]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
@@ -83,6 +87,7 @@ class APSManagement(object):
                 %(nwk, cmd, self.ListOfDevices[nwk]['Last Cmds']))
 
     def processCMD( self, cmd, payload):
+        """ extract from Payload the NetworkID of the interested commands"""
 
         Domoticz.Debug("processCMD - cmd: %s, payload: %s" %(cmd, payload))
         if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
@@ -94,6 +99,7 @@ class APSManagement(object):
             self._addNewCmdtoDevice( nwkid, cmd )
 
     def _errorMgt( self, cmd, nwk, ieee, aps_code):
+        """ Process the error """
 
         timedOutDevice( self, self.Devices, NwkId = nwk)
         _deviceName = 'not found'
@@ -112,6 +118,7 @@ class APSManagement(object):
             self.ListOfDevices[nwk]['Health'] = 'Not Reachable'
 
     def _updateAPSrecord( self, nwk, aps_code):
+        """ Update APS Failure record in DeviceList """
 
         if 'APS Failure' not in self.ListOfDevices[nwk]:
             self.ListOfDevices[nwk]['APS Failure'] = []
@@ -123,13 +130,10 @@ class APSManagement(object):
 
 
     def processAPSFailure( self, nwk, ieee, aps_code):
-
         """
         We are receiving a APS Failure code for that particular Device
         - Let's check if we have sent a command in the last window
         """
-
-        APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
 
         Domoticz.Debug("processAPSFailure - %s %s %s" %(nwk, ieee, aps_code))
         if nwk not in self.ListOfDevices:
@@ -166,4 +170,3 @@ class APSManagement(object):
                 # That command has been issued in the APS time window
                 Domoticz.Log("processAPSFailure - %s found cmd: %s in the APS time window, age is: %s sec" %(nwk, iterCmd, round((_timeAPS - iterTime),2)))
                 self._errorMgt( iterCmd, nwk, ieee, aps_code)
-
