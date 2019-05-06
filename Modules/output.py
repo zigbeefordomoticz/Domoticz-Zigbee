@@ -134,7 +134,6 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
-    self.APS.addNewCmdtoDevice( addr, "0100")
 
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
@@ -493,7 +492,6 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     sendZigateCmd(self, "0110", str(datas) )
-    self.APS.addNewCmdtoDevice( key, "0110")
 
 def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
 
@@ -528,7 +526,6 @@ def getListofAttribute(self, nwkid, EpOut, cluster):
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "00" + "00" + "0000" + "FF"
     Domoticz.Debug("attribute_discovery_request - " +str(datas) )
     sendZigateCmd(self, "0140", datas )
-    self.APS.addNewCmdtoDevice( nwkid, "0140")
 
 
 
@@ -737,7 +734,6 @@ def processConfigureReporting( self, NWKID=None ):
                 datas +=  "%02x" %(attrLen) + attrList
                 Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
                 sendZigateCmd(self, "0120", datas )
-                self.APS.addNewCmdtoDevice( key, "0120")
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -769,7 +765,6 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         Domoticz.Debug("bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
-        self.APS.addNewCmdtoDevice( nwkid, "0030")
     else:
         Domoticz.Debug("bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']))
 
@@ -867,7 +862,6 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
     datas = "02" + "%s"%(nwkid) + "01" + ep + "%02x"%(effect_command[effect])  + "%02x" %0
     sendZigateCmd(self, "00E0", datas )
-    self.APS.addNewCmdtoDevice( nwkid, "00E0")
     
 
 def initiateTouchLink( self):
