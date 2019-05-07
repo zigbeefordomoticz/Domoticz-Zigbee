@@ -235,6 +235,8 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 
 def ReadAttributeRequest_Ack(self, key):
 
+    return
+    ### This is disabled for now
     EPin = "01"
     EPout= "01"
 
