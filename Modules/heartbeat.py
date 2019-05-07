@@ -22,7 +22,7 @@ from Modules.output import  sendZigateCmd,  \
         bindDevice, rebind_Clusters, getListofAttribute, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
-        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0300,  \
+        ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0702
 
@@ -45,6 +45,7 @@ READ_ATTRIBUTES_REQUEST = {
     '000C' : ( ReadAttributeRequest_000C, 3600 ),
     '0102' : ( ReadAttributeRequest_0102, 300 ),
     '0201' : ( ReadAttributeRequest_0201, 900 ),
+    '0204' : ( ReadAttributeRequest_0204, 86400 ),
     '0300' : ( ReadAttributeRequest_0300, 900 ),
     '0400' : ( ReadAttributeRequest_0400, 900 ),
     '0402' : ( ReadAttributeRequest_0402, 900 ),
@@ -68,6 +69,7 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0006',            # On/Off
         '0008',            # Level Control
         '0201',            # Thermostat
+        '0204',            # Thermostat UI
         '0300',            # Colour Control
         '0000',            # Basic
         'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
