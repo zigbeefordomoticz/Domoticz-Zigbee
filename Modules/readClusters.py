@@ -164,6 +164,7 @@ def ReadCluster(self, Devices, MsgData):
             "0101": Cluster0101,
             "0102": Cluster0102,
             "0201": Cluster0201,
+            "0204": Cluster0204,
             "0300": Cluster0300,
             "0400": Cluster0400,
             "0402": Cluster0402,
@@ -1126,6 +1127,19 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
     else:
         Domoticz.Log("ReadCluster 0201 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))
+
+def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    Domoticz.Log("ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+            %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+
+
+    if MsgAttrID == '0001':
+        # Lock Mode
+        value = decodeAttribute( MsgAttType, MsgClusterData)
+        Domoticz.Log("ReadCluster 0204 - Lokc Mode: %s" %value)
+    else:
+        Domoticz.Log("ReadCluster 0204 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))
 
 
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
