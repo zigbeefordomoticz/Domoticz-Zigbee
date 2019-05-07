@@ -541,6 +541,7 @@ def processConfigureReporting( self, NWKID=None ):
 
     ATTRIBUTESbyCLUSTERS = {
             # 0xFFFF sable reporting-
+            # 6460   - 6 hours
             # 0x0E10 - 3600s A hour
             # 0x0708 - 30'
             # 0x0384 - 15'
@@ -574,6 +575,7 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0017': {'DataType': '16', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Thermostat
         '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0001': {'DataType': '20', 'MinInterval':'0600', 'MaxInterval':'5460', 'TimeOut':'0FFF','Change':'01'},
                                  '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0011': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
@@ -796,7 +798,7 @@ def rebind_Clusters( self, NWKID):
 
     # Binding devices
     CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001',
-            '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0300', '0000',
+            '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
             'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
             'ff02'  # Used by Xiaomi devices for battery informations.
             ]
@@ -1180,6 +1182,55 @@ def ReadAttributeRequest_0201(self, key):
         listAttributes.append(0x0403)    
         listAttributes.append(0x0408)   
         listAttributes.append(0x0409)  
+
     if len(listAttributes) > 0:
         Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
         ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
+
+
+def ReadAttributeRequest_0204(self, key):
+
+    Domoticz.Debug("ReadAttributeRequest_0204 - Key: %s " %key)
+    # Power Config
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+
+    listAttributes = []
+    listAttributes.append(0x0001) # Read KeypadLockout
+
+    if len(listAttributes) > 0:
+        Domoticz.Debug("Request 0204 %s/%s-%s 0204 %s " %(key, EPin, EPout, listAttributes))
+        ReadAttributeReq( self, key, EPin, EPout, "0204", listAttributes )
+
+def Thermostat_LockMode( self, key, lockmode):
+
+
+    LOCK_MODE = { 'unlocked':0x00,
+            'templock':0x02,
+            'off':0x04,
+            'off':0x05
+            }
+
+    if lockmode not in LOCK_MODE:
+        return
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0204
+    Hattribute = "%04x" %0x0001
+    data_type = "30" # Int16
+    Domoticz.Debug("lockmode: %s" %lockmode)
+    lockmode = LOCK_MODE[lockmode]
+    Hdata = "%02x" %lockmode
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    Domoticz.Debug("Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type))
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
