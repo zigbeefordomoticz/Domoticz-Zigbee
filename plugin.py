@@ -225,7 +225,8 @@ class BasePlugin:
             self.DiscoveryDevices = {}
 
         # Initialise APS Object
-        self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf)
+        if self.pluginconf.enableAPSFailureLoging or self.pluginconf.enableAPSFailureReporting:
+            self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf)
 
         #Import DeviceConf.txt
         importDeviceConf( self ) 
