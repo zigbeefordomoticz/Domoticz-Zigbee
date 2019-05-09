@@ -104,6 +104,7 @@ from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
+from Classes.WebServer import WebServer
 
 
 class BasePlugin:
@@ -155,6 +156,8 @@ class BasePlugin:
         self.FirmwareMajorVersion = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # 
+
+        self.webserver = None
 
         self.DomoticzMajor = None
         self.DomoticzMinor = None
@@ -294,6 +297,11 @@ class BasePlugin:
 
         Domoticz.Debug("Establish Zigate connection" )
         self.ZigateComm.openConn()
+
+        Domoticz.Status("Start Web Server connection")
+        self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
+
         self.busy = False
         return
 
@@ -348,7 +356,27 @@ class BasePlugin:
         
     def onConnect(self, Connection, Status, Description):
 
-        Domoticz.Debug("onConnect called with status: %s" %Status)
+        def decodeConnection( connection ):
+
+            decoded = {}
+            for i in connection.strip().split(','):
+                label, value = i.split(': ')
+                label = label.strip().strip("'")
+                value = value.strip().strip("'")
+                decoded[label] = value
+            return decoded
+
+        Domoticz.Log("onConnect %s called with status: %s è Desc: %s" %( Connection, Status, Description))
+
+        decodedConnection = decodeConnection ( str(Connection) )
+        for x in decodedConnection:
+            Domoticz.Log("Connection: %s:>%s<" %(x,decodedConnection[x]))
+
+        if 'Protocol' in decodedConnection:
+            if decodedConnection['Protocol'] == 'HTTP' : # We assumed that is the Web Server 
+                self.webserver.onConnect( Connection, Status, Description)
+                return
+
         self.busy = True
 
         if Status != 0:
@@ -419,8 +447,7 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if isinstance(Data, dict):
-            Domoticz.Log("onMessage - unExpected for now")
-            DumpHTTPResponseToLog(Data)
+            self.webserver.onMessage( Connection, Data)
             return
 
         self.Ping['Nb Ticks'] = 0
@@ -459,6 +486,27 @@ class BasePlugin:
         return
 
     def onDisconnect(self, Connection):
+
+        def decodeConnection( connection ):
+
+            decoded = {}
+            for i in connection.strip().split(','):
+                label, value = i.split(': ')
+                label = label.strip().strip("'")
+                value = value.strip().strip("'")
+                decoded[label] = value
+            return decoded
+
+        decodedConnection = decodeConnection ( str(Connection) )
+        for x in decodedConnection:
+            Domoticz.Log("Connection: %s:>%s<" %(x,decodedConnection[x]))
+
+        if 'Protocol' in decodedConnection:
+            if decodedConnection['Protocol'] == 'HTTP' : # We assumed that is the Web Server 
+                self.webserver.onDisconnect( Connection )
+                return
+
+        
         self.connectionState = 0
         self.adminWidgets.updateStatusWidget( Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
