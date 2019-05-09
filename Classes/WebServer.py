@@ -58,7 +58,6 @@ class WebServer(object):
 
     def onMessage( self, Connection, Data ):
 
-
             Domoticz.Log("WebServer onMessage")
 
             DumpHTTPResponseToLog(Data)
@@ -80,20 +79,32 @@ class WebServer(object):
             if (headerCode != "200 OK"):
                 DumpHTTPResponseToLog(Data)
                 Connection.Send({"Status": headerCode})
-            else:
-                # 'Range':'bytes=0-'
-                for x in Data:
-                    Domoticz.Log("%s: %s" %(x,Data[x]))
+                return
 
-                webFile = open(  self.homedirectory +'www'+Data['URL'] , mode ='rt')
-                webPage = webFile.read()
-                webFile.close()
+            # We are ready to send the response
+            webFilename = self.homedirectory +'www'+Data['URL'] 
+            webFile = open(  webFilename , mode ='rb')
+            webPage = webFile.read()
+            webFile.close()
 
-                Domoticz.Log("Connection: %s" %Connection)
-                Domoticz.Log("self.httpClientConn: %s" %self.httpClientConn)
-                Domoticz.Log("self.httpServerConns: %s" %self.httpServerConns)
+            if Data['URL'].find('.html') != -1:
+                _contentType = 'text/html'
 
-                Connection.Send({"Status":"200 OK", "Headers": {"Connection": "keep-alive", "Accept": "Content-Type: text/html; charset=UTF-8"}, "Data": webPage})
+            elif Data['URL'].find('.css') != -1:
+                _contentType = 'text/css'
+
+            elif Data['URL'].find('.ico') != -1:
+                _contentType = 'image/x-icon'
+
+            elif Data['URL'].find('.js') != -1:
+                _contentType = 'text/javascript'
+
+            elif Data['URL'].find('.json') != -1:
+                _contentType = 'application/json'
+
+            _headers = {"Connection": "keep-alive", "Accept": "Content-Type:"+ _contentType +"; charset=UTF-8"}
+            Domoticz.Log("Send response : Headers: %s" %_headers)
+            Connection.Send({"Status":"200 OK", "Headers": _headers, "Data": webPage})
 
 
     def keepConnectionAlive( self ):
