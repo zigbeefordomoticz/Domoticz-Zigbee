@@ -10,11 +10,12 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 class WebServer(object):
     hearbeats = 0 
-    httpServerConn = None
-    httpServerConns = {}
-    httpClientConn = None
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
+
+        self.httpServerConn = None
+        self.httpServerConns = {}
+        self.httpClientConn = None
 
         self.pluginconf = PluginConf
         self.adminWidget = adminWidgets
@@ -24,6 +25,8 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
 
+        self.homedirectory = HomeDirectory
+        self.hardwareID = hardwareID
         self.startWebServer()
         
 
@@ -56,23 +59,41 @@ class WebServer(object):
     def onMessage( self, Connection, Data ):
 
 
-        if "Verb" in Data:
-            strVerb = Data["Verb"]
-            #strData = Data["Data"].decode("utf-8", "ignore")
-            Domoticz.Log(strVerb+" request received.")
-            data = "<!doctype html><html><head></head><body><h1>Successful GET!!!</h1><body></html>"
+            Domoticz.Log("WebServer onMessage")
 
-            if (Connection != self.httpClientConn):
-               httpClientConn =  self.httpServerConns[Connection.Name]
-            else:
-                httpClientConn = self.httpClientConn
+            DumpHTTPResponseToLog(Data)
 
-            if (strVerb == "GET"):
-                httpClientConn.Send({"Status":"200 OK", "Headers": {"Connection": "keep-alive", "Accept": "Content-Type: text/html; charset=UTF-8"}, "Data": data})
-            elif (strVerb == "POST"):
-                httpClientConn.Send({"Status":"200 OK", "Headers": {"Connection": "keep-alive", "Accept": "Content-Type: text/html; charset=UTF-8"}, "Data": data})
+            headerCode = "200 OK"
+            if (not 'Verb' in Data):
+                Domoticz.Error("Invalid web request received, no Verb present")
+                headerCode = "400 Bad Request"
+            elif (Data['Verb'] != 'GET'):
+                Domoticz.Error("Invalid web request received, only GET requests allowed ("+Data['Verb']+")")
+                headerCode = "405 Method Not Allowed"
+            elif (not 'URL' in Data):
+                Domoticz.Error("Invalid web request received, no URL present")
+                headerCode = "400 Bad Request"
+            elif (not os.path.exists( self.homedirectory +'www'+Data['URL'])):
+                Domoticz.Error("Invalid web request received, file '"+ self.homedirectory +'www'+Data['URL']+"' does not exist")
+                headerCode = "404 File Not Found"
+
+            if (headerCode != "200 OK"):
+                DumpHTTPResponseToLog(Data)
+                Connection.Send({"Status": headerCode})
             else:
-                Domoticz.Error("Unknown verb in request: "+strVerb)
+                # 'Range':'bytes=0-'
+                for x in Data:
+                    Domoticz.Log("%s: %s" %(x,Data[x]))
+
+                webFile = open(  self.homedirectory +'www'+Data['URL'] , mode ='rt')
+                webPage = webFile.read()
+                webFile.close()
+
+                Domoticz.Log("Connection: %s" %Connection)
+                Domoticz.Log("self.httpClientConn: %s" %self.httpClientConn)
+                Domoticz.Log("self.httpServerConns: %s" %self.httpServerConns)
+
+                Connection.Send({"Status":"200 OK", "Headers": {"Connection": "keep-alive", "Accept": "Content-Type: text/html; charset=UTF-8"}, "Data": webPage})
 
 
     def keepConnectionAlive( self ):
@@ -90,4 +111,17 @@ class WebServer(object):
             elif (self.heartbeats == 3) and (Parameters["Mode6"] != "File"):
                 self.httpClientConn.Disconnect()
         self.heartbeats += 1
+
+
+def DumpHTTPResponseToLog(httpDict):
+    if isinstance(httpDict, dict):
+        Domoticz.Log("HTTP Details ("+str(len(httpDict))+"):")
+        for x in httpDict:
+            if isinstance(httpDict[x], dict):
+                Domoticz.Log("--->'"+x+" ("+str(len(httpDict[x]))+"):")
+                for y in httpDict[x]:
+                    Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
+            else:
+                Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
+
 
