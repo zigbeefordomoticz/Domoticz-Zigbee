@@ -29,7 +29,7 @@ from Modules.output import  sendZigateCmd,  \
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
 from Modules.LQI import LQIcontinueScan
-from Modules.consts import HEARTBEAT
+from Modules.consts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
@@ -83,6 +83,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
     _mainPowered = False
+
     if 'PowerSource' in self.ListOfDevices[NWKID]:
         if (self.ListOfDevices[NWKID]['PowerSource']) == 'Main':
             _mainPowered = True
@@ -98,7 +99,7 @@ def processKnownDevices( self, Devices, NWKID ):
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                    if self.busy  or len(self.ZigateComm._normalQueue) > 2:
+                    if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                         Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                                 %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
                         break # Will do at the next round
@@ -109,8 +110,11 @@ def processKnownDevices( self, Devices, NWKID ):
                 'LogicalType' not in self.ListOfDevices[NWKID] or \
                 'PowerSource' not in self.ListOfDevices[NWKID] or \
                 'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
-            Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
-            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
+            if not self.busy and  len(self.ZigateComm._normalQueue) <= MAX_LOAD_ZIGATE:
+                Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                        %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
+                sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
     if _mainPowered and \
             ( self.pluginconf.enableReadAttributes or self.pluginconf.resetReadAttributes ) and ( intHB % (30 // HEARTBEAT)) == 0 :
@@ -123,9 +127,11 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
-                if self.busy  or len(self.ZigateComm._normalQueue) > 2:
+                if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                             %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                    if intHB != 0:
+                        self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
                     break # Will do at the next round
 
                 func = READ_ATTRIBUTES_REQUEST[Cluster][0]

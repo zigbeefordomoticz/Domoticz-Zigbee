@@ -22,13 +22,12 @@ import os.path
 from time import time
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.consts import ADDRESS_MODE
+from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 from Classes.AdminWidgets import AdminWidgets
 
 
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
-MAX_LOAD = 2
 TIMEOUT = 12
 MAX_CYCLE = 3
 
@@ -1099,7 +1098,7 @@ class GroupsManagement(object):
                                 if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] == 'REQ-Membership':
                                     continue
 
-                            if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                            if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                                 Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                                 Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                                 Domoticz.Debug("too busy, will try again ...%s" %len(self.ZigateComm._normalQueue))
@@ -1289,7 +1288,7 @@ class GroupsManagement(object):
             Domoticz.Log("hearbeatGroupMgt - Perform Zigate commands")
             Domoticz.Log(" - Removal to be performed: %s" %str(self.TobeRemoved))
             for iterDev, iterEp, iterGrp in list(self.TobeRemoved):
-                if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
@@ -1302,7 +1301,7 @@ class GroupsManagement(object):
 
             Domoticz.Log(" - Add to be performed: %s" %str(self.TobeAdded))
             for iterIEEE, iterDev, iterEp, iterGrp in list(self.TobeAdded):
-                if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False

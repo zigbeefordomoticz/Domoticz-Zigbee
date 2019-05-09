@@ -93,7 +93,7 @@ from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.LQI import LQIdiscovery
-from Modules.consts import HEARTBEAT, CERTIFICATION
+from Modules.consts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
 from Modules.txPower import set_TxPower
 
 from Classes.APS import APSManagement
@@ -577,7 +577,7 @@ class BasePlugin:
             pingZigate( self )
             self.Ping['Nb Ticks'] += 1
 
-        if len(self.ZigateComm._normalQueue) > 3:
+        if len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
             busy_ = True
 
         if busy_:

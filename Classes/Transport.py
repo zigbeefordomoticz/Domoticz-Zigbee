@@ -11,6 +11,7 @@ import time
 
 from Classes.APS import APSManagement
 from Modules.tools import is_hex
+from Modules.consts import MAX_LOAD_ZIGATE
 
 # Standalone message. They are receive and do not belongs to a command
 STANDALONE_MESSAGE = (0x8101, 0x8102, 0x8003, 0x804, 0x8005, 0x8006, 0x8701, 0x8702, 0x004D)

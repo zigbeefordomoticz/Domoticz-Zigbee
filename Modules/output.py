@@ -19,7 +19,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.consts import ZLL_DEVICES
+from Modules.consts import ZLL_DEVICES, MAX_LOAD_ZIGATE
 from Modules.tools import getClusterListforEP
 
 def ZigatePermitToJoin( self, permit ):
@@ -614,7 +614,7 @@ def processConfigureReporting( self, NWKID=None ):
 
     now = int(time())
     if NWKID is None :
-        if self.busy or len(self.ZigateComm._normalQueue) > 2:
+        if self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
             Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
             return # Will do at the next round
@@ -689,7 +689,7 @@ def processConfigureReporting( self, NWKID=None ):
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
                         continue
 
-                if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > 3):
+                if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE):
                     Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(self.busy, len(self.ZigateComm._normalQueue), key))
                     Domoticz.Debug("QUEUE: %s" %str(self.ZigateComm._normalQueue))

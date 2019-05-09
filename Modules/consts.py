@@ -11,6 +11,7 @@
 """
 
 HEARTBEAT = 5
+MAX_LOAD_ZIGATE = 3
 
 CERTIFICATION = {
         0x01:'CE',
