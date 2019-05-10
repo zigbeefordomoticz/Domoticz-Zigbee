@@ -366,14 +366,14 @@ class BasePlugin:
                 decoded[label] = value
             return decoded
 
-        Domoticz.Log("onConnect %s called with status: %s è Desc: %s" %( Connection, Status, Description))
+        Domoticz.Log("onConnect %s called with status: %s and Desc: %s" %( Connection, Status, Description))
 
         decodedConnection = decodeConnection ( str(Connection) )
         for x in decodedConnection:
-            Domoticz.Log("Connection: %s:>%s<" %(x,decodedConnection[x]))
+            Domoticz.Debug("Connection: %s:>%s<" %(x,decodedConnection[x]))
 
         if 'Protocol' in decodedConnection:
-            if decodedConnection['Protocol'] == 'HTTP' : # We assumed that is the Web Server 
+            if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
                 self.webserver.onConnect( Connection, Status, Description)
                 return
 
@@ -502,11 +502,10 @@ class BasePlugin:
             Domoticz.Log("Connection: %s:>%s<" %(x,decodedConnection[x]))
 
         if 'Protocol' in decodedConnection:
-            if decodedConnection['Protocol'] == 'HTTP' : # We assumed that is the Web Server 
+            if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
                 self.webserver.onDisconnect( Connection )
                 return
 
-        
         self.connectionState = 0
         self.adminWidgets.updateStatusWidget( Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")

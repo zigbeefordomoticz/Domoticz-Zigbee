@@ -7,8 +7,8 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
     alert('The File APIs are not fully supported in this browser.');
 }
 
-var ReportsFolder = location.origin + '/templates/zigate/reports/';
-var ConfFolder = location.origin + '/templates/zigate/conf/';
+var ReportsFolder = location.origin + '/zigate/reports/';
+var ConfFolder = location.origin + '/zigate/conf/';
 var HwIDX = "";
 var DeviceIEEE = new Object();
 var Devices;
@@ -441,8 +441,8 @@ function PrintNETGraph(id) {
 }
 
 function ReadHxIDx() {
-    $.domoticzurl = ""; //"http://localhost:8080";
-    $.getJSON($.domoticzurl + "/json.htm", {
+    domoticzurl = ""; //"http://localhost:8080";
+    getJSON(domoticzurl + "/json.htm", {
             type: "hardware",
             format: "json"
         },
@@ -470,6 +470,6 @@ function ReadHxIDx() {
 };
 
 
-$(document).ready(function() {
+{
     ReadHxIDx();
-});
+};

@@ -14,6 +14,7 @@ class WebServer(object):
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
 
         self.httpServerConn = None
+        self.httpsServerConn = None
         self.httpServerConns = {}
         self.httpClientConn = None
 
@@ -32,8 +33,10 @@ class WebServer(object):
 
     def  startWebServer( self ):
 
-        self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9988')
+        self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
+        self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
         self.httpServerConn.Listen()
+        self.httpsServerConn.Listen()
         Domoticz.Log("Leaving on start")
 
 
