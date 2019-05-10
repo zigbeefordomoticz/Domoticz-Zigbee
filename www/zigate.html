@@ -18,30 +18,56 @@
 
 <body>
 
-<!-- https://getbootstrap.com/docs/3.4/components/#navbar -->
 <nav class="navbar navbar-default">
-  <div class="container-fluid">
-    <!-- Brand and toggle get grouped for better mobile display -->
-    <div class="navbar-header">
-      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
-        <span class="sr-only">Toggle navigation</span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-        <span class="icon-bar"></span>
-      </button>
-      <a class="navbar-brand" href="http://zigate.fr">
-      	<img alt="Zigate" src="images/zigate_logo.png">
-      </a>
-    </div>
-  </div><!-- /.container-fluid -->
+	<div class="container-fluid">
+		<!-- Brand and toggle get grouped for better mobile display -->
+		<div class="navbar-header">
+			<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false">
+				<span class="sr-only">Toggle navigation</span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+				<span class="icon-bar"></span>
+			</button>
+			<a class="navbar-brand" href="http://zigate.fr"> <img alt="Zigate" src="images/zigate_logo.png"> </a>
+		</div>
+
+		<div id="navbar" class="navbar-collapse collapse">
+			<ul class="nav navbar-nav navbar-right">
+				<li><a href="#">Dashboard</a></li>
+				<li><a href="#">Devices</a></li>
+				<li><a href="#">Groups</a></li>
+				<li><a href="#">Network Topology</a></li>
+				<li><a href="https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md" target="_blank">Wiki</a></li>
+			</ul>
+		</div>
+	</div>
 </nav>
 
 
+<div class="panel panel-default">
+  <div class="panel-body">
+
+
+
+
+
+
+
+  </div>
+
+
+
+
+  <div class="panel-footer"> Zigate Plugin for Domoticz, 2019 
+	  <a href="https://github.com/sasu-drooz/Domoticz-Zigate" target="_blank"> Domoticz-Zigate </a>
+  </div>
+</div>
 
 <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
 <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha384-nvAa0+6Qg9clwYCGGPpDQLVpLNn0fRaROjHqs13t4Ggj3Ez50XnGQqc/r8MhnRDZ" crossorigin="anonymous"></script>
 <!-- Include all compiled plugins (below), or include individual files as needed -->
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha384-aJ21OjlMXNL5UyIl/XNwTMqvzeRMZH2w8c5cRVpzpU8Y5bApTppSuUkhZXN0VxHd" crossorigin="anonymous"></script>
+<!-- https://getbootstrap.com/docs/3.4/components/#navbar -->
 
 </body>
 </html>
