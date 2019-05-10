@@ -102,9 +102,19 @@ class WebServer(object):
             elif Data['URL'].find('.png') != -1: _contentType = 'image/png'
             elif Data['URL'].find('.jpg') != -1: _contentType = 'image/jpg'
 
-            _headers = {"Connection": "keep-alive", "Accept": "Content-Type:"+ _contentType +"; charset=utf-8-8"}
-            Domoticz.Log("Send response : Headers: %s" %_headers)
-            Connection.Send({"Status":"200 OK", "Headers": _headers, "Data": webPage})
+            statbuf = os.stat(webFilename)
+            Domoticz.Log("%s" %statbuf.st_mtime)
+
+
+            _response = {}
+            _response["Headers"] = {}
+            _response["Status"] = "200 OK"
+            _response["Headers"]["Connection"] = "Keealive"
+            _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
+            _response["Data"] = webPage
+
+            Connection.Send( _response )
+            Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
 
 
     def keepConnectionAlive( self ):
