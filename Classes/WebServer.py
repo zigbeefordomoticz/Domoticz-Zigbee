@@ -102,9 +102,6 @@ class WebServer(object):
             elif Data['URL'].find('.png') != -1: _contentType = 'image/png'
             elif Data['URL'].find('.jpg') != -1: _contentType = 'image/jpg'
 
-            statbuf = os.stat(webFilename)
-            Domoticz.Log("%s" %statbuf.st_mtime)
-
             _response = {}
             _response["Headers"] = {}
             _response["Status"] = "200 OK"
@@ -134,41 +131,73 @@ class WebServer(object):
     def jsonDispatch( self, Connection, Data ):
 
         _response = {}
-        _response["Headers"] = {}
 
         _analyse = Data['URL'].split('?')
         if len(_analyse) != 2:
+            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
             _response["Status"] = "400 BAD REQUEST"
-            _response["Data"] = 'Syntax error'
         elif _analyse[0] != '/json.htm':
-            _response["Data"] = 'Syntax error'
-
-        _api = _analyse[1].split('=')
-        if (len(_api) != 2):
             _response["Status"] = "400 BAD REQUEST"
-            _response["Data"] = 'Syntax error'
-        elif _api[0] != 'type':
-            _response["Status"] = "400 BAD REQUEST"
-            _response["Data"] = 'Syntax error'
+            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
+        else:
+            _api = _analyse[1].split('=')
+            if (len(_api) != 2):
+                _response["Status"] = "400 BAD REQUEST"
+                _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
+            elif _api[0] != 'type':
+                _response["Status"] = "400 BAD REQUEST"
+                _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
+            else: 
+                _command = _api[1].split('&')
+                if _command[0] not in ('devicebyname', 'devicebyIEEE', 'devices', 'zdevices', 'zdevicesbyIEEE', 'zdevicesbySaddr', 'zgroups' ):
+                    _response["Status"] = "400 BAD REQUEST"
+                    _response["Data"] = "Authorized  Verbs are: devicebyname', 'devicebyIEEE', 'devices', 'zdevices', 'zdevicesbyIEEE', 'zdevicesbySaddr', 'zgroups '"
+                else: 
+                    if len(_command) > 2:
+                        _response["Status"] = "400 BAD REQUEST"
+                        _response["Data"] = "Syntax error, expecting: /json.htm?type=devicebyIEEE&00158d00028f8e74 in order get the Domoticz Widget info for Device 00158d00028f8e74"
+                    else:
+                        # Finally syntax, verbs are ok.
+                        if _command[0] == 'devices':
+                            if self.jsonListWidgets( Connection ):
+                                return
+                            _response["Status"] = "404 Not Found"
+                            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
+                        elif _command[0] == 'zdevices':
+                            if self.jsonListOfDevices( Connection ):
+                                return
+                            _response["Status"] = "404 Not Found"
+                            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
+                        elif _command[0] in ( 'devicebyname', 'devicebyIEEE' ) and len(_command) == 2:
+                            if _command[0] == 'devicebyIEEE':
+                                if self.jsonListWidgets( Connection, WidgetID=_command[1]):
+                                    return
+                                _response["Data"] = "Widget ID (IEEE): %s not found" %_command[1]
+                                _response["Status"] = "404 Not Found"
+                            else:
+                                if self.jsonListWidgets( Connection,WidgetName=_command[1]):
+                                    return
+                                _response["Data"] = "Widget Name: %s not found" %_command[1]
+                                _response["Status"] = "404 Not Found"
+                        elif _command[0] in ( 'zdevicesbyIEEE', 'zdevicesbySaddr' ) and len(_command) == 2:
+                            if _command[0] == 'zdevicesbyIEEE':
+                                if self.jsonListOfDevices( Connection, IEEE=_command[1]):
+                                    return
+                                _response["Status"] = "404 Not Found"
+                                _response["Data"] = "IEEE: %s not found" %_command[1]
+                            else:
+                                if self.jsonListOfDevices( Connection, Nwkid=_command[1]):
+                                    return
+                                _response["Status"] = "404 Not Found"
+                                _response["Data"] = "Short Address: %s not found" %_command[1]
 
-        _command = _api[1].split('&')
 
-        if _command[0] not in ('devicebyname', 'devicebyIEEE', 'devices', 'zdevices', 'zdevicesbyIEEE', 'zdevicesbySaddr', 'zgroups' ):
-            _response["Status"] = "400 BAD REQUEST"
-            _response["Data"] = 'unkown commands. Only devices, zdevices, zgroups are valid'
-
-        if len(_command) > 2:
-            _response["Status"] = "400 BAD REQUEST"
-            _response["Data"] = 'Syntax error'
-
-        if _command[0] == 'devices':
-            self.jsonListWidgets( Connection )
-            return
-
-        elif _command[0] == 'zdevices':
-            self.jsonListOfDevices( Connection )
-            return
-
+        # We reach here due to failure !
+        if 'Status' not in _response:
+                _response["Status"] = "400 BAD REQUEST"
+                _response["Data"] = 'Syntax error'
+    
+        _response["Headers"] = {}
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
         Connection.Send( _response )
@@ -185,7 +214,7 @@ class WebServer(object):
 
         if WidgetName and WidgetID:
             Domoticz.Error("jsonListWidgets - not expected")
-            return
+            return False
 
         if WidgetName:
             # Return the list of Widgets for this particular IEEE
@@ -193,7 +222,7 @@ class WebServer(object):
                 if self.Devices[x].Name == WidgetName:
                     break
             else:
-                return
+                return False
             _dictDevices = {}
             _dictDevices['Name'] = self.Devices[x].Name
             _dictDevices['DeviceID'] = self.Devices[x].DeviceID
@@ -213,7 +242,7 @@ class WebServer(object):
                 if self.Devices[x].DeviceID == WidgetID:
                     break
             else:
-                return
+                return False
             _dictDevices = {}
             _dictDevices['Name'] = self.Devices[x].Name
             _dictDevices['DeviceID'] = self.Devices[x].DeviceID
@@ -247,6 +276,7 @@ class WebServer(object):
 
         Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
         Connection.Send( _response )
+        return True
 
     def jsonListOfDevices( self, Connection, IEEE=None, Nwkid=None):
 
@@ -258,25 +288,26 @@ class WebServer(object):
 
         if IEEE and Nwkid:
             Domoticz.Error("jsonListOfDevices - not expected")
-            return
+            return False
         if Nwkid:
             # Return the Device infos based on Nwkid
             if Nwkid not in self.ListOfDevices:
-                return
-            _response["Data"] = json.dumps( self.ListOfDevices[Nwkid],indent=4, sort_keys=True )
+                return False
+            _response["Data"] = "{ " + Nwkid + ":" + json.dumps( self.ListOfDevices[Nwkid],indent=4, sort_keys=True ) + " }"
         elif IEEE:
             # Return the Deviceinfos after getting the Nwkid
             if IEEE not in self.IEEE2NWK:
-                return
+                return False
             if self.IEEE2NWK[IEEE] not in self.ListOfDevices:
-                return
-            _response["Data"] = json.dumps( self.ListOfDevices[self.IEEE2NWK[IEEE]],indent=4, sort_keys=True )
+                return False
+            _response["Data"] = "{ " + self.IEEE2NWK[IEEE] + ":" + json.dumps( self.ListOfDevices[self.IEEE2NWK[IEEE]],indent=4, sort_keys=True ) + " }"
         else:
             # Return a sorted list of devices and filter 0000
             _response["Data"] = json.dumps( self.ListOfDevices,indent=4, sort_keys=True )
 
         Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
         Connection.Send( _response )
+        return True
 
 
 def DumpHTTPResponseToLog(httpDict):
