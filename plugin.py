@@ -601,7 +601,8 @@ def pingZigate( self ):
     'Nb Ticks' is incremented at every heartbeat
     """
 
-    PING_CHECK_FREQ =  5 * 60  
+    # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
+    PING_CHECK_FREQ =  240
 
     Domoticz.Debug("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
