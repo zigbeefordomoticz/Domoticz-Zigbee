@@ -84,6 +84,9 @@ class WebServer(object):
                 Connection.Send({"Status": headerCode})
                 return
 
+            if ( Data['URL'] == '/'):
+                    Data['URL'] += 'zigate.html'
+
             # We are ready to send the response
             webFilename = self.homedirectory +'www'+Data['URL'] 
             webFile = open(  webFilename , mode ='rb')
