@@ -90,22 +90,16 @@ class WebServer(object):
             webPage = webFile.read()
             webFile.close()
 
-            if Data['URL'].find('.html') != -1:
-                _contentType = 'text/html'
+            _contentType = 'application/octet-stream'
+            if Data['URL'].find('.html') != -1: _contentType = 'text/html'
+            elif Data['URL'].find('.css') != -1: _contentType = 'text/css'
+            elif Data['URL'].find('.ico') != -1: _contentType = 'image/x-icon'
+            elif Data['URL'].find('.js') != -1: _contentType = 'text/javascript'
+            elif Data['URL'].find('.json') != -1: _contentType = 'application/json'
+            elif Data['URL'].find('.png') != -1: _contentType = 'image/png'
+            elif Data['URL'].find('.jpg') != -1: _contentType = 'image/jpg'
 
-            elif Data['URL'].find('.css') != -1:
-                _contentType = 'text/css'
-
-            elif Data['URL'].find('.ico') != -1:
-                _contentType = 'image/x-icon'
-
-            elif Data['URL'].find('.js') != -1:
-                _contentType = 'text/javascript'
-
-            elif Data['URL'].find('.json') != -1:
-                _contentType = 'application/json'
-
-            _headers = {"Connection": "keep-alive", "Accept": "Content-Type:"+ _contentType +"; charset=UTF-8"}
+            _headers = {"Connection": "keep-alive", "Accept": "Content-Type:"+ _contentType +"; charset=utf-8-8"}
             Domoticz.Log("Send response : Headers: %s" %_headers)
             Connection.Send({"Status":"200 OK", "Headers": _headers, "Data": webPage})
 

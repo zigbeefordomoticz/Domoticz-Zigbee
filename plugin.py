@@ -369,9 +369,6 @@ class BasePlugin:
         Domoticz.Log("onConnect %s called with status: %s and Desc: %s" %( Connection, Status, Description))
 
         decodedConnection = decodeConnection ( str(Connection) )
-        for x in decodedConnection:
-            Domoticz.Debug("Connection: %s:>%s<" %(x,decodedConnection[x]))
-
         if 'Protocol' in decodedConnection:
             if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
                 self.webserver.onConnect( Connection, Status, Description)
@@ -498,8 +495,6 @@ class BasePlugin:
             return decoded
 
         decodedConnection = decodeConnection ( str(Connection) )
-        for x in decodedConnection:
-            Domoticz.Log("Connection: %s:>%s<" %(x,decodedConnection[x]))
 
         if 'Protocol' in decodedConnection:
             if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
