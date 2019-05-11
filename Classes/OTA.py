@@ -443,6 +443,11 @@ class OTAManagement(object):
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgImageVersion, MsgImageType, MsgManufCode, MsgStatus))
 
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
+            Domoticz.Error("Decode8503 - OTA upgrade request - Unknown device: %s" %MsgSrcAddr)
+            return
+
+        if 'Start Time' not in self.OTA['Upgraded Device'][MsgSrcAddr]:
+            Domoticz.Error("Decode8503 - OTA upgrade request - No Start Time for device: %s" %MsgSrcAddr)
             return
 
         _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime( int(time() - self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time']))
