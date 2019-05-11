@@ -210,7 +210,7 @@ class WebServer(object):
         _response["Headers"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
-        _response["Headers"]["Content-Type"] = "text/json; charset=utf-8"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if WidgetName and WidgetID:
             Domoticz.Error("jsonListWidgets - not expected")
@@ -284,7 +284,7 @@ class WebServer(object):
         _response["Headers"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
-        _response["Headers"]["Content-Type"] = "text/json; charset=utf-8"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if IEEE and Nwkid:
             Domoticz.Error("jsonListOfDevices - not expected")
