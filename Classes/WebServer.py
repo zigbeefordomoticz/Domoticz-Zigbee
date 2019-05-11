@@ -272,7 +272,6 @@ class WebServer(object):
                 _dictDevices[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
 
             _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
-            Domoticz.Log("jsonListWidgets - jsonDevices: %s" %_dictDevices)
 
         Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
         Connection.Send( _response )
@@ -293,14 +292,14 @@ class WebServer(object):
             # Return the Device infos based on Nwkid
             if Nwkid not in self.ListOfDevices:
                 return False
-            _response["Data"] = "{ " + Nwkid + ":" + json.dumps( self.ListOfDevices[Nwkid],indent=4, sort_keys=True ) + " }"
+            _response["Data"] =  json.dumps( self.ListOfDevices[Nwkid],indent=4, sort_keys=True ) 
         elif IEEE:
             # Return the Deviceinfos after getting the Nwkid
             if IEEE not in self.IEEE2NWK:
                 return False
             if self.IEEE2NWK[IEEE] not in self.ListOfDevices:
                 return False
-            _response["Data"] = "{ " + self.IEEE2NWK[IEEE] + ":" + json.dumps( self.ListOfDevices[self.IEEE2NWK[IEEE]],indent=4, sort_keys=True ) + " }"
+            _response["Data"] = json.dumps( self.ListOfDevices[self.IEEE2NWK[IEEE]],indent=4, sort_keys=True ) 
         else:
             # Return a sorted list of devices and filter 0000
             _response["Data"] = json.dumps( self.ListOfDevices,indent=4, sort_keys=True )
