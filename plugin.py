@@ -104,6 +104,7 @@ from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
+from Classes.WebServer import WebServer
 
 
 class BasePlugin:
@@ -155,6 +156,8 @@ class BasePlugin:
         self.FirmwareMajorVersion = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # 
+
+        self.webserver = None
 
         self.DomoticzMajor = None
         self.DomoticzMinor = None
@@ -294,6 +297,8 @@ class BasePlugin:
 
         Domoticz.Debug("Establish Zigate connection" )
         self.ZigateComm.openConn()
+
+
         self.busy = False
         return
 
@@ -348,7 +353,24 @@ class BasePlugin:
         
     def onConnect(self, Connection, Status, Description):
 
-        Domoticz.Debug("onConnect called with status: %s" %Status)
+        def decodeConnection( connection ):
+
+            decoded = {}
+            for i in connection.strip().split(','):
+                label, value = i.split(': ')
+                label = label.strip().strip("'")
+                value = value.strip().strip("'")
+                decoded[label] = value
+            return decoded
+
+        Domoticz.Log("onConnect %s called with status: %s and Desc: %s" %( Connection, Status, Description))
+
+        decodedConnection = decodeConnection ( str(Connection) )
+        if 'Protocol' in decodedConnection:
+            if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
+                self.webserver.onConnect( Connection, Status, Description)
+                return
+
         self.busy = True
 
         if Status != 0:
@@ -419,8 +441,7 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if isinstance(Data, dict):
-            Domoticz.Log("onMessage - unExpected for now")
-            DumpHTTPResponseToLog(Data)
+            self.webserver.onMessage( Connection, Data)
             return
 
         self.Ping['Nb Ticks'] = 0
@@ -456,6 +477,24 @@ class BasePlugin:
         return
 
     def onDisconnect(self, Connection):
+
+        def decodeConnection( connection ):
+
+            decoded = {}
+            for i in connection.strip().split(','):
+                label, value = i.split(': ')
+                label = label.strip().strip("'")
+                value = value.strip().strip("'")
+                decoded[label] = value
+            return decoded
+
+        decodedConnection = decodeConnection ( str(Connection) )
+
+        if 'Protocol' in decodedConnection:
+            if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
+                self.webserver.onDisconnect( Connection )
+                return
+
         self.connectionState = 0
         self.adminWidgets.updateStatusWidget( Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
@@ -521,6 +560,10 @@ class BasePlugin:
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
+
+                Domoticz.Status("Start Web Server connection")
+                self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                                    self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.allowOTA:
@@ -597,7 +640,7 @@ def pingZigate( self ):
     # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
     PING_CHECK_FREQ =  240
 
-    Domoticz.Debug("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
+    Domoticz.Log("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
 
     if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
@@ -620,10 +663,16 @@ def pingZigate( self ):
                 sendZigateCmd( self, "0014", "" ) # Request status
         return
 
+    if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
+        self.Ping['Status'] = 'Receive'
+        self.connectionState = 1
+        Domoticz.Log("pingZigate - We have receive a message in the cycle ")
+        return                     # Most likely between the cycle.
+
     # If we are more than PING_CHECK_FREQ without any messages, let's check
     if  self.Ping['Nb Ticks'] <  ( PING_CHECK_FREQ  //  HEARTBEAT):
         self.connectionState = 1
-        Domoticz.Debug("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
+        Domoticz.Log("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
         return
 
     if 'Status' not in self.Ping:
