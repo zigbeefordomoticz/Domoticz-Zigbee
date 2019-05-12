@@ -640,7 +640,7 @@ def pingZigate( self ):
     # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
     PING_CHECK_FREQ =  240
 
-    Domoticz.Log("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
+    Domoticz.Debug("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
 
     if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
@@ -663,16 +663,10 @@ def pingZigate( self ):
                 sendZigateCmd( self, "0014", "" ) # Request status
         return
 
-    if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
-        self.Ping['Status'] = 'Receive'
-        self.connectionState = 1
-        Domoticz.Log("pingZigate - We have receive a message in the cycle ")
-        return                     # Most likely between the cycle.
-
     # If we are more than PING_CHECK_FREQ without any messages, let's check
     if  self.Ping['Nb Ticks'] <  ( PING_CHECK_FREQ  //  HEARTBEAT):
         self.connectionState = 1
-        Domoticz.Log("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
+        Domoticz.Debug("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
         return
 
     if 'Status' not in self.Ping:
