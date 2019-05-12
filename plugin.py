@@ -298,9 +298,6 @@ class BasePlugin:
         Domoticz.Debug("Establish Zigate connection" )
         self.ZigateComm.openConn()
 
-        Domoticz.Status("Start Web Server connection")
-        self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
 
         self.busy = False
         return
@@ -571,6 +568,10 @@ class BasePlugin:
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
+                Domoticz.Status("Start Web Server connection")
+                self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                                    self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
+
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.allowOTA:
                 self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
@@ -643,9 +644,9 @@ def pingZigate( self ):
     'Nb Ticks' is incremented at every heartbeat
     """
 
-    PING_CHECK_FREQ =  5 * 60  
+    PING_CHECK_FREQ =  3 * 60  
 
-    Domoticz.Debug("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
+    Domoticz.Log("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
 
     if self.Ping['Status'] == 'Sent':
@@ -665,13 +666,13 @@ def pingZigate( self ):
     if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
         self.Ping['Status'] = 'Receive'
         self.connectionState = 1
-        Domoticz.Debug("pingZigate - We have receive a message in the cycle ")
+        Domoticz.Log("pingZigate - We have receive a message in the cycle ")
         return                     # Most likely between the cycle.
 
     # If we are more than PING_CHECK_FREQ without any messages, let's check
     if  self.Ping['Nb Ticks'] <  ( PING_CHECK_FREQ  //  HEARTBEAT):
         self.connectionState = 1
-        Domoticz.Debug("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
+        Domoticz.Log("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
         return
 
     if 'Status' not in self.Ping:

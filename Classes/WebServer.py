@@ -10,7 +10,7 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, groupManagement, ListOfDevices, IEEE2NWK ):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -21,6 +21,10 @@ class WebServer(object):
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
 
+        if groupManagement:
+            self.groupmgt = groupManagement
+        else:
+            self.groupmgt = None
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
@@ -129,6 +133,15 @@ class WebServer(object):
         self.heartbeats += 1
 
     def jsonDispatch( self, Connection, Data ):
+        """
+        GET
+            /json.htm?type=devices                          Provide the list ond the details of Domoticz Widget for this Zigate
+            /json.htm?type=devicesbyIEEE&<IEEE address>     Provide the list and the details of Domoticz Widget matching this IEEE
+            /json.htm?type=zdevices                         Provide the list and details of Zigate devices (managed by the Plugin)
+            /json.htm?type=zdevicesbyIEEE&<IEEE address>    Provide the details of the Zigate paired device matching the IEEE
+            /json.htm?type=zdevicesbySaddr&<Short address>  Provide the details of the Zigate paired device matching the Short Address
+            /json.htm?type=zgroups                          Provide the list and details of Groups 
+        """
 
         _response = {}
 
@@ -165,6 +178,11 @@ class WebServer(object):
                             _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
                         elif _command[0] == 'zdevices':
                             if self.jsonListOfDevices( Connection ):
+                                return
+                            _response["Status"] = "404 Not Found"
+                            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
+                        elif _command[0] == 'zgroups':
+                            if self.jsonListOfGroups( Connection ):
                                 return
                             _response["Status"] = "404 Not Found"
                             _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
@@ -206,6 +224,8 @@ class WebServer(object):
 
     def jsonListWidgets( self, Connection, WidgetName=None, WidgetID = None):
 
+        if self.Devices is None or len(self.Devices) == 0:
+            return
         _response = {}
         _response["Headers"] = {}
         _response["Status"] = "200 OK"
@@ -277,8 +297,32 @@ class WebServer(object):
         Connection.Send( _response )
         return True
 
+    def jsonListOfGroups( self, Connection):
+
+
+        if groupmgti is None:
+            return
+
+        ListOfGroups = self.groupmgt.ListOfGroups
+        if ListOfGroups is None or len(ListOfGroups) == 0:
+            return
+        _response = {}
+        _response["Headers"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        _response["Data"] = json.dumps( ListOfGroups,indent=4, sort_keys=True )
+        Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
+        Connection.Send( _response )
+        return True
+
+
+
     def jsonListOfDevices( self, Connection, IEEE=None, Nwkid=None):
 
+        if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
+            return
         _response = {}
         _response["Headers"] = {}
         _response["Status"] = "200 OK"
