@@ -8,27 +8,27 @@
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-4.3" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
-	<h3> Short description </h3>
-       	This plugin allow Domoticz to access to the Zigate (Zigbee) worlds of devices.<br/>
-	<h3> Configuration </h3>
-      	You can use the following parameter to interact with the Zigate:<br/>
-	<ul style="list-style-type:square">
-        	<li> Model: Wifi</li>
-	        <ul style="list-style-type:square">
-        	    <li> IP : For Wifi Zigate, the IP address. </li>
-        	    <li> Port: For Wifi Zigate,  port number. </li>
+    <h3> Short description </h3>
+           This plugin allow Domoticz to access to the Zigate (Zigbee) worlds of devices.<br/>
+    <h3> Configuration </h3>
+          You can use the following parameter to interact with the Zigate:<br/>
+    <ul style="list-style-type:square">
+            <li> Model: Wifi</li>
+            <ul style="list-style-type:square">
+                <li> IP : For Wifi Zigate, the IP address. </li>
+                <li> Port: For Wifi Zigate,  port number. </li>
                 </ul>
                 <li> Model USB or PI:</li>
-	        <ul style="list-style-type:square">
-        	    <li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
+            <ul style="list-style-type:square">
+                <li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
-        	<li> Software Reset: This allow you to do a soft reset of the Zigate (no lost of data). Can be use if have change the Channel number in PluginConf.txt</li>
+            <li> Software Reset: This allow you to do a soft reset of the Zigate (no lost of data). Can be use if have change the Channel number in PluginConf.txt</li>
                 <li> Rescan for Group Membership. In case you have added a new device, or remove some, you might want to have the plugin re-scanning the all devices for Group membership.</li>
-        	<li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
-        	<li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
-	</ul>
-	<h3> Support </h3>
-	Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
+            <li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
+            <li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
+    </ul>
+    <h3> Support </h3>
+    Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
     </description>
     <params>
         <param field="Mode1" label="Zigate Model" width="75px">
@@ -104,7 +104,6 @@ from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
-from Classes.WebServer import WebServer
 
 
 class BasePlugin:
@@ -156,8 +155,6 @@ class BasePlugin:
         self.FirmwareMajorVersion = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
         self.ForceCreationDevice = None   # 
-
-        self.webserver = None
 
         self.DomoticzMajor = None
         self.DomoticzMinor = None
@@ -297,8 +294,6 @@ class BasePlugin:
 
         Domoticz.Debug("Establish Zigate connection" )
         self.ZigateComm.openConn()
-
-
         self.busy = False
         return
 
@@ -353,24 +348,7 @@ class BasePlugin:
         
     def onConnect(self, Connection, Status, Description):
 
-        def decodeConnection( connection ):
-
-            decoded = {}
-            for i in connection.strip().split(','):
-                label, value = i.split(': ')
-                label = label.strip().strip("'")
-                value = value.strip().strip("'")
-                decoded[label] = value
-            return decoded
-
-        Domoticz.Log("onConnect %s called with status: %s and Desc: %s" %( Connection, Status, Description))
-
-        decodedConnection = decodeConnection ( str(Connection) )
-        if 'Protocol' in decodedConnection:
-            if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
-                self.webserver.onConnect( Connection, Status, Description)
-                return
-
+        Domoticz.Debug("onConnect called with status: %s" %Status)
         self.busy = True
 
         if Status != 0:
@@ -441,7 +419,8 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if isinstance(Data, dict):
-            self.webserver.onMessage( Connection, Data)
+            Domoticz.Log("onMessage - unExpected for now")
+            DumpHTTPResponseToLog(Data)
             return
 
         self.Ping['Nb Ticks'] = 0
@@ -477,24 +456,6 @@ class BasePlugin:
         return
 
     def onDisconnect(self, Connection):
-
-        def decodeConnection( connection ):
-
-            decoded = {}
-            for i in connection.strip().split(','):
-                label, value = i.split(': ')
-                label = label.strip().strip("'")
-                value = value.strip().strip("'")
-                decoded[label] = value
-            return decoded
-
-        decodedConnection = decodeConnection ( str(Connection) )
-
-        if 'Protocol' in decodedConnection:
-            if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
-                self.webserver.onDisconnect( Connection )
-                return
-
         self.connectionState = 0
         self.adminWidgets.updateStatusWidget( Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
@@ -560,10 +521,6 @@ class BasePlugin:
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
-
-                Domoticz.Status("Start Web Server connection")
-                self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                                    self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.allowOTA:
@@ -640,7 +597,7 @@ def pingZigate( self ):
     # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
     PING_CHECK_FREQ =  240
 
-    Domoticz.Log("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
+    Domoticz.Debug("pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
 
     if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
@@ -663,16 +620,10 @@ def pingZigate( self ):
                 sendZigateCmd( self, "0014", "" ) # Request status
         return
 
-    if self.Ping['Nb Ticks'] == 0: # We have recently received a message, Zigate is up and running
-        self.Ping['Status'] = 'Receive'
-        self.connectionState = 1
-        Domoticz.Log("pingZigate - We have receive a message in the cycle ")
-        return                     # Most likely between the cycle.
-
     # If we are more than PING_CHECK_FREQ without any messages, let's check
     if  self.Ping['Nb Ticks'] <  ( PING_CHECK_FREQ  //  HEARTBEAT):
         self.connectionState = 1
-        Domoticz.Log("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
+        Domoticz.Debug("pingZigate - We have receive a message less than %s sec  ago " %PING_CHECK_FREQ)
         return
 
     if 'Status' not in self.Ping:
