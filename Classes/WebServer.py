@@ -3,6 +3,9 @@ import Domoticz
 import json
 import os.path
 
+import mimetypes
+from urllib.parse import urlparse
+
 from time import time
 
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
@@ -10,7 +13,7 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, groupManagement, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK ):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -31,6 +34,7 @@ class WebServer(object):
 
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
+        mimetypes.init()
         self.startWebServer()
         
 
@@ -87,30 +91,23 @@ class WebServer(object):
                 self.jsonDispatch( Connection, Data )
                 return
 
-            if ( Data['URL'] == '/'):
-                Data['URL'] += 'zigate.html'
-
-
             # We are ready to send the response
             webFilename = self.homedirectory +'www'+Data['URL'] 
             webFile = open(  webFilename , mode ='rb')
             webPage = webFile.read()
             webFile.close()
 
-            _contentType = 'application/octet-stream'
-            if Data['URL'].find('.html') != -1: _contentType = 'text/html'
-            elif Data['URL'].find('.css') != -1: _contentType = 'text/css'
-            elif Data['URL'].find('.ico') != -1: _contentType = 'image/x-icon'
-            elif Data['URL'].find('.js') != -1: _contentType = 'text/javascript'
-            elif Data['URL'].find('.json') != -1: _contentType = 'application/json'
-            elif Data['URL'].find('.png') != -1: _contentType = 'image/png'
-            elif Data['URL'].find('.jpg') != -1: _contentType = 'image/jpg'
+            _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
+            Domoticz.Log("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
 
             _response = {}
             _response["Headers"] = {}
             _response["Status"] = "200 OK"
             _response["Headers"]["Connection"] = "Keealive"
-            _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
+            if _contentType:
+                _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
+            if _contentEncoding:
+                _response["Headers"]["Content-Encoding"] = _contentEncoding 
             _response["Data"] = webPage
 
             Connection.Send( _response )
@@ -300,7 +297,7 @@ class WebServer(object):
     def jsonListOfGroups( self, Connection):
 
 
-        if groupmgti is None:
+        if self.groupmgt is None:
             return
 
         ListOfGroups = self.groupmgt.ListOfGroups
