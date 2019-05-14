@@ -87,7 +87,9 @@ class WebServer(object):
 
             if ( parsed_query[0] == 'rest-zigate'):
                 # REST API
-                self.do_rest( Connection, Data['Verb'], parsed_query[1], parsed_query[2:])
+                Domoticz.Log(" Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
+                        %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
+                self.do_rest( Connection, Data['Verb'], parsed_query[1], parsed_query[2], parsed_query[3:])
                 return
                 
             elif (  parsed_query[0].find('json.htm') != -1 ):
@@ -142,7 +144,7 @@ class WebServer(object):
                 self.httpClientConn.Disconnect()
         self.heartbeats += 1
 
-    def do_rest( self, Connection, verb, command, parameters):
+    def do_rest( self, Connection, verb, version, command, parameters):
 
         REST_COMMANDS = { 
                 'settings':      {'Name':'settings',      'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
