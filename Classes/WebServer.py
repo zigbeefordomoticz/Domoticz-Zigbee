@@ -4,7 +4,6 @@ import json
 import os.path
 
 import mimetypes
-from urllib.parse import urlparse
 
 from time import time
 
@@ -72,23 +71,37 @@ class WebServer(object):
             if (not 'Verb' in Data):
                 Domoticz.Error("Invalid web request received, no Verb present")
                 headerCode = "400 Bad Request"
-            elif (Data['Verb'] != 'GET'):
+            elif (Data['Verb'] not in ( 'GET', 'PUT', 'POST', 'DELETE')):
                 Domoticz.Error("Invalid web request received, only GET requests allowed ("+Data['Verb']+")")
                 headerCode = "405 Method Not Allowed"
             elif (not 'URL' in Data):
                 Domoticz.Error("Invalid web request received, no URL present")
                 headerCode = "400 Bad Request"
-            elif ( Data['URL'].find("/json.htm?") == -1) and (not os.path.exists( self.homedirectory +'www'+Data['URL'])):
+
+            if  Data['URL'][0] == '/':
+                parsed_query = Data['URL'][1:].split('/')
+            else:
+                parsed_query = Data['URL'].split('/')
+
+            Domoticz.Log("Query:  %s" %parsed_query)
+
+            if ( parsed_query[0] == 'rest-zigate'):
+                # REST API
+                self.do_rest( Connection, Data['Verb'], parsed_query[1], parsed_query[2:])
+                return
+                
+            elif (  parsed_query[0].find('json.htm') != -1 ):
+                # JSON API
+                self.jsonDispatch( Connection, Data )
+                return
+
+            elif not os.path.exists( self.homedirectory +'www'+Data['URL']):
                 Domoticz.Error("Invalid web request received, file '"+ self.homedirectory +'www'+Data['URL']+"' does not exist")
                 headerCode = "404 File Not Found"
 
             if (headerCode != "200 OK"):
                 DumpHTTPResponseToLog(Data)
                 Connection.Send({"Status": headerCode})
-                return
-
-            if ( Data['URL'].find("/json.htm?") != -1 ):
-                self.jsonDispatch( Connection, Data )
                 return
 
             # We are ready to send the response
@@ -128,6 +141,120 @@ class WebServer(object):
             elif (self.heartbeats == 3) and (Parameters["Mode6"] != "File"):
                 self.httpClientConn.Disconnect()
         self.heartbeats += 1
+
+    def do_rest( self, Connection, verb, command, parameters):
+
+        REST_COMMANDS = { 
+                'settings':      {'Name':'settings',      'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
+                'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
+                'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
+                'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
+                'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup}
+                }
+
+
+        Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
+        HTTPresponse = {}
+        if command in REST_COMMANDS:
+            if verb in REST_COMMANDS[command]['Verbs']:
+                Domoticz.Log("Calling: %s" %str(REST_COMMANDS[command]['function']))
+                HTTPresponse = REST_COMMANDS[command]['function']( verb, parameters)
+
+        if HTTPresponse != {}:
+            HTTPresponse["Status"] = "200 OK"
+            HTTPresponse["Headers"] = {}
+            HTTPresponse["Headers"]["Connection"] = "Keealive"
+            HTTPresponse["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        else:
+            # We reach here due to failure !
+            HTTPresponse["Status"] = "400 BAD REQUEST"
+            HTTPresponse["Data"] = 'Unknown REST command'
+            HTTPresponse["Headers"] = {}
+            HTTPresponse["Headers"]["Connection"] = "Keealive"
+            HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
+
+        Connection.Send( HTTPresponse )
+        Domoticz.Log('"Status": %s, "Headers": %s' %(HTTPresponse["Status"],HTTPresponse["Headers"]))
+
+
+    def rest_Settings( self, verb, parameters):
+
+        return
+
+    def rest_PermitToJoin( self, verb, parameters):
+
+        return
+
+    def rest_Device( self, verb, parameters):
+
+        _dictDevices = {}
+        _response = {}
+        _response["Headers"] = {}
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            if self.Devices is None or len(self.Devices) == 0:
+                return _response
+
+            if len(parameters) == 0:
+                # Return the Full List of ZIgate Domoticz Widget
+                for x in self.Devices:
+                    _dictDevices[self.Devices[x].Name] = {}
+                    _dictDevices[self.Devices[x].Name]['Name'] = self.Devices[x].Name
+                    _dictDevices[self.Devices[x].Name]['ID'] = self.Devices[x].ID
+                    _dictDevices[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
+                    _dictDevices[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
+                    _dictDevices[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
+                    _dictDevices[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
+                    _dictDevices[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
+                    _dictDevices[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
+                    _dictDevices[self.Devices[x].Name]['Type'] = self.Devices[x].Type
+                    _dictDevices[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
+
+            elif len(parameters) == 1:
+                for x in self.Devices:
+                    if parameters[0] == self.Devices[x].DeviceID:
+                        _dictDevices[x] = {}
+                        _dictDevices[x]['Name'] = self.Devices[x].Name
+                        _dictDevices[x]['ID'] = self.Devices[x].ID
+                        _dictDevices[x]['DeviceID'] = self.Devices[x].DeviceID
+                        _dictDevices[x]['sValue'] = self.Devices[x].sValue
+                        _dictDevices[x]['nValue'] = self.Devices[x].nValue
+                        _dictDevices[x]['SignaleLevel'] = self.Devices[x].SignalLevel
+                        _dictDevices[x]['BatteryLevel'] = self.Devices[x].BatteryLevel
+                        _dictDevices[x]['TimedOut'] = self.Devices[x].TimedOut
+                        _dictDevices[x]['Type'] = self.Devices[x].Type
+                        _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
+            else:
+                for parm in parameters:
+                    for x in self.Devices:
+                        if parm == self.Devices[x].DeviceID:
+                            _dictDevices[x] = {}
+                            _dictDevices[x]['Name'] = self.Devices[x].Name
+                            _dictDevices[x]['ID'] = self.Devices[x].ID
+                            _dictDevices[x]['DeviceID'] = self.Devices[x].DeviceID
+                            _dictDevices[x]['sValue'] = self.Devices[x].sValue
+                            _dictDevices[x]['nValue'] = self.Devices[x].nValue
+                            _dictDevices[x]['SignaleLevel'] = self.Devices[x].SignalLevel
+                            _dictDevices[x]['BatteryLevel'] = self.Devices[x].BatteryLevel
+                            _dictDevices[x]['TimedOut'] = self.Devices[x].TimedOut
+                            _dictDevices[x]['Type'] = self.Devices[x].Type
+                            _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
+
+            _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
+
+        return _response
+
+    def rest_zDevice( self, verb, parameters):
+
+        return
+
+    def rest_zGroup( self, verb, parameters):
+
+        return
 
     def jsonDispatch( self, Connection, Data ):
         """
