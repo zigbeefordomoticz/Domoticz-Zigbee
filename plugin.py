@@ -104,7 +104,6 @@ from Classes.TransportStats import TransportStatistics
 from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
-from Classes.WebServer import WebServer
 
 
 class BasePlugin:
@@ -368,7 +367,8 @@ class BasePlugin:
         decodedConnection = decodeConnection ( str(Connection) )
         if 'Protocol' in decodedConnection:
             if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
-                self.webserver.onConnect( Connection, Status, Description)
+                if self.pluginconf.enableWebServer:
+                    self.webserver.onConnect( Connection, Status, Description)
                 return
 
         self.busy = True
@@ -441,7 +441,8 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         #Domoticz.Debug("onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if isinstance(Data, dict):
-            self.webserver.onMessage( Connection, Data)
+            if self.pluginconf.enableWebServer:
+                self.webserver.onMessage( Connection, Data)
             return
 
         self.Ping['Nb Ticks'] = 0
@@ -492,7 +493,8 @@ class BasePlugin:
 
         if 'Protocol' in decodedConnection:
             if decodedConnection['Protocol'] in ( 'HTTP', 'HTTPS') : # We assumed that is the Web Server 
-                self.webserver.onDisconnect( Connection )
+                if self.pluginconf.enableWebServer:
+                    self.webserver.onDisconnect( Connection )
                 return
 
         self.connectionState = 0
@@ -562,8 +564,10 @@ class BasePlugin:
                     self.groupmgt_NotStarted = False
 
                 Domoticz.Status("Start Web Server connection")
-                self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                                    self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
+                if self.pluginconf.enableWebServer:
+                    from Classes.WebServer import WebServer
+                    self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                                            self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.allowOTA:
