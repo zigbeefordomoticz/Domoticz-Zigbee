@@ -93,11 +93,13 @@ class WebServer(object):
 
             Domoticz.Log("Query:  %s" %parsed_query)
 
+            if 'Data' not in Data:
+                Data['Data'] = None
             if ( parsed_query[0] == 'rest-zigate'):
                 # REST API
                 Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
                         %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
-                self.do_rest( Connection, Data['Verb'], parsed_query[1], parsed_query[2], parsed_query[3:])
+                self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
                 return
                 
             elif (  parsed_query[0].find('json.htm') != -1 ):
@@ -153,7 +155,7 @@ class WebServer(object):
                 self.httpClientConn.Disconnect()
         self.heartbeats += 1
 
-    def do_rest( self, Connection, verb, version, command, parameters):
+    def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
                 'settings':      {'Name':'settings',      'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
@@ -167,7 +169,7 @@ class WebServer(object):
         HTTPresponse = setupHeadersResponse()
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
-                HTTPresponse = REST_COMMANDS[command]['function']( verb, parameters)
+                HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
 
         if HTTPresponse != {}:
             HTTPresponse["Status"] = "200 OK"
@@ -180,28 +182,73 @@ class WebServer(object):
             HTTPresponse["Headers"]["Connection"] = "Keealive"
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
+        Domoticz.Log("Response sent")
+        Domoticz.Log("--->Status: %s" %(HTTPresponse["Status"]))
+        Domoticz.Log("--->Headers")
+        for item in HTTPresponse["Headers"]:
+            Domoticz.Log("------>%s: %s" %(item, HTTPresponse["Headers"][item]))
+        Domoticz.Log("--->Data: %s" %HTTPresponse["Data"])
+
         Connection.Send( HTTPresponse )
-        Domoticz.Log('"Status": %s, "Headers": %s' %(HTTPresponse["Status"],HTTPresponse["Headers"]))
 
 
-    def rest_Settings( self, verb, parameters):
+    def rest_Settings( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
-        _response["Data"] = { 'Not Implemented Yet' }
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+
+            if len(parameters) == 0:
+                settings = {}
+                settings["Ping"] = {}
+                settings["Ping"]["default"] = "1"
+                settings["Ping"]["current"] = ""
+                settings["enableWebServer"] = {}
+                settings["enableWebServer"]["default"] = "0"
+                settings["enableWebServer"]["current"] = ""
+                _response["Data"] = json.dumps( settings,indent=4, sort_keys=True )
+
+        elif verb == 'PUT':
+            _response["Data"] = None
+            Domoticz.Log("Data: %s" %data)
+            data = data.decode('utf8')
+            Domoticz.Log("Data: %s" %data)
+            data = json.loads(data)
+
+            if len(parameters) == 1:
+                Domoticz.Log("parameters: %s value = %s" %(parameters[0], str(data)))
+            else:
+                Domoticz.Error("Unexpected number of Parameter")
+                _response["Data"] = { 'unexpected number of parameters' }
+                _response["Status"] = "400 SYNTAX ERROR"
+
         return _response
 
-    def rest_PermitToJoin( self, verb, parameters):
-        _response["Data"] = { 'Not Implemented Yet' }
+    def rest_PermitToJoin( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        return
+        if verb == 'GET':
+            _response["Data"] = { 'permit-to-join':254 }
 
-    def rest_Device( self, verb, parameters):
+        elif verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                Domoticz.Log("Data: %s" %data)
+                data = data.decode('utf8')
+                Domoticz.Log("Data: %s" %data)
+                data = json.loads(data)
+                Domoticz.Log("parameters: %s value = %s" %('permit-to-join', str(data)))
+
+        return _response
+
+    def rest_Device( self, verb, data, parameters):
 
         _dictDevices = {}
         _response = setupHeadersResponse()
@@ -262,7 +309,7 @@ class WebServer(object):
             _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
         return _response
 
-    def rest_zDevice( self, verb, parameters):
+    def rest_zDevice( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
         _response["Data"] = {}
@@ -284,7 +331,7 @@ class WebServer(object):
                     _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]],indent=4, sort_keys=True ) 
         return _response
 
-    def rest_zGroup( self, verb, parameters):
+    def rest_zGroup( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
         _response["Data"] = {}
