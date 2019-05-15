@@ -106,7 +106,6 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
-
 class BasePlugin:
     enabled = False
 
@@ -564,6 +563,14 @@ class BasePlugin:
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
+
+            # In case we have Transport = None , let's check if we have to active Group management or not.
+            if self.transport == 'None' and self.groupmgt_NotStarted and self.pluginconf.enablegroupmanagement:
+                    Domoticz.Status("Start Group Management")
+                    self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
+                            self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
+                    self.groupmgt_NotStarted = False
+
 
             Domoticz.Status("Start Web Server connection")
             if self.pluginconf.enableWebServer:
