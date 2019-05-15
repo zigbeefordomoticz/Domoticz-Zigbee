@@ -137,7 +137,12 @@ class WebServer(object):
             _response["Data"] = webPage
 
             Connection.Send( _response )
-            Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
+            Domoticz.Log("Response sent")
+            Domoticz.Log("--->Status: %s" %(_response["Status"]))
+            Domoticz.Log("--->Headers")
+            for item in _response["Headers"]:
+                Domoticz.Log("------>%s: %s" %(item, _response["Headers"][item]))
+            Domoticz.Log("--->Data: %.40s" %_response["Data"])
 
     def keepConnectionAlive( self ):
 
@@ -595,6 +600,6 @@ def setupHeadersResponse():
     _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     _response["Headers"]["Pragma"] = "no-cache"
     _response["Headers"]["Expires"] = "0"
-    _response["Headers"]["Server"] = "Plugin-Zigate"
+    _response["Headers"]["User-Agent"] = "Plugin-Zigate"
 
     return _response
