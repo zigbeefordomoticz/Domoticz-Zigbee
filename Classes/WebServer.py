@@ -4,6 +4,7 @@ import json
 import os.path
 
 import mimetypes
+from urllib.parse import urlparse, urlsplit, urldefrag
 
 from time import time
 
@@ -78,6 +79,13 @@ class WebServer(object):
                 Domoticz.Error("Invalid web request received, no URL present")
                 headerCode = "400 Bad Request"
 
+            parsed = urlparse(Data['URL'])
+            Domoticz.Log('--->URL parsing')
+            Domoticz.Log('------->path    :%s' %parsed.path)
+            Domoticz.Log('------->params  :%s' %parsed.params)
+            Domoticz.Log('------->query   :%s' %parsed.query)
+            Domoticz.Log('------->fragment:%s' %parsed.fragment)
+
             if  Data['URL'][0] == '/':
                 parsed_query = Data['URL'][1:].split('/')
             else:
@@ -87,7 +95,7 @@ class WebServer(object):
 
             if ( parsed_query[0] == 'rest-zigate'):
                 # REST API
-                Domoticz.Log(" Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
+                Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
                         %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
                 self.do_rest( Connection, Data['Verb'], parsed_query[1], parsed_query[2], parsed_query[3:])
                 return
@@ -97,8 +105,8 @@ class WebServer(object):
                 self.jsonDispatch( Connection, Data )
                 return
 
-            elif not os.path.exists( self.homedirectory +'www'+Data['URL']):
-                Domoticz.Error("Invalid web request received, file '"+ self.homedirectory +'www'+Data['URL']+"' does not exist")
+            elif not os.path.exists( self.homedirectory +'www'+ parsed.path):
+                Domoticz.Error("Invalid web request received, file '"+ self.homedirectory + 'www' + parsed.path + "' does not exist")
                 headerCode = "404 File Not Found"
 
             if (headerCode != "200 OK"):
@@ -107,7 +115,9 @@ class WebServer(object):
                 return
 
             # We are ready to send the response
-            webFilename = self.homedirectory +'www'+Data['URL'] 
+
+            #webFilename = self.homedirectory +'www'+Data['URL'] 
+            webFilename = self.homedirectory +'www'+ parsed.path
             webFile = open(  webFilename , mode ='rb')
             webPage = webFile.read()
             webFile.close()
@@ -115,10 +125,9 @@ class WebServer(object):
             _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
             Domoticz.Log("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
 
-            _response = {}
-            _response["Headers"] = {}
+            _response = setupHeadersResponse()
             _response["Status"] = "200 OK"
-            _response["Headers"]["Connection"] = "Keealive"
+
             if _contentType:
                 _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
             if _contentEncoding:
@@ -154,24 +163,20 @@ class WebServer(object):
                 'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup}
                 }
 
-
         Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
-        HTTPresponse = {}
+        HTTPresponse = setupHeadersResponse()
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
-                Domoticz.Log("Calling: %s" %str(REST_COMMANDS[command]['function']))
                 HTTPresponse = REST_COMMANDS[command]['function']( verb, parameters)
 
         if HTTPresponse != {}:
             HTTPresponse["Status"] = "200 OK"
-            HTTPresponse["Headers"] = {}
             HTTPresponse["Headers"]["Connection"] = "Keealive"
             HTTPresponse["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         else:
             # We reach here due to failure !
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
-            HTTPresponse["Headers"] = {}
             HTTPresponse["Headers"]["Connection"] = "Keealive"
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
@@ -181,17 +186,25 @@ class WebServer(object):
 
     def rest_Settings( self, verb, parameters):
 
-        return
+        _response = setupHeadersResponse()
+        _response["Data"] = { 'Not Implemented Yet' }
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        return _response
 
     def rest_PermitToJoin( self, verb, parameters):
+        _response["Data"] = { 'Not Implemented Yet' }
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         return
 
     def rest_Device( self, verb, parameters):
 
         _dictDevices = {}
-        _response = {}
-        _response["Headers"] = {}
+        _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
@@ -247,14 +260,53 @@ class WebServer(object):
                             _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
 
             _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
-
         return _response
 
     def rest_zDevice( self, verb, parameters):
 
-        return
+        _response = setupHeadersResponse()
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            if self.Devices is None or len(self.Devices) == 0:
+                return _response
+            if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
+                return _response
+            if len(parameters) == 0:
+                _response["Data"] = json.dumps( self.ListOfDevices,indent=4, sort_keys=True )
+            elif len(parameters) == 1:
+                if parameters[0] in self.ListOfDevices:
+                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]],indent=4, sort_keys=True ) 
+                elif parameters[0] in self.IEEE2NWK:
+                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]],indent=4, sort_keys=True ) 
+        return _response
 
     def rest_zGroup( self, verb, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        Domoticz.Log("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
+        if verb == 'GET':
+            if self.groupmgt is None:
+                return _response
+            ListOfGroups = self.groupmgt.ListOfGroups
+            if ListOfGroups is None or len(ListOfGroups) == 0:
+                return _response
+            if len(parameters) == 0:
+                _response["Data"] = json.dumps( ListOfGroups,indent=4, sort_keys=True )
+            if len(parameters) == 1:
+                if parameters[0] in ListOfGroups:
+                    _response["Data"] = json.dumps( ListOfGroups[parameters[0]],indent=4, sort_keys=True )
+        return _response
+
+    def jsonListOfDevices( self, Connection, IEEE=None, Nwkid=None):
 
         return
 
@@ -269,7 +321,7 @@ class WebServer(object):
             /json.htm?type=zgroups                          Provide the list and details of Groups 
         """
 
-        _response = {}
+        _response = setupHeadersResponse()
 
         _analyse = Data['URL'].split('?')
         if len(_analyse) != 2:
@@ -341,7 +393,6 @@ class WebServer(object):
                 _response["Status"] = "400 BAD REQUEST"
                 _response["Data"] = 'Syntax error'
     
-        _response["Headers"] = {}
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
         Connection.Send( _response )
@@ -352,8 +403,7 @@ class WebServer(object):
 
         if self.Devices is None or len(self.Devices) == 0:
             return
-        _response = {}
-        _response["Headers"] = {}
+        _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -432,8 +482,7 @@ class WebServer(object):
         ListOfGroups = self.groupmgt.ListOfGroups
         if ListOfGroups is None or len(ListOfGroups) == 0:
             return
-        _response = {}
-        _response["Headers"] = {}
+        _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -449,8 +498,7 @@ class WebServer(object):
 
         if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
             return
-        _response = {}
-        _response["Headers"] = {}
+        _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
         _response["Headers"]["Connection"] = "Keealive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -491,3 +539,15 @@ def DumpHTTPResponseToLog(httpDict):
                 Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
 
 
+
+def setupHeadersResponse():
+
+    _response = {}
+    _response["Headers"] = {}
+    _response["Headers"]["Connection"] = "Keealive"
+    _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    _response["Headers"]["Pragma"] = "no-cache"
+    _response["Headers"]["Expires"] = "0"
+    _response["Headers"]["Server"] = "Plugin-Zigate"
+
+    return _response
