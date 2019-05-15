@@ -142,7 +142,8 @@ class WebServer(object):
             Domoticz.Log("--->Headers")
             for item in _response["Headers"]:
                 Domoticz.Log("------>%s: %s" %(item, _response["Headers"][item]))
-            Domoticz.Log("--->Data: %.40s" %_response["Data"])
+            if 'Data' not in _response:
+                Domoticz.Log("--->Data: %.40s" %_response["Data"])
 
     def keepConnectionAlive( self ):
 
@@ -163,7 +164,7 @@ class WebServer(object):
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
-                'settings':      {'Name':'settings',      'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
+                'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
@@ -192,7 +193,8 @@ class WebServer(object):
         Domoticz.Log("--->Headers")
         for item in HTTPresponse["Headers"]:
             Domoticz.Log("------>%s: %s" %(item, HTTPresponse["Headers"][item]))
-        Domoticz.Log("--->Data: %s" %HTTPresponse["Data"])
+        if 'Data' in HTTPresponse:
+            Domoticz.Log("--->Data: %s" %HTTPresponse["Data"])
 
         Connection.Send( HTTPresponse )
 
