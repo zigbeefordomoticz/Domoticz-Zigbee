@@ -43,7 +43,7 @@ class WebServer(object):
         self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
         self.httpServerConn.Listen()
         self.httpsServerConn.Listen()
-        Domoticz.Log("Leaving on start")
+        Domoticz.Log("Web backend started")
 
     def onDisconnect ( self, Connection ):
 
