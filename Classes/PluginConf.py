@@ -22,6 +22,8 @@ class PluginConf:
 
         self.logFORMAT = 0
 
+        self.enableWebServer = 0
+
         # Device Management
         self.allowStoreDiscoveryFrames = 0
         self.allowForceCreationDomoDevice = 0
@@ -110,6 +112,11 @@ class PluginConf:
             Domoticz.Error("Error while importing %s, all plugin parameters set to default" %self.filename)
             
         else:
+            if self.PluginConf.get('enableWebServer'):
+                if self.PluginConf.get('enableWebServer').isdigit():
+                    self.enableWebServer = int(self.PluginConf['enableWebServer'])
+                    Domoticz.Status(" -enableWebServer: %s" %self.enableWebServer)
+
             if self.PluginConf.get('vibrationAqarasensitivity'):
                 self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
                 Domoticz.Status(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
