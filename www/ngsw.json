@@ -1,0 +1,70 @@
+{
+  "configVersion": 1,
+  "timestamp": 1557862110055,
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "urls": [
+        "/4.f684e1eb86e66fc873cc.js",
+        "/5.afc61763f90f7ae4ba25.js",
+        "/6.ee33d9f71a220d240d85.js",
+        "/7.f4d889f57df64b2cc0a2.js",
+        "/8.60788fd6f2fa74207197.js",
+        "/9.0dfce40ce699aa65d694.js",
+        "/favicon.ico",
+        "/index.html",
+        "/main.f7b20c35640932e24b98.js",
+        "/polyfills.a4813d5f9fa974c71ef6.js",
+        "/runtime.15847ba80af240bfba75.js",
+        "/styles.f6b5e530db2757fcb861.css"
+      ],
+      "patterns": []
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "urls": [
+        "/assets/zigate_logo.png"
+      ],
+      "patterns": []
+    }
+  ],
+  "dataGroups": [],
+  "hashTable": {
+    "/4.f684e1eb86e66fc873cc.js": "f5fa5d0d3594d25f722b17910dc6c149098669cf",
+    "/5.afc61763f90f7ae4ba25.js": "35ace5844b3e548531b0d02a8135fac17ff87794",
+    "/6.ee33d9f71a220d240d85.js": "c666c58ade7cae2d9a7a06c274375d3d74792e64",
+    "/7.f4d889f57df64b2cc0a2.js": "ba515b0e2841a1647d99b1a7f7d26425434c439a",
+    "/8.60788fd6f2fa74207197.js": "82f4d9bd2aa92bfc4c981b611420f696c98f3e5b",
+    "/9.0dfce40ce699aa65d694.js": "55ef10fe9b13667ab5ebd2c494cc7fe81aa8604c",
+    "/assets/zigate_logo.png": "bdf79a5f4921f2dcbb7a690f9d271483ddd702e8",
+    "/favicon.ico": "7311d698cc2194b4182fdcbc85bdc0e27a45774b",
+    "/index.html": "ad305f457aa7f931c3759c3e434b438330f3d2ae",
+    "/main.f7b20c35640932e24b98.js": "d55271f5628b83ba54452342231995f3e473a7c6",
+    "/polyfills.a4813d5f9fa974c71ef6.js": "e4ab04ac0d36669c2efe23eea384de13708c0c70",
+    "/runtime.15847ba80af240bfba75.js": "5412ae58afe744c2774cc65cc0b54b09fa19daa6",
+    "/styles.f6b5e530db2757fcb861.css": "0bed490d6290af83e6f8c7ab8d4b6be495129440"
+  },
+  "navigationUrls": [
+    {
+      "positive": true,
+      "regex": "^\\/.*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*\\.[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*$"
+    },
+    {
+      "positive": false,
+      "regex": "^\\/(?:.+\\/)?[^/]*__[^/]*\\/.*$"
+    }
+  ]
+}
