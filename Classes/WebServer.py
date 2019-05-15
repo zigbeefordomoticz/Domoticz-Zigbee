@@ -79,19 +79,10 @@ class WebServer(object):
                 Domoticz.Error("Invalid web request received, no URL present")
                 headerCode = "400 Bad Request"
 
-            parsed = urlparse(Data['URL'])
-            Domoticz.Log('--->URL parsing')
-            Domoticz.Log('------->path    :%s' %parsed.path)
-            Domoticz.Log('------->params  :%s' %parsed.params)
-            Domoticz.Log('------->query   :%s' %parsed.query)
-            Domoticz.Log('------->fragment:%s' %parsed.fragment)
-
             if  Data['URL'][0] == '/':
                 parsed_query = Data['URL'][1:].split('/')
             else:
                 parsed_query = Data['URL'].split('/')
-
-            Domoticz.Log("Query:  %s" %parsed_query)
 
             if 'Data' not in Data:
                 Data['Data'] = None
@@ -107,8 +98,8 @@ class WebServer(object):
                 self.jsonDispatch( Connection, Data )
                 return
 
-            elif not os.path.exists( self.homedirectory +'www'+ parsed.path):
-                Domoticz.Error("Invalid web request received, file '"+ self.homedirectory + 'www' + parsed.path + "' does not exist")
+            elif not os.path.exists( self.homedirectory +'www'+ Data['URL']):
+                Domoticz.Error("Invalid web request received, file '"+ self.homedirectory + 'www' +Data['URL'] + "' does not exist")
                 headerCode = "404 File Not Found"
 
             if (headerCode != "200 OK"):
@@ -117,33 +108,34 @@ class WebServer(object):
                 return
 
             # We are ready to send the response
+            _response = setupHeadersResponse()
 
             #webFilename = self.homedirectory +'www'+Data['URL'] 
-            webFilename = self.homedirectory +'www'+ parsed.path
-            webFile = open(  webFilename , mode ='rb')
-            webPage = webFile.read()
-            webFile.close()
+            webFilename = self.homedirectory +'www'+ Data['URL']
+            with open(webFilename , mode ='rb') as webFile:
+                _response["Data"] = webFile.read()
 
-            _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
-            Domoticz.Log("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
+                Domoticz.Log("Reading file: %.40s len: %s" %(_response["Data"], len(_response["Data"])))
 
-            _response = setupHeadersResponse()
-            _response["Status"] = "200 OK"
-
-            if _contentType:
-                _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
-            if _contentEncoding:
-                _response["Headers"]["Content-Encoding"] = _contentEncoding 
-            _response["Data"] = webPage
-
-            Connection.Send( _response )
-            Domoticz.Log("Response sent")
-            Domoticz.Log("--->Status: %s" %(_response["Status"]))
-            Domoticz.Log("--->Headers")
-            for item in _response["Headers"]:
-                Domoticz.Log("------>%s: %s" %(item, _response["Headers"][item]))
-            if 'Data' not in _response:
-                Domoticz.Log("--->Data: %.40s" %_response["Data"])
+                _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
+                Domoticz.Log("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
+    
+                if _contentType:
+                    _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
+                if _contentEncoding:
+                    _response["Headers"]["Content-Encoding"] = _contentEncoding 
+    
+                _response["Status"] = "200 OK"
+    
+                Connection.Send( _response )
+    
+                Domoticz.Log("Response sent")
+                Domoticz.Log("--->Status: %s" %(_response["Status"]))
+                Domoticz.Log("--->Headers")
+                for item in _response["Headers"]:
+                    Domoticz.Log("------>%s: %s" %(item, _response["Headers"][item]))
+                if 'Data' in _response:
+                    Domoticz.Log("--->Data: '%.40s'" %str(_response["Data"]))
 
     def keepConnectionAlive( self ):
 
