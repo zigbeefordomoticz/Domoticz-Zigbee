@@ -36,6 +36,7 @@
                 <option label="USB" value="USB" default="true" />
                 <option label="PI" value="PI" />
                 <option label="Wifi" value="Wifi"/>
+                <option label="None" value="None"/>
             </options>
         </param>
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
@@ -266,8 +267,6 @@ class BasePlugin:
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
-
-
             Domoticz.Status("Switch PiZigate in RUN mode")
             import os
 
@@ -290,6 +289,9 @@ class BasePlugin:
         elif  self.transport == "Wifi":
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
+        elif self.transport == "None":
+            Domoticz.Status("Transport mode set to None, no communication.")
+            return
         else :
             Domoticz.Error("Unknown Transport comunication protocol : "+str(self.transport) )
             return
@@ -509,13 +511,13 @@ class BasePlugin:
         self.HeartbeatCount += 1
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
-        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4):   
+        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
             sendZigateCmd(self, "0009","")
-        elif self.ZigateIEEE is None and self.HeartbeatCount == 5:
+        elif self.ZigateIEEE is None and self.HeartbeatCount == 5 and self.transport != 'None':
             start_Zigate( self )
             return
 
-        if self.FirmwareVersion is None:
+        if self.FirmwareVersion is None and self.transport != 'None':
             Domoticz.Log("FirmwareVersion not ready")
             if self.HeartbeatCount in ( 4, 8 ): # Try to get Firmware version once more time.
                 Domoticz.Log("Try to get Firmware version once more %s" %self.HeartbeatCount)
@@ -533,27 +535,27 @@ class BasePlugin:
             self.initdone = True
 
             # Ceck Firmware version
-            if self.FirmwareVersion.lower() < '030f':
+            if self.FirmwareVersion and self.FirmwareVersion.lower() < '030f':
                 Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
 
-            if self.FirmwareVersion.lower() == '030e':
+            if self.FirmwareVersion and self.FirmwareVersion.lower() == '030e':
                 Domoticz.Status("You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
 
-            if self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
+            if self.FirmwareVersion and self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
                 Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
         
-            if self.FirmwareVersion.lower() > '030f':
+            if self.FirmwareVersion and self.FirmwareVersion.lower() > '030f':
                 Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
-            if self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003':
+            if self.FirmwareVersion and self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003' and self.transport != 'None':
                 if self.pluginconf.blueLedOff:
                     Domoticz.Log("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
-                if self.pluginconf.TXpower_set:
+                if self.pluginconf.TXpower_set and self.transport != 'None':
                     set_TxPower( self, self.pluginconf.TXpower_set )
 
-                if self.pluginconf.Certification in CERTIFICATION:
+                if self.pluginconf.Certification in CERTIFICATION and self.transport != 'None':
                     Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.Certification])
                     sendZigateCmd(self, '0019', '%02x' %self.pluginconf.Certification)
 
@@ -563,21 +565,23 @@ class BasePlugin:
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
-                Domoticz.Status("Start Web Server connection")
-                if self.pluginconf.enableWebServer:
-                    from Classes.WebServer import WebServer
-                    self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                                            self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
+            Domoticz.Status("Start Web Server connection")
+            if self.pluginconf.enableWebServer:
+                from Classes.WebServer import WebServer
+                self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.allowOTA:
                 self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
                             self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK)
 
-            if self.FirmwareVersion >= "030d":
-                if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0 :
+            if self.FirmwareVersion and self.FirmwareVersion >= "030d":
+                if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0  and self.transport != 'None':
                     sendZigateCmd(self, "0009","")
 
+        if self.transport == 'None':
+            return
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
 
