@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1557667308035,
+  "timestamp": 1557862110055,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -9,17 +9,17 @@
       "updateMode": "prefetch",
       "urls": [
         "/4.f684e1eb86e66fc873cc.js",
-        "/5.1e8252e5ddd400ca3bcd.js",
-        "/6.98d792cd3d4b9ad7b9a1.js",
-        "/7.ad8437fda2e4bd708b32.js",
-        "/8.7b29df8e2c68c076f347.js",
-        "/9.6a31348add4e9b2d51a3.js",
+        "/5.afc61763f90f7ae4ba25.js",
+        "/6.ee33d9f71a220d240d85.js",
+        "/7.f4d889f57df64b2cc0a2.js",
+        "/8.60788fd6f2fa74207197.js",
+        "/9.0dfce40ce699aa65d694.js",
         "/favicon.ico",
         "/index.html",
-        "/main.21158213c9ad2240803a.js",
+        "/main.f7b20c35640932e24b98.js",
         "/polyfills.a4813d5f9fa974c71ef6.js",
-        "/runtime.a615cc442d2ed9bd4809.js",
-        "/styles.e6a9d90b1b447be243ec.css"
+        "/runtime.15847ba80af240bfba75.js",
+        "/styles.f6b5e530db2757fcb861.css"
       ],
       "patterns": []
     },
@@ -36,18 +36,18 @@
   "dataGroups": [],
   "hashTable": {
     "/4.f684e1eb86e66fc873cc.js": "f5fa5d0d3594d25f722b17910dc6c149098669cf",
-    "/5.1e8252e5ddd400ca3bcd.js": "8006f4d708f231dfb8287bf05a745fdbd6e8c0fc",
-    "/6.98d792cd3d4b9ad7b9a1.js": "71810310042024099d4e93e77a104f075077a0b0",
-    "/7.ad8437fda2e4bd708b32.js": "831400bfc1c40c50c1733064ddb12727e53c36b3",
-    "/8.7b29df8e2c68c076f347.js": "057b4f1712386756e18c9266d84f1da46ba181e1",
-    "/9.6a31348add4e9b2d51a3.js": "0495d5cbce76f648dfa91a1df274a446d056ac2a",
+    "/5.afc61763f90f7ae4ba25.js": "35ace5844b3e548531b0d02a8135fac17ff87794",
+    "/6.ee33d9f71a220d240d85.js": "c666c58ade7cae2d9a7a06c274375d3d74792e64",
+    "/7.f4d889f57df64b2cc0a2.js": "ba515b0e2841a1647d99b1a7f7d26425434c439a",
+    "/8.60788fd6f2fa74207197.js": "82f4d9bd2aa92bfc4c981b611420f696c98f3e5b",
+    "/9.0dfce40ce699aa65d694.js": "55ef10fe9b13667ab5ebd2c494cc7fe81aa8604c",
     "/assets/zigate_logo.png": "bdf79a5f4921f2dcbb7a690f9d271483ddd702e8",
     "/favicon.ico": "7311d698cc2194b4182fdcbc85bdc0e27a45774b",
-    "/index.html": "175a6f0bb286947104bdb17e3f2d00ab1cd29c59",
-    "/main.21158213c9ad2240803a.js": "5ed721a6085152b041cf6bec10f06f90aa62645a",
+    "/index.html": "ad305f457aa7f931c3759c3e434b438330f3d2ae",
+    "/main.f7b20c35640932e24b98.js": "d55271f5628b83ba54452342231995f3e473a7c6",
     "/polyfills.a4813d5f9fa974c71ef6.js": "e4ab04ac0d36669c2efe23eea384de13708c0c70",
-    "/runtime.a615cc442d2ed9bd4809.js": "7517b3c512b56f80b5ceea9c05b39a5632f11493",
-    "/styles.e6a9d90b1b447be243ec.css": "7cbb4df6bef5198f7290e7a2f8175980052a5c47"
+    "/runtime.15847ba80af240bfba75.js": "5412ae58afe744c2774cc65cc0b54b09fa19daa6",
+    "/styles.f6b5e530db2757fcb861.css": "0bed490d6290af83e6f8c7ab8d4b6be495129440"
   },
   "navigationUrls": [
     {
