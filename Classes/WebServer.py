@@ -11,8 +11,9 @@ from gzip import compress
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 
+ALLOW_GZIP = 1
 ALLOW_CHUNK = 1
-MAX_KB_TO_SEND = 16 * 1024
+MAX_KB_TO_SEND = 4 * 1024
 DEBUG_HTTP = True
 
 class WebServer(object):
@@ -146,12 +147,11 @@ class WebServer(object):
 
         Domoticz.Log("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
 
-        if Compress:
+        if ALLOW_GZIP and Compress:
             Response["Data"] = compress( Response["Data"] )
             Response["Headers"]['Content-Encoding'] = 'gzip'
 
         if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
-
             idx = 0
             HTTPchunk = {}
             HTTPchunk['Status'] = Response['Status']
@@ -159,11 +159,9 @@ class WebServer(object):
             HTTPchunk['Headers'] = dict(Response['Headers'])
             HTTPchunk['Chunk'] = True
             HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
-
             Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
             DumpHTTPResponseToLog( Response )
             Connection.Send( HTTPchunk )
-
             idx = MAX_KB_TO_SEND
             while idx != -1:
                 tosend={}
@@ -178,16 +176,13 @@ class WebServer(object):
                 Connection.Send( tosend )
                 Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
                 DumpHTTPResponseToLog( Response )
-
             tosend={}
             tosend['Chunk'] = True
             DumpHTTPResponseToLog( Response )
             Connection.Send( tosend )
-
         else:
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response )
-
 
     def keepConnectionAlive( self ):
 
@@ -400,7 +395,7 @@ def setupHeadersResponse():
     _response["Headers"]["Expires"] = "0"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate"
     _response["Headers"]["Server"] = "Domoticz"
-    _response["Headers"]["Accept-Range"] = "none"
+    #_response["Headers"]["Accept-Range"] = "none"
 
     return _response
 
