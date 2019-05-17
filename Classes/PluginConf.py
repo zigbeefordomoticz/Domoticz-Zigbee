@@ -66,7 +66,7 @@ class PluginConf:
         self.pluginConfig = self.pluginHome + 'Conf/'
         self.pluginWWW = self.pluginHome + 'www/'
         #self.pluginReports = self.pluginWWW + 'zigate/reports/'
-        self.pluginReports = self.pluginHome + 'www/zigate/reports/'
+        self.pluginReports = self.pluginHome + 'Reports/'
         self.pluginOTAFirmware = self.pluginHome + 'OTAFirmware/'
 
         self.filename = None
