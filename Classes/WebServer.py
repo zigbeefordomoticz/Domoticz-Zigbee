@@ -115,39 +115,44 @@ class WebServer(object):
             _response = setupHeadersResponse()
 
             #webFilename = self.homedirectory +'www'+Data['URL'] 
-            Domoticz.Log("Opening: %s" %webFilename)
+            Domoticz.Debug("Opening: %s" %webFilename)
             with open(webFilename , mode ='rb') as webFile:
                 _response["Data"] = webFile.read()
 
-                _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
-                Domoticz.Log("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
-    
-                if _contentType:
-                    _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
-                if _contentEncoding:
-                    _response["Headers"]["Content-Encoding"] = _contentEncoding 
-    
-                _response["Status"] = "200 OK"
-    
-                self.sendResponse( Connection, _response )
+            _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
+            Domoticz.Debug("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
+   
+            if _contentType:
+                _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
+            if _contentEncoding:
+                _response["Headers"]["Content-Encoding"] = _contentEncoding 
+  
+            _response["Status"] = "200 OK"
+            compress=False
+            if Data['Headers']['Accept-Encoding'].find('gzip') != -1:
+                compress=True
+            self.sendResponse( Connection, _response, compress  )
 
-    def sendResponse( self, Connection, Response):
+    def sendResponse( self, Connection, Response, Compress ):
 
         ALLOW_CHUNK = 1
-        MAX_KB_TO_SEND = 8 * 1024
+        MAX_KB_TO_SEND = 16 * 1024
 
-        Domoticz.Log("Response sent")
-        Domoticz.Log("--->Status: %s" %(Response["Status"]))
-        Domoticz.Log("--->Headers")
+        Domoticz.Log("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
         for item in Response["Headers"]:
             Domoticz.Log("------>%s: %s" %(item, Response["Headers"][item]))
         if 'Data' in Response:
             Domoticz.Log("--->Data: '%.40s'" %str(Response["Data"]))
-        Connection.Send( Response )
 
-        if  ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
+        if Compress:
+            Response["Data"] = gzip.compress( Response["Data"] )
+            Response["Headers"]['Content-Encoding'] = 'gzip'
+            #DumpHTTPResponseToLog( Response )
+            #Connection.Send( Response )
+
+        if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
+
             idx = 0
-
             HTTPchunk = {}
             HTTPchunk['Status'] = Response['Status']
             HTTPchunk['Headers'] = {}
@@ -156,8 +161,10 @@ class WebServer(object):
             HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
 
             Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+            DumpHTTPResponseToLog( Response )
             Connection.Send( HTTPchunk )
 
+            idx = MAX_KB_TO_SEND
             while idx != -1:
                 tosend={}
                 tosend['Chunk'] = True
@@ -170,9 +177,11 @@ class WebServer(object):
 
                 Connection.Send( tosend )
                 Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+                DumpHTTPResponseToLog( Response )
 
             tosend={}
             tosend['Chunk'] = True
+            DumpHTTPResponseToLog( Response )
             Connection.Send( tosend )
 
         else:
