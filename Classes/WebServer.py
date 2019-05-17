@@ -7,7 +7,7 @@ import mimetypes
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
 from time import time
-
+import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 class WebServer(object):
@@ -88,7 +88,7 @@ class WebServer(object):
                 headerCode = "400 Bad Request"
 
             parsed_url = urlparse(  Data['URL'] )
-            Domoticz.Log(" URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
+            Domoticz.Log("URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
 
             if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
             else: parsed_query = Data['URL'].split('/')
@@ -97,23 +97,19 @@ class WebServer(object):
                 Data['Data'] = None
 
             if (headerCode != "200 OK"):
-                DumpHTTPResponseToLog(Data)
                 Connection.Send({"Status": headerCode})
                 return
             elif ( parsed_query[0] == 'rest-zigate'):
-                # REST API
                 Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
                         %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
                 self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
                 return
 
-
             webFilename = self.homedirectory +'www'+ Data['URL']
-            Domoticz.Log("webFilename: %s" %webFilename)
-
+            Domoticz.Debug("webFilename: %s" %webFilename)
             if not os.path.isfile( webFilename ):
                 webFilename =  self.homedirectory + 'www' + "/index.html"
-                Domoticz.Log("Redirecting to /index.html")
+                Domoticz.Debug("Redirecting to /index.html")
 
             # We are ready to send the response
             _response = setupHeadersResponse()
@@ -122,8 +118,6 @@ class WebServer(object):
             Domoticz.Log("Opening: %s" %webFilename)
             with open(webFilename , mode ='rb') as webFile:
                 _response["Data"] = webFile.read()
-
-                Domoticz.Log("Reading file: %.40s len: %s" %(_response["Data"], len(_response["Data"])))
 
                 _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
                 Domoticz.Log("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
@@ -135,32 +129,60 @@ class WebServer(object):
     
                 _response["Status"] = "200 OK"
     
-                Connection.Send( _response )
-    
-                Domoticz.Log("Response sent")
-                Domoticz.Log("--->Status: %s" %(_response["Status"]))
-                Domoticz.Log("--->Headers")
-                for item in _response["Headers"]:
-                    Domoticz.Log("------>%s: %s" %(item, _response["Headers"][item]))
-                if 'Data' in _response:
-                    Domoticz.Log("--->Data: '%.40s'" %str(_response["Data"]))
+                self.sendResponse( Connection, _response )
+
+    def sendResponse( self, Connection, Response):
+
+        ALLOW_CHUNK = 1
+        MAX_KB_TO_SEND = 8 * 1024
+
+        Domoticz.Log("Response sent")
+        Domoticz.Log("--->Status: %s" %(Response["Status"]))
+        Domoticz.Log("--->Headers")
+        for item in Response["Headers"]:
+            Domoticz.Log("------>%s: %s" %(item, Response["Headers"][item]))
+        if 'Data' in Response:
+            Domoticz.Log("--->Data: '%.40s'" %str(Response["Data"]))
+        Connection.Send( Response )
+
+        if  ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
+            idx = 0
+
+            HTTPchunk = {}
+            HTTPchunk['Status'] = Response['Status']
+            HTTPchunk['Headers'] = {}
+            HTTPchunk['Headers'] = dict(Response['Headers'])
+            HTTPchunk['Chunk'] = True
+            HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
+
+            Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+            Connection.Send( HTTPchunk )
+
+            while idx != -1:
+                tosend={}
+                tosend['Chunk'] = True
+                if idx + MAX_KB_TO_SEND <= len(Response['Data']):
+                    tosend['Data'] = Response['Data'][idx:idx+MAX_KB_TO_SEND]        
+                    idx += MAX_KB_TO_SEND
+                else:
+                    tosend['Data'] = Response['Data'][idx:]        
+                    idx = -1
+
+                Connection.Send( tosend )
+                Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+
+            tosend={}
+            tosend['Chunk'] = True
+            Connection.Send( tosend )
+
+        else:
+            Connection.Send( Response )
+
 
     def keepConnectionAlive( self ):
 
-        return
-        if (self.httpClientConn == None or self.httpClientConn.Connected() != True):
-            self.httpClientConn = Domoticz.Connection(Name="Client Connection", Transport="TCP/IP", Protocol="HTTP", Address="127.0.0.1", Port=Parameters["Port"])
-            self.httpClientConn.Connect()
-            self.heartbeats = 0
-        else:
-            if (self.heartbeats == 1):
-                self.httpClientConn.Send({"Verb":"GET", "URL":"/page.html", "Headers": {"Connection": "keep-alive", "Accept": "Content-Type: text/html; charset=UTF-8"}})
-            elif (self.heartbeats == 2):
-                postData = "param1=value&param2=other+value"
-                self.httpClientConn.Send({'Verb':'POST', 'URL':'/MediaRenderer/AVTransport/Control', 'Data': postData})
-            elif (self.heartbeats == 3) and (Parameters["Mode6"] != "File"):
-                self.httpClientConn.Disconnect()
         self.heartbeats += 1
+        return
 
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
@@ -182,7 +204,7 @@ class WebServer(object):
             # We reach here due to failure !
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
-            HTTPresponse["Headers"]["Connection"] = "Keep-alive"
+            HTTPresponse["Headers"]["Connection"] = "Close"
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
         Domoticz.Log("Response sent")
@@ -191,7 +213,7 @@ class WebServer(object):
         for item in HTTPresponse["Headers"]:
             Domoticz.Log("------>%s: %s" %(item, HTTPresponse["Headers"][item]))
         if 'Data' in HTTPresponse:
-            Domoticz.Log("--->Data: %s" %HTTPresponse["Data"])
+            Domoticz.Debug("--->Data: %s" %HTTPresponse["Data"])
 
         Connection.Send( HTTPresponse )
 
@@ -353,228 +375,9 @@ class WebServer(object):
                     _response["Data"] = json.dumps( ListOfGroups[parameters[0]],indent=4, sort_keys=True )
         return _response
 
-    def jsonListOfDevices( self, Connection, IEEE=None, Nwkid=None):
-
-        return
-
-    def jsonDispatch( self, Connection, Data ):
-        """
-        GET
-            /json.htm?type=devices                          Provide the list ond the details of Domoticz Widget for this Zigate
-            /json.htm?type=devicesbyIEEE&<IEEE address>     Provide the list and the details of Domoticz Widget matching this IEEE
-            /json.htm?type=zdevices                         Provide the list and details of Zigate devices (managed by the Plugin)
-            /json.htm?type=zdevicesbyIEEE&<IEEE address>    Provide the details of the Zigate paired device matching the IEEE
-            /json.htm?type=zdevicesbySaddr&<Short address>  Provide the details of the Zigate paired device matching the Short Address
-            /json.htm?type=zgroups                          Provide the list and details of Groups 
-        """
-
-        _response = setupHeadersResponse()
-
-        _analyse = Data['URL'].split('?')
-        if len(_analyse) != 2:
-            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-            _response["Status"] = "400 BAD REQUEST"
-        elif _analyse[0] != '/json.htm':
-            _response["Status"] = "400 BAD REQUEST"
-            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-        else:
-            _api = _analyse[1].split('=')
-            if (len(_api) != 2):
-                _response["Status"] = "400 BAD REQUEST"
-                _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-            elif _api[0] != 'type':
-                _response["Status"] = "400 BAD REQUEST"
-                _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-            else: 
-                _command = _api[1].split('&')
-                if _command[0] not in ('devicebyname', 'devicebyIEEE', 'devices', 'zdevices', 'zdevicesbyIEEE', 'zdevicesbySaddr', 'zgroups' ):
-                    _response["Status"] = "400 BAD REQUEST"
-                    _response["Data"] = "Authorized  Verbs are: devicebyname', 'devicebyIEEE', 'devices', 'zdevices', 'zdevicesbyIEEE', 'zdevicesbySaddr', 'zgroups '"
-                else: 
-                    if len(_command) > 2:
-                        _response["Status"] = "400 BAD REQUEST"
-                        _response["Data"] = "Syntax error, expecting: /json.htm?type=devicebyIEEE&00158d00028f8e74 in order get the Domoticz Widget info for Device 00158d00028f8e74"
-                    else:
-                        # Finally syntax, verbs are ok.
-                        if _command[0] == 'devices':
-                            if self.jsonListWidgets( Connection ):
-                                return
-                            _response["Status"] = "404 Not Found"
-                            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-                        elif _command[0] == 'zdevices':
-                            if self.jsonListOfDevices( Connection ):
-                                return
-                            _response["Status"] = "404 Not Found"
-                            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-                        elif _command[0] == 'zgroups':
-                            if self.jsonListOfGroups( Connection ):
-                                return
-                            _response["Status"] = "404 Not Found"
-                            _response["Data"] = "Syntax error, expecting: /json.htm?type=devices  in order to get the full list of Domoticz Widgets"
-                        elif _command[0] in ( 'devicebyname', 'devicebyIEEE' ) and len(_command) == 2:
-                            if _command[0] == 'devicebyIEEE':
-                                if self.jsonListWidgets( Connection, WidgetID=_command[1]):
-                                    return
-                                _response["Data"] = "Widget ID (IEEE): %s not found" %_command[1]
-                                _response["Status"] = "404 Not Found"
-                            else:
-                                if self.jsonListWidgets( Connection,WidgetName=_command[1]):
-                                    return
-                                _response["Data"] = "Widget Name: %s not found" %_command[1]
-                                _response["Status"] = "404 Not Found"
-                        elif _command[0] in ( 'zdevicesbyIEEE', 'zdevicesbySaddr' ) and len(_command) == 2:
-                            if _command[0] == 'zdevicesbyIEEE':
-                                if self.jsonListOfDevices( Connection, IEEE=_command[1]):
-                                    return
-                                _response["Status"] = "404 Not Found"
-                                _response["Data"] = "IEEE: %s not found" %_command[1]
-                            else:
-                                if self.jsonListOfDevices( Connection, Nwkid=_command[1]):
-                                    return
-                                _response["Status"] = "404 Not Found"
-                                _response["Data"] = "Short Address: %s not found" %_command[1]
-
-
-        # We reach here due to failure !
-        if 'Status' not in _response:
-                _response["Status"] = "400 BAD REQUEST"
-                _response["Data"] = 'Syntax error'
-    
-        _response["Headers"]["Connection"] = "Keep-alive"
-        _response["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
-        Connection.Send( _response )
-        Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
-
-
-    def jsonListWidgets( self, Connection, WidgetName=None, WidgetID = None):
-
-        if self.Devices is None or len(self.Devices) == 0:
-            return
-        _response = setupHeadersResponse()
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        if WidgetName and WidgetID:
-            Domoticz.Error("jsonListWidgets - not expected")
-            return False
-
-        if WidgetName:
-            # Return the list of Widgets for this particular IEEE
-            for x in self.Devices:
-                if self.Devices[x].Name == WidgetName:
-                    break
-            else:
-                return False
-            _dictDevices = {}
-            _dictDevices['Name'] = self.Devices[x].Name
-            _dictDevices['DeviceID'] = self.Devices[x].DeviceID
-            _dictDevices['sValue'] = self.Devices[x].sValue
-            _dictDevices['nValue'] = self.Devices[x].nValue
-            _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
-            _dictDevices['BatteryLevel'] = self.Devices[x].BatteryLevel
-            _dictDevices['TimedOut'] = self.Devices[x].TimedOut
-            _dictDevices['Type'] = self.Devices[x].Type
-            _dictDevices['SwitchType'] = self.Devices[x].SwitchType
-
-            _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
-
-        elif WidgetID:
-            # Return the Widget Device information
-            for x in self.Devices:
-                if self.Devices[x].DeviceID == WidgetID:
-                    break
-            else:
-                return False
-            _dictDevices = {}
-            _dictDevices['Name'] = self.Devices[x].Name
-            _dictDevices['DeviceID'] = self.Devices[x].DeviceID
-            _dictDevices['sValue'] = self.Devices[x].sValue
-            _dictDevices['nValue'] = self.Devices[x].nValue
-            _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
-            _dictDevices['BatteryLevel'] = self.Devices[x].BatteryLevel
-            _dictDevices['TimedOut'] = self.Devices[x].TimedOut
-            _dictDevices['Type'] = self.Devices[x].Type
-            _dictDevices['SwitchType'] = self.Devices[x].SwitchType
-
-            _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
-        else:
-            # Return the Full List of ZIgate Domoticz Widget
-            _dictDevices = {}
-
-            for x in self.Devices:
-                _dictDevices[self.Devices[x].Name] = {}
-                _dictDevices[self.Devices[x].Name]['Name'] = self.Devices[x].Name
-                _dictDevices[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
-                _dictDevices[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
-                _dictDevices[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
-                _dictDevices[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
-                _dictDevices[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
-                _dictDevices[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
-                _dictDevices[self.Devices[x].Name]['Type'] = self.Devices[x].Type
-                _dictDevices[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
-
-            _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
-
-        Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
-        Connection.Send( _response )
-        return True
-
-    def jsonListOfGroups( self, Connection):
-
-
-        if self.groupmgt is None:
-            return
-
-        ListOfGroups = self.groupmgt.ListOfGroups
-        if ListOfGroups is None or len(ListOfGroups) == 0:
-            return
-        _response = setupHeadersResponse()
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        _response["Data"] = json.dumps( ListOfGroups,indent=4, sort_keys=True )
-        Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
-        Connection.Send( _response )
-        return True
-
-
-
-    def jsonListOfDevices( self, Connection, IEEE=None, Nwkid=None):
-
-        if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
-            return
-        _response = setupHeadersResponse()
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        if IEEE and Nwkid:
-            Domoticz.Error("jsonListOfDevices - not expected")
-            return False
-        if Nwkid:
-            # Return the Device infos based on Nwkid
-            if Nwkid not in self.ListOfDevices:
-                return False
-            _response["Data"] =  json.dumps( self.ListOfDevices[Nwkid],indent=4, sort_keys=True ) 
-        elif IEEE:
-            # Return the Deviceinfos after getting the Nwkid
-            if IEEE not in self.IEEE2NWK:
-                return False
-            if self.IEEE2NWK[IEEE] not in self.ListOfDevices:
-                return False
-            _response["Data"] = json.dumps( self.ListOfDevices[self.IEEE2NWK[IEEE]],indent=4, sort_keys=True ) 
-        else:
-            # Return a sorted list of devices and filter 0000
-            _response["Data"] = json.dumps( self.ListOfDevices,indent=4, sort_keys=True )
-
-        Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
-        Connection.Send( _response )
-        return True
-
 
 def DumpHTTPResponseToLog(httpDict):
+
     if isinstance(httpDict, dict):
         Domoticz.Log("HTTP Details ("+str(len(httpDict))+"):")
         for x in httpDict:
@@ -584,8 +387,6 @@ def DumpHTTPResponseToLog(httpDict):
                     Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
             else:
                 Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
-
-
 
 def setupHeadersResponse():
 
@@ -600,3 +401,5 @@ def setupHeadersResponse():
     _response["Headers"]["Accept-Range"] = "none"
 
     return _response
+
+
