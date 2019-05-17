@@ -7,8 +7,13 @@ import mimetypes
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
 from time import time
-import gzip
+from gzip import compress
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
+
+
+ALLOW_CHUNK = 1
+MAX_KB_TO_SEND = 16 * 1024
+DEBUG_HTTP = True
 
 class WebServer(object):
     hearbeats = 0 
@@ -93,8 +98,8 @@ class WebServer(object):
             if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
             else: parsed_query = Data['URL'].split('/')
 
-            if 'Data' not in Data:
-                Data['Data'] = None
+            if 'Data' not in Data: Data['Data'] = None
+
 
             if (headerCode != "200 OK"):
                 self.sendResponse( Connection, {"Status": headerCode}, False  )
@@ -128,6 +133,9 @@ class WebServer(object):
                 _response["Headers"]["Content-Encoding"] = _contentEncoding 
   
             _response["Status"] = "200 OK"
+            if 'Cookie' in Data: 
+                _response['Cookie'] = Data['Cookie']
+
             compress=False
             if Data['Headers']['Accept-Encoding'].find('gzip') != -1:
                 compress=True
@@ -135,17 +143,11 @@ class WebServer(object):
 
     def sendResponse( self, Connection, Response, Compress ):
 
-        ALLOW_CHUNK = 1
-        MAX_KB_TO_SEND = 16 * 1024
 
         Domoticz.Log("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
-        for item in Response["Headers"]:
-            Domoticz.Log("------>%s: %s" %(item, Response["Headers"][item]))
-        if 'Data' in Response:
-            Domoticz.Log("--->Data: '%.40s'" %str(Response["Data"]))
 
         if Compress:
-            Response["Data"] = gzip.compress( Response["Data"] )
+            Response["Data"] = compress( Response["Data"] )
             Response["Headers"]['Content-Encoding'] = 'gzip'
 
         if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
@@ -183,6 +185,7 @@ class WebServer(object):
             Connection.Send( tosend )
 
         else:
+            DumpHTTPResponseToLog( Response )
             Connection.Send( Response )
 
 
@@ -214,14 +217,6 @@ class WebServer(object):
             HTTPresponse["Headers"]["Connection"] = "Close"
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
-        Domoticz.Log("Response sent")
-        Domoticz.Log("--->Status: %s" %(HTTPresponse["Status"]))
-        Domoticz.Log("--->Headers")
-        for item in HTTPresponse["Headers"]:
-            Domoticz.Log("------>%s: %s" %(item, HTTPresponse["Headers"][item]))
-        if 'Data' in HTTPresponse:
-            Domoticz.Debug("--->Data: %s" %HTTPresponse["Data"])
-
         self.sendResponse( Connection, HTTPresponse, False  )
 
 
@@ -229,7 +224,6 @@ class WebServer(object):
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -260,7 +254,6 @@ class WebServer(object):
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -283,7 +276,6 @@ class WebServer(object):
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -343,7 +335,6 @@ class WebServer(object):
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -365,7 +356,6 @@ class WebServer(object):
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         Domoticz.Log("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
@@ -385,6 +375,8 @@ class WebServer(object):
 
 def DumpHTTPResponseToLog(httpDict):
 
+    if not DEBUG_HTTP:
+        return
     if isinstance(httpDict, dict):
         Domoticz.Log("HTTP Details ("+str(len(httpDict))+"):")
         for x in httpDict:
