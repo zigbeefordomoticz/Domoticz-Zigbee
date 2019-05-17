@@ -360,7 +360,7 @@ class BasePlugin:
                 decoded[label] = value
             return decoded
 
-        Domoticz.Log("onConnect %s called with status: %s and Desc: %s" %( Connection, Status, Description))
+        Domoticz.Debug("onConnect %s called with status: %s and Desc: %s" %( Connection, Status, Description))
 
         decodedConnection = decodeConnection ( str(Connection) )
         if 'Protocol' in decodedConnection:
@@ -443,6 +443,9 @@ class BasePlugin:
                 self.webserver.onMessage( Connection, Data)
             return
 
+        if len(Data) == 0:
+            Domoticz.Log("onMessage - empty message received on %s" %Connection)
+
         self.Ping['Nb Ticks'] = 0
         self.ZigateComm.onMessage(Data)
 
@@ -477,6 +480,7 @@ class BasePlugin:
 
     def onDisconnect(self, Connection):
 
+        Domoticz.Debug("onDisconnect: %s" %Connection)
         def decodeConnection( connection ):
 
             decoded = {}
