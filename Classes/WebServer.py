@@ -37,6 +37,13 @@ class WebServer(object):
         mimetypes.init()
         self.startWebServer()
         
+        self.Settings = {}
+        self.Settings["Ping"] = {}
+        self.Settings["Ping"]["default"] = "1"
+        self.Settings["Ping"]["current"] = ""
+        self.Settings["enableWebServer"] = {}
+        self.Settings["enableWebServer"]["default"] = "0"
+        self.Settings["enableWebServer"]["current"] = ""
 
     def  startWebServer( self ):
 
@@ -83,42 +90,36 @@ class WebServer(object):
             parsed_url = urlparse(  Data['URL'] )
             Domoticz.Log(" URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
 
-            if  Data['URL'][0] == '/':
-                parsed_query = Data['URL'][1:].split('/')
-            else:
-                parsed_query = Data['URL'].split('/')
+            if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
+            else: parsed_query = Data['URL'].split('/')
 
             if 'Data' not in Data:
                 Data['Data'] = None
-            if ( parsed_query[0] == 'rest-zigate'):
-                # REST API
-                Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
-                        %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
-                self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
-                return
-                
-            elif (  parsed_query[0].find('json.htm') != -1 ):
-                # JSON API
-                self.jsonDispatch( Connection, Data )
-                return
-
-            elif not os.path.exists( self.homedirectory +'www'+ Data['URL']):
-                if os.path.exists( self.homedirectory +'www'+ Data['URL'] + "/" ):
-                    Data['URL'] = self.homedirectory +'www' + "/index.html"
-
-                Domoticz.Error("Invalid web request received, file '"+ self.homedirectory + 'www' +Data['URL'] + "' does not exist")
-                headerCode = "404 File Not Found"
 
             if (headerCode != "200 OK"):
                 DumpHTTPResponseToLog(Data)
                 Connection.Send({"Status": headerCode})
                 return
+            elif ( parsed_query[0] == 'rest-zigate'):
+                # REST API
+                Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
+                        %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
+                self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
+                return
+
+
+            webFilename = self.homedirectory +'www'+ Data['URL']
+            Domoticz.Log("webFilename: %s" %webFilename)
+
+            if not os.path.isfile( webFilename ):
+                webFilename =  self.homedirectory + 'www' + "/index.html"
+                Domoticz.Log("Redirecting to /index.html")
 
             # We are ready to send the response
             _response = setupHeadersResponse()
 
             #webFilename = self.homedirectory +'www'+Data['URL'] 
-            webFilename = self.homedirectory +'www'+ Data['URL']
+            Domoticz.Log("Opening: %s" %webFilename)
             with open(webFilename , mode ='rb') as webFile:
                 _response["Data"] = webFile.read()
 
@@ -179,13 +180,13 @@ class WebServer(object):
 
         if HTTPresponse != {}:
             HTTPresponse["Status"] = "200 OK"
-            HTTPresponse["Headers"]["Connection"] = "Keealive"
+            HTTPresponse["Headers"]["Connection"] = "Keep-alive"
             HTTPresponse["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         else:
             # We reach here due to failure !
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
-            HTTPresponse["Headers"]["Connection"] = "Keealive"
+            HTTPresponse["Headers"]["Connection"] = "Keep-alive"
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
         Domoticz.Log("Response sent")
@@ -203,27 +204,31 @@ class WebServer(object):
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
 
             if len(parameters) == 0:
-                settings = {}
-                settings["Ping"] = {}
-                settings["Ping"]["default"] = "1"
-                settings["Ping"]["current"] = ""
-                settings["enableWebServer"] = {}
-                settings["enableWebServer"]["default"] = "0"
-                settings["enableWebServer"]["current"] = ""
-                _response["Data"] = json.dumps( settings,indent=4, sort_keys=True )
+                _response["Data"] = json.dumps( self.Settings,indent=4, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
-            Domoticz.Log("Data: %s" %data)
             data = data.decode('utf8')
             Domoticz.Log("Data: %s" %data)
-            data = json.loads(data)
+            data = eval(data)
+            Domoticz.Log("Data: %s" %data)
+            Domoticz.Log("type(data): %s" %type(data))
+
+            """"
+            Data: {"ping":{"current":"0"},"enableWebServer":{"current":"0"}}
+            """
+
+            for item in data:
+                Domoticz.Log("Data[%s] = %s" %(item, data[item]))
+                Domoticz.Log(" self.Settings[%s] = %s" %(item, self.Settings[item]))
+                if data[item]['current'] != self.Settings[item]['current']:
+                     self.Settings[item]['current'] = data[item]['current']
 
             if len(parameters) == 1:
                 Domoticz.Log("parameters: %s value = %s" %(parameters[0], str(data)))
@@ -238,7 +243,7 @@ class WebServer(object):
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -261,7 +266,7 @@ class WebServer(object):
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -321,7 +326,7 @@ class WebServer(object):
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
@@ -343,7 +348,7 @@ class WebServer(object):
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         Domoticz.Log("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
@@ -447,7 +452,7 @@ class WebServer(object):
                 _response["Status"] = "400 BAD REQUEST"
                 _response["Data"] = 'Syntax error'
     
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
         Connection.Send( _response )
         Domoticz.Log('"Status": %s, "Headers": %s' %(_response["Status"],_response["Headers"]))
@@ -459,7 +464,7 @@ class WebServer(object):
             return
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if WidgetName and WidgetID:
@@ -538,7 +543,7 @@ class WebServer(object):
             return
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         _response["Data"] = json.dumps( ListOfGroups,indent=4, sort_keys=True )
@@ -554,7 +559,7 @@ class WebServer(object):
             return
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
-        _response["Headers"]["Connection"] = "Keealive"
+        _response["Headers"]["Connection"] = "Keep-alive"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if IEEE and Nwkid:
