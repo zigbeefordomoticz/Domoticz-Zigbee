@@ -290,7 +290,7 @@ class WebServer(object):
         Statistics['Cluster'] =self.statistics._clusterOK
         Statistics['ReTx'] =self.statistics._reTx
         Statistics['MaxLoad'] =self.statistics._MaxLoad
-        Statistics['Start Time'] =self.statistics._start
+        Statistics['Start-Time'] =self.statistics._start
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
