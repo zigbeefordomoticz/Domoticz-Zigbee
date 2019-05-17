@@ -178,11 +178,7 @@ class WebServer(object):
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
 
-        if HTTPresponse != {}:
-            HTTPresponse["Status"] = "200 OK"
-            HTTPresponse["Headers"]["Connection"] = "Keep-alive"
-            HTTPresponse["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        else:
+        if HTTPresponse == {}:
             # We reach here due to failure !
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
@@ -208,7 +204,6 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
-
             if len(parameters) == 0:
                 _response["Data"] = json.dumps( self.Settings,indent=4, sort_keys=True )
 
@@ -217,26 +212,19 @@ class WebServer(object):
             data = data.decode('utf8')
             Domoticz.Log("Data: %s" %data)
             data = eval(data)
-            Domoticz.Log("Data: %s" %data)
-            Domoticz.Log("type(data): %s" %type(data))
-
-            """"
-            Data: {"ping":{"current":"0"},"enableWebServer":{"current":"0"}}
-            """
 
             for item in data:
                 Domoticz.Log("Data[%s] = %s" %(item, data[item]))
-                Domoticz.Log(" self.Settings[%s] = %s" %(item, self.Settings[item]))
-                if data[item]['current'] != self.Settings[item]['current']:
-                     self.Settings[item]['current'] = data[item]['current']
-
-            if len(parameters) == 1:
-                Domoticz.Log("parameters: %s value = %s" %(parameters[0], str(data)))
-            else:
-                Domoticz.Error("Unexpected number of Parameter")
-                _response["Data"] = { 'unexpected number of parameters' }
-                _response["Status"] = "400 SYNTAX ERROR"
-
+                if item not in self.Settings:
+                    Domoticz.Error("Unexpectped parameter: %s" %item)
+                    Domoticz.Error("Unexpected number of Parameter")
+                    _response["Data"] = { 'unexpected parameters %s' %item }
+                    _response["Status"] = "400 SYNTAX ERROR"
+                    break
+                else:
+                    Domoticz.Log(" self.Settings[%s] = %s" %(item, self.Settings[item]))
+                    if data[item]['current'] != self.Settings[item]['current']:
+                        self.Settings[item]['current'] = data[item]['current']
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
