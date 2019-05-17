@@ -144,14 +144,17 @@ class WebServer(object):
 
     def sendResponse( self, Connection, Response, Compress ):
 
+        if 'Data' not in Response or Response['Data'] == None:
+            DumpHTTPResponseToLog( Response )
+            Connection.Send( Response )
+            return
 
         Domoticz.Log("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
-
-        if ALLOW_GZIP and Compress:
+        if ALLOW_GZIP and Compress and 'Data' in Response:
             Response["Data"] = compress( Response["Data"] )
             Response["Headers"]['Content-Encoding'] = 'gzip'
 
-        if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
+        if ALLOW_CHUNK  and len(Response['Data']) > MAX_KB_TO_SEND:
             idx = 0
             HTTPchunk = {}
             HTTPchunk['Status'] = Response['Status']
@@ -166,10 +169,12 @@ class WebServer(object):
             while idx != -1:
                 tosend={}
                 tosend['Chunk'] = True
-                if idx + MAX_KB_TO_SEND <= len(Response['Data']):
+                if idx + MAX_KB_TO_SEND < len(Response['Data']):
+                    # we have to send one chunk and then continue
                     tosend['Data'] = Response['Data'][idx:idx+MAX_KB_TO_SEND]        
                     idx += MAX_KB_TO_SEND
                 else:
+                    # we have to send MAX_KB_TO_SEND or less and then exit
                     tosend['Data'] = Response['Data'][idx:]        
                     idx = -1
 
