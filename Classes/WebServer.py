@@ -245,7 +245,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.pluginparameters,indent=4, sort_keys=True )
+                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
         return _response
 
     def rest_netTopologie( self, verb, data, parameters):
@@ -273,7 +273,7 @@ class WebServer(object):
                     _response['Data'] += ','
                 _response['Data'] = _response['Data'][:-1] + '}'
             elif len(parameters) == 1:
-                _response['Data'] = json.dumps( _lqi[parameters[0]] ,indent=4, sort_keys=True ) 
+                _response['Data'] = json.dumps( _lqi[parameters[0]] , sort_keys=True ) 
         return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
@@ -296,7 +296,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( Statistics,indent=4, sort_keys=True )
+                _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
 
     def rest_Settings( self, verb, data, parameters):
@@ -307,7 +307,7 @@ class WebServer(object):
 
         if verb == 'GET':
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( self.Settings,indent=4, sort_keys=True )
+                _response["Data"] = json.dumps( self.Settings, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -406,7 +406,7 @@ class WebServer(object):
                             _dictDevices[x]['Type'] = self.Devices[x].Type
                             _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
 
-            _response["Data"] = json.dumps( _dictDevices,indent=4, sort_keys=True )
+            _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
         return _response
 
     def rest_zDevice( self, verb, data, parameters):
@@ -422,12 +422,12 @@ class WebServer(object):
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
                 return _response
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( self.ListOfDevices,indent=4, sort_keys=True )
+                _response["Data"] = json.dumps( self.ListOfDevices, sort_keys=True )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]],indent=4, sort_keys=True ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
                 elif parameters[0] in self.IEEE2NWK:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]],indent=4, sort_keys=True ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=True ) 
         return _response
 
     def rest_zGroup( self, verb, data, parameters):
@@ -445,10 +445,10 @@ class WebServer(object):
             if ListOfGroups is None or len(ListOfGroups) == 0:
                 return _response
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( ListOfGroups,indent=4, sort_keys=True )
+                _response["Data"] = json.dumps( ListOfGroups, sort_keys=True )
             if len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
-                    _response["Data"] = json.dumps( ListOfGroups[parameters[0]],indent=4, sort_keys=True )
+                    _response["Data"] = json.dumps( ListOfGroups[parameters[0]], sort_keys=True )
         return _response
 
 
