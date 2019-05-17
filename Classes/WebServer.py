@@ -250,7 +250,31 @@ class WebServer(object):
 
     def rest_netTopologie( self, verb, data, parameters):
 
-        return
+        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.hardwareID + '.json'
+        Domoticz.Log("Filename: %s" %_filename)
+        _lqi = {}
+
+        with open( _filename , 'rt') as handle:
+            for line in handle:
+                entry = json.loads( line, encoding=dict )
+                for x in entry:
+                    Domoticz.Log("--> %s" %x)
+                    _lqi[x] = dict(entry[x])
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+
+        if verb == 'GET':
+            if len(parameters) == 0:
+                # Send list of Time Stamps
+                _response['Data'] = '{'
+                for item in _lqi:
+                    _response['Data'] += item 
+                    _response['Data'] += ','
+                _response['Data'] = _response['Data'][:-1] + '}'
+            elif len(parameters) == 1:
+                _response['Data'] = json.dumps( _lqi[parameters[0]] ,indent=4, sort_keys=True ) 
+        return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
 
