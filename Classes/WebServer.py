@@ -13,7 +13,8 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 ALLOW_GZIP = 1
 ALLOW_CHUNK = 1
-MAX_KB_TO_SEND = 1 * 1024
+MAX_KB_TO_SEND = 4 * 1024
+KEEP_ALIVE = False
 DEBUG_HTTP = True
 
 class WebServer(object):
@@ -54,9 +55,7 @@ class WebServer(object):
     def  startWebServer( self ):
 
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
-        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
         self.httpServerConn.Listen()
-        #self.httpsServerConn.Listen()
         Domoticz.Log("Web backend started")
 
     def onDisconnect ( self, Connection ):
@@ -69,12 +68,9 @@ class WebServer(object):
     def onConnect(self, Connection, Status, Description):
 
         if (Status == 0):
-            Domoticz.Log("Connected successfully to: "+Connection.Address+":"+Connection.Port)
+            Domoticz.Debug("Connected successfully to: "+Connection.Address+":"+Connection.Port)
         else:
             Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
-        Domoticz.Log(str(Connection))
-        if (Connection != self.httpClientConn):
-            self.httpServerConns[Connection.Name] = Connection
 
     def onMessage( self, Connection, Data ):
 
@@ -100,7 +96,6 @@ class WebServer(object):
             else: parsed_query = Data['URL'].split('/')
 
             if 'Data' not in Data: Data['Data'] = None
-
 
             if (headerCode != "200 OK"):
                 self.sendResponse( Connection, {"Status": headerCode}, False  )
@@ -146,10 +141,16 @@ class WebServer(object):
 
         if 'Data' not in Response or Response['Data'] == None:
             DumpHTTPResponseToLog( Response )
-            Connection.Send( Response )
+            if KEEP_ALIVE:
+                Response['Connection'] = 'Keep-alive'
+                Connection.Send( Response )
+            else:
+                Response['Connection'] = 'Close'
+                Connection.Send( Response )
+                Connection.Disconnect( )
             return
 
-        Domoticz.Log("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
+        Domoticz.Debug("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
         if ALLOW_GZIP and Compress and 'Data' in Response:
             Response["Data"] = compress( Response["Data"] )
             Response["Headers"]['Content-Encoding'] = 'gzip'
@@ -162,7 +163,7 @@ class WebServer(object):
             HTTPchunk['Headers'] = dict(Response['Headers'])
             HTTPchunk['Chunk'] = True
             HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
-            Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+            Domoticz.Debug("Sending: %s out of %s" %(idx, len((Response['Data']))))
             DumpHTTPResponseToLog( Response )
             Connection.Send( HTTPchunk )
             idx = MAX_KB_TO_SEND
@@ -179,15 +180,22 @@ class WebServer(object):
                     idx = -1
 
                 Connection.Send( tosend )
-                Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
-                DumpHTTPResponseToLog( Response )
+                Domoticz.Debug("Sending: %s out of %s" %(idx, len((Response['Data']))))
             tosend={}
+            tosend['Connection'] = 'Close'
             tosend['Chunk'] = True
             DumpHTTPResponseToLog( Response )
             Connection.Send( tosend )
+            Connection.Disconnect( )
         else:
             DumpHTTPResponseToLog( Response )
-            Connection.Send( Response )
+            if KEEP_ALIVE:
+                Response['Connection'] = 'Keep-alive'
+                Connection.Send( Response )
+            else:
+                Response['Connection'] = 'Close'
+                Connection.Send( Response )
+                Connection.Disconnect( )
 
     def keepConnectionAlive( self ):
 
@@ -394,7 +402,7 @@ def setupHeadersResponse():
 
     _response = {}
     _response["Headers"] = {}
-    _response["Headers"]["Connection"] = "keep-alive"
+    #_response["Headers"]["Connection"] = "keep-alive"
     _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     _response["Headers"]["Pragma"] = "no-cache"
     _response["Headers"]["Expires"] = "0"
