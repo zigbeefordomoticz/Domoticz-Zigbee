@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1557862110055,
+  "timestamp": 1557960357371,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -8,17 +8,17 @@
       "installMode": "prefetch",
       "updateMode": "prefetch",
       "urls": [
-        "/4.f684e1eb86e66fc873cc.js",
-        "/5.afc61763f90f7ae4ba25.js",
-        "/6.ee33d9f71a220d240d85.js",
-        "/7.f4d889f57df64b2cc0a2.js",
-        "/8.60788fd6f2fa74207197.js",
-        "/9.0dfce40ce699aa65d694.js",
+        "/4.059c7798fe60d35ef4bc.js",
+        "/5.d08d7cbc7b92200e0569.js",
+        "/6.56da4c6652d47d878629.js",
+        "/7.fdcd526e073efa2e0e0b.js",
+        "/8.058267a9857e1d84a25e.js",
+        "/9.a14157da196a08850748.js",
         "/favicon.ico",
         "/index.html",
-        "/main.f7b20c35640932e24b98.js",
-        "/polyfills.a4813d5f9fa974c71ef6.js",
-        "/runtime.15847ba80af240bfba75.js",
+        "/main.e060690944be64b9bf0f.js",
+        "/polyfills.62a09f3b0d90106e506f.js",
+        "/runtime.b9178d2cb56bfba2a7a9.js",
         "/styles.f6b5e530db2757fcb861.css"
       ],
       "patterns": []
@@ -35,18 +35,18 @@
   ],
   "dataGroups": [],
   "hashTable": {
-    "/4.f684e1eb86e66fc873cc.js": "f5fa5d0d3594d25f722b17910dc6c149098669cf",
-    "/5.afc61763f90f7ae4ba25.js": "35ace5844b3e548531b0d02a8135fac17ff87794",
-    "/6.ee33d9f71a220d240d85.js": "c666c58ade7cae2d9a7a06c274375d3d74792e64",
-    "/7.f4d889f57df64b2cc0a2.js": "ba515b0e2841a1647d99b1a7f7d26425434c439a",
-    "/8.60788fd6f2fa74207197.js": "82f4d9bd2aa92bfc4c981b611420f696c98f3e5b",
-    "/9.0dfce40ce699aa65d694.js": "55ef10fe9b13667ab5ebd2c494cc7fe81aa8604c",
+    "/4.059c7798fe60d35ef4bc.js": "ed8e0e52eee37d6eaff4fc2933f66c4f8b23c6d2",
+    "/5.d08d7cbc7b92200e0569.js": "e9724148dea07212a24169e24f5544518bbbc1f4",
+    "/6.56da4c6652d47d878629.js": "7ef38004d406472a178764580626542e7377bfa3",
+    "/7.fdcd526e073efa2e0e0b.js": "e49efb0f2ea4b1d321c6b7a2991b2d43c6f3d8b8",
+    "/8.058267a9857e1d84a25e.js": "b35df1ea1f0b1071ce554338c80a53fb581c6f6d",
+    "/9.a14157da196a08850748.js": "d25187dec78bf77ca8371f926419fae567576328",
     "/assets/zigate_logo.png": "bdf79a5f4921f2dcbb7a690f9d271483ddd702e8",
     "/favicon.ico": "7311d698cc2194b4182fdcbc85bdc0e27a45774b",
-    "/index.html": "ad305f457aa7f931c3759c3e434b438330f3d2ae",
-    "/main.f7b20c35640932e24b98.js": "d55271f5628b83ba54452342231995f3e473a7c6",
-    "/polyfills.a4813d5f9fa974c71ef6.js": "e4ab04ac0d36669c2efe23eea384de13708c0c70",
-    "/runtime.15847ba80af240bfba75.js": "5412ae58afe744c2774cc65cc0b54b09fa19daa6",
+    "/index.html": "fb12c2e16096c1bf24d93c9ff52093c2f2510141",
+    "/main.e060690944be64b9bf0f.js": "9aa7dafafa8b8cf2db63c4718e57063b59ccc85d",
+    "/polyfills.62a09f3b0d90106e506f.js": "e4ab04ac0d36669c2efe23eea384de13708c0c70",
+    "/runtime.b9178d2cb56bfba2a7a9.js": "e607e7ca5d89aa7ef3c400c66ed0a0c709744400",
     "/styles.f6b5e530db2757fcb861.css": "0bed490d6290af83e6f8c7ab8d4b6be495129440"
   },
   "navigationUrls": [

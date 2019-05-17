@@ -4,7 +4,7 @@ import json
 import os.path
 
 import mimetypes
-from urllib.parse import urlparse, urlsplit, urldefrag
+from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
 from time import time
 
@@ -41,9 +41,9 @@ class WebServer(object):
     def  startWebServer( self ):
 
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
-        self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
+        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
         self.httpServerConn.Listen()
-        self.httpsServerConn.Listen()
+        #self.httpsServerConn.Listen()
         Domoticz.Log("Web backend started")
 
     def onDisconnect ( self, Connection ):
@@ -69,6 +69,7 @@ class WebServer(object):
             DumpHTTPResponseToLog(Data)
 
             headerCode = "200 OK"
+
             if (not 'Verb' in Data):
                 Domoticz.Error("Invalid web request received, no Verb present")
                 headerCode = "400 Bad Request"
@@ -78,6 +79,9 @@ class WebServer(object):
             elif (not 'URL' in Data):
                 Domoticz.Error("Invalid web request received, no URL present")
                 headerCode = "400 Bad Request"
+
+            parsed_url = urlparse(  Data['URL'] )
+            Domoticz.Log(" URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
 
             if  Data['URL'][0] == '/':
                 parsed_query = Data['URL'][1:].split('/')
@@ -99,6 +103,9 @@ class WebServer(object):
                 return
 
             elif not os.path.exists( self.homedirectory +'www'+ Data['URL']):
+                if os.path.exists( self.homedirectory +'www'+ Data['URL'] + "/" ):
+                    Data['URL'] = self.homedirectory +'www' + "/index.html"
+
                 Domoticz.Error("Invalid web request received, file '"+ self.homedirectory + 'www' +Data['URL'] + "' does not exist")
                 headerCode = "404 File Not Found"
 
@@ -139,6 +146,7 @@ class WebServer(object):
 
     def keepConnectionAlive( self ):
 
+        return
         if (self.httpClientConn == None or self.httpClientConn.Connected() != True):
             self.httpClientConn = Domoticz.Connection(Name="Client Connection", Transport="TCP/IP", Protocol="HTTP", Address="127.0.0.1", Port=Parameters["Port"])
             self.httpClientConn.Connect()
@@ -590,10 +598,12 @@ def setupHeadersResponse():
 
     _response = {}
     _response["Headers"] = {}
-    _response["Headers"]["Connection"] = "Keealive"
+    _response["Headers"]["Connection"] = "keep-alive"
     _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     _response["Headers"]["Pragma"] = "no-cache"
     _response["Headers"]["Expires"] = "0"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate"
+    _response["Headers"]["Server"] = "Domoticz"
+    _response["Headers"]["Accept-Range"] = "none"
 
     return _response
