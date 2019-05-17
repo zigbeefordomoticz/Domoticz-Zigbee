@@ -13,7 +13,7 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 ALLOW_GZIP = 1
 ALLOW_CHUNK = 1
-MAX_KB_TO_SEND = 4 * 1024
+MAX_KB_TO_SEND = 1 * 1024
 DEBUG_HTTP = True
 
 class WebServer(object):
