@@ -576,7 +576,7 @@ class BasePlugin:
             Domoticz.Status("Start Web Server connection")
             if self.pluginconf.enableWebServer:
                 from Classes.WebServer import WebServer
-                self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                self.webserver = WebServer( self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
                                         self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)

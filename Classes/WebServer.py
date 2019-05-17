@@ -20,7 +20,7 @@ DEBUG_HTTP = True
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK ):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -30,6 +30,7 @@ class WebServer(object):
         self.pluginconf = PluginConf
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
+        self.statistics = Statistics
 
         if groupManagement:
             self.groupmgt = groupManagement
@@ -209,7 +210,11 @@ class WebServer(object):
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
-                'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup}
+                'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
+                'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
+                'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
+                'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
+                'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat}
                 }
 
         Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
@@ -227,6 +232,36 @@ class WebServer(object):
 
         self.sendResponse( Connection, HTTPresponse, False  )
 
+
+    def rest_PluginEnv( self, verb, data, parameters):
+
+        return
+    def rest_netTopologie( self, verb, data, parameters):
+
+        return
+
+    def rest_nwk_stat( self, verb, data, parameters):
+
+        return
+
+    def rest_plugin_stat( self, verb, data, parameters):
+
+        Statistics = {}
+        Statistics['CRC'] =self.statistics._crcErrors
+        Statistics['FrameErrors'] =self.statistics._frameErrors
+        Statistics['Sent'] =self.statistics._sent
+        Statistics['Received'] =self.statistics._received
+        Statistics['Cluster'] =self.statistics._clusterOK
+        Statistics['ReTx'] =self.statistics._reTx
+        Statistics['MaxLoad'] =self.statistics._MaxLoad
+        Statistics['Start Time'] =self.statistics._start
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+                _response["Data"] = json.dumps( Statistics,indent=4, sort_keys=True )
+        return _response
 
     def rest_Settings( self, verb, data, parameters):
 
