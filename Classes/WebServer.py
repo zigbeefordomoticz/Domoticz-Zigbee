@@ -97,7 +97,7 @@ class WebServer(object):
                 Data['Data'] = None
 
             if (headerCode != "200 OK"):
-                Connection.Send({"Status": headerCode})
+                self.sendResponse( Connection, {"Status": headerCode}, False  )
                 return
             elif ( parsed_query[0] == 'rest-zigate'):
                 Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
@@ -147,8 +147,6 @@ class WebServer(object):
         if Compress:
             Response["Data"] = gzip.compress( Response["Data"] )
             Response["Headers"]['Content-Encoding'] = 'gzip'
-            #DumpHTTPResponseToLog( Response )
-            #Connection.Send( Response )
 
         if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
 
@@ -224,7 +222,7 @@ class WebServer(object):
         if 'Data' in HTTPresponse:
             Domoticz.Debug("--->Data: %s" %HTTPresponse["Data"])
 
-        Connection.Send( HTTPresponse )
+        self.sendResponse( Connection, HTTPresponse, False  )
 
 
     def rest_Settings( self, verb, data, parameters):
@@ -395,7 +393,10 @@ def DumpHTTPResponseToLog(httpDict):
                 for y in httpDict[x]:
                     Domoticz.Log("------->'" + y + "':'" + str(httpDict[x][y]) + "'")
             else:
-                Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
+                if x == 'Data':
+                    Domoticz.Log("--->'%s':'%.40s'" %(x, str(httpDict[x])))
+                else:
+                    Domoticz.Log("--->'" + x + "':'" + str(httpDict[x]) + "'")
 
 def setupHeadersResponse():
 
