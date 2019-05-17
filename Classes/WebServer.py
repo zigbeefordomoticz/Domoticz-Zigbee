@@ -105,7 +105,12 @@ class WebServer(object):
             elif ( parsed_query[0] == 'rest-zigate'):
                 Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
                         %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
-                self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
+                if parsed_query[1] == '1':
+                    # API Version 1
+                    self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
+                else:
+                    Domoticz.Error("Unknown API version %s" %parsed_query[1])
+                    headerCode = "400 Bad Request"
                 return
 
             webFilename = self.homedirectory +'www'+ Data['URL']
