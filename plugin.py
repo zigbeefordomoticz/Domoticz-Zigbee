@@ -137,6 +137,7 @@ class BasePlugin:
         self.adminWidgets = None   # Manage AdminWidgets object
         self.DeviceListName = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
+        self.pluginParameters = None
 
         self.OTA = None
 
@@ -164,6 +165,7 @@ class BasePlugin:
     def onStart(self):
 
         Domoticz.Status("Zigate plugin beta-4.3.0 started")
+        self.pluginParameters = Parameters
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
@@ -576,7 +578,7 @@ class BasePlugin:
             Domoticz.Status("Start Web Server connection")
             if self.pluginconf.enableWebServer:
                 from Classes.WebServer import WebServer
-                self.webserver = WebServer( self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                self.webserver = WebServer( self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
                                         self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)

@@ -20,7 +20,7 @@ DEBUG_HTTP = True
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK ):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -31,6 +31,7 @@ class WebServer(object):
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
+        self.pluginparameters = PluginParameters
 
         if groupManagement:
             self.groupmgt = groupManagement
@@ -235,7 +236,13 @@ class WebServer(object):
 
     def rest_PluginEnv( self, verb, data, parameters):
 
-        return
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+                _response["Data"] = json.dumps( self.pluginparameters,indent=4, sort_keys=True )
+        return _response
+
     def rest_netTopologie( self, verb, data, parameters):
 
         return
