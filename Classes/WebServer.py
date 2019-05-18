@@ -252,7 +252,9 @@ class WebServer(object):
 
         _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.hardwareID + '.json'
         Domoticz.Log("Filename: %s" %_filename)
+
         _lqi = {}
+        _key = {}
 
         with open( _filename , 'rt') as handle:
             for line in handle:
@@ -262,19 +264,19 @@ class WebServer(object):
                 for x in entry:
                     Domoticz.Log("--> %s" %x)
                     if x in entry:
-                        _lqi[x] = dict(entry[x])
+                        _key[x] = '1'
+                        if x in entry:
+                            _lqi[x] = dict(entry[x])
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
-                _response['Data'] = '{'
-                for item in _lqi:
-                    _response['Data'] += item 
-                    _response['Data'] += ','
-                _response['Data'] = _response['Data'][:-1] + '}'
+                _response['Data'] = json.dumps( _key, sort_keys=True)
+
             elif len(parameters) == 1:
                 _response['Data'] = json.dumps( _lqi[parameters[0]] , sort_keys=True ) 
         return _response
