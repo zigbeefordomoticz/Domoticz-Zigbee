@@ -223,6 +223,7 @@ class WebServer(object):
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
+                'zgroup-list-available-device':        {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
@@ -420,8 +421,14 @@ class WebServer(object):
             _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
         return _response
 
+    def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
-    def rest_zDevice_name( self, verb, data, parameters):
+        """
+        Provide a list of IEEE/EP/ZDeviceName/WidgetName with
+            Main Powered
+            Cluster 0x0004
+            ClusterType
+        """
 
         _response = setupHeadersResponse()
         _response["Data"] = {}
@@ -429,6 +436,53 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
+            devName = {}
+            for x in self.ListOfDevices:
+                if x == '0000': continue
+                if 'MacCapa' not in self.ListOfDevices[x]:
+                    continue
+                if self.ListOfDevices[x]['MacCapa'] != '8e':
+                    continue
+                if 'Ep' in self.ListOfDevices[x]:
+                    if 'ZDeviceName' in self.ListOfDevices[x] and \
+                          'IEEE' in self.ListOfDevices[x]:
+                        devName[x] = {}
+                        devName[x]['Ep'] = {}
+                        devName[x]['ZDeviceName'] = self.ListOfDevices[x]['ZDeviceName']
+                        devName[x]['IEEE'] = self.ListOfDevices[x]['IEEE']
+                        for ep in self.ListOfDevices[x]['Ep']:
+                            devName[x]['Ep'][ep] = {}
+                            if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
+                                'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
+                                '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
+                                '0008' not in  self.ListOfDevices[x]['Ep'][ep]:
+                                continue
+                            if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
+                                for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
+                                    if self.ListOfDevices[x]['Ep'][ep]['ClusterType'][widgetID] not in ( 'LvlControl', 'Switch', 'Plug' ):
+                                        continue
+                                    for widget in self.Devices:
+                                        if self.Devices[widget].ID == int(widgetID):
+                                            devName[x]['Ep'][ep]['WidgetName'] = self.Devices[widget].Name
+                                            break
+                            if ep in devName[x]['Ep'] and 'WidgetName' not in devName[x]['Ep'][ep]:
+                                del devName[x]['Ep'][ep]
+                        if devName[x]['Ep'] == {}:
+                            del devName[x]['Ep']
+                    if 'Ep' not in devName[x]:
+                        del devName[x]
+
+            _response["Data"] = json.dumps( devName, sort_keys=True )
+            return _response
+
+    def rest_zDevice_name( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+
+        if verb == 'GET':
+            _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
             devName = {}
             for x in self.ListOfDevices:
                 if x == '0000': continue
@@ -456,7 +510,22 @@ class WebServer(object):
             _response["Data"] = json.dumps( devName, sort_keys=True )
 
         elif verb == 'PUT':
-            pass
+
+            _response["Data"] = None
+            data = data.decode('utf8')
+            Domoticz.Log("Data: %s" %data)
+            data = eval(data)
+
+            for x in data:
+                if 'ZDeviceName' in data[x] and 'IEEE' in data[x]:
+                    for dev in self.ListOfDevices:
+                        if self.ListOfDevices[dev]['IEEE'] == data[x]['IEEE'] and \
+                                self.ListOfDevices[dev]['ZDeviceName'] != data[x]['ZDeviceName']:
+                            self.ListOfDevices[dev]['ZDeviceName'] = data[x]['ZDeviceName']
+                            Domoticz.Log("Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
+                                    %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
+                else:
+                    Domoticz.Error("wrong data received: %s" %data)
 
         return _response
 
