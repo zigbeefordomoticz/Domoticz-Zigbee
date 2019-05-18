@@ -337,7 +337,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
-            _response["Data"] = "{ 'permit-to-join':254 }"
+            _response["Data"] = '{"permit-to-join":"254"}'
 
         elif verb == 'PUT':
             _response["Data"] = None
