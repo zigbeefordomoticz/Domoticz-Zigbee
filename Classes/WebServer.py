@@ -431,10 +431,28 @@ class WebServer(object):
         if verb == 'GET':
             devName = {}
             for x in self.ListOfDevices:
+                if x == '0000': continue
                 devName[x] = {}
-                for item in ( 'ZDeviceName', 'IEEE', 'Model' ):
+                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'PowerSource', 'MacCapa', 'Status', 'Logical Type' ):
                     if item in self.ListOfDevices[x]:
-                        devName[x][item] = self.ListOfDevices[x][item]
+                        devName[x][item.strip()] = self.ListOfDevices[x][item]
+                    else:
+                        Domoticz.Log("rest_zDevice_name - warning device %s item: %s not reported to UI" %(x,item))
+
+                devName[x]['WidgetNames'] = "[ "
+                for ep in self.ListOfDevices[x]['Ep']:
+                    if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
+                        for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
+                            for widget in self.Devices:
+                                if self.Devices[widget].ID == int(widgetID):
+                                    Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
+                                    devName[x]['WidgetNames'] += self.Devices[widget].Name
+                                    devName[x]['WidgetNames'] += " ,"
+                if devName[x]['WidgetNames'][-1] == ',':
+                    devName[x]['WidgetNames'] = devName[x]['WidgetNames'][:-1] + "]"
+                else:
+                    devName[x]['WidgetNames'] += " ]"
+
             _response["Data"] = json.dumps( devName, sort_keys=True )
 
         elif verb == 'PUT':
