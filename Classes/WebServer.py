@@ -6,7 +6,7 @@ import os.path
 import mimetypes
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
-from time import time
+from time import time, ctime, strftime, gmtime
 from gzip import compress
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
@@ -14,7 +14,7 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 ALLOW_GZIP = 1
 ALLOW_CHUNK = 1
 MAX_KB_TO_SEND = 4 * 1024
-KEEP_ALIVE = False
+KEEP_ALIVE = True
 DEBUG_HTTP = True
 
 class WebServer(object):
@@ -124,6 +124,10 @@ class WebServer(object):
 
             #webFilename = self.homedirectory +'www'+Data['URL'] 
             Domoticz.Debug("Opening: %s" %webFilename)
+            _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(os.path.getmtime(webFilename)))
+
+            #_response["Headers"]["Last-Modified"] = ctime(os.path.getmtime(webFilename))
+            _response["Headers"]["Last-Modified"] = _lastmodified
             with open(webFilename , mode ='rb') as webFile:
                 _response["Data"] = webFile.read()
 
@@ -136,8 +140,8 @@ class WebServer(object):
                 _response["Headers"]["Content-Encoding"] = _contentEncoding 
   
             _response["Status"] = "200 OK"
-            if 'Cookie' in Data: 
-                _response['Cookie'] = Data['Cookie']
+            if 'Cookie' in Data['Headers']: 
+                _response['Headers']['Cookie'] = Data['Headers']['Cookie']
 
             compress=False
             if Data['Headers']['Accept-Encoding'].find('gzip') != -1:
@@ -478,10 +482,8 @@ def setupHeadersResponse():
 
     _response = {}
     _response["Headers"] = {}
-    #_response["Headers"]["Connection"] = "keep-alive"
     _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     _response["Headers"]["Pragma"] = "no-cache"
-    _response["Headers"]["Expires"] = "0"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate"
     _response["Headers"]["Server"] = "Domoticz"
     #_response["Headers"]["Accept-Range"] = "none"
