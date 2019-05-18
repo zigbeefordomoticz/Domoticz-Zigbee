@@ -13,7 +13,7 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 ALLOW_GZIP = 1
 ALLOW_CHUNK = 1
-MAX_KB_TO_SEND = 4 * 1024
+MAX_KB_TO_SEND = 2 * 1024
 KEEP_ALIVE = True
 DEBUG_HTTP = True
 
@@ -163,8 +163,9 @@ class WebServer(object):
 
         Domoticz.Debug("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
         if ALLOW_GZIP and Compress and 'Data' in Response:
-            Response["Data"] = compress( Response["Data"] )
-            Response["Headers"]['Content-Encoding'] = 'gzip'
+            if len(Response["Data"]) > MAX_KB_TO_SEND:
+                Response["Data"] = compress( Response["Data"] )
+                Response["Headers"]['Content-Encoding'] = 'gzip'
 
         if ALLOW_CHUNK  and len(Response['Data']) > MAX_KB_TO_SEND:
             idx = 0
@@ -220,6 +221,7 @@ class WebServer(object):
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
+                'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
@@ -416,6 +418,28 @@ class WebServer(object):
                             _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
 
             _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
+        return _response
+
+
+    def rest_zDevice_name( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            devName = {}
+            for x in self.ListOfDevices:
+                devName[x] = {}
+                for item in ( 'ZDeviceName', 'IEEE', 'Model' ):
+                    if item in self.ListOfDevices[x]:
+                        devName[x][item] = self.ListOfDevices[x][item]
+            _response["Data"] = json.dumps( devName, sort_keys=True )
+
+        elif verb == 'PUT':
+            pass
+
         return _response
 
     def rest_zDevice( self, verb, data, parameters):
