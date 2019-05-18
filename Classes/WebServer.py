@@ -256,6 +256,8 @@ class WebServer(object):
 
         with open( _filename , 'rt') as handle:
             for line in handle:
+                Domoticz.Log("Line: %.40s" %line)
+                if line[0] != '{': continue
                 entry = json.loads( line, encoding=dict )
                 for x in entry:
                     Domoticz.Log("--> %s" %x)
