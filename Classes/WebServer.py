@@ -259,7 +259,8 @@ class WebServer(object):
                 entry = json.loads( line, encoding=dict )
                 for x in entry:
                     Domoticz.Log("--> %s" %x)
-                    _lqi[x] = dict(entry[x])
+                    if x in entry:
+                        _lqi[x] = dict(entry[x])
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
