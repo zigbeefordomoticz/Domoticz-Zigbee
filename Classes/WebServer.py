@@ -459,7 +459,10 @@ class WebServer(object):
                                 continue
                             if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
                                 for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
-                                    if self.ListOfDevices[x]['Ep'][ep]['ClusterType'][widgetID] not in ( 'LvlControl', 'Switch', 'Plug' ):
+                                    if self.ListOfDevices[x]['Ep'][ep]['ClusterType'][widgetID] not in ( 'LvlControl', 'Switch', 'Plug', 
+                                        "SwitchAQ2", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR',
+                                        'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
+                                        'WindowCovering'):
                                         continue
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
