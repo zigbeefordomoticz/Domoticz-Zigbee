@@ -231,13 +231,15 @@ class WebServer(object):
                 }
 
         Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
-        HTTPresponse = setupHeadersResponse()
+        HTTPresponse = {}
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
+                HTTPresponse = setupHeadersResponse()
                 HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
 
         if HTTPresponse == {}:
             # We reach here due to failure !
+            HTTPresponse = setupHeadersResponse()
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
             HTTPresponse["Headers"]["Connection"] = "Close"
@@ -271,7 +273,7 @@ class WebServer(object):
                 for x in entry:
                     Domoticz.Log("--> %s" %x)
                     if x in entry:
-                        _key.append( x )
+                        _key.append( int(x) )
                         if x in entry:
                             _lqi[x] = dict(entry[x])
 
@@ -282,7 +284,7 @@ class WebServer(object):
         if verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
-                _response['Data'] = json.dumps( _key, sort_keys=True)
+                _response['Data'] = json.dumps( _key , sort_keys=True)
 
             elif len(parameters) == 1:
                 _response['Data'] = json.dumps( _lqi[parameters[0]] , sort_keys=True ) 
@@ -475,7 +477,7 @@ class WebServer(object):
                     if 'Ep' not in devName[x]:
                         del devName[x]
 
-            _response["Data"] = json.dumps( devName, sort_keys=True )
+            _response["Data"] = json.dumps( {int(x,16):devName[x] for x in devName.keys()}, sort_keys=True )
             return _response
 
     def rest_zDevice_name( self, verb, data, parameters):
@@ -505,7 +507,7 @@ class WebServer(object):
                                     Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
                                     devName[x]['WidgetNames'].append( self.Devices[widget].Name )
 
-            _response["Data"] = json.dumps( devName, sort_keys=True )
+            _response["Data"] = json.dumps( {int(x,16):devName[x] for x in devName.keys()}, sort_keys=True )
 
         elif verb == 'PUT':
 
@@ -540,7 +542,7 @@ class WebServer(object):
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
                 return _response
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( self.ListOfDevices, sort_keys=True )
+                _response["Data"] = json.dumps( {int(x,16):self.ListOfDevices[x] for x in self.ListOfDevices.keys()}, sort_keys=True )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
                     _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
@@ -573,7 +575,7 @@ class WebServer(object):
                     zgroup[item]['Devices'][dev] = ep 
 
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( zgroup, sort_keys=True )
+                _response["Data"] = json.dumps( {int(x,16):zgroup[x] for x in zgroup.keys()}, sort_keys=True )
             if len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
                     _response["Data"] = json.dumps( zgroup[parameters[0]], sort_keys=True )
