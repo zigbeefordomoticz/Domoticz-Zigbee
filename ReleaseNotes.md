@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 19 May 2019 - 4.2.3
+- [Issue] Wrong battery calculation for Xiaomi devices.
+
 ## 05 May 2019 - 4.2.2
 - [Issue] Fix a problem when creating a device and there is no Model associated.
 
