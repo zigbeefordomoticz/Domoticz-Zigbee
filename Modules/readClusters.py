@@ -889,11 +889,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery_old=round(voltage/10/3.3)
-            volt_min = 2.75; volt_max = 3.15
+            volt_min = 2750; volt_max = 3150
 
-            if voltage/1000 > volt_max: ValueBattery = 100
-            elif voltage/1000 < volt_min: ValueBattery = 0
-            else: ValueBattery = round( ((volt_max - (voltage/1000))/(volt_max - volt_min)) * 100 )
+            if voltage > volt_max: ValueBattery = 100
+            elif voltage < volt_min: ValueBattery = 0
+            else: ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
 
             Domoticz.Log("ReadCluster - %s/%s Saddr: %s Battery: %s OldValue: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, ValueBattery_old, voltage))
             self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
