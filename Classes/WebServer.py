@@ -261,7 +261,7 @@ class WebServer(object):
         Domoticz.Log("Filename: %s" %_filename)
 
         _lqi = {}
-        _key = {}
+        _key = []
 
         with open( _filename , 'rt') as handle:
             for line in handle:
@@ -271,7 +271,7 @@ class WebServer(object):
                 for x in entry:
                     Domoticz.Log("--> %s" %x)
                     if x in entry:
-                        _key[x] = '1'
+                        _key.append( x )
                         if x in entry:
                             _lqi[x] = dict(entry[x])
 
@@ -562,11 +562,21 @@ class WebServer(object):
             ListOfGroups = self.groupmgt.ListOfGroups
             if ListOfGroups is None or len(ListOfGroups) == 0:
                 return _response
+            zgroup = {}
+            for item in ListOfGroups:
+                zgroup[item] = {}
+                Domoticz.Log("Process Group: %s" %item)
+                zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
+                zgroup[item]['Devices'] = {}
+                for dev, ep in ListOfGroups[item]['Devices']:
+                    Domoticz.Log("--> add %s %s" %(dev, ep))
+                    zgroup[item]['Devices'][dev] = ep 
+
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( ListOfGroups, sort_keys=True )
+                _response["Data"] = json.dumps( zgroup, sort_keys=True )
             if len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
-                    _response["Data"] = json.dumps( ListOfGroups[parameters[0]], sort_keys=True )
+                    _response["Data"] = json.dumps( zgroup[parameters[0]], sort_keys=True )
         return _response
 
 
