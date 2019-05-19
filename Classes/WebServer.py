@@ -448,12 +448,12 @@ class WebServer(object):
                 if 'Ep' in self.ListOfDevices[x]:
                     if 'ZDeviceName' in self.ListOfDevices[x] and \
                           'IEEE' in self.ListOfDevices[x]:
-                        devName[x] = {}
-                        devName[x]['Ep'] = {}
-                        devName[x]['ZDeviceName'] = self.ListOfDevices[x]['ZDeviceName']
-                        devName[x]['IEEE'] = self.ListOfDevices[x]['IEEE']
+                        devName[x] = []
+                        #devName[x]['Ep'] = {}
+                        #devName[x]['ZDeviceName'] = self.ListOfDevices[x]['ZDeviceName']
+                        #devName[x]['IEEE'] = self.ListOfDevices[x]['IEEE']
                         for ep in self.ListOfDevices[x]['Ep']:
-                            devName[x]['Ep'][ep] = {}
+                            #devName[x]['Ep'][ep] = {}
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
@@ -468,14 +468,20 @@ class WebServer(object):
                                         continue
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
-                                            devName[x]['Ep'][ep]['WidgetName'] = self.Devices[widget].Name
+                                            #devName[x]['Ep'][ep]['WidgetName'] = self.Devices[widget].Name
+                                            _entry = []
+                                            _entry.append( self.Devices[widget].Name )
+                                            _entry.append( self.ListOfDevices[x]['IEEE'] )
+                                            _entry.append( ep )
+                                            _entry.append( self.ListOfDevices[x]['ZDeviceName'] )
+                                            devName[x].append( _entry )
                                             break
-                            if ep in devName[x]['Ep'] and 'WidgetName' not in devName[x]['Ep'][ep]:
-                                del devName[x]['Ep'][ep]
-                        if devName[x]['Ep'] == {}:
-                            del devName[x]['Ep']
-                    if 'Ep' not in devName[x]:
-                        del devName[x]
+                            #if ep in devName[x]['Ep'] and 'WidgetName' not in devName[x]['Ep'][ep]:
+                            #    del devName[x]['Ep'][ep]
+                        #if devName[x]['Ep'] == {}:
+                        #    del devName[x]['Ep']
+                    #if 'Ep' not in devName[x]:
+                    #    del devName[x]
 
             _response["Data"] = json.dumps( {int(x,16):devName[x] for x in devName.keys()}, sort_keys=True )
             return _response
