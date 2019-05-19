@@ -496,19 +496,14 @@ class WebServer(object):
                     else:
                         Domoticz.Log("rest_zDevice_name - warning device %s item: %s not reported to UI" %(x,item))
 
-                devName[x]['WidgetNames'] = "[ "
+                devName[x]['WidgetNames'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
                     if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
                         for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
                             for widget in self.Devices:
                                 if self.Devices[widget].ID == int(widgetID):
                                     Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
-                                    devName[x]['WidgetNames'] += self.Devices[widget].Name
-                                    devName[x]['WidgetNames'] += " ,"
-                if devName[x]['WidgetNames'][-1] == ',':
-                    devName[x]['WidgetNames'] = devName[x]['WidgetNames'][:-1] + "]"
-                else:
-                    devName[x]['WidgetNames'] += " ]"
+                                    devName[x]['WidgetNames'].append( self.Devices[widget].Name )
 
             _response["Data"] = json.dumps( devName, sort_keys=True )
 
