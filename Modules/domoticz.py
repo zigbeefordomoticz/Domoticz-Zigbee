@@ -961,6 +961,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     #UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
+                elif DeviceType == "SwitchIKEA":  # On/Off switch
+                    state = ''
+                    if value == "01":
+                        state = "On"
+                    elif value == "00":
+                        state = "Off"
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
                     if value == 1: state = "00"
