@@ -6,15 +6,17 @@ import os.path
 import mimetypes
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
-from time import time, ctime, strftime, gmtime
-from gzip import compress
+from time import time, ctime, strftime, gmtime, mktime, strptime
+import zlib
+import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 
+DELAY = 0
 ALLOW_GZIP = 1
+ALLOW_DEFLATE = 1
 ALLOW_CHUNK = 1
-MAX_KB_TO_SEND = 2 * 1024
-KEEP_ALIVE = True
+MAX_KB_TO_SEND = 8 * 1024
 DEBUG_HTTP = True
 
 class WebServer(object):
@@ -60,19 +62,27 @@ class WebServer(object):
         self.httpServerConn.Listen()
         Domoticz.Log("Web backend started")
 
+
+    def onConnect(self, Connection, Status, Description):
+
+        if (Status == 0):
+            Domoticz.Log("Connected successfully to: "+Connection.Address+":"+Connection.Port)
+            if Connection.Name not in self.httpServerConns:
+                self.httpServerConns[Connection.Name] = Connection
+            else:
+                Domoticz.Log("Connection already established .... %s" %Connection)
+        else:
+            Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
+        Domoticz.Log("Number of Connection : %s" %len(self.httpServerConns))
+
     def onDisconnect ( self, Connection ):
 
+        Domoticz.Log("onDisconnect %s" %(Connection))
         for x in self.httpServerConns:
             Domoticz.Log("--> "+str(x)+"'.")
         if Connection.Name in self.httpServerConns:
             del self.httpServerConns[Connection.Name]
 
-    def onConnect(self, Connection, Status, Description):
-
-        if (Status == 0):
-            Domoticz.Debug("Connected successfully to: "+Connection.Address+":"+Connection.Port)
-        else:
-            Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
 
     def onMessage( self, Connection, Data ):
 
@@ -100,7 +110,7 @@ class WebServer(object):
             if 'Data' not in Data: Data['Data'] = None
 
             if (headerCode != "200 OK"):
-                self.sendResponse( Connection, {"Status": headerCode}, False  )
+                self.sendResponse( Connection, {"Status": headerCode} )
                 return
             elif ( parsed_query[0] == 'rest-zigate'):
                 Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
@@ -122,16 +132,28 @@ class WebServer(object):
             # We are ready to send the response
             _response = setupHeadersResponse()
 
-            #webFilename = self.homedirectory +'www'+Data['URL'] 
             Domoticz.Debug("Opening: %s" %webFilename)
-            _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(os.path.getmtime(webFilename)))
+            currentVersionOnServer = os.path.getmtime(webFilename)
+            _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
 
-            #_response["Headers"]["Last-Modified"] = ctime(os.path.getmtime(webFilename))
+
+            # Can we use Cache if exists
+            if 'If-Modified-Since' in Data['Headers']:
+                lastVersionInCache = Data['Headers']['If-Modified-Since']
+                Domoticz.Log("InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
+                if lastVersionInCache == _lastmodified:
+                    # No need to send it back
+                    Domoticz.Log("Use Caching")
+                    _response['Status'] = "304 Not Modified"
+                    self.sendResponse( Connection, _response )
+                    return _response
+
             _response["Headers"]["Last-Modified"] = _lastmodified
             with open(webFilename , mode ='rb') as webFile:
                 _response["Data"] = webFile.read()
 
             _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
+            if ( webFilename.find('.js') != -1): _contentType = 'text/javascript'
             Domoticz.Debug("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
    
             if _contentType:
@@ -143,41 +165,54 @@ class WebServer(object):
             if 'Cookie' in Data['Headers']: 
                 _response['Headers']['Cookie'] = Data['Headers']['Cookie']
 
-            compress=False
-            if Data['Headers']['Accept-Encoding'].find('gzip') != -1:
-                compress=True
-            self.sendResponse( Connection, _response, compress  )
-
-    def sendResponse( self, Connection, Response, Compress ):
-
-        if 'Data' not in Response or Response['Data'] == None:
-            DumpHTTPResponseToLog( Response )
-            if KEEP_ALIVE:
-                Response['Connection'] = 'Keep-alive'
-                Connection.Send( Response )
+            if 'Accept-Encoding' in Data['Headers']:
+                self.sendResponse( Connection, _response, AcceptEncoding = Data['Headers']['Accept-Encoding']  )
             else:
-                Response['Connection'] = 'Close'
-                Connection.Send( Response )
-                Connection.Disconnect( )
+                self.sendResponse( Connection, _response )
+
+
+    def sendResponse( self, Connection, Response, AcceptEncoding=None ):
+
+        if ('Data' not in Response) or (Response['Data'] == None):
+            DumpHTTPResponseToLog( Response )
+            Connection.Send( Response , Delay= DELAY)
             return
 
-        Domoticz.Debug("sendResponse - Compress: %s, Chunk: %s" %(Compress, ALLOW_CHUNK))
-        if ALLOW_GZIP and Compress and 'Data' in Response:
-            if len(Response["Data"]) > MAX_KB_TO_SEND:
-                Response["Data"] = compress( Response["Data"] )
-                Response["Headers"]['Content-Encoding'] = 'gzip'
+        Domoticz.Log("Sending Response to : %s:%s" %(Connection.Name, Connection.Port))
 
-        if ALLOW_CHUNK  and len(Response['Data']) > MAX_KB_TO_SEND:
+        # Compression
+        if (ALLOW_GZIP or ALLOW_DEFLATE ) and 'Data' in Response and AcceptEncoding:
+            Domoticz.Debug("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, ALLOW_CHUNK, ALLOW_DEFLATE, ALLOW_GZIP))
+            if len(Response["Data"]) > MAX_KB_TO_SEND:
+                orig_size = len(Response["Data"])
+                if ALLOW_DEFLATE and AcceptEncoding.find('deflate') != -1:
+                    zlib_compress = zlib.compressobj( 9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
+                    deflated = zlib_compress.compress(Response["Data"])
+                    deflated += zlib_compress.flush()
+                    Response["Headers"]['Content-Encoding'] = 'deflate'
+                    Response["Data"] = deflated
+
+                elif ALLOW_GZIP and AcceptEncoding.find('gzip'):
+                    Response["Data"] = gzip.compress( Response["Data"] )
+                    Response["Headers"]['Content-Encoding'] = 'gzip'
+
+                Domoticz.Log("Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int((len(Response["Data"])/orig_size)*100)))
+
+        # Chunking, Follow the Domoticz Python Plugin Framework
+        if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
             idx = 0
             HTTPchunk = {}
             HTTPchunk['Status'] = Response['Status']
+            HTTPchunk['Chunk'] = True
             HTTPchunk['Headers'] = {}
             HTTPchunk['Headers'] = dict(Response['Headers'])
-            HTTPchunk['Chunk'] = True
             HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
-            Domoticz.Debug("Sending: %s out of %s" %(idx, len((Response['Data']))))
-            DumpHTTPResponseToLog( Response )
-            Connection.Send( HTTPchunk )
+            Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+
+            # Firs Chunk
+            DumpHTTPResponseToLog( HTTPchunk )
+            Connection.Send( HTTPchunk , Delay= DELAY)
+
             idx = MAX_KB_TO_SEND
             while idx != -1:
                 tosend={}
@@ -187,31 +222,27 @@ class WebServer(object):
                     tosend['Data'] = Response['Data'][idx:idx+MAX_KB_TO_SEND]        
                     idx += MAX_KB_TO_SEND
                 else:
-                    # we have to send MAX_KB_TO_SEND or less and then exit
+                    # Last Chunk with Data
                     tosend['Data'] = Response['Data'][idx:]        
                     idx = -1
 
-                Connection.Send( tosend )
-                Domoticz.Debug("Sending: %s out of %s" %(idx, len((Response['Data']))))
+                Domoticz.Log("Sending Chunk: %s out of %s" %(idx, len((Response['Data']))))
+                Connection.Send( tosend , Delay= DELAY)
+
+            # Closing Chunk
             tosend={}
-            tosend['Connection'] = 'Close'
             tosend['Chunk'] = True
-            DumpHTTPResponseToLog( Response )
-            Connection.Send( tosend )
-            Connection.Disconnect( )
+            Connection.Send( tosend , Delay = DELAY)
         else:
             DumpHTTPResponseToLog( Response )
-            if KEEP_ALIVE:
-                Response['Connection'] = 'Keep-alive'
-                Connection.Send( Response )
-            else:
-                Response['Connection'] = 'Close'
-                Connection.Send( Response )
-                Connection.Disconnect( )
+            Connection.Send( Response , Delay = DELAY)
 
     def keepConnectionAlive( self ):
 
         self.heartbeats += 1
+        Domoticz.Log("%s Connections established" %len(self.httpServerConns))
+        for con in self.httpServerConns:
+            Domoticz.Log("Connection established: %s" %self.httpServerConns[con].Name)
         return
 
     def do_rest( self, Connection, verb, data, version, command, parameters):
@@ -242,10 +273,9 @@ class WebServer(object):
             HTTPresponse = setupHeadersResponse()
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
-            HTTPresponse["Headers"]["Connection"] = "Close"
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
-        self.sendResponse( Connection, HTTPresponse, False  )
+        self.sendResponse( Connection, HTTPresponse )
 
 
     def rest_PluginEnv( self, verb, data, parameters):
@@ -264,6 +294,13 @@ class WebServer(object):
 
         _lqi = {}
         _key = []
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if not os.path.isfile( _filename ) :
+            _response['Data'] = json.dumps( {} , sort_keys=True ) 
+            return _response
 
         with open( _filename , 'rt') as handle:
             for line in handle:
@@ -277,9 +314,6 @@ class WebServer(object):
                         if x in entry:
                             _lqi[x] = dict(entry[x])
 
-        _response = setupHeadersResponse()
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
             if len(parameters) == 0:
@@ -425,13 +459,6 @@ class WebServer(object):
 
     def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
-        """
-        Provide a list of IEEE/EP/ZDeviceName/WidgetName with
-            Main Powered
-            Cluster 0x0004
-            ClusterType
-        """
-
         _response = setupHeadersResponse()
         _response["Data"] = {}
         _response["Status"] = "200 OK"
@@ -483,7 +510,7 @@ class WebServer(object):
                     #if 'Ep' not in devName[x]:
                     #    del devName[x]
 
-            _response["Data"] = json.dumps( {int(x,16):devName[x] for x in devName.keys()}, sort_keys=True )
+            _response["Data"] = json.dumps( devName, sort_keys=True )
             return _response
 
     def rest_zDevice_name( self, verb, data, parameters):
@@ -498,11 +525,30 @@ class WebServer(object):
             for x in self.ListOfDevices:
                 if x == '0000': continue
                 devName[x] = {}
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'PowerSource', 'MacCapa', 'Status', 'Logical Type' ):
+                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health'):
                     if item in self.ListOfDevices[x]:
-                        devName[x][item.strip()] = self.ListOfDevices[x][item]
+                        if item != 'MacCapa':
+                            devName[x][item.strip()] = self.ListOfDevices[x][item]
+                        else:
+                                devName[x]['MacCapa'] = []
+                                mac_capability = int(self.ListOfDevices[x][item],16)
+                                AltPAN      =   ( mac_capability & 0x00000001 )
+                                DeviceType  =   ( mac_capability >> 1 ) & 1
+                                PowerSource =   ( mac_capability >> 2 ) & 1
+                                ReceiveonIdle = ( mac_capability >> 3 ) & 1
+                                if DeviceType == 1 :
+                                    devName[x]['MacCapa'].append("FFD")
+                                else :
+                                    devName[x]['MacCapa'].append("RFD")
+                                if ReceiveonIdle == 1 :
+                                    devName[x]['MacCapa'].append("RxonIdle")
+                                if PowerSource == 1 :
+                                    devName[x]['MacCapa'].append("MainPower")
+                                else :
+                                    devName[x]['MacCapa'].append("Battery")
+                                Domoticz.Log("decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(devName[x]['MacCapa'])))
                     else:
-                        Domoticz.Log("rest_zDevice_name - warning device %s item: %s not reported to UI" %(x,item))
+                        devName[x][item.strip()] = ""
 
                 devName[x]['WidgetNames'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
@@ -513,7 +559,7 @@ class WebServer(object):
                                     Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
                                     devName[x]['WidgetNames'].append( self.Devices[widget].Name )
 
-            _response["Data"] = json.dumps( {int(x,16):devName[x] for x in devName.keys()}, sort_keys=True )
+            _response["Data"] = json.dumps( devName, sort_keys=True )
 
         elif verb == 'PUT':
 
@@ -548,7 +594,7 @@ class WebServer(object):
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
                 return _response
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( {int(x,16):self.ListOfDevices[x] for x in self.ListOfDevices.keys()}, sort_keys=True )
+                _response["Data"] = json.dumps( self.ListOfDevices, sort_keys=True )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
                     _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
@@ -581,7 +627,7 @@ class WebServer(object):
                     zgroup[item]['Devices'][dev] = ep 
 
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( {int(x,16):zgroup[x] for x in zgroup.keys()}, sort_keys=True )
+                _response["Data"] = json.dumps( zgroup, sort_keys=True )
             if len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
                     _response["Data"] = json.dumps( zgroup[parameters[0]], sort_keys=True )
@@ -609,12 +655,12 @@ def setupHeadersResponse():
 
     _response = {}
     _response["Headers"] = {}
-    _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
-    _response["Headers"]["Pragma"] = "no-cache"
-    _response["Headers"]["User-Agent"] = "Plugin-Zigate"
+    _response["Headers"]["Connection"] = "Keep-alive"
+    _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
     _response["Headers"]["Server"] = "Domoticz"
-    #_response["Headers"]["Accept-Range"] = "none"
-
+    _response["Headers"]["Cache-Control"] = "private"
+    #_response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    #_response["Headers"]["Pragma"] = "no-cache"
+    #_response["Headers"]["Expires"] = "0"
+    _response["Headers"]["Accept"] = "*/*"
     return _response
-
-
