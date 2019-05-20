@@ -106,6 +106,8 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
+from Classes.WebServer import WebServer
+
 class BasePlugin:
     enabled = False
 
@@ -572,6 +574,7 @@ class BasePlugin:
                     Domoticz.Status("Start Group Management")
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
+                    self.groupmgt._load_GroupList()
                     self.groupmgt_NotStarted = False
 
 
