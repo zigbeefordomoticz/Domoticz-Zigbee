@@ -309,65 +309,39 @@ class WebServer(object):
                     for line in handle:
                         if line[0] != '{' and line[-1] != '}': continue
                         entry = json.loads( line, encoding=dict )
-                        Domoticz.Log("entry = %.15s" %entry)
                         for timestamp in entry:
-                            Domoticz.Log("TimeStamp: %s" %timestamp)
                             _key.append( timestamp )
                 _response['Data'] = json.dumps( _key , sort_keys=True)
 
             elif len(parameters) == 1:
+                topologie_lst = []
                 timestamp = parameters[0]
-                Domoticz.Log("TimeStamp: %s" %timestamp)
                 with open( _filename , 'rt') as handle:
                     for line in handle:
                         #print("Line: %.40s" %line)
                         if line[0] != '{' and line[-1] != '}': continue
                         entry = json.loads( line, encoding=dict )
-                        Domoticz.Log("entry = %.15s" %entry)
                         if timestamp in entry:
-                            Domoticz.Log("Timestamp found")
                             reportLQI = entry[timestamp]
                             topologie_lst = []
                             for item in reportLQI:
                                 for x in  reportLQI[item]:
-
-                                    Domoticz.Log("---> %s <- %s : %s" %(item, x, reportLQI[item][x]))
                                     # Report only Child relationship
-                                    # Extract all relationship
-                                    if reportLQI[item][x]['_relationshp'] != "Child":
-                                        continue
-                                    if item not in self.ListOfDevices or x not in self.ListOfDevices :
+                                    if item == x: continue
+                                    if reportLQI[item][x]['_relationshp'] != "Child": continue
+                                    if item != '0000' and x != '0000' and \
+                                            ((item not in self.ListOfDevices) or (x not in self.ListOfDevices)) :
                                         continue
 
+                                    Domoticz.Log("---> %s <- %s : %s" %(item, x, reportLQI[item][x]['_relationshp']))
                                     relationship = {}
-                                    # Father
-                                    if 'ZDeviceName' in self.ListOfDevices[item]:
-                                        if self.ListOfDevices[item]["ZDeviceName"] != "":
+                                    relationship["Father"] = item
+                                    relationship["Child"] = x
+                                    relationship["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
+                                    relationship["DeviceType"] = reportLQI[item][x]['_devicetype']
+                                    topologie_lst.append( relationship )
 
-                                            relationship['Father'] = self.ListOfDevices[item]["ZDeviceName"]
-                                        else:
-                                            relationship['Father'] = item
-                                    else:
-                                        relationship['Father'] = item
-
-                                    # Child
-                                    if 'ZDeviceName' in self.ListOfDevices[x]:
-                                        if self.ListOfDevices[x]["ZDeviceName"] != "":
-                                            relationship["Child"] = self.ListOfDevices[x]["ZDeviceName"]
-                                        else:
-                                            relationship['Child'] = x
-                                    else:
-                                        relationship['Child'] = x
-
-                                    # Link QTY
-                                    relationship['_linkqty'] = int(reportLQI[item][x]['_lnkqty'],16)
-
-                                    # Device Type
-                                    relationship['_devicetype'] = reportLQI[item][x]['_devicetype']
-
-                                    topologie_lst.append ( relationship )
-                            _response['Data'] = json.dumps( topologie_lst , sort_keys=True)
-
+                _response['Data'] = json.dumps( topologie_lst , sort_keys=True)
         return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
