@@ -571,6 +571,7 @@ class WebServer(object):
         if verb == 'GET':
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
             devName_lst = []
+            devName = {}
             for x in self.ListOfDevices:
                 if x == '0000': continue
                 devName[x] = {}
