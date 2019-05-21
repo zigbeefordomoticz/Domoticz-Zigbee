@@ -238,6 +238,7 @@ def initDeviceInList(self, Nwkid) :
         if Nwkid != '' :
             self.ListOfDevices[Nwkid]={}
             self.ListOfDevices[Nwkid]['Version']="3"
+            self.ListOfDevices[Nwkid]['ZDeviceName']=""
             self.ListOfDevices[Nwkid]['Status']="004d"
             self.ListOfDevices[Nwkid]['SQN']={}
             self.ListOfDevices[Nwkid]['Ep']={}
@@ -271,6 +272,9 @@ def CheckDeviceList(self, key, val) :
     if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
         initDeviceInList(self, key)
         self.ListOfDevices[key]['RIA']="10"
+        if 'ZDeviceName' in DeviceListVal:
+            self.ListOfDevices[key]['ZDeviceName']=DeviceListVal['ZDeviceName']
+
         if 'Ep' in DeviceListVal :
             self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
         if 'NbEp' in DeviceListVal :
@@ -295,6 +299,8 @@ def CheckDeviceList(self, key, val) :
             self.ListOfDevices[key]['ZDeviceID']=DeviceListVal['ZDeviceID']
         if 'Manufacturer' in DeviceListVal :
             self.ListOfDevices[key]['Manufacturer']=DeviceListVal['Manufacturer']
+        if 'Manufacturer Name' in DeviceListVal:
+            self.ListOfDevices[key]['Manufacturer Name']=DeviceListVal['Manufacturer Name']
         if 'DeviceType' in DeviceListVal :
             self.ListOfDevices[key]['DeviceType']=DeviceListVal['DeviceType']
         if 'LogicalType' in DeviceListVal :
