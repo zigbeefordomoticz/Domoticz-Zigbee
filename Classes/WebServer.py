@@ -301,32 +301,36 @@ class WebServer(object):
             _response['Data'] = json.dumps( {} , sort_keys=True ) 
             return _response
 
-
         if verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
                 _key = []
                 with open( _filename , 'rt') as handle:
                     for line in handle:
-                        #print("Line: %.40s" %line)
-                        if line[0] != '{': continue
+                        if line[0] != '{' and line[-1] != '}': continue
                         entry = json.loads( line, encoding=dict )
+                        Domoticz.Log("entry = %.15s" %entry)
                         for timestamp in entry:
+                            Domoticz.Log("TimeStamp: %s" %timestamp)
                             _key.append( timestamp )
                 _response['Data'] = json.dumps( _key , sort_keys=True)
 
             elif len(parameters) == 1:
                 timestamp = parameters[0]
+                Domoticz.Log("TimeStamp: %s" %timestamp)
                 with open( _filename , 'rt') as handle:
                     for line in handle:
                         #print("Line: %.40s" %line)
                         if line[0] != '{' and line[-1] != '}': continue
                         entry = json.loads( line, encoding=dict )
+                        Domoticz.Log("entry = %.15s" %entry)
                         if timestamp in entry:
+                            Domoticz.Log("Timestamp found")
                             reportLQI = entry[timestamp]
                             topologie_lst = []
                             for item in reportLQI:
                                 for x in  reportLQI[item]:
+
                                     Domoticz.Log("---> %s <- %s : %s" %(item, x, reportLQI[item][x]))
                                     # Report only Child relationship
                                     # Extract all relationship
@@ -335,30 +339,32 @@ class WebServer(object):
                                     if item not in self.ListOfDevices or x not in self.ListOfDevices :
                                         continue
 
-                                    relationship = []
+                                    relationship = {}
                                     # Father
                                     if 'ZDeviceName' in self.ListOfDevices[item]:
                                         if self.ListOfDevices[item]["ZDeviceName"] != "":
-                                            relationship.append(  self.ListOfDevices[item]["ZDeviceName"] )
+
+                                            relationship['Father'] = self.ListOfDevices[item]["ZDeviceName"]
                                         else:
-                                            relationship.append( item )
+                                            relationship['Father'] = item
                                     else:
-                                        relationship.append( item )
+                                        relationship['Father'] = item
 
                                     # Child
                                     if 'ZDeviceName' in self.ListOfDevices[x]:
                                         if self.ListOfDevices[x]["ZDeviceName"] != "":
-                                            relationship.append(  self.ListOfDevices[x]["ZDeviceName"] )
+                                            relationship["Child"] = self.ListOfDevices[x]["ZDeviceName"]
                                         else:
-                                            relationship.append( x )
+                                            relationship['Child'] = x
                                     else:
-                                        relationship.append( x )
+                                        relationship['Child'] = x
 
                                     # Link QTY
-                                    relationship.append( int(reportLQI[item][x]['_lnkqty'],16))
+                                    relationship['_linkqty'] = int(reportLQI[item][x]['_lnkqty'],16)
 
                                     # Device Type
-                                    relationship.append( reportLQI[item][x]['_devicetype'])
+                                    relationship['_devicetype'] = reportLQI[item][x]['_devicetype']
+
                                     topologie_lst.append ( relationship )
                             _response['Data'] = json.dumps( topologie_lst , sort_keys=True)
 
@@ -732,5 +738,5 @@ def setupHeadersResponse():
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.
     #_response["Headers"]["Content-Security-Policy"] = "default-src 'self'; img-src *"
-    _response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
+    #_response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
     return _response
