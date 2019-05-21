@@ -292,9 +292,8 @@ class WebServer(object):
         _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.hardwareID + '.json'
         Domoticz.Log("Filename: %s" %_filename)
 
-        _lqi = {}
-        _key = []
         _response = setupHeadersResponse()
+        _response["Data"] = "{}"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -302,26 +301,67 @@ class WebServer(object):
             _response['Data'] = json.dumps( {} , sort_keys=True ) 
             return _response
 
-        with open( _filename , 'rt') as handle:
-            for line in handle:
-                Domoticz.Log("Line: %.40s" %line)
-                if line[0] != '{': continue
-                entry = json.loads( line, encoding=dict )
-                for x in entry:
-                    Domoticz.Log("--> %s" %x)
-                    if x in entry:
-                        _key.append( int(x) )
-                        if x in entry:
-                            _lqi[x] = dict(entry[x])
-
 
         if verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
+                _key = []
+                with open( _filename , 'rt') as handle:
+                    for line in handle:
+                        #print("Line: %.40s" %line)
+                        if line[0] != '{': continue
+                        entry = json.loads( line, encoding=dict )
+                        for timestamp in entry:
+                            _key.append( timestamp )
                 _response['Data'] = json.dumps( _key , sort_keys=True)
 
             elif len(parameters) == 1:
-                _response['Data'] = json.dumps( _lqi[parameters[0]] , sort_keys=True ) 
+                timestamp = parameters[0]
+                with open( _filename , 'rt') as handle:
+                    for line in handle:
+                        #print("Line: %.40s" %line)
+                        if line[0] != '{' and line[-1] != '}': continue
+                        entry = json.loads( line, encoding=dict )
+                        if timestamp in entry:
+                            reportLQI = entry[timestamp]
+                            topologie_lst = []
+                            for item in reportLQI:
+                                for x in  reportLQI[item]:
+                                    Domoticz.Log("---> %s <- %s : %s" %(item, x, reportLQI[item][x]))
+                                    # Report only Child relationship
+                                    # Extract all relationship
+                                    if reportLQI[item][x]['_relationshp'] != "Child":
+                                        continue
+                                    if item not in self.ListOfDevices or x not in self.ListOfDevices :
+                                        continue
+
+                                    relationship = []
+                                    # Father
+                                    if 'ZDeviceName' in self.ListOfDevices[item]:
+                                        if self.ListOfDevices[item]["ZDeviceName"] != "":
+                                            relationship.append(  self.ListOfDevices[item]["ZDeviceName"] )
+                                        else:
+                                            relationship.append( item )
+                                    else:
+                                        relationship.append( item )
+
+                                    # Child
+                                    if 'ZDeviceName' in self.ListOfDevices[x]:
+                                        if self.ListOfDevices[x]["ZDeviceName"] != "":
+                                            relationship.append(  self.ListOfDevices[x]["ZDeviceName"] )
+                                        else:
+                                            relationship.append( x )
+                                    else:
+                                        relationship.append( x )
+
+                                    # Link QTY
+                                    relationship.append( int(reportLQI[item][x]['_lnkqty'],16))
+
+                                    # Device Type
+                                    relationship.append( reportLQI[item][x]['_devicetype'])
+                                    topologie_lst.append ( relationship )
+                            _response['Data'] = json.dumps( topologie_lst , sort_keys=True)
+
         return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
@@ -411,18 +451,22 @@ class WebServer(object):
 
             if len(parameters) == 0:
                 # Return the Full List of ZIgate Domoticz Widget
+                device_lst = []
+                device_info = {}
                 for x in self.Devices:
-                    _dictDevices[self.Devices[x].Name] = {}
-                    _dictDevices[self.Devices[x].Name]['Name'] = self.Devices[x].Name
-                    _dictDevices[self.Devices[x].Name]['ID'] = self.Devices[x].ID
-                    _dictDevices[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
-                    _dictDevices[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
-                    _dictDevices[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
-                    _dictDevices[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
-                    _dictDevices[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
-                    _dictDevices[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
-                    _dictDevices[self.Devices[x].Name]['Type'] = self.Devices[x].Type
-                    _dictDevices[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
+                    device_info[self.Devices[x].Name] = {}
+                    device_info[self.Devices[x].Name]['Name'] = self.Devices[x].Name
+                    device_info[self.Devices[x].Name]['ID'] = self.Devices[x].ID
+                    device_info[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
+                    device_info[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
+                    device_info[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
+                    device_info[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
+                    device_info[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
+                    device_info[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
+                    device_info[self.Devices[x].Name]['Type'] = self.Devices[x].Type
+                    device_info[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
+                    device_lst.append( device_info )
+                _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
             elif len(parameters) == 1:
                 for x in self.Devices:
@@ -438,23 +482,28 @@ class WebServer(object):
                         _dictDevices[x]['TimedOut'] = self.Devices[x].TimedOut
                         _dictDevices[x]['Type'] = self.Devices[x].Type
                         _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
+                        _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
+                        break
             else:
+                device_lst = []
                 for parm in parameters:
+                    device_info = {}
                     for x in self.Devices:
                         if parm == self.Devices[x].DeviceID:
-                            _dictDevices[x] = {}
-                            _dictDevices[x]['Name'] = self.Devices[x].Name
-                            _dictDevices[x]['ID'] = self.Devices[x].ID
-                            _dictDevices[x]['DeviceID'] = self.Devices[x].DeviceID
-                            _dictDevices[x]['sValue'] = self.Devices[x].sValue
-                            _dictDevices[x]['nValue'] = self.Devices[x].nValue
-                            _dictDevices[x]['SignaleLevel'] = self.Devices[x].SignalLevel
-                            _dictDevices[x]['BatteryLevel'] = self.Devices[x].BatteryLevel
-                            _dictDevices[x]['TimedOut'] = self.Devices[x].TimedOut
-                            _dictDevices[x]['Type'] = self.Devices[x].Type
-                            _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
-
-            _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
+                            device_info[self.Devices[x].Name] = {}
+                            device_info[self.Devices[x].Name]['Name'] = self.Devices[x].Name
+                            device_info[self.Devices[x].Name]['ID'] = self.Devices[x].ID
+                            device_info[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
+                            device_info[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
+                            device_info[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
+                            device_info[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
+                            device_info[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
+                            device_info[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
+                            device_info[self.Devices[x].Name]['Type'] = self.Devices[x].Type
+                            device_info[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
+                            device_lst.append( device_info )
+                        break
+                _response["Data"] = json.dumps( device_lst, sort_keys=True )
         return _response
 
     def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
@@ -521,7 +570,7 @@ class WebServer(object):
 
         if verb == 'GET':
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-            devName = {}
+            devName_lst = []
             for x in self.ListOfDevices:
                 if x == '0000': continue
                 devName[x] = {}
@@ -559,15 +608,14 @@ class WebServer(object):
                                     Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
                                     devName[x]['WidgetNames'].append( self.Devices[widget].Name )
 
+                devName_lst.append( devName )
             _response["Data"] = json.dumps( devName, sort_keys=True )
 
         elif verb == 'PUT':
-
             _response["Data"] = None
             data = data.decode('utf8')
             Domoticz.Log("Data: %s" %data)
             data = eval(data)
-
             for x in data:
                 if 'ZDeviceName' in data[x] and 'IEEE' in data[x]:
                     for dev in self.ListOfDevices:
@@ -594,12 +642,16 @@ class WebServer(object):
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
                 return _response
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( self.ListOfDevices, sort_keys=True )
+                zdev_lst = []
+                for item in self.ListOfDevices:
+                    zdev_lst.append(self.ListOfDevices[item])
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
                     _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
                 elif parameters[0] in self.IEEE2NWK:
                     _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=True ) 
+
         return _response
 
     def rest_zGroup( self, verb, data, parameters):
@@ -616,21 +668,32 @@ class WebServer(object):
             ListOfGroups = self.groupmgt.ListOfGroups
             if ListOfGroups is None or len(ListOfGroups) == 0:
                 return _response
-            zgroup = {}
-            for item in ListOfGroups:
-                zgroup[item] = {}
-                Domoticz.Log("Process Group: %s" %item)
-                zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
-                zgroup[item]['Devices'] = {}
-                for dev, ep in ListOfGroups[item]['Devices']:
-                    Domoticz.Log("--> add %s %s" %(dev, ep))
-                    zgroup[item]['Devices'][dev] = ep 
 
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( zgroup, sort_keys=True )
-            if len(parameters) == 1:
+                zgroup_lst = []
+                for item in ListOfGroups:
+                    zgroup = {}
+                    zgroup[item] = {}
+                    Domoticz.Log("Process Group: %s" %item)
+                    zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup[item]['Devices'] = {}
+                    for dev, ep in ListOfGroups[item]['Devices']:
+                        Domoticz.Log("--> add %s %s" %(dev, ep))
+                        zgroup[item]['Devices'][dev] = ep 
+                    zgroup_lst.append(zgroup)
+                _response["Data"] = json.dumps( zgroup_lst, sort_keys=True )
+
+            elif len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
+                    item =  parameters[0]
+                    zgroup = {}
+                    zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup[item]['Devices'] = {}
+                    for dev, ep in ListOfGroups[item]['Devices']:
+                        Domoticz.Log("--> add %s %s" %(dev, ep))
+                        zgroup[item]['Devices'][dev] = ep 
                     _response["Data"] = json.dumps( zgroup[parameters[0]], sort_keys=True )
+
         return _response
 
 
@@ -663,4 +726,8 @@ def setupHeadersResponse():
     #_response["Headers"]["Pragma"] = "no-cache"
     #_response["Headers"]["Expires"] = "0"
     _response["Headers"]["Accept"] = "*/*"
+    # allow users of a web application to include images from any origin in their own conten
+    # and all scripts only to a specific server that hosts trusted code.
+    #_response["Headers"]["Content-Security-Policy"] = "default-src 'self'; img-src *"
+    _response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
     return _response
