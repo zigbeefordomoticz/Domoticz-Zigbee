@@ -676,10 +676,12 @@ class WebServer(object):
                     zgroup[item] = {}
                     Domoticz.Log("Process Group: %s" %item)
                     zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
-                    zgroup[item]['Devices'] = {}
+                    zgroup[item]['Devices'] = []
                     for dev, ep in ListOfGroups[item]['Devices']:
                         Domoticz.Log("--> add %s %s" %(dev, ep))
-                        zgroup[item]['Devices'][dev] = ep 
+                        _dev = {}
+                        _dev[dev] = ep
+                        zgroup[item]['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=True )
 
