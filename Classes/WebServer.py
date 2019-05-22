@@ -451,36 +451,35 @@ class WebServer(object):
             if len(parameters) == 0:
                 # Return the Full List of ZIgate Domoticz Widget
                 device_lst = []
-                device_info = {}
                 for x in self.Devices:
-                    device_info[self.Devices[x].Name] = {}
-                    device_info[self.Devices[x].Name]['Name'] = self.Devices[x].Name
-                    device_info[self.Devices[x].Name]['ID'] = self.Devices[x].ID
-                    device_info[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
-                    device_info[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
-                    device_info[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
-                    device_info[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
-                    device_info[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
-                    device_info[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
-                    device_info[self.Devices[x].Name]['Type'] = self.Devices[x].Type
-                    device_info[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
+                    device_info = {}
+                    device_info['Name'] = self.Devices[x].Name
+                    device_info['ID'] = self.Devices[x].ID
+                    device_info['DeviceID'] = self.Devices[x].DeviceID
+                    device_info['sValue'] = self.Devices[x].sValue
+                    device_info['nValue'] = self.Devices[x].nValue
+                    device_info['SignaleLevel'] = self.Devices[x].SignalLevel
+                    device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
+                    device_info['TimedOut'] = self.Devices[x].TimedOut
+                    device_info['Type'] = self.Devices[x].Type
+                    device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
             elif len(parameters) == 1:
                 for x in self.Devices:
                     if parameters[0] == self.Devices[x].DeviceID:
-                        _dictDevices[x] = {}
-                        _dictDevices[x]['Name'] = self.Devices[x].Name
-                        _dictDevices[x]['ID'] = self.Devices[x].ID
-                        _dictDevices[x]['DeviceID'] = self.Devices[x].DeviceID
-                        _dictDevices[x]['sValue'] = self.Devices[x].sValue
-                        _dictDevices[x]['nValue'] = self.Devices[x].nValue
-                        _dictDevices[x]['SignaleLevel'] = self.Devices[x].SignalLevel
-                        _dictDevices[x]['BatteryLevel'] = self.Devices[x].BatteryLevel
-                        _dictDevices[x]['TimedOut'] = self.Devices[x].TimedOut
-                        _dictDevices[x]['Type'] = self.Devices[x].Type
-                        _dictDevices[x]['SwitchType'] = self.Devices[x].SwitchType
+                        _dictDevices = {}
+                        _dictDevices['Name'] = self.Devices[x].Name
+                        _dictDevices['ID'] = self.Devices[x].ID
+                        _dictDevices['DeviceID'] = self.Devices[x].DeviceID
+                        _dictDevices['sValue'] = self.Devices[x].sValue
+                        _dictDevices['nValue'] = self.Devices[x].nValue
+                        _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
+                        _dictDevices['BatteryLevel'] = self.Devices[x].BatteryLevel
+                        _dictDevices['TimedOut'] = self.Devices[x].TimedOut
+                        _dictDevices['Type'] = self.Devices[x].Type
+                        _dictDevices['SwitchType'] = self.Devices[x].SwitchType
                         _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
                         break
             else:
@@ -489,19 +488,18 @@ class WebServer(object):
                     device_info = {}
                     for x in self.Devices:
                         if parm == self.Devices[x].DeviceID:
-                            device_info[self.Devices[x].Name] = {}
-                            device_info[self.Devices[x].Name]['Name'] = self.Devices[x].Name
-                            device_info[self.Devices[x].Name]['ID'] = self.Devices[x].ID
-                            device_info[self.Devices[x].Name]['DeviceID'] = self.Devices[x].DeviceID
-                            device_info[self.Devices[x].Name]['sValue'] = self.Devices[x].sValue
-                            device_info[self.Devices[x].Name]['nValue'] = self.Devices[x].nValue
-                            device_info[self.Devices[x].Name]['SignaleLevel'] = self.Devices[x].SignalLevel
-                            device_info[self.Devices[x].Name]['BatteryLevel'] = self.Devices[x].BatteryLevel
-                            device_info[self.Devices[x].Name]['TimedOut'] = self.Devices[x].TimedOut
-                            device_info[self.Devices[x].Name]['Type'] = self.Devices[x].Type
-                            device_info[self.Devices[x].Name]['SwitchType'] = self.Devices[x].SwitchType
+                            device_info = {}
+                            device_info['Name'] = self.Devices[x].Name
+                            device_info['ID'] = self.Devices[x].ID
+                            device_info['DeviceID'] = self.Devices[x].DeviceID
+                            device_info['sValue'] = self.Devices[x].sValue
+                            device_info['nValue'] = self.Devices[x].nValue
+                            device_info['SignaleLevel'] = self.Devices[x].SignalLevel
+                            device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
+                            device_info['TimedOut'] = self.Devices[x].TimedOut
+                            device_info['Type'] = self.Devices[x].Type
+                            device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
-                        break
                 _response["Data"] = json.dumps( device_lst, sort_keys=True )
         return _response
 
