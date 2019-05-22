@@ -17,7 +17,7 @@ ALLOW_GZIP = 1
 ALLOW_DEFLATE = 1
 ALLOW_CHUNK = 0
 MAX_KB_TO_SEND = 8 * 1024
-DEBUG_HTTP = True
+DEBUG_HTTP = False
 
 class WebServer(object):
     hearbeats = 0 
@@ -178,25 +178,27 @@ class WebServer(object):
             Connection.Send( Response , Delay= DELAY)
             return
 
-        Domoticz.Log("Sending Response to : %s:%s" %(Connection.Name, Connection.Port))
+        Domoticz.Log("Sending Response to : %s" %(Connection.Name))
 
         # Compression
         if (ALLOW_GZIP or ALLOW_DEFLATE ) and 'Data' in Response and AcceptEncoding:
-            Domoticz.Debug("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, ALLOW_CHUNK, ALLOW_DEFLATE, ALLOW_GZIP))
+            Domoticz.Log("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, ALLOW_CHUNK, ALLOW_DEFLATE, ALLOW_GZIP))
             if len(Response["Data"]) > MAX_KB_TO_SEND:
                 orig_size = len(Response["Data"])
                 if ALLOW_DEFLATE and AcceptEncoding.find('deflate') != -1:
+                    Domoticz.Log("Compressing - deflate")
                     zlib_compress = zlib.compressobj( 9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
                     deflated = zlib_compress.compress(Response["Data"])
                     deflated += zlib_compress.flush()
                     Response["Headers"]['Content-Encoding'] = 'deflate'
                     Response["Data"] = deflated
 
-                elif ALLOW_GZIP and AcceptEncoding.find('gzip'):
+                elif ALLOW_GZIP and AcceptEncoding.find('gzip') != -1:
+                    Domoticz.Log("Compressing - gzip")
                     Response["Data"] = gzip.compress( Response["Data"] )
                     Response["Headers"]['Content-Encoding'] = 'gzip'
 
-                Domoticz.Log("Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int((len(Response["Data"])/orig_size)*100)))
+                Domoticz.Log("Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int(100-(len(Response["Data"])/orig_size)*100)))
 
         # Chunking, Follow the Domoticz Python Plugin Framework
         if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
@@ -301,47 +303,63 @@ class WebServer(object):
             _response['Data'] = json.dumps( {} , sort_keys=True ) 
             return _response
 
+        # Read the file, as we have anyway to do it
+        _topo = {}           # All Topo reports
+        _timestamps_lst = [] # Just the list of Timestamps
+        with open( _filename , 'rt') as handle:
+            for line in handle:
+                if line[0] != '{' and line[-1] != '}': continue
+                entry = json.loads( line, encoding=dict )
+                for _ts in entry:
+                    _timestamps_lst.append( _ts )
+                    _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
+                    reportLQI = entry[_ts]
+                    for item in reportLQI:
+                        if item != '0000' and item not in self.ListOfDevices:
+                            continue
+                        for x in  reportLQI[item]:
+                            # Report only Child relationship
+                            if item == x: continue
+                            if x != '0000' and x not in self.ListOfDevices:
+                                continue
+
+                            _relation = {}
+                            if reportLQI[item][x]['_relationshp'] == "Child":
+                                master = 'Father'
+                                slave = 'Child'
+                            elif reportLQI[item][x]['_relationshp'] == "Parent":
+                                master = 'Child'
+                                slave = 'Father'
+                            else:
+                                continue
+
+                            _relation[master] = item
+                            if item != "0000":
+                                if 'ZDeviceName' in self.ListOfDevices[item]:
+                                    _relation[master] = self.ListOfDevices[item]['ZDeviceName']
+
+                            _relation[slave] = x
+                            if x != "0000":
+                                if 'ZDeviceName' in self.ListOfDevices[x]:
+                                    _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
+
+                            _relation["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
+                            _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
+                            Domoticz.Debug("TimeStamp: %s -> %s" %(_ts,str(_relation)))
+                            _topo[_ts].append( _relation )
+
         if verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
-                _key = []
-                with open( _filename , 'rt') as handle:
-                    for line in handle:
-                        if line[0] != '{' and line[-1] != '}': continue
-                        entry = json.loads( line, encoding=dict )
-                        for timestamp in entry:
-                            _key.append( timestamp )
-                _response['Data'] = json.dumps( _key , sort_keys=True)
+                _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
 
             elif len(parameters) == 1:
-                topologie_lst = []
                 timestamp = parameters[0]
-                with open( _filename , 'rt') as handle:
-                    for line in handle:
-                        #print("Line: %.40s" %line)
-                        if line[0] != '{' and line[-1] != '}': continue
-                        entry = json.loads( line, encoding=dict )
-                        if timestamp in entry:
-                            reportLQI = entry[timestamp]
-                            topologie_lst = []
-                            for item in reportLQI:
-                                for x in  reportLQI[item]:
-                                    # Report only Child relationship
-                                    if item == x: continue
-                                    if reportLQI[item][x]['_relationshp'] != "Child": continue
-                                    if item != '0000' and x != '0000' and \
-                                            ((item not in self.ListOfDevices) or (x not in self.ListOfDevices)) :
-                                        continue
+                if timestamp in _topo:
+                    _response['Data'] = json.dumps( _topo[timestamp] , sort_keys=True)
+                else:
+                    _response['Data'] = json.dumps( [] , sort_keys=True)
 
-                                    Domoticz.Log("---> %s <- %s : %s" %(item, x, reportLQI[item][x]['_relationshp']))
-                                    relationship = {}
-                                    relationship["Father"] = item
-                                    relationship["Child"] = x
-                                    relationship["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
-                                    relationship["DeviceType"] = reportLQI[item][x]['_devicetype']
-                                    topologie_lst.append( relationship )
-
-                _response['Data'] = json.dumps( topologie_lst , sort_keys=True)
         return _response
 
     def rest_nwk_stat( self, verb, data, parameters):
@@ -398,6 +416,7 @@ class WebServer(object):
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
+        p
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
