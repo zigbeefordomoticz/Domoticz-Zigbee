@@ -15,9 +15,9 @@ from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 DELAY = 0
 ALLOW_GZIP = 1
 ALLOW_DEFLATE = 1
-ALLOW_CHUNK = 0
-MAX_KB_TO_SEND = 8 * 1024
-DEBUG_HTTP = False
+ALLOW_CHUNK = 1
+MAX_KB_TO_SEND = 4 * 1024
+DEBUG_HTTP = True
 
 class WebServer(object):
     hearbeats = 0 
@@ -90,7 +90,6 @@ class WebServer(object):
             DumpHTTPResponseToLog(Data)
 
             headerCode = "200 OK"
-
             if (not 'Verb' in Data):
                 Domoticz.Error("Invalid web request received, no Verb present")
                 headerCode = "400 Bad Request"
@@ -103,7 +102,6 @@ class WebServer(object):
 
             parsed_url = urlparse(  Data['URL'] )
             Domoticz.Log("URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
-
             if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
             else: parsed_query = Data['URL'].split('/')
 
@@ -148,27 +146,42 @@ class WebServer(object):
                     self.sendResponse( Connection, _response )
                     return _response
 
-            _response["Headers"]["Last-Modified"] = _lastmodified
-            with open(webFilename , mode ='rb') as webFile:
-                _response["Data"] = webFile.read()
-
-            _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
-            if ( webFilename.find('.js') != -1): _contentType = 'text/javascript'
-            Domoticz.Debug("MimeType: %s, Content-Encoding: %s " %(_contentType, _contentEncoding))
-   
-            if _contentType:
-                _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
-            if _contentEncoding:
-                _response["Headers"]["Content-Encoding"] = _contentEncoding 
-  
-            _response["Status"] = "200 OK"
-            if 'Cookie' in Data['Headers']: 
-                _response['Headers']['Cookie'] = Data['Headers']['Cookie']
-
-            if 'Accept-Encoding' in Data['Headers']:
-                self.sendResponse( Connection, _response, AcceptEncoding = Data['Headers']['Accept-Encoding']  )
+            if 'Ranges' in Data['Headers']:
+                Domoticz.Log("Ranges processing")
+                range = Data['Headers']['Range']
+                fileStartPosition = int(range[range.find('=')+1:range.find('-')])
+                messageFileSize = os.path.getsize(webFilename)
+                messageFile = open(webFilename, mode='rb')
+                messageFile.seek(fileStartPosition)
+                fileContent = messageFile.read(MAX_KB_TO_SEND)
+                Domoticz.Log(Connection.Address+":"+Connection.Port+" Sent 'GET' request file '"+Data['URL']+"' from position "+str(fileStartPosition)+", "+str(len(fileContent))+" bytes will be returned")
+                _response["Status"] = "200 OK"
+                if (len(fileContent) == MAX_KB_TO_SEND):
+                    _response["Status"] = "206 Partial Content"
+                    _response["Headers"]["Content-Range"] = "bytes "+str(fileStartPosition)+"-"+str(messageFile.tell())+"/"+str(messageFileSize)
+                DumpHTTPResponseToLog( _response )
+                Connection.Send( _response)
             else:
-                self.sendResponse( Connection, _response )
+                _response["Headers"]["Last-Modified"] = _lastmodified
+                with open(webFilename , mode ='rb') as webFile:
+                    _response["Data"] = webFile.read()
+    
+                _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
+                #if ( webFilename.find('.js') != -1): _contentType = 'text/javascript'
+     
+                if _contentType:
+                    _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
+                if _contentEncoding:
+                    _response["Headers"]["Content-Encoding"] = _contentEncoding 
+     
+                _response["Status"] = "200 OK"
+                if 'Cookie' in Data['Headers']: 
+                    _response['Headers']['Cookie'] = Data['Headers']['Cookie']
+    
+                if 'Accept-Encoding' in Data['Headers']:
+                    self.sendResponse( Connection, _response, AcceptEncoding = Data['Headers']['Accept-Encoding']  )
+                else:
+                    self.sendResponse( Connection, _response )
 
 
     def sendResponse( self, Connection, Response, AcceptEncoding=None ):
@@ -714,6 +727,7 @@ def setupHeadersResponse():
     #_response["Headers"]["Pragma"] = "no-cache"
     #_response["Headers"]["Expires"] = "0"
     _response["Headers"]["Accept"] = "*/*"
+    #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.
     #_response["Headers"]["Content-Security-Policy"] = "default-src 'self'; img-src *"
