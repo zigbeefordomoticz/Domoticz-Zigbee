@@ -429,7 +429,6 @@ class WebServer(object):
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
-        p
 
         _response = setupHeadersResponse()
         _response["Status"] = "200 OK"
