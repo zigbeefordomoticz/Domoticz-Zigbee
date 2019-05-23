@@ -680,7 +680,7 @@ def Decode8041(self, Devices, MsgData, MsgRSSI) : # IEEE Address response
                     + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 
 
-    if ( self.pluginconf['logFORMAT'] == 1 ) :
+    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
         Domoticz.Log("Zigate activity for | 8041 " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
 
     if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :        # We have requested a IEEE address for a Short Address, 
@@ -750,7 +750,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     Domoticz.Debug("Decode8042 - Logical Type = " +str(LogicalType) )
 
     if self.ListOfDevices[addr]['Status'] != "inDB" :
-        if self.pluginconf['allowStoreDiscoveryFrames'] and addr in self.DiscoveryDevices :
+        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and addr in self.DiscoveryDevices :
             self.DiscoveryDevices[addr]['Manufacturer'] = manufacturer
             self.DiscoveryDevices[addr]['8042'] = MsgData
             self.DiscoveryDevices[addr]['DeviceType'] = str(DeviceType)
@@ -871,7 +871,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
             MsgDataCluster=""
             i=i+1
 
-    if self.pluginconf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
+    if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
         self.DiscoveryDevices[MsgDataShAddr]['ProfileID'][MsgDataProfile] = MsgDataEp
         self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID'][MsgDataDeviceId] = MsgDataEp
         if self.DiscoveryDevices[MsgDataShAddr].get('8043') :
@@ -883,9 +883,9 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
             self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
         
         if 'IEEE' in self.ListOfDevices[MsgDataShAddr]:
-            _jsonFilename = self.pluginconf['pluginZData'] + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgDataShAddr]['IEEE']) + ".json"
+            _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgDataShAddr]['IEEE']) + ".json"
         else:
-            _jsonFilename = self.pluginconf['pluginZData'] + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
+            _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
 
         with open ( _jsonFilename, 'at') as json_file:
             json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file, indent=4, sort_keys=True)
@@ -957,7 +957,7 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
         Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
-        if self.pluginconf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
+        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
             self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
             self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
 
@@ -1004,7 +1004,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             break
     self.adminWidgets.updateNotificationWidget( Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
 
-    if ( self.pluginconf['logFORMAT'] == 1 ) :
+    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
         Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     if MsgExtAddress not in self.IEEE2NWK: # Most likely this object has been removed and we are receiving the confirmation.
@@ -1078,13 +1078,13 @@ def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update re
         Domoticz.Status("     Channel: %s Interference: : %s " %(chan, int(inter,16)))
 
     # Write the report onto file
-    _filename =  self.pluginconf['pluginReports'] + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
+    _filename =  self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
     #Domoticz.Status("Network Scan report save on " +str(_filename))
     #with open(_filename , 'at') as file:
     #    for key in nwkscan:
     #        file.write(str(key) + ": " + str(nwkscan[key]) + "\n")
 
-    _filename =  self.pluginconf['pluginReports'] + 'Network_scan-' + '%02d' %self.HardwareID 
+    _filename =  self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.HardwareID 
     json_filename = _filename + ".json"
     with open( json_filename , 'at') as json_file:
         json_file.write('\n')
@@ -1238,7 +1238,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
     timeStamped( self, MsgSrcAddr , 0x8100)
-    if ( self.pluginconf['logFORMAT'] == 1 ) :
+    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
         Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
     try :
         self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
@@ -1277,7 +1277,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     Domoticz.Debug("Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ))
 
-    if ( self.pluginconf['logFORMAT'] == 1 ) :
+    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
         if 'IEEE' in self.ListOfDevices[MsgSrcAddr]:
             Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" | " +str(self.ListOfDevices[MsgSrcAddr]['IEEE']) +" | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
         else:
@@ -1419,7 +1419,7 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
         if MsgAttID not in self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID]:
             self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
 
-        if self.pluginconf['allowStoreDiscoveryFrames'] and MsgSrcAddr in self.DiscoveryDevices :
+        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgSrcAddr in self.DiscoveryDevices :
             if 'Attribute Discovery' not in  self.DiscoveryDevices[MsgSrcAddr]:
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery'] = {}
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'] = {}
@@ -1432,9 +1432,9 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
 
             if 'IEEE' in self.ListOfDevices[MsgSrcAddr]:
-                _jsonFilename = self.pluginconf['pluginZData'] + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgSrcAddr]['IEEE']) + ".json"
+                _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgSrcAddr]['IEEE']) + ".json"
             else:
-                _jsonFilename = self.pluginconf['pluginZData'] + "/DiscoveryDevice-" + str(MsgSrcAddr) + ".json"
+                _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(MsgSrcAddr) + ".json"
             with open ( _jsonFilename, 'at') as json_file:
                 json.dump(self.DiscoveryDevices[MsgSrcAddr],json_file, indent=4, sort_keys=True)
 
@@ -1549,7 +1549,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     Domoticz.Status("Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
 
-    if ( self.pluginconf['logFORMAT'] == 1 ) :
+    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
         Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
@@ -1578,7 +1578,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     else:
         # Device exist
         # We will also reset ReadAttributes
-        if self.pluginconf['allowReBindingClusters']:
+        if self.pluginconf.pluginConf['allowReBindingClusters']:
             Domoticz.Log("Decode004d - rebind clusters for %s" %MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
 
@@ -1595,7 +1595,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
-    if self.pluginconf['allowStoreDiscoveryFrames']:
+    if self.pluginconf.pluginConf['allowStoreDiscoveryFrames']:
         self.DiscoveryDevices[MsgSrcAddr] = {}
         self.DiscoveryDevices[MsgSrcAddr]['004d']={}
         self.DiscoveryDevices[MsgSrcAddr]['8043']={}

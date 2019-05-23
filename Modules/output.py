@@ -49,8 +49,8 @@ def start_Zigate(self, Mode='Controller'):
         return
 
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
-            %self.pluginconf['channel'])
-    setChannel(self, self.pluginconf['channel'])
+            %self.pluginconf.pluginConf['channel'])
+    setChannel(self, self.pluginconf.pluginConf['channel'])
     
     if Mode == 'Controller':
         Domoticz.Status("Set Zigate as a Coordinator")
@@ -697,7 +697,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 Domoticz.Debug("configureReporting - requested for device: %s on Cluster: %s" %(key, cluster))
 
-                if self.pluginconf['allowReBindingClusters']:
+                if self.pluginconf.pluginConf['allowReBindingClusters']:
                     if 'Bind' in self.ListOfDevices[key]:
                         del self.ListOfDevices[key]['Bind'] 
                     if 'IEEE' in self.ListOfDevices[key]:

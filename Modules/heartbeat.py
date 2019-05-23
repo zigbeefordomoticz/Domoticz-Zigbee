@@ -117,7 +117,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
     if _mainPowered and \
-            ( self.pluginconf['enableReadAttributes'] or self.pluginconf['resetReadAttributes'] ) and ( intHB % (30 // HEARTBEAT)) == 0 :
+            ( self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes'] ) and ( intHB % (30 // HEARTBEAT)) == 0 :
         now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
             if tmpEp == 'ClusterType': continue
@@ -192,7 +192,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # Let's check if this Model is known
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                if not self.pluginconf['allowStoreDiscoveryFrames']:
+                if not self.pluginconf.pluginConf['allowStoreDiscoveryFrames']:
                     status = 'createDB' # Fast track
 
     waitForDomoDeviceCreation = False
@@ -284,7 +284,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
         Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
-                %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf['allowStoreDiscoveryFrames'], self.ListOfDevices[NWKID]['Model']))
+                %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.pluginConf['allowStoreDiscoveryFrames'], self.ListOfDevices[NWKID]['Model']))
         Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
         self.adminWidgets.updateNotificationWidget( Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
         self.CommiSSionning = False
@@ -301,7 +301,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         for x in Devices:
             if self.ListOfDevices[NWKID].get('IEEE'):
                 if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                    if self.pluginconf['allowForceCreationDomoDevice'] == 1:
+                    if self.pluginconf.pluginConf['allowForceCreationDomoDevice'] == 1:
                         Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
                         Domoticz.Log("processNotinDBDevices - ForceCreationDevice enable, we continue")
                     else:
@@ -361,8 +361,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
                  Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
-                        %(NWKID, self.pluginconf['vibrationAqarasensitivity']))
-                 setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf['vibrationAqarasensitivity'])
+                        %(NWKID, self.pluginconf.pluginConf['vibrationAqarasensitivity']))
+                 setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.pluginConf['vibrationAqarasensitivity'])
 
             self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
@@ -442,8 +442,8 @@ def processListOfDevices( self , Devices ):
 
     # LQI Scanner
     #    - LQI = 0 - no scanning at all otherwise delay the scan by n x HEARTBEAT
-    if self.pluginconf['logLQI'] != 0 and \
-            self.HeartbeatCount > (( 120 + self.pluginconf['logLQI']) // HEARTBEAT):
+    if self.pluginconf.pluginConf['logLQI'] != 0 and \
+            self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
         if self.ZigateComm.loadTransmit() < 5 :
             LQIcontinueScan( self, Devices )
 
@@ -451,8 +451,8 @@ def processListOfDevices( self , Devices ):
         # Trigger Conifre Reporting to eligeable decices
         processConfigureReporting( self )
     
-    if self.pluginconf['networkScan'] != 0 and \
-            (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf['networkScan'] ) // HEARTBEAT )) == 0) :
+    if self.pluginconf.pluginConf['networkScan'] != 0 and \
+            (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.pluginConf['networkScan'] ) // HEARTBEAT )) == 0) :
         NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
 
     return True

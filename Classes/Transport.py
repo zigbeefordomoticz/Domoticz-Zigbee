@@ -91,10 +91,10 @@ class ZigateTransport(object):
         self.statistics = statistics
 
         self.APS = aps
-        self.reTransmit = pluginconf['reTransmit']
-        self.zmode = pluginconf['zmode']
-        self.sendDelay = pluginconf['sendDelay']
-        self.zTimeOut = pluginconf['zTimeOut']
+        self.reTransmit = pluginconf.pluginConf['reTransmit']
+        self.zmode = pluginconf.pluginConf['zmode']
+        self.sendDelay = pluginconf.pluginConf['sendDelay']
+        self.zTimeOut = pluginconf.pluginConf['zTimeOut']
 
         if str(transport) == "USB":
             self._transp = "USB"

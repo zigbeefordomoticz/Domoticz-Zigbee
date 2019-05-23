@@ -56,7 +56,7 @@ class AdminWidgets:
         if unit != 0:
             return
 
-        if self.pluginconf['eraseZigatePDM']:
+        if self.pluginconf.pluginConf['eraseZigatePDM']:
             Options = {"LevelActions": "|||||||",
                    "LevelNames": "Off|Purge Reports|Soft Reset|One Time Enrollment|Perm. Enrollment|Interf Scan|LQI Report|Erase PDM",
                    "LevelOffHidden": "true", "SelectorStyle": "0"}

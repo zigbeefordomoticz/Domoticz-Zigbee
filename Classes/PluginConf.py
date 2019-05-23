@@ -32,7 +32,7 @@ SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None },
             'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None },
 
             # Zigate Configuration
-            'channel':  { 'type':'int', 'default':0 , 'current': None },
+            'channel':  { 'type':'str', 'default':0 , 'current': None },
             'allowRemoveZigateDevice':  { 'type':'int', 'default':0 , 'current': None },
             'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None },
             'blueLedOff':  { 'type':'int', 'default':0 , 'current': None },
@@ -80,40 +80,40 @@ class PluginConf:
 
     def __init__(self, homedir, hardwareid):
 
-        self.pluginConfig = {}
+        self.pluginConf = {}
         for param in SETTINGS:
-            self.pluginConfig[param] = SETTINGS[param]['default']
+            self.pluginConf[param] = SETTINGS[param]['default']
             if param == 'pluginHome':
-                self.pluginConfig[param] = homedir
+                self.pluginConf[param] = homedir
             elif param == 'homedirectory':
-                self.pluginConfig[param] = homedir
+                self.pluginConf[param] = homedir
             elif param == 'pluginData':
-                self.pluginConfig[param] = self.pluginConfig['pluginHome'] + 'Data/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
             elif param == 'pluginZData':
-                self.pluginConfig[param] = self.pluginConfig['pluginHome'] + 'Zdatas/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Zdatas/'
             elif param == 'pluginConfig':
-                self.pluginConfig[param] = self.pluginConfig['pluginHome'] + 'Conf/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
             elif param == 'pluginWWW':
-                self.pluginConfig[param] = self.pluginConfig['pluginHome'] + 'www/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
             elif param == 'pluginReports':
-                self.pluginConfig[param] = self.pluginConfig['pluginHome'] + 'www/zigate/reports/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/zigate/reports/'
             elif param == 'pluginOTAFirmware':
-                self.pluginConfig[param] = self.pluginConfig['pluginHome'] + 'OTAFirmware/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
 
 
         # Import PluginConf.txt
-        self.pluginConfig['filename'] = self.pluginConfig['pluginConfig'] + "PluginConf-%02d.txt" %hardwareid
-        if not os.path.isfile(self.pluginConfig['filename']) :
-            self.pluginConfig['filename'] = self.pluginConfig['pluginConfig'] + "PluginConf-%d.txt" %hardwareid
-            if not os.path.isfile(self.pluginConfig['filename']) :
-                self.pluginConfig['filename'] = self.pluginConfig['pluginConfig'] + "PluginConf.txt"
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.txt" %hardwareid
+        if not os.path.isfile(self.pluginConf['filename']) :
+            self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%d.txt" %hardwareid
+            if not os.path.isfile(self.pluginConf['filename']) :
+                self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf.txt"
 
-        Domoticz.Status("PluginConf: %s" %self.pluginConfig['filename'])
+        Domoticz.Status("PluginConfig: %s" %self.pluginConf['filename'])
         tmpPluginConf = ""
-        if not os.path.isfile( self.pluginConfig['filename'] ) :
+        if not os.path.isfile( self.pluginConf['filename'] ) :
             return
 
-        with open( self.pluginConfig['filename'], 'r') as myPluginConfFile:
+        with open( self.pluginConf['filename'], 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
         Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
@@ -130,56 +130,58 @@ class PluginConf:
             
         else:
             for param in SETTINGS:
+                Domoticz.Log("Processing: %s" %param)
                 if PluginConf.get( param ):
+                    Domoticz.Log("---> found in PluginConf.txt")
                     if SETTINGS[param]['type'] == 'hex':
                         if is_hex( PluginConf.get( param ) ):
-                            self.pluginConfig[param] = int(PluginConf[ param ], 16)
-                            Domoticz.Status(" -%s: %s" %(param, self.pluginConfig[param]))
+                            self.pluginConf[param] = int(PluginConf[ param ], 16)
+                            Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
                         else:
                             Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
-                                    %( param, self.pluginConfig[param]['default']))
-                            self.pluginConfig[param] = self.pluginConfig[param]['default']
+                                    %( param, self.pluginConf[param]['default']))
+                            self.pluginConf[param] = self.pluginConf[param]['default']
 
-                    elif SETTINGS[param]['type'] == int:
+                    elif SETTINGS[param]['type'] == 'int':
                         if PluginConf.get('enableWebServer').isdigit():
-                            self.pluginConfig[param] = int(PluginConf[ param ])
-                            Domoticz.Status(" -%s: %s" %(param, self.pluginConfig[param]))
+                            self.pluginConf[param] = int(PluginConf[ param ])
+                            Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
                         else:
                             Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
-                                    %( param, self.pluginConfig[param]['default']))
-                            self.pluginConfig[param] = self.pluginConfig[param]['default']
+                                    %( param, self.pluginConf[param]['default']))
+                            self.pluginConf[param] = self.pluginConf[param]['default']
                     elif SETTINGS[param]['type'] == 'str':
-                        self.pluginConfig[param] = PluginConf[ param ]
+                        self.pluginConf[param] = PluginConf[ param ]
 
             # Sanity Checks
-            if self.pluginConfig['TradfriKelvinStep'] < 0 or  self.pluginConfig['TradfriKelvinStep'] > 255:
-                self.pluginConfig['TradfriKelvinStep'] = 75
-                Domoticz.Status(" -TradfriKelvinStep corrected: %s" %self.pluginConfig['TradfriKelvinStep'])
+            if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
+                self.pluginConf['TradfriKelvinStep'] = 75
+                Domoticz.Status(" -TradfriKelvinStep corrected: %s" %self.pluginConf['TradfriKelvinStep'])
 
-            if self.pluginConfig['Certification'] == 'CE':
-                self.pluginConfig['Certification'] = 0x01
-                Domoticz.Status(" -Certification corrected: %s" %self.pluginConfig['Certification'])
+            if self.pluginConf['Certification'] == 'CE':
+                self.pluginConf['Certification'] = 0x01
+                Domoticz.Status(" -Certification corrected: %s" %self.pluginConf['Certification'])
 
-            elif self.pluginConfig['Certification'] == 'FCC':
-                self.pluginConfig['Certification'] = 0x02
-                Domoticz.Status(" -Certification corrected: %s" %self.pluginConfig['Certification'])
+            elif self.pluginConf['Certification'] == 'FCC':
+                self.pluginConf['Certification'] = 0x02
+                Domoticz.Status(" -Certification corrected: %s" %self.pluginConf['Certification'])
             else:
-                self.pluginConfig['Certification'] = 0x00
-                Domoticz.Status(" -Certification corrected: %s" %self.pluginConfig['Certification'])
+                self.pluginConf['Certification'] = 0x00
+                Domoticz.Status(" -Certification corrected: %s" %self.pluginConf['Certification'])
 
-            if self.pluginConfig['zmode'] == 'Agressive':
+            if self.pluginConf['zmode'] == 'Agressive':
                 self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
-                Domoticz.Status(" -zmod corrected: %s" %self.pluginConfig['zmod'])
+                Domoticz.Status(" -zmod corrected: %s" %self.pluginConf['zmod'])
 
 
         # Check Path
         for param in SETTINGS:
             if SETTINGS[param]['type'] == 'path':
-                if not os.path.exists( self.pluginConfig[ param] ):
-                    Domoticz.Error( "Cannot access path: %s" % self.pluginConfig[ param] )
+                if not os.path.exists( self.pluginConf[ param] ):
+                    Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
 
         for param in SETTINGS:
-            Domoticz.Log(" -%s: %s" %(param, self.pluginConfig[param]))
+            Domoticz.Log(" -%s: %s" %(param, self.pluginConf[param]))
 
 
 
