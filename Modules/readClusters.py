@@ -333,7 +333,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0007":   # ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorTemperatureMireds'] = value
         Domoticz.Debug("ReadCluster0300 - ColorTemperatureMireds: %s" %value)
-        if self.pluginconf.pluginConf['allowStoreDiscoveryFramesi'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
+        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorTemperatureMireds']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0008":   # Color Mode 
