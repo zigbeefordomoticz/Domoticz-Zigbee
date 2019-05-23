@@ -13,350 +13,206 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 import Domoticz
 import os.path
+import json
 
-from Modules.tools import is_hex
+#from Modules.tools import is_hex
+
+
+SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 'Restart':True },
+
+            # Device Management
+            'allowStoreDiscoveryFrames': { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'allowForceCreationDomoDevice':  { 'type':'int', 'default':0 , 'current': None , 'Restart':False },
+            'allowReBindingClusters':  { 'type':'int', 'default':1 , 'current': None , 'Restart':False },
+            'enableReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'Restart':False },
+            'resetConfigureReporting': { 'type':'int', 'default':0 , 'current': None , 'Restart':True },
+            'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'Restart':False },
+            'resetReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':True  },
+            'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'Restart':False },
+            'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'Restart':False },
+
+            # Zigate Configuration
+            'allowRemoveZigateDevice':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'allowOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'batteryOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'blueLedOff':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True },
+            'channel':  { 'type':'str', 'default':0 , 'current': None, 'Restart':True },
+            'extendedPANID': { 'type':'hex', 'default':None , 'current': None, 'Restart':True },
+            'enableAPSFailureLoging':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'enableAPSFailureReporting':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
+            'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'Ping':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
+            'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'Restart':True },
+
+            # Plugin Transport
+            'CrcCheck':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+            'reTransmit':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+            'sendDelay':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'Restart':True },
+            'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'Restart':True },
+
+            # Plugin Directories
+            'pluginHome':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'homedirectory':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginData':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginZData': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginConfig': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'filename':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginOTAFirmware': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginReports':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+
+            # Groups Management
+            'enableConfigGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+            'enablegroupmanagement':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'discoverZigateGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+    
+            # Network Topoology
+            'logLQI':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+            'networkScan': { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+
+            # Debugging
+            'logFORMAT':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'debugReadCluster':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False }
+            }
 
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
 
-        self.logFORMAT = 0
+        self.pluginConf = {}
+        for param in SETTINGS:
+            self.pluginConf[param] = SETTINGS[param]['default']
+            if param == 'pluginHome':
+                self.pluginConf[param] = homedir
+            elif param == 'homedirectory':
+                self.pluginConf[param] = homedir
+            elif param == 'pluginData':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
+            elif param == 'pluginZData':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Zdatas/'
+            elif param == 'pluginConfig':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
+            elif param == 'pluginWWW':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
+            elif param == 'pluginReports':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/zigate/reports/'
+            elif param == 'pluginOTAFirmware':
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
 
-        self.enableWebServer = 0
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
+        if not os.path.isfile(self.pluginConf['filename']):
+            self._load_oldfashon( homedir, hardwareid)
+        else:
+            self._load_Settings()
 
-        # Device Management
-        self.allowStoreDiscoveryFrames = 0
-        self.allowForceCreationDomoDevice = 0
-        self.allowReBindingClusters = 1  # When receiving a Device Annouced, allow rebinding on clustered.
-        self.resetConfigureReporting = 0 # Allow to reset the Configure Reporting record
-        self.resetReadAttributes = 0 # Allow to reset the ReadAttribute
-        self.enableReadAttributes = 0 # Enable the plugin to poll information from the devices.
-        self.resetMotiondelay = 30
-        self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
-        self.TradfriKelvinStep = 51
-        self.numDeviceListVersion = 12
+        # Sanity Checks
+        if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
+            self.pluginConf['TradfriKelvinStep'] = 75
+            Domoticz.Status(" -TradfriKelvinStep corrected: %s" %self.pluginConf['TradfriKelvinStep'])
 
-        # Zigate Configuration
-        self.channel = 0
-        self.allowRemoveZigateDevice = 0
-        self.eraseZigatePDM = 0
-        self.blueLedOff = 0
-        self.TXpower_set = 0
-        self.Certification = 0  # 1- CE; 2- FCC
-        self.enableAPSFailureLoging = 0
-        self.enableAPSFailureReporting = 1
-        self.allowOTA = 0
-        self.waitingOTA = 3600
-        self.batteryOTA = 0
-        self.extendedPANID = None
+        if self.pluginConf['Certification'] == 'CE':
+            self.pluginConf['Certification'] = 0x01
 
-        # Plugin Transport
-        self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
-        self.reTransmit = 1  # Default mode, we do one retransmit if Data not reach at TO
-        self.zTimeOut = 2  # 2'' Tiemout to get Ack and Data
-        self.CrcCheck = 1
-        self.sendDelay = 0
-        self.Ping = 1
+        elif self.pluginConf['Certification'] == 'FCC':
+            self.pluginConf['Certification'] = 0x02
+        else:
+            self.pluginConf['Certification'] = 0x00
 
-        # Plugin Directories
-        self.pluginHome = homedir
-        self.homedirectory = homedir
-        self.pluginData = self.pluginHome + 'Data/'
-        self.pluginZData = self.pluginHome + 'Zdatas/'
-        self.pluginConfig = self.pluginHome + 'Conf/'
-        self.pluginWWW = self.pluginHome + 'www/'
-        #self.pluginReports = self.pluginWWW + 'zigate/reports/'
-        self.pluginReports = self.pluginHome + 'Reports/'
-        self.pluginOTAFirmware = self.pluginHome + 'OTAFirmware/'
+        if self.pluginConf['zmode'] == 'Agressive':
+            self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
+            Domoticz.Status(" -zmod corrected: %s" %self.pluginConf['zmod'])
 
-        self.filename = None
+        # Check Path
+        for param in SETTINGS:
+            if SETTINGS[param]['type'] == 'path':
+                if not os.path.exists( self.pluginConf[ param] ):
+                    Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
 
-        # Groups Management
-        self.enablegroupmanagement = 0
-        self.discoverZigateGroups = 1
-        self.enableConfigGroups = 1
+        for param in SETTINGS:
+            Domoticz.Log(" -%s: %s" %(param, self.pluginConf[param]))
 
-        # Network Topoology
-        self.logLQI = 0
-        self.networkScan = 0
 
-        # Debugging
-        self.debugReadCluster = 0
-
-        # Zigate
+    def _load_oldfashon( self, homedir, hardwareid):
 
         # Import PluginConf.txt
-        self.filename = self.pluginConfig + "PluginConf-%02d.txt" %hardwareid
-        if not os.path.isfile(self.filename) :
-            self.filename = self.pluginConfig + "PluginConf-%d.txt" %hardwareid
-            if not os.path.isfile(self.filename) :
-                self.filename = self.pluginConfig + "PluginConf.txt"
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.txt" %hardwareid
+        if not os.path.isfile(self.pluginConf['filename']) :
+            self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%d.txt" %hardwareid
+            if not os.path.isfile(self.pluginConf['filename']) :
+                self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf.txt"
 
-        Domoticz.Status("PluginConf: %s" %self.filename)
+        Domoticz.Status("PluginConfig: %s" %self.pluginConf['filename'])
         tmpPluginConf = ""
-        self.PluginConf = {}
-        if not os.path.isfile( self.filename ) :
+        if not os.path.isfile( self.pluginConf['filename'] ) :
             return
-
-        with open( self.filename, 'r') as myPluginConfFile:
+        with open( self.pluginConf['filename'], 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
         Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
+        PluginConf = {}
 
         try:
-            self.PluginConf = eval(tmpPluginConf)
-
+            PluginConf = eval(tmpPluginConf)
         except SyntaxError:
             Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" %self.filename)
         except (NameError, TypeError, ZeroDivisionError):
             Domoticz.Error("Error while importing %s, all plugin parameters set to default" %self.filename)
-            
         else:
-            if self.PluginConf.get('enableWebServer'):
-                if self.PluginConf.get('enableWebServer').isdigit():
-                    self.enableWebServer = int(self.PluginConf['enableWebServer'])
-                    Domoticz.Status(" -enableWebServer: %s" %self.enableWebServer)
+            for param in SETTINGS:
+                Domoticz.Log("Processing: %s" %param)
+                if PluginConf.get( param ):
+                    Domoticz.Log("---> found in PluginConf.txt")
+                    if SETTINGS[param]['type'] == 'hex':
+                        if is_hex( PluginConf.get( param ) ):
+                            self.pluginConf[param] = int(PluginConf[ param ], 16)
+                            Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
+                        else:
+                            Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
+                                    %( param, self.pluginConf[param]['default']))
+                            self.pluginConf[param] = self.pluginConf[param]['default']
 
-            if self.PluginConf.get('vibrationAqarasensitivity'):
-                self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
-                Domoticz.Status(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
+                    elif SETTINGS[param]['type'] == 'int':
+                        if PluginConf.get('enableWebServer').isdigit():
+                            self.pluginConf[param] = int(PluginConf[ param ])
+                            Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
+                        else:
+                            Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
+                                    %( param, self.pluginConf[param]['default']))
+                            self.pluginConf[param] = self.pluginConf[param]['default']
+                    elif SETTINGS[param]['type'] == 'str':
+                        self.pluginConf[param] = PluginConf[ param ]
 
-            if self.PluginConf.get('TradfriKelvinStep') and \
-                    self.PluginConf.get('TradfriKelvinStep').isdigit():
-                self.TradfriKelvinStep = int(self.PluginConf['TradfriKelvinStep'], 10)
-                if self.TradfriKelvinStep < 0 or self.TradfriKelvinStep > 255:
-                    self.TradfriKelvinStep = 75
+        self.write_Settings( homedir, hardwareid)
 
-            if self.PluginConf.get('pluginData'):
-                self.pluginData = self.PluginConf['pluginData']
 
-            if self.PluginConf.get('pluginZData'):
-                self.pluginZData = self.PluginConf['pluginZData']
-                Domoticz.Status(" -pluginData: %s" %self.pluginData)
+    def write_Settings(self, homedir, hardwareid):
+        ' serialize json format the pluginConf '
+        ' Only the arameters which are different than default '
 
-            if self.PluginConf.get('pluginReports'):
-                self.pluginReports = self.PluginConf['pluginReports']
-                Domoticz.Status(" -pluginReports: %s" %self.pluginReports)
+        pluginConfFile = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
+        Domoticz.Debug("Write %s" %pluginConfFile)
+        write_pluginConf = {}
+        for param in SETTINGS:
+            if self.pluginConf[param] != SETTINGS[param]['default']:
+                write_pluginConf[param] = self.pluginConf[param]
+                Domoticz.Debug("archive %s" %param)
 
-            if self.PluginConf.get('pluginOTAFirmware'):
-                self.pluginOTAFirmware = self.PluginConf['pluginOTAFirmware']
-                Domoticz.Status(" -pluginOTAFirmware: %s" %self.pluginOTAFirmware)
+        Domoticz.Debug("Number elements to write: %s" %len(write_pluginConf))
+        with open( pluginConfFile , 'wt') as handle:
+            json.dump( write_pluginConf, handle, sort_keys=True, indent=2)
 
-            if self.PluginConf.get('pluginConfig'):
-                self.pluginConfig = self.PluginConf['pluginConfig']
-                Domoticz.Status(" -pluginConfig: %s" %self.pluginConfig)
 
-            if self.PluginConf.get('pluginWWW'):
-                self.pluginWWW = self.PluginConf['pluginWWW']
-                Domoticz.Status(" -pluginWWW: %s" %self.pluginWWW)
+    def _load_Settings(self):
+        ' deserialize json format of pluginConf'
+        ' load parameters '
 
-            if self.PluginConf.get('enablegroupmanagement') and \
-                    self.PluginConf.get('enablegroupmanagement').isdigit():
-                self.enablegroupmanagement = int(self.PluginConf['enablegroupmanagement'], 10)
-                Domoticz.Status(" -enablegroupmanagement: %s" %self.enablegroupmanagement)
+        with open( self.pluginConf['filename'] , 'rt') as handle:
+            _pluginConf = {}
+            _pluginConf = json.load( handle, encoding=dict)
+            for param in _pluginConf:
+                self.pluginConf[param] = _pluginConf[param]
 
-            if self.PluginConf.get('debugReadCluster') and \
-                    self.PluginConf.get('debugReadCluster').isdigit():
-                self.debugReadCluster = int(self.PluginConf['debugReadCluster'], 10)
-
-            if self.PluginConf.get('resetMotiondelay') and \
-                    self.PluginConf.get('resetMotiondelay').isdigit():
-                self.resetMotiondelay = int(self.PluginConf['resetMotiondelay'], 10)
-                Domoticz.Status(" -resetMotiondelay: %s" %self.resetMotiondelay)
-
-            if self.PluginConf.get('sendDelay') and \
-                    self.PluginConf.get('sendDelay').isdigit():
-                self.sendDelay = int(self.PluginConf['sendDelay'], 10)
-                Domoticz.Status(" -sendDelay: %s" %self.sendDelay)
-
-            if self.PluginConf.get('Ping') and \
-                    self.PluginConf.get('Ping').isdigit():
-                self.Ping = int(self.PluginConf['Ping'], 10)
-                Domoticz.Status(" -Ping: %s" %self.Ping)
-
-            if self.PluginConf.get('numDeviceListVersion') and \
-                    self.PluginConf.get('numDeviceListVersion').isdigit():
-                self.numDeviceListVersion = int(self.PluginConf['numDeviceListVersion'], 10)
-                Domoticz.Status(" -numDeviceListVersion : %s" %self.numDeviceListVersion)
-
-            if self.PluginConf.get('allowStoreDiscoveryFrames') and \
-                    self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
-                self.allowStoreDiscoveryFrames = int(self.PluginConf['allowStoreDiscoveryFrames'], 10)
-                Domoticz.Status(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
-
-            if self.PluginConf.get('allowReBindingClusters') and \
-                    self.PluginConf.get('allowReBindingClusters').isdigit():
-                self.allowReBindingClusters = int(self.PluginConf['allowReBindingClusters'], 10)
-                Domoticz.Status(" -allowReBindingClusters: %s" %self.allowReBindingClusters)
-
-            if self.PluginConf.get('resetConfigureReporting') and \
-                    self.PluginConf.get('resetConfigureReporting').isdigit():
-                self.resetConfigureReporting = int(self.PluginConf['resetConfigureReporting'], 10)
-                Domoticz.Status(" -resetConfigureReporting: %s" %self.resetConfigureReporting)
-
-            if self.PluginConf.get('resetReadAttributes') and \
-                    self.PluginConf.get('resetReadAttributes').isdigit():
-                self.resetReadAttributes = int(self.PluginConf['resetReadAttributes'], 10)
-                Domoticz.Status(" -resetReadAttributes: %s" %self.resetReadAttributes)
-
-            if self.PluginConf.get('enableReadAttributes') and \
-                    self.PluginConf.get('enableReadAttributes').isdigit():
-                self.enableReadAttributes = int(self.PluginConf['enableReadAttributes'], 10)
-                Domoticz.Status(" -enableReadAttributes: %s" %self.enableReadAttributes)
-
-            if self.PluginConf.get('logFORMAT') and \
-                    self.PluginConf.get('logFORMAT').isdigit():
-                self.logFORMAT = int(self.PluginConf['logFORMAT'], 10)
-                Domoticz.Status(" -logFORMAT: %s" %self.logFORMAT)
-
-            if self.PluginConf.get('logLQI') and self.PluginConf.get('logLQI').isdigit():
-                self.logLQI = int(self.PluginConf['logLQI'], 10)
-                Domoticz.Status(" -logLQI: %s"% self.logLQI)
-
-            if self.PluginConf.get('allowRemoveZigateDevice') and \
-                    self.PluginConf.get('allowRemoveZigateDevice').isdigit():
-                self.allowRemoveZigateDevice = int(self.PluginConf['allowRemoveZigateDevice'], 10)
-                Domoticz.Status(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
-
-            if self.PluginConf.get('allowForceCreationDomoDevice') and \
-                    self.PluginConf.get('allowForceCreationDomoDevice').isdigit():
-                self.allowForceCreationDomoDevice = int(self.PluginConf['allowForceCreationDomoDevice'], 10)
-                Domoticz.Status(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
-
-            if self.PluginConf.get('networkScan') and \
-                    self.PluginConf.get('networkScan').isdigit():
-                self.networkScan = int(self.PluginConf['networkScan'], 10)
-                Domoticz.Status(" -networkScan: %s" %self.networkScan)
-
-            if self.PluginConf.get('channel'): 
-                self.channel = self.PluginConf.get('channel')
-                self.channel = [c.strip() for c in self.channel.split(',')]
-                Domoticz.Status(" -channel: %s" %self.channel)
-
-            if self.PluginConf.get('enableAPSFailureReporting') and \
-                    self.PluginConf.get('enableAPSFailureReporting').isdigit():
-                self.enableAPSFailureReporting = int(self.PluginConf.get('enableAPSFailureReporting'))
-                Domoticz.Status(" -enableAPSFailureReporting: %s" %self.enableAPSFailureReporting)
-
-            if self.PluginConf.get('enableAPSFailureLoging') and \
-                    self.PluginConf.get('enableAPSFailureLoging').isdigit():
-                self.enableAPSFailureLoging = int(self.PluginConf.get('enableAPSFailureLoging'))
-                Domoticz.Status(" -enableAPSFailureLogin: %s" %self.enableAPSFailureLoging)
-
-            if self.PluginConf.get('blueLedOff') and \
-                    self.PluginConf.get('blueLedOff').isdigit():
-                self.blueLedOff = int(self.PluginConf.get('blueLedOff'))
-                Domoticz.Status(" -blueLedOff: %s" %self.blueLedOff)
-
-            if self.PluginConf.get('TXpower') and \
-                    self.PluginConf.get('TXpower').isdigit():
-                self.TXpower_set = int(self.PluginConf.get('TXpower'))
-                Domoticz.Status(" -TXpower: %s" %self.TXpower_set)
-
-            if self.PluginConf.get('allowOTA') and \
-                    self.PluginConf.get('allowOTA').isdigit():
-                self.allowOTA = int(self.PluginConf.get('allowOTA'))
-                Domoticz.Status(" -allowOTA: %s" %self.allowOTA)
-
-            if self.PluginConf.get('waitingOTA') and \
-                    self.PluginConf.get('waitingOTA').isdigit():
-                self.waitingOTA = int(self.PluginConf.get('waitingOTA'))
-                Domoticz.Status(" -waitingOTA: %s" %self.waitingOTA)
-
-            if self.PluginConf.get('batteryOTA') and \
-                    self.PluginConf.get('batteryOTA').isdigit():
-                self.batteryOTA = int(self.PluginConf.get('batteryOTA'))
-                Domoticz.Status(" -batteryOTA: %s" %self.batteryOTA)
-
-            if self.PluginConf.get('Certification'):
-                if self.PluginConf.get('Certification') == 'CE':
-                    self.Certification = 0x01
-                elif self.PluginConf.get('Certification') == 'FCC':
-                    self.Certification = 0x02
-                else:
-                    self.Certification = 0
-                Domoticz.Status(" -Certification: %s" %self.Certification)
-
-            if self.PluginConf.get('zmode'):
-                if self.PluginConf.get('zmode') == 'Agressive':
-                    self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
-                Domoticz.Status(" -zmode: %s" %self.zmode)
-
-            if self.PluginConf.get('reTransmit') and \
-                    self.PluginConf.get('reTransmit').isdigit():
-                self.reTransmit = int(self.PluginConf.get('reTransmit'))
-                Domoticz.Status(" -reTransmit: %s" %self.reTransmit)
-
-            if self.PluginConf.get('zTimeOut') and \
-                    self.PluginConf.get('zTimeOut').isdigit():
-                self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
-                Domoticz.Status(" -zTimeOut: %s" %self.zTimeOut)
-
-            if self.PluginConf.get('extendedPANID'):
-                if is_hex( self.PluginConf.get('extendedPANID') ):
-                    self.extendedPANID = int(self.PluginConf.get('extendedPANID'), 16)
-                    Domoticz.Status(" -extendedPANID: 0x%x" %self.extendedPANID)
-                else:
-                    Domoticz.Error("PluginConf - wrong parameter extendedPANID must be hex. %s" \
-                            %self.PluginConf.get('extendedPANID'))
-
-        Domoticz.Debug("Device Management:")
-        Domoticz.Debug(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
-        Domoticz.Debug(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
-        Domoticz.Debug(" -allowReBindingClusters: %s" %self.allowReBindingClusters)
-        Domoticz.Debug(" -resetConfigureReporting: %s" %self.resetConfigureReporting)
-        Domoticz.Debug(" -resetReadAttributes: %s" %self.resetReadAttributes)
-        Domoticz.Debug(" -enableReadAttributes: %s" %self.enableReadAttributes)
-        Domoticz.Debug(" -resetMotiondelay: %s" %self.resetMotiondelay)
-        Domoticz.Debug(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
-
-        Domoticz.Debug("Zigate Configuration")
-        Domoticz.Debug(" -channel: %s" %self.channel)
-        Domoticz.Debug(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
-        Domoticz.Debug(" -eraseZigatePDM: %s" %self.eraseZigatePDM)
-        Domoticz.Debug(" -blueLedOff: %s" %self.blueLedOff)
-        Domoticz.Debug(" -TXpower: %s" %self.TXpower_set)
-        Domoticz.Debug(" -Certification: %s" %self.Certification)
-        Domoticz.Debug(" -allowOTA: %s" %self.allowOTA)
-
-        Domoticz.Debug("Plugin Transport")
-        Domoticz.Debug(" -zmode: %s" %self.zmode)
-        Domoticz.Debug(" -reTransmit: %s" %self.reTransmit)
-        Domoticz.Debug(" -zTimeOut: %s" %self.zTimeOut)
-        Domoticz.Debug(" -CrcCheck: %s" %self.CrcCheck)
-        Domoticz.Debug(" -sendDelay: %s" %self.sendDelay)
-        Domoticz.Debug(" -Ping: %s" %self.Ping)
-
-        Domoticz.Debug("Plugin Directories")
-        Domoticz.Debug(" -pluginHome: %s" %self.pluginHome)
-        Domoticz.Debug(" -pluginData: %s" %self.pluginData)
-        Domoticz.Debug(" -pluginZData: %s" %self.pluginZData)
-        Domoticz.Debug(" -pluginReports: %s" %self.pluginReports)
-        Domoticz.Debug(" -pluginConfig: %s" %self.pluginConfig)
-        Domoticz.Debug(" -pluginWWW: %s" %self.pluginWWW)
-        Domoticz.Debug(" -homedirectory: %s" %self.homedirectory)
-        Domoticz.Debug(" -filename: %s" %self.filename)
-
-        # Groups Management
-        Domoticz.Debug("Groups Management")
-        Domoticz.Debug(" -enablegroupmanagement: %s" %self.enablegroupmanagement)
-        Domoticz.Debug(" -discoverZigateGroups: %s" %self.discoverZigateGroups)
-        Domoticz.Debug(" -enableConfigGroups: %s" %self.enableConfigGroups)
-
-        # Network Topoology
-        Domoticz.Debug("Reportings and Statistics")
-        Domoticz.Debug(" -logLQI: %s"% self.logLQI)
-        Domoticz.Debug(" -networkScan: %s" %self.networkScan)
-
-        if not os.path.exists( self.pluginData ):
-            Domoticz.Error( "Cannot access pluginData: %s" %self.pluginData)
-        if not os.path.exists( self.pluginZData ):
-            Domoticz.Error( "Cannot access pluginZData: %s" %self.pluginZData)
-        if not os.path.exists( self.pluginConfig ):
-            Domoticz.Error( "Cannot access pluginConfig: %s" %self.pluginConfig)
-        if not os.path.exists( self.pluginWWW ):
-            Domoticz.Error( "Cannot access pluginWWW: %s" %self.pluginWWW)
-        if not os.path.exists( self.pluginReports ):
-            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginReports)
-        if not os.path.exists( self.pluginOTAFirmware ):
-            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginOTAFirmware)
