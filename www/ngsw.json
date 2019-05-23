@@ -1,6 +1,6 @@
 {
   "configVersion": 1,
-  "timestamp": 1558480646100,
+  "timestamp": 1558546017762,
   "index": "/index.html",
   "assetGroups": [
     {
@@ -10,16 +10,16 @@
       "urls": [
         "/1.37924b8ca71a0d14c7a9.js",
         "/10.530071b2e2ece7bc4517.js",
-        "/5.acab57263f63d6b41711.js",
+        "/5.b5f3f7df15dfddf9905f.js",
         "/6.564847ba1688ab48ddd0.js",
         "/7.07179facab7b3af28106.js",
         "/8.551bc8357f48f8e99937.js",
         "/9.63f3f514656c2b628bdf.js",
         "/favicon.ico",
         "/index.html",
-        "/main.b07e47ebbf82f91baf6d.js",
+        "/main.419f464fb981611f08f7.js",
         "/polyfills.77090679ce028d98260c.js",
-        "/runtime.94d42a7b96520dd829af.js",
+        "/runtime.1ceeb99eb313b823bd69.js",
         "/styles.ac0b3ef20df4ae173ccb.css"
       ],
       "patterns": []
@@ -38,17 +38,17 @@
   "hashTable": {
     "/1.37924b8ca71a0d14c7a9.js": "6a60219ce1a9ac0c17e223dd94aff949a8a715d0",
     "/10.530071b2e2ece7bc4517.js": "a136ccd73d3231695a9b3a97e52d9e80bb985e96",
-    "/5.acab57263f63d6b41711.js": "8d4178151c73503b2fdc4d6b722c5d9efa4af6d4",
+    "/5.b5f3f7df15dfddf9905f.js": "dc3a6e697db65b2ecd02763cea830ad3421f18fe",
     "/6.564847ba1688ab48ddd0.js": "5b19a70e409c280b6cc9eeed46d28beb65f47096",
     "/7.07179facab7b3af28106.js": "f6681b8f41a0699a07908932387970f2db9ccccd",
     "/8.551bc8357f48f8e99937.js": "edc7974933bc16f76624129d497da68c755c6f9d",
     "/9.63f3f514656c2b628bdf.js": "eb89925cdf4a712ff869ca9a5c3464e12c687afd",
     "/assets/zigate_logo.png": "bdf79a5f4921f2dcbb7a690f9d271483ddd702e8",
     "/favicon.ico": "7311d698cc2194b4182fdcbc85bdc0e27a45774b",
-    "/index.html": "d7b3236b217acc03f845aa669e894212e73e50ed",
-    "/main.b07e47ebbf82f91baf6d.js": "2f763a534a62d05baca71e4e3228eeab876343d7",
+    "/index.html": "b77502b0a1c8c913274d6a0afd17891fa748b636",
+    "/main.419f464fb981611f08f7.js": "09005962f5d6d00356ddcf18f137ba1bd00c18fb",
     "/polyfills.77090679ce028d98260c.js": "eecb4f2fffb4e34e302b1ceb32c30eb8ce05bdc5",
-    "/runtime.94d42a7b96520dd829af.js": "39db0f7d332141f6365f380a8bd11539c048b471",
+    "/runtime.1ceeb99eb313b823bd69.js": "012441f7e00e83a5e9ad410f6d76b20d3bed944b",
     "/styles.ac0b3ef20df4ae173ccb.css": "66c6b88b6c004322f184d9339f64e09ed5c3afce"
   },
   "navigationUrls": [
