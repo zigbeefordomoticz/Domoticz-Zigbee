@@ -131,7 +131,7 @@ class PluginConf:
         else:
             for param in SETTINGS:
                 if PluginConf.get( param ):
-                    if SETTINGS[param]['Type'] == 'hex':
+                    if SETTINGS[param]['type'] == 'hex':
                         if is_hex( PluginConf.get( param ) ):
                             self.pluginConfig[param] = int(PluginConf[ param ], 16)
                             Domoticz.Status(" -%s: %s" %(param, self.pluginConfig[param]))
@@ -140,7 +140,7 @@ class PluginConf:
                                     %( param, self.pluginConfig[param]['default']))
                             self.pluginConfig[param] = self.pluginConfig[param]['default']
 
-                    elif SETTINGS[param]['Type'] == int:
+                    elif SETTINGS[param]['type'] == int:
                         if PluginConf.get('enableWebServer').isdigit():
                             self.pluginConfig[param] = int(PluginConf[ param ])
                             Domoticz.Status(" -%s: %s" %(param, self.pluginConfig[param]))
@@ -148,7 +148,7 @@ class PluginConf:
                             Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                     %( param, self.pluginConfig[param]['default']))
                             self.pluginConfig[param] = self.pluginConfig[param]['default']
-                    elif SETTINGS[param]['Type'] == 'str':
+                    elif SETTINGS[param]['type'] == 'str':
                         self.pluginConfig[param] = PluginConf[ param ]
 
             # Sanity Checks
