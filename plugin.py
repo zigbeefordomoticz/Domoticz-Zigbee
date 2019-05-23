@@ -220,8 +220,7 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
         Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
 
-        plugconf = self.pluginconf
-        if  plugconf['allowStoreDiscoveryFrames'] == 1 :
+        if  self.pluginconf['allowStoreDiscoveryFrames'] == 1 :
             self.DiscoveryDevices = {}
 
         # Initialise APS Object
