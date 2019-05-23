@@ -125,7 +125,7 @@ class TransportStatistics:
         stats[timing]['start'] = self._start
         stats[timing]['stop'] = timing
 
-        json_filename = self.pluginconf.pluginReports + 'Transport-stats.json'
+        json_filename = self.pluginconf['pluginReports'] + 'Transport-stats.json'
         with open( json_filename, 'at') as json_file:
             json_file.write('\n')
             json.dump( stats, json_file)

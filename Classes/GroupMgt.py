@@ -57,15 +57,15 @@ class GroupsManagement(object):
         self.Firmware = None
         self.homeDirectory = HomeDirectory
 
-        self.groupsConfigFilename = self.pluginconf.pluginConfig + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
+        self.groupsConfigFilename = self.pluginconf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".txt"
         if not os.path.isfile(self.groupsConfigFilename) :
-            self.groupsConfigFilename = self.pluginconf.pluginConfig + GROUPS_CONFIG_FILENAME + ".txt"
+            self.groupsConfigFilename = self.pluginconf['pluginConfig'] + GROUPS_CONFIG_FILENAME + ".txt"
             if not os.path.isfile(self.groupsConfigFilename):
                 Domoticz.Debug("No Groups Configuration File")
                 self.groupsConfigFilename = None
 
-        self.groupListFileName = self.pluginconf.pluginData + "/GroupsList-%02d.pck" %hardwareID 
-        self.groupListReport = self.pluginconf.pluginReports + "GroupList-%02d.json" %hardwareID
+        self.groupListFileName = self.pluginconf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID 
+        self.groupListReport = self.pluginconf['pluginReports'] + "GroupList-%02d.json" %hardwareID
 
 
         return
@@ -958,10 +958,10 @@ class GroupsManagement(object):
                 t = self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T']
 
             if type_dir == 'left':
-                t -= self.pluginconf.TradfriKelvinStep
+                t -= self.pluginconf['TradfriKelvinStep']
                 if t < 0: t = 255
             elif type_dir == 'right':
-                t += self.pluginconf.TradfriKelvinStep
+                t += self.pluginconf['TradfriKelvinStep']
                 if t > 255: t = 0
                 
             Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
@@ -1002,9 +1002,6 @@ class GroupsManagement(object):
     def hearbeatGroupMgt( self ):
         ' hearbeat to process Group Management actions '
         # Groups Management
-        # self.pluginconf.enablegroupmanagement 
-        # self.pluginconf.discoverZigateGroups 
-        # self.pluginconf.enableConfigGroups
 
         def modification_date( filename ):
             """

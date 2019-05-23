@@ -152,7 +152,7 @@ class APSManagement(object):
             if self.ListOfDevices[nwk]['PowerSource'] == 'Main':
                 _mainPowered = True
 
-        if self.pluginconf.enableAPSFailureLoging:
+        if self.pluginconf['enableAPSFailureLoging']:
             Domoticz.Log("processAPSFailure - NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
                     %( nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
 
@@ -160,7 +160,7 @@ class APSManagement(object):
 
         if  not _mainPowered \
                 or (aps_code not in APS_FAILURE_CODE) \
-                or not self.pluginconf.enableAPSFailureReporting:
+                or not self.pluginconf['enableAPSFailureReporting']:
             return
 
         _timeAPS = (time())
