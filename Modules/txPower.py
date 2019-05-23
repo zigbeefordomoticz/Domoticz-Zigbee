@@ -56,8 +56,8 @@ def set_TxPower( self, powerlevel):
     setValue = POWER_LEVEL[powerlevel]
     Domoticz.Log("set_TxPower - PowerLevel: %s Requesting %s dBm" %(powerlevel, MAPPED_dBm[powerlevel]))
 
-    if self.pluginconf.TXpower_set:
-        attr_tx_power = '%02x' %self.pluginconf.TXpower_set
+    if self.pluginconf['TXpower_set']:
+        attr_tx_power = '%02x' %self.pluginconf['TXpower_set']
         sendZigateCmd(self, "0806", attr_tx_power)
         Domoticz.Log("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
 
