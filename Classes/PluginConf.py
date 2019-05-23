@@ -24,34 +24,34 @@ SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 
             'allowStoreDiscoveryFrames': { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
             'allowForceCreationDomoDevice':  { 'type':'int', 'default':0 , 'current': None , 'Restart':False },
             'allowReBindingClusters':  { 'type':'int', 'default':1 , 'current': None , 'Restart':False },
-            'resetConfigureReporting': { 'type':'int', 'default':0 , 'current': None , 'Restart':True },
-            'resetReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':True  },
             'enableReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'Restart':False },
-            'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'Restart':False },
-            'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'Restart':False },
             'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'Restart':False },
+            'resetConfigureReporting': { 'type':'int', 'default':0 , 'current': None , 'Restart':True },
+            'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'Restart':False },
+            'resetReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':True  },
+            'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'Restart':False },
+            'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'Restart':False },
 
             # Zigate Configuration
-            'channel':  { 'type':'str', 'default':0 , 'current': None, 'Restart':True },
             'allowRemoveZigateDevice':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'allowOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'batteryOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
             'blueLedOff':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'Certification':  { 'type':'str', 'default':0 , 'current': None, 'restart':True },
+            'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True },
+            'channel':  { 'type':'str', 'default':0 , 'current': None, 'Restart':True },
+            'extendedPANID': { 'type':'hex', 'default':None , 'current': None, 'Restart':True },
             'enableAPSFailureLoging':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
             'enableAPSFailureReporting':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
-            'allowOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
             'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'Restart':True },
-            'batteryOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'extendedPANID': { 'type':'hex', 'default':None , 'current': None, 'Restart':True },
 
             # Plugin Transport
-            'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'Restart':True },
-            'reTransmit':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
-            'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'Restart':True },
             'CrcCheck':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+            'reTransmit':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
             'sendDelay':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'Restart':True },
+            'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'Restart':True },
 
             # Plugin Directories
             'pluginHome':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
@@ -59,15 +59,15 @@ SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 
             'pluginData':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
             'pluginZData': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
             'pluginConfig': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginReports':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginOTAFirmware': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
             'filename':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginOTAFirmware': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginReports':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
 
             # Groups Management
+            'enableConfigGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
             'enablegroupmanagement':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
             'discoverZigateGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
-            'enableConfigGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
     
             # Network Topoology
             'logLQI':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
@@ -102,7 +102,7 @@ class PluginConf:
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
-        if not os.path.isfile(self.pluginConf['filename']) :
+        if not os.path.isfile(self.pluginConf['filename']):
             self._load_oldfashon( homedir, hardwareid)
         else:
             self._load_Settings()
@@ -114,14 +114,11 @@ class PluginConf:
 
         if self.pluginConf['Certification'] == 'CE':
             self.pluginConf['Certification'] = 0x01
-            Domoticz.Status(" -Certification corrected: %s" %self.pluginConf['Certification'])
 
         elif self.pluginConf['Certification'] == 'FCC':
             self.pluginConf['Certification'] = 0x02
-            Domoticz.Status(" -Certification corrected: %s" %self.pluginConf['Certification'])
         else:
             self.pluginConf['Certification'] = 0x00
-            Domoticz.Status(" -Certification corrected: %s" %self.pluginConf['Certification'])
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
@@ -135,7 +132,6 @@ class PluginConf:
 
         for param in SETTINGS:
             Domoticz.Log(" -%s: %s" %(param, self.pluginConf[param]))
-
 
 
     def _load_oldfashon( self, homedir, hardwareid):
@@ -188,28 +184,33 @@ class PluginConf:
                     elif SETTINGS[param]['type'] == 'str':
                         self.pluginConf[param] = PluginConf[ param ]
 
+        self.write_Settings( homedir, hardwareid)
 
-    def _write_Settings(self):
+
+    def write_Settings(self, homedir, hardwareid):
         ' serialize json format the pluginConf '
         ' Only the arameters which are different than default '
 
-        Domoticz.Log("Write %s" %self.pluginConfFile)
+        pluginConfFile = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
+        Domoticz.Debug("Write %s" %pluginConfFile)
+        write_pluginConf = {}
         for param in SETTINGS:
-            if self.pluginConf[param]['current'] != SETTINGS[param]['default']
-                write_pluginConf[param] = self.pluginConf[param]['current']
+            if self.pluginConf[param] != SETTINGS[param]['default']:
+                write_pluginConf[param] = self.pluginConf[param]
+                Domoticz.Debug("archive %s" %param)
 
-        with open( self.groupListFileName , 'wb') as handle:
-            json.dump( handle, write_pluginConf, sort=True, indent=2)
+        Domoticz.Debug("Number elements to write: %s" %len(write_pluginConf))
+        with open( pluginConfFile , 'wt') as handle:
+            json.dump( write_pluginConf, handle, sort_keys=True, indent=2)
 
 
     def _load_Settings(self):
         ' deserialize json format of pluginConf'
         ' load parameters '
 
-        Domoticz.Status("Opening %s" %self.pluginConf['filename'])
-        load_pluginConf = {}
         with open( self.pluginConf['filename'] , 'rt') as handle:
-            json.load( handle, load_pluginConf)
-            for param in load_pluginConf:
-                self.pluginConf[param]['current'] = load_pluginConf[param]
-                Domoticz.Status(" PluginConf settings: %s updated to: %s" %(param, self.pluginConf[param]['current']))
+            _pluginConf = {}
+            _pluginConf = json.load( handle, encoding=dict)
+            for param in _pluginConf:
+                self.pluginConf[param] = _pluginConf[param]
+
