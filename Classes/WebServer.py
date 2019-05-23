@@ -122,15 +122,15 @@ class WebServer(object):
                 return
 
             webFilename = self.homedirectory +'www'+ Data['URL']
-            Domoticz.Debug("webFilename: %s" %webFilename)
+            Domoticz.Log("webFilename: %s" %webFilename)
             if not os.path.isfile( webFilename ):
                 webFilename =  self.homedirectory + 'www' + "/index.html"
-                Domoticz.Debug("Redirecting to /index.html")
+                Domoticz.Log("Redirecting to /index.html")
 
             # We are ready to send the response
             _response = setupHeadersResponse()
 
-            Domoticz.Debug("Opening: %s" %webFilename)
+            Domoticz.Log("Opening: %s" %webFilename)
             currentVersionOnServer = os.path.getmtime(webFilename)
             _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
 
@@ -304,7 +304,7 @@ class WebServer(object):
 
     def rest_netTopologie( self, verb, data, parameters):
 
-        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.hardwareID + '.json'
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'LQI_reports-' + '%02d' %self.hardwareID + '.json'
         Domoticz.Log("Filename: %s" %_filename)
 
         _response = setupHeadersResponse()
