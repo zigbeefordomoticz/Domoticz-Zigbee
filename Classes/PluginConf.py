@@ -43,6 +43,7 @@ SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 
             'enableAPSFailureLoging':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
             'enableAPSFailureReporting':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
             'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
+            'Ping':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
             'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
             'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'Restart':True },
 
@@ -74,6 +75,7 @@ SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 
             'networkScan': { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
 
             # Debugging
+            'logFORMAT':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
             'debugReadCluster':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False }
             }
 

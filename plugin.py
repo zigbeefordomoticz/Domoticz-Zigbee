@@ -556,7 +556,7 @@ class BasePlugin:
 
                 if self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
                     Domoticz.Status("Start Group Management")
-                    self.groupmgt = GroupsManagement( self.pluginconf.pluginConf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
+                    self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
