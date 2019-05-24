@@ -121,7 +121,9 @@ class BasePlugin:
         self.ZigateComm = None
         self.transport = None         # USB or Wifi
         self._ReqRcv = bytearray()
-        self.permitTojoin = None
+        self.permitTojoin = {}
+        self.permitTojoin['duration'] = 0
+        self.permitTojoin['Starttime'] = 0
         self.groupmgt = None
         self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
@@ -581,7 +583,7 @@ class BasePlugin:
                 from Classes.WebServer import WebServer
                 Domoticz.Status("Start Web Server connection")
                 self.webserver = WebServer( self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
+                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.pluginConf['allowOTA']:

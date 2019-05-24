@@ -25,15 +25,16 @@ from Modules.tools import getClusterListforEP
 def ZigatePermitToJoin( self, permit ):
 
     if permit:
-        self.permitTojoin = permit
         Domoticz.Log("Request discovery mode for %s seconds " %permit)
+        self.permitTojoin['Starttime'] = int(time())
+        self.permitTojoin['Duration'] = permit
         sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
-        sendZigateCmd( self, "0014", "" ) # Request status
     else: 
-        self.permitTojoin = 0x00
+        self.permitTojoin['Starttime'] = int(time())
+        self.permitTojoin['Duration'] = permit
         Domoticz.Log("Request stop discovery mode")
         #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
-        sendZigateCmd( self, "0014", "" ) # Request status
+    sendZigateCmd( self, "0014", "" ) # Request status
 
 def start_Zigate(self, Mode='Controller'):
     """

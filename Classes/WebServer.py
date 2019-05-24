@@ -24,7 +24,7 @@ DEBUG_HTTP = False
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -36,6 +36,8 @@ class WebServer(object):
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
         self.pluginparameters = PluginParameters
+
+        self.permitTojoin = permitTojoin
 
         if groupManagement:
             self.groupmgt = groupManagement
@@ -478,7 +480,19 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
-            _response["Data"] = '{"PermitToJoin":"254"}'
+            duration = self.permitTojoin['duration']
+            timestamp = self.permitTojoin['Starttime']
+            info = {}
+            if self.permitTojoin['Duration'] == 255:
+                info['PermitToJoin'] = 255
+            elif int(time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
+                info['PermitToJoin'] = 0
+            else:
+                rest =  ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration'] ) - int(time())
+                Domoticz.Log("remain %s s" %rest)
+                info['PermitToJoin'] = rest
+
+            _response["Data"] = json.dumps( info, sort_keys=False )
 
         elif verb == 'PUT':
             _response["Data"] = None
