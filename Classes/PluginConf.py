@@ -163,9 +163,8 @@ class PluginConf:
             Domoticz.Error("Error while importing %s, all plugin parameters set to default" %self.filename)
         else:
             for param in SETTINGS:
-                Domoticz.Log("Processing: %s" %param)
+                Domoticz.Debug("Processing: %s" %param)
                 if PluginConf.get( param ):
-                    Domoticz.Log("---> found in PluginConf.txt")
                     if SETTINGS[param]['type'] == 'hex':
                         if is_hex( PluginConf.get( param ) ):
                             self.pluginConf[param] = int(PluginConf[ param ], 16)
