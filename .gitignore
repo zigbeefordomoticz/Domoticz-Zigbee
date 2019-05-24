@@ -4,6 +4,7 @@ Data/DeviceList-*
 Data/GroupsList-*
 Data/Zigate.json
 www/zigate/reports/*
+Reports/*
 Zdatas/DiscoveryDevice*
 __pycache__/
 */__pycache__
