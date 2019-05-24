@@ -49,13 +49,6 @@ class WebServer(object):
         mimetypes.init()
         self.startWebServer()
         
-        self.Settings = {}
-        self.Settings["Ping"] = {}
-        self.Settings["Ping"]["default"] = "1"
-        self.Settings["Ping"]["current"] = ""
-        self.Settings["enableWebServer"] = {}
-        self.Settings["enableWebServer"]["default"] = "0"
-        self.Settings["enableWebServer"]["current"] = ""
 
     def  startWebServer( self ):
 
@@ -338,14 +331,8 @@ class WebServer(object):
                         for x in  reportLQI[item]:
                             # Report only Child relationship
                             if item == x: continue
-                            if x != '0000' and x not in self.ListOfDevices:
-                                continue
-
-                            if reportLQI[item][x]['_depth'] != '01':
-                                continue
-
-                            if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ):
-                                continue
+                            if x != '0000' and x not in self.ListOfDevices: continue
+                            if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): continue
 
                             if reportLQI[item][x]['_relationshp'] == "Child":
                                 master = 'Father'
@@ -359,19 +346,18 @@ class WebServer(object):
                             _relation[slave] = x
                             _relation["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
                             _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
-                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s" \
-                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
 
                             if item != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[item]:
                                     if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
                                         _relation[master] = self.ListOfDevices[item]['ZDeviceName']
-
                             if x != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[x]:
                                     if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
                                         _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
 
+                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s" \
+                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
 
                             _topo[_ts].append( _relation )
 
@@ -465,20 +451,23 @@ class WebServer(object):
             _response["Data"] = None
             data = data.decode('utf8')
             Domoticz.Log("Data: %s" %data)
-            data = eval(data)
+            setting_lst = eval(data)
 
-            for item in data:
-                Domoticz.Log("Data[%s] = %s" %(item, data[item]))
-                if item not in self.Settings:
-                    Domoticz.Error("Unexpectped parameter: %s" %item)
-                    Domoticz.Error("Unexpected number of Parameter")
-                    _response["Data"] = { 'unexpected parameters %s' %item }
-                    _response["Status"] = "400 SYNTAX ERROR"
-                    break
-                else:
-                    Domoticz.Log(" self.Settings[%s] = %s" %(item, self.Settings[item]))
-                    if data[item]['current'] != self.Settings[item]['current']:
-                        self.Settings[item]['current'] = data[item]['current']
+            for setting in setting_lst:
+                Domoticz.Log("setting: %s" %setting)
+
+                for param in setting:
+                    if param not in SETTING:
+                        Domoticz.Error("Unexpectped parameter: %s" %item)
+                        Domoticz.Error("Unexpected number of Parameter")
+                        _response["Data"] = { 'unexpected parameters %s' %item }
+                        _response["Status"] = "400 SYNTAX ERROR"
+                        break
+                    else:
+                        Domoticz.Log("loading %s" %param)
+                        if param in self.pluginconf.pluginConf:
+                            if self.pluginconf.pluginConf[param] != setting[param]['current_value']:
+                                self.pluginconf.pluginConf[param] = setting[param]['current_value']
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
