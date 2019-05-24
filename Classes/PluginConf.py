@@ -99,7 +99,7 @@ class PluginConf:
             elif param == 'pluginWWW':
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
             elif param == 'pluginReports':
-                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/zigate/reports/'
+                self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
             elif param == 'pluginOTAFirmware':
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
 
