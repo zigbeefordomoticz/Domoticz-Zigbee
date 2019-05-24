@@ -115,7 +115,10 @@ class DomoticzDB_DeviceStatus:
 
         self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
         value = self.dbCursor.fetchone()
-        return value[0]
+        if value == None:
+            return 0
+        else:
+            return value[0]
 
     def retreiveTimeOut_Motion( self, ID):
         """
@@ -124,7 +127,10 @@ class DomoticzDB_DeviceStatus:
 
         self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
         value = self.dbCursor.fetchone()
-        return value[0]
+        if value == None:
+            return 0
+        else:
+            return value[0]
 
     def retreiveAddjValue_temp( self, ID):
         """
@@ -133,7 +139,10 @@ class DomoticzDB_DeviceStatus:
 
         self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
         value = self.dbCursor.fetchone()
-        return value[0]
+        if value == None:
+            return 0
+        else:
+            return value[0]
 
 
 if __name__ == '__main__':
