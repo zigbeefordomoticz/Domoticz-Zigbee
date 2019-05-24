@@ -712,7 +712,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     Domoticz.Debug("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
     if addr not in self.ListOfDevices:
-        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %saddr)
+        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %addr)
         return
 
     mac_capability = int(mac_capability,16)
