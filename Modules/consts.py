@@ -209,3 +209,5 @@ ZCL_CLUSTERS_LIST = {
         '0501': 'IAS ACE (Ancillary Control Equipment)',
         '0502': 'IAS WD (Warning Device)'
         }
+
+

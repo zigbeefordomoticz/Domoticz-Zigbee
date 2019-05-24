@@ -9,15 +9,16 @@ from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 import zlib
 import gzip
-from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
+from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
+from Classes.PluginConf import SETTINGS
 
 
 DELAY = 0
 ALLOW_GZIP = 1
 ALLOW_DEFLATE = 1
-ALLOW_CHUNK = 1
+ALLOW_CHUNK = 0
 MAX_KB_TO_SEND = 4 * 1024
-DEBUG_HTTP = True
+DEBUG_HTTP = False
 
 class WebServer(object):
     hearbeats = 0 
@@ -270,6 +271,7 @@ class WebServer(object):
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
+                'zdevice-raw':  {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
                 'zgroup-list-available-device':        {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
@@ -302,7 +304,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
+                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=False )
         return _response
 
     def rest_netTopologie( self, verb, data, parameters):
@@ -316,7 +318,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if not os.path.isfile( _filename ) :
-            _response['Data'] = json.dumps( {} , sort_keys=True ) 
+            _response['Data'] = json.dumps( {} , sort_keys=False ) 
             return _response
 
         # Read the file, as we have anyway to do it
@@ -415,7 +417,16 @@ class WebServer(object):
 
         if verb == 'GET':
             if len(parameters) == 0:
-                _response["Data"] = json.dumps( self.Settings, sort_keys=True )
+                setting_lst = []
+                for param in self.pluginconf.pluginConf:
+                    if not SETTINGS[param]['hidden']:
+                        setting = {}
+                        setting['Name'] = param
+                        setting['default_value'] = SETTINGS[param]['default']
+                        setting['restart_nedd'] = SETTINGS[param]['restart']
+                        setting['current_value'] = self.pluginconf.pluginConf[param] 
+                        setting_lst.append( setting )
+                _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -543,7 +554,7 @@ class WebServer(object):
                     if 'ZDeviceName' in self.ListOfDevices[x] and \
                           'IEEE' in self.ListOfDevices[x]:
                         _device = {}
-                        _device['NwkID'] = x
+                        _device['_NwkId'] = x
                         _device['WidgetList'] = []
                         for ep in self.ListOfDevices[x]['Ep']:
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
@@ -568,7 +579,7 @@ class WebServer(object):
                                             _device['WidgetList'].append( _widget )
                                             break
                 device_lst.append( _device )
-            _response["Data"] = json.dumps( device_lst, sort_keys=True )
+            _response["Data"] = json.dumps( device_lst, sort_keys=False )
             return _response
 
     def rest_zDevice_name( self, verb, data, parameters):
@@ -579,47 +590,49 @@ class WebServer(object):
 
         if verb == 'GET':
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-            devName_lst = []
-            devName = {}
+            device_lst = []
             for x in self.ListOfDevices:
                 if x == '0000': continue
-                devName[x] = {}
+                device = {}
+                device['_NwkId'] = x
+
                 for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health'):
                     if item in self.ListOfDevices[x]:
                         if item != 'MacCapa':
-                            devName[x][item.strip()] = self.ListOfDevices[x][item]
+                            device[item.strip()] = self.ListOfDevices[x][item]
                         else:
-                                devName[x]['MacCapa'] = []
+                                device['MacCapa'] = []
                                 mac_capability = int(self.ListOfDevices[x][item],16)
                                 AltPAN      =   ( mac_capability & 0x00000001 )
                                 DeviceType  =   ( mac_capability >> 1 ) & 1
                                 PowerSource =   ( mac_capability >> 2 ) & 1
                                 ReceiveonIdle = ( mac_capability >> 3 ) & 1
                                 if DeviceType == 1 :
-                                    devName[x]['MacCapa'].append("FFD")
+                                    device['MacCapa'].append("FFD")
                                 else :
-                                    devName[x]['MacCapa'].append("RFD")
+                                    device['MacCapa'].append("RFD")
                                 if ReceiveonIdle == 1 :
-                                    devName[x]['MacCapa'].append("RxonIdle")
+                                    device['MacCapa'].append("RxonIdle")
                                 if PowerSource == 1 :
-                                    devName[x]['MacCapa'].append("MainPower")
+                                    device['MacCapa'].append("MainPower")
                                 else :
-                                    devName[x]['MacCapa'].append("Battery")
-                                Domoticz.Log("decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(devName[x]['MacCapa'])))
+                                    device['MacCapa'].append("Battery")
+                                Domoticz.Log("decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
                     else:
-                        devName[x][item.strip()] = ""
+                        device[item.strip()] = ""
 
-                devName[x]['WidgetNames'] = []
+                device['WidgetList'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
                     if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
                         for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
                             for widget in self.Devices:
                                 if self.Devices[widget].ID == int(widgetID):
                                     Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
-                                    devName[x]['WidgetNames'].append( self.Devices[widget].Name )
+                                    device['WidgetList'].append( self.Devices[widget].Name )
 
-                devName_lst.append( devName )
-            _response["Data"] = json.dumps( devName, sort_keys=True )
+                device_lst.append( device )
+            #_response["Data"] = json.dumps( device_lst, sort_keys=True )
+            _response["Data"] = json.dumps( device_lst, sort_keys=False )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -654,13 +667,108 @@ class WebServer(object):
             if len(parameters) == 0:
                 zdev_lst = []
                 for item in self.ListOfDevices:
+                    device = {}
+                    device['_NwkId'] = item
+                    # Main Attributes
+                    for attribut in ('Health', 'ZDeviceName', 'Status', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
+
+                        if attribut in self.ListOfDevices[item]:
+                            device[attribut] = self.ListOfDevices[item][attribut]
+                        else:
+                            device[attribut] = ''
+
+                    # Last Seen Information
+                    device['LastSeen'] = ''
+                    if 'Stamp' in self.ListOfDevices[item]:
+                        if 'LastSeen' in self.ListOfDevices[item]['Stamp']:
+                            device['LastSeen'] = self.ListOfDevices[item]['Stamp']['LastSeen']
+
+                    # ClusterType
+                    _widget_lst = []
+                    if 'ClusterType' in self.ListOfDevices[item]:
+                        for widgetId in self.ListOfDevices[item]['ClusterType']:
+                            widget = {}
+                            widget['_WidgetID'] = widgetId
+                            widget['WidgetName'] = ''
+                            for x in self.Devices:
+                                if self.Devices[x].ID == int(widgetId):
+                                    widget['WidgetName'] = self.Devices[x].Name
+                                    break
+                            widget['WidgetType'] = self.ListOfDevices[item]['ClusterType'][widgetId]
+                            _widget_lst.append( widget )
+
+                    # Ep informations
+                    ep_lst = []
+                    if 'Ep' in self.ListOfDevices[item]:
+                        for epId in self.ListOfDevices[item]['Ep']:
+                            _ep = {}
+                            _ep['Ep'] = epId
+                            _ep['ClusterList'] = []
+                            for cluster in self.ListOfDevices[item]['Ep'][epId]:
+                                if cluster == 'ColorMode': continue
+                                if cluster == 'Type':
+                                    device['Type'] = self.ListOfDevices[item]['Ep'][epId]['Type']
+                                    continue
+                                if cluster == 'ClusterType':
+                                    for widgetId in self.ListOfDevices[item]['Ep'][epId]['ClusterType']:
+                                        widget = {}
+                                        widget['_WidgetID'] = widgetId
+                                        widget['WidgetName'] = ''
+                                        for x in self.Devices:
+                                            if self.Devices[x].ID == int(widgetId):
+                                                widget['WidgetName'] = self.Devices[x].Name
+                                                break
+                                        widget['WidgetType'] = self.ListOfDevices[item]['Ep'][epId]['ClusterType'][widgetId]
+                                        _widget_lst.append( widget )
+                                    continue
+                                _cluster = {}
+                                if cluster in ZCL_CLUSTERS_LIST:
+                                    _cluster[cluster] = ZCL_CLUSTERS_LIST[cluster]
+                                else:
+                                    _cluster[cluster] = "Unknown"
+                                _ep['ClusterList'].append( _cluster )
+
+                            ep_lst.append ( _ep )
+                    device['Ep'] = ep_lst
+                    device['WidgetList'] = _widget_lst
+
+                    # Last Commands
+                    lastcmd_lst = []
+                    if 'Last Cmds' in self.ListOfDevices[item]:
+                        for timestamp, cmd in self.ListOfDevices[item]['Last Cmds']:
+                            _cmd = {}
+                            _cmd['CmdCode'] = cmd
+                            _cmd['TimeStamps'] =  timestamp
+                            lastcmd_lst.append( _cmd )
+                    device['LastCmds'] = lastcmd_lst
+                    zdev_lst.append( device )
+
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
+        return _response
+
+
+    def rest_zDevice_raw( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            if self.Devices is None or len(self.Devices) == 0:
+                return _response
+            if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
+                return _response
+            if len(parameters) == 0:
+                zdev_lst = []
+                for item in self.ListOfDevices:
                     zdev_lst.append(self.ListOfDevices[item])
-                _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=False ) 
                 elif parameters[0] in self.IEEE2NWK:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=True ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=False ) 
 
         return _response
 
@@ -684,7 +792,7 @@ class WebServer(object):
                 for item in ListOfGroups:
                     Domoticz.Log("Process Group: %s" %item)
                     zgroup = {}
-                    zgroup['GroupId'] = item
+                    zgroup['_GroupId'] = item
                     zgroup['GroupName'] = ListOfGroups[item]['Name']
                     zgroup['Devices'] = []
                     for dev, ep in ListOfGroups[item]['Devices']:
@@ -693,19 +801,19 @@ class WebServer(object):
                         _dev[dev] = ep
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
-                _response["Data"] = json.dumps( zgroup_lst, sort_keys=True )
+                _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
 
             elif len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
                     item =  parameters[0]
                     zgroup = {}
-                    zgroup['GroupId'] = item
+                    zgroup['_GroupId'] = item
                     zgroup['GroupName'] = ListOfGroups[item]['Name']
                     zgroup['Devices'] = {}
                     for dev, ep in ListOfGroups[item]['Devices']:
                         Domoticz.Log("--> add %s %s" %(dev, ep))
                         zgroup['Devices'][dev] = ep 
-                    _response["Data"] = json.dumps( zgroup, sort_keys=True )
+                    _response["Data"] = json.dumps( zgroup, sort_keys=False )
 
         return _response
 
