@@ -341,35 +341,38 @@ class WebServer(object):
                             if x != '0000' and x not in self.ListOfDevices:
                                 continue
 
+                            if reportLQI[item][x]['_depth'] != '01':
+                                continue
+
+                            if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ):
+                                continue
+
                             if reportLQI[item][x]['_relationshp'] == "Child":
                                 master = 'Father'
                                 slave = 'Child'
                             elif reportLQI[item][x]['_relationshp'] == "Parent":
                                 master = 'Child'
                                 slave = 'Father'
-                            else:
-                                continue
 
                             _relation = {}
-                            Domoticz.Log("Processing - %s has %s" %(item, master))
                             _relation[master] = item
+                            _relation[slave] = x
+                            _relation["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
+                            _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
+                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s" \
+                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
 
                             if item != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[item]:
                                     if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
                                         _relation[master] = self.ListOfDevices[item]['ZDeviceName']
 
-                            Domoticz.Log("Processing - %s has %s" %(x, slave))
-                            _relation[slave] = x
                             if x != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[x]:
                                     if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
                                         _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
 
-                            _relation["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
-                            _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
-                            Domoticz.Debug("TimeStamp: %s -> %s" %(_ts,str(_relation)))
-                            Domoticz.Log("Relationship - %s - %s %s %s %s" %(_relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"]))
+
                             _topo[_ts].append( _relation )
 
         if verb == 'GET':
