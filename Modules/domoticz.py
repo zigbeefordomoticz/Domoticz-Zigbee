@@ -278,6 +278,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "SwitchIKEA":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
             if t == "SwitchAQ2":  # interrupteur multi lvl lumi.sensor_switch.aq2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click",
