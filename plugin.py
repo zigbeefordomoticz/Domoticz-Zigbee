@@ -569,9 +569,9 @@ class BasePlugin:
                     self.groupmgt_NotStarted = False
 
 
-            Domoticz.Status("Start Web Server connection")
             if self.pluginconf.enableWebServer:
                 from Classes.WebServer import WebServer
+                Domoticz.Status("Start Web Server connection")
                 self.webserver = WebServer( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
                                         self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK )
 
