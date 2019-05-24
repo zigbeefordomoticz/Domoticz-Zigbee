@@ -11,6 +11,7 @@ import zlib
 import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
 from Classes.PluginConf import SETTINGS
+from Modules.output import ZigatePermitToJoin
 
 
 DELAY = 0
@@ -482,11 +483,10 @@ class WebServer(object):
         elif verb == 'PUT':
             _response["Data"] = None
             if len(parameters) == 0:
-                Domoticz.Log("Data: %s" %data)
                 data = data.decode('utf8')
-                Domoticz.Log("Data: %s" %data)
                 data = json.loads(data)
-                Domoticz.Log("parameters: %s value = %s" %('permit-to-join', str(data)))
+                Domoticz.Log("parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
+                ZigatePermitToJoin(self, int( data['PermitToJoin']))
 
         return _response
 
