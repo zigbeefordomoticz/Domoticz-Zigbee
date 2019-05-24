@@ -445,7 +445,7 @@ class WebServer(object):
                         setting = {}
                         setting['Name'] = param
                         setting['default_value'] = SETTINGS[param]['default']
-                        setting['restart_nedd'] = SETTINGS[param]['restart']
+                        setting['restart_need'] = SETTINGS[param]['restart']
                         setting['current_value'] = self.pluginconf.pluginConf[param] 
                         setting_lst.append( setting )
                 _response["Data"] = json.dumps( setting_lst, sort_keys=True )
@@ -500,7 +500,7 @@ class WebServer(object):
                 data = data.decode('utf8')
                 data = json.loads(data)
                 Domoticz.Log("parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
-                ZigatePermitToJoin(self, int( data['PermitToJoin']))
+                #ZigatePermitToJoin(self, int( data['PermitToJoin']))
 
         return _response
 
