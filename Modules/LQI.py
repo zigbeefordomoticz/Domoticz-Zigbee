@@ -102,7 +102,8 @@ def LQIcontinueScan(self, Devices):
                             %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
 
         # Write the report onto file
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'LQI_reports-' + '%02d' %self.HardwareID + '.json'
+                # Write the report onto file
+        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.HardwareID + '.json'
         storeLQI = {}
         storeLQI[int(time.time())] = self.LQI
 
