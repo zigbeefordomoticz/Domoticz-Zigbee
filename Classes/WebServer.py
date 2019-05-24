@@ -121,6 +121,7 @@ class WebServer(object):
                     headerCode = "400 Bad Request"
                 return
 
+            # Finaly we simply has to serve a File.
             webFilename = self.homedirectory +'www'+ Data['URL']
             Domoticz.Log("webFilename: %s" %webFilename)
             if not os.path.isfile( webFilename ):
@@ -129,6 +130,7 @@ class WebServer(object):
 
             # We are ready to send the response
             _response = setupHeadersResponse()
+            _response["Headers"]["Cache-Control"] = "private"
 
             Domoticz.Log("Opening: %s" %webFilename)
             currentVersionOnServer = os.path.getmtime(webFilename)
@@ -281,6 +283,7 @@ class WebServer(object):
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = setupHeadersResponse()
+                HTTPresponse["Headers"]["Cache-Control"] = "no-store, no-cache"
                 HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
 
         if HTTPresponse == {}:
@@ -336,7 +339,6 @@ class WebServer(object):
                             if x != '0000' and x not in self.ListOfDevices:
                                 continue
 
-                            _relation = {}
                             if reportLQI[item][x]['_relationshp'] == "Child":
                                 master = 'Father'
                                 slave = 'Child'
@@ -346,19 +348,26 @@ class WebServer(object):
                             else:
                                 continue
 
+                            _relation = {}
+                            Domoticz.Log("Processing - %s has %s" %(item, master))
                             _relation[master] = item
+
                             if item != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[item]:
-                                    _relation[master] = self.ListOfDevices[item]['ZDeviceName']
+                                    if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
+                                        _relation[master] = self.ListOfDevices[item]['ZDeviceName']
 
+                            Domoticz.Log("Processing - %s has %s" %(x, slave))
                             _relation[slave] = x
                             if x != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[x]:
-                                    _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
+                                    if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
+                                        _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
 
                             _relation["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
                             _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
                             Domoticz.Debug("TimeStamp: %s -> %s" %(_ts,str(_relation)))
+                            Domoticz.Log("Relationship - %s - %s %s %s %s" %(_relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"]))
                             _topo[_ts].append( _relation )
 
         if verb == 'GET':
@@ -523,7 +532,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
-            devName = {}
+            device_lst = []
             for x in self.ListOfDevices:
                 if x == '0000': continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
@@ -533,7 +542,9 @@ class WebServer(object):
                 if 'Ep' in self.ListOfDevices[x]:
                     if 'ZDeviceName' in self.ListOfDevices[x] and \
                           'IEEE' in self.ListOfDevices[x]:
-                        devName[x] = []
+                        _device = {}
+                        _device['NwkID'] = x
+                        _device['WidgetList'] = []
                         for ep in self.ListOfDevices[x]['Ep']:
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
@@ -549,14 +560,15 @@ class WebServer(object):
                                         continue
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
-                                            _entry = []
-                                            _entry.append( self.Devices[widget].Name )
-                                            _entry.append( self.ListOfDevices[x]['IEEE'] )
-                                            _entry.append( ep )
-                                            _entry.append( self.ListOfDevices[x]['ZDeviceName'] )
-                                            devName[x].append( _entry )
+                                            _widget = []
+                                            _widget.append( self.Devices[widget].Name )
+                                            _widget.append( self.ListOfDevices[x]['IEEE'] )
+                                            _widget.append( ep )
+                                            _widget.append( self.ListOfDevices[x]['ZDeviceName'] )
+                                            _device['WidgetList'].append( _widget )
                                             break
-            _response["Data"] = json.dumps( devName, sort_keys=True )
+                device_lst.append( _device )
+            _response["Data"] = json.dumps( device_lst, sort_keys=True )
             return _response
 
     def rest_zDevice_name( self, verb, data, parameters):
@@ -670,16 +682,16 @@ class WebServer(object):
             if len(parameters) == 0:
                 zgroup_lst = []
                 for item in ListOfGroups:
-                    zgroup = {}
-                    zgroup[item] = {}
                     Domoticz.Log("Process Group: %s" %item)
-                    zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
-                    zgroup[item]['Devices'] = []
+                    zgroup = {}
+                    zgroup['GroupId'] = item
+                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['Devices'] = []
                     for dev, ep in ListOfGroups[item]['Devices']:
                         Domoticz.Log("--> add %s %s" %(dev, ep))
                         _dev = {}
                         _dev[dev] = ep
-                        zgroup[item]['Devices'].append( _dev )
+                        zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=True )
 
@@ -687,12 +699,13 @@ class WebServer(object):
                 if parameters[0] in ListOfGroups:
                     item =  parameters[0]
                     zgroup = {}
-                    zgroup[item]['GroupName'] = ListOfGroups[item]['Name']
-                    zgroup[item]['Devices'] = {}
+                    zgroup['GroupId'] = item
+                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['Devices'] = {}
                     for dev, ep in ListOfGroups[item]['Devices']:
                         Domoticz.Log("--> add %s %s" %(dev, ep))
-                        zgroup[item]['Devices'][dev] = ep 
-                    _response["Data"] = json.dumps( zgroup[parameters[0]], sort_keys=True )
+                        zgroup['Devices'][dev] = ep 
+                    _response["Data"] = json.dumps( zgroup, sort_keys=True )
 
         return _response
 
@@ -721,7 +734,6 @@ def setupHeadersResponse():
     _response["Headers"]["Connection"] = "Keep-alive"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
     _response["Headers"]["Server"] = "Domoticz"
-    _response["Headers"]["Cache-Control"] = "private"
     #_response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
     #_response["Headers"]["Pragma"] = "no-cache"
     #_response["Headers"]["Expires"] = "0"
