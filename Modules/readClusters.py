@@ -376,17 +376,18 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Magic Cube Xiaomi rotation and Power Meter
 
     Domoticz.Log("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
+
     if MsgAttrID=="0055":
         # Are we receiving Power
         EPforPower = getEPforClusterType( self, MsgSrcAddr, "Power" ) 
         EPforMeter = getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
-        Domoticz.Debug("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
+        Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
 
-            Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
+            Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
 
             if rotation_angle < 0:
