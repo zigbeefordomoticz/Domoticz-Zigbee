@@ -18,65 +18,65 @@ import json
 #from Modules.tools import is_hex
 
 
-SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 'Restart':True },
+SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
 
             # Device Management
-            'allowStoreDiscoveryFrames': { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'allowForceCreationDomoDevice':  { 'type':'int', 'default':0 , 'current': None , 'Restart':False },
-            'allowReBindingClusters':  { 'type':'int', 'default':1 , 'current': None , 'Restart':False },
-            'enableReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'Restart':False },
-            'resetConfigureReporting': { 'type':'int', 'default':0 , 'current': None , 'Restart':True },
-            'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'Restart':False },
-            'resetReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'Restart':True  },
-            'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'Restart':False },
-            'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'Restart':False },
+            'allowStoreDiscoveryFrames': { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'allowForceCreationDomoDevice':  { 'type':'int', 'default':0 , 'current': None , 'restart':False , 'hidden':False},
+            'allowReBindingClusters':  { 'type':'int', 'default':1 , 'current': None , 'restart':False , 'hidden':False},
+            'enableReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False},
+            'resetConfigureReporting': { 'type':'int', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
+            'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False},
+            'resetReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'restart':True  , 'hidden':False},
+            'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False},
+            'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False},
 
             # Zigate Configuration
-            'allowRemoveZigateDevice':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'allowOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'batteryOTA':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'blueLedOff':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True },
-            'channel':  { 'type':'str', 'default':0 , 'current': None, 'Restart':True },
-            'extendedPANID': { 'type':'hex', 'default':None , 'current': None, 'Restart':True },
-            'enableAPSFailureLoging':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'enableAPSFailureReporting':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
-            'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'Ping':  { 'type':'int', 'default':1 , 'current': None, 'Restart':False },
-            'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'Restart':True },
+            'allowRemoveZigateDevice':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'allowOTA':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'batteryOTA':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'blueLedOff':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False},
+            'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'extendedPANID': { 'type':'hex', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'enableAPSFailureLoging':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'enableAPSFailureReporting':  { 'type':'int', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
+            'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'Ping':  { 'type':'int', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
+            'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False},
 
             # Plugin Transport
-            'CrcCheck':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
-            'reTransmit':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
-            'sendDelay':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'Restart':True },
-            'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'Restart':True },
+            'CrcCheck':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
+            'reTransmit':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
+            'sendDelay':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':True},
+            'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True},
+            'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'restart':True , 'hidden':True},
 
             # Plugin Directories
-            'pluginHome':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'homedirectory':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginData':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginZData': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginConfig': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'filename':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginOTAFirmware': { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginReports':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
-            'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'Restart':True },
+            'pluginHome':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'homedirectory':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginData':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginZData': { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginConfig': { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'filename':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginOTAFirmware': { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginReports':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
 
             # Groups Management
-            'enableConfigGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
-            'enablegroupmanagement':  { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
-            'discoverZigateGroups':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
+            'enableConfigGroups':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
+            'enablegroupmanagement':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'discoverZigateGroups':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
     
             # Network Topoology
-            'logLQI':  { 'type':'int', 'default':1 , 'current': None, 'Restart':True },
-            'networkScan': { 'type':'int', 'default':0 , 'current': None, 'Restart':True },
+            'logLQI':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
+            'networkScan': { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
 
             # Debugging
-            'logFORMAT':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False },
-            'debugReadCluster':  { 'type':'int', 'default':0 , 'current': None, 'Restart':False }
+            'logFORMAT':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'debugReadCluster':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False}
             }
 
 class PluginConf:
