@@ -114,7 +114,7 @@ def LQIcontinueScan(self, Devices):
                 json.dump( storeLQI, json_file)
             self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
         else:
-            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
+            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
 
 def mgtLQIreq(self, nwkid='0000', index=0):
