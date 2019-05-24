@@ -518,9 +518,9 @@ class WebServer(object):
                 device_lst = []
                 for x in self.Devices:
                     device_info = {}
+                    device_info['_DeviceID'] = self.Devices[x].DeviceID
                     device_info['Name'] = self.Devices[x].Name
                     device_info['ID'] = self.Devices[x].ID
-                    device_info['DeviceID'] = self.Devices[x].DeviceID
                     device_info['sValue'] = self.Devices[x].sValue
                     device_info['nValue'] = self.Devices[x].nValue
                     device_info['SignaleLevel'] = self.Devices[x].SignalLevel
@@ -529,15 +529,15 @@ class WebServer(object):
                     device_info['Type'] = self.Devices[x].Type
                     device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
-                _response["Data"] = json.dumps( device_lst, sort_keys=True )
+                _response["Data"] = json.dumps( device_lst, sort_keys=False )
 
             elif len(parameters) == 1:
                 for x in self.Devices:
                     if parameters[0] == self.Devices[x].DeviceID:
                         _dictDevices = {}
+                        _dictDevices['_DeviceID'] = self.Devices[x].DeviceID
                         _dictDevices['Name'] = self.Devices[x].Name
                         _dictDevices['ID'] = self.Devices[x].ID
-                        _dictDevices['DeviceID'] = self.Devices[x].DeviceID
                         _dictDevices['sValue'] = self.Devices[x].sValue
                         _dictDevices['nValue'] = self.Devices[x].nValue
                         _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
@@ -545,7 +545,7 @@ class WebServer(object):
                         _dictDevices['TimedOut'] = self.Devices[x].TimedOut
                         _dictDevices['Type'] = self.Devices[x].Type
                         _dictDevices['SwitchType'] = self.Devices[x].SwitchType
-                        _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
+                        _response["Data"] = json.dumps( _dictDevices, sort_keys=False )
                         break
             else:
                 device_lst = []
@@ -554,9 +554,9 @@ class WebServer(object):
                     for x in self.Devices:
                         if parm == self.Devices[x].DeviceID:
                             device_info = {}
+                            device_info['_DeviceID'] = self.Devices[x].DeviceID
                             device_info['Name'] = self.Devices[x].Name
                             device_info['ID'] = self.Devices[x].ID
-                            device_info['DeviceID'] = self.Devices[x].DeviceID
                             device_info['sValue'] = self.Devices[x].sValue
                             device_info['nValue'] = self.Devices[x].nValue
                             device_info['SignaleLevel'] = self.Devices[x].SignalLevel
@@ -565,7 +565,7 @@ class WebServer(object):
                             device_info['Type'] = self.Devices[x].Type
                             device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
-                _response["Data"] = json.dumps( device_lst, sort_keys=True )
+                _response["Data"] = json.dumps( device_lst, sort_keys=False )
         return _response
 
     def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
@@ -673,11 +673,11 @@ class WebServer(object):
             Domoticz.Log("Data: %s" %data)
             data = eval(data)
             for x in data:
-                if 'ZDeviceName' in data[x] and 'IEEE' in data[x]:
+                if 'ZDeviceName' in x and 'IEEE' in x:
                     for dev in self.ListOfDevices:
-                        if self.ListOfDevices[dev]['IEEE'] == data[x]['IEEE'] and \
-                                self.ListOfDevices[dev]['ZDeviceName'] != data[x]['ZDeviceName']:
-                            self.ListOfDevices[dev]['ZDeviceName'] = data[x]['ZDeviceName']
+                        if self.ListOfDevices[dev]['IEEE'] == x['IEEE'] and \
+                                self.ListOfDevices[dev]['ZDeviceName'] != x['ZDeviceName']:
+                            self.ListOfDevices[dev]['ZDeviceName'] = x['ZDeviceName']
                             Domoticz.Log("Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
                                     %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
                 else:
