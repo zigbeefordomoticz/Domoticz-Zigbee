@@ -391,7 +391,37 @@ class WebServer(object):
 
     def rest_nwk_stat( self, verb, data, parameters):
 
-        return
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.hardwareID + '.json'
+
+        _timestamps_lst = [] # Just the list of Timestamps
+        _scan = {}
+        if os.path.isfile( _filename ) :
+            Domoticz.Log("Opening file: %s" %_filename)
+            with open( _filename , 'rt') as handle:
+                for line in handle:
+                    if line[0] != '{' and line[-1] != '}': continue
+                    entry = json.loads( line, encoding=dict )
+                    for _ts in entry:
+                        _timestamps_lst.append( _ts )
+                        NetworkScan = entry[_ts]
+                        _scan[_ts] = {}
+                        for item in NetworkScan:
+                            _scan[_ts][item] = NetworkScan[item]
+        if verb == 'GET':
+            if len(parameters) == 0:
+                _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
+
+            elif len(parameters) == 1:
+                timestamp = parameters[0]
+                if timestamp in _scan:
+                    _response['Data'] = json.dumps( _scan[timestamp] , sort_keys=True)
+                else:
+                    _response['Data'] = json.dumps( [] , sort_keys=True)
+        return _response
 
     def rest_plugin_stat( self, verb, data, parameters):
 
