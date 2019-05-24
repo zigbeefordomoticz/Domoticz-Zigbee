@@ -90,8 +90,7 @@ def LQIcontinueScan(self, Devices):
                 break                                    # We do only one !
 
     if not LQIfound and not LODfound:                    # We didn't find any more Network address. Game is over
-        Domoticz.Log("LQI Scan is over ....")
-        Domoticz.Log("LQI Results:")
+        Domoticz.Status("Publishing LQI Results")
         for src in self.LQI:
             for child in self.LQI[src]:
                 try:
@@ -126,6 +125,28 @@ def mgtLQIreq(self, nwkid='0000', index=0):
      <Target Address: uint16_t>
      <Start Index: uint8_t>
     """
+
+    doWork = False
+    if nwkid not in self.ListOfDevices:
+        return
+    if nwkid == '0000':
+        doWork = True
+    elif 'LogicalType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
+            doWork = True
+    if 'DeviceType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
+            doWork = True
+    if 'MacCapa' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
+            doWork = True
+    if 'PowerSource' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
+            doWork = True
+
+    if not doWork:
+        Domoticz.Debug("Skiping %s as it's not a Router nor Coordinator" %nwkid)
+        return
 
     self.LQISource.put(str(nwkid))
     datas = str(nwkid) + "{:02n}".format(index)
