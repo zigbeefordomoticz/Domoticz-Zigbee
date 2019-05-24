@@ -15,7 +15,7 @@ import Domoticz
 import os.path
 import json
 
-#from Modules.tools import is_hex
+from Modules.tools import is_hex
 
 
 SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
