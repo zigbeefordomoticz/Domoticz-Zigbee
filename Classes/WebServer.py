@@ -445,6 +445,7 @@ class WebServer(object):
                         setting = {}
                         setting['Name'] = param
                         setting['default_value'] = SETTINGS[param]['default']
+                        setting['DataType'] = SETTINGS[param]['type']
                         setting['restart_need'] = SETTINGS[param]['restart']
                         setting['current_value'] = self.pluginconf.pluginConf[param] 
                         setting_lst.append( setting )
@@ -460,7 +461,7 @@ class WebServer(object):
                 Domoticz.Log("setting: %s" %setting)
 
                 for param in setting:
-                    if param not in SETTING:
+                    if param not in SETTINGS:
                         Domoticz.Error("Unexpectped parameter: %s" %item)
                         Domoticz.Error("Unexpected number of Parameter")
                         _response["Data"] = { 'unexpected parameters %s' %item }
@@ -607,11 +608,12 @@ class WebServer(object):
                                         continue
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
-                                            _widget = []
-                                            _widget.append( self.Devices[widget].Name )
-                                            _widget.append( self.ListOfDevices[x]['IEEE'] )
-                                            _widget.append( ep )
-                                            _widget.append( self.ListOfDevices[x]['ZDeviceName'] )
+                                            _widget = {}
+                                            _widget['_ID'] =  self.Devices[widget].ID 
+                                            _widget['Name'] =  self.Devices[widget].Name 
+                                            _widget['IEEE'] =  self.ListOfDevices[x]['IEEE'] 
+                                            _widget['Ep'] =  ep 
+                                            _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
                                             _device['WidgetList'].append( _widget )
                                             break
                 device_lst.append( _device )
