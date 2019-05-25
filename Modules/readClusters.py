@@ -375,19 +375,19 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Magic Cube Xiaomi rotation and Power Meter
 
-    Domoticz.Log("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
+    Domoticz.Debug("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
 
     if MsgAttrID=="0055":
         # Are we receiving Power
         EPforPower = getEPforClusterType( self, MsgSrcAddr, "Power" ) 
         EPforMeter = getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
-        Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
+        Domoticz.Debug("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
 
-            Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
+            Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
 
             if rotation_angle < 0:
@@ -401,11 +401,11 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         elif len(EPforPower) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
-            Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
-            Domoticz.Log("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
+            Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
+            Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
             for ep in EPforPower + EPforMeter:
                 if ep == MsgSrcEp:
-                    Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(value) )
+                    Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(value) )
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = str(value)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0702',str(value))   # For to Power Cluster
                     break      # We just need to send once
@@ -470,7 +470,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 # endpoint 02 is for controlling the L1 outpu
                 # Blacklist all EPs other than '02'
                 if MsgSrcEp != '02':
-                    Domoticz.Log("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                    Domoticz.Debug("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
                          %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
                     return
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2':
@@ -564,40 +564,40 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Windows Covering / Shutter
     value = decodeAttribute(MsgAttType, MsgClusterData)
-    Domoticz.Debuf("ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
+    Domoticz.Debug("ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
 
 
     if MsgAttrID == "0001":
         Domoticz.Log("Window Covering Type")
 
     elif  MsgAttrID == "0001":
-        Domoticz.Debuf("Physical close limit lift cm")
+        Domoticz.Debug("Physical close limit lift cm")
 
     elif MsgAttrID == "0003":
-        Domoticz.Debuf("Cuurent positiojn in cm")
+        Domoticz.Debug("Cuurent positiojn in cm")
 
     elif MsgAttrID == "0007":
-        Domoticz.Debuf("Status")
+        Domoticz.Debug("Status")
 
     elif MsgAttrID == "0008":
-        Domoticz.Debuf("Current position lift %s " %value)
+        Domoticz.Debug("Current position lift %s " %value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
 
     elif MsgAttrID == "0009":
-        Domoticz.Debuf("Current position tilt") 
+        Domoticz.Debug("Current position tilt") 
 
     elif MsgAttrID == "000a":
-        Domoticz.Debuf("Open limit lift cm")
+        Domoticz.Debug("Open limit lift cm")
 
     elif MsgAttrID == "000b":
-        Domoticz.Debuf("Closed limit lift cm")
+        Domoticz.Debug("Closed limit lift cm")
 
     elif MsgAttrID == "000e":
-        Domoticz.Debuf("Velocity")
+        Domoticz.Debug("Velocity")
 
     elif MsgAttrID == "0011":
-        Domoticz.Debuf("Windows Covering mode")
+        Domoticz.Debug("Windows Covering mode")
     else:
         Domoticz.Log("Unknown Attribute : %s " %MsgAttrID)
 
@@ -733,7 +733,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             acmain = int(MsgClusterData,16) & 0x0000000010000000
             test   = int(MsgClusterData,16) & 0x0000000100000000
             batdef = int(MsgClusterData,16) & 0x0000001000000000
-            Domoticz.Log("ReadCluster0500 - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
+            Domoticz.Log("IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
                     %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef))
 
             #self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = int(MsgClusterData,16)
@@ -795,7 +795,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
             modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
-            Domoticz.Log("ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName))
+            Domoticz.Debug("ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName))
             if modelName != '':
 
                 if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
@@ -888,7 +888,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         ReadAttributeRequest_Ack(self, MsgSrcAddr)         # Ping Xiaomi devices
 
-        Domoticz.Log("ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData))
+        Domoticz.Debug("ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData))
         # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
         # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
