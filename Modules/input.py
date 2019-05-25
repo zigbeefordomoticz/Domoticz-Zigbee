@@ -461,17 +461,23 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     Domoticz.Debug("Decode8014 - MsgData lenght is : " +MsgData + "len: "+ str(MsgLen) + " out of 2")
 
     Status=MsgData[0:2]
+    timestamp = int(time.time())
+
     Domoticz.Debug("Permit Join status: %s" %Status)
+    Domoticz.Debug("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
+    Domoticz.Debug("---> Current time                  : %s" %timestamp)
+
     if Status == "00": 
-        if self.Ping['Permit'] is None:
+        if ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
             Domoticz.Status("Permit Join: Off")
         self.Ping['Permit'] = 'Off'
     elif Status == "01" : 
-        if self.Ping['Permit'] is None:
+        if (self.Ping['Permit'] is None) or ( self.permitTojoin['Starttime'] >= timestamp - 240):
             Domoticz.Status("Zigate in Permit Join: On")
         self.Ping['Permit'] = 'On'
     else: 
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
+
     self.Ping['TimeStamp'] = int(time.time())
     self.Ping['Status'] = 'Receive'
     Domoticz.Debug("Ping - received")
