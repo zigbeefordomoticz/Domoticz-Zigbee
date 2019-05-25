@@ -160,7 +160,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
                 if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
                     del self.ListOfDevices[newNWKID]['ConfigureReporting']
-                self.ListOfDevices[newNWKID]['Hearbeat'] = 0
+                self.ListOfDevices[newNWKID]['Heartbeat'] = 0
 
                 # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
@@ -168,7 +168,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
                     Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
-                    self.ListOfDevices[newNWKID]['Hearbeat'] = 0
+                    self.ListOfDevices[newNWKID]['Heartbeat'] = 0
 
                 found = True
                 break
@@ -271,81 +271,28 @@ def CheckDeviceList(self, key, val) :
             return
     if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
         initDeviceInList(self, key)
-        self.ListOfDevices[key]['RIA']="10"
-        if 'ZDeviceName' in DeviceListVal:
-            self.ListOfDevices[key]['ZDeviceName']=DeviceListVal['ZDeviceName']
 
-        if 'Ep' in DeviceListVal :
-            self.ListOfDevices[key]['Ep']=DeviceListVal['Ep']
-        if 'NbEp' in DeviceListVal :
-            self.ListOfDevices[key]['NbEp']=DeviceListVal['NbEp']
-        if 'Type' in DeviceListVal :
-            self.ListOfDevices[key]['Type']=DeviceListVal['Type']
-        if 'Model' in DeviceListVal :
-            self.ListOfDevices[key]['Model']=DeviceListVal['Model']
-        if 'MacCapa' in DeviceListVal :
-            self.ListOfDevices[key]['MacCapa']=DeviceListVal['MacCapa']
-        if 'IEEE' in DeviceListVal :
-            self.ListOfDevices[key]['IEEE']=DeviceListVal['IEEE']
+        self.ListOfDevices[key]['RIA']="10"
+
+        for attribute in ( 'App Version', 'Attributes List', 'Battery', 'Bind', 'ColorInfos', 'ConfigureReporting', 
+                'ClusterType', 'DeviceType', 'Ep', 'HW Version', 'Heartbeat', 'IAS',
+                'Last Cmds', 'Location', 'LogicalType', 'MacCapa', 'Manufacturer', 'Manufacturer Name', 'Model', 'NbEp',
+                'PowerSource', 'ProfileID', 'ReadAttributes', 'ReceiveOnIdle', 'Stack Version', 'RIA', 'RSSI',
+                'SQN', 'SWBUILD_1', 'SWBUILD_2', 'SWBUILD_3', 'Stamp', 'Stack Version', 'Stamp', 'Status', 'Type', 
+                'Version', 'ZCL Version', 'ZDeviceID', 'ZDeviceName' ):
+            if attribute in DeviceListVal:
+                self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
+
+        self.ListOfDevices[key]['Health'] = ''
+
+        if 'IEEE' in DeviceListVal:
+            self.ListOfDevices[key]['IEEE'] = DeviceListVal['IEEE']
             Domoticz.Debug("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
-            if  DeviceListVal['IEEE'] :
+            if  DeviceListVal['IEEE']:
                 IEEE = DeviceListVal['IEEE']
                 self.IEEE2NWK[IEEE] = key
             else :
                 Domoticz.Debug("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
-        if 'ProfileID' in DeviceListVal :
-            self.ListOfDevices[key]['ProfileID']=DeviceListVal['ProfileID']
-        if 'ZDeviceID' in DeviceListVal :
-            self.ListOfDevices[key]['ZDeviceID']=DeviceListVal['ZDeviceID']
-        if 'Manufacturer' in DeviceListVal :
-            self.ListOfDevices[key]['Manufacturer']=DeviceListVal['Manufacturer']
-        if 'Manufacturer Name' in DeviceListVal:
-            self.ListOfDevices[key]['Manufacturer Name']=DeviceListVal['Manufacturer Name']
-        if 'DeviceType' in DeviceListVal :
-            self.ListOfDevices[key]['DeviceType']=DeviceListVal['DeviceType']
-        if 'LogicalType' in DeviceListVal :
-            self.ListOfDevices[key]['LogicalType']=DeviceListVal['LogicalType']
-        if 'PowerSource' in DeviceListVal :
-            self.ListOfDevices[key]['PowerSource']=DeviceListVal['PowerSource']
-        if 'ReceiveOnIdle' in DeviceListVal :
-            self.ListOfDevices[key]['ReceiveOnIdle']=DeviceListVal['ReceiveOnIdle']
-        if 'App Version' in DeviceListVal :
-            self.ListOfDevices[key]['App Version']=DeviceListVal['App Version']
-        if 'Stack Version' in DeviceListVal :
-            self.ListOfDevices[key]['Stack Version']=DeviceListVal['Stack Version']
-        if 'HW Version' in DeviceListVal :
-            self.ListOfDevices[key]['HW Version']=DeviceListVal['HW Version']
-        if 'Status' in DeviceListVal :
-            self.ListOfDevices[key]['Status']=DeviceListVal['Status']
-        if 'Battery' in DeviceListVal :
-            self.ListOfDevices[key]['Battery']=DeviceListVal['Battery']
-        if 'RSSI' in DeviceListVal :
-            self.ListOfDevices[key]['RSSI']=DeviceListVal['RSSI']
-        if 'SQN' in DeviceListVal :
-            self.ListOfDevices[key]['SQN']=DeviceListVal['SQN']
-        if 'ClusterType' in DeviceListVal :
-            self.ListOfDevices[key]['ClusterType']=DeviceListVal['ClusterType']
-        if 'RIA' in DeviceListVal :
-            self.ListOfDevices[key]['RIA']=DeviceListVal['RIA']
-        if 'Version' in DeviceListVal :
-            self.ListOfDevices[key]['Version']=DeviceListVal['Version']
-        if 'Stamp' in DeviceListVal :
-            self.ListOfDevices[key]['Stamp']=DeviceListVal['Stamp']
-        if 'ColorInfos' in DeviceListVal :
-            self.ListOfDevices[key]['ColorInfos']=DeviceListVal['ColorInfos']
-        if 'ConfigureReporting' in DeviceListVal :
-            self.ListOfDevices[key]['ConfigureReporting']=DeviceListVal['ConfigureReporting']
-        if 'ReadAttributes' in DeviceListVal :
-            self.ListOfDevices[key]['ReadAttributes']=DeviceListVal['ReadAttributes']
-        if 'IAS' in DeviceListVal :
-            self.ListOfDevices[key]['IAS']=DeviceListVal['IAS']
-        if 'Attributes List' in DeviceListVal :
-            self.ListOfDevices[key]['Attributes List']=DeviceListVal['Attributes List']
-        if 'Bind' in DeviceListVal :
-            self.ListOfDevices[key]['Bind']=DeviceListVal['Bind']
-
-        self.ListOfDevices[key]['Heartbeat'] = DeviceListVal['Heartbeat']
-
 
 def timeStamped( self, key, Type ):
     if key in self.ListOfDevices:

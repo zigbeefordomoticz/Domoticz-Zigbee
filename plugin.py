@@ -174,7 +174,7 @@ class BasePlugin:
         Domoticz.Status("Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
 
-        Domoticz.Status("Switching Hearbeat to %s s interval" %HEARTBEAT)
+        Domoticz.Status("Switching Heartbeat to %s s interval" %HEARTBEAT)
         Domoticz.Heartbeat( HEARTBEAT )
 
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
@@ -192,6 +192,7 @@ class BasePlugin:
         self.DomoticzMinor = int(minor)
         if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355):
             # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
+
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
             Domoticz.Debug("Startup Folder: %s" %Parameters["StartupFolder"])
@@ -619,7 +620,7 @@ class BasePlugin:
         if self.OTA:
             self.OTA.heartbeat()
             
-        # Hearbeat - Ping Zigate every minute to check connectivity
+        # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.Ping:
             pingZigate( self )
