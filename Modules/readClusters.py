@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 # coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
@@ -375,18 +375,19 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Magic Cube Xiaomi rotation and Power Meter
 
-    Domoticz.Debug("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
+    Domoticz.Log("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
+
     if MsgAttrID=="0055":
         # Are we receiving Power
         EPforPower = getEPforClusterType( self, MsgSrcAddr, "Power" ) 
         EPforMeter = getEPforClusterType( self, MsgSrcAddr, "Meter" ) 
         EPforPowerMeter = getEPforClusterType( self, MsgSrcAddr, "PowerMeter" ) 
-        Domoticz.Debug("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
+        Domoticz.Log("EPforPower: %s, EPforMeter: %s, EPforPowerMeter: %s" %(EPforPower, EPforMeter, EPforPowerMeter))
        
         if len(EPforPower) == len(EPforMeter) == len(EPforPowerMeter) == 0:
             rotation_angle = struct.unpack('f',struct.pack('I',int(MsgClusterData,16)))[0]
 
-            Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
+            Domoticz.Log("ReadCluster - ClusterId=000c - Magic Cube angle: %s" %rotation_angle)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(int(rotation_angle)), Attribute_ = '0055' )
 
             if rotation_angle < 0:
@@ -398,19 +399,23 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
-        elif len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
+        elif len(EPforPower) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
-            Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
-            Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
+            Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
+            Domoticz.Log("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
             for ep in EPforPower + EPforMeter:
                 if ep == MsgSrcEp:
-                    Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(value) )
-                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
+                    Domoticz.Log("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(value) )
+                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = str(value)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0702',str(value))   # For to Power Cluster
                     break      # We just need to send once
         else:
             Domoticz.Log("ReadCluster 000c - received unknown value - MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
                     %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+            Domoticz.Log("----------------> EPforPower: %s" %EPforPower)
+            Domoticz.Log("----------------> EPforMeter: %s" %EPforMeter)
+            Domoticz.Log("----------------> EPforPowerMeter: %s" %EPforPowerMeter)
+
 
     elif MsgAttrID=="ff05": # Rotation - horinzontal
         Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
@@ -418,7 +423,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
     else:
-        Domoticz.Debug("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
+        Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
                 str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
 
@@ -883,14 +888,14 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         ReadAttributeRequest_Ack(self, MsgSrcAddr)         # Ping Xiaomi devices
 
-        Domoticz.Debug("ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData))
+        Domoticz.Log("ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData))
         # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
         # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
         sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-        #stag04 = retreive4Tag( '0424', MsgClusterData )
-        #stag05 = retreive4Tag( '0521', MsgClusterData )
-        #stag06 = retreive4Tag( '0620', MsgClusterData )
+        stag04 = retreive4Tag( '0424', MsgClusterData )
+        stag05 = retreive4Tag( '0521', MsgClusterData )
+        stag06 = retreive4Tag( '0620', MsgClusterData )
         sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
         sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
         sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb
@@ -958,7 +963,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if stag10 != '':
             # f400 --
             # 4602 --
-            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
     else:
         Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))
