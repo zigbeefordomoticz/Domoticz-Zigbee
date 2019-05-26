@@ -660,10 +660,6 @@ class WebServer(object):
                     _device['WidgetList'].append( _widget )
                     device_lst.append( _device )
                     continue
-                if 'MacCapa' not in self.ListOfDevices[x]:
-                    continue
-                if self.ListOfDevices[x]['MacCapa'] != '8e':
-                    continue
                 if 'Ep' in self.ListOfDevices[x]:
                     if 'ZDeviceName' in self.ListOfDevices[x] and \
                           'IEEE' in self.ListOfDevices[x]:
@@ -671,6 +667,32 @@ class WebServer(object):
                         _device['_NwkId'] = x
                         _device['WidgetList'] = []
                         for ep in self.ListOfDevices[x]['Ep']:
+                            if 'Type' in self.ListOfDevices[x]:
+                                if self.ListOfDevices[x]['Type'] == 'Ikea_Round_5b':
+                                    Domoticz.Log("Ikea Remote")
+                                    if '01' in self.ListOfDevices[x]['Ep']:
+                                        if 'ClusterType' in self.ListOfDevices[x]['Ep']['01']:
+                                            widgetID = ''
+                                            for iterDev in self.ListOfDevices[x]['Ep']['01']['ClusterType']:
+                                                if self.ListOfDevices[x]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
+                                                    widgetID = iterDev
+                                                    break
+                                            for widget in self.Devices:
+                                                if self.Devices[widget].ID == int(widgetID):
+                                                    _widget = {}
+                                                    _widget['_ID'] =  self.Devices[widget].ID 
+                                                    _widget['Name'] =  self.Devices[widget].Name 
+                                                    _widget['IEEE'] =  self.ListOfDevices[x]['IEEE'] 
+                                                    _widget['Ep'] =  ep 
+                                                    _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
+                                                    _device['WidgetList'].append( _widget )
+                                                    break
+                                            device_lst.append( _device )
+                                            continue
+                            if 'MacCapa' not in self.ListOfDevices[x]:
+                                continue
+                            if self.ListOfDevices[x]['MacCapa'] != '8e':
+                                continue
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
@@ -692,7 +714,7 @@ class WebServer(object):
                                             _widget['Ep'] =  ep 
                                             _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
                                             _device['WidgetList'].append( _widget )
-                                            break
+
                 device_lst.append( _device )
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
             return _response
