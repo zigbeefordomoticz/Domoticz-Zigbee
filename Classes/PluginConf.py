@@ -18,39 +18,39 @@ import json
 from Modules.tools import is_hex
 
 
-SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
+SETTINGS = { 'enableWebServer': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
 
             # Device Management
-            'allowStoreDiscoveryFrames': { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-            'allowForceCreationDomoDevice':  { 'type':'int', 'default':0 , 'current': None , 'restart':False , 'hidden':False},
-            'allowReBindingClusters':  { 'type':'int', 'default':1 , 'current': None , 'restart':False , 'hidden':False},
-            'enableReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'allowStoreDiscoveryFrames': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False},
+            'allowReBindingClusters':  { 'type':'bool', 'default':1 , 'current': None , 'restart':False , 'hidden':False},
+            'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
             'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False},
-            'resetConfigureReporting': { 'type':'int', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
+            'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False},
             'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False},
-            'resetReadAttributes': { 'type':'int', 'default':0 , 'current': None, 'restart':True  , 'hidden':False},
+            'resetReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False},
             'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False},
             'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False},
 
             # Zigate Configuration
-            'allowRemoveZigateDevice':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-            'allowOTA':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
-            'batteryOTA':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
-            'blueLedOff':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'batteryOTA':  { 'type':'int', 'default':60 , 'current': None, 'restart':True , 'hidden':False},
+            'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
             'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False},
             'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
             'extendedPANID': { 'type':'hex', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
-            'enableAPSFailureLoging':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-            'enableAPSFailureReporting':  { 'type':'int', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
-            'eraseZigatePDM':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-            'Ping':  { 'type':'int', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
+            'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
+            'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
             'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
             'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False},
 
             # Plugin Transport
-            'CrcCheck':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
-            'reTransmit':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
-            'sendDelay':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':True},
+            'CrcCheck':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
+            'reTransmit':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
+            'sendDelay':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True},
             'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True},
             'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'restart':True , 'hidden':True},
 
@@ -66,17 +66,17 @@ SETTINGS = { 'enableWebServer': { 'type':'int', 'default':0 , 'current': None , 
             'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
 
             # Groups Management
-            'enableConfigGroups':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
-            'enablegroupmanagement':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
-            'discoverZigateGroups':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
+            'enableConfigGroups':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
+            'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'discoverZigateGroups':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
     
             # Network Topoology
-            'logLQI':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
-            'networkScan': { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
+            'logLQI':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False},
+            'networkScan': { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False},
 
             # Debugging
-            'logFORMAT':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-            'debugReadCluster':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False}
+            'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+            'debugReadCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True}
             }
 
 class PluginConf:
