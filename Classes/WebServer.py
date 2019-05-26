@@ -1,6 +1,7 @@
 
 import Domoticz
 import json
+import os
 import os.path
 
 import mimetypes
@@ -11,7 +12,7 @@ import zlib
 import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
 from Classes.PluginConf import SETTINGS
-from Modules.output import ZigatePermitToJoin
+from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq
 
 
 DELAY = 0
@@ -24,7 +25,7 @@ DEBUG_HTTP = False
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
+    def __init__( self, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -32,6 +33,7 @@ class WebServer(object):
         self.httpClientConn = None
 
         self.pluginconf = PluginConf
+        self.zigatedata = ZigateData
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
@@ -262,18 +264,22 @@ class WebServer(object):
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
-                'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
-                'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
+                'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
+                'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
+                'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
+                'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
+                'req-nwk-inter': {'Name':'nwk-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
+                'req-topologie': {'Name':'req-topologie', 'Verbs':{'GET'}, 'function':self.rest_req_topologie},
+                'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
+                'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
-                'zdevice-raw':  {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
+                'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
-                'zgroup-list-available-device':        {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
-                'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
-                'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
-                'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
-                'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat}
+                'zgroup-list-available-device':   
+                                 {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
+                'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate}
                 }
 
         Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
@@ -294,6 +300,45 @@ class WebServer(object):
         self.sendResponse( Connection, HTTPresponse )
 
 
+    def rest_req_nwk_inter( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            action = {}
+            action['Name'] = "Nwk-Interferences"
+            action['TimeStamp'] = int(time())
+            _response["Data"] = json.dumps( action, sort_keys=False )
+
+            NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
+
+        return _response
+
+    def rest_req_topologie( self, verb, data, parameters):
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            action = {}
+            action['Name'] = 'Req-Topology'
+            action['TimeStamp'] = int(time())
+            _response["Data"] = json.dumps( action, sort_keys=False )
+
+            # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
+        return _response
+
+    def rest_zigate( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            if self.zigatedata:
+                _response["Data"] = json.dumps( self.zigatedata, sort_keys=False )
+        return _response
+
+
     def rest_PluginEnv( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
@@ -312,6 +357,14 @@ class WebServer(object):
         _response["Data"] = "{}"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'DELETE':
+            os.remove( _filename )
+            action = {}
+            action['Name'] = 'File-Removed'
+            action['FileName'] = _filename
+            _response['Data'] = json.dumps( action , sort_keys=True)
+            return _response
 
         if not os.path.isfile( _filename ) :
             _response['Data'] = json.dumps( {} , sort_keys=False ) 
@@ -386,6 +439,14 @@ class WebServer(object):
 
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.hardwareID + '.json'
 
+        if verb == 'DELETE':
+            os.remove( _filename )
+            action = {}
+            action['Name'] = 'File-Removed'
+            action['FileName'] = _filename
+            _response['Data'] = json.dumps( action , sort_keys=True)
+            return _response
+
         _timestamps_lst = [] # Just the list of Timestamps
         _scan = {}
         if os.path.isfile( _filename ) :
@@ -421,6 +482,7 @@ class WebServer(object):
         Statistics['Received'] =self.statistics._received
         Statistics['Cluster'] =self.statistics._clusterOK
         Statistics['ReTx'] =self.statistics._reTx
+        Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
         Statistics['MaxLoad'] =self.statistics._MaxLoad
         Statistics['StartTime'] =self.statistics._start
 
@@ -501,7 +563,7 @@ class WebServer(object):
                 data = data.decode('utf8')
                 data = json.loads(data)
                 Domoticz.Log("parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
-                #ZigatePermitToJoin(self, int( data['PermitToJoin']))
+                ZigatePermitToJoin(self, int( data['PermitToJoin']))
 
         return _response
 
@@ -582,7 +644,22 @@ class WebServer(object):
         if verb == 'GET':
             device_lst = []
             for x in self.ListOfDevices:
-                if x == '0000': continue
+                if x == '0000': 
+
+                    _device = {}
+                    _device['_NwkId'] = '0000'
+                    _device['WidgetList'] = []
+
+                    _widget = {}
+                    _widget['_ID'] =  ''
+                    _widget['Name'] =  ''
+                    if 'IEEE' in self.ListOfDevices['0000']: _widget['IEEE'] =  self.ListOfDevices['0000']['IEEE'] 
+                    else: _widget['IEEE'] =  'Fake for None Mode'
+                    _widget['Ep'] =  '01' 
+                    _widget['ZDeviceName'] =  'Zigate (Coordinator)'
+                    _device['WidgetList'].append( _widget )
+                    device_lst.append( _device )
+                    continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
                     continue
                 if self.ListOfDevices[x]['MacCapa'] != '8e':
@@ -836,7 +913,8 @@ class WebServer(object):
                     for dev, ep in ListOfGroups[item]['Devices']:
                         Domoticz.Log("--> add %s %s" %(dev, ep))
                         _dev = {}
-                        _dev[dev] = ep
+                        _dev['_NwkId'] = dev
+                        _dev['Ep'] = ep
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
