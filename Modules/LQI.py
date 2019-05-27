@@ -90,8 +90,7 @@ def LQIcontinueScan(self, Devices):
                 break                                    # We do only one !
 
     if not LQIfound and not LODfound:                    # We didn't find any more Network address. Game is over
-        Domoticz.Log("LQI Scan is over ....")
-        Domoticz.Log("LQI Results:")
+        Domoticz.Status("Publishing LQI Results")
         for src in self.LQI:
             for child in self.LQI[src]:
                 try:
@@ -103,25 +102,20 @@ def LQIcontinueScan(self, Devices):
                             %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
 
         # Write the report onto file
-        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.HardwareID + '.txt'
+                # Write the report onto file
+        _filename = self.pluginconf.pluginReports + 'LQI_reports-' + '%02d' %self.HardwareID + '.json'
         storeLQI = {}
         storeLQI[int(time.time())] = self.LQI
 
         self.pluginconf.logLQI = 0
         if os.path.isdir( self.pluginconf.pluginReports ):
-            #Domoticz.Status("LQI report save on " +str(_filename))
-            #with open(_filename , 'at') as file:
-            #    for key in storeLQI:
-            #        file.write(str(key) + ": " + str(storeLQI[key]) + "\n")
-            #self.pluginconf.logLQI = 0
-
-            json_filename = _filename + ".json"
-            with open( json_filename, 'at') as json_file:
+            with open( _filename, 'at') as json_file:
                 json_file.write('\n')
                 json.dump( storeLQI, json_file)
             self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
         else:
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginReports))
+
 
 
 def mgtLQIreq(self, nwkid='0000', index=0):
@@ -133,6 +127,28 @@ def mgtLQIreq(self, nwkid='0000', index=0):
      <Target Address: uint16_t>
      <Start Index: uint8_t>
     """
+
+    doWork = False
+    if nwkid not in self.ListOfDevices:
+        return
+    if nwkid == '0000':
+        doWork = True
+    elif 'LogicalType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
+            doWork = True
+    if 'DeviceType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
+            doWork = True
+    if 'MacCapa' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
+            doWork = True
+    if 'PowerSource' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
+            doWork = True
+
+    if not doWork:
+        Domoticz.Debug("Skiping %s as it's not a Router nor Coordinator" %nwkid)
+        return
 
     self.LQISource.put(str(nwkid))
     datas = str(nwkid) + "{:02n}".format(index)

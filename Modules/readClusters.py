@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+
 # coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
@@ -164,6 +164,7 @@ def ReadCluster(self, Devices, MsgData):
             "0101": Cluster0101,
             "0102": Cluster0102,
             "0201": Cluster0201,
+            "0204": Cluster0204,
             "0300": Cluster0300,
             "0400": Cluster0400,
             "0402": Cluster0402,
@@ -199,6 +200,27 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
         Domoticz.Debug("readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) )
+
+    elif MsgAttrID == "0001": # MAINS FREQUENCY
+                              # 0x00 indicates a DC supply, or Freq too low
+                              # 0xFE indicates AC Freq is too high
+                              # 0xFF indicates AC Freq cannot be measured
+        if int(value) == 0x00:
+            Domoticz.Log("readCluster 0001 %s Freq is DC or too  low" %MsgSrcAddr)
+        elif int(value) == 0xFE:
+            Domoticz.Log("readCluster 0001 %s Freq is too high" %MsgSrcAddr)
+        elif int(value) == 0xFF:
+            Domoticz.Log("readCluster 0001 %s Freq cannot be measured" %MsgSrcAddr)
+        else:
+            value = round(int(value)/2)  # 
+            Domoticz.Log("readCluster 0001 %s Freq %s Hz" %(MsgSrcAddr, value))
+
+    elif MsgAttrID == "0002": # MAINS ALARM MASK
+        _undervoltage = (int(value)) & 1
+        _overvoltage = (int(value) >> 1 ) & 1
+        _mainpowerlost = (int(value) >> 2 ) & 1
+        Domoticz.Log("readCluster 0001 %s Alarm Mask: UnderVoltage: %s OverVoltage: %s MainPowerLost: %s" \
+                %(MsgSrcAddr, _undervoltage, _overvoltage, _mainpowerlost))
 
     elif MsgAttrID == "0010": # Voltage
         battVolt = value
@@ -243,6 +265,14 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value))
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
         #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
+    elif MsgAttrID == "0001":
+        Domoticz.Log("ReadCluster0702 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
+    elif MsgAttrID == "000a":
+        Domoticz.Log("ReadCluster0702 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
+    elif MsgAttrID == "000b":
+        Domoticz.Log("ReadCluster0702 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
 
     elif MsgAttrID == "0301":   # Multiplier
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
@@ -285,6 +315,9 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == "0002":   
+        Domoticz.Log("ReadCluster0300 - %s/%s RemainingTime: %s" %(MsgSrcAddr, MsgSrcEp, value))
+
     elif MsgAttrID == "0003":     # CurrentX
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
         Domoticz.Debug("ReadCluster0300 - CurrentX: %s" %value)
@@ -312,6 +345,16 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.allowStoreDiscoveryFrames == 1 and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '000f':
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
+    elif MsgAttrID == '400b':
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
+    elif MsgAttrID == '400c':
+        Domoticz.Log("ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value))
+
+
     elif MsgAttrID == "f000":
         # 070000df
         # 00800900
@@ -333,6 +376,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Magic Cube Xiaomi rotation and Power Meter
 
     Domoticz.Debug("ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData))
+
     if MsgAttrID=="0055":
         # Are we receiving Power
         EPforPower = getEPforClusterType( self, MsgSrcAddr, "Power" ) 
@@ -355,19 +399,23 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]="80"
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
-        elif len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
+        elif len(EPforPower) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
             value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
             Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value))
             Domoticz.Debug("ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) )
             for ep in EPforPower + EPforMeter:
                 if ep == MsgSrcEp:
                     Domoticz.Debug("ReadCluster - ClusterId=000c - MsgAttrID=0055 - reception Conso Prise Xiaomi: " + str(value) )
-                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
+                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = str(value)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0702',str(value))   # For to Power Cluster
                     break      # We just need to send once
         else:
             Domoticz.Log("ReadCluster 000c - received unknown value - MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
                     %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+            Domoticz.Log("----------------> EPforPower: %s" %EPforPower)
+            Domoticz.Log("----------------> EPforMeter: %s" %EPforMeter)
+            Domoticz.Log("----------------> EPforPowerMeter: %s" %EPforPowerMeter)
+
 
     elif MsgAttrID=="ff05": # Rotation - horinzontal
         Domoticz.Debug("ReadCluster - ClusterId=000c - Magic Cube Rotation: " + str(MsgClusterData) )
@@ -375,7 +423,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
     else:
-        Domoticz.Debug("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
+        Domoticz.Log("ReadCluster - ClusterID=000c - unknown message - SAddr = " + str(MsgSrcAddr) + " EP = " +\
                 str( MsgSrcEp) + " MsgAttrID = " + str(MsgAttrID) + " Value = "+ str(MsgClusterData) )
 
 
@@ -416,12 +464,28 @@ def Cluster0005( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Cluster On/Off
 
-    if MsgSrcEp == '06': # Most likely Livolo
-        Domoticz.Log("ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
-                %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
-
     if MsgAttrID=="0000" or MsgAttrID=="8000":
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral1':
+                # endpoint 02 is for controlling the L1 outpu
+                # Blacklist all EPs other than '02'
+                if MsgSrcEp != '02':
+                    Domoticz.Debug("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                         %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+                    return
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2':
+                # Endpoint 03 is for the L2 output of the lumi.ctrl_neutral2
+                if MsgSrcEp != '03':
+                    Domoticz.Log("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                         %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+                    return
+
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+                # Livolo / Might get something else than On/Off
+                Domoticz.Log("ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+                         %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
+
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
         Domoticz.Debug("ReadCluster - ClusterId=0006 - reception General: On/Off: " + str(MsgClusterData) )
@@ -445,27 +509,27 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif value == "0003": return '30' #Drop
         return '00'
 
-    Domoticz.Log("ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s" \
+    Domoticz.Debug("ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s" \
             %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
     if MsgAttrID == "0000":          # Lockstate
-        Domoticz.Log("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
+        Domoticz.Debug("ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) )
 
     elif MsgAttrID == "0001":         # Locktype
-        Domoticz.Log("ReadCluster 0101 - Dev: Lock type "  + str(MsgClusterData))
+        Domoticz.Debug("ReadCluster 0101 - Dev: Lock type "  + str(MsgClusterData))
 
     elif MsgAttrID == "0002":         # Enabled
-        Domoticz.Log("ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData))
+        Domoticz.Debug("ReadCluster 0101 - Dev: Enabled "  + str(MsgClusterData))
 
     elif MsgAttrID ==  "0055":   # Aqara Vibration
-        Domoticz.Log("ReadCluster %s/%s - Aqara Vibration - Event: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
+        Domoticz.Debug("ReadCluster %s/%s - Aqara Vibration - Event: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
         # "LevelNames": "Off|Tilt|Vibrate|Free Fall"
         state = decode_vibr( MsgClusterData )
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, state )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
     elif MsgAttrID == "0503":   # Bed activties
-        Domoticz.Log("ReadCluster %s/%s -  Vibration Angle - Attribute: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
+        Domoticz.Debug("ReadCluster %s/%s -  Vibration Angle - Attribute: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
 
         if MsgClusterData == "0054": # Following Tilt
             state = "10"
@@ -473,7 +537,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
     elif MsgAttrID == "0505":   # Vibration Strenght
-        Domoticz.Log("ReadCluster %s/%s -  Vibration Strenght - Attribute: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
+        Domoticz.Debug("ReadCluster %s/%s -  Vibration Strenght - Attribute: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) )
 
     elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode / Orientation
         x = int(MsgClusterData, 16) & 0xffff
@@ -487,7 +551,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             angleY = round( atan(y/sqrt(x2+z2)) * 180 / pi)
             angleZ = round( atan(z/sqrt(x2+y2)) * 180 / pi)
 
-            Domoticz.Log("ReadCluster %s/%s -  Vibration Orientation - 0x%16x - x=%d, y=%d, z=%d" \
+            Domoticz.Debug("ReadCluster %s/%s -  Vibration Orientation - 0x%16x - x=%d, y=%d, z=%d" \
                     %(MsgClusterId, MsgAttrID, int(MsgClusterData,16), x, y, z) )
 
         state = "00"
@@ -500,40 +564,40 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Windows Covering / Shutter
     value = decodeAttribute(MsgAttType, MsgClusterData)
-    Domoticz.Log("ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
+    Domoticz.Debug("ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value))
 
 
     if MsgAttrID == "0001":
         Domoticz.Log("Window Covering Type")
 
     elif  MsgAttrID == "0001":
-        Domoticz.Log("Physical close limit lift cm")
+        Domoticz.Debug("Physical close limit lift cm")
 
     elif MsgAttrID == "0003":
-        Domoticz.Log("Cuurent positiojn in cm")
+        Domoticz.Debug("Cuurent positiojn in cm")
 
     elif MsgAttrID == "0007":
-        Domoticz.Log("Status")
+        Domoticz.Debug("Status")
 
     elif MsgAttrID == "0008":
-        Domoticz.Log("Current position lift %s " %value)
+        Domoticz.Debug("Current position lift %s " %value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
 
     elif MsgAttrID == "0009":
-        Domoticz.Log("Current position tilt") 
+        Domoticz.Debug("Current position tilt") 
 
     elif MsgAttrID == "000a":
-        Domoticz.Log("Open limit lift cm")
+        Domoticz.Debug("Open limit lift cm")
 
     elif MsgAttrID == "000b":
-        Domoticz.Log("Closed limit lift cm")
+        Domoticz.Debug("Closed limit lift cm")
 
     elif MsgAttrID == "000e":
-        Domoticz.Log("Velocity")
+        Domoticz.Debug("Velocity")
 
     elif MsgAttrID == "0011":
-        Domoticz.Log("Windows Covering mode")
+        Domoticz.Debug("Windows Covering mode")
     else:
         Domoticz.Log("Unknown Attribute : %s " %MsgAttrID)
 
@@ -669,7 +733,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             acmain = int(MsgClusterData,16) & 0x0000000010000000
             test   = int(MsgClusterData,16) & 0x0000000100000000
             batdef = int(MsgClusterData,16) & 0x0000001000000000
-            Domoticz.Log("ReadCluster0500 - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
+            Domoticz.Log("IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
                     %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef))
 
             #self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = int(MsgClusterData,16)
@@ -731,7 +795,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
             modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
-            Domoticz.Log("ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName))
+            Domoticz.Debug("ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName))
             if modelName != '':
 
                 if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
@@ -743,7 +807,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
                 if 'Model' in self.ListOfDevices[MsgSrcAddr]:
                     if self.ListOfDevices[MsgSrcAddr]['Model'] == modelName and self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:
-                        Domoticz.Log("ReadCluster - %s / %s - no action" %(MsgClusterId, MsgAttrID))
+                        Domoticz.Debug("ReadCluster - %s / %s - no action" %(MsgClusterId, MsgAttrID))
                         return
                 else:
                     self.ListOfDevices[MsgSrcAddr]['Model'] = {}
@@ -829,9 +893,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
         sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-        #stag04 = retreive4Tag( '0424', MsgClusterData )
-        #stag05 = retreive4Tag( '0521', MsgClusterData )
-        #stag06 = retreive4Tag( '0620', MsgClusterData )
+        stag04 = retreive4Tag( '0424', MsgClusterData )
+        stag05 = retreive4Tag( '0521', MsgClusterData )
+        stag06 = retreive4Tag( '0620', MsgClusterData )
         sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
         sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
         sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb
@@ -899,7 +963,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if stag10 != '':
             # f400 --
             # 4602 --
-            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
     else:
         Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))
@@ -944,13 +1008,21 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             Domoticz.Debug("cube action: Not expected value %s" %value )
         return value
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', 'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
+    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', \
+                                                    'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
         value = decodeAttribute( MsgAttType, MsgClusterData )
         Domoticz.Debug("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
         value = int(value)
         if value == 0: value = 3
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
-        return                                                                              # a switch in order to behave as a switch
+        return                                                                   # a switch in order to behave as a switch
+
+    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
+        value = decodeAttribute( MsgAttType, MsgClusterData )
+        Domoticz.Debug("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
+        value = int(value)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
+        return                                                                   # a switch in order to behave as a switch
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube'):
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
@@ -1035,34 +1107,34 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 0x07: 'Fan only'  }
 
         if int(value) in SYSTEM_MODE:
-            Domoticz.Log("ReadCluster 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]))
+            Domoticz.Debug("ReadCluster 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]))
         else:
-            Domoticz.Log("ReadCluster 0201 - Attribute 1C: %s" %value)
+            Domoticz.Debug("ReadCluster 0201 - Attribute 1C: %s" %value)
 
 
     elif MsgAttrID == '0403':
-        Domoticz.Log("ReadCluster 0201 - Attribute 403: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Attribute 403: %s" %value)
 
     elif MsgAttrID == '0408':
         value = int(decodeAttribute( MsgAttType, MsgClusterData))
-        Domoticz.Log("ReadCluster 0201 - Attribute 408: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Attribute 408: %s" %value)
 
     elif MsgAttrID == '0409':
         value = int(decodeAttribute( MsgAttType, MsgClusterData))
-        Domoticz.Log("ReadCluster 0201 - Attribute 409: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Attribute 409: %s" %value)
 
     elif MsgAttrID == '4000': # TRV Mode
-        Domoticz.Log("ReadCluster 0201 - TRV Mode: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - TRV Mode: %s" %value)
 
     elif MsgAttrID == '4001': # Valve position
-        Domoticz.Log("ReadCluster 0201 - Valve position: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Valve position: %s" %value)
 
     elif MsgAttrID == '4002': # Erreors
-        Domoticz.Log("ReadCluster 0201 - Status: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Status: %s" %value)
 
     elif MsgAttrID == '4003': # Current Temperature Set point
         ValueTemp = round(int(value)/100,1)
-        Domoticz.Log("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
+        Domoticz.Debug("ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, oldValue[3]))
         if ValueTemp != float(oldValue[3]):
             # Seems that there is a local setpoint
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
@@ -1076,11 +1148,24 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 0x000020:'enable off mode',
                 0x000080:'child lock'
                 }
-        Domoticz.Log("ReadCluster 0201 - Host Flags: %s" %value)
+        Domoticz.Debug("ReadCluster 0201 - Host Flags: %s" %value)
 
         
     else:
         Domoticz.Log("ReadCluster 0201 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))
+
+def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    Domoticz.Log("ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+            %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+
+
+    if MsgAttrID == '0001':
+        # Lock Mode
+        value = decodeAttribute( MsgAttType, MsgClusterData)
+        Domoticz.Log("ReadCluster 0204 - Lokc Mode: %s" %value)
+    else:
+        Domoticz.Log("ReadCluster 0204 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))
 
 
 def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -1139,7 +1224,7 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 lvlValue -= round( delta * DIMMER_STEP)
 
         elif action in ('03') : # Release after Long Press
-            Domoticz.Log("ReadCluster - %s - %s/%s - DIM Release after %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, round(duration/10)))
+            Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Release after %s seconds" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, round(duration/10)))
 
         else:
             Domoticz.Debug("ReadCluster - %s - %s/%s - DIM Action: %s not processed" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, action))

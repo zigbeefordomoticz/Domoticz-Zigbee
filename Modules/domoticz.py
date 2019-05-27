@@ -34,7 +34,6 @@ def CreateDomoDevice(self, Devices, NWKID):
             if self.ListOfDevices[NWKID]['Model'] != {}:
                 _Model = self.ListOfDevices[NWKID]['Model']
                 Domoticz.Debug("deviceName - Model found: %s" %_Model)
-
                 if _Model in self.DeviceConf:
                     if 'NickName' in self.DeviceConf[_Model]:
                         _NickName = self.DeviceConf[_Model]['NickName']
@@ -277,6 +276,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "SwitchIKEA":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
             if t == "SwitchAQ2":  # interrupteur multi lvl lumi.sensor_switch.aq2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click",
@@ -291,6 +304,23 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "SwitchAQ3":  # interrupteur multi lvl lumi.sensor_switch.aq2
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "||||", "LevelNames": "Click|Double Click|Long Click|Release Click|Shake",
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
 
             if t == "DSwitch":  # interrupteur double sur EP different
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -943,6 +973,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     #UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
+                elif DeviceType == "SwitchIKEA":  # On/Off switch
+                    state = ''
+                    if value == "01":
+                        state = "On"
+                    elif value == "00":
+                        state = "Off"
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
                     if value == 1: state = "00"
@@ -953,6 +991,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     else:
                         return  # Simply return and don't process any other values than the above
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif DeviceType == "SwitchAQ3":  # Xiaomi Aqara Smart Wireless Switch Key Built In Gyro Multi-Functional 
+                    value = int(value)
+                    if value == 1: state = "00"
+                    elif value == 2: state = "10"
+                    elif value == 16: state = "20"
+                    elif value == 17: state = "30"
+                    elif value == 18: state = "40"
+                    else:
+                        return  # Simply return and don't process any other values than the above
+                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
                 elif DeviceType == "DSwitch":
                     # double switch avec EP different 
                     value = int(value)
@@ -1353,11 +1403,11 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
  
     _Unit = _nValue = _sValue = None
     if Unit:
-        Domoticz.Debug("timeOutDevice unit %s" %( Devices[Unit].Name ))
         _nValue = Devices[Unit].nValue
         _sValue = Devices[Unit].sValue
         _Unit = Unit
         if not Devices[_Unit].TimedOut:
+            Domoticz.Log("timeOutDevice unit %s" %( Devices[Unit].Name ))
             Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
     elif NwkId:
         if NwkId not in self.ListOfDevices:
@@ -1367,11 +1417,11 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                Domoticz.Debug( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
                 _nValue = Devices[x].nValue
                 _sValue = Devices[x].sValue
                 _Unit = x
                 if not  Devices[_Unit].TimedOut:
+                    Domoticz.Log( "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
                     Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 

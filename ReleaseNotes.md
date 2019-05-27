@@ -1,6 +1,29 @@
 # Release Notes 
 
-## 19 May 2019 - 4.2.3
+## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
+- [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
+- [Hardware] #421 - Integrate the new Aqara switch with gyroscope
+- [Hardware] - Add group management (cluster 0x0004) to Aqara Switch with Neutral
+- [Hardware] - Add Aqara Switch with Neutral (one button)
+- [Technical] - Make a configure reporting on Main powered devices on a daily basis
+- [Technical] - Ping enhacement
+- [Hardware] - Xiaomi relay ( lumi.relay.c3acn01 )
+- [Technical] - Simplify ConfigureReporting
+- [Technical] - Do ReadAttributes only for supported attributes.
+- [Hardware] - Xiaomi Aqara Switch ( lumi.ctrl_86plug.aq1)
+- [Technical] - Fancy log of Cluster during inclusion of new device
+- [Technical] - History of DeviceList limited to 12 version by default
+- [Issue] - Fix an issue with lumi.ctrl_neutral1
+- [Hardware] - Make the Ikea ON/OFF switch able to send multiple Off/On, require a new pairing
+- [Technical] - Better presentation of Cluster when doing a pairing
+- [Technical] - Do ConfigureReporting on daily basis
+- [Technical] - use the result of Attribute List from the end device
+- [Technical] - Fix issue in Topology/LQI report
+- [Technical] - Create a Report folder to store reporting ( LQI, Nwk Interference) reports.
+- [Technical] - APS Failure management + reporting
+
+
+## 19 May 2019 - 4.2.3 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2.3
 - [Issue] Wrong battery calculation for Xiaomi devices.
 
 ## 05 May 2019 - 4.2.2
@@ -8,8 +31,10 @@
 
 ## 30 April 2019 - 4.2.1
 - [Technical] Disable APS failure reporting. If still want to use it, you can enable it enableAPSFailurereporting in PluginConf.txt
+>>>>>>> stable
 
-## 24 April 2019 - 4.2.0
+## 24 April 2019 - 4.2.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.2
+
 - [Enhancement] Over-The-Air firmware upgrade of main powered Ikea/Tradfri devices (so far only firmware publicaly available)
 - [Enhancement] In case of communication failure between Zigate -> Device, triggering TimeOut flag on Domoticz Device widget.
 - [Enhancement] Update device only in case of batterly level changes and not SignalLevel in order to reduce the notification system.
@@ -38,7 +63,7 @@
 - [Hardware] - Handle lumi.ctrl_neutral1 / QBKG04LM device
 - [Issue] #414 - Plugin will switch GPIO to RUN mode at plugin start
 
-## 05 April 2019 - 4.1.4
+## 05 April 2019 - 4.1.4 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.1.4
 - [Issue] #395 - PI doesn't stay as Model .
 
 ## 04 April 2019 - 4.1.3
@@ -51,7 +76,7 @@
 - [Issue] #383 - fixing and allowing index on one digit.
 - [Issue] #384 - Handling 0xff02 Xiaomi attribute for cluster 0x0000 and decoding what is inside.
 
-## 12 Mars 2019 - 4.1
+## 12 Mars 2019 - 4.1.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.1.0
 
 - [Technical] Full refactor of Discovery and Enrolement process
 - [Issue] Make the possibility to use a PluginConf per HardwareID #271
@@ -128,7 +153,7 @@
 - [Issue] Correct the Selector tab label for the Double Button swicth
 - [Issue] When receiving a leave message , if the object is not 'removed' then request a rejoin
 
-## 02 Decembre 2018 - Version 4.0.0
+## 02 Decembre 2018 - Version 4.0.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.0.0
 - [Technical] New Zigate Transport layer  ( ZigBee compliant with retransmission in case of missing data, bit also a agressive algorithm.)
 - [Technical] Creation of PluginConf class to manage the PluginConf.txt file
 - [Technical] Refactor the inclusion/discovery and domoticz widget creation
@@ -185,14 +210,14 @@
 - [Issue] - When you remove a device in Domoticz, we remove the entry in the Plugin, but we don't remove the device in Zigate, yet.
 
 
-## 12 September 2018 - 3.0.0 
+## 12 September 2018 - 3.0.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/3.0.0
 Mainly a technical version in order to split the code in pieces.
 
 - Code split
 - Bug fixing
 
 
-## 8 September 2018 - 2.4.0
+## 8 September 2018 - 2.4.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/2.4.0
 We are keen to release this version off the Zigate Plugin, which include a set of update, enhacement and bugfixing.
 
 - Configuration file to enable further configuration parameters

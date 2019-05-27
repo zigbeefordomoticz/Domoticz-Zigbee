@@ -37,19 +37,35 @@ from os import listdir
 from os.path import isfile, join
 from time import time
 
-from Modules.consts import ADDRESS_MODE, HEARTBEAT
+from Modules.consts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE
 
 from Classes.AdminWidgets import AdminWidgets
 
 OTA_CLUSTER_ID = '0019'
-MAX_LOAD = 2            # No more than 2 commands in the Zigate queue
 OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
 TO_TRANSFER = 60        # Time before timed out for Transfer
-TO_NOTIFICATION = 15    # Time before timed out for Notfication
+TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out for Notfication for main powered devices
+TO_BATTERYPOWERED_NOTIFICATION = 1 * 3600 # We will leave the Image loaded on Zigate and Notified by device during 1 hour max.
 WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
 
 
-
+BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
+"""
+  4353 - Control outlet
+  4545 - Remote Control
+  4546 - Wireless dimmer
+  4548 - Motion sensor
+  4549 - Switch On/Off 
+  8705 - Bulb White spectrum
+  8706 - Bulb White Spectrum 1000lm
+  8707 - Bulb White Spectrum GU10
+  8449 - Bulb white 1000lm
+ 10241 - Bulb Color + White Spectrum 
+ 16641 - Transformer
+ 16897 - Driver LP
+ 16898 - Driver HP
+ 16900 - ???
+"""
 
 class OTAManagement(object):
 
@@ -67,6 +83,8 @@ class OTAManagement(object):
         self.OTA = {} # Store Firmware infos
         self.OTA['Images'] = {}
         self.OTA['Upgraded Device'] = {}
+        self.logMessageDone = 0
+        self.batteryTypeFirmware = []
         self.availableManufCode = []
         self.upgradableDev = None
         self.upgradeInProgress = None
@@ -144,6 +162,10 @@ class OTAManagement(object):
         self.OTA['Images'][key]['image'] = ota_image
         if self.OTA['Images'][key]['Decoded Header']['manufacturer_code'] not in self.availableManufCode:
             self.availableManufCode.append( self.OTA['Images'][key]['Decoded Header']['manufacturer_code'])
+
+        if key in BATTERY_TYPES:    # In such case let's pile it so we will expsoe it a while after the powered Devices Type.
+            Domoticz.Debug("ota_decode_new_image - Firmware for battery type detected - %s %s" %(key, image))
+            self.batteryTypeFirmware.append( key )
 
         return key
 
@@ -443,6 +465,11 @@ class OTAManagement(object):
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgImageVersion, MsgImageType, MsgManufCode, MsgStatus))
 
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
+            Domoticz.Error("Decode8503 - OTA upgrade request - Unknown device: %s" %MsgSrcAddr)
+            return
+
+        if 'Start Time' not in self.OTA['Upgraded Device'][MsgSrcAddr]:
+            Domoticz.Error("Decode8503 - OTA upgrade request - No Start Time for device: %s" %MsgSrcAddr)
             return
 
         _transferTime_hh, _transferTime_mm, _transferTime_ss = convertTime( int(time() - self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time']))
@@ -525,7 +552,7 @@ class OTAManagement(object):
         if self.HB < ( self.pluginconf.waitingOTA // HEARTBEAT): 
             return
 
-        if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+        if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
             Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
             Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
             Domoticz.Debug("Too busy, will come back later")
@@ -552,35 +579,62 @@ class OTAManagement(object):
         if self.upgradeInProgress:
             if self.upgradeInProgress in self.OTA['Upgraded Device']:
                 if  self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] not in ( 'Block Requested', 'Transfer Progress' ):
-                    Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
-                            %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+                    if self.logMessageDone != 1:
+                        Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
+                                %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+                        self.logMessageDone = 1
             else:
+                if self.logMessageDone != 2:
+                    Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
+                        %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
+                    self.logMessageDone = 2
+        else:
+            if self.logMessageDone != 3:
                 Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
                     %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
-        else:
-            Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
-                %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
+                self.logMessageDone = 3
 
         if self.upgradableDev is None: 
             self.upgradableDev = []
             for iterDev in self.ListOfDevices:
                 if iterDev in ( '0000', 'ffff' ): continue
                 if not self.pluginconf.batteryOTA:
+                    _mainPowered = False
+                    if 'MacCapa' in self.ListOfDevices[iterDev]:
+                        if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
+                            _mainPowered = True
                     if 'PowerSource' in self.ListOfDevices[iterDev]:
-                        if (self.ListOfDevices[iterDev]['PowerSource']) != 'Main':
-                            continue
-                    else:
+                        if (self.ListOfDevices[iterDev]['PowerSource']) == 'Main':
+                            _mainPowered = True
+                    if not _mainPowered:
+                        Domoticz.Debug("OTA heartbeat - skip %s not main powered" %iterDev)
                         continue
-                if 'Manufacturer' in self.ListOfDevices[iterDev]:
-                    if self.ListOfDevices[iterDev]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
-                        if 0x117c in self.availableManufCode:
-                            self.upgradableDev.append( iterDev )
+
+                if 'Manufacturer' not in self.ListOfDevices[iterDev]:
+                    Domoticz.Debug("OTA heartbeat - skip %s No Manufacturer code !!!" %iterDev)
+                    continue
+                                
+                if self.ListOfDevices[iterDev]['Manufacturer'] not in ( 'IKEA of Sweden', '117c'):
+                    Domoticz.Debug("OTA heartbeat - skip %s Not an IKEA products" %iterDev)
+                    continue
+            
+                if 0x117c in self.availableManufCode:
+                    self.upgradableDev.append( iterDev )
+                else:
+                    Domoticz.Debug("OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, 0x117c, self.availableManufCode))
         else:
             if self.upgradeInProgress is None and len(self.upgradableDev) > 0 :
                 if self.upgradeOTAImage is None:
                     if len(self.OTA['Images']) == 0:
                         return
-                    key = next(iter(self.OTA['Images']))
+                    for iterKey in iter(self.OTA['Images']):
+                        if iterKey not in self.batteryTypeFirmware:
+                            key = iterKey
+                            break
+                    else:
+                        # Looks like we have the remaining firmware only for Battery devices
+                        key = next(iter(self.OTA['Images']))
+
                     Domoticz.Log("OTA heartbeat - Image: %s from file: %s" %(key, self.OTA['Images'][key]['Filename']))
 
                     # Loading Image in Zigate
@@ -592,6 +646,10 @@ class OTAManagement(object):
                 self.upgradeInProgress = self.upgradableDev[0]
                 del self.upgradableDev[0]
     
+                if self.upgradeOTAImage in BATTERY_TYPES: # For batery Types , let's reduce the frequency of Notify
+                    if ((self.HB % 60 ) != 0 ):
+                        return
+
                 EPout = "01"
                 for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
                     if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
@@ -604,7 +662,7 @@ class OTAManagement(object):
                         self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
                         Domoticz.Debug("OTA hearbeat - Request Advertizement for %s %s" \
                                 %(self.upgradeInProgress, EPout))
-                        #self.ota_image_advertize(self.upgradeInProgress, EPout)
+
                         self.ota_image_advertize(self.upgradeInProgress, EPout, \
                                 self.OTA['Images'][x]['Decoded Header']['image_version'], \
                                 self.OTA['Images'][x]['Decoded Header']['image_type'], \
@@ -612,11 +670,24 @@ class OTAManagement(object):
                         break
             elif self.upgradeInProgress:
                 # Check Timeout
+                if self.upgradeInProgress not in self.OTA['Upgraded Device']:
+                    self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
+                if 'Status' not in self.OTA['Upgraded Device'][self.upgradeInProgress]:
+                    self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Notified'
+                    self.OTA['Upgraded Device'][self.upgradeInProgress]['Notified Time'] = int(time())
+
                 _status = self.OTA['Upgraded Device'][self.upgradeInProgress]['Status']
                 _notifiedTime = self.OTA['Upgraded Device'][self.upgradeInProgress]['Notified Time']
-                if _status == 'Notified':
-                    if int(time()) > ( _notifiedTime + TO_NOTIFICATION):
-                            Domoticz.Debug("OTA heartbeat - Timeout for %s Upgrade notified " \
+                if _status == 'Timeout':
+                    self.upgradeInProgress = None
+
+                elif _status == 'Notified':
+                    TO_notification = TO_MAINPOWERED_NOTIFICATION
+                    if self.upgradeOTAImage in BATTERY_TYPES:
+                        TO_notification = TO_BATTERYPOWERED_NOTIFICATION
+
+                    if int(time()) > ( _notifiedTime + TO_notification):
+                            Domoticz.Log("OTA heartbeat - Timeout for %s Upgrade notified " \
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None
@@ -657,8 +728,10 @@ class OTAManagement(object):
             if self.upgradeOTAImage:
                 del self.OTA['Images'][self.upgradeOTAImage]
             else:
-                Domoticz.Log("OTA heartbeat - Unexpected situation self.upgradeOTAImage: %s, self.upgradeOTAImage: %s, self.upgradableDev: %s, self.upgradeInProgress: %s" \
-                        %(self.upgradeOTAImage, self.upgradeOTAImage, self.upgradableDev, self.upgradeInProgress))
+                Domoticz.Log("OTA heartbeat - No device to be upgraded...")
+                self.upgradeDone = None
+                del self.OTA['Images']
+
             self.upgradeOTAImage = None
             self.upgradableDev = None
             self.upgradeInProgress = None
@@ -670,9 +743,6 @@ class OTAManagement(object):
                 self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
                 self.stopOTA = True
                 Domoticz.Status("OTA heartbeat - Stop OTA upgrade")
-
-
-
 
 def convertTime( _timeInSec):
 

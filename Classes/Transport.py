@@ -9,7 +9,9 @@ import binascii
 import struct
 import time
 
+from Classes.APS import APSManagement
 from Modules.tools import is_hex
+from Modules.consts import MAX_LOAD_ZIGATE
 
 # Standalone message. They are receive and do not belongs to a command
 STANDALONE_MESSAGE = (0x8101, 0x8102, 0x8003, 0x804, 0x8005, 0x8006, 0x8701, 0x8702, 0x004D)
@@ -70,7 +72,7 @@ class ZigateTransport(object):
     Managed also the Command -> Status -> Data sequence
     """
 
-    def __init__(self, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, transport, statistics, aps, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
 
         self._checkTO_flag = None
@@ -88,6 +90,7 @@ class ZigateTransport(object):
 
         self.statistics = statistics
 
+        self.APS = aps
         self.reTransmit = pluginconf.reTransmit
         self.zmode = pluginconf.zmode
         self.sendDelay = pluginconf.sendDelay
@@ -173,6 +176,8 @@ class ZigateTransport(object):
 
         self._connection.Send(bytes.fromhex(str(lineinput)), delay)
         self.statistics._sent += 1
+        if self.APS:
+            self.APS.processCMD( cmd, datas)
 
     # Transport / called by plugin 
     def onMessage(self, Data):
@@ -314,11 +319,11 @@ class ZigateTransport(object):
         '''
         # Before to anything, let's check that the cmd and datas are HEXA information.
         if not is_hex( cmd):
-            Domoticz.Error("sendData - receiving a non hexa Command: 0x%s" %cmd)
+            Domoticz.Error("sendData - receiving a non hexa Command: >%s<" %cmd)
             return
         if datas != '':
             if not is_hex( datas):
-                Domoticz.Error("sendData - receiving a non hexa Data: 0x%s" %datas)
+                Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)
                 return
 
         # Check if normalQueue is empty. If yes we can send the command straight
@@ -437,7 +442,7 @@ class ZigateTransport(object):
         'look at the waitForStatus, and in case of TimeOut delete the entry'
 
         if self._checkTO_flag:  # checkTOwaitFor can be called either by onHeartbeat or from inside the Class. 
-                                # In case it comes from onHearbeat we might have a re-entrance issue
+                                # In case it comes from onHeartbeat we might have a re-entrance issue
             Domoticz.Debug("checkTOwaitFor already ongoing")
             return
         self._checkTO_flag = True

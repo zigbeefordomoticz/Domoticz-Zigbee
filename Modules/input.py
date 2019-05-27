@@ -20,12 +20,12 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.LQI import mgtLQIresp
 from Modules.database import saveZigateNetworkData
-from Modules.consts import ADDRESS_MODE
+from Modules.consts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
@@ -128,6 +128,9 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+    if MsgSrcAddr not in self.ListOfDevices:
+        Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" %sMsgSrcAddr)
+        return
     if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
 
@@ -469,7 +472,7 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
         self.Ping['Permit'] = 'On'
     else: 
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
-    self.Ping['TimeStamp'] = time.time()
+    self.Ping['TimeStamp'] = int(time.time())
     self.Ping['Status'] = 'Receive'
     Domoticz.Debug("Ping - received")
 
@@ -709,7 +712,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     Domoticz.Debug("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
     if addr not in self.ListOfDevices:
-        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %saddr)
+        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %addr)
         return
 
     mac_capability = int(mac_capability,16)
@@ -833,7 +836,10 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
-            Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+            if MsgDataCluster in ZCL_CLUSTERS_LIST:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
+            else:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
 
@@ -852,13 +858,16 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
-                    Domoticz.Log("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
+                    Domoticz.Debug("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             else: # Not 'ConfigSource'
                 self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
-            Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+            if MsgDataCluster in ZCL_CLUSTERS_LIST:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
+            else:
+                Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
             MsgDataCluster=""
             i=i+1
 
@@ -1009,7 +1018,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         Domoticz.Status("device " +str(sAddr) + " annouced to leave" )
         if self.ListOfDevices[sAddr]['Status'] == 'inDB':
             self.ListOfDevices[sAddr]['Status'] = 'Left'
-            self.ListOfDevices[sAddr]['Hearbeat'] = 0
+            self.ListOfDevices[sAddr]['Heartbeat'] = 0
             Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
             leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
@@ -1477,9 +1486,6 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     Status: cf - Attempt at route discovery has failed due to lack of table spac
     """
 
-    WARNING_CODE = ( 'd4' )
-    FAILURE_CODE = ( 'd4', 'e9', 'f0' , 'cf' )
-
     MsgLen=len(MsgData)
     if MsgLen==0: 
         return
@@ -1521,38 +1527,9 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     if NWKID == None or IEEE == None:
         Domoticz.Log("Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
         return
-
-    if 'APS Failure' not in self.ListOfDevices[NWKID]:
-        self.ListOfDevices[NWKID]['APS Failure'] = {}
-
-    self.ListOfDevices[NWKID]['APS Failure']['Stamp'] = int(time.time())
-    self.ListOfDevices[NWKID]['APS Failure']['Status Code'] = MsgDataStatus
-    self.ListOfDevices[NWKID]['APS Failure']['Status Msg'] = DisplayStatusCode( MsgDataStatus )
-
-    _mainPowered = False
-    if 'MacCapa' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['MacCapa'] == '8e':
-            _mainPowered = True
-    elif 'PowerSource' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['PowerSource'] == 'Main':
-            _mainPowered = True
-
-    if self.pluginconf.enableAPSFailureReporting:
-        if _mainPowered and MsgDataStatus in FAILURE_CODE:
-                Domoticz.Error("Communication error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-                timedOutDevice( self, Devices, NwkId = NWKID) 
-                Domoticz.Error("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                    %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-                if 'Health' in self.ListOfDevices[NWKID]:
-                    self.ListOfDevices[NWKID]['Health'] = 'Not Reachable'
-        elif _mainPowered and MsgDataStatus in WARNING_CODE:
-                Domoticz.Log("Recoverable error when transmiting a previous command to %s ieee %s" %(NWKID, IEEE))
-                Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                    %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
-
-    if self.pluginconf.enableAPSFailureLoging:
-            Domoticz.Log("Decode8702 - SQN: %s AddrMode: %s DestAddr: %s SrcEP: %s DestEP: %s Status: %s - %s" \
-                %( MsgDataSQN, MsgDataDestMode, MsgDataDestAddr, MsgDataSrcEp, MsgDataDestEp, MsgDataStatus, DisplayStatusCode( MsgDataStatus )))
+    
+    if self.APS:
+        self.APS.processAPSFailure(NWKID, IEEE, MsgDataStatus)
 
     timeStamped( self, NWKID , 0x8702)
     updSQN( self, NWKID, MsgDataSQN)
@@ -1610,7 +1587,11 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     
             if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
                 del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
-                self.ListOfDevices[MsgSrcAddr]['Hearbeat'] = 0
+                self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
+
+            # Let's take the opportunity to trigger some request/adjustement
+            ReadAttributeRequest_0000( self,  MsgSrcAddr)
+            sendZigateCmd(self,"0042", str(MsgSrcAddr) )
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
@@ -1649,17 +1630,16 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             '07':'release_up'
             }
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
-        """
-        Ikea Remote 5 buttons round.
-            ( cmd, cluster )
-            ( 0x01, 0x0008 ) - Down Push 
-            ( 0x02, 0x0008 ) - Down Click
-            ( 0x03, 0x0008 ) - Down Release 
-            ( 0x05, 0x0008 ) - Up Push 
-            ( 0x06, 0x0008 ) - Up Click
-            ( 0x07, 0x0008 ) - Up Release 
-        """
+    Domoticz.Debug("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
+    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'TRADFRI remote control', 'RC 110'):
+
         if MsgClusterId == '0008':
             if MsgCmd in TYPE_ACTIONS:
                 selector = TYPE_ACTIONS[MsgCmd]
@@ -1672,7 +1652,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
     else:
-       Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+       Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+               %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
@@ -1685,11 +1666,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
-    Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    Domoticz.Debug("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
-
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
@@ -1744,6 +1725,8 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             '09':'release'
             }
 
+    Domoticz.Debug("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
+                %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
     if MsgSrcAddr not in self.ListOfDevices:
         return
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:

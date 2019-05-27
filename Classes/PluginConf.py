@@ -22,6 +22,8 @@ class PluginConf:
 
         self.logFORMAT = 0
 
+        self.enableWebServer = 0
+
         # Device Management
         self.allowStoreDiscoveryFrames = 0
         self.allowForceCreationDomoDevice = 0
@@ -32,6 +34,7 @@ class PluginConf:
         self.resetMotiondelay = 30
         self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
         self.TradfriKelvinStep = 51
+        self.numDeviceListVersion = 12
 
         # Zigate Configuration
         self.channel = 0
@@ -63,7 +66,7 @@ class PluginConf:
         self.pluginConfig = self.pluginHome + 'Conf/'
         self.pluginWWW = self.pluginHome + 'www/'
         #self.pluginReports = self.pluginWWW + 'zigate/reports/'
-        self.pluginReports = self.pluginHome + 'www/zigate/reports/'
+        self.pluginReports = self.pluginHome + 'Reports/'
         self.pluginOTAFirmware = self.pluginHome + 'OTAFirmware/'
 
         self.filename = None
@@ -109,6 +112,11 @@ class PluginConf:
             Domoticz.Error("Error while importing %s, all plugin parameters set to default" %self.filename)
             
         else:
+            if self.PluginConf.get('enableWebServer'):
+                if self.PluginConf.get('enableWebServer').isdigit():
+                    self.enableWebServer = int(self.PluginConf['enableWebServer'])
+                    Domoticz.Status(" -enableWebServer: %s" %self.enableWebServer)
+
             if self.PluginConf.get('vibrationAqarasensitivity'):
                 self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
                 Domoticz.Status(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
@@ -165,6 +173,11 @@ class PluginConf:
                     self.PluginConf.get('Ping').isdigit():
                 self.Ping = int(self.PluginConf['Ping'], 10)
                 Domoticz.Status(" -Ping: %s" %self.Ping)
+
+            if self.PluginConf.get('numDeviceListVersion') and \
+                    self.PluginConf.get('numDeviceListVersion').isdigit():
+                self.numDeviceListVersion = int(self.PluginConf['numDeviceListVersion'], 10)
+                Domoticz.Status(" -numDeviceListVersion : %s" %self.numDeviceListVersion)
 
             if self.PluginConf.get('allowStoreDiscoveryFrames') and \
                     self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():

@@ -22,13 +22,12 @@ import os.path
 from time import time
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.consts import ADDRESS_MODE
+from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 from Classes.AdminWidgets import AdminWidgets
 
 
 GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
-MAX_LOAD = 2
 TIMEOUT = 12
 MAX_CYCLE = 3
 
@@ -141,7 +140,7 @@ class GroupsManagement(object):
             for token in tmpread.split(','):
                 if group_id is None:
                     # 1st item: group id
-                    group_id = str(token)
+                    group_id = str(token).strip(' ')
                     if group_id not in self.ListOfGroups:
                         Domoticz.Debug("  - Init ListOfGroups")
                         self.ListOfGroups[group_id] = {}
@@ -784,6 +783,32 @@ class GroupsManagement(object):
         Domoticz.Debug("Command: %s - data: %s" %(zigate_cmd,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
 
+    def _updateDeviceListAttribute( self, grpid, cluster, value):
+
+        if grpid not in self.ListOfGroups:
+            return
+
+        # search for all Devices in the group
+        for iterDev, iterEp in self.ListOfGroups[grpid]['Devices']:
+            if iterDev == '0000': continue
+            if iterDev not in self.ListOfDevices:
+                Domoticz.Error("_updateDeviceListAttribute - Device: %s of Group: %s not in the list anymore" %(iterDev,grpid))
+                continue
+            if iterEp not in self.ListOfDevices[iterDev]['Ep']:
+                Domoticz.Error("_updateDeviceListAttribute - Not existing Ep: %s for Device: %s in Group: %s" %(iterEp, iterDev, grpid))
+                continue
+            if 'ClusterType' not in self.ListOfDevices[iterDev]['Ep'][iterEp] and 'ClusterType' not in self.ListOfDevices[iterDev]:
+                Domoticz.Error("_updateDeviceListAttribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev,iterEp,grpid))
+                continue
+            if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
+                Domoticz.Error("_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
+                continue
+
+            self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] = value
+            Domoticz.Debug("_updateDeviceListAttribute - Updating Device: %s/%s of Group: %s Cluster: %s to value: %s" %(iterDev, iterEp, grpid, cluster, value))
+
+        return
+
 
     def processCommand( self, unit, nwkid, Command, Level, Color_ ) : 
 
@@ -807,6 +832,8 @@ class GroupsManagement(object):
             nValue = 0
             sValue = 'Off'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0006', '00')
+            self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -819,6 +846,8 @@ class GroupsManagement(object):
             nValue = '1'
             sValue = 'On'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0006', '01')
+            self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -833,6 +862,8 @@ class GroupsManagement(object):
             nValue = '1'
             sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0008', sValue)
+            self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             Domoticz.Debug("Command: %s" %datas)
@@ -1033,13 +1064,22 @@ class GroupsManagement(object):
             _workcompleted = True
             listofdevices = list(self.ListOfDevices)
             for iterDev in listofdevices:
+                _mainPowered = False
+                if 'MacCapa' in self.ListOfDevices[iterDev]:
+                    if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
+                        _mainPowered = True
                 if 'PowerSource' in self.ListOfDevices[iterDev]:
-                    if self.ListOfDevices[iterDev]['PowerSource'] != 'Main':
-                        continue
+                    if self.ListOfDevices[iterDev]['PowerSource'] == 'Main':
+                        _mainPowered = True
+                if not _mainPowered:
+                    Domoticz.Debug(" - %s not main Powered" %(iterDev))
+                    continue
+
                 if 'Ep' in self.ListOfDevices[iterDev]:
                     for iterEp in self.ListOfDevices[iterDev]['Ep']:
                         if iterEp == 'ClusterType': continue
-                        if  ( iterDev == '0000' or 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
+                        if  ( iterDev == '0000' or \
+                                ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                               '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                              ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                             # As we are looking for Group Membership, we don't know to which Group it could belongs.
@@ -1058,7 +1098,7 @@ class GroupsManagement(object):
                                 if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] == 'REQ-Membership':
                                     continue
 
-                            if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                            if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                                 Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                                 Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                                 Domoticz.Debug("too busy, will try again ...%s" %len(self.ZigateComm._normalQueue))
@@ -1221,7 +1261,8 @@ class GroupsManagement(object):
                                 Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
                                 continue
 
-                            if  ( iterDev == '0000' or 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] ) and \
+                            if  ( iterDev == '0000' or \
+                                    ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                                     ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                                 Domoticz.Debug("Adding %s/%s to be added to %s"
@@ -1247,7 +1288,7 @@ class GroupsManagement(object):
             Domoticz.Log("hearbeatGroupMgt - Perform Zigate commands")
             Domoticz.Log(" - Removal to be performed: %s" %str(self.TobeRemoved))
             for iterDev, iterEp, iterGrp in list(self.TobeRemoved):
-                if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
@@ -1260,7 +1301,7 @@ class GroupsManagement(object):
 
             Domoticz.Log(" - Add to be performed: %s" %str(self.TobeAdded))
             for iterIEEE, iterDev, iterEp, iterGrp in list(self.TobeAdded):
-                if  len(self.ZigateComm._normalQueue) > MAX_LOAD:
+                if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
