@@ -46,13 +46,13 @@ def LoadDeviceList( self ):
     #
     Domoticz.Debug("LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 
-    _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
+    _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
     # Check if the DeviceList file exist.
     if not os.path.isfile( _DeviceListFileName ) :
         self.ListOfDevices = {}
         return True    
 
-    _versionFile( _DeviceListFileName , self.pluginconf.numDeviceListVersion)
+    _versionFile( _DeviceListFileName , self.pluginconf.pluginConf['numDeviceListVersion'])
     #_backup = _DeviceListFileName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
     #_copyfile( str(_DeviceListFileName) , str(_backup) )
 
@@ -94,7 +94,7 @@ def LoadDeviceList( self ):
                 CheckDeviceList( self, key, val )
 
     for addr in self.ListOfDevices:
-        if self.pluginconf.resetReadAttributes:
+        if self.pluginconf.pluginConf['resetReadAttributes']:
             Domoticz.Log("ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             self.ListOfDevices[addr]['ReadAttributes'] = {}
             self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
@@ -102,7 +102,7 @@ def LoadDeviceList( self ):
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][iterEp] = {}
                 self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
 
-        if self.pluginconf.resetConfigureReporting:
+        if self.pluginconf.pluginConf['resetConfigureReporting']:
             Domoticz.Log("Reset ConfigureReporting data %s" %addr)
             self.ListOfDevices[addr]['ConfigureReporting'] = {}
             self.ListOfDevices[addr]['ConfigureReporting']['Ep'] = {}
@@ -118,9 +118,9 @@ def LoadDeviceList( self ):
 def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
-        if self.pluginconf.pluginData is None or self.DeviceListName is None:
-            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginData: %s , self.DeviceListName: %s" %(self.pluginconf.pluginData, self.DeviceListName))
-        _DeviceListFileName = self.pluginconf.pluginData + self.DeviceListName
+        if self.pluginconf.pluginConf['pluginData'] is None or self.DeviceListName is None:
+            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
+        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
         Domoticz.Debug("Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
         with open( _DeviceListFileName , 'wt') as file:
             for key in self.ListOfDevices :
@@ -128,7 +128,7 @@ def WriteDeviceList(self, count):
         self.HBcount=0
 
         # To be written in the Reporting folder
-        json_filename = self.pluginconf.pluginData + self.DeviceListName.replace('.txt','.json') 
+        json_filename = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName.replace('.txt','.json') 
         Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
             json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
@@ -139,12 +139,12 @@ def importDeviceConf( self ) :
     #Import DeviceConf.txt
     tmpread=""
     self.DeviceConf = {}
-    with open( self.pluginconf.pluginConfig  + "DeviceConf.txt", 'r') as myfile:
+    with open( self.pluginconf.pluginConf['pluginConfig']  + "DeviceConf.txt", 'r') as myfile:
         tmpread+=myfile.read().replace('\n', '')
         try:
             self.DeviceConf=eval(tmpread)
         except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConfig, tmpread))
+            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConf['pluginConfig'], tmpread))
             return
 
     # Remove comments
@@ -175,7 +175,7 @@ def checkListOfDevice2Devices( self, Devices ) :
         else:
             # Let's check if this is End Node
             if str(ID) not in self.IEEE2NWK :
-                if self.pluginconf.allowForceCreationDomoDevice == 1 :
+                if self.pluginconf.pluginConf['allowForceCreationDomoDevice'] == 1 :
                     Domoticz.Log("checkListOfDevice2Devices - " +str(Devices[x].Name) + " - " +str(ID) + " not found in Plugin Database" )
                     continue
                 else:
@@ -191,7 +191,7 @@ def checkListOfDevice2Devices( self, Devices ) :
 
 def saveZigateNetworkData( self, nkwdata ):
 
-        json_filename = self.pluginconf.pluginData + "/Zigate.json" 
+        json_filename = self.pluginconf.pluginConf['pluginData'] + "/Zigate.json" 
         Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
             json.dump(nkwdata, json_file, indent=4, sort_keys=True)

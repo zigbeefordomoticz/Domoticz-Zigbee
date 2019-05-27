@@ -99,7 +99,7 @@ class OTAManagement(object):
         'LOAD_NEW_IMAGE 	0x0500 	Load headers to ZiGate. Use this command first.'
         
         try:
-            with open( self.pluginconf.pluginOTAFirmware + image, 'rb') as file:
+            with open( self.pluginconf.pluginConf['pluginOTAFirmware'] + image, 'rb') as file:
                 ota_image = file.read()
         except OSError as err:
             Domoticz.Error("ota_decode_new_image - error when opening %s - %s" %(image, err))
@@ -532,7 +532,7 @@ class OTAManagement(object):
         """
         Scanning the Firmware folder and processing them
         """
-        ota_dir = self.pluginconf.pluginOTAFirmware
+        ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware']
         ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
         for ota_image_file in ota_image_files:
@@ -549,7 +549,7 @@ class OTAManagement(object):
 
         self.HB += 1
 
-        if self.HB < ( self.pluginconf.waitingOTA // HEARTBEAT): 
+        if self.HB < ( self.pluginconf.pluginConf['waitingOTA'] // HEARTBEAT): 
             return
 
         if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
@@ -598,7 +598,7 @@ class OTAManagement(object):
             self.upgradableDev = []
             for iterDev in self.ListOfDevices:
                 if iterDev in ( '0000', 'ffff' ): continue
-                if not self.pluginconf.batteryOTA:
+                if not self.pluginconf.pluginConf['batteryOTA']:
                     _mainPowered = False
                     if 'MacCapa' in self.ListOfDevices[iterDev]:
                         if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
@@ -691,7 +691,7 @@ class OTAManagement(object):
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None
-                    elif self.pluginconf.batteryOTA:
+                    elif self.pluginconf.pluginConf['batteryOTA']:
                         EPout = "01"
                         for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
                             if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:

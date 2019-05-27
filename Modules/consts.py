@@ -220,3 +220,5 @@ ZCL_CLUSTERS_LIST = {
         '0502': 'IAS WD (Warning Device)',
         '1000': 'Touchlink'
         }
+
+

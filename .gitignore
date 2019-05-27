@@ -6,5 +6,6 @@ Data/Zigate.json
 www/zigate/reports/*
 Reports/*
 Zdatas/DiscoveryDevice*
+Reports/*
 __pycache__/
 */__pycache__

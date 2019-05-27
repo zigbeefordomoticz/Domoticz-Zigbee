@@ -1351,7 +1351,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if self.ListOfDevices[NWKID].get('Battery'):
                 BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
-            _timeout = self.pluginconf.resetMotiondelay
+            _timeout = self.pluginconf.pluginConf['resetMotiondelay']
             #resetMotionDelay = 0
 
             #if self.domoticzdb_DeviceStatus:
