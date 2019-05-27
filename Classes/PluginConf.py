@@ -84,11 +84,11 @@ class PluginConf:
     def __init__(self, homedir, hardwareid):
 
         self.pluginConf = {}
+        self.pluginConf["pluginHome"] = homedir
 
         for param in SETTINGS:
-            self.pluginConf[param] = SETTINGS[param]['default']
             if param == 'pluginHome':
-                self.pluginConf[param] = homedir
+                pass
             elif param == 'homedirectory':
                 self.pluginConf[param] = homedir
             elif param == 'pluginData':
@@ -103,6 +103,8 @@ class PluginConf:
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
             elif param == 'pluginOTAFirmware':
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+            else:
+                self.pluginConf[param] = SETTINGS[param]['default']
             Domoticz.Log("pluginConf[%s] initialized to: %s" %(param, self.pluginConf[param]))
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
