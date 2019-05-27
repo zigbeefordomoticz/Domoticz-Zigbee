@@ -179,7 +179,7 @@ class PluginConf:
                             self.pluginConf[param] = self.pluginConf[param]['default']
 
                     elif SETTINGS[param]['type'] == 'int':
-                        if PluginConf.get('enableWebServer').isdigit():
+                        if PluginConf.get( param).isdigit():
                             self.pluginConf[param] = int(PluginConf[ param ])
                             Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
                         else:
