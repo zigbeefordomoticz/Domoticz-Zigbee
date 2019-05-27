@@ -34,7 +34,6 @@ def CreateDomoDevice(self, Devices, NWKID):
             if self.ListOfDevices[NWKID]['Model'] != {}:
                 _Model = self.ListOfDevices[NWKID]['Model']
                 Domoticz.Debug("deviceName - Model found: %s" %_Model)
-    
                 if _Model in self.DeviceConf:
                     if 'NickName' in self.DeviceConf[_Model]:
                         _NickName = self.DeviceConf[_Model]['NickName']
@@ -51,7 +50,6 @@ def CreateDomoDevice(self, Devices, NWKID):
         Domoticz.Debug("deviceName - Dev Name: %s" %devName)
 
         return devName
-
 
     def getCreatedID(self, Devices, DeviceID, Name):
         """

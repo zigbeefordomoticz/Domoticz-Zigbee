@@ -44,7 +44,7 @@ class PluginConf:
         self.TXpower_set = 0
         self.Certification = 0  # 1- CE; 2- FCC
         self.enableAPSFailureLoging = 0
-        self.enableAPSFailureReporting = 1
+        self.enableAPSFailureReporting = 0
         self.allowOTA = 0
         self.waitingOTA = 3600
         self.batteryOTA = 0
