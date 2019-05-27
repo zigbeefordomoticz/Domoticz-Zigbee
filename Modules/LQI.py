@@ -106,7 +106,7 @@ def LQIcontinueScan(self, Devices):
         storeLQI = {}
         storeLQI[int(time.time())] = self.LQI
 
-        self.pluginconf.pluginConf['logLQI'] = 0
+        self.runLQI[0] = 0
         if os.path.isdir( self.pluginconf.pluginConf['pluginReports'] ):
             with open( _filename, 'at') as json_file:
                 json_file.write('\n')

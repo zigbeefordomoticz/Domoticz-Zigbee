@@ -116,6 +116,7 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
+        self.runLQI = [ 0 ]
         self.zigatedata = {}
 
         self.ZigateComm = None
@@ -436,6 +437,7 @@ class BasePlugin:
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
 
         if (self.pluginconf.pluginConf)['logLQI'] != 0 :
+            self.runLQI = [ 2 ]
             LQIdiscovery( self ) 
 
         self.busy = False
@@ -584,7 +586,7 @@ class BasePlugin:
                 from Classes.WebServer import WebServer
 
                 Domoticz.Status("Start Web Server connection")
-                self.webserver = WebServer( self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                self.webserver = WebServer( self.runLQI, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
                                         self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)

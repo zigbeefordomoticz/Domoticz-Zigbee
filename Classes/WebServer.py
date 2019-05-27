@@ -25,7 +25,7 @@ DEBUG_HTTP = False
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
+    def __init__( self, runLQI, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -40,6 +40,7 @@ class WebServer(object):
         self.pluginparameters = PluginParameters
 
         self.permitTojoin = permitTojoin
+        self.runLQI = runLQI
 
         if groupManagement:
             self.groupmgt = groupManagement
@@ -326,6 +327,11 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=False )
 
             # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
+            Domoticz.Log("Request a Start of LQI Process")
+            if self.runLQI[0] == 0:
+                self.runLQI[0] = 1 # Start LQI process
+            else:
+                Domoticz.Log("Cannot start as LQI is ongoing")
         return _response
 
     def rest_zigate( self, verb, data, parameters):
