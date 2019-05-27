@@ -55,15 +55,15 @@ SETTINGS = { 'enableWebServer': { 'type':'bool', 'default':0 , 'current': None ,
             'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'restart':True , 'hidden':True},
 
             # Plugin Directories
-            'pluginHome':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'homedirectory':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'pluginData':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'pluginZData': { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'pluginConfig': { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'filename':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'pluginOTAFirmware': { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'pluginReports':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
-            'pluginWWW':  { 'type':'path', 'default':None , 'current': None, 'restart':True , 'hidden':False},
+            'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'homedirectory':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'pluginData':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'pluginZData': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'pluginConfig': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'pluginOTAFirmware': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'pluginReports':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+            'pluginWWW':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
 
             # Groups Management
             'enableConfigGroups':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
@@ -84,6 +84,7 @@ class PluginConf:
     def __init__(self, homedir, hardwareid):
 
         self.pluginConf = {}
+
         for param in SETTINGS:
             self.pluginConf[param] = SETTINGS[param]['default']
             if param == 'pluginHome':
@@ -102,6 +103,7 @@ class PluginConf:
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
             elif param == 'pluginOTAFirmware':
                 self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+            Domoticz.Log("pluginConf[%s] initialized to: %s" %(param, self.pluginConf[param]))
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
         if not os.path.isfile(self.pluginConf['filename']):
