@@ -580,7 +580,7 @@ class BasePlugin:
                     self.groupmgt_NotStarted = False
 
 
-            if self.pluginconf.pluginConf['enableWebServer']:
+            #if self.pluginconf.pluginConf['enableWebServer']:
                 #from Classes.WebServer import WebServer
 
                 #Domoticz.Status("Start Web Server connection")
