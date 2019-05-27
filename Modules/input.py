@@ -718,7 +718,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     Domoticz.Debug("Decode8042 - Reception Node Descriptor for : " +addr + " SEQ : " + sequence + " Status : " + status +" manufacturer :" + manufacturer + " mac_capability : "+str(mac_capability) + " bit_field : " +str(bit_field) )
 
     if addr not in self.ListOfDevices:
-        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %saddr)
+        Domoticz.Log("Decode8042 receives a message from a non existing device %s" %addr)
         return
 
     mac_capability = int(mac_capability,16)
@@ -1024,7 +1024,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         Domoticz.Status("device " +str(sAddr) + " annouced to leave" )
         if self.ListOfDevices[sAddr]['Status'] == 'inDB':
             self.ListOfDevices[sAddr]['Status'] = 'Left'
-            self.ListOfDevices[sAddr]['Hearbeat'] = 0
+            self.ListOfDevices[sAddr]['Heartbeat'] = 0
             Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
             leaveMgtReJoin( self, sAddr, MsgExtAddress )
 
@@ -1593,7 +1593,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     
             if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
                 del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
-                self.ListOfDevices[MsgSrcAddr]['Hearbeat'] = 0
+                self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
 
             # Let's take the opportunity to trigger some request/adjustement
             ReadAttributeRequest_0000( self,  MsgSrcAddr)

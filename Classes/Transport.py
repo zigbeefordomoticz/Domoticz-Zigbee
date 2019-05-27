@@ -442,7 +442,7 @@ class ZigateTransport(object):
         'look at the waitForStatus, and in case of TimeOut delete the entry'
 
         if self._checkTO_flag:  # checkTOwaitFor can be called either by onHeartbeat or from inside the Class. 
-                                # In case it comes from onHearbeat we might have a re-entrance issue
+                                # In case it comes from onHeartbeat we might have a re-entrance issue
             Domoticz.Debug("checkTOwaitFor already ongoing")
             return
         self._checkTO_flag = True

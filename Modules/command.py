@@ -110,7 +110,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     Domoticz.Debug("EPout = " +str(EPout) )
 
     if Command == "Off" :
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
                 livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
@@ -129,7 +129,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
 
     if Command == "On" :
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
@@ -151,7 +151,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
         
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType == 'ThermoSetpoint':
             value = int(float(Level)*100)
             Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
@@ -200,7 +200,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == "Set Color" :
         Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Hearbeat
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         Hue_List = json.loads(Color)
         
         #Color 

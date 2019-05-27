@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-4.3" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.3.0" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
     <h3> Short description </h3>
@@ -168,7 +168,7 @@ class BasePlugin:
 
     def onStart(self):
 
-        Domoticz.Status("Zigate plugin beta-4.3.0 started")
+        Domoticz.Status("Zigate plugin beta-4.4.0 started")
         self.pluginParameters = Parameters
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
@@ -180,7 +180,7 @@ class BasePlugin:
         Domoticz.Status("Python Version - %s" %sys.version)
         assert sys.version_info >= (3, 4)
 
-        Domoticz.Status("Switching Hearbeat to %s s interval" %HEARTBEAT)
+        Domoticz.Status("Switching Heartbeat to %s s interval" %HEARTBEAT)
         Domoticz.Heartbeat( HEARTBEAT )
 
         Domoticz.Status("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
@@ -198,6 +198,7 @@ class BasePlugin:
         self.DomoticzMinor = int(minor)
         if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355):
             # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
+
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
 
             Domoticz.Debug("Startup Folder: %s" %Parameters["StartupFolder"])
@@ -630,7 +631,7 @@ class BasePlugin:
         if self.OTA:
             self.OTA.heartbeat()
             
-        # Hearbeat - Ping Zigate every minute to check connectivity
+        # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.pluginConf['Ping']:
             pingZigate( self )

@@ -39,10 +39,18 @@ class DomoticzDB_Preferences:
 
     def retreiveAcceptNewHardware( self):
 
-        self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'" )
-        value = self.dbCursor.fetchone()
-        return value[0]
+        try:
+            self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'" )
+            value = self.dbCursor.fetchone()
+            if value == None:
+                return 0
+            else:
+                return value[0]
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveAcceptNewHardware - Database error: %s" %e)
 
+        except Exception as e:
+            Domoticz.Error("retreiveAcceptNewHardware - Exception: %s" %e)
 
     def unsetAcceptNewHardware( self):
 
@@ -113,27 +121,57 @@ class DomoticzDB_DeviceStatus:
         Retreive the AddjValue of Device.ID
         """
 
-        self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
-        value = self.dbCursor.fetchone()
-        return value[0]
+        try:
+            self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
+            value = self.dbCursor.fetchone()
+            if value == None:
+                return 0
+            else:
+                return value[0]
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveAddjValue_baro - Database error: %s" %e)
+
+        except Exception as e:
+            Domoticz.Error("retreiveAddjValue_baro - Exception: %s" %e)
 
     def retreiveTimeOut_Motion( self, ID):
         """
         Retreive the TmeeOut Motion value of Device.ID
         """
 
-        self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
-        value = self.dbCursor.fetchone()
-        return value[0]
+        try:
+            self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
+            value = self.dbCursor.fetchone()
+            if value == None:
+                return 0
+            else:
+                return value[0]
+
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveTimeOut_Motion - Database error: %s" %e)
+
+        except Exception as e:
+            Domoticz.Error("retreiveTimeOut_Motion - Exception: %s" %e)
+
 
     def retreiveAddjValue_temp( self, ID):
         """
         Retreive the AddjValue of Device.ID
         """
 
-        self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
-        value = self.dbCursor.fetchone()
-        return value[0]
+        try:
+            self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
+            value = self.dbCursor.fetchone()
+            if value == None:
+                return 0
+            else:
+                return value[0]
+
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveAddjValue_temp - Database error: %s" %e)
+
+        except Exception as e:
+            Domoticz.Error("retreiveAddjValue_temp - Exception: %s" %e)
 
 
 if __name__ == '__main__':

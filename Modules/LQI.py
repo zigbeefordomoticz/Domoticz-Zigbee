@@ -116,6 +116,7 @@ def LQIcontinueScan(self, Devices):
             Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
 
+
 def mgtLQIreq(self, nwkid='0000', index=0):
     """
     Send a Management LQI request 
