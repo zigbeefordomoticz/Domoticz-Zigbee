@@ -536,6 +536,23 @@ class GroupsManagement(object):
         else:
             self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s created' %groupname)
 
+    def _updateDomoGroupDeviceWidgetName( self, groupname, group_nwkid ):
+
+        if groupname == '' or group_nwkid == '':
+            Domoticz.Log("_updateDomoGroupDeviceWidget - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
+
+        unit = 0
+        for x in self.Devices:
+            if self.Devices[x].DeviceID == group_nwkid:
+                unit = x
+                break
+        else:
+            Domoticz.Log("_updateDomoGroupDeviceWidget - Group doesn't exist %s / %s" %(groupname, group_nwkid))
+
+        nValue = self.Devices[unit].nValue
+        sValue = self.Devices[unit].sValue
+        self.Devices[unit].Update( nValue, sValue, Name=groupname)
+
     def _updateDomoGroupDeviceWidget( self, groupname, group_nwkid ):
 
         if groupname == '' or group_nwkid == '':
