@@ -106,7 +106,7 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
-# from Classes.WebServer import WebServer
+from Classes.WebServer import WebServer
 
 class BasePlugin:
     enabled = False

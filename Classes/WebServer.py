@@ -316,7 +316,7 @@ class WebServer(object):
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
-                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
+                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup}, 'functionv2':self.rest_zGroupv2,
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate}
@@ -328,7 +328,10 @@ class WebServer(object):
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = setupHeadersResponse()
                 HTTPresponse["Headers"]["Cache-Control"] = "no-store, no-cache"
-                HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
+                if version == '1':
+                    HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
+                elif version == '2':
+                    HTTPresponse = REST_COMMANDS[command]['functionv2']( verb, data, parameters)
 
         if HTTPresponse == {}:
             # We reach here due to failure !
@@ -547,15 +550,23 @@ class WebServer(object):
         if verb == 'GET':
             if len(parameters) == 0:
                 setting_lst = []
-                for param in self.pluginconf.pluginConf:
-                    if not SETTINGS[param]['hidden']:
-                        setting = {}
-                        setting['Name'] = param
-                        setting['default_value'] = SETTINGS[param]['default']
-                        setting['DataType'] = SETTINGS[param]['type']
-                        setting['restart_need'] = SETTINGS[param]['restart']
-                        setting['current_value'] = self.pluginconf.pluginConf[param] 
-                        setting_lst.append( setting )
+                for _theme in SETTINGS:
+                    Domoticz.Log("Processing: %s" %_theme)
+                    theme = {}
+                    theme['_Theme'] = _theme
+                    theme['ListOfSettings'] = []
+                    for param in self.pluginconf.pluginConf:
+                        if param not in SETTINGS[_theme]: continue
+                        Domoticz.Log("----> %s" %param)
+                        if not SETTINGS[_theme][param]['hidden']:
+                            setting = {}
+                            setting['Name'] = param
+                            setting['default_value'] = SETTINGS[_theme][param]['default']
+                            setting['DataType'] = SETTINGS[_theme][param]['type']
+                            setting['restart_need'] = SETTINGS[_theme][param]['restart']
+                            setting['current_value'] = self.pluginconf.pluginConf[param] 
+                            theme['ListOfSettings'].append ( setting )
+                    setting_lst.append( theme )
                 _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
@@ -567,18 +578,19 @@ class WebServer(object):
             for setting in setting_lst:
                 Domoticz.Log("setting: %s" %setting)
 
-                for param in setting:
-                    if param not in SETTINGS:
-                        Domoticz.Error("Unexpectped parameter: %s" %item)
-                        Domoticz.Error("Unexpected number of Parameter")
-                        _response["Data"] = { 'unexpected parameters %s' %item }
-                        _response["Status"] = "400 SYNTAX ERROR"
-                        break
-                    else:
-                        Domoticz.Log("loading %s" %param)
-                        if param in self.pluginconf.pluginConf:
-                            if self.pluginconf.pluginConf[param] != setting[param]['current_value']:
-                                self.pluginconf.pluginConf[param] = setting[param]['current_value']
+                for _theme in SETTINGS:
+                    for param in setting:
+                        if param not in SETTINGS[_theme]:
+                            Domoticz.Error("Unexpectped parameter: %s" %item)
+                            Domoticz.Error("Unexpected number of Parameter")
+                            _response["Data"] = { 'unexpected parameters %s' %item }
+                            _response["Status"] = "400 SYNTAX ERROR"
+                            break
+                        else:
+                            Domoticz.Log("loading %s" %param)
+                            if param in self.pluginconf.pluginConf:
+                                if self.pluginconf.pluginConf[param] != setting[param]['current_value']:
+                                    self.pluginconf.pluginConf[param] = setting[param]['current_value']
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
@@ -957,6 +969,51 @@ class WebServer(object):
                     _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=False ) 
 
         return _response
+
+    def rest_zGroupv2( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        Domoticz.Log("rest_zGroupv2 - ListOfGroups = %s" %str(self.groupmgt))
+
+        if verb == 'GET':
+            if self.groupmgt is None:
+                return _response
+            ListOfGroups = self.groupmgt.ListOfGroups
+            if ListOfGroups is None or len(ListOfGroups) == 0:
+                return _response
+
+            if len(parameters) == 0:
+                zgroup_lst = []
+                for item in ListOfGroups:
+                    Domoticz.Log("Process Group: %s" %item)
+                    zgroup = {}
+                    zgroup['_GroupId'] = item
+                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['Devices'] = []
+                    for dev, ep in ListOfGroups[item]['Devices']:
+                        Domoticz.Log("--> add %s %s" %(dev, ep))
+                        _dev = {}
+                        _dev['_NwkId'] = dev
+                        _dev['Ep'] = ep
+                        zgroup['Devices'].append( _dev )
+                    zgroup_lst.append(zgroup)
+                _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
+
+            elif len(parameters) == 1:
+                if parameters[0] in ListOfGroups:
+                    item =  parameters[0]
+                    zgroup = {}
+                    zgroup['_GroupId'] = item
+                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['Devices'] = {}
+                    for dev, ep in ListOfGroups[item]['Devices']:
+                        Domoticz.Log("--> add %s %s" %(dev, ep))
+                        zgroup['Devices'][dev] = ep 
+                    _response["Data"] = json.dumps( zgroup, sort_keys=False )
 
     def rest_zGroup( self, verb, data, parameters):
 
