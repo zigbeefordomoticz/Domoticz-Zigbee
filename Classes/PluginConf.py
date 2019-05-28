@@ -178,7 +178,7 @@ class PluginConf:
                                     %( param, self.pluginConf[param]['default']))
                             self.pluginConf[param] = self.pluginConf[param]['default']
 
-                    elif SETTINGS[param]['type'] == 'int':
+                    elif SETTINGS[param]['type'] in ( 'bool', 'int'):
                         if PluginConf.get( param).isdigit():
                             self.pluginConf[param] = int(PluginConf[ param ])
                             Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
@@ -186,7 +186,7 @@ class PluginConf:
                             Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                     %( param, self.pluginConf[param]['default']))
                             self.pluginConf[param] = self.pluginConf[param]['default']
-                    elif SETTINGS[param]['type'] == 'str':
+                    elif SETTINGS[param]['type'] == ( 'path', 'str'):
                         self.pluginConf[param] = PluginConf[ param ]
 
         self.write_Settings( homedir, hardwareid)
