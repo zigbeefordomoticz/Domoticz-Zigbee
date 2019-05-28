@@ -11,16 +11,47 @@ from time import time, ctime, strftime, gmtime, mktime, strptime
 import zlib
 import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
-from Classes.PluginConf import SETTINGS
 from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq
 
+from Classes.PluginConf import SETTINGS
+from Classes.GroupMgt import GroupsManagement
 
 DELAY = 0
-ALLOW_GZIP = 1
-ALLOW_DEFLATE = 1
-ALLOW_CHUNK = 0
-MAX_KB_TO_SEND = 4 * 1024
-DEBUG_HTTP = False
+ALLOW_GZIP = 1              # Allow Standard gzip compression
+ALLOW_DEFLATE = 1           # Use gzip/Deflate compression algo.
+ALLOW_CHUNK = 0             # This will break the file to be send in chunks of MAX_KB_TO_SEND
+MAX_KB_TO_SEND = 2 * 1024   # Chunk size
+ALLOW_CACHE = False         # Allow Caching mecanishm
+KEEPALIVE = False           # Enable/Disable Keep-alibe
+DEBUG_HTTP = True
+
+MIMETYPES = { 
+        "gif": "image/gif" ,
+        "htm": "text/html" ,
+        "html": "text/html" ,
+        "jpg": "image/jpeg" ,
+        "png": "image/png" ,
+        "css": "text/css" ,
+        "xml": "application/xml" ,
+        "js": "application/javascript" ,
+        "json": "application/json" ,
+        "swf": "application/x-shockwave-flash" ,
+        "manifest": "text/cache-manifest" ,
+        "appcache": "text/cache-manifest" ,
+        "xls": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ,
+        "m3u": "audio/mpegurl" ,
+        "mp3": "audio/mpeg" ,
+        "ogg": "audio/ogg" ,
+        "php": "text/html" ,
+        "wav": "audio/x-wav" ,
+        "svg": "image/svg+xml" ,
+        "db": "application/octet-stream" ,
+        "otf": "application/x-font-otf" ,
+        "ttf": "application/x-font-ttf" ,
+        "woff": "application/x-font-woff" 
+   }
+
+
 
 class WebServer(object):
     hearbeats = 0 
@@ -163,13 +194,14 @@ class WebServer(object):
                     _response["Headers"]["Content-Range"] = "bytes "+str(fileStartPosition)+"-"+str(messageFile.tell())+"/"+str(messageFileSize)
                 DumpHTTPResponseToLog( _response )
                 Connection.Send( _response)
+                if not KEEPALIVE:
+                    Connection.Disconnect()
             else:
                 _response["Headers"]["Last-Modified"] = _lastmodified
                 with open(webFilename , mode ='rb') as webFile:
                     _response["Data"] = webFile.read()
     
                 _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
-                #if ( webFilename.find('.js') != -1): _contentType = 'text/javascript'
      
                 if _contentType:
                     _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
@@ -191,6 +223,8 @@ class WebServer(object):
         if ('Data' not in Response) or (Response['Data'] == None):
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response , Delay= DELAY)
+            if not KEEPALIVE:
+                Connection.Disconnect()
             return
 
         Domoticz.Log("Sending Response to : %s" %(Connection.Name))
@@ -250,9 +284,14 @@ class WebServer(object):
             tosend={}
             tosend['Chunk'] = True
             Connection.Send( tosend , Delay = DELAY)
+            if not KEEPALIVE:
+                Connection.Disconnect()
         else:
+            #Response['Headers']['Content-Length'] = len( Response['Data'] )
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response , Delay = DELAY)
+            if not KEEPALIVE:
+                Connection.Disconnect()
 
     def keepConnectionAlive( self ):
 
@@ -277,7 +316,7 @@ class WebServer(object):
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
-                'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
+                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate}
@@ -927,6 +966,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         Domoticz.Log("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
+
         if verb == 'GET':
             if self.groupmgt is None:
                 return _response
@@ -963,6 +1003,36 @@ class WebServer(object):
                         zgroup['Devices'][dev] = ep 
                     _response["Data"] = json.dumps( zgroup, sort_keys=False )
 
+        elif verb == 'PUT':
+            _response["Data"] = None
+            ListOfGroups = self.groupmgt.ListOfGroups
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+                Domoticz.Log("data: %s" %data)
+                for item in data:
+                    Domoticz.Log("item: %s" %item)
+                    if item['_GroupId'] not in ListOfGroups:
+                        Domoticz.Error("zGroup REST API - unknown GroupId: %s" %grpid)
+                        continue
+                    grpid = item['_GroupId']
+                    if item['GroupName'] != ListOfGroups[grpid]['Name']:
+                        # Update the GroupName
+                        Domoticz.Log("Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
+                        self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
+                    for entry in item['Devices']:
+                        # List of ( DeviceId, Ep)
+                        Domoticz.Log("_Nwkid: %s" %entry['_NwkId'])
+                        Domoticz.Log("_Ep: %s" %entry['Ep'])
+                        pass
+                    for devselected in item['devicesSelected']:
+                        # We need to search if we have Added this device to list
+                        pass
+                        # We need to search if the device has been removed
+                        pass
+
+
+
         return _response
 
 
@@ -987,13 +1057,17 @@ def setupHeadersResponse():
 
     _response = {}
     _response["Headers"] = {}
-    _response["Headers"]["Connection"] = "Keep-alive"
-    _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
     _response["Headers"]["Server"] = "Domoticz"
-    #_response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    #_response["Headers"]["Pragma"] = "no-cache"
-    #_response["Headers"]["Expires"] = "0"
-    _response["Headers"]["Accept"] = "*/*"
+    _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
+    if KEEPALIVE:
+        _response["Headers"]["Connection"] = "Keep-alive"
+    else:
+        _response["Headers"]["Connection"] = "Close"
+    if not ALLOW_CACHE:
+        _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        _response["Headers"]["Pragma"] = "no-cache"
+        _response["Headers"]["Expires"] = "0"
+        _response["Headers"]["Accept"] = "*/*"
     #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.
