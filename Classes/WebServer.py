@@ -583,6 +583,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 setting_lst = []
                 for _theme in SETTINGS:
+                    if _theme == 'PluginTransport': continue
                     Domoticz.Log("Processing: %s" %_theme)
                     theme = {}
                     theme['_Theme'] = _theme
