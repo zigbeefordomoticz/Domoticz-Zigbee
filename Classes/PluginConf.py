@@ -43,7 +43,7 @@ SETTINGS = {
                 'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
                 'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False},
                 'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
-                'extendedPANID': { 'type':'hex', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+                'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
                 'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
                 'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
