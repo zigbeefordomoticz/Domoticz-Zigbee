@@ -11,7 +11,7 @@ from time import time, ctime, strftime, gmtime, mktime, strptime
 import zlib
 import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
-from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq
+from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq, sendZigateCmd, start_Zigate, setExtendedPANID
 
 from Classes.PluginConf import SETTINGS
 from Classes.GroupMgt import GroupsManagement
@@ -311,6 +311,7 @@ class WebServer(object):
                 'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
                 'req-nwk-inter': {'Name':'nwk-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
                 'req-topologie': {'Name':'req-topologie', 'Verbs':{'GET'}, 'function':self.rest_req_topologie},
+                'sw-reset-zigate':  {'Name':'sw-reset-zigate',  'Verbs':{'GET'}, 'function':self.rest_reset_zigate},
                 'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
@@ -319,7 +320,8 @@ class WebServer(object):
                 'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup}, 'functionv2':self.rest_zGroupv2,
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
-                'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate}
+                'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
+                'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM}
                 }
 
         Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
@@ -374,6 +376,36 @@ class WebServer(object):
                 self.runLQI[0] = 1 # Start LQI process
             else:
                 Domoticz.Log("Cannot start as LQI is ongoing")
+        return _response
+
+    def rest_zigate_erase_PDM( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            Domoticz.Status("Erase Zigate PDM")
+            Domoticz.Error("Erase Zigate PDM non implémenté pour l'instant")
+            #sendZigateCmd(self, "0012", "")
+            if self.pluginconf.pluginConf['extendedPANID'] is not None:
+                Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
+                setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+            action = {}
+            action['Description'] = 'Erase Zigate PDM - Non Implemente'
+            start_Zigate( self )
+        return _response
+
+    def rest_reset_zigate( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            sendZigateCmd(self, "0011", "" ) # Software Reset
+            start_Zigate( self )
+            action = {}
+            action['Name'] = 'Software reboot of Zigate'
+            action['TimeStamp'] = int(time())
         return _response
 
     def rest_zigate( self, verb, data, parameters):
