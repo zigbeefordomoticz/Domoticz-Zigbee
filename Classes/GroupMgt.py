@@ -553,6 +553,12 @@ class GroupsManagement(object):
         sValue = self.Devices[unit].sValue
         self.Devices[unit].Update( nValue, sValue, Name=groupname)
 
+        # Update Group Structure
+        self.ListOfGroups[group_nwkid]['Name'] = groupname
+
+        # Write it in the Pickle file
+        self._write_GroupList()
+
     def _updateDomoGroupDeviceWidget( self, groupname, group_nwkid ):
 
         if groupname == '' or group_nwkid == '':
