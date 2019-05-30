@@ -1,15 +1,20 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 import Domoticz
 import json
 import os
 import os.path
-
 import mimetypes
-from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
-from time import time, ctime, strftime, gmtime, mktime, strptime
 import zlib
 import gzip
+from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
+from time import time, ctime, strftime, gmtime, mktime, strptime
+
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
 from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq, sendZigateCmd, start_Zigate, setExtendedPANID
 
@@ -701,8 +706,8 @@ class WebServer(object):
                     device_info['SignaleLevel'] = self.Devices[x].SignalLevel
                     device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
                     device_info['TimedOut'] = self.Devices[x].TimedOut
-                    device_info['Type'] = self.Devices[x].Type
-                    device_info['SwitchType'] = self.Devices[x].SwitchType
+                    #device_info['Type'] = self.Devices[x].Type
+                    #device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=False )
 
@@ -718,8 +723,8 @@ class WebServer(object):
                         _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
                         _dictDevices['BatteryLevel'] = self.Devices[x].BatteryLevel
                         _dictDevices['TimedOut'] = self.Devices[x].TimedOut
-                        _dictDevices['Type'] = self.Devices[x].Type
-                        _dictDevices['SwitchType'] = self.Devices[x].SwitchType
+                        #_dictDevices['Type'] = self.Devices[x].Type
+                        #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
                         _response["Data"] = json.dumps( _dictDevices, sort_keys=False )
                         break
             else:
@@ -737,8 +742,8 @@ class WebServer(object):
                             device_info['SignaleLevel'] = self.Devices[x].SignalLevel
                             device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
                             device_info['TimedOut'] = self.Devices[x].TimedOut
-                            device_info['Type'] = self.Devices[x].Type
-                            device_info['SwitchType'] = self.Devices[x].SwitchType
+                            #device_info['Type'] = self.Devices[x].Type
+                            #device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=False )
         return _response
@@ -1121,6 +1126,24 @@ class WebServer(object):
                             Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
                             continue
                         Domoticz.Log("------>Device to be checked : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
+
+                        # Check if this is not an Ikea Tradfri Remote
+                        nwkid = devselected['_NwkId']
+                        _tradfri_remote = False
+                        if 'Ep' in self.ListOfDevices[nwkid]:
+                            if '01' in self.ListOfDevices[nwkid]['Ep']:
+                                if 'ClusterType' in self.ListOfDevices[nwkid]['Ep']['01']:
+                                    for iterDev in self.ListOfDevices[nwkid]['Ep']['01']['ClusterType']:
+                                        if self.ListOfDevices[nwkid]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
+                                            # We should not process it through the group.
+                                            Domoticz.Log("Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
+                                            ListOfGroups[grpid]['Tradfri Remote'] = {}
+                                            ListOfGroups[grpid]['Tradfri Remote']['Device Addr'] = nwkid
+                                            ListOfGroups[grpid]['Tradfri Remote']['Device Id'] = iterDev
+                                            _tradfri_remote = True
+                        if _tradfri_remote:
+                            continue
+                        # Process the rest
                         for _dev,_ep in ListOfGroups[grpid]['Devices']:
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:

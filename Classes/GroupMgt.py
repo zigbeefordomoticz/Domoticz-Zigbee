@@ -159,7 +159,10 @@ class GroupsManagement(object):
                 if self.ListOfGroups[group_id]['Name'] == '':
                     self.ListOfGroups[group_id]['Name'] = ZigateGroupConfig[group_id]['Name']
             Domoticz.Debug(" )> Group Name: %s" %ZigateGroupConfig[group_id]['Name'])
-            self.ListOfGroups[group_id]['Imported'] = list(ZigateGroupConfig[group_id]['Imported'])
+            if 'Tradfri Remote' in ZigateGroupConfig[group_id]:
+                self.ListOfGroups[group_id]['Tradfri Remote'] = ZigateGroupConfig[group_id]['Tradfri Remote']
+            if 'Imported' in ZigateGroupConfig[group_id]:
+                self.ListOfGroups[group_id]['Imported'] = list(ZigateGroupConfig[group_id]['Imported'])
 
             Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" 
                 %( group_id, self.ListOfGroups[group_id]['Name'], str(self.ListOfGroups[group_id]['Imported'])))
