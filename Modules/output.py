@@ -29,12 +29,14 @@ def ZigatePermitToJoin( self, permit ):
         self.permitTojoin['Starttime'] = int(time())
         self.permitTojoin['Duration'] = permit
         sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
+        sendZigateCmd( self, "0014", "" ) # Request status
     else: 
-        self.permitTojoin['Starttime'] = int(time())
-        self.permitTojoin['Duration'] = permit
+        if self.permitTojoin['Duration'] != 0:
+            self.permitTojoin['Starttime'] = int(time())
+            self.permitTojoin['Duration'] = 0
+            sendZigateCmd(self, "0049","FFFC" + '00' + "00")
+            sendZigateCmd( self, "0014", "" ) # Request status
         Domoticz.Log("Request stop discovery mode")
-        #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
-    sendZigateCmd( self, "0014", "" ) # Request status
 
 def start_Zigate(self, Mode='Controller'):
     """
@@ -185,7 +187,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 
     Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
-
+    EPout = '01'
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
 
