@@ -21,9 +21,9 @@ ALLOW_GZIP = 1              # Allow Standard gzip compression
 ALLOW_DEFLATE = 1           # Use gzip/Deflate compression algo.
 ALLOW_CHUNK = 0             # This will break the file to be send in chunks of MAX_KB_TO_SEND
 MAX_KB_TO_SEND = 2 * 1024   # Chunk size
-ALLOW_CACHE = False         # Allow Caching mecanishm
-KEEPALIVE = False           # Enable/Disable Keep-alibe
-DEBUG_HTTP = True
+ALLOW_CACHE = True         # Allow Caching mecanishm
+KEEPALIVE = True           # Enable/Disable Keep-alibe
+DEBUG_HTTP = False
 
 MIMETYPES = { 
         "gif": "image/gif" ,
@@ -633,7 +633,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
-            duration = self.permitTojoin['duration']
+            duration = self.permitTojoin['Duration']
             timestamp = self.permitTojoin['Starttime']
             info = {}
             if self.permitTojoin['Duration'] == 255:

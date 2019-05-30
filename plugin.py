@@ -123,7 +123,7 @@ class BasePlugin:
         self.transport = None         # USB or Wifi
         self._ReqRcv = bytearray()
         self.permitTojoin = {}
-        self.permitTojoin['duration'] = 0
+        self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
         self.groupmgt = None
         self.groupmgt_NotStarted = True
@@ -633,6 +633,12 @@ class BasePlugin:
         if self.OTA:
             self.OTA.heartbeat()
             
+        # Check PermitToJoin
+        if self.permitTojoin['Duration'] != 255 and self.permitTojoin['Duration'] != 0:
+            if int(time.time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
+                sendZigateCmd( self, "0014", "" ) # Request status
+                self.permitTojoin['Duration'] = 0
+
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.pluginConf['Ping']:
