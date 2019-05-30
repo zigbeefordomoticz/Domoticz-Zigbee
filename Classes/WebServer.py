@@ -416,6 +416,16 @@ class WebServer(object):
         if verb == 'GET':
             if self.zigatedata:
                 _response["Data"] = json.dumps( self.zigatedata, sort_keys=False )
+            else:
+                fake_zigate = {}
+                fake_zigate['Firmware Version'] = "fake - 0310"
+                fake_zigate['IEEE'] = "00158d0001ededde"
+                fake_zigate['Short Address'] = "0000"
+                fake_zigate['Channel'] = "0b"
+                fake_zigate['PANID'] = "51cf"
+                fake_zigate['Extended PANID'] = "bd1247ec9d358634"
+
+                _response["Data"] = json.dumps( fake_zigate , sort_keys=False )
         return _response
 
 
@@ -584,13 +594,11 @@ class WebServer(object):
                 setting_lst = []
                 for _theme in SETTINGS:
                     if _theme == 'PluginTransport': continue
-                    Domoticz.Log("Processing: %s" %_theme)
                     theme = {}
                     theme['_Theme'] = _theme
                     theme['ListOfSettings'] = []
                     for param in self.pluginconf.pluginConf:
                         if param not in SETTINGS[_theme]: continue
-                        Domoticz.Log("----> %s" %param)
                         if not SETTINGS[_theme][param]['hidden']:
                             setting = {}
                             setting['Name'] = param
@@ -613,8 +621,7 @@ class WebServer(object):
             upd = False
             for setting in setting_lst:
                 found = False
-
-                Domoticz.Log("setting: %s = %s" %(setting, setting_lst[setting]['current']))
+                Domoticz.Debug("setting: %s = %s" %(setting, setting_lst[setting]['current']))
 
                 # Do we have to update ?
                 for _theme in SETTINGS:
@@ -626,7 +633,6 @@ class WebServer(object):
                         Domoticz.Log("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
                         self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
-                
                 if not found:
                     Domoticz.Error("Unexpectped parameter: %s" %setting)
                     _response["Data"] = { 'unexpected parameters %s' %setting }
