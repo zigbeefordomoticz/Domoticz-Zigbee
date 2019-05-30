@@ -317,7 +317,7 @@ class WebServer(object):
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
-                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup}, 'functionv2':self.rest_zGroupv2,
+                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
@@ -752,23 +752,16 @@ class WebServer(object):
 
         if verb == 'GET':
             device_lst = []
+            _device = {}; _device['_NwkId'] = '0000'; _device['WidgetList'] = []
+            _widget = {}; _widget['_ID'] =  ''; _widget['Name'] =  ''
+            if 'IEEE' in self.ListOfDevices['0000']: _widget['IEEE'] =  self.ListOfDevices['0000']['IEEE'] 
+            else: _widget['IEEE'] =  'Fake for None Mode'
+            _widget['Ep'] =  '01' 
+            _widget['ZDeviceName'] =  'Zigate (Coordinator)'
+            _device['WidgetList'].append( _widget )
+            device_lst.append( _device )
             for x in self.ListOfDevices:
-                if x == '0000': 
-
-                    _device = {}
-                    _device['_NwkId'] = '0000'
-                    _device['WidgetList'] = []
-
-                    _widget = {}
-                    _widget['_ID'] =  ''
-                    _widget['Name'] =  ''
-                    if 'IEEE' in self.ListOfDevices['0000']: _widget['IEEE'] =  self.ListOfDevices['0000']['IEEE'] 
-                    else: _widget['IEEE'] =  'Fake for None Mode'
-                    _widget['Ep'] =  '01' 
-                    _widget['ZDeviceName'] =  'Zigate (Coordinator)'
-                    _device['WidgetList'].append( _widget )
-                    device_lst.append( _device )
-                    continue
+                if x == '0000':  continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
                     continue
                 
@@ -802,9 +795,11 @@ class WebServer(object):
                                                             _widget['IEEE'] =  self.ListOfDevices[x]['IEEE'] 
                                                             _widget['Ep'] =  ep 
                                                             _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
-                                                            _device['WidgetList'].append( _widget )
+                                                            if _widget not in _device['WidgetList']:
+                                                                _device['WidgetList'].append( _widget )
                                                             break
-                                                    device_lst.append( _device )
+                                                    if _device not in device_lst:
+                                                        device_lst.append( _device )
                                             continue # Next Ep
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
@@ -826,9 +821,11 @@ class WebServer(object):
                                             _widget['IEEE'] =  self.ListOfDevices[x]['IEEE'] 
                                             _widget['Ep'] =  ep 
                                             _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
-                                            _device['WidgetList'].append( _widget )
+                                            if _widget not in _device['WidgetList']:
+                                                _device['WidgetList'].append( _widget )
 
-                device_lst.append( _device )
+                if _device not in device_lst:
+                    device_lst.append( _device )
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
             return _response
 
@@ -1022,51 +1019,6 @@ class WebServer(object):
 
         return _response
 
-    def rest_zGroupv2( self, verb, data, parameters):
-
-        _response = setupHeadersResponse()
-        _response["Data"] = {}
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
-        Domoticz.Log("rest_zGroupv2 - ListOfGroups = %s" %str(self.groupmgt))
-
-        if verb == 'GET':
-            if self.groupmgt is None:
-                return _response
-            ListOfGroups = self.groupmgt.ListOfGroups
-            if ListOfGroups is None or len(ListOfGroups) == 0:
-                return _response
-
-            if len(parameters) == 0:
-                zgroup_lst = []
-                for item in ListOfGroups:
-                    Domoticz.Log("Process Group: %s" %item)
-                    zgroup = {}
-                    zgroup['_GroupId'] = item
-                    zgroup['GroupName'] = ListOfGroups[item]['Name']
-                    zgroup['Devices'] = []
-                    for dev, ep in ListOfGroups[item]['Devices']:
-                        Domoticz.Log("--> add %s %s" %(dev, ep))
-                        _dev = {}
-                        _dev['_NwkId'] = dev
-                        _dev['Ep'] = ep
-                        zgroup['Devices'].append( _dev )
-                    zgroup_lst.append(zgroup)
-                _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
-
-            elif len(parameters) == 1:
-                if parameters[0] in ListOfGroups:
-                    item =  parameters[0]
-                    zgroup = {}
-                    zgroup['_GroupId'] = item
-                    zgroup['GroupName'] = ListOfGroups[item]['Name']
-                    zgroup['Devices'] = {}
-                    for dev, ep in ListOfGroups[item]['Devices']:
-                        Domoticz.Log("--> add %s %s" %(dev, ep))
-                        zgroup['Devices'][dev] = ep 
-                    _response["Data"] = json.dumps( zgroup, sort_keys=False )
-
     def rest_zGroup( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
@@ -1118,29 +1070,82 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode('utf8')
                 data = json.loads(data)
-                Domoticz.Log("data: %s" %data)
+                Domoticz.Debug("data: %s" %data)
                 for item in data:
                     Domoticz.Log("item: %s" %item)
-                    if item['_GroupId'] not in ListOfGroups:
-                        Domoticz.Error("zGroup REST API - unknown GroupId: %s" %grpid)
-                        continue
-                    grpid = item['_GroupId']
+                    if '_GroupId' not in item:
+                        Domoticz.Log("--->Adding Group: ")
+                        # Define a GroupId 
+                        for x in range( 0x0001, 0x9999):
+                            if x not in ListOfGroups:
+                                grpid = '%04d' %x
+                                break
+                        else:
+                            Domoticz.Error("Out of GroupId")
+                            continue
+                        ListOfGroups[grpid] = {}
+                        ListOfGroups[grpid]['Name'] = item['GroupName']
+                        ListOfGroups[grpid]['Devices'] = []
+
+                    else:
+                        if item['_GroupId'] not in ListOfGroups:
+                            Domoticz.Error("zGroup REST API - unknown GroupId: %s" %grpid)
+                            continue
+                        grpid = item['_GroupId']
+
+                    #Update Group
+                    Domoticz.Log("--->Checking Group: %s" %grpid)
                     if item['GroupName'] != ListOfGroups[grpid]['Name']:
                         # Update the GroupName
-                        Domoticz.Log("Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
+                        Domoticz.Log("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
                         self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
-                    for entry in item['Devices']:
-                        # List of ( DeviceId, Ep)
-                        Domoticz.Log("_Nwkid: %s" %entry['_NwkId'])
-                        Domoticz.Log("_Ep: %s" %entry['Ep'])
-                        pass
+
+                    newdev = []
+                    #deldev = []
+                    #for _dev, _ep in ListOfGroups[grpid]['Devices']:
+                    #    for devselected in item['devicesSelected']:
+                    #        if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
+                    #            break
+                    #    else:
+                    #        deldev.append( (_dev, _ep) )
+                    #Domoticz.Log("--->Devices Removed: %s" %deldev)
+
                     for devselected in item['devicesSelected']:
-                        # We need to search if we have Added this device to list
-                        pass
-                        # We need to search if the device has been removed
-                        pass
+                        #widget = devselected['WidgetName']
+                        #ZDeviceName = devselected['ZDeviceName']
+                        if 'IEEE' in devselected:
+                            ieee = devselected['IEEE']
+                        elif 'IEEE' in self.ListOfDevices[devselected['_NwkId']]:
+                            ieee = self.ListOfDevices[devselected['_NwkId']]['IEEE']
+                        else: 
+                            Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
+                            continue
+                        Domoticz.Log("------>Device to be checked : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
+                        for _dev,_ep in ListOfGroups[grpid]['Devices']:
+                            if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
+                                if (ieee, _ep) not in newdev:
+                                    newdev.append( (ieee, _ep) )
+                                else:
+                                    Domoticz.Log("------>--> %s already in %s" %( (ieee, _ep), newdev))
+                                break
+                        else:
+                            if (ieee, devselected['Ep']) not in newdev:
+                                newdev.append( (ieee, devselected['Ep']) )
+                            else:
+                                Domoticz.Log("------>--> %s already in %s" %( (_dev, _ep), newdev))
 
+                    if 'coordinatorInside' in item:
+                        if item['coordinatorInside']:
+                            if 'IEEE' in self.zigatedata:
+                                ieee_zigate = self.zigatedata['IEEE']
+                                if ( ieee_zigate, '01') not in newdev:
+                                    newdev.append( (ieee_zigate, _ep) )
 
+                    Domoticz.Log("--->Devices Added: %s" %newdev)
+                    ListOfGroups[grpid]['Imported'] = list( newdev )
+
+                    # We need to check if we have not removed any device 
+                self.groupmgt.write_jsonZigateGroupConfig()
 
         return _response
 

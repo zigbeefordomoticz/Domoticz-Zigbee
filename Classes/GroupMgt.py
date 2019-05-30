@@ -42,6 +42,7 @@ class GroupsManagement(object):
         self.UpdatedGroups = []     # List of Groups to be updated and so trigger the Identify at the end.
         self.Cycle = 0              # Cycle count
         self.stillWIP = True
+        self.txt_last_update_ConfigFile = self. json_last_update_ConfigFile = 0
 
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
@@ -64,8 +65,13 @@ class GroupsManagement(object):
                 Domoticz.Debug("No Groups Configuration File")
                 self.groupsConfigFilename = None
 
-        self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID 
+        self.json_groupsConfigFilename = self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json"
+        #if not os.path.isfile( self.json_groupsConfigFilename ):
+        #        Domoticz.Debug("No Json Groups Configuration File")
+        #        self.json_groupsConfigFilename = None
+
         self.groupListReport = self.pluginconf.pluginConf['pluginReports'] + "GroupList-%02d.json" %hardwareID
+        self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID 
 
 
         return
@@ -103,6 +109,11 @@ class GroupsManagement(object):
         ' serialize pickle format the ListOfGrups '
 
         Domoticz.Debug("Write %s" %self.groupListFileName)
+        for grpid in self.ListOfGroups:
+            if 'Imported' in self.ListOfGroups[grpid]:
+                del self.ListOfGroups[grpid]['Imported']
+            self.ListOfGroups[grpid]['Imported'] = []
+        Domoticz.Log("Dumping: %s" %self.ListOfGroups)
         with open( self.groupListFileName , 'wb') as handle:
             pickle.dump( self.ListOfGroups, handle, protocol=pickle.HIGHEST_PROTOCOL)
         self.HBcount=0
@@ -113,6 +124,63 @@ class GroupsManagement(object):
 
         with open( self.groupListFileName , 'rb') as handle:
             self.ListOfGroups = pickle.load( handle )
+        for grpid in self.ListOfGroups:
+            if 'Imported' in self.ListOfGroups[grpid]:
+                del self.ListOfGroups[grpid]['Imported']
+            self.ListOfGroups[grpid]['Imported'] = []
+        Domoticz.Log("Loading ListOfGroups: %s" %self.ListOfGroups)
+
+    def load_jsonZigateGroupConfig( self ):
+
+        if self.json_groupsConfigFilename is None:
+            return
+        if not os.path.isfile( self.json_groupsConfigFilename ) :
+            Domoticz.Debug("GroupMgt - Nothing to import from %" %self.json_groupsConfigFilename)
+            return
+                
+        with open( self.json_groupsConfigFilename, 'rt') as handle:
+            ZigateGroupConfig = json.load( handle)
+
+        for group_id in ZigateGroupConfig:
+            Domoticz.Debug(" )> Group ID: %s" %group_id)
+            if group_id not in self.ListOfGroups:
+                Domoticz.Debug("  - Init ListOfGroups")
+                self.ListOfGroups[group_id] = {}
+                self.ListOfGroups[group_id]['Name'] = ''
+                self.ListOfGroups[group_id]['Devices'] = []
+                self.ListOfGroups[group_id]['Imported'] = []
+            if 'Imported' not in self.ListOfGroups[group_id]:
+                self.ListOfGroups[group_id]['Imported'] = []
+            if 'Devices' not in self.ListOfGroups[group_id]:
+                self.ListOfGroups[group_id]['Devices'] = []
+            if 'Name' not in self.ListOfGroups[group_id]:
+                self.ListOfGroups[group_id]['Name'] = ZigateGroupConfig[group_id]['Name']
+            else:
+                if self.ListOfGroups[group_id]['Name'] == '':
+                    self.ListOfGroups[group_id]['Name'] = ZigateGroupConfig[group_id]['Name']
+            Domoticz.Debug(" )> Group Name: %s" %ZigateGroupConfig[group_id]['Name'])
+            self.ListOfGroups[group_id]['Imported'] = list(ZigateGroupConfig[group_id]['Imported'])
+
+            Domoticz.Debug("load_ZigateGroupConfiguration - Group[%s]: %s List of Devices: %s to be processed" 
+                %( group_id, self.ListOfGroups[group_id]['Name'], str(self.ListOfGroups[group_id]['Imported'])))
+
+
+    def write_jsonZigateGroupConfig( self ):
+
+        Domoticz.Log("ListOfGroups: %s" %self.ListOfGroups)
+        zigateGroupConfig = {}
+        for group_id in self.ListOfGroups:
+            zigateGroupConfig[group_id] = {}
+            zigateGroupConfig[group_id]['Name'] =  self.ListOfGroups[group_id]['Name']
+            if 'Imported' in self.ListOfGroups[group_id]:
+                zigateGroupConfig[group_id]['Imported'] = list(self.ListOfGroups[group_id]['Imported'])
+            if 'Tradfri Remote' in self.ListOfGroups[group_id]:
+                zigateGroupConfig[group_id]['Tradfri Remote'] = self.ListOfGroups[group_id]['Tradfri Remote'] 
+
+        Domoticz.Log("Dumping: %s" %zigateGroupConfig)
+        Domoticz.Log("Write to : %s" %self.json_groupsConfigFilename)
+        with open( self.json_groupsConfigFilename , 'wt') as handle:
+            json.dump( zigateGroupConfig, handle, sort_keys=True, indent=2)
 
 
     def load_ZigateGroupConfiguration(self):
@@ -126,7 +194,6 @@ class GroupsManagement(object):
             Domoticz.Debug("GroupMgt - Nothing to import")
             return
                 
-
         myfile = open( self.groupsConfigFilename, 'r')
         Domoticz.Debug("load_ZigateGroupConfiguration. Reading the file")
         while True:
@@ -1047,30 +1114,38 @@ class GroupsManagement(object):
             Domoticz.Log("Group Management - Init phase")
             self.StartupPhase = 'discovery'
             if os.path.isfile( self.groupListFileName ) :
-                Domoticz.Debug("GroupList.pck exists")
+                Domoticz.Log("--->GroupList.pck exists")
                 last_update_GroupList = modification_date( self.groupListFileName )
-                Domoticz.Debug("Last Update of GroupList: %s" %last_update_GroupList)
+                Domoticz.Log("--->Last Update of GroupList: %s" %last_update_GroupList)
 
-                if self.groupsConfigFilename:
-                    if os.path.isfile( self.groupsConfigFilename ):
-                        Domoticz.Debug("Config file exists")
-                        last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                        Domoticz.Debug("Last Update of Config File: %s" %last_update_ConfigFile)
-                        if last_update_GroupList > last_update_ConfigFile :
-                            # GroupList is newer , just reload the file and exit
-                            Domoticz.Status("No update of Groups needed")
-                            self.StartupPhase = 'end of group startup'
-                            self._load_GroupList()
-                    else:   # No config file, so let's move on
-                        Domoticz.Debug("No Config file, let's use the GroupList")
-                        Domoticz.Debug("switch to end of Group Startup")
-                        self._load_GroupList()
+                if self.groupsConfigFilename or self.json_groupsConfigFilename :
+                    if self.groupsConfigFilename:
+                        if os.path.isfile( self.groupsConfigFilename ):
+                            Domoticz.Log("------------>Config file exists")
+                            self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
+                            Domoticz.Log("------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
+    
+                    if self.json_groupsConfigFilename:
+                        if os.path.isfile( self.json_groupsConfigFilename):
+                            Domoticz.Log("------------>Json Config file exists")
+                            self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
+                            Domoticz.Log("------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
+                    
+                    if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
+                        # GroupList is newer , just reload the file and exit
+                        Domoticz.Status("--------->No update of Groups needed")
                         self.StartupPhase = 'end of group startup'
-                else:   # GroupList exist but no config file
-                    Domoticz.Debug("No Config file, let's use the GroupList")
-                    Domoticz.Debug("switch to end of Group Startup")
+                        self._load_GroupList()
+                else:   # No config file, so let's move on
+                    Domoticz.Log("------>No Config file, let's use the GroupList")
+                    Domoticz.Log("------>switch to end of Group Startup")
                     self._load_GroupList()
                     self.StartupPhase = 'end of group startup'
+            else:   # GroupList exist but no config file
+                Domoticz.Log("--->No Config file, let's use the GroupList")
+                Domoticz.Log("--->switch to end of Group Startup")
+                self._load_GroupList()
+                self.StartupPhase = 'end of group startup'
 
             if self.ScanGroupMembership == 'True' and self.StartupPhase != 'discovery':
                 self.StartupPhase = 'discovery'
@@ -1189,8 +1264,19 @@ class GroupsManagement(object):
                     self.StartupPhase = 'load config'
 
         elif  self.StartupPhase == 'load config':
-            self.load_ZigateGroupConfiguration()
+
+
+
+            # Which config file is the newest
             Domoticz.Log("Group Management - Loading Zigate Group Configuration file")
+            if self.json_last_update_ConfigFile >= self.txt_last_update_ConfigFile:
+                # Take JSON
+                Domoticz.Log("Group Management - Loading Zigate Group Configuration file JSON")
+                self.load_jsonZigateGroupConfig()
+            else:
+                #Take TXT
+                Domoticz.Log("Group Management - Loading Zigate Group Configuration file TXT")
+                self.load_ZigateGroupConfiguration()
             self.TobeAdded = []
             self.TobeRemoved = []
             self.StartupPhase = 'process config'
@@ -1199,8 +1285,10 @@ class GroupsManagement(object):
             self.stillWIP = True
             for iterGrp in self.ListOfGroups:
                 if 'Imported' not in self.ListOfGroups[iterGrp]:
+                    Domoticz.Debug("Nothing to import ...")
                     continue
                 if len(self.ListOfGroups[iterGrp]['Imported']) == 0 and len(self.ListOfGroups[iterGrp]['Devices']) == 0 :
+                    Domoticz.Debug("Nothing to import and no Devices ...")
                     continue
 
                 Domoticz.Debug("Processing Group: %s - Checking Removal" %iterGrp)
@@ -1242,7 +1330,7 @@ class GroupsManagement(object):
                     if removeNKWID not in self.ListOfDevices:
                         Domoticz.Error("Unknown IEEE to be removed %s" %removeNKWID)
                         continue
-                    Domoticz.Debug("Adding %s/%s to be removed from %s" 
+                    Domoticz.Debug(" %s/%s to be removed from %s" 
                             %(removeNKWID, iterEp, iterGrp))
                     self.TobeRemoved.append( ( removeNKWID, iterEp, iterGrp ) )
 
@@ -1285,7 +1373,7 @@ class GroupsManagement(object):
                                     ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                                     ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
-                                Domoticz.Debug("Adding %s/%s to be added to %s"
+                                Domoticz.Debug(" %s/%s to be added to %s"
                                         %( iterDev, iterEp, iterGrp))
                                 self.TobeAdded.append( ( iterIEEE, iterDev, iterEp, iterGrp ) )
 
