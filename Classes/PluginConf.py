@@ -111,6 +111,8 @@ class PluginConf:
     def __init__(self, homedir, hardwareid):
 
         self.pluginConf = {}
+        self.homedir = homedir
+        self.hardwareid = hardwareid
         self.pluginConf["pluginHome"] = homedir
 
         for theme in SETTINGS:
@@ -180,7 +182,7 @@ class PluginConf:
                 self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf.txt"
                 if not os.path.isfile(self.pluginConf['filename']) :
                     Domoticz.Log("No PluginConf.txt , using default values")
-                    self.write_Settings( homedir, hardwareid)
+                    self.write_Settings( )
                     return
 
         Domoticz.Status("PluginConfig: %s" %self.pluginConf['filename'])
@@ -224,14 +226,14 @@ class PluginConf:
                         elif SETTINGS[theme][param]['type'] == ( 'path', 'str'):
                             self.pluginConf[param] = PluginConf[ param ]
 
-        self.write_Settings( homedir, hardwareid)
+        self.write_Settings( )
 
 
-    def write_Settings(self, homedir, hardwareid):
+    def write_Settings(self):
         ' serialize json format the pluginConf '
         ' Only the arameters which are different than default '
 
-        pluginConfFile = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
+        pluginConfFile = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %self.hardwareid
         Domoticz.Debug("Write %s" %pluginConfFile)
         write_pluginConf = {}
         for theme in SETTINGS:

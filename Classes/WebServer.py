@@ -13,7 +13,7 @@ import gzip
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
 from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq, sendZigateCmd, start_Zigate, setExtendedPANID
 
-from Classes.PluginConf import SETTINGS
+from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 
 DELAY = 0
@@ -606,24 +606,37 @@ class WebServer(object):
             _response["Data"] = None
             data = data.decode('utf8')
             Domoticz.Log("Data: %s" %data)
+            data = data.replace('true','1')     # UI is coming with true and not True
+            data = data.replace('false','0')   # UI is coming with false and not False
+
             setting_lst = eval(data)
-
+            upd = False
             for setting in setting_lst:
-                Domoticz.Log("setting: %s" %setting)
+                found = False
 
+                Domoticz.Log("setting: %s = %s" %(setting, setting_lst[setting]['current']))
+
+                # Do we have to update ?
                 for _theme in SETTINGS:
-                    for param in setting:
-                        if param not in SETTINGS[_theme]:
-                            Domoticz.Error("Unexpectped parameter: %s" %item)
-                            Domoticz.Error("Unexpected number of Parameter")
-                            _response["Data"] = { 'unexpected parameters %s' %item }
-                            _response["Status"] = "400 SYNTAX ERROR"
-                            break
-                        else:
-                            Domoticz.Log("loading %s" %param)
-                            if param in self.pluginconf.pluginConf:
-                                if self.pluginconf.pluginConf[param] != setting[param]['current_value']:
-                                    self.pluginconf.pluginConf[param] = setting[param]['current_value']
+                    for param in SETTINGS[_theme]:
+                        if param != setting: continue
+                        found = True
+                        if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: continue
+                        upd = True
+                        Domoticz.Log("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+
+                
+                if not found:
+                    Domoticz.Error("Unexpectped parameter: %s" %setting)
+                    _response["Data"] = { 'unexpected parameters %s' %setting }
+
+                if upd:
+                    # We need to write done the new version of PluginConf
+                    self.pluginconf.write_Settings()
+                    pass
+
+            
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
