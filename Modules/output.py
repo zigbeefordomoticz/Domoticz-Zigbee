@@ -188,6 +188,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
     EPin = "01"
     EPout = '01'
+
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
 
@@ -635,7 +636,7 @@ def processConfigureReporting( self, NWKID=None ):
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
         if 'Status' not in self.ListOfDevices[key]:
-            Domoticz.Error("processConfigureReporting - not status for that device %s !!!" %key)
+            Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" %key)
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
         if NWKID is None:

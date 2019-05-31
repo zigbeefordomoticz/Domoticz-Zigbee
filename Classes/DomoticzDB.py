@@ -48,9 +48,11 @@ class DomoticzDB_Preferences:
                 return value[0]
         except sqlite3.Error as e:
             Domoticz.Error("retreiveAcceptNewHardware - Database error: %s" %e)
+            return 0
 
         except Exception as e:
             Domoticz.Error("retreiveAcceptNewHardware - Exception: %s" %e)
+            return 0
 
     def unsetAcceptNewHardware( self):
 
@@ -130,9 +132,11 @@ class DomoticzDB_DeviceStatus:
                 return value[0]
         except sqlite3.Error as e:
             Domoticz.Error("retreiveAddjValue_baro - Database error: %s" %e)
+            return 0
 
         except Exception as e:
             Domoticz.Error("retreiveAddjValue_baro - Exception: %s" %e)
+            return 0
 
     def retreiveTimeOut_Motion( self, ID):
         """
@@ -149,9 +153,11 @@ class DomoticzDB_DeviceStatus:
 
         except sqlite3.Error as e:
             Domoticz.Error("retreiveTimeOut_Motion - Database error: %s" %e)
+            return 0
 
         except Exception as e:
             Domoticz.Error("retreiveTimeOut_Motion - Exception: %s" %e)
+            return 0
 
 
     def retreiveAddjValue_temp( self, ID):
@@ -169,9 +175,11 @@ class DomoticzDB_DeviceStatus:
 
         except sqlite3.Error as e:
             Domoticz.Error("retreiveAddjValue_temp - Database error: %s" %e)
+            return 0
 
         except Exception as e:
             Domoticz.Error("retreiveAddjValue_temp - Exception: %s" %e)
+            return 0
 
 
 if __name__ == '__main__':

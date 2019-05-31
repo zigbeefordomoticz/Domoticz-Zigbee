@@ -44,7 +44,7 @@
     "TRADFRI bulb E27 WS opal 980lm":{"Ep":{"01":{"0b05":"","0008":"","0300":"","0003":"","0000":"","0005":"","0020":"","0019":"","0004":"","0006":"","1000":"","Type":"ColorControlWW"}},"Type":""},
     "TRADFRI bulb E27 WS opal 950lm":{"Ep":{"01":{"0000":"","0003":"","0004":"","0005":"","0006":"","0008":"","0300":"","0b05":"","1000":"","Type":"ColorControlWW","ColorMode":"2"}},"Type":"","ProfileID":"c05e","ZDeviceID":"0220","NickName":"LED1545G12"},
     "TRADFRI bulb E27 WS clear 950lm":{"Ep":{"01":{"0000":"","0003":"","0004":"","0005":"","0006":"","0008":"","0300":"","0b05":"","1000":"","Type":"ColorControlWW","ColorMode":"2"}},"Type":"","ProfileID":"c05e","ZDeviceID":"0220","NickName":"LED1546G12"},
-    "TRADFRI control outlet":{"Ep":{"02":{"1000":"","0021":""},"01":{"0006":"","fc7c":"","0004":"","0000":"","0003":"","0008":"","0005":""}},"Type":"Plug","ProfileID":"c05e","ZDeviceID":"010a"},
+    "TRADFRI control outlet":{"Ep":{"02":{"1000":"","0021":""},"01":{"0006":"","fc7c":"","0004":"","0000":"","0003":"","0008":"","0005":"","Type":"Plug"}},"Type":"","ProfileID":"c05e","ZDeviceID":"010a"},
     "TRADFRI on/off switch":{"Ep":{"01":{"0000":"","0001":"","0003":"","0004":"","0006":"","0008":"","Type":"SwitchIKEA"}},"Type":""},
     "TRADFRI remote control":{"Ep":{"01":{"0000":"","0001":"","0003":"","0009":"","0b05":"","1000":"","0004":"","0005":"","0006":"","0008":"","0019":"","Type":"Ikea_Round_5b"}},"Type":"","ProfileID":"c05e","ZDeviceID":"0830"},
     "TRADFRI wireless dimmer":{"Ep":{"01": {"0000":"","0007":"","0004":"","000a":"","0010":"","0005":"","Type":"Switch/LvlControl"}},"Type":"","ProfileID": "c05e", "ZDeviceID": "0810"},
