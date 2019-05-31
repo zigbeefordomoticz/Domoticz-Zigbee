@@ -109,10 +109,6 @@ class GroupsManagement(object):
         ' serialize pickle format the ListOfGrups '
 
         Domoticz.Debug("Write %s" %self.groupListFileName)
-        for grpid in self.ListOfGroups:
-            if 'Imported' in self.ListOfGroups[grpid]:
-                del self.ListOfGroups[grpid]['Imported']
-            self.ListOfGroups[grpid]['Imported'] = []
         Domoticz.Log("Dumping: %s" %self.ListOfGroups)
         with open( self.groupListFileName , 'wb') as handle:
             pickle.dump( self.ListOfGroups, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -122,12 +118,14 @@ class GroupsManagement(object):
     def _load_GroupList(self):
         ' unserialized (load) ListOfGroup from file'
 
-        with open( self.groupListFileName , 'rb') as handle:
-            self.ListOfGroups = pickle.load( handle )
-        for grpid in self.ListOfGroups:
-            if 'Imported' in self.ListOfGroups[grpid]:
-                del self.ListOfGroups[grpid]['Imported']
-            self.ListOfGroups[grpid]['Imported'] = []
+        self.ListOfGroups = {}
+        if os.path.isfile( self.groupListFileName ):
+            with open( self.groupListFileName , 'rb') as handle:
+                self.ListOfGroups = pickle.load( handle )
+            for grpid in self.ListOfGroups:
+                if 'Imported' in self.ListOfGroups[grpid]:
+                    del self.ListOfGroups[grpid]['Imported']
+                self.ListOfGroups[grpid]['Imported'] = []
         Domoticz.Log("Loading ListOfGroups: %s" %self.ListOfGroups)
 
     def load_jsonZigateGroupConfig( self ):
@@ -135,7 +133,7 @@ class GroupsManagement(object):
         if self.json_groupsConfigFilename is None:
             return
         if not os.path.isfile( self.json_groupsConfigFilename ) :
-            Domoticz.Debug("GroupMgt - Nothing to import from %" %self.json_groupsConfigFilename)
+            Domoticz.Debug("GroupMgt - Nothing to import from %s" %self.json_groupsConfigFilename)
             return
                 
         with open( self.json_groupsConfigFilename, 'rt') as handle:

@@ -86,6 +86,9 @@ class WebServer(object):
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
 
+        self.restart_needed = {}
+        self.restart_needed['RestartNeeded'] = False
+
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
@@ -314,6 +317,7 @@ class WebServer(object):
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
+                'restart-needed':{'Name':'restart-needed','Verbs':{'GET'}, 'function':self.rest_restart_needed},
                 'req-nwk-inter': {'Name':'nwk-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
                 'req-topologie': {'Name':'req-topologie', 'Verbs':{'GET'}, 'function':self.rest_req_topologie},
                 'sw-reset-zigate':  {'Name':'sw-reset-zigate',  'Verbs':{'GET'}, 'function':self.rest_reset_zigate},
@@ -568,6 +572,16 @@ class WebServer(object):
                     _response['Data'] = json.dumps( [] , sort_keys=True)
         return _response
 
+    def rest_restart_needed( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+                _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
+        return _response
+        
+
     def rest_plugin_stat( self, verb, data, parameters):
 
         Statistics = {}
@@ -637,6 +651,8 @@ class WebServer(object):
                         upd = True
                         Domoticz.Log("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
                         self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                        if SETTINGS[_theme][param]['restart']:
+                            self.restart_needed['RestartNeeded'] = True
 
                 if not found:
                     Domoticz.Error("Unexpectped parameter: %s" %setting)
@@ -1083,18 +1099,20 @@ class WebServer(object):
         elif verb == 'PUT':
             _response["Data"] = None
             ListOfGroups = self.groupmgt.ListOfGroups
+            grp_lst = []
             if len(parameters) == 0:
+                self.restart_needed['RestartNeeded'] = True
                 data = data.decode('utf8')
                 data = json.loads(data)
                 Domoticz.Debug("data: %s" %data)
                 for item in data:
-                    Domoticz.Log("item: %s" %item)
+                    Domoticz.Debug("item: %s" %item)
                     if '_GroupId' not in item:
                         Domoticz.Log("--->Adding Group: ")
                         # Define a GroupId 
                         for x in range( 0x0001, 0x9999):
-                            if x not in ListOfGroups:
-                                grpid = '%04d' %x
+                            grpid = '%04d' %x
+                            if grpid not in ListOfGroups:
                                 break
                         else:
                             Domoticz.Error("Out of GroupId")
@@ -1102,13 +1120,13 @@ class WebServer(object):
                         ListOfGroups[grpid] = {}
                         ListOfGroups[grpid]['Name'] = item['GroupName']
                         ListOfGroups[grpid]['Devices'] = []
-
                     else:
                         if item['_GroupId'] not in ListOfGroups:
                             Domoticz.Error("zGroup REST API - unknown GroupId: %s" %grpid)
                             continue
                         grpid = item['_GroupId']
 
+                    grp_lst.append( grpid ) # To memmorize the list of Group
                     #Update Group
                     Domoticz.Log("--->Checking Group: %s" %grpid)
                     if item['GroupName'] != ListOfGroups[grpid]['Name']:
@@ -1117,18 +1135,7 @@ class WebServer(object):
                         self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
 
                     newdev = []
-                    #deldev = []
-                    #for _dev, _ep in ListOfGroups[grpid]['Devices']:
-                    #    for devselected in item['devicesSelected']:
-                    #        if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
-                    #            break
-                    #    else:
-                    #        deldev.append( (_dev, _ep) )
-                    #Domoticz.Log("--->Devices Removed: %s" %deldev)
-
                     for devselected in item['devicesSelected']:
-                        #widget = devselected['WidgetName']
-                        #ZDeviceName = devselected['ZDeviceName']
                         if 'IEEE' in devselected:
                             ieee = devselected['IEEE']
                         elif 'IEEE' in self.ListOfDevices[devselected['_NwkId']]:
@@ -1136,8 +1143,7 @@ class WebServer(object):
                         else: 
                             Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
                             continue
-                        Domoticz.Log("------>Device to be checked : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
-
+                        Domoticz.Log("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
                         # Check if this is not an Ikea Tradfri Remote
                         nwkid = devselected['_NwkId']
                         _tradfri_remote = False
@@ -1147,7 +1153,7 @@ class WebServer(object):
                                     for iterDev in self.ListOfDevices[nwkid]['Ep']['01']['ClusterType']:
                                         if self.ListOfDevices[nwkid]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
                                             # We should not process it through the group.
-                                            Domoticz.Log("Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
+                                            Domoticz.Log("------>Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
                                             ListOfGroups[grpid]['Tradfri Remote'] = {}
                                             ListOfGroups[grpid]['Tradfri Remote']['Device Addr'] = nwkid
                                             ListOfGroups[grpid]['Tradfri Remote']['Device Id'] = iterDev
@@ -1158,28 +1164,49 @@ class WebServer(object):
                         for _dev,_ep in ListOfGroups[grpid]['Devices']:
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:
+                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
                                     newdev.append( (ieee, _ep) )
                                 else:
                                     Domoticz.Log("------>--> %s already in %s" %( (ieee, _ep), newdev))
                                 break
                         else:
                             if (ieee, devselected['Ep']) not in newdev:
+                                Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
                                 newdev.append( (ieee, devselected['Ep']) )
                             else:
                                 Domoticz.Log("------>--> %s already in %s" %( (_dev, _ep), newdev))
+                    # end for devselecte
 
                     if 'coordinatorInside' in item:
                         if item['coordinatorInside']:
                             if 'IEEE' in self.zigatedata:
                                 ieee_zigate = self.zigatedata['IEEE']
                                 if ( ieee_zigate, '01') not in newdev:
+                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee_zigate, '01'), grpid))
                                     newdev.append( (ieee_zigate, _ep) )
 
                     Domoticz.Log("--->Devices Added: %s" %newdev)
                     ListOfGroups[grpid]['Imported'] = list( newdev )
+                    Domoticz.Log("--->Grp: %s - tobe Imported: %s" %(grpid, ListOfGroups[grpid]['Imported']))
 
-                    # We need to check if we have not removed any device 
+                # end for item / next group
+                # Finaly , we need to check if AnyGroup have been removed !
+                Domoticz.Log("Group to be removed")
+                for grpid in ListOfGroups:
+                    if grpid not in grp_lst:
+                        Domoticz.Log("--->Group %s has to be removed" %grpid)
+                        del ListOfGroups[grpid]['Imported']
+                        ListOfGroups[grpid]['Imported'] = []
+
+                Domoticz.Log("Group to be worked out")
+                for grpid in ListOfGroups:
+                    Domoticz.Log("Group: %s" %grpid)
+                    for dev in ListOfGroups[grpid]['Imported']:
+                        Domoticz.Log("---> %s to be imported" %str(dev))
+
                 self.groupmgt.write_jsonZigateGroupConfig()
+            # end if len()
+        # end if Verb=
 
         return _response
 
