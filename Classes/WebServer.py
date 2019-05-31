@@ -1,31 +1,67 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 import Domoticz
 import json
 import os
 import os.path
-
 import mimetypes
-from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 
-from time import time, ctime, strftime, gmtime, mktime, strptime
 import zlib
 import gzip
-from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
-from Classes.PluginConf import SETTINGS
-from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq
+from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
+from time import time, ctime, strftime, gmtime, mktime, strptime
 
+from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST
+from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq, sendZigateCmd, start_Zigate, setExtendedPANID
+
+from Classes.PluginConf import PluginConf,SETTINGS
+from Classes.GroupMgt import GroupsManagement
 
 DELAY = 0
-ALLOW_GZIP = 1
-ALLOW_DEFLATE = 1
-ALLOW_CHUNK = 0
-MAX_KB_TO_SEND = 4 * 1024
+ALLOW_GZIP = 1              # Allow Standard gzip compression
+ALLOW_DEFLATE = 1           # Use gzip/Deflate compression algo.
+ALLOW_CHUNK = 0             # This will break the file to be send in chunks of MAX_KB_TO_SEND
+MAX_KB_TO_SEND = 2 * 1024   # Chunk size
+ALLOW_CACHE = True         # Allow Caching mecanishm
+KEEPALIVE = True           # Enable/Disable Keep-alibe
 DEBUG_HTTP = False
+
+MIMETYPES = { 
+        "gif": "image/gif" ,
+        "htm": "text/html" ,
+        "html": "text/html" ,
+        "jpg": "image/jpeg" ,
+        "png": "image/png" ,
+        "css": "text/css" ,
+        "xml": "application/xml" ,
+        "js": "application/javascript" ,
+        "json": "application/json" ,
+        "swf": "application/x-shockwave-flash" ,
+        "manifest": "text/cache-manifest" ,
+        "appcache": "text/cache-manifest" ,
+        "xls": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ,
+        "m3u": "audio/mpegurl" ,
+        "mp3": "audio/mpeg" ,
+        "ogg": "audio/ogg" ,
+        "php": "text/html" ,
+        "wav": "audio/x-wav" ,
+        "svg": "image/svg+xml" ,
+        "db": "application/octet-stream" ,
+        "otf": "application/x-font-otf" ,
+        "ttf": "application/x-font-ttf" ,
+        "woff": "application/x-font-woff" 
+   }
+
+
 
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
+    def __init__( self, runLQI, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -40,6 +76,7 @@ class WebServer(object):
         self.pluginparameters = PluginParameters
 
         self.permitTojoin = permitTojoin
+        self.runLQI = runLQI
 
         if groupManagement:
             self.groupmgt = groupManagement
@@ -48,6 +85,9 @@ class WebServer(object):
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
+
+        self.restart_needed = {}
+        self.restart_needed['RestartNeeded'] = False
 
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
@@ -162,13 +202,14 @@ class WebServer(object):
                     _response["Headers"]["Content-Range"] = "bytes "+str(fileStartPosition)+"-"+str(messageFile.tell())+"/"+str(messageFileSize)
                 DumpHTTPResponseToLog( _response )
                 Connection.Send( _response)
+                if not KEEPALIVE:
+                    Connection.Disconnect()
             else:
                 _response["Headers"]["Last-Modified"] = _lastmodified
                 with open(webFilename , mode ='rb') as webFile:
                     _response["Data"] = webFile.read()
     
                 _contentType, _contentEncoding = mimetypes.guess_type( Data['URL'] )
-                #if ( webFilename.find('.js') != -1): _contentType = 'text/javascript'
      
                 if _contentType:
                     _response["Headers"]["Content-Type"] = _contentType +"; charset=utf-8"
@@ -190,6 +231,8 @@ class WebServer(object):
         if ('Data' not in Response) or (Response['Data'] == None):
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response , Delay= DELAY)
+            if not KEEPALIVE:
+                Connection.Disconnect()
             return
 
         Domoticz.Log("Sending Response to : %s" %(Connection.Name))
@@ -249,9 +292,14 @@ class WebServer(object):
             tosend={}
             tosend['Chunk'] = True
             Connection.Send( tosend , Delay = DELAY)
+            if not KEEPALIVE:
+                Connection.Disconnect()
         else:
+            #Response['Headers']['Content-Length'] = len( Response['Data'] )
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response , Delay = DELAY)
+            if not KEEPALIVE:
+                Connection.Disconnect()
 
     def keepConnectionAlive( self ):
 
@@ -269,17 +317,20 @@ class WebServer(object):
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
+                'restart-needed':{'Name':'restart-needed','Verbs':{'GET'}, 'function':self.rest_restart_needed},
                 'req-nwk-inter': {'Name':'nwk-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
                 'req-topologie': {'Name':'req-topologie', 'Verbs':{'GET'}, 'function':self.rest_req_topologie},
+                'sw-reset-zigate':  {'Name':'sw-reset-zigate',  'Verbs':{'GET'}, 'function':self.rest_reset_zigate},
                 'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
-                'zgroup':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_zGroup},
+                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
-                'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate}
+                'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
+                'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM}
                 }
 
         Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
@@ -288,7 +339,10 @@ class WebServer(object):
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = setupHeadersResponse()
                 HTTPresponse["Headers"]["Cache-Control"] = "no-store, no-cache"
-                HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
+                if version == '1':
+                    HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
+                elif version == '2':
+                    HTTPresponse = REST_COMMANDS[command]['functionv2']( verb, data, parameters)
 
         if HTTPresponse == {}:
             # We reach here due to failure !
@@ -326,6 +380,41 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=False )
 
             # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
+            Domoticz.Log("Request a Start of LQI Process")
+            if self.runLQI[0] == 0:
+                self.runLQI[0] = 1 # Start LQI process
+            else:
+                Domoticz.Log("Cannot start as LQI is ongoing")
+        return _response
+
+    def rest_zigate_erase_PDM( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            Domoticz.Status("Erase Zigate PDM")
+            Domoticz.Error("Erase Zigate PDM non implémenté pour l'instant")
+            #sendZigateCmd(self, "0012", "")
+            if self.pluginconf.pluginConf['extendedPANID'] is not None:
+                Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
+                setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+            action = {}
+            action['Description'] = 'Erase Zigate PDM - Non Implemente'
+            start_Zigate( self )
+        return _response
+
+    def rest_reset_zigate( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            sendZigateCmd(self, "0011", "" ) # Software Reset
+            start_Zigate( self )
+            action = {}
+            action['Name'] = 'Software reboot of Zigate'
+            action['TimeStamp'] = int(time())
         return _response
 
     def rest_zigate( self, verb, data, parameters):
@@ -336,6 +425,16 @@ class WebServer(object):
         if verb == 'GET':
             if self.zigatedata:
                 _response["Data"] = json.dumps( self.zigatedata, sort_keys=False )
+            else:
+                fake_zigate = {}
+                fake_zigate['Firmware Version'] = "fake - 0310"
+                fake_zigate['IEEE'] = "00158d0001ededde"
+                fake_zigate['Short Address'] = "0000"
+                fake_zigate['Channel'] = "0b"
+                fake_zigate['PANID'] = "51cf"
+                fake_zigate['Extended PANID'] = "bd1247ec9d358634"
+
+                _response["Data"] = json.dumps( fake_zigate , sort_keys=False )
         return _response
 
 
@@ -473,6 +572,16 @@ class WebServer(object):
                     _response['Data'] = json.dumps( [] , sort_keys=True)
         return _response
 
+    def rest_restart_needed( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+                _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
+        return _response
+        
+
     def rest_plugin_stat( self, verb, data, parameters):
 
         Statistics = {}
@@ -502,38 +611,59 @@ class WebServer(object):
         if verb == 'GET':
             if len(parameters) == 0:
                 setting_lst = []
-                for param in self.pluginconf.pluginConf:
-                    if not SETTINGS[param]['hidden']:
-                        setting = {}
-                        setting['Name'] = param
-                        setting['default_value'] = SETTINGS[param]['default']
-                        setting['DataType'] = SETTINGS[param]['type']
-                        setting['restart_need'] = SETTINGS[param]['restart']
-                        setting['current_value'] = self.pluginconf.pluginConf[param] 
-                        setting_lst.append( setting )
+                for _theme in SETTINGS:
+                    if _theme == 'PluginTransport': continue
+                    theme = {}
+                    theme['_Theme'] = _theme
+                    theme['ListOfSettings'] = []
+                    for param in self.pluginconf.pluginConf:
+                        if param not in SETTINGS[_theme]: continue
+                        if not SETTINGS[_theme][param]['hidden']:
+                            setting = {}
+                            setting['Name'] = param
+                            setting['default_value'] = SETTINGS[_theme][param]['default']
+                            setting['DataType'] = SETTINGS[_theme][param]['type']
+                            setting['restart_need'] = SETTINGS[_theme][param]['restart']
+                            setting['current_value'] = self.pluginconf.pluginConf[param] 
+                            theme['ListOfSettings'].append ( setting )
+                    setting_lst.append( theme )
                 _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
             data = data.decode('utf8')
             Domoticz.Log("Data: %s" %data)
+            data = data.replace('true','1')     # UI is coming with true and not True
+            data = data.replace('false','0')   # UI is coming with false and not False
+
             setting_lst = eval(data)
-
+            upd = False
             for setting in setting_lst:
-                Domoticz.Log("setting: %s" %setting)
+                found = False
+                Domoticz.Debug("setting: %s = %s" %(setting, setting_lst[setting]['current']))
 
-                for param in setting:
-                    if param not in SETTINGS:
-                        Domoticz.Error("Unexpectped parameter: %s" %item)
-                        Domoticz.Error("Unexpected number of Parameter")
-                        _response["Data"] = { 'unexpected parameters %s' %item }
-                        _response["Status"] = "400 SYNTAX ERROR"
-                        break
-                    else:
-                        Domoticz.Log("loading %s" %param)
-                        if param in self.pluginconf.pluginConf:
-                            if self.pluginconf.pluginConf[param] != setting[param]['current_value']:
-                                self.pluginconf.pluginConf[param] = setting[param]['current_value']
+                # Do we have to update ?
+                for _theme in SETTINGS:
+                    for param in SETTINGS[_theme]:
+                        if param != setting: continue
+                        found = True
+                        if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: continue
+                        upd = True
+                        Domoticz.Log("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                        if SETTINGS[_theme][param]['restart']:
+                            self.restart_needed['RestartNeeded'] = True
+
+                if not found:
+                    Domoticz.Error("Unexpectped parameter: %s" %setting)
+                    _response["Data"] = { 'unexpected parameters %s' %setting }
+
+                if upd:
+                    # We need to write done the new version of PluginConf
+                    self.pluginconf.write_Settings()
+                    pass
+
+            
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
@@ -543,7 +673,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
-            duration = self.permitTojoin['duration']
+            duration = self.permitTojoin['Duration']
             timestamp = self.permitTojoin['Starttime']
             info = {}
             if self.permitTojoin['Duration'] == 255:
@@ -592,8 +722,8 @@ class WebServer(object):
                     device_info['SignaleLevel'] = self.Devices[x].SignalLevel
                     device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
                     device_info['TimedOut'] = self.Devices[x].TimedOut
-                    device_info['Type'] = self.Devices[x].Type
-                    device_info['SwitchType'] = self.Devices[x].SwitchType
+                    #device_info['Type'] = self.Devices[x].Type
+                    #device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=False )
 
@@ -609,8 +739,8 @@ class WebServer(object):
                         _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
                         _dictDevices['BatteryLevel'] = self.Devices[x].BatteryLevel
                         _dictDevices['TimedOut'] = self.Devices[x].TimedOut
-                        _dictDevices['Type'] = self.Devices[x].Type
-                        _dictDevices['SwitchType'] = self.Devices[x].SwitchType
+                        #_dictDevices['Type'] = self.Devices[x].Type
+                        #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
                         _response["Data"] = json.dumps( _dictDevices, sort_keys=False )
                         break
             else:
@@ -628,8 +758,8 @@ class WebServer(object):
                             device_info['SignaleLevel'] = self.Devices[x].SignalLevel
                             device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
                             device_info['TimedOut'] = self.Devices[x].TimedOut
-                            device_info['Type'] = self.Devices[x].Type
-                            device_info['SwitchType'] = self.Devices[x].SwitchType
+                            #device_info['Type'] = self.Devices[x].Type
+                            #device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
                 _response["Data"] = json.dumps( device_lst, sort_keys=False )
         return _response
@@ -643,23 +773,26 @@ class WebServer(object):
 
         if verb == 'GET':
             device_lst = []
+            _device =  {}
+            _widget = {}
+            _device['_NwkId'] = '0000'
+            _device['WidgetList'] = []
+
+            _widget['_ID'] =  ''
+            _widget['Name'] =  ''
+            _widget['IEEE'] =  '0000000000000000'
+            _widget['Ep'] =  '01' 
+            _widget['ZDeviceName'] =  'Zigate (Coordinator)'
+            if self.zigatedata:
+                if 'IEEE' in self.zigatedata:
+                    _widget['IEEE'] =  self.zigatedata['IEEE'] 
+                    _device['_NwkId'] = self.zigatedata['Short Address']
+
+            _device['WidgetList'].append( _widget )
+            device_lst.append( _device )
+
             for x in self.ListOfDevices:
-                if x == '0000': 
-
-                    _device = {}
-                    _device['_NwkId'] = '0000'
-                    _device['WidgetList'] = []
-
-                    _widget = {}
-                    _widget['_ID'] =  ''
-                    _widget['Name'] =  ''
-                    if 'IEEE' in self.ListOfDevices['0000']: _widget['IEEE'] =  self.ListOfDevices['0000']['IEEE'] 
-                    else: _widget['IEEE'] =  'Fake for None Mode'
-                    _widget['Ep'] =  '01' 
-                    _widget['ZDeviceName'] =  'Zigate (Coordinator)'
-                    _device['WidgetList'].append( _widget )
-                    device_lst.append( _device )
-                    continue
+                if x == '0000':  continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
                     continue
                 
@@ -693,9 +826,11 @@ class WebServer(object):
                                                             _widget['IEEE'] =  self.ListOfDevices[x]['IEEE'] 
                                                             _widget['Ep'] =  ep 
                                                             _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
-                                                            _device['WidgetList'].append( _widget )
+                                                            if _widget not in _device['WidgetList']:
+                                                                _device['WidgetList'].append( _widget )
                                                             break
-                                                    device_lst.append( _device )
+                                                    if _device not in device_lst:
+                                                        device_lst.append( _device )
                                             continue # Next Ep
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
@@ -717,9 +852,12 @@ class WebServer(object):
                                             _widget['IEEE'] =  self.ListOfDevices[x]['IEEE'] 
                                             _widget['Ep'] =  ep 
                                             _widget['ZDeviceName'] =  self.ListOfDevices[x]['ZDeviceName'] 
-                                            _device['WidgetList'].append( _widget )
+                                            if _widget not in _device['WidgetList']:
+                                                _device['WidgetList'].append( _widget )
 
-                device_lst.append( _device )
+                if _device not in device_lst:
+                    device_lst.append( _device )
+            Domoticz.Log("Response: %s" %device_lst)
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
             return _response
 
@@ -921,6 +1059,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         Domoticz.Log("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
+
         if verb == 'GET':
             if self.groupmgt is None:
                 return _response
@@ -957,6 +1096,118 @@ class WebServer(object):
                         zgroup['Devices'][dev] = ep 
                     _response["Data"] = json.dumps( zgroup, sort_keys=False )
 
+        elif verb == 'PUT':
+            _response["Data"] = None
+            ListOfGroups = self.groupmgt.ListOfGroups
+            grp_lst = []
+            if len(parameters) == 0:
+                self.restart_needed['RestartNeeded'] = True
+                data = data.decode('utf8')
+                data = json.loads(data)
+                Domoticz.Debug("data: %s" %data)
+                for item in data:
+                    Domoticz.Debug("item: %s" %item)
+                    if '_GroupId' not in item:
+                        Domoticz.Log("--->Adding Group: ")
+                        # Define a GroupId 
+                        for x in range( 0x0001, 0x9999):
+                            grpid = '%04d' %x
+                            if grpid not in ListOfGroups:
+                                break
+                        else:
+                            Domoticz.Error("Out of GroupId")
+                            continue
+                        ListOfGroups[grpid] = {}
+                        ListOfGroups[grpid]['Name'] = item['GroupName']
+                        ListOfGroups[grpid]['Devices'] = []
+                    else:
+                        if item['_GroupId'] not in ListOfGroups:
+                            Domoticz.Error("zGroup REST API - unknown GroupId: %s" %grpid)
+                            continue
+                        grpid = item['_GroupId']
+
+                    grp_lst.append( grpid ) # To memmorize the list of Group
+                    #Update Group
+                    Domoticz.Log("--->Checking Group: %s" %grpid)
+                    if item['GroupName'] != ListOfGroups[grpid]['Name']:
+                        # Update the GroupName
+                        Domoticz.Log("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
+                        self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
+
+                    newdev = []
+                    for devselected in item['devicesSelected']:
+                        if 'IEEE' in devselected:
+                            ieee = devselected['IEEE']
+                        elif 'IEEE' in self.ListOfDevices[devselected['_NwkId']]:
+                            ieee = self.ListOfDevices[devselected['_NwkId']]['IEEE']
+                        else: 
+                            Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
+                            continue
+                        Domoticz.Log("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
+                        # Check if this is not an Ikea Tradfri Remote
+                        nwkid = devselected['_NwkId']
+                        _tradfri_remote = False
+                        if 'Ep' in self.ListOfDevices[nwkid]:
+                            if '01' in self.ListOfDevices[nwkid]['Ep']:
+                                if 'ClusterType' in self.ListOfDevices[nwkid]['Ep']['01']:
+                                    for iterDev in self.ListOfDevices[nwkid]['Ep']['01']['ClusterType']:
+                                        if self.ListOfDevices[nwkid]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
+                                            # We should not process it through the group.
+                                            Domoticz.Log("------>Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
+                                            ListOfGroups[grpid]['Tradfri Remote'] = {}
+                                            ListOfGroups[grpid]['Tradfri Remote']['Device Addr'] = nwkid
+                                            ListOfGroups[grpid]['Tradfri Remote']['Device Id'] = iterDev
+                                            _tradfri_remote = True
+                        if _tradfri_remote:
+                            continue
+                        # Process the rest
+                        for _dev,_ep in ListOfGroups[grpid]['Devices']:
+                            if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
+                                if (ieee, _ep) not in newdev:
+                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
+                                    newdev.append( (ieee, _ep) )
+                                else:
+                                    Domoticz.Log("------>--> %s already in %s" %( (ieee, _ep), newdev))
+                                break
+                        else:
+                            if (ieee, devselected['Ep']) not in newdev:
+                                Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
+                                newdev.append( (ieee, devselected['Ep']) )
+                            else:
+                                Domoticz.Log("------>--> %s already in %s" %( (_dev, _ep), newdev))
+                    # end for devselecte
+
+                    if 'coordinatorInside' in item:
+                        if item['coordinatorInside']:
+                            if 'IEEE' in self.zigatedata:
+                                ieee_zigate = self.zigatedata['IEEE']
+                                if ( ieee_zigate, '01') not in newdev:
+                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee_zigate, '01'), grpid))
+                                    newdev.append( (ieee_zigate, _ep) )
+
+                    Domoticz.Log("--->Devices Added: %s" %newdev)
+                    ListOfGroups[grpid]['Imported'] = list( newdev )
+                    Domoticz.Log("--->Grp: %s - tobe Imported: %s" %(grpid, ListOfGroups[grpid]['Imported']))
+
+                # end for item / next group
+                # Finaly , we need to check if AnyGroup have been removed !
+                Domoticz.Log("Group to be removed")
+                for grpid in ListOfGroups:
+                    if grpid not in grp_lst:
+                        Domoticz.Log("--->Group %s has to be removed" %grpid)
+                        del ListOfGroups[grpid]['Imported']
+                        ListOfGroups[grpid]['Imported'] = []
+
+                Domoticz.Log("Group to be worked out")
+                for grpid in ListOfGroups:
+                    Domoticz.Log("Group: %s" %grpid)
+                    for dev in ListOfGroups[grpid]['Imported']:
+                        Domoticz.Log("---> %s to be imported" %str(dev))
+
+                self.groupmgt.write_jsonZigateGroupConfig()
+            # end if len()
+        # end if Verb=
+
         return _response
 
 
@@ -981,13 +1232,17 @@ def setupHeadersResponse():
 
     _response = {}
     _response["Headers"] = {}
-    _response["Headers"]["Connection"] = "Keep-alive"
-    _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
     _response["Headers"]["Server"] = "Domoticz"
-    #_response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    #_response["Headers"]["Pragma"] = "no-cache"
-    #_response["Headers"]["Expires"] = "0"
-    _response["Headers"]["Accept"] = "*/*"
+    _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
+    if KEEPALIVE:
+        _response["Headers"]["Connection"] = "Keep-alive"
+    else:
+        _response["Headers"]["Connection"] = "Close"
+    if not ALLOW_CACHE:
+        _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        _response["Headers"]["Pragma"] = "no-cache"
+        _response["Headers"]["Expires"] = "0"
+        _response["Headers"]["Accept"] = "*/*"
     #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.

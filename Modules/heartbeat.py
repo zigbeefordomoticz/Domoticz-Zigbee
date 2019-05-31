@@ -28,7 +28,7 @@ from Modules.output import  sendZigateCmd,  \
 
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
-from Modules.LQI import LQIcontinueScan
+from Modules.LQI import LQIcontinueScan, LQIdiscovery
 from Modules.consts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 from Classes.IAS import IAS_Zone_Management
@@ -441,8 +441,15 @@ def processListOfDevices( self , Devices ):
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     # LQI Scanner
-    #    - LQI = 0 - no scanning at all otherwise delay the scan by n x HEARTBEAT
-    if self.pluginconf.pluginConf['logLQI'] != 0 and \
+    #    - runLQI == 0 // Stop 
+    #    - runLQI == 1 // Start the process
+    #    - runLQI == 2 // Continue scanning
+
+    if self.runLQI[0] == 1: # Start LQI process (triggered from WebUI)
+        Domoticz.Log("Start LQI process")
+        LQIdiscovery( self )
+        self.runLQI[0] = 2
+    elif self.runLQI[0] == 2 and \
             self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
         if self.ZigateComm.loadTransmit() < 5 :
             LQIcontinueScan( self, Devices )

@@ -106,7 +106,7 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
-# from Classes.WebServer import WebServer
+from Classes.WebServer import WebServer
 
 class BasePlugin:
     enabled = False
@@ -116,13 +116,14 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.LQI = {}
+        self.runLQI = [ 0 ]
         self.zigatedata = {}
 
         self.ZigateComm = None
         self.transport = None         # USB or Wifi
         self._ReqRcv = bytearray()
         self.permitTojoin = {}
-        self.permitTojoin['duration'] = 0
+        self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
         self.groupmgt = None
         self.groupmgt_NotStarted = True
@@ -436,6 +437,7 @@ class BasePlugin:
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
 
         if (self.pluginconf.pluginConf)['logLQI'] != 0 :
+            self.runLQI = [ 2 ]
             LQIdiscovery( self ) 
 
         self.busy = False
@@ -580,12 +582,12 @@ class BasePlugin:
                     self.groupmgt_NotStarted = False
 
 
-            #if self.pluginconf.pluginConf['enableWebServer']:
-                #from Classes.WebServer import WebServer
+            if self.pluginconf.pluginConf['enableWebServer']:
+                from Classes.WebServer import WebServer
 
-                #Domoticz.Status("Start Web Server connection")
-                #self.webserver = WebServer( self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                #                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin )
+                Domoticz.Status("Start Web Server connection")
+                self.webserver = WebServer( self.runLQI, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin )
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.pluginConf['allowOTA']:
@@ -631,6 +633,12 @@ class BasePlugin:
         if self.OTA:
             self.OTA.heartbeat()
             
+        # Check PermitToJoin
+        if self.permitTojoin['Duration'] != 255 and self.permitTojoin['Duration'] != 0:
+            if int(time.time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
+                sendZigateCmd( self, "0014", "" ) # Request status
+                self.permitTojoin['Duration'] = 0
+
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.pluginConf['Ping']:
