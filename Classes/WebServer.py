@@ -757,14 +757,24 @@ class WebServer(object):
 
         if verb == 'GET':
             device_lst = []
-            _device = {}; _device['_NwkId'] = '0000'; _device['WidgetList'] = []
-            _widget = {}; _widget['_ID'] =  ''; _widget['Name'] =  ''
-            if 'IEEE' in self.ListOfDevices['0000']: _widget['IEEE'] =  self.ListOfDevices['0000']['IEEE'] 
-            else: _widget['IEEE'] =  'Fake for None Mode'
+            _device =  {}
+            _widget = {}
+            _device['_NwkId'] = '0000'
+            _device['WidgetList'] = []
+
+            _widget['_ID'] =  ''
+            _widget['Name'] =  ''
+            _widget['IEEE'] =  '0000000000000000'
             _widget['Ep'] =  '01' 
             _widget['ZDeviceName'] =  'Zigate (Coordinator)'
+            if self.zigatedata:
+                if 'IEEE' in self.zigatedata:
+                    _widget['IEEE'] =  self.zigatedata['IEEE'] 
+                    _device['_NwkId'] = self.zigatedata['Short Address']
+
             _device['WidgetList'].append( _widget )
             device_lst.append( _device )
+
             for x in self.ListOfDevices:
                 if x == '0000':  continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
@@ -831,6 +841,7 @@ class WebServer(object):
 
                 if _device not in device_lst:
                     device_lst.append( _device )
+            Domoticz.Log("Response: %s" %device_lst)
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
             return _response
 
