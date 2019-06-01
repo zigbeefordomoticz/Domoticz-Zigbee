@@ -510,11 +510,17 @@ class WebServer(object):
                             continue
                         for x in  reportLQI[item]:
                             # Report only Child relationship
-                            if item == x: continue
                             if x != '0000' and x not in self.ListOfDevices: continue
+                            if item == x: continue
+                            Domoticz.Log("%s -- %s ==> %s " %(_ts, x, reportLQI[item][x]))
+
+                            for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
+                                if attribute not in reportLQI[item][x]:
+                                    Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
+                        
                             if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): 
                                 Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s SKIPED" \
-                                    %( _ts, item, x,  reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
+                                    %( _ts, item, x,  reportLQI[item][x]['_relationshp'], reportLQI[item][x]["_lnkqty"], reportLQI[item][x]["_devicetype"], reportLQI[item][x]['_depth']))
                                 continue
 
                             if reportLQI[item][x]['_relationshp'] == "Child":
@@ -526,7 +532,7 @@ class WebServer(object):
                             _relation = {}
                             _relation[master] = item
                             _relation[slave] = x
-                            _relation["_linkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
+                            _relation["_lnkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
                             _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
 
                             if item != "0000":
@@ -538,8 +544,8 @@ class WebServer(object):
                                     if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
                                         _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
 
-                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s" \
-                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
+                                Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s" \
+                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_lnkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
 
                             _topo[_ts].append( _relation )
                         #end for x
