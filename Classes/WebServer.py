@@ -820,6 +820,7 @@ class WebServer(object):
             for x in self.ListOfDevices:
                 if x == '0000':  continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
+                    Domoticz.Log("rest_zGroup_lst_avlble_dev - no 'MacCapa' info found for %s!!!!" %x)
                     continue
                 
                 IkeaRemote = False
@@ -827,6 +828,7 @@ class WebServer(object):
                     if self.ListOfDevices[x]['Type'] == 'Ikea_Round_5b':
                         IkeaRemote = True
                 if self.ListOfDevices[x]['MacCapa'] != '8e' and not IkeaRemote:
+                    Domoticz.Log("rest_zGroup_lst_avlble_dev - %s not a Main Powered device. " %x)
                     continue
 
                 if 'Ep' in self.ListOfDevices[x]:
@@ -859,13 +861,18 @@ class WebServer(object):
                                                         device_lst.append( _device )
                                             continue # Next Ep
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
-                                'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] and \
+                                ( 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' not in self.ListOfDevices[x]) and \
                                 '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 '0008' not in  self.ListOfDevices[x]['Ep'][ep]:
                                 continue
-                            if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
-                                for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
-                                    if self.ListOfDevices[x]['Ep'][ep]['ClusterType'][widgetID] not in ( 'LvlControl', 'Switch', 'Plug', 
+                            if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' in self.ListOfDevices[x]:
+                                if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
+                                    clusterType= self.ListOfDevices[x]['Ep'][ep]['ClusterType']
+                                else:
+                                    clusterType = self.ListOfDevices[x]['ClusterType']
+
+                                for widgetID in clusterType:
+                                    if clusterType[widgetID] not in ( 'LvlControl', 'Switch', 'Plug', 
                                         "SwitchAQ2", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR',
                                         'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
                                         'WindowCovering'):
@@ -931,15 +938,22 @@ class WebServer(object):
 
                 device['WidgetList'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
-                    if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
-                        for widgetID in self.ListOfDevices[x]['Ep'][ep]['ClusterType']:
+                    if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' in self.ListOfDevices[x]:
+                        if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
+                            clusterType= self.ListOfDevices[x]['Ep'][ep]['ClusterType']
+                        else:
+                            clusterType = self.ListOfDevices[x]['ClusterType']
+                        for widgetID in clusterType:
                             for widget in self.Devices:
                                 if self.Devices[widget].ID == int(widgetID):
                                     Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
-                                    device['WidgetList'].append( self.Devices[widget].Name )
+                                    if self.Devices[widget].Name not in device['WidgetList']:
+                                        device['WidgetList'].append( self.Devices[widget].Name )
 
-                device_lst.append( device )
+                if device not in device_lst:
+                    device_lst.append( device )
             #_response["Data"] = json.dumps( device_lst, sort_keys=True )
+            Domoticz.Log("zDevice_name - sending %s" %device_lst)
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
 
         elif verb == 'PUT':
