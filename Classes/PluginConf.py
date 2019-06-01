@@ -19,6 +19,11 @@ from Modules.tools import is_hex
 
 
 SETTINGS = { 
+            'DomoticzEnvironment': {
+                'proto': { 'type':'str', 'default':'http', 'current':None, 'restart':False, 'hidden':False},
+                'host': { 'type':'str', 'default':'127.0.0.1', 'current':None, 'restart':False, 'hidden':False},
+                'port': { 'type':'str', 'default':'8080', 'current':None, 'restart':False, 'hidden':False}},
+
             'WebInterface': { 
                 'enableWebServer': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False}},
 
@@ -143,6 +148,9 @@ class PluginConf:
         else:
             self._load_Settings()
 
+        # Reset eraseZigatePDM to default
+        self.pluginConf['eraseZigatePDM'] = 0
+
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
@@ -154,7 +162,7 @@ class PluginConf:
         elif self.pluginConf['Certification'] == 'FCC':
             self.pluginConf['Certification'] = 0x02
         else:
-            self.pluginConf['Certification'] = 0x00
+            self.pluginConf['Certification'] = 0x01
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command

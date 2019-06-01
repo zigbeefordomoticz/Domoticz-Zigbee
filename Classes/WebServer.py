@@ -20,6 +20,7 @@ from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq, sendZigateCmd, star
 
 from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
+from Classes.DomoticzDB import DomoticzDB_Preferences
 
 DELAY = 0
 ALLOW_GZIP = 1              # Allow Standard gzip compression
@@ -61,13 +62,15 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, runLQI, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin):
+    def __init__( self, runLQI, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword):
 
         self.httpServerConn = None
         self.httpsServerConn = None
         self.httpServerConns = {}
         self.httpClientConn = None
 
+        self.WebUsername = WebUserName
+        self.WebPassword = WebPassword
         self.pluginconf = PluginConf
         self.zigatedata = ZigateData
         self.adminWidget = adminWidgets
@@ -313,6 +316,7 @@ class WebServer(object):
 
         REST_COMMANDS = { 
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
+                'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
@@ -395,7 +399,10 @@ class WebServer(object):
         if verb == 'GET':
             Domoticz.Status("Erase Zigate PDM")
             Domoticz.Error("Erase Zigate PDM non implémenté pour l'instant")
-            #sendZigateCmd(self, "0012", "")
+            if self.pluginconf.pluginConf['eraseZigatePDM']:
+                #sendZigateCmd(self, "0012", "")
+                self.pluginconf.pluginConf['eraseZigatePDM'] = 0
+
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
                 Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
                 setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
@@ -437,6 +444,24 @@ class WebServer(object):
                 _response["Data"] = json.dumps( fake_zigate , sort_keys=False )
         return _response
 
+
+    def rest_domoticz_env( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+                
+                dzenv = {}
+                dzenv['proto'] = self.pluginconf.pluginConf['proto']
+                dzenv['host'] = self.pluginconf.pluginConf['host']
+                dzenv['port'] = self.pluginconf.pluginConf['port']
+
+                dzenv['WebUserName'] = self.WebUsername
+                dzenv['WebPassword'] = self.WebPassword
+
+                _response["Data"] = json.dumps( dzenv, sort_keys=False )
+        return _response
 
     def rest_PluginEnv( self, verb, data, parameters):
 
@@ -524,6 +549,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 timestamp = parameters[0]
                 if timestamp in _topo:
+                    Domoticz.Log("Topologie sent: %s" %_topo[timestamp])
                     _response['Data'] = json.dumps( _topo[timestamp] , sort_keys=True)
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
@@ -878,7 +904,10 @@ class WebServer(object):
                 for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health'):
                     if item in self.ListOfDevices[x]:
                         if item != 'MacCapa':
-                            device[item.strip()] = self.ListOfDevices[x][item]
+                            if self.ListOfDevices[x][item] != {}:
+                                device[item.strip()] = self.ListOfDevices[x][item]
+                            else:
+                                device[item.strip()] = ""
                         else:
                                 device['MacCapa'] = []
                                 mac_capability = int(self.ListOfDevices[x][item],16)
@@ -1082,6 +1111,7 @@ class WebServer(object):
                         _dev['Ep'] = ep
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
+                Domoticz.Log("zGroup: %s" %zgroup_lst)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
 
             elif len(parameters) == 1:
