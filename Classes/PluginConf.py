@@ -148,6 +148,9 @@ class PluginConf:
         else:
             self._load_Settings()
 
+        # Reset eraseZigatePDM to default
+        self.pluginConf['eraseZigatePDM'] = 0
+
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
@@ -159,7 +162,7 @@ class PluginConf:
         elif self.pluginConf['Certification'] == 'FCC':
             self.pluginConf['Certification'] = 0x02
         else:
-            self.pluginConf['Certification'] = 0x00
+            self.pluginConf['Certification'] = 0x01
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
