@@ -152,16 +152,18 @@ class WebServer(object):
             if (headerCode != "200 OK"):
                 self.sendResponse( Connection, {"Status": headerCode} )
                 return
-            elif ( parsed_query[0] == 'rest-zigate'):
-                Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
+            else:
+                if len(parsed_query) >= 3:
+                    Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
                         %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
-                if parsed_query[1] == '1':
-                    # API Version 1
-                    self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
-                else:
-                    Domoticz.Error("Unknown API version %s" %parsed_query[1])
-                    headerCode = "400 Bad Request"
-                return
+                    if parsed_query[0] == 'rest-zigate' and parsed_query[1] == '1':
+                        # API Version 1
+                        self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
+                    else:
+                        Domoticz.Error("Unknown API  %s" %parsed_query)
+                        headerCode = "400 Bad Request"
+                        self.sendResponse( Connection, {"Status": headerCode} )
+                    return
 
             # Finaly we simply has to serve a File.
             webFilename = self.homedirectory +'www'+ Data['URL']
@@ -752,6 +754,8 @@ class WebServer(object):
                 # Return the Full List of ZIgate Domoticz Widget
                 device_lst = []
                 for x in self.Devices:
+                    if len(self.Devices[x].DeviceID)  != 16:
+                        continue
                     device_info = {}
                     device_info['_DeviceID'] = self.Devices[x].DeviceID
                     device_info['Name'] = self.Devices[x].Name
@@ -768,6 +772,8 @@ class WebServer(object):
 
             elif len(parameters) == 1:
                 for x in self.Devices:
+                    if len(self.Devices[x].DeviceID)  != 16:
+                        continue
                     if parameters[0] == self.Devices[x].DeviceID:
                         _dictDevices = {}
                         _dictDevices['_DeviceID'] = self.Devices[x].DeviceID
@@ -787,6 +793,8 @@ class WebServer(object):
                 for parm in parameters:
                     device_info = {}
                     for x in self.Devices:
+                        if len(self.Devices[x].DeviceID)  != 16:
+                            continue
                         if parm == self.Devices[x].DeviceID:
                             device_info = {}
                             device_info['_DeviceID'] = self.Devices[x].DeviceID
