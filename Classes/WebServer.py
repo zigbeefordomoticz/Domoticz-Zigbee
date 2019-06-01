@@ -512,7 +512,10 @@ class WebServer(object):
                             # Report only Child relationship
                             if item == x: continue
                             if x != '0000' and x not in self.ListOfDevices: continue
-                            if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): continue
+                            if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): 
+                                Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s SKIPED" \
+                                    %( _ts, item, x,  reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
+                                continue
 
                             if reportLQI[item][x]['_relationshp'] == "Child":
                                 master = 'Father'
@@ -520,7 +523,6 @@ class WebServer(object):
                             elif reportLQI[item][x]['_relationshp'] == "Parent":
                                 master = 'Child'
                                 slave = 'Father'
-
                             _relation = {}
                             _relation[master] = item
                             _relation[slave] = x
@@ -540,6 +542,11 @@ class WebServer(object):
                                     %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_linkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
 
                             _topo[_ts].append( _relation )
+                        #end for x
+                    #end for item
+
+                    # Process the Sibling
+                #end for _st
 
         if verb == 'GET':
             if len(parameters) == 0:
