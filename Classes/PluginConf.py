@@ -19,6 +19,11 @@ from Modules.tools import is_hex
 
 
 SETTINGS = { 
+            'DomoticzEnvironment': {
+                'proto': { 'type':'str', 'default':'http', 'current':None, 'restart':False, 'hidden':False},
+                'host': { 'type':'str', 'default':'127.0.0.1', 'current':None, 'restart':False, 'hidden':False},
+                'port': { 'type':'str', 'default':'8080', 'current':None, 'restart':False, 'hidden':False}},
+
             'WebInterface': { 
                 'enableWebServer': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False}},
 

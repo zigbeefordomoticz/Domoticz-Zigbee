@@ -54,6 +54,40 @@ class DomoticzDB_Preferences:
             Domoticz.Error("retreiveAcceptNewHardware - Exception: %s" %e)
             return 0
 
+    def retreiveWebUserNamePassword( self ):
+
+        try:
+            self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
+            WebUserName = self.dbCursor.fetchone()
+            WebUserName = WebUserName[0]
+            Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %WebUserName)
+
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" %e)
+            WebUserName = None
+
+        except Exception as e:
+            Domoticz.Error("retreiveWebUserNamePassword - Exception: %s" %e)
+            WebUserName = None
+
+
+        try:
+            self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
+            WebPassword = self.dbCursor.fetchone()
+            WebPassword = WebPassword[0] 
+            Domoticz.Log("retreiveWebUserNamePassword - WebPassword: %s" %WebPassword)
+            return (WebUserName, WebPassword)
+
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" %e)
+            WebPassword = None
+            return (WebUserName, WebPassword)
+
+        except Exception as e:
+            Domoticz.Error("retreiveWebUserNamePassword - Exception: %s" %e)
+            WebPassword = None
+            return (WebUserName, WebPassword)
+
     def unsetAcceptNewHardware( self):
 
         self.dbCursor.execute("UPDATE Preferences Set nValue = '0' Where Key = 'AcceptNewHardware' " )

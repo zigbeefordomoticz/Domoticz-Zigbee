@@ -139,6 +139,7 @@ class BasePlugin:
         self.StartupFolder = None
         self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
         self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
+        self.domoticzdb_Preferences = None         # Object allowing direct access to Domoticz DB Preferences
         self.adminWidgets = None   # Manage AdminWidgets object
         self.DeviceListName = None
         self.pluginconf = None     # PlugConf object / all configuration parameters
@@ -214,6 +215,8 @@ class BasePlugin:
             self.domoticzdb_DeviceStatus = DomoticzDB_DeviceStatus( _dbfilename, self.HardwareID  )
             Domoticz.Debug("   - Hardware table")
             self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
+            Domoticz.Debug("   - Preferences table")
+            self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
         else:
             Domoticz.Status("The current Domoticz version doesn't support the plugin to enable a number of features")
             Domoticz.Status(" switching to Domoticz V 4.10355 and above would help")
@@ -262,9 +265,6 @@ class BasePlugin:
 
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf)
-
-        # Check update for web GUI
-        # CheckForUpdate( self )
 
         # Connect to Zigate only when all initialisation are properly done.
         if  self.transport == "USB":
@@ -585,9 +585,11 @@ class BasePlugin:
             if self.pluginconf.pluginConf['enableWebServer']:
                 from Classes.WebServer import WebServer
 
+                WebUserName, WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
+
                 Domoticz.Status("Start Web Server connection")
                 self.webserver = WebServer( self.runLQI, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin )
+                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , WebUserName, WebPassword)
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.pluginConf['allowOTA']:
