@@ -399,7 +399,10 @@ class WebServer(object):
         if verb == 'GET':
             Domoticz.Status("Erase Zigate PDM")
             Domoticz.Error("Erase Zigate PDM non implémenté pour l'instant")
-            #sendZigateCmd(self, "0012", "")
+            if self.pluginconf.pluginConf['eraseZigatePDM']:
+                #sendZigateCmd(self, "0012", "")
+                self.pluginconf.pluginConf['eraseZigatePDM'] = 0
+
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
                 Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
                 setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
@@ -901,7 +904,10 @@ class WebServer(object):
                 for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health'):
                     if item in self.ListOfDevices[x]:
                         if item != 'MacCapa':
-                            device[item.strip()] = self.ListOfDevices[x][item]
+                            if self.ListOfDevices[x][item] != {}:
+                                device[item.strip()] = self.ListOfDevices[x][item]
+                            else:
+                                device[item.strip()] = ""
                         else:
                                 device['MacCapa'] = []
                                 mac_capability = int(self.ListOfDevices[x][item],16)
@@ -1105,6 +1111,7 @@ class WebServer(object):
                         _dev['Ep'] = ep
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
+                Domoticz.Log("zGroup: %s" %zgroup_lst)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
 
             elif len(parameters) == 1:
