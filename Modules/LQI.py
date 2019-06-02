@@ -101,51 +101,6 @@ def LQIcontinueScan(self, Devices):
                     Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2s linkQty     Rx-Idl %6s" \
                             %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
 
-        Domoticz.Log("SANITY CHECK - REMOVING SIBLING")
-
-        Domoticz.Log("Before")
-        for src in self.LQI:
-            for child in self.LQI[src]:
-                try:
-                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
-                        %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], int(self.LQI[src][child]['_depth'], 16), int(self.LQI[src][child]['_lnkqty'], 16), self.LQI[src][child]['_rxonwhenidl']))
-                except:
-                    Domoticz.Log(" linkQty: " +str(self.LQI[src][child]['_lnkqty']))
-                    Domoticz.Log(" Node %4s child %4s relation %7s type %11s deepth %2s linkQty     Rx-Idl %6s" \
-                            %(src, child, self.LQI[src][child]['_relationshp'], self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_rxonwhenidl']))
-
-        #### 
-        list_sibling = []
-        list_relation = list(self.LQI)
-        for pere in list_relation:
-            list_relation_pere = list(self.LQI[pere])
-            for fils in list_relation_pere:
-                if pere == fils: continue
-                if self.LQI[pere][fils]['_relationshp'] == 'Sibling':
-                    del self.LQI[pere][fils]
-                    list_sibling.append( ( pere, fils, self.LQI[src][child]['_devicetype'], self.LQI[src][child]['_depth'], self.LQI[src][child]['_lnkqty'], self.LQI[src][child]['_rxonwhenidl']) )
-
-        ######
-        for child1,child2, _devtype, _depth, _lnkqty, rxonidle in list_sibling:
-            # child1/2 are brothers. They share the same Parent
-            Domoticz.Log("Search Parent for %s %s" %(child1, child2))
-            # Parent of x:
-            list_relation = list(self.LQI)
-            for x in list_relation:
-                #list_relation_pere = list(self.LQI[pere])
-                #for y in list_relation_pere:
-                    if x == child2:
-                        #child1's parent is x
-                        Domoticz.Log("Found Parent %s " %x)
-                        self.LQI[x][child2] ={}
-                        self.LQI[x][child2]['_relationshp'] = 'Child'
-                        self.LQI[x][child2]['_devicetype'] = _devtype
-                        self.LQI[x][child2]['_depth'] = _depth
-                        self.LQI[x][child2]['_lnkqty'] = _lnkqty
-                        self.LQI[x][child2]['_rxonwhenidl'] = rxonidle
-
-
-        Domoticz.Log("And the result is")
         Domoticz.Status("Publishing LQI Results")
         for src in self.LQI:
             for child in self.LQI[src]:
