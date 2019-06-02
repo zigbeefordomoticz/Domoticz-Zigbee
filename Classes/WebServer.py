@@ -128,7 +128,7 @@ class WebServer(object):
 
     def onMessage( self, Connection, Data ):
 
-            Domoticz.Log("WebServer onMessage")
+            Domoticz.Debug("WebServer onMessage")
             DumpHTTPResponseToLog(Data)
 
             headerCode = "200 OK"
@@ -143,7 +143,7 @@ class WebServer(object):
                 headerCode = "400 Bad Request"
 
             parsed_url = urlparse(  Data['URL'] )
-            Domoticz.Log("URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
+            Domoticz.Debug("URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
             if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
             else: parsed_query = Data['URL'].split('/')
 
@@ -167,30 +167,31 @@ class WebServer(object):
 
             # Finaly we simply has to serve a File.
             webFilename = self.homedirectory +'www'+ Data['URL']
-            Domoticz.Log("webFilename: %s" %webFilename)
+            Domoticz.Debug("webFilename: %s" %webFilename)
             if not os.path.isfile( webFilename ):
                 webFilename =  self.homedirectory + 'www' + "/index.html"
-                Domoticz.Log("Redirecting to /index.html")
+                Domoticz.Debug("Redirecting to /index.html")
 
             # We are ready to send the response
             _response = setupHeadersResponse()
             _response["Headers"]["Cache-Control"] = "private"
 
-            Domoticz.Log("Opening: %s" %webFilename)
+            Domoticz.Debug("Opening: %s" %webFilename)
             currentVersionOnServer = os.path.getmtime(webFilename)
             _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
 
 
             # Can we use Cache if exists
-            if 'If-Modified-Since' in Data['Headers']:
-                lastVersionInCache = Data['Headers']['If-Modified-Since']
-                Domoticz.Log("InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
-                if lastVersionInCache == _lastmodified:
-                    # No need to send it back
-                    Domoticz.Log("Use Caching")
-                    _response['Status'] = "304 Not Modified"
-                    self.sendResponse( Connection, _response )
-                    return _response
+            if ALLOW_CACHE:
+                if 'If-Modified-Since' in Data['Headers']:
+                    lastVersionInCache = Data['Headers']['If-Modified-Since']
+                    Domoticz.Debug("InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
+                    if lastVersionInCache == _lastmodified:
+                        # No need to send it back
+                        Domoticz.Log("User Caching - InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
+                        _response['Status'] = "304 Not Modified"
+                        self.sendResponse( Connection, _response )
+                        return _response
 
             if 'Ranges' in Data['Headers']:
                 Domoticz.Log("Ranges processing")
@@ -240,15 +241,15 @@ class WebServer(object):
                 Connection.Disconnect()
             return
 
-        Domoticz.Log("Sending Response to : %s" %(Connection.Name))
+        Domoticz.Debug("Sending Response to : %s" %(Connection.Name))
 
         # Compression
         if (ALLOW_GZIP or ALLOW_DEFLATE ) and 'Data' in Response and AcceptEncoding:
-            Domoticz.Log("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, ALLOW_CHUNK, ALLOW_DEFLATE, ALLOW_GZIP))
+            Domoticz.Debug("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, ALLOW_CHUNK, ALLOW_DEFLATE, ALLOW_GZIP))
             if len(Response["Data"]) > MAX_KB_TO_SEND:
                 orig_size = len(Response["Data"])
                 if ALLOW_DEFLATE and AcceptEncoding.find('deflate') != -1:
-                    Domoticz.Log("Compressing - deflate")
+                    Domoticz.Debug("Compressing - deflate")
                     zlib_compress = zlib.compressobj( 9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
                     deflated = zlib_compress.compress(Response["Data"])
                     deflated += zlib_compress.flush()
@@ -256,11 +257,11 @@ class WebServer(object):
                     Response["Data"] = deflated
 
                 elif ALLOW_GZIP and AcceptEncoding.find('gzip') != -1:
-                    Domoticz.Log("Compressing - gzip")
+                    Domoticz.Debug("Compressing - gzip")
                     Response["Data"] = gzip.compress( Response["Data"] )
                     Response["Headers"]['Content-Encoding'] = 'gzip'
 
-                Domoticz.Log("Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int(100-(len(Response["Data"])/orig_size)*100)))
+                Domoticz.Debug("Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int(100-(len(Response["Data"])/orig_size)*100)))
 
         # Chunking, Follow the Domoticz Python Plugin Framework
         if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
@@ -271,7 +272,7 @@ class WebServer(object):
             HTTPchunk['Headers'] = {}
             HTTPchunk['Headers'] = dict(Response['Headers'])
             HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
-            Domoticz.Log("Sending: %s out of %s" %(idx, len((Response['Data']))))
+            Domoticz.Debug("Sending: %s out of %s" %(idx, len((Response['Data']))))
 
             # Firs Chunk
             DumpHTTPResponseToLog( HTTPchunk )
@@ -290,7 +291,7 @@ class WebServer(object):
                     tosend['Data'] = Response['Data'][idx:]        
                     idx = -1
 
-                Domoticz.Log("Sending Chunk: %s out of %s" %(idx, len((Response['Data']))))
+                Domoticz.Debug("Sending Chunk: %s out of %s" %(idx, len((Response['Data']))))
                 Connection.Send( tosend , Delay= DELAY)
 
             # Closing Chunk
@@ -309,9 +310,9 @@ class WebServer(object):
     def keepConnectionAlive( self ):
 
         self.heartbeats += 1
-        Domoticz.Log("%s Connections established" %len(self.httpServerConns))
-        for con in self.httpServerConns:
-            Domoticz.Log("Connection established: %s" %self.httpServerConns[con].Name)
+        #Domoticz.Log("%s Connections established" %len(self.httpServerConns))
+        #for con in self.httpServerConns:
+        #    Domoticz.Log("Connection established: %s" %self.httpServerConns[con].Name)
         return
 
     def do_rest( self, Connection, verb, data, version, command, parameters):
@@ -623,6 +624,7 @@ class WebServer(object):
                         _scan[_ts] = {}
                         for item in NetworkScan:
                             _scan[_ts][item] = NetworkScan[item]
+
         if verb == 'DELETE':
             if len(parameters) == 0:
                 #os.remove( _filename )
