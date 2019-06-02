@@ -484,13 +484,6 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == 'DELETE':
-            os.remove( _filename )
-            action = {}
-            action['Name'] = 'File-Removed'
-            action['FileName'] = _filename
-            _response['Data'] = json.dumps( action , sort_keys=True)
-            return _response
 
         if not os.path.isfile( _filename ) :
             _response['Data'] = json.dumps( {} , sort_keys=False ) 
@@ -514,49 +507,86 @@ class WebServer(object):
                             # Report only Child relationship
                             if x != '0000' and x not in self.ListOfDevices: continue
                             if item == x: continue
-                            Domoticz.Log("%s -- %s ==> %s " %(_ts, x, reportLQI[item][x]))
-
                             for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
                                 if attribute not in reportLQI[item][x]:
                                     Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
                         
-                            if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): 
-                                Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s SKIPED" \
-                                    %( _ts, item, x,  reportLQI[item][x]['_relationshp'], reportLQI[item][x]["_lnkqty"], reportLQI[item][x]["_devicetype"], reportLQI[item][x]['_depth']))
-                                continue
+                            #if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): 
+                            #    Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s SKIPED" \
+                            #        %( _ts, item, x,  reportLQI[item][x]['_relationshp'], reportLQI[item][x]["_lnkqty"], reportLQI[item][x]["_devicetype"], reportLQI[item][x]['_depth']))
+                            #    continue
 
-                            if reportLQI[item][x]['_relationshp'] == "Child":
-                                master = 'Father'
-                                slave = 'Child'
-                            elif reportLQI[item][x]['_relationshp'] == "Parent":
-                                master = 'Child'
-                                slave = 'Father'
+                            #if reportLQI[item][x]['_relationshp'] == "Child":
+                            #    master = 'Father'
+                            #    slave = 'Child'
+                            #elif reportLQI[item][x]['_relationshp'] == "Parent":
+                            #    master = 'Child'
+                            #    slave = 'Father'
                             _relation = {}
-                            _relation[master] = item
-                            _relation[slave] = x
+                            _relation['Father'] = item
+                            _relation['Child'] = x
                             _relation["_lnkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
                             _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
 
                             if item != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[item]:
                                     if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
-                                        _relation[master] = self.ListOfDevices[item]['ZDeviceName']
+                                        #_relation[master] = self.ListOfDevices[item]['ZDeviceName']
+                                        _relation['Father'] = self.ListOfDevices[item]['ZDeviceName']
                             if x != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[x]:
                                     if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
-                                        _relation[slave] = self.ListOfDevices[x]['ZDeviceName']
+                                        #_relation[slave] = self.ListOfDevices[x]['ZDeviceName']
+                                        _relation['Child'] = self.ListOfDevices[x]['ZDeviceName']
 
-                                Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s" \
-                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_lnkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
+                                Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
+                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item][x]['_depth']))
+                                    #%( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_lnkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
 
                             _topo[_ts].append( _relation )
                         #end for x
                     #end for item
-
-                    # Process the Sibling
                 #end for _st
 
-        if verb == 'GET':
+        if verb == 'DELETE':
+            if len(parameters) == 0:
+                os.remove( _filename )
+                action = {}
+                action['Name'] = 'File-Removed'
+                action['FileName'] = _filename
+                _response['Data'] = json.dumps( action , sort_keys=True)
+
+            elif len(parameters) == 1:
+                timestamp = parameters[0]
+                if timestamp in _topo:
+                    Domoticz.Log("Removing Report: %s from %s records" %(timestamp, len(_topo)))
+                    with open( _filename, 'r+') as handle:
+                        d = handle.readlines()
+                        handle.seek(0)
+                        for line in d:
+                            if line[0] != '{' and line[-1] != '}':
+                                handle.write( line )
+                                continue
+                            entry = json.loads( line, encoding=dict )
+                            entry_ts = entry.keys()
+                            if len( entry_ts ) == 1:
+                                if timestamp in entry_ts:
+                                    Domoticz.Log("--------> Skiping %s" %timestamp)
+                                    continue
+                            else:
+                                continue
+                            handle.write( line )
+                        handle.truncate()
+
+                    action = {}
+                    action['Name'] = 'Report %s removed' %timestamp
+                    _response['Data'] = json.dumps( action , sort_keys=True)
+                else:
+                    Domoticz.Log("Timestamp: %s not found" %timestamp)
+                    _response['Data'] = json.dumps( [] , sort_keys=True)
+            return _response
+
+        elif verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
                 _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
@@ -579,14 +609,6 @@ class WebServer(object):
 
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.hardwareID + '.json'
 
-        if verb == 'DELETE':
-            os.remove( _filename )
-            action = {}
-            action['Name'] = 'File-Removed'
-            action['FileName'] = _filename
-            _response['Data'] = json.dumps( action , sort_keys=True)
-            return _response
-
         _timestamps_lst = [] # Just the list of Timestamps
         _scan = {}
         if os.path.isfile( _filename ) :
@@ -601,7 +623,44 @@ class WebServer(object):
                         _scan[_ts] = {}
                         for item in NetworkScan:
                             _scan[_ts][item] = NetworkScan[item]
-        if verb == 'GET':
+        if verb == 'DELETE':
+            if len(parameters) == 0:
+                #os.remove( _filename )
+                action = {}
+                action['Name'] = 'File-Removed'
+                action['FileName'] = _filename
+                _response['Data'] = json.dumps( action , sort_keys=True)
+
+            elif len(parameters) == 1:
+                timestamp = parameters[0]
+                if timestamp in _timestamps_lst:
+                    Domoticz.Log("Removing Report: %s from %s records" %(timestamp, len(_topo)))
+                    with open( _filename, 'r+') as handle:
+                        d = handle.readlines()
+                        handle.seek(0)
+                        for line in d:
+                            if line[0] != '{' and line[-1] != '}':
+                                handle.write( line )
+                                continue
+                            entry = json.loads( line, encoding=dict )
+                            entry_ts = entry.keys()
+                            if len( entry_ts ) == 1:
+                                if timestamp in entry_ts:
+                                    Domoticz.Log("--------> Skiping %s" %timestamp)
+                                    continue
+                            else:
+                                continue
+                            handle.write( line )
+                        handle.truncate()
+
+                    action = {}
+                    action['Name'] = 'Report %s removed' %timestamp
+                    _response['Data'] = json.dumps( action , sort_keys=True)
+                else:
+                    Domoticz.Log("Timestamp: %s not found" %timestamp)
+                    _response['Data'] = json.dumps( [] , sort_keys=True)
+            return _response
+        elif verb == 'GET':
             if len(parameters) == 0:
                 _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
 
