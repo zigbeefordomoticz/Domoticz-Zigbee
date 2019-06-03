@@ -446,14 +446,12 @@ def processListOfDevices( self , Devices ):
     #    - phase == 2 // Continue scanning
 
     phase = self.networkmap.NetworkMapPhase()
-    Domoticz.Log("NetworkMap phase: %s" %phase)
     if phase == 1:
         Domoticz.Log("Start NetworkMap process")
         self.start_scan( )
     #elif self.runLQI[0] == 2 and \
-    #        self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
-    elif phase == 2:
-        #if self.ZigateComm.loadTransmit() < 5 :
+    elif phase == 2 and self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
+        if self.ZigateComm.loadTransmit() < 5 :
             self.networkmap.continue_scan( )
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
