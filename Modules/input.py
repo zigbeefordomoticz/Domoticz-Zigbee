@@ -1113,8 +1113,9 @@ def Decode804B(self, Devices, MsgData, MsgRSSI) : # System Server Discovery resp
 
 def Decode804E( self, Devices, MsgData, MsgRSSI):
 
-    Domoticz.Log("Decode804E - Receive message")
-    self.networkmap.LQIresp( MsgData )
+    Domoticz.Debug("Decode804E - Receive message")
+    if self.networkmap:
+        self.networkmap.LQIresp( MsgData )
 
 #Group response
 # Implemented in z_GrpMgt.py

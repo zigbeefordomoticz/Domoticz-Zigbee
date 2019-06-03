@@ -445,14 +445,15 @@ def processListOfDevices( self , Devices ):
     #    - phase == 1 // Start the process
     #    - phase == 2 // Continue scanning
 
-    phase = self.networkmap.NetworkMapPhase()
-    if phase == 1:
-        Domoticz.Log("Start NetworkMap process")
-        self.start_scan( )
-    #elif self.runLQI[0] == 2 and \
-    elif phase == 2 and self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
-        if self.ZigateComm.loadTransmit() < 5 :
-            self.networkmap.continue_scan( )
+    if self.networkmap:
+        phase = self.networkmap.NetworkMapPhase()
+        if phase == 1:
+            Domoticz.Log("Start NetworkMap process")
+            self.start_scan( )
+        #elif self.runLQI[0] == 2 and \
+        elif phase == 2 and self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
+            if self.ZigateComm.loadTransmit() < 5 :
+                self.networkmap.continue_scan( )
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
         # Trigger Conifre Reporting to eligeable decices

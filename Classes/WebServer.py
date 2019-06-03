@@ -387,11 +387,12 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=False )
 
             # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
-            Domoticz.Log("Request a Start of LQI Process")
-            if not self.networkmap.NetworkMapPhase():
-                self.networkmap.start_scan()
-            else:
-                Domoticz.Log("Cannot start as LQI is ongoing")
+            Domoticz.Log("Request a Start of Network Topology scan")
+            if self.networkmap:
+                if not self.networkmap.NetworkMapPhase():
+                    self.networkmap.start_scan()
+                else:
+                    Domoticz.Log("Cannot start Network Topology as one is in the pipe")
         return _response
 
     def rest_zigate_erase_PDM( self, verb, data, parameters):
