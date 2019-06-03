@@ -241,7 +241,8 @@ class PluginConf:
         ' serialize json format the pluginConf '
         ' Only the arameters which are different than default '
 
-        pluginConfFile = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %self.hardwareid
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %self.hardwareid
+        pluginConfFile = self.pluginConf['filename']
         Domoticz.Debug("Write %s" %pluginConfFile)
         write_pluginConf = {}
         for theme in SETTINGS:
