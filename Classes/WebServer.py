@@ -477,7 +477,7 @@ class WebServer(object):
 
     def rest_netTopologie( self, verb, data, parameters):
 
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'LQI_reports-' + '%02d' %self.hardwareID + '.json'
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.hardwareID + '.json'
         Domoticz.Log("Filename: %s" %_filename)
 
         _response = setupHeadersResponse()
@@ -501,17 +501,22 @@ class WebServer(object):
                     _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
                     reportLQI = entry[_ts]
                     for item in reportLQI:
-                        Domoticz.Log("Node: %s" %item)
+                        Domoticz.Debug("Node: %s" %item)
                         if item != '0000' and item not in self.ListOfDevices:
                             continue
                         for x in  reportLQI[item]['Neighbours']:
-                            Domoticz.Log("---> %s" %x)
+                            Domoticz.Debug("---> %s" %x)
                             # Report only Child relationship
                             if x != '0000' and x not in self.ListOfDevices: continue
                             if item == x: continue
+                            if 'Neighbours' not in reportLQI[item]:
+                                Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
+                                continue
+
                             for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
                                 if attribute not in reportLQI[item]['Neighbours'][x]:
                                     Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
+                                    continue
                         
                             _relation = {}
                             _relation['Father'] = item

@@ -211,7 +211,7 @@ class NetworkMap():
                             self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
 
         self.prettyPrintNeighbours()
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'LQI_reports-' + '%02d' %self.HardwareID + '.json'
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.HardwareID + '.json'
 
         storeLQI = {}
         storeLQI[int(time.time())] = dict(self.Neighbours)
