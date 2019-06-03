@@ -28,12 +28,12 @@ from Modules.output import  sendZigateCmd,  \
 
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
-from Modules.LQI import LQIcontinueScan, LQIdiscovery
 from Modules.consts import HEARTBEAT, MAX_LOAD_ZIGATE
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
+from Classes.NetworkMap import NetworkMap
 
 
 READ_ATTRIBUTES_REQUEST = {
@@ -441,18 +441,20 @@ def processListOfDevices( self , Devices ):
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     # LQI Scanner
-    #    - runLQI == 0 // Stop 
-    #    - runLQI == 1 // Start the process
-    #    - runLQI == 2 // Continue scanning
+    #    - phase == 0 // Stop 
+    #    - phase == 1 // Start the process
+    #    - phase == 2 // Continue scanning
 
-    if self.runLQI[0] == 1: # Start LQI process (triggered from WebUI)
-        Domoticz.Log("Start LQI process")
-        LQIdiscovery( self )
-        self.runLQI[0] = 2
-    elif self.runLQI[0] == 2 and \
-            self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
-        if self.ZigateComm.loadTransmit() < 5 :
-            LQIcontinueScan( self, Devices )
+    phase = self.networkmap.NetworkMapPhase()
+    Domoticz.Log("NetworkMap phase: %s" %phase)
+    if phase == 1:
+        Domoticz.Log("Start NetworkMap process")
+        self.start_scan( )
+    #elif self.runLQI[0] == 2 and \
+    #        self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
+    elif phase == 2:
+        #if self.ZigateComm.loadTransmit() < 5 :
+            self.networkmap.continue_scan( )
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
         # Trigger Conifre Reporting to eligeable decices

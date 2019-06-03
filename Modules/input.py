@@ -23,7 +23,6 @@ from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IE
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
-from Modules.LQI import mgtLQIresp
 from Modules.database import saveZigateNetworkData
 from Modules.consts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
 
@@ -33,6 +32,7 @@ from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
 from Classes.GroupMgt import GroupsManagement
 from Classes.OTA import OTAManagement
+from Classes.NetworkMap import NetworkMap
 
 def ZigateRead(self, Devices, Data):
 
@@ -1113,7 +1113,8 @@ def Decode804B(self, Devices, MsgData, MsgRSSI) : # System Server Discovery resp
 
 def Decode804E( self, Devices, MsgData, MsgRSSI):
 
-    mgtLQIresp( self,MsgData)
+    Domoticz.Log("Decode804E - Receive message")
+    self.networkmap.LQIresp( MsgData )
 
 #Group response
 # Implemented in z_GrpMgt.py

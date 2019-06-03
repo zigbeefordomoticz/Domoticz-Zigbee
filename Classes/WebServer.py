@@ -62,7 +62,7 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, runLQI, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword):
+    def __init__( self, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword):
 
         self.httpServerConn = None
         self.httpsServerConn = None
@@ -77,9 +77,9 @@ class WebServer(object):
         self.ZigateComm = ZigateComm
         self.statistics = Statistics
         self.pluginparameters = PluginParameters
+        self.networkmap = networkmap
 
         self.permitTojoin = permitTojoin
-        self.runLQI = runLQI
 
         if groupManagement:
             self.groupmgt = groupManagement
@@ -388,8 +388,8 @@ class WebServer(object):
 
             # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
             Domoticz.Log("Request a Start of LQI Process")
-            if self.runLQI[0] == 0:
-                self.runLQI[0] = 1 # Start LQI process
+            if not self.networkmap.NetworkMapPhase():
+                self.networkmap.start_scan()
             else:
                 Domoticz.Log("Cannot start as LQI is ongoing")
         return _response
@@ -485,7 +485,6 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-
         if not os.path.isfile( _filename ) :
             _response['Data'] = json.dumps( {} , sort_keys=False ) 
             return _response
@@ -502,47 +501,43 @@ class WebServer(object):
                     _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
                     reportLQI = entry[_ts]
                     for item in reportLQI:
+                        Domoticz.Log("%s" %item)
                         if item != '0000' and item not in self.ListOfDevices:
                             continue
-                        for x in  reportLQI[item]:
+                        for x in  reportLQI[item]['Neighbours']:
+                            Domoticz.Log("---> %s" %x)
                             # Report only Child relationship
                             if x != '0000' and x not in self.ListOfDevices: continue
                             if item == x: continue
                             for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
-                                if attribute not in reportLQI[item][x]:
+                                if attribute not in reportLQI[item]['Neighbours'][x]:
                                     Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
                         
-                            #if reportLQI[item][x]['_relationshp'] not in ( 'Child', 'Parent' ): 
-                            #    Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %13s %2s SKIPED" \
-                            #        %( _ts, item, x,  reportLQI[item][x]['_relationshp'], reportLQI[item][x]["_lnkqty"], reportLQI[item][x]["_devicetype"], reportLQI[item][x]['_depth']))
-                            #    continue
-
-                            #if reportLQI[item][x]['_relationshp'] == "Child":
-                            #    master = 'Father'
-                            #    slave = 'Child'
-                            #elif reportLQI[item][x]['_relationshp'] == "Parent":
-                            #    master = 'Child'
-                            #    slave = 'Father'
                             _relation = {}
                             _relation['Father'] = item
                             _relation['Child'] = x
-                            _relation["_lnkqty"] = int(reportLQI[item][x]['_lnkqty'], 16)
-                            _relation["DeviceType"] = reportLQI[item][x]['_devicetype']
+                            _relation["_lnkqty"] = int(reportLQI[item]['Neighbours'][x]['_lnkqty'], 16)
+                            _relation["DeviceType"] = reportLQI[item]['Neighbours'][x]['_devicetype']
+
 
                             if item != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[item]:
                                     if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
                                         #_relation[master] = self.ListOfDevices[item]['ZDeviceName']
                                         _relation['Father'] = self.ListOfDevices[item]['ZDeviceName']
+                            else:
+                                _relation['Father'] = "Zigate"
+
                             if x != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[x]:
                                     if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
                                         #_relation[slave] = self.ListOfDevices[x]['ZDeviceName']
                                         _relation['Child'] = self.ListOfDevices[x]['ZDeviceName']
+                            else:
+                                _relation['Child'] = "Zigate"
 
-                                Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
-                                    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item][x]['_depth']))
-                                    #%( _ts, _relation['Father'], _relation['Child'], reportLQI[item][x]['_relationshp'], _relation["_lnkqty"], _relation["DeviceType"], reportLQI[item][x]['_depth']))
+                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
+                                %( _ts, _relation['Father'], _relation['Child'], reportLQI[item]['Neighbours'][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item]['Neighbours'][x]['_depth']))
 
                             _topo[_ts].append( _relation )
                         #end for x

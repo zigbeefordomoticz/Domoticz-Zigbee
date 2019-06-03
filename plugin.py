@@ -93,7 +93,6 @@ from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
-from Modules.LQI import LQIdiscovery
 from Modules.consts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
 from Modules.txPower import set_TxPower
 
@@ -108,6 +107,8 @@ from Classes.OTA import OTAManagement
 
 from Classes.WebServer import WebServer
 
+from Classes.NetworkMap import NetworkMap
+
 class BasePlugin:
     enabled = False
 
@@ -115,8 +116,7 @@ class BasePlugin:
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
-        self.LQI = {}
-        self.runLQI = [ 0 ]
+        self.networkmap = None
         self.zigatedata = {}
 
         self.ZigateComm = None
@@ -130,7 +130,6 @@ class BasePlugin:
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
 
         self.APS = None
-
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.homedirectory = None
         self.HardwareID = None
@@ -149,7 +148,6 @@ class BasePlugin:
 
         self.Ping = {}
         self.connectionState = None
-        self.LQISource = None
         self.initdone = None
         self.statistics = None
         self.iaszonemgt = None      # Object to manage IAS Zone
@@ -437,11 +435,10 @@ class BasePlugin:
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
 
         if (self.pluginconf.pluginConf)['logLQI'] != 0 :
-            self.runLQI = [ 2 ]
-            LQIdiscovery( self ) 
+            self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)
+            self.networkmap.start_scan( ) 
 
         self.busy = False
-
         return True
 
     def onMessage(self, Connection, Data):
@@ -588,7 +585,7 @@ class BasePlugin:
                 WebUserName, WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
 
                 Domoticz.Status("Start Web Server connection")
-                self.webserver = WebServer( self.runLQI, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
+                self.webserver = WebServer( self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
                                         self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , WebUserName, WebPassword)
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
