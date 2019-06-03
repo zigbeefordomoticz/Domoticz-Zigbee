@@ -501,7 +501,7 @@ class WebServer(object):
                     _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
                     reportLQI = entry[_ts]
                     for item in reportLQI:
-                        Domoticz.Log("%s" %item)
+                        Domoticz.Log("Node: %s" %item)
                         if item != '0000' and item not in self.ListOfDevices:
                             continue
                         for x in  reportLQI[item]['Neighbours']:
@@ -519,7 +519,6 @@ class WebServer(object):
                             _relation["_lnkqty"] = int(reportLQI[item]['Neighbours'][x]['_lnkqty'], 16)
                             _relation["DeviceType"] = reportLQI[item]['Neighbours'][x]['_devicetype']
 
-
                             if item != "0000":
                                 if 'ZDeviceName' in self.ListOfDevices[item]:
                                     if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
@@ -536,9 +535,10 @@ class WebServer(object):
                             else:
                                 _relation['Child'] = "Zigate"
 
-                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
-                                %( _ts, _relation['Father'], _relation['Child'], reportLQI[item]['Neighbours'][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item]['Neighbours'][x]['_depth']))
-
+                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %2s" \
+                                %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"]))
+                            #Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
+                            #    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item]['Neighbours'][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item]['Neighbours'][x]['_depth']))
                             _topo[_ts].append( _relation )
                         #end for x
                     #end for item
