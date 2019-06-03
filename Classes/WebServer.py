@@ -636,7 +636,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 timestamp = parameters[0]
                 if timestamp in _timestamps_lst:
-                    Domoticz.Log("Removing Report: %s from %s records" %(timestamp, len(_topo)))
+                    Domoticz.Log("Removing Report: %s from %s records" %(timestamp, len(_timestamps_lst)))
                     with open( _filename, 'r+') as handle:
                         d = handle.readlines()
                         handle.seek(0)
