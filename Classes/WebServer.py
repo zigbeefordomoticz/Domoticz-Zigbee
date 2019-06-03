@@ -188,7 +188,7 @@ class WebServer(object):
                     Domoticz.Debug("InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
                     if lastVersionInCache == _lastmodified:
                         # No need to send it back
-                        Domoticz.Log("User Caching - InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
+                        Domoticz.Log("User Caching - file: %s InCache: %s versus Current: %s" %(webFilename, lastVersionInCache, _lastmodified))
                         _response['Status'] = "304 Not Modified"
                         self.sendResponse( Connection, _response )
                         return _response
