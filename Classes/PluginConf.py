@@ -60,7 +60,7 @@ SETTINGS = {
             'OverTheAirUpgrade':
                 {
                 'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
-                'batteryOTA':  { 'type':'int', 'default':60 , 'current': None, 'restart':True , 'hidden':False},
+                'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
                 'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False}
                 },
 
@@ -77,10 +77,10 @@ SETTINGS = {
             # Plugin Directories
             'PluginConfiguration':
                 {
-                'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+                'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True},
                 'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False},
-                'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
-                'homedirectory':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
+                'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True},
+                'homedirectory':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True},
                 'pluginData':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
                 'pluginZData': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
                 'pluginConfig': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False},
@@ -92,9 +92,7 @@ SETTINGS = {
             # Groups Management
             'GroupManagement':
                 {
-                'enableConfigGroups':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False},
                 'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
-                'discoverZigateGroups':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False}
                 },
     
             # Debugging
