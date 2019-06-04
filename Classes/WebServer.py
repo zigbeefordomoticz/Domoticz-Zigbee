@@ -23,12 +23,7 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
 DELAY = 0
-ALLOW_GZIP = 1              # Allow Standard gzip compression
-ALLOW_DEFLATE = 1           # Use gzip/Deflate compression algo.
-ALLOW_CHUNK = 0             # This will break the file to be send in chunks of MAX_KB_TO_SEND
 MAX_KB_TO_SEND = 2 * 1024   # Chunk size
-ALLOW_CACHE = True         # Allow Caching mecanishm
-KEEPALIVE = True           # Enable/Disable Keep-alibe
 DEBUG_HTTP = False
 
 MIMETYPES = { 
@@ -174,7 +169,17 @@ class WebServer(object):
 
             # We are ready to send the response
             _response = setupHeadersResponse()
-            _response["Headers"]["Cache-Control"] = "private"
+            if self.pluginconf.pluginConf['enableKeepalive']:
+                _response["Headers"]["Connection"] = "Keep-alive"
+            else:
+                _response["Headers"]["Connection"] = "Close"
+            if not self.pluginconf.pluginConf['enableCache']:
+                _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                _response["Headers"]["Pragma"] = "no-cache"
+                _response["Headers"]["Expires"] = "0"
+                _response["Headers"]["Accept"] = "*/*"
+            else:
+                _response["Headers"]["Cache-Control"] = "private"
 
             Domoticz.Debug("Opening: %s" %webFilename)
             currentVersionOnServer = os.path.getmtime(webFilename)
@@ -182,7 +187,8 @@ class WebServer(object):
 
 
             # Can we use Cache if exists
-            if ALLOW_CACHE:
+
+            if self.pluginconf.pluginConf['enableCache']:
                 if 'If-Modified-Since' in Data['Headers']:
                     lastVersionInCache = Data['Headers']['If-Modified-Since']
                     Domoticz.Debug("InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
@@ -208,7 +214,7 @@ class WebServer(object):
                     _response["Headers"]["Content-Range"] = "bytes "+str(fileStartPosition)+"-"+str(messageFile.tell())+"/"+str(messageFileSize)
                 DumpHTTPResponseToLog( _response )
                 Connection.Send( _response)
-                if not KEEPALIVE:
+                if not self.pluginconf.pluginConf['enableKeepalive']:
                     Connection.Disconnect()
             else:
                 _response["Headers"]["Last-Modified"] = _lastmodified
@@ -237,18 +243,21 @@ class WebServer(object):
         if ('Data' not in Response) or (Response['Data'] == None):
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response , Delay= DELAY)
-            if not KEEPALIVE:
+            if not self.pluginconf.pluginConf['enableKeepalive']:
                 Connection.Disconnect()
             return
 
         Domoticz.Debug("Sending Response to : %s" %(Connection.Name))
 
         # Compression
-        if (ALLOW_GZIP or ALLOW_DEFLATE ) and 'Data' in Response and AcceptEncoding:
-            Domoticz.Debug("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, ALLOW_CHUNK, ALLOW_DEFLATE, ALLOW_GZIP))
+        allowgzip = self.pluginconf.pluginConf['enableGzip']
+        allowdeflate = self.pluginconf.pluginConf['enableDeflate']
+
+        if (allowgzip or allowdeflate ) and 'Data' in Response and AcceptEncoding:
+            Domoticz.Debug("sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, self.pluginconf.pluginConf['enableChunk'], allowdeflate, allowgzip))
             if len(Response["Data"]) > MAX_KB_TO_SEND:
                 orig_size = len(Response["Data"])
-                if ALLOW_DEFLATE and AcceptEncoding.find('deflate') != -1:
+                if allowdeflate and AcceptEncoding.find('deflate') != -1:
                     Domoticz.Debug("Compressing - deflate")
                     zlib_compress = zlib.compressobj( 9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
                     deflated = zlib_compress.compress(Response["Data"])
@@ -256,7 +265,7 @@ class WebServer(object):
                     Response["Headers"]['Content-Encoding'] = 'deflate'
                     Response["Data"] = deflated
 
-                elif ALLOW_GZIP and AcceptEncoding.find('gzip') != -1:
+                elif allowgzip and AcceptEncoding.find('gzip') != -1:
                     Domoticz.Debug("Compressing - gzip")
                     Response["Data"] = gzip.compress( Response["Data"] )
                     Response["Headers"]['Content-Encoding'] = 'gzip'
@@ -264,7 +273,8 @@ class WebServer(object):
                 Domoticz.Debug("Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int(100-(len(Response["Data"])/orig_size)*100)))
 
         # Chunking, Follow the Domoticz Python Plugin Framework
-        if ALLOW_CHUNK and len(Response['Data']) > MAX_KB_TO_SEND:
+
+        if self.pluginconf.pluginConf['enableChunk'] and len(Response['Data']) > MAX_KB_TO_SEND:
             idx = 0
             HTTPchunk = {}
             HTTPchunk['Status'] = Response['Status']
@@ -298,13 +308,13 @@ class WebServer(object):
             tosend={}
             tosend['Chunk'] = True
             Connection.Send( tosend , Delay = DELAY)
-            if not KEEPALIVE:
+            if not self.pluginconf.pluginConf['enableKeepalive']:
                 Connection.Disconnect()
         else:
             #Response['Headers']['Content-Length'] = len( Response['Data'] )
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response , Delay = DELAY)
-            if not KEEPALIVE:
+            if not self.pluginconf.pluginConf['enableKeepalive']:
                 Connection.Disconnect()
 
     def keepConnectionAlive( self ):
@@ -345,7 +355,14 @@ class WebServer(object):
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = setupHeadersResponse()
-                HTTPresponse["Headers"]["Cache-Control"] = "no-store, no-cache"
+                if self.pluginconf.pluginConf['enableKeepalive']:
+                    HTTPresponse["Headers"]["Connection"] = "Keep-alive"
+                else:
+                    HTTPresponse["Headers"]["Connection"] = "Close"
+                HTTPresponse["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                HTTPresponse["Headers"]["Pragma"] = "no-cache"
+                HTTPresponse["Headers"]["Expires"] = "0"
+                HTTPresponse["Headers"]["Accept"] = "*/*"
                 if version == '1':
                     HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
                 elif version == '2':
@@ -354,6 +371,15 @@ class WebServer(object):
         if HTTPresponse == {}:
             # We reach here due to failure !
             HTTPresponse = setupHeadersResponse()
+            if self.pluginconf.pluginConf['enableKeepalive']:
+                HTTPresponse["Headers"]["Connection"] = "Keep-alive"
+            else:
+                HTTPresponse["Headers"]["Connection"] = "Close"
+            if not self.pluginconf.pluginConf['enableCache']:
+                HTTPresponse["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                HTTPresponse["Headers"]["Pragma"] = "no-cache"
+                HTTPresponse["Headers"]["Expires"] = "0"
+                HTTPresponse["Headers"]["Accept"] = "*/*"
             HTTPresponse["Status"] = "400 BAD REQUEST"
             HTTPresponse["Data"] = 'Unknown REST command'
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
@@ -364,6 +390,15 @@ class WebServer(object):
     def rest_req_nwk_inter( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        if not self.pluginconf.pluginConf['enableCache']:
+            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            _response["Headers"]["Pragma"] = "no-cache"
+            _response["Headers"]["Expires"] = "0"
+            _response["Headers"]["Accept"] = "*/*"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -378,6 +413,10 @@ class WebServer(object):
 
     def rest_req_topologie( self, verb, data, parameters):
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -398,6 +437,10 @@ class WebServer(object):
     def rest_zigate_erase_PDM( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -418,6 +461,10 @@ class WebServer(object):
     def rest_reset_zigate( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -431,6 +478,10 @@ class WebServer(object):
     def rest_zigate( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -452,6 +503,10 @@ class WebServer(object):
     def rest_domoticz_env( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -470,6 +525,10 @@ class WebServer(object):
     def rest_PluginEnv( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -482,6 +541,10 @@ class WebServer(object):
         Domoticz.Log("Filename: %s" %_filename)
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = "{}"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -606,6 +669,10 @@ class WebServer(object):
     def rest_nwk_stat( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -678,6 +745,10 @@ class WebServer(object):
     def rest_restart_needed( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -699,6 +770,10 @@ class WebServer(object):
         Statistics['StartTime'] =self.statistics._start
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
@@ -708,6 +783,10 @@ class WebServer(object):
     def rest_Settings( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -772,6 +851,10 @@ class WebServer(object):
     def rest_PermitToJoin( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
@@ -804,6 +887,10 @@ class WebServer(object):
 
         _dictDevices = {}
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -876,6 +963,10 @@ class WebServer(object):
     def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -980,6 +1071,10 @@ class WebServer(object):
     def rest_zDevice_name( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = {}
         _response["Status"] = "200 OK"
 
@@ -1060,6 +1155,10 @@ class WebServer(object):
     def rest_zDevice( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -1155,6 +1254,10 @@ class WebServer(object):
     def rest_zDevice_raw( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -1180,6 +1283,10 @@ class WebServer(object):
     def rest_zGroup( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
         _response["Data"] = {}
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
@@ -1361,15 +1468,6 @@ def setupHeadersResponse():
     _response["Headers"] = {}
     _response["Headers"]["Server"] = "Domoticz"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
-    if KEEPALIVE:
-        _response["Headers"]["Connection"] = "Keep-alive"
-    else:
-        _response["Headers"]["Connection"] = "Close"
-    if not ALLOW_CACHE:
-        _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-        _response["Headers"]["Pragma"] = "no-cache"
-        _response["Headers"]["Expires"] = "0"
-        _response["Headers"]["Accept"] = "*/*"
     #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.

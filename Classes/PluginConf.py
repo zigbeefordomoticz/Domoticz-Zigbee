@@ -25,7 +25,12 @@ SETTINGS = {
                 'port': { 'type':'str', 'default':'8080', 'current':None, 'restart':False, 'hidden':False}},
 
             'WebInterface': { 
-                'enableWebServer': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False}},
+                'enableWebServer': { 'type':'bool', 'default':0, 'current': None , 'restart':True , 'hidden':False},
+                'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False},
+                'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False},
+                'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True},
+                'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False},
+                'enableCache':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False}},
 
             # Device Management
             'DeviceManagement': 
