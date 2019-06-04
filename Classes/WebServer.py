@@ -604,10 +604,9 @@ class WebServer(object):
                             else:
                                 _relation['Child'] = "Zigate"
 
-                            Domoticz.Debug("%10s Relationship - %15.15s - %15.15s %2s" \
-                                %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"]))
-                            #Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
-                            #    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item]['Neighbours'][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item]['Neighbours'][x]['_depth']))
+                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %3s %7s %2s" \
+                                %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"],
+                                        reportLQI[item]['Neighbours'][x]['_relationshp'], reportLQI[item]['Neighbours'][x]['_depth']))
                             _topo[_ts].append( _relation )
                         #end for x
                     #end for item
