@@ -97,26 +97,26 @@ class WebServer(object):
 
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
         self.httpServerConn.Listen()
-        Domoticz.Log("Web backend started")
+        Domoticz.Status("Web backend for Web User Interface started on port: %s" %9440)
 
 
     def onConnect(self, Connection, Status, Description):
 
         if (Status == 0):
-            Domoticz.Log("Connected successfully to: "+Connection.Address+":"+Connection.Port)
+            Domoticz.Debug("Connected successfully to: "+Connection.Address+":"+Connection.Port)
             if Connection.Name not in self.httpServerConns:
                 self.httpServerConns[Connection.Name] = Connection
             else:
-                Domoticz.Log("Connection already established .... %s" %Connection)
+                Domoticz.Debug("Connection already established .... %s" %Connection)
         else:
-            Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
-        Domoticz.Log("Number of Connection : %s" %len(self.httpServerConns))
+            Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
+        Domoticz.Debug("Number of Connection : %s" %len(self.httpServerConns))
 
     def onDisconnect ( self, Connection ):
 
-        Domoticz.Log("onDisconnect %s" %(Connection))
+        Domoticz.Debug("onDisconnect %s" %(Connection))
         for x in self.httpServerConns:
-            Domoticz.Log("--> "+str(x)+"'.")
+            Domoticz.Debug("--> "+str(x)+"'.")
         if Connection.Name in self.httpServerConns:
             del self.httpServerConns[Connection.Name]
 
@@ -149,7 +149,7 @@ class WebServer(object):
                 return
             else:
                 if len(parsed_query) >= 3:
-                    Domoticz.Log("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
+                    Domoticz.Debug("Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
                         %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
                     if parsed_query[0] == 'rest-zigate' and parsed_query[1] == '1':
                         # API Version 1
@@ -194,7 +194,7 @@ class WebServer(object):
                     Domoticz.Debug("InCache: %s versus Current: %s" %(lastVersionInCache, _lastmodified))
                     if lastVersionInCache == _lastmodified:
                         # No need to send it back
-                        Domoticz.Log("User Caching - file: %s InCache: %s versus Current: %s" %(webFilename, lastVersionInCache, _lastmodified))
+                        Domoticz.Debug("User Caching - file: %s InCache: %s versus Current: %s" %(webFilename, lastVersionInCache, _lastmodified))
                         _response['Status'] = "304 Not Modified"
                         self.sendResponse( Connection, _response )
                         return _response
@@ -350,7 +350,7 @@ class WebServer(object):
                 'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM}
                 }
 
-        Domoticz.Log("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
+        Domoticz.Debug("do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
         HTTPresponse = {}
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
@@ -426,12 +426,12 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=False )
 
             # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
-            Domoticz.Log("Request a Start of Network Topology scan")
+            Domoticz.Debug("Request a Start of Network Topology scan")
             if self.networkmap:
                 if not self.networkmap.NetworkMapPhase():
                     self.networkmap.start_scan()
                 else:
-                    Domoticz.Log("Cannot start Network Topology as one is in the pipe")
+                    Domoticz.Debug("Cannot start Network Topology as one is in the pipe")
         return _response
 
     def rest_zigate_erase_PDM( self, verb, data, parameters):
@@ -538,7 +538,7 @@ class WebServer(object):
     def rest_netTopologie( self, verb, data, parameters):
 
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.hardwareID + '.json'
-        Domoticz.Log("Filename: %s" %_filename)
+        Domoticz.Debug("Filename: %s" %_filename)
 
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
@@ -604,7 +604,7 @@ class WebServer(object):
                             else:
                                 _relation['Child'] = "Zigate"
 
-                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %2s" \
+                            Domoticz.Debug("%10s Relationship - %15.15s - %15.15s %2s" \
                                 %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"]))
                             #Domoticz.Log("%10s Relationship - %15.15s - %15.15s %7s %3s %2s" \
                             #    %( _ts, _relation['Father'], _relation['Child'], reportLQI[item]['Neighbours'][x]['_relationshp'], _relation["_lnkqty"], reportLQI[item]['Neighbours'][x]['_depth']))
@@ -624,7 +624,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 timestamp = parameters[0]
                 if timestamp in _topo:
-                    Domoticz.Log("Removing Report: %s from %s records" %(timestamp, len(_topo)))
+                    Domoticz.Debug("Removing Report: %s from %s records" %(timestamp, len(_topo)))
                     with open( _filename, 'r+') as handle:
                         d = handle.readlines()
                         handle.seek(0)
@@ -636,7 +636,7 @@ class WebServer(object):
                             entry_ts = entry.keys()
                             if len( entry_ts ) == 1:
                                 if timestamp in entry_ts:
-                                    Domoticz.Log("--------> Skiping %s" %timestamp)
+                                    Domoticz.Debug("--------> Skiping %s" %timestamp)
                                     continue
                             else:
                                 continue
@@ -647,7 +647,7 @@ class WebServer(object):
                     action['Name'] = 'Report %s removed' %timestamp
                     _response['Data'] = json.dumps( action , sort_keys=True)
                 else:
-                    Domoticz.Log("Timestamp: %s not found" %timestamp)
+                    Domoticz.Error("Timestamp: %s not found" %timestamp)
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
 
@@ -659,7 +659,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 timestamp = parameters[0]
                 if timestamp in _topo:
-                    Domoticz.Log("Topologie sent: %s" %_topo[timestamp])
+                    Domoticz.Debug("Topologie sent: %s" %_topo[timestamp])
                     _response['Data'] = json.dumps( _topo[timestamp] , sort_keys=True)
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
@@ -681,7 +681,7 @@ class WebServer(object):
         _timestamps_lst = [] # Just the list of Timestamps
         _scan = {}
         if os.path.isfile( _filename ) :
-            Domoticz.Log("Opening file: %s" %_filename)
+            Domoticz.Debug("Opening file: %s" %_filename)
             with open( _filename , 'rt') as handle:
                 for line in handle:
                     if line[0] != '{' and line[-1] != '}': continue
@@ -704,7 +704,7 @@ class WebServer(object):
             elif len(parameters) == 1:
                 timestamp = parameters[0]
                 if timestamp in _timestamps_lst:
-                    Domoticz.Log("Removing Report: %s from %s records" %(timestamp, len(_timestamps_lst)))
+                    Domoticz.Debug("Removing Report: %s from %s records" %(timestamp, len(_timestamps_lst)))
                     with open( _filename, 'r+') as handle:
                         d = handle.readlines()
                         handle.seek(0)
@@ -716,7 +716,7 @@ class WebServer(object):
                             entry_ts = entry.keys()
                             if len( entry_ts ) == 1:
                                 if timestamp in entry_ts:
-                                    Domoticz.Log("--------> Skiping %s" %timestamp)
+                                    Domoticz.Debug("--------> Skiping %s" %timestamp)
                                     continue
                             else:
                                 continue
@@ -727,7 +727,7 @@ class WebServer(object):
                     action['Name'] = 'Report %s removed' %timestamp
                     _response['Data'] = json.dumps( action , sort_keys=True)
                 else:
-                    Domoticz.Log("Timestamp: %s not found" %timestamp)
+                    Domoticz.Error("Timestamp: %s not found" %timestamp)
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
         elif verb == 'GET':
@@ -814,7 +814,7 @@ class WebServer(object):
         elif verb == 'PUT':
             _response["Data"] = None
             data = data.decode('utf8')
-            Domoticz.Log("Data: %s" %data)
+            Domoticz.Debug("Data: %s" %data)
             data = data.replace('true','1')     # UI is coming with true and not True
             data = data.replace('false','0')   # UI is coming with false and not False
 
@@ -831,7 +831,7 @@ class WebServer(object):
                         found = True
                         if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: continue
                         upd = True
-                        Domoticz.Log("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        Domoticz.Debug("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
                         self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                         if SETTINGS[_theme][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
@@ -868,7 +868,7 @@ class WebServer(object):
                 info['PermitToJoin'] = 0
             else:
                 rest =  ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration'] ) - int(time())
-                Domoticz.Log("remain %s s" %rest)
+                Domoticz.Debug("remain %s s" %rest)
                 info['PermitToJoin'] = rest
 
             _response["Data"] = json.dumps( info, sort_keys=False )
@@ -878,7 +878,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode('utf8')
                 data = json.loads(data)
-                Domoticz.Log("parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
+                Domoticz.Debug("parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
                 ZigatePermitToJoin(self, int( data['PermitToJoin']))
 
         return _response
@@ -994,7 +994,7 @@ class WebServer(object):
             for x in self.ListOfDevices:
                 if x == '0000':  continue
                 if 'MacCapa' not in self.ListOfDevices[x]:
-                    Domoticz.Log("rest_zGroup_lst_avlble_dev - no 'MacCapa' info found for %s!!!!" %x)
+                    Domoticz.Debug("rest_zGroup_lst_avlble_dev - no 'MacCapa' info found for %s!!!!" %x)
                     continue
                 
                 IkeaRemote = False
@@ -1002,7 +1002,7 @@ class WebServer(object):
                     if self.ListOfDevices[x]['Type'] == 'Ikea_Round_5b':
                         IkeaRemote = True
                 if self.ListOfDevices[x]['MacCapa'] != '8e' and not IkeaRemote:
-                    Domoticz.Log("rest_zGroup_lst_avlble_dev - %s not a Main Powered device. " %x)
+                    Domoticz.Debug("rest_zGroup_lst_avlble_dev - %s not a Main Powered device. " %x)
                     continue
 
                 if 'Ep' in self.ListOfDevices[x]:
@@ -1064,7 +1064,7 @@ class WebServer(object):
 
                 if _device not in device_lst:
                     device_lst.append( _device )
-            Domoticz.Log("Response: %s" %device_lst)
+            Domoticz.Debug("Response: %s" %device_lst)
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
             return _response
 
@@ -1110,7 +1110,7 @@ class WebServer(object):
                                     device['MacCapa'].append("MainPower")
                                 else :
                                     device['MacCapa'].append("Battery")
-                                Domoticz.Log("decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
+                                Domoticz.Debug("decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
                     else:
                         device[item.strip()] = ""
 
@@ -1124,20 +1124,20 @@ class WebServer(object):
                         for widgetID in clusterType:
                             for widget in self.Devices:
                                 if self.Devices[widget].ID == int(widgetID):
-                                    Domoticz.Log("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
+                                    Domoticz.Debug("Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
                                     if self.Devices[widget].Name not in device['WidgetList']:
                                         device['WidgetList'].append( self.Devices[widget].Name )
 
                 if device not in device_lst:
                     device_lst.append( device )
             #_response["Data"] = json.dumps( device_lst, sort_keys=True )
-            Domoticz.Log("zDevice_name - sending %s" %device_lst)
+            Domoticz.Debug("zDevice_name - sending %s" %device_lst)
             _response["Data"] = json.dumps( device_lst, sort_keys=False )
 
         elif verb == 'PUT':
             _response["Data"] = None
             data = data.decode('utf8')
-            Domoticz.Log("Data: %s" %data)
+            Domoticz.Debug("Data: %s" %data)
             data = eval(data)
             for x in data:
                 if 'ZDeviceName' in x and 'IEEE' in x:
@@ -1291,7 +1291,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        Domoticz.Log("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
+        Domoticz.Debug("rest_zGroup - ListOfGroups = %s" %str(self.groupmgt))
 
         if verb == 'GET':
             if self.groupmgt is None:
@@ -1303,19 +1303,19 @@ class WebServer(object):
             if len(parameters) == 0:
                 zgroup_lst = []
                 for item in ListOfGroups:
-                    Domoticz.Log("Process Group: %s" %item)
+                    Domoticz.Debug("Process Group: %s" %item)
                     zgroup = {}
                     zgroup['_GroupId'] = item
                     zgroup['GroupName'] = ListOfGroups[item]['Name']
                     zgroup['Devices'] = []
                     for dev, ep in ListOfGroups[item]['Devices']:
-                        Domoticz.Log("--> add %s %s" %(dev, ep))
+                        Domoticz.Debug("--> add %s %s" %(dev, ep))
                         _dev = {}
                         _dev['_NwkId'] = dev
                         _dev['Ep'] = ep
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
-                Domoticz.Log("zGroup: %s" %zgroup_lst)
+                Domoticz.Debug("zGroup: %s" %zgroup_lst)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
 
             elif len(parameters) == 1:
@@ -1326,7 +1326,7 @@ class WebServer(object):
                     zgroup['GroupName'] = ListOfGroups[item]['Name']
                     zgroup['Devices'] = {}
                     for dev, ep in ListOfGroups[item]['Devices']:
-                        Domoticz.Log("--> add %s %s" %(dev, ep))
+                        Domoticz.Debug("--> add %s %s" %(dev, ep))
                         zgroup['Devices'][dev] = ep 
                     _response["Data"] = json.dumps( zgroup, sort_keys=False )
 
@@ -1342,7 +1342,7 @@ class WebServer(object):
                 for item in data:
                     Domoticz.Debug("item: %s" %item)
                     if '_GroupId' not in item:
-                        Domoticz.Log("--->Adding Group: ")
+                        Domoticz.Debug("--->Adding Group: ")
                         # Define a GroupId 
                         for x in range( 0x0001, 0x9999):
                             grpid = '%04d' %x
@@ -1362,10 +1362,10 @@ class WebServer(object):
 
                     grp_lst.append( grpid ) # To memmorize the list of Group
                     #Update Group
-                    Domoticz.Log("--->Checking Group: %s" %grpid)
+                    Domoticz.Debug("--->Checking Group: %s" %grpid)
                     if item['GroupName'] != ListOfGroups[grpid]['Name']:
                         # Update the GroupName
-                        Domoticz.Log("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
+                        Domoticz.Debug("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
                         self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
 
                     newdev = []
@@ -1377,7 +1377,7 @@ class WebServer(object):
                         else: 
                             Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
                             continue
-                        Domoticz.Log("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
+                        Domoticz.Debug("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
                         # Check if this is not an Ikea Tradfri Remote
                         nwkid = devselected['_NwkId']
                         _tradfri_remote = False
@@ -1387,7 +1387,7 @@ class WebServer(object):
                                     for iterDev in self.ListOfDevices[nwkid]['Ep']['01']['ClusterType']:
                                         if self.ListOfDevices[nwkid]['Ep']['01']['ClusterType'][iterDev] == 'Ikea_Round_5b':
                                             # We should not process it through the group.
-                                            Domoticz.Log("------>Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
+                                            Domoticz.Debug("------>Not processing Ikea Tradfri as part of Group. Will enable the Left/Right actions")
                                             ListOfGroups[grpid]['Tradfri Remote'] = {}
                                             ListOfGroups[grpid]['Tradfri Remote']['Device Addr'] = nwkid
                                             ListOfGroups[grpid]['Tradfri Remote']['Device Id'] = iterDev
@@ -1398,17 +1398,17 @@ class WebServer(object):
                         for _dev,_ep in ListOfGroups[grpid]['Devices']:
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:
-                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
+                                    Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
                                     newdev.append( (ieee, _ep) )
                                 else:
-                                    Domoticz.Log("------>--> %s already in %s" %( (ieee, _ep), newdev))
+                                    Domoticz.Debug("------>--> %s already in %s" %( (ieee, _ep), newdev))
                                 break
                         else:
                             if (ieee, devselected['Ep']) not in newdev:
-                                Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
+                                Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
                                 newdev.append( (ieee, devselected['Ep']) )
                             else:
-                                Domoticz.Log("------>--> %s already in %s" %( (_dev, _ep), newdev))
+                                Domoticz.Debug("------>--> %s already in %s" %( (_dev, _ep), newdev))
                     # end for devselecte
 
                     if 'coordinatorInside' in item:
@@ -1416,27 +1416,27 @@ class WebServer(object):
                             if 'IEEE' in self.zigatedata:
                                 ieee_zigate = self.zigatedata['IEEE']
                                 if ( ieee_zigate, '01') not in newdev:
-                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee_zigate, '01'), grpid))
+                                    Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee_zigate, '01'), grpid))
                                     newdev.append( (ieee_zigate, _ep) )
 
-                    Domoticz.Log("--->Devices Added: %s" %newdev)
+                    Domoticz.Debug("--->Devices Added: %s" %newdev)
                     ListOfGroups[grpid]['Imported'] = list( newdev )
-                    Domoticz.Log("--->Grp: %s - tobe Imported: %s" %(grpid, ListOfGroups[grpid]['Imported']))
+                    Domoticz.Debug("--->Grp: %s - tobe Imported: %s" %(grpid, ListOfGroups[grpid]['Imported']))
 
                 # end for item / next group
                 # Finaly , we need to check if AnyGroup have been removed !
-                Domoticz.Log("Group to be removed")
+                Domoticz.Debug("Group to be removed")
                 for grpid in ListOfGroups:
                     if grpid not in grp_lst:
-                        Domoticz.Log("--->Group %s has to be removed" %grpid)
+                        Domoticz.Debug("--->Group %s has to be removed" %grpid)
                         del ListOfGroups[grpid]['Imported']
                         ListOfGroups[grpid]['Imported'] = []
 
-                Domoticz.Log("Group to be worked out")
+                Domoticz.Debug("Group to be worked out")
                 for grpid in ListOfGroups:
-                    Domoticz.Log("Group: %s" %grpid)
+                    Domoticz.Debug("Group: %s" %grpid)
                     for dev in ListOfGroups[grpid]['Imported']:
-                        Domoticz.Log("---> %s to be imported" %str(dev))
+                        Domoticz.Debug("---> %s to be imported" %str(dev))
 
                 self.groupmgt.write_jsonZigateGroupConfig()
             # end if len()
