@@ -581,32 +581,46 @@ class WebServer(object):
                                 if attribute not in reportLQI[item]['Neighbours'][x]:
                                     Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
                                     continue
+                            
+                            # We need to reorganise in Father/Child relationship.
+                            if reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Parent':
+                                _father = item
+                                _child  = x
+                            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Child':
+                                _father = x
+                                _child = item
+                            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
+                                _father = item
+                                _child  = x
+                            else:
+                                _father = item
+                                _child  = x
                         
                             _relation = {}
-                            _relation['Father'] = item
-                            _relation['Child'] = x
+                            _relation['Father'] = _father
+                            _relation['Child'] = _child
                             _relation["_lnkqty"] = int(reportLQI[item]['Neighbours'][x]['_lnkqty'], 16)
                             _relation["DeviceType"] = reportLQI[item]['Neighbours'][x]['_devicetype']
 
-                            if item != "0000":
-                                if 'ZDeviceName' in self.ListOfDevices[item]:
-                                    if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
-                                        #_relation[master] = self.ListOfDevices[item]['ZDeviceName']
-                                        _relation['Father'] = self.ListOfDevices[item]['ZDeviceName']
+                            if _father != "0000":
+                                if 'ZDeviceName' in self.ListOfDevices[_father]:
+                                    if self.ListOfDevices[_father]['ZDeviceName'] != "" and self.ListOfDevices[_father]['ZDeviceName'] != {}:
+                                        #_relation[master] = self.ListOfDevices[_father]['ZDeviceName']
+                                        _relation['Father'] = self.ListOfDevices[_father]['ZDeviceName']
                             else:
                                 _relation['Father'] = "Zigate"
 
-                            if x != "0000":
-                                if 'ZDeviceName' in self.ListOfDevices[x]:
-                                    if self.ListOfDevices[x]['ZDeviceName'] != "" and self.ListOfDevices[x]['ZDeviceName'] != {}:
-                                        #_relation[slave] = self.ListOfDevices[x]['ZDeviceName']
-                                        _relation['Child'] = self.ListOfDevices[x]['ZDeviceName']
+                            if _child != "0000":
+                                if 'ZDeviceName' in self.ListOfDevices[_child]:
+                                    if self.ListOfDevices[_child]['ZDeviceName'] != "" and self.ListOfDevices[_child]['ZDeviceName'] != {}:
+                                        #_relation[slave] = self.ListOfDevices[_child]['ZDeviceName']
+                                        _relation['Child'] = self.ListOfDevices[_child]['ZDeviceName']
                             else:
                                 _relation['Child'] = "Zigate"
 
-                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %3s %7s %2s" \
+                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %3s %2s" \
                                 %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"],
-                                        reportLQI[item]['Neighbours'][x]['_relationshp'], reportLQI[item]['Neighbours'][x]['_depth']))
+                                        reportLQI[item]['Neighbours'][x]['_depth']))
                             _topo[_ts].append( _relation )
                         #end for x
                     #end for item
