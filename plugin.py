@@ -273,16 +273,17 @@ class BasePlugin:
             import os
 
             GPIO_CMD = '/usr/bin/gpio'
-
             if os.path.isfile( GPIO_CMD ):
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " mode 2 out")
+                os.system( GPIO_CMD + " gpio mode 0 out")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " write 2 1")
+                os.system( GPIO_CMD + " gpio mode 2 out")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " mode 0 down")
+                os.system( GPIO_CMD + " gpio write 2 1")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " mode 0 up")
+                os.system( GPIO_CMD + " gpio write 0 0")
+                Domoticz.Log(".")
+                os.system( GPIO_CMD + " gpio write 0 1")
             else:
                 Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
