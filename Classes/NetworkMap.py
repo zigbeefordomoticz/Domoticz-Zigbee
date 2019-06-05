@@ -201,12 +201,12 @@ class NetworkMap():
     def finish_scan( self ):
 
         # Write the report onto file
-        for nwkid in self.Neighbours:
-            Domoticz.Log("Network Topology report")
-            Domoticz.Log("------------------------------------------------------------------------------------------")
-            Domoticz.Log("")
-            Domoticz.Log("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
+        Domoticz.Log("Network Topology report")
+        Domoticz.Log("------------------------------------------------------------------------------------------")
+        Domoticz.Log("")
+        Domoticz.Log("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
 
+        for nwkid in self.Neighbours:
             for child in self.Neighbours[nwkid]['Neighbours']:
                 Domoticz.Log("%6s %6s %9s %11s %6d %4d %7s" \
                     %( nwkid, child , self.Neighbours[nwkid]['Neighbours'][child]['_relationshp'],
@@ -214,7 +214,7 @@ class NetworkMap():
                             int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
                             int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
                             self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
-            Domoticz.Log("--")
+        Domoticz.Log("--")
 
         self.prettyPrintNeighbours()
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.HardwareID + '.json'
