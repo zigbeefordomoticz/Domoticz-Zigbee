@@ -1397,15 +1397,26 @@ class GroupsManagement(object):
             Domoticz.Log("hearbeatGroupMgt - Perform Zigate commands")
             Domoticz.Log(" - Removal to be performed: %s" %str(self.TobeRemoved))
             for iterDev, iterEp, iterGrp in list(self.TobeRemoved):
+                if iterDev not in self.ListOfDevices:
+                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s not found in ListOfDevices." %iterDev)
+                    continue
+                if iterEp not in self.ListOfDevices[iterDev]['GroupMgt']:
+                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s/%s not found in ListOfDevices." %(iterDev,iterEp))
+                    continue
+                if iterGrp not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
+                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. Group: %s for %s/%s not found in ListOfDevices." \
+                            %(iterGrp, iterDev,iterEp))
+                    continue
+
                 if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
                     Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
                     _completed = False
                     Domoticz.Debug("Too busy, will come back later")
                     break # will continue in the next cycle
+                self._removeGroup( iterDev, iterEp, iterGrp )
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'DEL-Membership'
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
-                self._removeGroup( iterDev, iterEp, iterGrp )
                 self.TobeRemoved.remove( (iterDev, iterEp, iterGrp) )
 
             Domoticz.Log(" - Add to be performed: %s" %str(self.TobeAdded))
@@ -1416,6 +1427,9 @@ class GroupsManagement(object):
                     _completed = False
                     Domoticz.Debug("Too busy, will come back later")
                     break # will continue in the next cycle
+                if iterDev not in self.ListOfDevices:
+                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s not for found in ListOfDevices." %iterDev)
+                    continue
 
                 if 'GroupMgt' not in self.ListOfDevices[iterDev]:
                     self.ListOfDevices[iterDev]['GroupMgt'] = {}
@@ -1433,9 +1447,9 @@ class GroupsManagement(object):
                     self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = {}
                     self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = {}
 
+                self._addGroup( iterIEEE, iterDev, iterEp, iterGrp )
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'ADD-Membership'
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
-                self._addGroup( iterIEEE, iterDev, iterEp, iterGrp )
                 self.TobeAdded.remove( (iterIEEE, iterDev, iterEp, iterGrp) )
 
             if _completed:
