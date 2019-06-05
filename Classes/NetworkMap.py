@@ -54,7 +54,7 @@ class NetworkMap():
     def _initNeighbours( self):
 
         # Will popoulate the Neghours dict with all Main Powered Devices
-        Domoticz.Log("_initNeighbours")
+        Domoticz.Debug("_initNeighbours")
 
         for nwkid in self.ListOfDevices:
             router = False
@@ -79,7 +79,7 @@ class NetworkMap():
 
     def _initNeighboursTableEntry( self, nwkid):
 
-        Domoticz.Log("_initNeighboursTableEntry - %s" %nwkid)
+        Domoticz.Debug("_initNeighboursTableEntry - %s" %nwkid)
         self.Neighbours[ nwkid ] = {}
         self.Neighbours[ nwkid ]['Status'] = 'ScanRequired'
         self.Neighbours[ nwkid ]['TableMaxSize'] = 0
@@ -89,11 +89,11 @@ class NetworkMap():
     def prettyPrintNeighbours( self ):
 
         for nwkid in self.Neighbours:
-            Domoticz.Log("Neighbours table: %s, %s out of %s - Status: %s" \
+            Domoticz.Debug("Neighbours table: %s, %s out of %s - Status: %s" \
                     %(nwkid,self.Neighbours[ nwkid ]['TableCurSize'], self.Neighbours[ nwkid ]['TableMaxSize'], self.Neighbours[ nwkid ]['Status']))
             for entry in self.Neighbours[ nwkid ]['Neighbours']:
                 Domoticz.Log("---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
-        Domoticz.Log("")
+        Domoticz.Debug("")
 
 
     def LQIreq(self, nwkid='0000'):
@@ -149,7 +149,7 @@ class NetworkMap():
     def start_scan(self):
 
         if len(self.Neighbours) != 0:
-            Domoticz.Log("start_scan - initialize data")
+            Domoticz.Debug("start_scan - initialize data")
             del self.Neighbours
             self.Neighbours = {}
 
@@ -193,7 +193,7 @@ class NetworkMap():
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:
-                Domoticz.Log("continue_scan - scan completed, all Neighbour tables received.")
+                Domoticz.Debug("continue_scan - scan completed, all Neighbour tables received.")
                 self._NetworkMapPhase = 0
                 self.finish_scan()
         return
@@ -202,13 +202,19 @@ class NetworkMap():
 
         # Write the report onto file
         for nwkid in self.Neighbours:
+            Domoticz.Log("Network Topology report")
+            Domoticz.Log("------------------------------------------------------------------------------------------")
+            Domoticz.Log("")
+            Domoticz.Log("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
+
             for child in self.Neighbours[nwkid]['Neighbours']:
-                Domoticz.Log("Node %4s child %4s relation %7s type %11s deepth %2d linkQty %3d Rx-Idl %6s" \
+                Domoticz.Log("%6s %6s %9s %11s %6d %4d %7s" \
                     %( nwkid, child , self.Neighbours[nwkid]['Neighbours'][child]['_relationshp'],
                             self.Neighbours[nwkid]['Neighbours'][child]['_devicetype'],
                             int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
                             int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
                             self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
+            Domoticz.Log("--")
 
         self.prettyPrintNeighbours()
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.HardwareID + '.json'
