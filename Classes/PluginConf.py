@@ -109,8 +109,8 @@ SETTINGS = {
             #Others
             'Others':
                 {
-                    'logLQI':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False},
-                    'networkScan': { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False}
+                    'logLQI':  { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':False},
+                    'networkScan': { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':False}
                 }
             }
 
