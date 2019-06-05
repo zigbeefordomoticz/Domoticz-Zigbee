@@ -1397,14 +1397,14 @@ class GroupsManagement(object):
             Domoticz.Log("hearbeatGroupMgt - Perform Zigate commands")
             Domoticz.Log(" - Removal to be performed: %s" %str(self.TobeRemoved))
             for iterDev, iterEp, iterGrp in list(self.TobeRemoved):
-                if iterDev not in self.ListOfDevices:
-                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s not found in ListOfDevices." %iterDev)
+                if iterDev not in self.ListOfDevices and iterDev != '0000':
+                    Domoticz.Error("hearbeatGroupMgt - unconsistency found. %s not found in ListOfDevices." %iterDev)
                     continue
                 if iterEp not in self.ListOfDevices[iterDev]['GroupMgt']:
-                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s/%s not found in ListOfDevices." %(iterDev,iterEp))
+                    Domoticz.Error("hearbeatGroupMgt - unconsistency found. %s/%s not found in ListOfDevices." %(iterDev,iterEp))
                     continue
-                if iterGrp not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
-                    Domoticz.Error("hearbeatGroupMgt - unconsitecy found. Group: %s for %s/%s not found in ListOfDevices." \
+                if iterGrp not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
+                    Domoticz.Error("hearbeatGroupMgt - unconsistency found. Group: %s for %s/%s not found in ListOfDevices." \
                             %(iterGrp, iterDev,iterEp))
                     continue
 
@@ -1427,7 +1427,7 @@ class GroupsManagement(object):
                     _completed = False
                     Domoticz.Debug("Too busy, will come back later")
                     break # will continue in the next cycle
-                if iterDev not in self.ListOfDevices:
+                if iterDev not in self.ListOfDevices and iterDev != '0000':
                     Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s not for found in ListOfDevices." %iterDev)
                     continue
 
