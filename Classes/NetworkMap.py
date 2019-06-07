@@ -89,7 +89,7 @@ class NetworkMap():
     def prettyPrintNeighbours( self ):
 
         for nwkid in self.Neighbours:
-            Domoticz.Debug("Neighbours table: %s, %s out of %s - Status: %s" \
+            Domoticz.Log("Neighbours table: %s, %s out of %s - Status: %s" \
                     %(nwkid,self.Neighbours[ nwkid ]['TableCurSize'], self.Neighbours[ nwkid ]['TableMaxSize'], self.Neighbours[ nwkid ]['Status']))
             for entry in self.Neighbours[ nwkid ]['Neighbours']:
                 Domoticz.Log("---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
