@@ -1193,7 +1193,7 @@ class WebServer(object):
                     device = {}
                     device['_NwkId'] = item
                     # Main Attributes
-                    for attribut in ( 'Stamp', 'Health', 'ZDeviceName', 'Status', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
+                    for attribut in ( 'ZDeviceName', 'Stamp', 'Health', 'Status', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
 
                         if attribut in self.ListOfDevices[item]:
                             device[attribut] = self.ListOfDevices[item][attribut]
