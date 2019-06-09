@@ -581,18 +581,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                     if 'ColorInfos' in self.ListOfDevices[NWKID]:
                         Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
                             self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
-                        if Subtype_ == 0x02:
-                            t = 'ColorControlRGB'
-                        elif Subtype_ == 0x04:
-                            t = 'ColorControlRGBWW'
-                        elif Subtype_ == 0x07:
-                            t = 'ColorControlFull'
-                        elif Subtype_ == 0x08:
-                            t = 'ColorControlWW'
-                        else:
-                            t = 'ColorControlFull'
                     else:
-                        Subtype_ =  0x07
+                        Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
+                            self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], None)
+
+                    if Subtype_ == 0x02:
+                        t = 'ColorControlRGB'
+                    elif Subtype_ == 0x04:
+                        t = 'ColorControlRGBWW'
+                    elif Subtype_ == 0x07:
+                        t = 'ColorControlFull'
+                    elif Subtype_ == 0x08:
+                        t = 'ColorControlWW'
+                    else:
+                        t = 'ColorControlFull'
 
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
@@ -1578,7 +1580,7 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
     return TypeFromCluster
 
-def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, ColorInfos):
+def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, ColorInfos=None):
 
         # Type 0xF1    pTypeColorSwitch
         # Switchtype 7 STYPE_Dimmer
@@ -1601,8 +1603,10 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     ZLL_Commissioning = False
 
     ColorMode = 0
-    if 'ColorMode' in ColorInfos:
-        ColorMode = ColorInfos['ColorMode']
+    if ColorInfos:
+        if 'ColorMode' in ColorInfos:
+            ColorMode = ColorInfos['ColorMode']
+
     for iterEp in EndPoints:
         if '1000' in  iterEp:
             ZLL_Commissioning = True
@@ -1652,6 +1656,9 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
             Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         else:
             Subtype = ColorControlFull
+
+    if Subtype is None:
+        Subtype = ColorControlFull
 
     Domoticz.Log("subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
     return Subtype
