@@ -82,7 +82,7 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
             decode = binascii.unhexlify(Attribute).decode('utf-8')
         except:
             if handleErrors: # If there is an error we force the result to '' This is used for 0x0000/0x0005
-                Domoticz.Log("decodeAttribute - seems errors, so returning empty")
+                Domoticz.Log("decodeAttribute - seems errors decoding %s, so returning empty" %str(Attribute))
                 decode = ''
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
