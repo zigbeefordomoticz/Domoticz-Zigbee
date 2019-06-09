@@ -577,6 +577,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 elif t == 'ColorControlWW': 
                     Subtype_ = 0x08  # White color palette / Dimable
                 else:
+                    # Generic ColorControl, let's try to find a better one.
                     if 'ColorInfos' in self.ListOfDevices[NWKID]:
                         Subtype_ = subtypeRGB_FromProfile_Device_IDs( self.ListOfDevices[NWKID]['Ep'], self.ListOfDevices[NWKID]['Model'],
                             self.ListOfDevices[NWKID]['ProfileID'], self.ListOfDevices[NWKID]['ZDeviceID'], self.ListOfDevices[NWKID]['ColorInfos'])
