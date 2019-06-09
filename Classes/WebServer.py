@@ -813,7 +813,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 setting_lst = []
                 for _theme in SETTINGS:
-                    if _theme == 'PluginTransport': continue
+                    if _theme in ( 'Debuging', 'PluginTransport'): continue
                     theme = {}
                     theme['_Theme'] = _theme
                     theme['ListOfSettings'] = []
