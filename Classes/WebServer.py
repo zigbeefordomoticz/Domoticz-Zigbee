@@ -564,24 +564,15 @@ class WebServer(object):
                     _timestamps_lst.append( _ts )
                     _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
                     _check_duplicate = []
+                    _nwkid_list = []
                     reportLQI = entry[_ts]
-                    #for item in reportLQI:
-                    for item in self.ListOfDevices:
-                        if item not in reportLQI:
-                            _relation = {}
-                            _relation['Father'] = item
-                            _relation['Child'] = item
-                            _relation["_lnkqty"] =  0
-                            _relation["DeviceType"] = ''
-                            if 'ZDeviceName' in self.ListOfDevices[item]:
-                                    if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
-                                        _relation['Father'] = _relation['Child'] = self.ListOfDevices[item]['ZDeviceName']
-                            _topo[_ts].append( _relation )
-                            continue
 
+                    for item in reportLQI:
                         Domoticz.Debug("Node: %s" %item)
                         if item != '0000' and item not in self.ListOfDevices:
                             continue
+                        if item not in _nwkid_list:
+                            _nwkid_list.append( item )
                         for x in  reportLQI[item]['Neighbours']:
                             Domoticz.Debug("---> %s" %x)
                             # Report only Child relationship
@@ -595,6 +586,8 @@ class WebServer(object):
                                 if attribute not in reportLQI[item]['Neighbours'][x]:
                                     Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
                                     continue
+                            if x not in _nwkid_list:
+                                _nwkid_list.append( x )
                             
                             # We need to reorganise in Father/Child relationship.
                             if reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Parent':
@@ -643,6 +636,22 @@ class WebServer(object):
                             _topo[_ts].append( _relation )
                         #end for x
                     #end for item
+
+                    # Sanity check, to see if all devices are part of the report.
+                    for iterDev in self.ListOfDevices:
+                        if iterDev in _nwkid_list: continue
+                        if 'Status' not in self.ListOfDevices[iterDev]: continue
+                        if self.ListOfDevices[iterDev]['Status'] != 'inDB': continue
+                        Domoticz.Log("Nwkid %s has not been reported by this scan" %iterDev)
+                        _relation = {}
+                        _relation['Father'] = _relation['Child'] = iterDev
+                        _relation['_lnkqty'] = 0
+                        _relation['DeviceType'] = ''
+                        if 'ZDeviceName' in self.ListOfDevices[iterDev]:
+                            if self.ListOfDevices[iterDev]['ZDeviceName'] != "" and self.ListOfDevices[iterDev]['ZDeviceName'] != {}:
+                                _relation['Father'] = _relation['Child'] = self.ListOfDevices[iterDev]['ZDeviceName']
+                        _topo[_ts].append( _relation )
+
                 #end for _st
 
         if verb == 'DELETE':
