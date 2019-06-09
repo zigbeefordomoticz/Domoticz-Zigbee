@@ -565,7 +565,20 @@ class WebServer(object):
                     _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
                     _check_duplicate = []
                     reportLQI = entry[_ts]
-                    for item in reportLQI:
+                    #for item in reportLQI:
+                    for item in self.ListOfDevices:
+                        if item not in reportLQI:
+                            _relation = {}
+                            _relation['Father'] = item
+                            _relation['Child'] = item
+                            _relation["_lnkqty"] =  0
+                            _relation["DeviceType"] = ''
+                            if 'ZDeviceName' in self.ListOfDevices[item]:
+                                    if self.ListOfDevices[item]['ZDeviceName'] != "" and self.ListOfDevices[item]['ZDeviceName'] != {}:
+                                        _relation['Father'] = _relation['Child'] = self.ListOfDevices[item]['ZDeviceName']
+                            _topo[_ts].append( _relation )
+                            continue
+
                         Domoticz.Debug("Node: %s" %item)
                         if item != '0000' and item not in self.ListOfDevices:
                             continue
