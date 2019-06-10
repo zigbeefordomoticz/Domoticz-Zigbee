@@ -800,15 +800,29 @@ class WebServer(object):
     def rest_plugin_stat( self, verb, data, parameters):
 
         Statistics = {}
-        Statistics['CRC'] =self.statistics._crcErrors
-        Statistics['FrameErrors'] =self.statistics._frameErrors
-        Statistics['Sent'] =self.statistics._sent
-        Statistics['Received'] =self.statistics._received
-        Statistics['Cluster'] =self.statistics._clusterOK
-        Statistics['ReTx'] =self.statistics._reTx
-        Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
-        Statistics['MaxLoad'] =self.statistics._MaxLoad
-        Statistics['StartTime'] =self.statistics._start
+        Domoticz.Log("self.statistics: %s" %self.statistics)
+        Domoticz.Log(" --> Type: %s" %type(self.statistics))
+
+        if self.pluginparameters['Mode1'] == 'None':
+            Statistics['CRC'] = 1
+            Statistics['FrameErrors'] = 1
+            Statistics['Sent'] = 144
+            Statistics['Received'] = 490
+            Statistics['Cluster'] = 268
+            Statistics['ReTx'] = 3
+            Statistics['CurrentLoad'] = 0
+            Statistics['MaxLoad'] = 7
+            Statistics['StartTime'] = int(time())
+        else:
+            Statistics['CRC'] =self.statistics._crcErrors
+            Statistics['FrameErrors'] =self.statistics._frameErrors
+            Statistics['Sent'] =self.statistics._sent
+            Statistics['Received'] =self.statistics._received
+            Statistics['Cluster'] =self.statistics._clusterOK
+            Statistics['ReTx'] =self.statistics._reTx
+            Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
+            Statistics['MaxLoad'] =self.statistics._MaxLoad
+            Statistics['StartTime'] =self.statistics._start
 
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
