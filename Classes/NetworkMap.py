@@ -242,11 +242,18 @@ class NetworkMap():
         StartIndex = int(MsgData[8:10], 16)
         ListOfEntries = MsgData[10:len(MsgData)]
 
+        Domoticz.Log("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
+                %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
+
+        if Status != '00':
+            Domoticz.Error("LQIresp - Status: %s for %s" %(Status, MsgData))
+            return
+        if len(self.LQIreqInProgress) == 0:
+            Domoticz.Error("LQIresp - Receive unexpected message %s"  %(MsgData))
+            return
+
         NwkIdSource = self.LQIreqInProgress.pop()
         Domoticz.Debug("self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
-
-        Domoticz.Debug("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
-                %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
         if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and NeighbourTableEntries:
             self.Neighbours[ NwkIdSource ]['TableMaxSize'] = NeighbourTableEntries
@@ -259,13 +266,12 @@ class NetworkMap():
 
         if (StartIndex + NeighbourTableListCount) == NeighbourTableEntries:
             Domoticz.Debug("mgtLQIresp - We have received %s entries out of %s" %( NeighbourTableListCount, NeighbourTableEntries))
-            self.Neighbours[ NwkIdSource ]['TableCurSize'] = StartIndex + NeighbourTableListCount
+            self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
             self.Neighbours[NwkIdSource]['Status'] = 'Completed'
         else:
             Domoticz.Debug("mgtLQIresp - We have received %s entries out of %s" %( NeighbourTableListCount, NeighbourTableEntries))
             self.Neighbours[NwkIdSource]['Status'] = 'ScanRequired'
-            self.Neighbours[ NwkIdSource ]['TableCurSize'] = StartIndex + NeighbourTableListCount
-
+            self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
 
         # Decoding the Table
         n = 0
