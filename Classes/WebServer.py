@@ -407,7 +407,8 @@ class WebServer(object):
             action['TimeStamp'] = int(time())
             _response["Data"] = json.dumps( action, sort_keys=False )
 
-            NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
+            if self.pluginparameters['Mode1'] != 'None':
+                NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
 
         return _response
 
@@ -447,15 +448,18 @@ class WebServer(object):
             Domoticz.Status("Erase Zigate PDM")
             Domoticz.Error("Erase Zigate PDM non implémenté pour l'instant")
             if self.pluginconf.pluginConf['eraseZigatePDM']:
-                #sendZigateCmd(self, "0012", "")
+                if self.pluginparameters['Mode1'] != 'None':
+                    sendZigateCmd(self, "0012", "")
                 self.pluginconf.pluginConf['eraseZigatePDM'] = 0
 
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
                 Domoticz.Status("ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
-                setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+                if self.pluginparameters['Mode1'] != 'None':
+                    setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {}
             action['Description'] = 'Erase Zigate PDM - Non Implemente'
-            start_Zigate( self )
+            if self.pluginparameters['Mode1'] != 'None':
+                start_Zigate( self )
         return _response
 
     def rest_reset_zigate( self, verb, data, parameters):
@@ -468,8 +472,9 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            sendZigateCmd(self, "0011", "" ) # Software Reset
-            start_Zigate( self )
+            if self.pluginparameters['Mode1'] != 'None':
+                sendZigateCmd(self, "0011", "" ) # Software Reset
+                start_Zigate( self )
             action = {}
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
@@ -934,7 +939,8 @@ class WebServer(object):
                 data = data.decode('utf8')
                 data = json.loads(data)
                 Domoticz.Debug("parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
-                ZigatePermitToJoin(self, int( data['PermitToJoin']))
+                if self.pluginparameters['Mode1'] != 'None':
+                    ZigatePermitToJoin(self, int( data['PermitToJoin']))
 
         return _response
 
