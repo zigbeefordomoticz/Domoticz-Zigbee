@@ -642,7 +642,7 @@ class WebServer(object):
                         if iterDev in _nwkid_list: continue
                         if 'Status' not in self.ListOfDevices[iterDev]: continue
                         if self.ListOfDevices[iterDev]['Status'] != 'inDB': continue
-                        Domoticz.Log("Nwkid %s has not been reported by this scan" %iterDev)
+                        Domoticz.Debug("Nwkid %s has not been reported by this scan" %iterDev)
                         _relation = {}
                         _relation['Father'] = _relation['Child'] = iterDev
                         _relation['_lnkqty'] = 0
