@@ -288,10 +288,19 @@ class NetworkMap():
             if ListOfEntries[n+40:n+42] != '':
                 _bitmap   = int(ListOfEntries[n+40:n+42], 16)
 
-            _devicetype   = _bitmap & 0b00000011
+            _devicetype   =  _bitmap & 0b00000011
             _permitjnt    = (_bitmap & 0b00001100) >> 2
             _relationshp  = (_bitmap & 0b00110000) >> 4
             _rxonwhenidl  = (_bitmap & 0b11000000) >> 6
+
+            if _devicetype == 0x03:
+                Domoticz.Log("mgtLQIresp - decoding issue - _devicetype = %s for ( %s, %s )" %(_devicetype, NwkIdSource, _nwkid))
+            if _relationshp == 0x03 or _relationshp == 0x04:
+                Domoticz.Log("mgtLQIresp - decoding issue - _relationshp = %s for ( %s, %s )" %(_relationshp, NwkIdSource, _nwkid))
+            if _permitjnt == 0x02:
+                Domoticz.Log("mgtLQIresp - decoding issue - _permitjnt = %s for ( %s, %s )" %(_permitjnt, NwkIdSource, _nwkid))
+            if _rxonwhenidl == 0x02:
+                Domoticz.Log("mgtLQIresp - decoding issue - _rxonwhenidl = %s for ( %s, %s )" %(_rxonwhenidl, NwkIdSource, _nwkid))
 
             # s a 2-bit value representing the ZigBee device type of the neighbouring node
             if  _devicetype   == 0x00: _devicetype = 'Coordinator'
@@ -299,12 +308,14 @@ class NetworkMap():
             elif  _devicetype == 0x02: _devicetype = 'End Device'
             elif  _devicetype == 0x03: _devicetype = '??'
 
+
             #is a 3-bit value representing the neighbouring node’s relationship to the local node
             if _relationshp   == 0x00: _relationshp = 'Parent'
             elif _relationshp == 0x01: _relationshp = 'Child'
             elif _relationshp == 0x02: _relationshp = 'Sibling'
-            elif _relationshp == 0x03: _relationshp = 'None'
-            elif _relationshp == 0x04: _relationshp = 'Former Child'
+            else: _relationshp = 'Child'
+            #elif _relationshp == 0x03: _relationshp = 'None'
+            #elif _relationshp == 0x04: _relationshp = 'Former Child'
 
             if _permitjnt   == 0x00: _permitjnt = 'Off'
             elif _permitjnt == 0x01 : _permitjnt = 'On'
