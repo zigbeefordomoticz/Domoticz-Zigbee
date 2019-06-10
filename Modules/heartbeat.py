@@ -452,7 +452,7 @@ def processListOfDevices( self , Devices ):
             self.start_scan( )
         #elif self.runLQI[0] == 2 and \
         elif phase == 2 and self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
-            if self.ZigateComm.loadTransmit() < 5 :
+            if self.ZigateComm.loadTransmit() < 2 :
                 self.networkmap.continue_scan( )
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
