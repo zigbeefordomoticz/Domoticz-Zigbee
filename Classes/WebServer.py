@@ -627,10 +627,10 @@ class WebServer(object):
 
                             # Sanity check, remove the direct loop
                             if ( _relation['Child'], _relation['Father'] ) in _check_duplicate:
-                                Domoticz.Log("Skip (%s,%s) as there is already ( %s, %s)" %(_relation['Father'], _relation['Child'], _relation['Child'], _relation['Father']))
+                                Domoticz.Debug("Skip (%s,%s) as there is already ( %s, %s)" %(_relation['Father'], _relation['Child'], _relation['Child'], _relation['Father']))
                                 continue
                             _check_duplicate.append( ( _relation['Father'], _relation['Child']))
-                            Domoticz.Log("%10s Relationship - %15.15s - %15.15s %3s %2s" \
+                            Domoticz.Debug("%10s Relationship - %15.15s - %15.15s %3s %2s" \
                                 %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"],
                                         reportLQI[item]['Neighbours'][x]['_depth']))
                             _topo[_ts].append( _relation )
