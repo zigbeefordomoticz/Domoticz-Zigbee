@@ -14,7 +14,9 @@
         self.Neighbours[ nwkdi ]
                                 ['Status'] ( 'Completed' /* table is completd (all entries collected */
                                              'WaitResponse' /* Waiting for response */
+                                             'WaitResponse2' /* Waiting for response */
                                              'ScanRequired' /* A scan is required to get more entries */
+                                             'ScanRequired2' /* A scan is required to get more entries */
                                 ['TableMaxSize'] Number of Expected entries
                                 ['TableCurSize'] Number of actual entries
                                 ['Neighbours'][ nwkid ]
@@ -140,7 +142,11 @@ class NetworkMap():
         datas = "%s%02X" %(nwkid, index)
 
         Domoticz.Debug("LQIreq - from: %s start at index: %s" %( nwkid, index ))
-        self.Neighbours[ nwkid ]['Status'] = 'WaitResponse'
+        if self.Neighbours[ nwkid ]['Status'] == 'ScanRequired':
+            self.Neighbours[ nwkid ]['Status'] = 'WaitResponse'
+        elif self.Neighbours[ nwkid ]['Status'] == 'ScanRequired2':
+            self.Neighbours[ nwkid ]['Status'] = 'WaitResponse2'
+
         sendZigateCmd(self, "004E",datas)    
 
         return
@@ -170,7 +176,11 @@ class NetworkMap():
         elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
             entry = self.LQIreqInProgress.pop()
             Domoticz.Debug("Commdand pending Timeout: %s" % entry)
-            self.Neighbours[entry]['Status'] = 'TimedOut'
+            if self.Neighbours[entry]['Status'] == 'WaitResponse':
+                self.Neighbours[entry]['Status'] = 'ScanRequired2'
+            elif self.Neighbours[entry]['Status'] == 'WaitResponse2':
+                self.Neighbours[entry]['Status'] = 'TimedOut'
+
             self.LQIticks = 0
             Domoticz.Debug("continue_scan - %s" %( len(self.LQIreqInProgress) ))
 
@@ -179,14 +189,14 @@ class NetworkMap():
             if self.Neighbours[entry]['Status'] == 'Completed':
                 continue
 
-            elif self.Neighbours[entry]['Status'] == 'TimedOut':
+            elif self.Neighbours[entry]['Status'] in ( 'TimedOut'):
                 continue
 
-            elif self.Neighbours[entry]['Status'] == 'WaitResponse':
+            elif self.Neighbours[entry]['Status'] in ( 'WaitResponse', 'WaitResponse2'):
                 waitResponse = True
                 continue
 
-            elif self.Neighbours[entry]['Status'] == 'ScanRequired':
+            elif self.Neighbours[entry]['Status'] in ( 'ScanRequired', 'ScanRequired2') :
                     self.LQIreq( entry )
                     return
 
