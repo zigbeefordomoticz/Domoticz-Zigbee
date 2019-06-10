@@ -242,13 +242,16 @@ class NetworkMap():
         StartIndex = int(MsgData[8:10], 16)
         ListOfEntries = MsgData[10:len(MsgData)]
 
-
         if Status != '00':
             Domoticz.Error("LQIresp - Status: %s for %s" %(Status, MsgData))
             return
         if len(self.LQIreqInProgress) == 0:
             Domoticz.Error("LQIresp - Receive unexpected message %s"  %(MsgData))
             return
+
+        if len(ListOfEntries)//42 != NeighbourTableListCount:
+            Domoticz.Log("LQIresp - missmatch. Expecting %s entries and found %s" \
+                    %(NeighbourTableListCount, len(ListOfEntries)//42))
 
         NwkIdSource = self.LQIreqInProgress.pop()
         Domoticz.Debug("self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
@@ -265,42 +268,39 @@ class NetworkMap():
             return
 
         if (StartIndex + NeighbourTableListCount) == NeighbourTableEntries:
-            Domoticz.Debug("mgtLQIresp - We have received %s entries out of %s" %( NeighbourTableListCount, NeighbourTableEntries))
+            Domoticz.Debug("mgtLQIresp - We have received %3s entries out of %3s" %( NeighbourTableListCount, NeighbourTableEntries))
             self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
             self.Neighbours[NwkIdSource]['Status'] = 'Completed'
         else:
-            Domoticz.Debug("mgtLQIresp - We have received %s entries out of %s" %( NeighbourTableListCount, NeighbourTableEntries))
+            Domoticz.Debug("mgtLQIresp - We have received %3s entries out of %3s" %( NeighbourTableListCount, NeighbourTableEntries))
             self.Neighbours[NwkIdSource]['Status'] = 'ScanRequired'
             self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
 
         # Decoding the Table
+        Domoticz.Log("mgtLQIresp - ListOfEntries: %s" %len(ListOfEntries))
         n = 0
         while n < ((NeighbourTableListCount * 42)):
-            _nwkid    = ListOfEntries[n:n+4]
-            _extPANID = ListOfEntries[n+4:n+20]
-            _ieee     = ListOfEntries[n+20:n+36]
+            _nwkid    = ListOfEntries[n:n+4]        # uint16
+            _extPANID = ListOfEntries[n+4:n+20]     # uint64
+            _ieee     = ListOfEntries[n+20:n+36]    # uint64
 
             _depth = _lnkqty = _bitmap = 0
             if ListOfEntries[n+36:n+38] != '':
-                _depth    = ListOfEntries[n+36:n+38]
+                _depth    = ListOfEntries[n+36:n+38] # uint8
             if ListOfEntries[n+38:n+40] != '':
-                _lnkqty   = ListOfEntries[n+38:n+40]
+                _lnkqty   = ListOfEntries[n+38:n+40] #uint8
             if ListOfEntries[n+40:n+42] != '':
-                _bitmap   = int(ListOfEntries[n+40:n+42], 16)
+                _bitmap   = int(ListOfEntries[n+40:n+42], 16) # uint8
 
             _devicetype   =  _bitmap & 0b00000011
             _permitjnt    = (_bitmap & 0b00001100) >> 2
             _relationshp  = (_bitmap & 0b00110000) >> 4
             _rxonwhenidl  = (_bitmap & 0b11000000) >> 6
-
-            if _devicetype == 0x03:
-                Domoticz.Log("mgtLQIresp - decoding issue - _devicetype = %s for ( %s, %s )" %(_devicetype, NwkIdSource, _nwkid))
-            if _relationshp == 0x03 or _relationshp == 0x04:
-                Domoticz.Log("mgtLQIresp - decoding issue - _relationshp = %s for ( %s, %s )" %(_relationshp, NwkIdSource, _nwkid))
-            if _permitjnt == 0x02:
-                Domoticz.Log("mgtLQIresp - decoding issue - _permitjnt = %s for ( %s, %s )" %(_permitjnt, NwkIdSource, _nwkid))
-            if _rxonwhenidl == 0x02:
-                Domoticz.Log("mgtLQIresp - decoding issue - _rxonwhenidl = %s for ( %s, %s )" %(_rxonwhenidl, NwkIdSource, _nwkid))
+            Domoticz.Log("bitmap         : {0:{fill}8b}".format(_bitmap, fill='0') + " - %0X for ( %s, %s)" %(_bitmap, NwkIdSource, _nwkid))
+            Domoticz.Log("--> _devicetype: | | |- %s" %_devicetype)
+            Domoticz.Log("--> _permitjnt:  | | -%s" %_permitjnt)
+            Domoticz.Log("--> _relationshp:| -%s" %_relationshp)
+            Domoticz.Log("--> _rxonwhenidl:-%s" %_rxonwhenidl)
 
             # s a 2-bit value representing the ZigBee device type of the neighbouring node
             if  _devicetype   == 0x00: _devicetype = 'Coordinator'
@@ -313,9 +313,9 @@ class NetworkMap():
             if _relationshp   == 0x00: _relationshp = 'Parent'
             elif _relationshp == 0x01: _relationshp = 'Child'
             elif _relationshp == 0x02: _relationshp = 'Sibling'
-            else: _relationshp = 'Child'
-            #elif _relationshp == 0x03: _relationshp = 'None'
-            #elif _relationshp == 0x04: _relationshp = 'Former Child'
+            #else: _relationshp = 'Child'
+            elif _relationshp == 0x03: _relationshp = 'None'
+            elif _relationshp == 0x04: _relationshp = 'Former Child'
 
             if _permitjnt   == 0x00: _permitjnt = 'Off'
             elif _permitjnt == 0x01 : _permitjnt = 'On'
