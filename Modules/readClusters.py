@@ -1016,21 +1016,23 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = int(value)
         if value == 0: value = 3
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
-        return                                                                   # a switch in order to behave as a switch
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
         value = decodeAttribute( MsgAttType, MsgClusterData )
         Domoticz.Debug("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
         value = int(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
-        return                                                                   # a switch in order to behave as a switch
+
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.ctrl_ln2.aq1'):
+        value = decodeAttribute( MsgAttType, MsgClusterData )
+        value = int(value)
+        Domoticz.Log("ReadCluster - ClusterId=0012 - Switch Aqara lumi.ctrl_ln2.aq1: EP: %s Attr: %s Value: %s " %(MsgSrcEp,MsgAttrID, value))
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube'):
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=MsgClusterData
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
         Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(MsgClusterData) )
         Domoticz.Debug("ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(MsgClusterData)) )
-        return
 
     else:
         Domoticz.Log("Cluster0012 - unknown Model: %s for this Attribute: %s value: %s " %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgAttrID, MsgClusterData))
