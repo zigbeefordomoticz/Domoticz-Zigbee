@@ -242,8 +242,6 @@ class NetworkMap():
         StartIndex = int(MsgData[8:10], 16)
         ListOfEntries = MsgData[10:len(MsgData)]
 
-        Domoticz.Log("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
-                %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
         if Status != '00':
             Domoticz.Error("LQIresp - Status: %s for %s" %(Status, MsgData))
@@ -254,6 +252,8 @@ class NetworkMap():
 
         NwkIdSource = self.LQIreqInProgress.pop()
         Domoticz.Debug("self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
+        Domoticz.Log("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
+                %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
         if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and NeighbourTableEntries:
             self.Neighbours[ NwkIdSource ]['TableMaxSize'] = NeighbourTableEntries
