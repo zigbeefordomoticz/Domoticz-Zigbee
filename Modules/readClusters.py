@@ -1007,8 +1007,12 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', \
                                                     'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
+        # 0 -> Hold
+        # 1 -> Short Release
+        # 2 -> Double press
+        # 255 -> Long Release
         value = decodeAttribute( MsgAttType, MsgClusterData )
-        Domoticz.Debug("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
+        Domoticz.Log("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
         value = int(value)
         if value == 0: value = 3
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 

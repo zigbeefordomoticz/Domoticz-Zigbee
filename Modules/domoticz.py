@@ -996,6 +996,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
+                    Domoticz.Log("SwitchAQ2 : Value -> %s" %value)
                     if value == 1: state = "00"
                     elif value == 2: state = "10"
                     elif value == 3: state = "20"
