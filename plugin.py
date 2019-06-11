@@ -524,7 +524,7 @@ class BasePlugin:
     def onHeartbeat(self):
         
         busy_ = False
-        Domoticz.Log("onHeartbeat - busy = %s, Health: %s" %(self.busy, self.PluginHealth))
+        Domoticz.Debug("onHeartbeat - busy = %s, Health: %s" %(self.busy, self.PluginHealth))
 
         self.HeartbeatCount += 1
 
