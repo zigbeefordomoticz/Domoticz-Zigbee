@@ -57,13 +57,14 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword):
+    def __init__( self, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
 
         self.httpServerConn = None
         self.httpsServerConn = None
         self.httpServerConns = {}
         self.httpClientConn = None
 
+        self.PluginHealth = PluginHealth
         self.WebUsername = WebUserName
         self.WebPassword = WebPassword
         self.pluginconf = PluginConf
@@ -330,6 +331,7 @@ class WebServer(object):
         REST_COMMANDS = { 
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
+                'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
@@ -386,6 +388,28 @@ class WebServer(object):
 
         self.sendResponse( Connection, HTTPresponse )
 
+
+    def rest_plugin_health( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        if not self.pluginconf.pluginConf['enableCache']:
+            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            _response["Headers"]["Pragma"] = "no-cache"
+            _response["Headers"]["Expires"] = "0"
+            _response["Headers"]["Accept"] = "*/*"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            health = {}
+            health['HealthFlag'] = self.PluginHealth[0]
+            health['HealthTxt'] = self.PluginHealth[1]
+            _response["Data"] = json.dumps( health, sort_keys=False )
+
+        return _response
 
     def rest_req_nwk_inter( self, verb, data, parameters):
 

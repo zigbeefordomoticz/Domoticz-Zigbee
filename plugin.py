@@ -146,6 +146,7 @@ class BasePlugin:
 
         self.OTA = None
 
+        self.PluginHealth = []
         self.Ping = {}
         self.connectionState = None
         self.initdone = None
@@ -223,6 +224,7 @@ class BasePlugin:
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
         # Create the adminStatusWidget if needed
+        self.PluginHealth = [ 1, 'Startup' ]
         self.adminWidgets = AdminWidgets( self.pluginconf, Devices, self.ListOfDevices, self.HardwareID )
         self.adminWidgets.updateStatusWidget( Devices, 'Startup')
         
@@ -326,6 +328,7 @@ class BasePlugin:
         WriteDeviceList(self, 0)
         self.statistics.printSummary()
         self.statistics.writeReport()
+        self.PluginHealth = [ 3, 'No Communication' ]
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :
@@ -382,14 +385,17 @@ class BasePlugin:
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
             self.ZigateComm.reConn()
+            self.PluginHealth = [ 3, 'No Communication' ]
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
             return
 
         Domoticz.Debug("Connected successfully")
         if self.connectionState is None:
+            self.PluginHealth = [ 2, 'Starting Up' ]
             self.adminWidgets.updateStatusWidget( Devices, 'Starting the plugin up')
         elif self.connectionState == 0:
             Domoticz.Status("Reconnected after failure")
+            self.PluginHealth = [ 2, 'Reconnecting after failure' ]
             self.adminWidgets.updateStatusWidget( Devices, 'Reconnected after failure')
 
         self.connectionState = 1
@@ -506,6 +512,7 @@ class BasePlugin:
                 return
 
         self.connectionState = 0
+        self.PluginHealth = [ 0, 'Shutdown' ]
         self.adminWidgets.updateStatusWidget( Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
 
@@ -587,7 +594,7 @@ class BasePlugin:
 
                 Domoticz.Status("Start Web Server connection")
                 self.webserver = WebServer( self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], \
-                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , WebUserName, WebPassword)
+                                        self.HardwareID, self.groupmgt, Devices, self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , WebUserName, WebPassword, self.PluginHealth)
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.pluginconf.pluginConf['allowOTA']:
@@ -620,6 +627,7 @@ class BasePlugin:
             WriteDeviceList(self, ( 90 * 5) )
 
         if self.CommiSSionning:
+            self.PluginHealth = [ 2, 'Enrollment in Progress' ]
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
             return
 
@@ -649,10 +657,13 @@ class BasePlugin:
             busy_ = True
 
         if busy_:
+            self.PluginHealth = [ 'Busy' ]
             self.adminWidgets.updateStatusWidget( Devices, 'Busy')
         elif not self.connectionState:
+            self.PluginHealth = [ 'No Communication' ]
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
         else:
+            self.PluginHealth = [ 'ready' ]
             self.adminWidgets.updateStatusWidget( Devices, 'Ready')
 
         self.busy = busy_
