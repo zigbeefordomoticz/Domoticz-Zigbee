@@ -146,7 +146,7 @@ class BasePlugin:
 
         self.OTA = None
 
-        self.PluginHealth = []
+        self.PluginHealth = {}
         self.Ping = {}
         self.connectionState = None
         self.initdone = None
@@ -224,7 +224,8 @@ class BasePlugin:
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
         # Create the adminStatusWidget if needed
-        self.PluginHealth = [ 1, 'Startup' ]
+        self.PluginHealth['Flag'] = 1
+        self.PluginHealth['Txt'] = 'Startup'
         self.adminWidgets = AdminWidgets( self.pluginconf, Devices, self.ListOfDevices, self.HardwareID )
         self.adminWidgets.updateStatusWidget( Devices, 'Startup')
         
@@ -328,7 +329,8 @@ class BasePlugin:
         WriteDeviceList(self, 0)
         self.statistics.printSummary()
         self.statistics.writeReport()
-        self.PluginHealth = [ 3, 'No Communication' ]
+        self.PluginHealth['Flag'] = 3
+        self.PluginHealth['Txt'] = 'No Communication'
         self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
 
     def onDeviceRemoved( self, Unit ) :
@@ -385,18 +387,20 @@ class BasePlugin:
             Domoticz.Debug("Failed to connect ("+str(Status)+") with error: "+Description)
             self.connectionState = 0
             self.ZigateComm.reConn()
-            self.PluginHealth = [ 3, 'No Communication' ]
+            self.PluginHealth['Flag'] = 3
+            self.PluginHealth['Txt'] = 'No Communication'
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
             return
 
         Domoticz.Debug("Connected successfully")
         if self.connectionState is None:
-            self.PluginHealth = [ 2, 'Starting Up' ]
+            self.PluginHealth['Flag'] = 2
+            self.PluginHealth['Txt'] = 'Starting Up'
             self.adminWidgets.updateStatusWidget( Devices, 'Starting the plugin up')
         elif self.connectionState == 0:
             Domoticz.Status("Reconnected after failure")
-            self.PluginHealth = [ 2, 'Reconnecting after failure' ]
-            self.adminWidgets.updateStatusWidget( Devices, 'Reconnected after failure')
+            self.PluginHealth['Flag'] = 2
+            self.PluginHealth['Txt'] = 'Reconnecting after failure'
 
         self.connectionState = 1
         self.Ping['Status'] = None
@@ -512,14 +516,15 @@ class BasePlugin:
                 return
 
         self.connectionState = 0
-        self.PluginHealth = [ 0, 'Shutdown' ]
+        self.PluginHealth['Flag'] = 0
+        self.PluginHealth['Txt'] = 'Shutdown'
         self.adminWidgets.updateStatusWidget( Devices, 'Plugin stop')
         Domoticz.Status("onDisconnect called")
 
     def onHeartbeat(self):
         
         busy_ = False
-        Domoticz.Debug("onHeartbeat - busy = %s" %self.busy)
+        Domoticz.Log("onHeartbeat - busy = %s, Health: %s" %(self.busy, self.PluginHealth))
 
         self.HeartbeatCount += 1
 
@@ -627,7 +632,8 @@ class BasePlugin:
             WriteDeviceList(self, ( 90 * 5) )
 
         if self.CommiSSionning:
-            self.PluginHealth = [ 2, 'Enrollment in Progress' ]
+            self.PluginHealth['Flag'] = 2
+            self.PluginHealth['Txt'] = 'Enrollment in Progress'
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
             return
 
@@ -657,13 +663,16 @@ class BasePlugin:
             busy_ = True
 
         if busy_:
-            self.PluginHealth = [ 'Busy' ]
+            self.PluginHealth['Flag'] = 2
+            self.PluginHealth['Txt'] = 'Busy'
             self.adminWidgets.updateStatusWidget( Devices, 'Busy')
         elif not self.connectionState:
-            self.PluginHealth = [ 'No Communication' ]
+            self.PluginHealth['Flag'] = 3
+            self.PluginHealth['Txt'] = 'No Communication' 
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
         else:
-            self.PluginHealth = [ 'ready' ]
+            self.PluginHealth['Flag'] = 1
+            self.PluginHealth['Txt'] = 'Ready' 
             self.adminWidgets.updateStatusWidget( Devices, 'Ready')
 
         self.busy = busy_

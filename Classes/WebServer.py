@@ -405,8 +405,8 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             health = {}
-            health['HealthFlag'] = self.PluginHealth[0]
-            health['HealthTxt'] = self.PluginHealth[1]
+            health['HealthFlag'] = self.PluginHealth['Flag']
+            health['HealthTxt'] = self.PluginHealth['Txt']
             _response["Data"] = json.dumps( health, sort_keys=False )
 
         return _response
