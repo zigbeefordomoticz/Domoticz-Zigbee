@@ -10,8 +10,15 @@ import os
 import os.path
 import mimetypes
 
-import zlib
-import gzip
+try:
+    import zlib
+except Exception as Err:
+    Domoticz.Error("zlib import error: '"+str(Err)+"'")
+try:
+    import gzip
+except Exception as Err:
+    Domoticz.Error("gzip import error: '"+str(Err)+"'")
+
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
@@ -22,8 +29,7 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
-DELAY = 0
-MAX_KB_TO_SEND = 2 * 1024   # Chunk size
+MAX_KB_TO_SEND = 8 * 1024   # Chunk size
 DEBUG_HTTP = False
 
 MIMETYPES = { 
@@ -62,6 +68,7 @@ class WebServer(object):
         self.httpServerConn = None
         self.httpsServerConn = None
         self.httpServerConns = {}
+        self.httpsServerConns = {}
         self.httpClientConn = None
 
         self.PluginHealth = PluginHealth
@@ -97,7 +104,9 @@ class WebServer(object):
     def  startWebServer( self ):
 
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
+        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
         self.httpServerConn.Listen()
+        #self.httpsServerConn.Listen()
         Domoticz.Status("Web backend for Web User Interface started on port: %s" %9440)
 
 
@@ -105,10 +114,10 @@ class WebServer(object):
 
         if (Status == 0):
             Domoticz.Debug("Connected successfully to: "+Connection.Address+":"+Connection.Port)
+            if Connection.Name not in self.httpsServerConns:
+                self.httpsServerConns[Connection.Name] = Connection
             if Connection.Name not in self.httpServerConns:
                 self.httpServerConns[Connection.Name] = Connection
-            else:
-                Domoticz.Debug("Connection already established .... %s" %Connection)
         else:
             Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
         Domoticz.Debug("Number of Connection : %s" %len(self.httpServerConns))
@@ -243,7 +252,7 @@ class WebServer(object):
 
         if ('Data' not in Response) or (Response['Data'] == None):
             DumpHTTPResponseToLog( Response )
-            Connection.Send( Response , Delay= DELAY)
+            Connection.Send( Response )
             if not self.pluginconf.pluginConf['enableKeepalive']:
                 Connection.Disconnect()
             return
@@ -287,7 +296,7 @@ class WebServer(object):
 
             # Firs Chunk
             DumpHTTPResponseToLog( HTTPchunk )
-            Connection.Send( HTTPchunk , Delay= DELAY)
+            Connection.Send( HTTPchunk )
 
             idx = MAX_KB_TO_SEND
             while idx != -1:
@@ -303,18 +312,18 @@ class WebServer(object):
                     idx = -1
 
                 Domoticz.Debug("Sending Chunk: %s out of %s" %(idx, len((Response['Data']))))
-                Connection.Send( tosend , Delay= DELAY)
+                Connection.Send( tosend )
 
             # Closing Chunk
             tosend={}
             tosend['Chunk'] = True
-            Connection.Send( tosend , Delay = DELAY)
+            Connection.Send( tosend )
             if not self.pluginconf.pluginConf['enableKeepalive']:
                 Connection.Disconnect()
         else:
             #Response['Headers']['Content-Length'] = len( Response['Data'] )
             DumpHTTPResponseToLog( Response )
-            Connection.Send( Response , Delay = DELAY)
+            Connection.Send( Response )
             if not self.pluginconf.pluginConf['enableKeepalive']:
                 Connection.Disconnect()
 
@@ -349,7 +358,6 @@ class WebServer(object):
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
-                'zigate-about':  {'Name':'zigate-about',  'Verbs':{'GET'}, 'function':self.rest_zigate_about},
                 'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM}
                 }
 
@@ -388,55 +396,6 @@ class WebServer(object):
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
         self.sendResponse( Connection, HTTPresponse )
-
-    def rest_zigate_about( self, verb, data, parameters):
-
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        if not self.pluginconf.pluginConf['enableCache']:
-            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            _response["Headers"]["Pragma"] = "no-cache"
-            _response["Headers"]["Expires"] = "0"
-            _response["Headers"]["Accept"] = "*/*"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        if verb == 'GET':
-            about = {}
-            about['About'] = """
-The aim of the plugin is to bridge Zigate hardware to the Domoticz UI. This will allow you to manage all your devices through widgets created on the Domoticz side.
-
-For information around the Zigate Plugin, please refer to :
-
-    https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md for informations
-
-Your first place to get support is via the Forums.
-
-    English channel : https://www.domoticz.com/forum/viewforum.php?f=68
-    French Channel : https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47
-"""
-
-
-            about['Contributors'] = """
-A big thanks to our main contributors
-@2m2
-@ben33880
-@d2e2n2o
-@karstenbakker 
-@ricky74
-@sbhc68
-@thiklop
-
-
-@zaraki673 & @pipiche38
-"""
-
-            _response["Data"] = json.dumps( about, sort_keys=False )
-        return _response
-
-
 
     def rest_plugin_health( self, verb, data, parameters):
 

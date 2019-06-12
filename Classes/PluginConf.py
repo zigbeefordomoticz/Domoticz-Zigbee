@@ -26,11 +26,11 @@ SETTINGS = {
 
             'WebInterface': { 
                 'enableWebServer': { 'type':'bool', 'default':0, 'current': None , 'restart':True , 'hidden':False},
-                'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False},
-                'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False},
+                'enableGzip':      { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True},
+                'enableDeflate':   { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True},
                 'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True},
-                'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False},
-                'enableCache':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False}},
+                'enableKeepalive': { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True},
+                'enableCache':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True}},
 
             # Device Management
             'DeviceManagement': 
