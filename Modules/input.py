@@ -1060,6 +1060,19 @@ def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update re
             25: 0x02000000,
             26: 0x04000000 }
 
+    """
+    u8Status is the return status for ZPS_eAplZdpMgmtNwkUpdateRequest()
+    u32ScannedChannels is a bitmask of the set of scanned radio channels (‘1’ means scanned, ‘0’ means not scanned):
+        Bits 0 to 26 respectively represent channels 0 to 26 (only bits 11 to 26 are relevant to the 2400-MHz band)Bits 27 to 31 are reserved
+    u16TotalTransmissions is the total number of transmissions (from other networks) detected during the scan
+    u16TransmissionFailures is the number of failed transmissions detected during the scan
+    u8ScannedChannelListCount is the number of energy-level measurements (one per scanned channel) reported in this notification (through u8EnergyValuesList)
+    u8EnergyValuesList is a pointer to the first in the set of reported energy-level measurements (the value 0xFF indicates there is too much interference on the channel)
+    """
+
+    if MsgDataStatus != '00':
+        Domoticz.Error("Decode804A - Status: %s with Data: %s" %(MsgDataStatus, MsgData))
+
     nwkscan = {}
     channelList = []
     for channel in CHANNELS:
