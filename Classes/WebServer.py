@@ -1428,11 +1428,11 @@ class WebServer(object):
                 self.restart_needed['RestartNeeded'] = True
                 data = data.decode('utf8')
                 data = json.loads(data)
-                Domoticz.Debug("data: %s" %data)
+                Domoticz.Log("data: %s" %data)
                 for item in data:
-                    Domoticz.Debug("item: %s" %item)
+                    Domoticz.Log("item: %s" %item)
                     if '_GroupId' not in item:
-                        Domoticz.Debug("--->Adding Group: ")
+                        Domoticz.Log("--->Adding Group: ")
                         # Define a GroupId 
                         for x in range( 0x0001, 0x9999):
                             grpid = '%04d' %x
@@ -1452,13 +1452,18 @@ class WebServer(object):
 
                     grp_lst.append( grpid ) # To memmorize the list of Group
                     #Update Group
-                    Domoticz.Debug("--->Checking Group: %s" %grpid)
+                    Domoticz.Log("--->Checking Group: %s" %grpid)
                     if item['GroupName'] != ListOfGroups[grpid]['Name']:
                         # Update the GroupName
-                        Domoticz.Debug("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
+                        Domoticz.Log("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
                         self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
 
                     newdev = []
+                    if 'devicesSelected' not in item:
+                        continue
+                    if 'GroupName' in item:
+                        if item['GroupName'] == '':
+                            continue
                     for devselected in item['devicesSelected']:
                         if 'IEEE' in devselected:
                             ieee = devselected['IEEE']
@@ -1467,7 +1472,7 @@ class WebServer(object):
                         else: 
                             Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
                             continue
-                        Domoticz.Debug("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
+                        Domoticz.Log("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
                         # Check if this is not an Ikea Tradfri Remote
                         nwkid = devselected['_NwkId']
                         _tradfri_remote = False
@@ -1488,17 +1493,17 @@ class WebServer(object):
                         for _dev,_ep in ListOfGroups[grpid]['Devices']:
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:
-                                    Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
+                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
                                     newdev.append( (ieee, _ep) )
                                 else:
-                                    Domoticz.Debug("------>--> %s already in %s" %( (ieee, _ep), newdev))
+                                    Domoticz.Log("------>--> %s already in %s" %( (ieee, _ep), newdev))
                                 break
                         else:
                             if (ieee, devselected['Ep']) not in newdev:
-                                Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
+                                Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
                                 newdev.append( (ieee, devselected['Ep']) )
                             else:
-                                Domoticz.Debug("------>--> %s already in %s" %( (_dev, _ep), newdev))
+                                Domoticz.Log("------>--> %s already in %s" %( (_dev, _ep), newdev))
                     # end for devselecte
 
                     if 'coordinatorInside' in item:
