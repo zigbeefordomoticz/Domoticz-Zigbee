@@ -1019,7 +1019,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
         value = decodeAttribute( MsgAttType, MsgClusterData )
-        Domoticz.Debug("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
+        Domoticz.Debug("ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " %(MsgSrcEp,value))
         value = int(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
 
