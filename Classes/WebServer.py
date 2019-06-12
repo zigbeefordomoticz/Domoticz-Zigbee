@@ -66,9 +66,7 @@ class WebServer(object):
     def __init__( self, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
 
         self.httpServerConn = None
-        self.httpsServerConn = None
         self.httpServerConns = {}
-        self.httpsServerConns = {}
         self.httpClientConn = None
 
         self.PluginHealth = PluginHealth
@@ -104,9 +102,7 @@ class WebServer(object):
     def  startWebServer( self ):
 
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
-        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port='9443')
         self.httpServerConn.Listen()
-        #self.httpsServerConn.Listen()
         Domoticz.Status("Web backend for Web User Interface started on port: %s" %9440)
 
 
@@ -114,8 +110,6 @@ class WebServer(object):
 
         if (Status == 0):
             Domoticz.Debug("Connected successfully to: "+Connection.Address+":"+Connection.Port)
-            if Connection.Name not in self.httpsServerConns:
-                self.httpsServerConns[Connection.Name] = Connection
             if Connection.Name not in self.httpServerConns:
                 self.httpServerConns[Connection.Name] = Connection
         else:
@@ -125,11 +119,13 @@ class WebServer(object):
     def onDisconnect ( self, Connection ):
 
         Domoticz.Debug("onDisconnect %s" %(Connection))
-        for x in self.httpServerConns:
-            Domoticz.Debug("--> "+str(x)+"'.")
         if Connection.Name in self.httpServerConns:
             del self.httpServerConns[Connection.Name]
-
+        else:
+            if (Connection != self.httpServerConn):
+                Domoticz.Error("Connection not in client list .... %s" %Connection)
+                for x in self.httpServerConns:
+                    Domoticz.Log("--> "+str(x)+"'.")
 
     def onMessage( self, Connection, Data ):
 
