@@ -1656,6 +1656,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+    timeStamped( self, MsgSrcAddr , 0x8085)
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
@@ -1692,6 +1694,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+    timeStamped( self, MsgSrcAddr , 0x8095)
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
@@ -1750,6 +1754,8 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
                 %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
     if MsgSrcAddr not in self.ListOfDevices:
         return
+    timeStamped( self, MsgSrcAddr , 0x80A7)
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
