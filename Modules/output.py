@@ -952,18 +952,22 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     # Channel Mask:
     #    Mask of channels to scan
     # Scan Duration:
-    # 0x00 - 0x05 :  Time in Second
+    # 0x00 - 0x05 : Time in Second
+    #             : Indicates that an energy scan is required and determines the time to be spent 
+    #               scanning each channel - this time is proportional to 2u8ScanDuration+1. 
+    #               The set of channels to scan is specified through u32ScanChannels and the maximum 
+    #               number of scans is equal to the value of u8ScanCount. Valid for unicasts only
     # 0x60 - 0xFD : Reserved
     # 0xFE        : Change radio channel to single channel specified through channel
     # 0xFF        : Update the stored radio channel mask
     # Scan count:
-    #    Scan repeats 0 – 5
+    #    Scan repeats 
     # Network Update ID:
     #    0 – 0xFF Transaction ID for scan
 
     # Scan Duration
     if mode == 'scan':
-        scanDuration = 0x05 # 2 seconds
+        scanDuration = 0x01 # 
     elif mode == 'change':
         scanDuration = 0xFE # Change radio channel
     elif mode == 'update':
@@ -977,7 +981,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     mask = maskChannel( channel )
     Domoticz.Debug("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
 
-    datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
+    datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "00" + "0000"
     if mode == 'scan':
         Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x duration: %02.x count: %s >%s<" \
                 %( mode, mask, scanDuration, scanCount, datas) )
@@ -985,6 +989,8 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
         Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x" \
                 %( mode, mask ) )
 
+    Domoticz.Log("NwkMgtUpdReq - request a %s on channels %s for duration %s an count %s" \
+            %( mode, channel, scanDuration, scanCount))
     sendZigateCmd(self, "004A", datas )
     return
 
