@@ -349,6 +349,7 @@ class WebServer(object):
                 'zgroup-list-available-device':   
                                  {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
                 'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
+                'zigate-about':  {'Name':'zigate-about',  'Verbs':{'GET'}, 'function':self.rest_zigate_about},
                 'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM}
                 }
 
@@ -387,6 +388,54 @@ class WebServer(object):
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
         self.sendResponse( Connection, HTTPresponse )
+
+    def rest_zigate_about( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        if not self.pluginconf.pluginConf['enableCache']:
+            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            _response["Headers"]["Pragma"] = "no-cache"
+            _response["Headers"]["Expires"] = "0"
+            _response["Headers"]["Accept"] = "*/*"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            about = {}
+            about['About'] = """
+The aim of the plugin is to bridge Zigate hardware to the Domoticz UI. This will allow you to manage all your devices through widgets created on the Domoticz side.
+
+For information around the Zigate Plugin, please refer to :
+
+    https://github.com/pipiche38/Domoticz-Zigate-Wiki/blob/master/en-eng/Home.md for informations
+
+Your first place to get support is via the Forums.
+
+    English channel : https://www.domoticz.com/forum/viewforum.php?f=68
+    French Channel : https://easydomoticz.com/forum/viewforum.php?f=28&sid=a8633a9d8cb2acccb32872543b50fd47
+"""
+
+
+            about['Contributors'] = """
+A big thanks to our main contributors
+@2m2
+@ben33880
+@d2e2n2o
+@karstenbakker 
+@ricky74
+@sbhc68
+@thiklop
+
+
+@zaraki673 & @pipiche38
+"""
+
+            _response["Data"] = json.dumps( about, sort_keys=False )
+        return _response
+
 
 
     def rest_plugin_health( self, verb, data, parameters):
