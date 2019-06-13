@@ -470,12 +470,12 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     Domoticz.Debug("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
                          %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
                     return
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2':
+            #if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2':
                 # Endpoint 03 is for the L2 output of the lumi.ctrl_neutral2
-                if MsgSrcEp != '03':
-                    Domoticz.Log("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
-                         %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
-                    return
+                #if MsgSrcEp != '03':
+                #    Domoticz.Log("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                #         %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+                #    return
 
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
                 # Livolo / Might get something else than On/Off
