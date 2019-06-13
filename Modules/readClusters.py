@@ -474,9 +474,12 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                          %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
                     return
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2':
-                # Endpoint 03 is for the L2 output of the lumi.ctrl_neutral2
-                if MsgSrcEp != '03':
-                    Domoticz.Log("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                # EP 02 ON/OFF LEFT    -- OK
+                # EP 03 ON/ON RIGHT    -- OK
+                # EP 04 EVENT LEFT
+                # EP 05 EVENT RIGHT
+                if MsgSrcEp in ( '04', '05'):
+                    Domoticz.Debug("ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
                          %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
                     return
 
@@ -963,7 +966,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if stag10 != '':
             # f400 --
             # 4602 --
-            Domoticz.Log("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+            Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
 
     else:
         Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))
