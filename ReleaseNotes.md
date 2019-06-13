@@ -1,5 +1,12 @@
 # Release Notes 
 
+## 13 June 2019 - 4.3.2
+- [Issue] - Problem with lumi.ctrl_neutral2 . Left switch not working
+- [Hardware] - #451 - Handle Philips Hue GU10 as a WW
+
+##  4 June 2019 - 4.3.1
+- [Issue] - #449 fix an issue when a new device is paired and not identified in DeviceConf.txt
+
 ## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
 - [Hardware] #421 - Integrate the new Aqara switch with gyroscope
