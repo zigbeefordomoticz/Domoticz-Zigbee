@@ -573,9 +573,9 @@ class BasePlugin:
                 if self.pluginconf.pluginConf['TXpower_set'] and self.transport != 'None':
                     set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
 
-                if self.pluginconf.pluginConf['Certification'] in CERTIFICATION and self.transport != 'None':
-                    Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['Certification']])
-                    sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['Certification'])
+                if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION and self.transport != 'None':
+                    Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
+                    sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
                 if self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
                     Domoticz.Status("Start Group Management")

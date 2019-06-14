@@ -52,6 +52,7 @@ SETTINGS = {
                 'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
                 'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False},
+                'CertificationCode':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True},
                 'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
                 'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False},
                 'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
@@ -160,12 +161,12 @@ class PluginConf:
             Domoticz.Status(" -TradfriKelvinStep corrected: %s" %self.pluginConf['TradfriKelvinStep'])
 
         if self.pluginConf['Certification'] == 'CE':
-            self.pluginConf['Certification'] = 0x01
+            self.pluginConf['CertificationCode'] = 0x01
 
         elif self.pluginConf['Certification'] == 'FCC':
-            self.pluginConf['Certification'] = 0x02
+            self.pluginConf['CertificationCode'] = 0x02
         else:
-            self.pluginConf['Certification'] = 0x01
+            self.pluginConf['CertificationCode'] = 0x01
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command

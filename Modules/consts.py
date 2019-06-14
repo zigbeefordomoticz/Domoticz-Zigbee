@@ -16,6 +16,9 @@ MAX_LOAD_ZIGATE = 3
 CERTIFICATION = {
         0x01:'CE',
         0x02:'FCC'}
+CERTIFICATION_CODE = {
+        'CE': 0x01,
+        'FCC': 0x02 }
 
 # SQN 1st UINT8 except for 0x8000 where it is the 2nd Uint8
 SQN_ANSWERS = ( 0x8401, 0x8000, 0x802B, 0x802C, 0x8030, 0x8031, 0x8034, 
