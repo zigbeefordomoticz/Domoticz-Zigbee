@@ -16,6 +16,7 @@ MAX_LOAD_ZIGATE = 3
 CERTIFICATION = {
         0x01:'CE',
         0x02:'FCC'}
+
 CERTIFICATION_CODE = {
         'CE': 0x01,
         'FCC': 0x02 }
