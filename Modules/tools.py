@@ -240,7 +240,7 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['Version']="3"
             self.ListOfDevices[Nwkid]['ZDeviceName']=""
             self.ListOfDevices[Nwkid]['Status']="004d"
-            self.ListOfDevices[Nwkid]['SQN']={}
+            self.ListOfDevices[Nwkid]['SQN']=''
             self.ListOfDevices[Nwkid]['Ep']={}
             self.ListOfDevices[Nwkid]['Heartbeat']="0"
             self.ListOfDevices[Nwkid]['RIA']="0"
@@ -252,6 +252,22 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['Type']={}
             self.ListOfDevices[Nwkid]['ProfileID']={}
             self.ListOfDevices[Nwkid]['ZDeviceID']={}
+            self.ListOfDevices[Nwkid]['App Version']=''
+            self.ListOfDevices[Nwkid]['Attributes List']={}
+            self.ListOfDevices[Nwkid]['DeviceType']=''
+            self.ListOfDevices[Nwkid]['HW Version']=''
+            self.ListOfDevices[Nwkid]['Last Cmds']={}
+            self.ListOfDevices[Nwkid]['LogicalType']=''
+            self.ListOfDevices[Nwkid]['Manufacturer']=''
+            self.ListOfDevices[Nwkid]['Maufacturer Name']=''
+            self.ListOfDevices[Nwkid]['NbEp']=''
+            self.ListOfDevices[Nwkid]['PowerSource']=''
+            self.ListOfDevices[Nwkid]['ReadAttributes']={}
+            self.ListOfDevices[Nwkid]['ReceiveOnIdle']=''
+            self.ListOfDevices[Nwkid]['Stack Version']=''
+            self.ListOfDevices[Nwkid]['Stamp']={}
+            self.ListOfDevices[Nwkid]['ZCL Version']=''
+            self.ListOfDevices[Nwkid]['Health']=''
         
 
 
@@ -279,7 +295,7 @@ def CheckDeviceList(self, key, val) :
                 'Last Cmds', 'Location', 'LogicalType', 'MacCapa', 'Manufacturer', 'Manufacturer Name', 'Model', 'NbEp',
                 'PowerSource', 'ProfileID', 'ReadAttributes', 'ReceiveOnIdle', 'Stack Version', 'RIA', 'RSSI',
                 'SQN', 'SWBUILD_1', 'SWBUILD_2', 'SWBUILD_3', 'Stamp', 'Stack Version', 'Stamp', 'Status', 'Type', 
-                'Version', 'ZCL Version', 'ZDeviceID', 'ZDeviceName' ):
+                'Version', 'ZCL Version', 'ZDeviceID', 'ZDeviceName', 'Health' ):
             if attribute in DeviceListVal:
                 self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
 
