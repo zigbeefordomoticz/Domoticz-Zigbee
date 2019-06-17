@@ -79,6 +79,11 @@ class APSManagement(object):
 
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
             self.ListOfDevices[nwk]['Last Cmds'] = []
+
+        # This is to fix a miss-initialization done where it was initiatlized as a dict and not a list
+        if isinstance(self.ListOfDevices[nwk]['Last Cmds'], dict ):
+            self.ListOfDevices[nwk]['Last Cmds'] = []
+
         if len(self.ListOfDevices[nwk]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
             # Remove the First element in the list.
             self.ListOfDevices[nwk]['Last Cmds'].pop(0)
