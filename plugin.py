@@ -448,9 +448,10 @@ class BasePlugin:
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
 
-        if (self.pluginconf.pluginConf)['logLQI'] != 0 :
+        if (self.pluginconf.pluginConf['logLQI'] != 0) or ( self.pluginconf.pluginConf['enableWebServer']):
             self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)
-            self.networkmap.start_scan( ) 
+            if self.pluginconf.pluginConf['logLQI'] != 0:
+                self.networkmap.start_scan( ) 
 
         self.busy = False
         return True
