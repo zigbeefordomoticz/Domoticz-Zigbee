@@ -1407,6 +1407,13 @@ class WebServer(object):
                         _dev['_NwkId'] = dev
                         _dev['Ep'] = ep
                         zgroup['Devices'].append( _dev )
+                    # Let's check if we don't have an Ikea Remote in the group
+                    if 'Tradfri Remote' in ListOfGroups[item]:
+                        Domoticz.Log("--> add Ikea Tradfri Remote")
+                        _dev = {}
+                        _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
+                        _dev['Ep'] = "01"
+                        zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
                 Domoticz.Debug("zGroup: %s" %zgroup_lst)
                 _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
@@ -1421,6 +1428,13 @@ class WebServer(object):
                     for dev, ep in ListOfGroups[item]['Devices']:
                         Domoticz.Debug("--> add %s %s" %(dev, ep))
                         zgroup['Devices'][dev] = ep 
+                    # Let's check if we don't have an Ikea Remote in the group
+                    if 'Tradfri Remote' in ListOfGroups[item]:
+                        Domoticz.Log("--> add Ikea Tradfri Remote")
+                        _dev = {}
+                        _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
+                        _dev['Ep'] = "01"
+                        zgroup['Devices'].append( _dev )
                     _response["Data"] = json.dumps( zgroup, sort_keys=False )
 
         elif verb == 'PUT':
