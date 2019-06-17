@@ -440,6 +440,10 @@ def processListOfDevices( self , Devices ):
         Domoticz.Debug("Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
+    if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
+        # Trigger Conifre Reporting to eligeable decices
+        processConfigureReporting( self )
+
     # LQI Scanner
     #    - phase == 0 // Stop 
     #    - phase == 1 // Start the process
@@ -450,14 +454,15 @@ def processListOfDevices( self , Devices ):
         if phase == 1:
             Domoticz.Log("Start NetworkMap process")
             self.start_scan( )
-        #elif self.runLQI[0] == 2 and \
-        elif phase == 2 and self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
-            if self.ZigateComm.loadTransmit() < 2 :
-                self.networkmap.continue_scan( )
+        elif phase == 2:
+            if self.pluginconf.pluginConf['enableWebServer']:
+                if self.ZigateComm.loadTransmit() < 2 :
+                    self.networkmap.continue_scan( )
+            else:
+                if self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
+                    if self.ZigateComm.loadTransmit() < 2 :
+                        self.networkmap.continue_scan( )
 
-    if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
-        # Trigger Conifre Reporting to eligeable decices
-        processConfigureReporting( self )
     
     if self.pluginconf.pluginConf['networkScan'] != 0 and \
             (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.pluginConf['networkScan'] ) // HEARTBEAT )) == 0) :
