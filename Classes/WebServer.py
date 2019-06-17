@@ -451,13 +451,12 @@ class WebServer(object):
             action['TimeStamp'] = int(time())
             _response["Data"] = json.dumps( action, sort_keys=False )
 
-            # Need to make hook in onHeart to 1) Start the LQI process, 2) continue the scan
-            Domoticz.Debug("Request a Start of Network Topology scan")
+            Domoticz.Log("Request a Start of Network Topology scan")
             if self.networkmap:
                 if not self.networkmap.NetworkMapPhase():
                     self.networkmap.start_scan()
                 else:
-                    Domoticz.Debug("Cannot start Network Topology as one is in the pipe")
+                    Domoticz.Log("Cannot start Network Topology as one is in the pipe")
         return _response
 
     def rest_zigate_erase_PDM( self, verb, data, parameters):
@@ -840,7 +839,7 @@ class WebServer(object):
             Statistics['Received'] = 490
             Statistics['Cluster'] = 268
             Statistics['ReTx'] = 3
-            Statistics['CurrentLoad'] = 0
+            Statistics['CurrentLoad'] = 1
             Statistics['MaxLoad'] = 7
             Statistics['StartTime'] = int(time())
         else:
@@ -851,7 +850,7 @@ class WebServer(object):
             Statistics['Cluster'] =self.statistics._clusterOK
             Statistics['ReTx'] =self.statistics._reTx
             Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
-            Statistics['MaxLoad'] =self.statistics._MaxLoad
+            Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
         _response = setupHeadersResponse()
