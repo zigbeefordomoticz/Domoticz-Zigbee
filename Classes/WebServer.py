@@ -594,7 +594,7 @@ class WebServer(object):
                 if line[0] != '{' and line[-1] != '}': continue
                 entry = json.loads( line, encoding=dict )
                 for _ts in entry:
-                    _timestamps_lst.append( _ts )
+                    _timestamps_lst.append( int(_ts) )
                     _topo[_ts] = [] # List of Father -> Child relation for one TimeStamp
                     _check_duplicate = []
                     _nwkid_list = []
