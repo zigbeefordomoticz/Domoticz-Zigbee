@@ -109,7 +109,7 @@ class GroupsManagement(object):
         ' serialize pickle format the ListOfGrups '
 
         Domoticz.Debug("Write %s" %self.groupListFileName)
-        Domoticz.Log("Dumping: %s" %self.ListOfGroups)
+        Domoticz.Debug("Dumping: %s" %self.ListOfGroups)
         with open( self.groupListFileName , 'wb') as handle:
             pickle.dump( self.ListOfGroups, handle, protocol=pickle.HIGHEST_PROTOCOL)
         self.HBcount=0
@@ -126,7 +126,7 @@ class GroupsManagement(object):
                 if 'Imported' in self.ListOfGroups[grpid]:
                     del self.ListOfGroups[grpid]['Imported']
                 self.ListOfGroups[grpid]['Imported'] = []
-        Domoticz.Log("Loading ListOfGroups: %s" %self.ListOfGroups)
+        Domoticz.Debug("Loading ListOfGroups: %s" %self.ListOfGroups)
 
     def load_jsonZigateGroupConfig( self ):
 
@@ -168,7 +168,7 @@ class GroupsManagement(object):
 
     def write_jsonZigateGroupConfig( self ):
 
-        Domoticz.Log("ListOfGroups: %s" %self.ListOfGroups)
+        Domoticz.Debug("ListOfGroups: %s" %self.ListOfGroups)
         zigateGroupConfig = {}
         for group_id in self.ListOfGroups:
             zigateGroupConfig[group_id] = {}
@@ -178,8 +178,8 @@ class GroupsManagement(object):
             if 'Tradfri Remote' in self.ListOfGroups[group_id]:
                 zigateGroupConfig[group_id]['Tradfri Remote'] = self.ListOfGroups[group_id]['Tradfri Remote'] 
 
-        Domoticz.Log("Dumping: %s" %zigateGroupConfig)
-        Domoticz.Log("Write to : %s" %self.json_groupsConfigFilename)
+        Domoticz.Debug("Dumping: %s" %zigateGroupConfig)
+        Domoticz.Debug("Write to : %s" %self.json_groupsConfigFilename)
         with open( self.json_groupsConfigFilename , 'wt') as handle:
             json.dump( zigateGroupConfig, handle, sort_keys=True, indent=2)
 
@@ -323,7 +323,7 @@ class GroupsManagement(object):
             MsgSrcAddr = MsgData[14:18]
             Domoticz.Debug("addGroupResponse >= 3.0f - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
         else:
-            Domoticz.Log("addGroupResponse - uncomplete message %s" %MsgData)
+            Domoticz.Error("addGroupResponse - uncomplete message %s" %MsgData)
             
         if MsgSrcAddr not in self.ListOfDevices:
                Domoticz.Error("Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
@@ -483,7 +483,7 @@ class GroupsManagement(object):
             MsgSrcAddr = MsgData[14:18]
             Domoticz.Debug("removeGroupResponse >= 3.0f - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
         else:
-            Domoticz.Log("removeGroupResponse - uncomplete message %s" %MsgData)
+            Domoticz.Error("removeGroupResponse - uncomplete message %s" %MsgData)
 
         Domoticz.Debug("Decode8063 - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s" 
                 %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
@@ -516,7 +516,7 @@ class GroupsManagement(object):
                 if unique == 1:
                     del self.ListOfDevices[delDev]['GroupMgt'][MsgEP][MsgGroupID]
         else:
-            Domoticz.Log("removeGroupResponse - GroupID: %s unexpected Status: %s" %(MsgGroupID, MsgStatus))
+            Domoticz.Error("removeGroupResponse - GroupID: %s unexpected Status: %s" %(MsgGroupID, MsgStatus))
 
         return
 
@@ -541,7 +541,7 @@ class GroupsManagement(object):
 
         _update = False
         for iterGrp in self.ListOfGroups:
-            Domoticz.Log("deviceChangeNetworkID - ListOfGroups[%s]['Devices']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Devices']))
+            Domoticz.Debug("deviceChangeNetworkID - ListOfGroups[%s]['Devices']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Devices']))
             old_listDev = list(self.ListOfGroups[iterGrp]['Devices'])
             new_listDev = []
             for iterList in old_listDev:
@@ -552,7 +552,7 @@ class GroupsManagement(object):
                     new_listDev.append( iterList )
 
         if _update:
-            Domoticz.Log("deviceChangeNetworkID - Change from %s to %s" %( self.ListOfGroups[iterGrp]['Devices'], new_listDev))
+            Domoticz.Debug("deviceChangeNetworkID - Change from %s to %s" %( self.ListOfGroups[iterGrp]['Devices'], new_listDev))
             del self.ListOfGroups[iterGrp]['Devices']
             self.ListOfGroups[iterGrp]['Devices'] = new_listDev
 
@@ -585,11 +585,11 @@ class GroupsManagement(object):
         ' Create Device for just created group in Domoticz. '
 
         if groupname == '' or group_nwkid == '':
-            Domoticz.Log("createDomoGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
+            Domoticz.Error("createDomoGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
 
         for x in self.Devices:
             if self.Devices[x].DeviceID == group_nwkid:
-                Domoticz.Log("_createDomoGroupDevice - existing group %s" %(self.Devices[x].Name))
+                Domoticz.Error("_createDomoGroupDevice - existing group %s" %(self.Devices[x].Name))
                 return
 
         Type_, Subtype_, SwitchType_ = self._bestGroupWidget( group_nwkid)
@@ -600,14 +600,14 @@ class GroupsManagement(object):
         myDev.Create()
         ID = myDev.ID
         if myDev.ID == -1 :
-            Domoticz.Log("CreateDomoGroupDevice - failed to create Group device.")
+            Domoticz.Error("CreateDomoGroupDevice - failed to create Group device.")
         else:
             self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s created' %groupname)
 
     def _updateDomoGroupDeviceWidgetName( self, groupname, group_nwkid ):
 
         if groupname == '' or group_nwkid == '':
-            Domoticz.Log("_updateDomoGroupDeviceWidget - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
+            Domoticz.Error("_updateDomoGroupDeviceWidget - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
 
         unit = 0
         for x in self.Devices:
@@ -615,7 +615,7 @@ class GroupsManagement(object):
                 unit = x
                 break
         else:
-            Domoticz.Log("_updateDomoGroupDeviceWidget - Group doesn't exist %s / %s" %(groupname, group_nwkid))
+            Domoticz.Error("_updateDomoGroupDeviceWidget - Group doesn't exist %s / %s" %(groupname, group_nwkid))
 
         nValue = self.Devices[unit].nValue
         sValue = self.Devices[unit].sValue
@@ -630,7 +630,7 @@ class GroupsManagement(object):
     def _updateDomoGroupDeviceWidget( self, groupname, group_nwkid ):
 
         if groupname == '' or group_nwkid == '':
-            Domoticz.Log("_updateDomoGroupDeviceWidget - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
+            Domoticz.Error("_updateDomoGroupDeviceWidget - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
 
         unit = 0
         for x in self.Devices:
@@ -638,7 +638,7 @@ class GroupsManagement(object):
                 unit = x
                 break
         else:
-            Domoticz.Log("_updateDomoGroupDeviceWidget - Group doesn't exist %s / %s" %(groupname, group_nwkid))
+            Domoticz.Error("_updateDomoGroupDeviceWidget - Group doesn't exist %s / %s" %(groupname, group_nwkid))
 
         Type_, Subtype_, SwitchType_ = self._bestGroupWidget( group_nwkid)
 
@@ -1032,7 +1032,7 @@ class GroupsManagement(object):
             break
         else:
             _ieee = self.ListOfDevices[addr]['IEEE']
-            Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" %_ieee)
+            Domoticz.Error("manageIkeaTradfriRemoteLeftRight - Remote %s not associated to any group" %_ieee)
             return
             
         _widgetColor = self.ListOfGroups[_grpid]['Tradfri Remote']['Color Mode'] 
@@ -1040,7 +1040,7 @@ class GroupsManagement(object):
             Domoticz.Error("manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" %_widgetColor)
             return
 
-        Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Color model : %s" %_widgetColor)
+        Domoticz.Debug("manageIkeaTradfriRemoteLeftRight - Color model : %s" %_widgetColor)
 
         if _widgetColor in ('ColorControlWW'): # Will work in Kelvin
             if 'Actual T' not in self.ListOfGroups[_grpid]['Tradfri Remote']:
@@ -1055,7 +1055,7 @@ class GroupsManagement(object):
                 t += self.pluginconf.pluginConf['TradfriKelvinStep']
                 if t > 255: t = 0
                 
-            Domoticz.Log("manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
+            Domoticz.Debug("manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
             self.set_Kelvin_Color( ADDRESS_MODE['group'], _grpid, '01', '01', t)
             self.ListOfGroups[_grpid]['Tradfri Remote']['Actual T'] = t
 
@@ -1086,7 +1086,7 @@ class GroupsManagement(object):
             if seq_idx >= len(PRESET_COLOR): seq_idx = 0
             if seq_idx < 0: seq_idx = len(PRESET_COLOR) - 1
 
-            Domoticz.Log("manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
+            Domoticz.Debug("manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
             self.set_RGB_color( ADDRESS_MODE['group'], _grpid, '01', '01', r, g, b)
             self.ListOfGroups[_grpid]['Tradfri Remote']['RGB'] = seq_idx
 
@@ -1115,22 +1115,22 @@ class GroupsManagement(object):
             Domoticz.Log("Group Management - Init phase")
             self.StartupPhase = 'discovery'
             if os.path.isfile( self.groupListFileName ) :
-                Domoticz.Log("--->GroupList.pck exists")
+                Domoticz.Debug("--->GroupList.pck exists")
                 last_update_GroupList = modification_date( self.groupListFileName )
-                Domoticz.Log("--->Last Update of GroupList: %s" %last_update_GroupList)
+                Domoticz.Debug("--->Last Update of GroupList: %s" %last_update_GroupList)
 
                 if self.groupsConfigFilename or self.json_groupsConfigFilename :
                     if self.groupsConfigFilename:
                         if os.path.isfile( self.groupsConfigFilename ):
-                            Domoticz.Log("------------>Config file exists")
+                            Domoticz.Debug("------------>Config file exists")
                             self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                            Domoticz.Log("------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
+                            Domoticz.Debug("------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
     
                     if self.json_groupsConfigFilename:
                         if os.path.isfile( self.json_groupsConfigFilename):
-                            Domoticz.Log("------------>Json Config file exists")
+                            Domoticz.Debug("------------>Json Config file exists")
                             self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
-                            Domoticz.Log("------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
+                            Domoticz.Debug("------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
                     
                     if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
                         # GroupList is newer , just reload the file and exit
@@ -1138,13 +1138,13 @@ class GroupsManagement(object):
                         self.StartupPhase = 'end of group startup'
                         self._load_GroupList()
                 else:   # No config file, so let's move on
-                    Domoticz.Log("------>No Config file, let's use the GroupList")
-                    Domoticz.Log("------>switch to end of Group Startup")
+                    Domoticz.Debug("------>No Config file, let's use the GroupList")
+                    Domoticz.Debug("------>switch to end of Group Startup")
                     self._load_GroupList()
                     self.StartupPhase = 'end of group startup'
             else:   # GroupList exist but no config file
-                Domoticz.Log("--->No Config file, let's use the GroupList")
-                Domoticz.Log("--->switch to end of Group Startup")
+                Domoticz.Debug("--->No Config file, let's use the GroupList")
+                Domoticz.Debug("--->switch to end of Group Startup")
                 self._load_GroupList()
                 self.StartupPhase = 'end of group startup'
 
@@ -1269,14 +1269,14 @@ class GroupsManagement(object):
 
 
             # Which config file is the newest
-            Domoticz.Log("Group Management - Loading Zigate Group Configuration file")
+            Domoticz.Debug("Group Management - Loading Zigate Group Configuration file")
             if self.json_last_update_ConfigFile >= self.txt_last_update_ConfigFile:
                 # Take JSON
-                Domoticz.Log("Group Management - Loading Zigate Group Configuration file JSON")
+                Domoticz.Debug("Group Management - Loading Zigate Group Configuration file JSON")
                 self.load_jsonZigateGroupConfig()
             else:
                 #Take TXT
-                Domoticz.Log("Group Management - Loading Zigate Group Configuration file TXT")
+                Domoticz.Debug("Group Management - Loading Zigate Group Configuration file TXT")
                 self.load_ZigateGroupConfiguration()
             self.TobeAdded = []
             self.TobeRemoved = []
@@ -1394,8 +1394,8 @@ class GroupsManagement(object):
         elif self.StartupPhase == 'perform command':
             self.stillWIP = True
             _completed = True
-            Domoticz.Log("hearbeatGroupMgt - Perform Zigate commands")
-            Domoticz.Log(" - Removal to be performed: %s" %str(self.TobeRemoved))
+            Domoticz.Debug("hearbeatGroupMgt - Perform Zigate commands")
+            Domoticz.Debug(" - Removal to be performed: %s" %str(self.TobeRemoved))
             for iterDev, iterEp, iterGrp in list(self.TobeRemoved):
                 if iterDev not in self.ListOfDevices and iterDev != '0000':
                     Domoticz.Error("hearbeatGroupMgt - unconsistency found. %s not found in ListOfDevices." %iterDev)
@@ -1419,7 +1419,7 @@ class GroupsManagement(object):
                 self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
                 self.TobeRemoved.remove( (iterDev, iterEp, iterGrp) )
 
-            Domoticz.Log(" - Add to be performed: %s" %str(self.TobeAdded))
+            Domoticz.Debug(" - Add to be performed: %s" %str(self.TobeAdded))
             for iterIEEE, iterDev, iterEp, iterGrp in list(self.TobeAdded):
                 if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
                     Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
@@ -1494,7 +1494,7 @@ class GroupsManagement(object):
                     Domoticz.Log("hearbeatGroupMgt - Configuration mode completed" )
                     self.Cycle += 1
                     if self.Cycle > MAX_CYCLE:
-                        Domoticz.Log("We reach the max number of Cycle and didn't succeed in the Group Creation")
+                        Domoticz.Error("We reach the max number of Cycle and didn't succeed in the Group Creation")
                         self.StartupPhase = 'check group list'
                     else:
                         self.StartupPhase = 'discovery'

@@ -144,7 +144,7 @@ class PluginConf:
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
                 else:
                     self.pluginConf[param] = SETTINGS[theme][param]['default']
-                Domoticz.Log("pluginConf[%s] initialized to: %s" %(param, self.pluginConf[param]))
+                Domoticz.Debug("pluginConf[%s] initialized to: %s" %(param, self.pluginConf[param]))
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
         if not os.path.isfile(self.pluginConf['filename']):
@@ -158,7 +158,7 @@ class PluginConf:
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
-            Domoticz.Status(" -TradfriKelvinStep corrected: %s" %self.pluginConf['TradfriKelvinStep'])
+            Domoticz.Debug(" -TradfriKelvinStep corrected: %s" %self.pluginConf['TradfriKelvinStep'])
 
         if self.pluginConf['Certification'] == 'CE':
             self.pluginConf['CertificationCode'] = 0x01
@@ -170,7 +170,7 @@ class PluginConf:
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
-            Domoticz.Status(" -zmod corrected: %s" %self.pluginConf['zmod'])
+            Domoticz.Debug(" -zmod corrected: %s" %self.pluginConf['zmod'])
 
         # Check Path
         for theme in SETTINGS:
@@ -181,23 +181,25 @@ class PluginConf:
 
         for theme in SETTINGS:
             for param in SETTINGS[theme]:
-                Domoticz.Log(" -%s: %s" %(param, self.pluginConf[param]))
+                if self.pluginConf[param] != SETTINGS[theme][param]['default']:
+                    Domoticz.Status("%s set to %s" %(param, self.pluginConf[param]))
 
 
     def _load_oldfashon( self, homedir, hardwareid):
 
         # Import PluginConf.txt
+        # Migration 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.txt" %hardwareid
         if not os.path.isfile(self.pluginConf['filename']) :
             self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%d.txt" %hardwareid
             if not os.path.isfile(self.pluginConf['filename']) :
                 self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf.txt"
                 if not os.path.isfile(self.pluginConf['filename']) :
-                    Domoticz.Log("No PluginConf.txt , using default values")
+                    Domoticz.Debug("No PluginConf.txt , using default values")
                     self.write_Settings( )
                     return
 
-        Domoticz.Status("PluginConfig: %s" %self.pluginConf['filename'])
+        Domoticz.Debug("PluginConfig: %s" %self.pluginConf['filename'])
         tmpPluginConf = ""
         if not os.path.isfile( self.pluginConf['filename'] ) :
             return
@@ -221,7 +223,7 @@ class PluginConf:
                         if SETTINGS[theme][param]['type'] == 'hex':
                             if is_hex( PluginConf.get( param ) ):
                                 self.pluginConf[param] = int(PluginConf[ param ], 16)
-                                Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
+                                Domoticz.Debug(" -%s: %s" %(param, self.pluginConf[param]))
                             else:
                                 Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                         %( param, self.pluginConf[param]['default']))
@@ -230,7 +232,7 @@ class PluginConf:
                         elif SETTINGS[theme][param]['type'] in ( 'bool', 'int'):
                             if PluginConf.get( param).isdigit():
                                 self.pluginConf[param] = int(PluginConf[ param ])
-                                Domoticz.Status(" -%s: %s" %(param, self.pluginConf[param]))
+                                Domoticz.Debug(" -%s: %s" %(param, self.pluginConf[param]))
                             else:
                                 Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                     %( param, self.pluginConf[param]['default']))

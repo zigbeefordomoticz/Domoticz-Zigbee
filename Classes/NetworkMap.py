@@ -91,10 +91,10 @@ class NetworkMap():
     def prettyPrintNeighbours( self ):
 
         for nwkid in self.Neighbours:
-            Domoticz.Log("Neighbours table: %s, %s out of %s - Status: %s" \
+            Domoticz.Debug("Neighbours table: %s, %s out of %s - Status: %s" \
                     %(nwkid,self.Neighbours[ nwkid ]['TableCurSize'], self.Neighbours[ nwkid ]['TableMaxSize'], self.Neighbours[ nwkid ]['Status']))
             for entry in self.Neighbours[ nwkid ]['Neighbours']:
-                Domoticz.Log("---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
+                Domoticz.Debug("---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
         Domoticz.Debug("")
 
 
@@ -265,7 +265,7 @@ class NetworkMap():
 
         NwkIdSource = self.LQIreqInProgress.pop()
         Domoticz.Debug("self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
-        Domoticz.Log("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
+        Domoticz.Debug("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
                 %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
         if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and NeighbourTableEntries:
@@ -287,7 +287,7 @@ class NetworkMap():
             self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
 
         # Decoding the Table
-        Domoticz.Log("mgtLQIresp - ListOfEntries: %s" %len(ListOfEntries))
+        Domoticz.Debug("mgtLQIresp - ListOfEntries: %s" %len(ListOfEntries))
         n = 0
         while n < ((NeighbourTableListCount * 42)):
             _nwkid    = ListOfEntries[n:n+4]        # uint16
@@ -306,11 +306,11 @@ class NetworkMap():
             _permitjnt    = (_bitmap & 0b00001100) >> 2
             _relationshp  = (_bitmap & 0b00110000) >> 4
             _rxonwhenidl  = (_bitmap & 0b11000000) >> 6
-            Domoticz.Log("bitmap         : {0:{fill}8b}".format(_bitmap, fill='0') + " - %0X for ( %s, %s)" %(_bitmap, NwkIdSource, _nwkid))
-            Domoticz.Log("--> _devicetype: | | |- %s" %_devicetype)
-            Domoticz.Log("--> _permitjnt:  | | -%s" %_permitjnt)
-            Domoticz.Log("--> _relationshp:| -%s" %_relationshp)
-            Domoticz.Log("--> _rxonwhenidl:-%s" %_rxonwhenidl)
+            Domoticz.Debug("bitmap         : {0:{fill}8b}".format(_bitmap, fill='0') + " - %0X for ( %s, %s)" %(_bitmap, NwkIdSource, _nwkid))
+            Domoticz.Debug("--> _devicetype: | | |- %s" %_devicetype)
+            Domoticz.Debug("--> _permitjnt:  | | -%s" %_permitjnt)
+            Domoticz.Debug("--> _relationshp:| -%s" %_relationshp)
+            Domoticz.Debug("--> _rxonwhenidl:-%s" %_rxonwhenidl)
 
             # s a 2-bit value representing the ZigBee device type of the neighbouring node
             if  _devicetype   == 0x00: _devicetype = 'Coordinator'

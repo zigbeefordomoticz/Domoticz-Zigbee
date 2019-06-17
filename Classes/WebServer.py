@@ -206,14 +206,14 @@ class WebServer(object):
                         return _response
 
             if 'Ranges' in Data['Headers']:
-                Domoticz.Log("Ranges processing")
+                Domoticz.Debug("Ranges processing")
                 range = Data['Headers']['Range']
                 fileStartPosition = int(range[range.find('=')+1:range.find('-')])
                 messageFileSize = os.path.getsize(webFilename)
                 messageFile = open(webFilename, mode='rb')
                 messageFile.seek(fileStartPosition)
                 fileContent = messageFile.read(MAX_KB_TO_SEND)
-                Domoticz.Log(Connection.Address+":"+Connection.Port+" Sent 'GET' request file '"+Data['URL']+"' from position "+str(fileStartPosition)+", "+str(len(fileContent))+" bytes will be returned")
+                Domoticz.Debug(Connection.Address+":"+Connection.Port+" Sent 'GET' request file '"+Data['URL']+"' from position "+str(fileStartPosition)+", "+str(len(fileContent))+" bytes will be returned")
                 _response["Status"] = "200 OK"
                 if (len(fileContent) == MAX_KB_TO_SEND):
                     _response["Status"] = "206 Partial Content"
@@ -326,9 +326,6 @@ class WebServer(object):
     def keepConnectionAlive( self ):
 
         self.heartbeats += 1
-        #Domoticz.Log("%s Connections established" %len(self.httpServerConns))
-        #for con in self.httpServerConns:
-        #    Domoticz.Log("Connection established: %s" %self.httpServerConns[con].Name)
         return
 
     def do_rest( self, Connection, verb, data, version, command, parameters):
@@ -833,8 +830,8 @@ class WebServer(object):
     def rest_plugin_stat( self, verb, data, parameters):
 
         Statistics = {}
-        Domoticz.Log("self.statistics: %s" %self.statistics)
-        Domoticz.Log(" --> Type: %s" %type(self.statistics))
+        Domoticz.Debug("self.statistics: %s" %self.statistics)
+        Domoticz.Debug(" --> Type: %s" %type(self.statistics))
 
         if self.pluginparameters['Mode1'] == 'None':
             Statistics['CRC'] = 1
@@ -1240,7 +1237,7 @@ class WebServer(object):
                         if self.ListOfDevices[dev]['IEEE'] == x['IEEE'] and \
                                 self.ListOfDevices[dev]['ZDeviceName'] != x['ZDeviceName']:
                             self.ListOfDevices[dev]['ZDeviceName'] = x['ZDeviceName']
-                            Domoticz.Log("Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
+                            Domoticz.Debug("Updating ZDeviceName to %s for IEEE: %s NWKID: %s" \
                                     %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
@@ -1434,11 +1431,11 @@ class WebServer(object):
                 self.restart_needed['RestartNeeded'] = True
                 data = data.decode('utf8')
                 data = json.loads(data)
-                Domoticz.Log("data: %s" %data)
+                Domoticz.Debug("data: %s" %data)
                 for item in data:
-                    Domoticz.Log("item: %s" %item)
+                    Domoticz.Debug("item: %s" %item)
                     if '_GroupId' not in item:
-                        Domoticz.Log("--->Adding Group: ")
+                        Domoticz.Debug("--->Adding Group: ")
                         # Define a GroupId 
                         for x in range( 0x0001, 0x9999):
                             grpid = '%04d' %x
@@ -1458,10 +1455,10 @@ class WebServer(object):
 
                     grp_lst.append( grpid ) # To memmorize the list of Group
                     #Update Group
-                    Domoticz.Log("--->Checking Group: %s" %grpid)
+                    Domoticz.Debug("--->Checking Group: %s" %grpid)
                     if item['GroupName'] != ListOfGroups[grpid]['Name']:
                         # Update the GroupName
-                        Domoticz.Log("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
+                        Domoticz.Debug("------>Updating Group from :%s to : %s" %( ListOfGroups[grpid]['Name'], item['GroupName']))
                         self.groupmgt._updateDomoGroupDeviceWidgetName( item['GroupName'], grpid )
 
                     newdev = []
@@ -1478,7 +1475,7 @@ class WebServer(object):
                         else: 
                             Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
                             continue
-                        Domoticz.Log("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
+                        Domoticz.Debug("------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
                         # Check if this is not an Ikea Tradfri Remote
                         nwkid = devselected['_NwkId']
                         _tradfri_remote = False
@@ -1499,17 +1496,17 @@ class WebServer(object):
                         for _dev,_ep in ListOfGroups[grpid]['Devices']:
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:
-                                    Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
+                                    Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
                                     newdev.append( (ieee, _ep) )
                                 else:
-                                    Domoticz.Log("------>--> %s already in %s" %( (ieee, _ep), newdev))
+                                    Domoticz.Debug("------>--> %s already in %s" %( (ieee, _ep), newdev))
                                 break
                         else:
                             if (ieee, devselected['Ep']) not in newdev:
-                                Domoticz.Log("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
+                                Domoticz.Debug("------>--> %s to be added to group %s" %( (ieee, devselected['Ep']), grpid))
                                 newdev.append( (ieee, devselected['Ep']) )
                             else:
-                                Domoticz.Log("------>--> %s already in %s" %( (_dev, _ep), newdev))
+                                Domoticz.Debug("------>--> %s already in %s" %( (_dev, _ep), newdev))
                     # end for devselecte
 
                     if 'coordinatorInside' in item:
