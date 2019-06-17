@@ -256,7 +256,7 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['Attributes List']={}
             self.ListOfDevices[Nwkid]['DeviceType']=''
             self.ListOfDevices[Nwkid]['HW Version']=''
-            self.ListOfDevices[Nwkid]['Last Cmds']={}
+            self.ListOfDevices[Nwkid]['Last Cmds']= []
             self.ListOfDevices[Nwkid]['LogicalType']=''
             self.ListOfDevices[Nwkid]['Manufacturer']=''
             self.ListOfDevices[Nwkid]['Maufacturer Name']=''
