@@ -197,7 +197,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
         mainVolt = value
-        newValue = '%s;%s;%s;%s' %(mainVolt, oldValue[1], oldValue[2], oldValue[3])
+        newValue = '%s;%s;%s;%s' %(mainVolt, oldValue[0], oldValue[1], oldValue[2])
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
         Domoticz.Debug("readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) )
@@ -919,6 +919,17 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             Domoticz.Debug("ReadCluster - %s/%s Saddr: %s Battery: %s OldValue: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, ValueBattery_old, voltage))
             self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
+
+            # Store Voltage in 0x0001
+            if '0001' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] = {}
+            oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']).split(";")
+            if len(oldValue) != 4:
+                oldValue = '0;0;0;0'.split(';')
+   
+            newValue = '%s;%s;%s;%s' %(voltage, oldValue[0], oldValue[1], oldValue[2])
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] = newValue
+
 
         if sTemp != '':
             Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
