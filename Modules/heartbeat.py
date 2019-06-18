@@ -18,7 +18,7 @@ import struct
 import json
 
 from Modules.output import  sendZigateCmd,  \
-        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, NwkMgtUpdReq, \
+        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
         bindDevice, rebind_Clusters, getListofAttribute, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
@@ -465,7 +465,8 @@ def processListOfDevices( self , Devices ):
 
     
     if self.pluginconf.pluginConf['networkScan'] != 0 and \
-            (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.pluginConf['networkScan'] ) // HEARTBEAT )) == 0) :
-        NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
+        (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.pluginConf['networkScan'] ) // HEARTBEAT )) == 0) :
+        self.networkenergy.do_scan()
+    self.networkenergy.do_scan()
 
     return True

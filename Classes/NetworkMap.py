@@ -63,13 +63,13 @@ class NetworkMap():
             if nwkid == '0000':
                 router = True
             elif 'LogicalType' in self.ListOfDevices[nwkid]:
-                if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
+                if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
                     router = True
                 if 'DeviceType' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
+                    if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
                         router = True
                 if 'MacCapa' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
+                    if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
                         router = True
 
             if not router:

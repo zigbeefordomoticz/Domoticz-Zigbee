@@ -23,7 +23,7 @@ from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
 from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
-from Modules.output import ZigatePermitToJoin, NwkMgtUpdReq, sendZigateCmd, start_Zigate, setExtendedPANID
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID
 
 from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
@@ -63,7 +63,7 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
 
         self.httpServerConn = None
         self.httpServerConns = {}
@@ -79,6 +79,7 @@ class WebServer(object):
         self.statistics = Statistics
         self.pluginparameters = PluginParameters
         self.networkmap = networkmap
+        self.networkenergy = networkenergy
 
         self.permitTojoin = permitTojoin
 
@@ -433,7 +434,7 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=False )
 
             if self.pluginparameters['Mode1'] != 'None':
-                NwkMgtUpdReq( self, ['11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26'] , mode='scan')
+                self.networkenergy.start_scan()
 
         return _response
 

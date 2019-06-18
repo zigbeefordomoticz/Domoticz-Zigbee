@@ -1031,86 +1031,8 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
     return
 
 def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update response
-    MsgLen=len(MsgData)
-    Domoticz.Debug("Decode804A - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
-    MsgSequenceNumber=MsgData[0:2]
-    MsgDataStatus=MsgData[2:4]
-    MsgTotalTransmission=MsgData[4:8]
-    MsgTransmissionFailures=MsgData[8:12]
-    MsgScannedChannel=MsgData[12:20]
-    MsgScannedChannelListCount=MsgData[20:22]
-    MsgChannelListInterference=MsgData[22:len(MsgData)]
-
-    #Decode the Channel mask received
-    CHANNELS = { 11: 0x00000800,
-            12: 0x00001000,
-            13: 0x00002000,
-            14: 0x00004000,
-            15: 0x00008000,
-            16: 0x00010000,
-            17: 0x00020000,
-            18: 0x00040000,
-            19: 0x00080000,
-            20: 0x00100000,
-            21: 0x00200000,
-            22: 0x00400000,
-            23: 0x00800000,
-            24: 0x01000000,
-            25: 0x02000000,
-            26: 0x04000000 }
-
-    """
-    u8Status is the return status for ZPS_eAplZdpMgmtNwkUpdateRequest()
-    u32ScannedChannels is a bitmask of the set of scanned radio channels (‘1’ means scanned, ‘0’ means not scanned):
-        Bits 0 to 26 respectively represent channels 0 to 26 (only bits 11 to 26 are relevant to the 2400-MHz band)Bits 27 to 31 are reserved
-    u16TotalTransmissions is the total number of transmissions (from other networks) detected during the scan
-    u16TransmissionFailures is the number of failed transmissions detected during the scan
-    u8ScannedChannelListCount is the number of energy-level measurements (one per scanned channel) reported in this notification (through u8EnergyValuesList)
-    u8EnergyValuesList is a pointer to the first in the set of reported energy-level measurements (the value 0xFF indicates there is too much interference on the channel)
-    """
-
-    if MsgDataStatus != '00':
-        Domoticz.Error("Decode804A - Status: %s with Data: %s" %(MsgDataStatus, MsgData))
-
-    nwkscan = {}
-    channelList = []
-    for channel in CHANNELS:
-        if int(MsgScannedChannel,16) & CHANNELS[channel]:
-            channelList.append( channel )
-
-    channelListInterferences = []
-    idx = 0
-    while idx < len(MsgChannelListInterference):
-        channelListInterferences.append( "%X" %(int(MsgChannelListInterference[idx:idx+2],16)))
-        idx += 2
-
-    Domoticz.Status("Management Network Update. SQN: %s, Total Transmit: %s , Transmit Failures: %s , Status: %s) " \
-            %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), DisplayStatusCode(MsgDataStatus)) )
-
-    timing = int(time.time())
-    nwkscan[timing] = {}
-    nwkscan[timing]['Total Tx'] = int(MsgTotalTransmission,16)
-    nwkscan[timing]['Total failures'] = int(MsgTransmissionFailures,16)
-    for chan, inter in zip( channelList, channelListInterferences ):
-        nwkscan[timing][chan] = int(inter,16)
-        Domoticz.Status("     Channel: %s Interference: : %s " %(chan, int(inter,16)))
-
-    # Write the report onto file
-    _filename =  self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.HardwareID + '.txt'
-    #Domoticz.Status("Network Scan report save on " +str(_filename))
-    #with open(_filename , 'at') as file:
-    #    for key in nwkscan:
-    #        file.write(str(key) + ": " + str(nwkscan[key]) + "\n")
-
-    _filename =  self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.HardwareID 
-    json_filename = _filename + ".json"
-    with open( json_filename , 'at') as json_file:
-        json_file.write('\n')
-        json.dump( nwkscan, json_file)
-
-    self.adminWidgets.updateNotificationWidget( Devices, 'A new Network Scan report is available' )
-
+    self.networkenergy.NwkScanResponse( MsgData)
     return
 
 def Decode804B(self, Devices, MsgData, MsgRSSI) : # System Server Discovery response

@@ -108,6 +108,7 @@ from Classes.OTA import OTAManagement
 from Classes.WebServer import WebServer
 
 from Classes.NetworkMap import NetworkMap
+from Classes.NetworkEnergy import NetworkEnergy
 
 class BasePlugin:
     enabled = False
@@ -117,6 +118,7 @@ class BasePlugin:
         self.DiscoveryDevices = {}
         self.IEEE2NWK = {}
         self.networkmap = None
+        self.networkenergy = None
         self.zigatedata = {}
 
         self.ZigateComm = None
@@ -453,6 +455,8 @@ class BasePlugin:
             if self.pluginconf.pluginConf['logLQI'] != 0:
                 self.networkmap.start_scan( ) 
 
+        self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)
+
         self.busy = False
         return True
 
@@ -602,7 +606,7 @@ class BasePlugin:
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
                 Domoticz.Status("Start Web Server connection")
-                self.webserver = WebServer( self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
+                self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
                         self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.groupmgt, Devices, 
                         self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth)
 

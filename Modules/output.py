@@ -966,6 +966,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     #    0 – 0xFF Transaction ID for scan
 
     # Scan Duration
+
     if mode == 'scan':
         scanDuration = 0x01 # 
     elif mode == 'change':
@@ -981,7 +982,9 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
     mask = maskChannel( channel )
     Domoticz.Debug("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
 
-    datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "00" + "0000"
+    #datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "00" + "0000"
+
+    datas = "0000" + "07FFF800" + "01" + "01" + "01" + "0000"
     if mode == 'scan':
         Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x duration: %02.x count: %s >%s<" \
                 %( mode, mask, scanDuration, scanCount, datas) )
@@ -991,6 +994,7 @@ def NwkMgtUpdReq( self, channel, mode='scan'  ):
 
     Domoticz.Log("NwkMgtUpdReq - request a %s on channels %s for duration %s an count %s" \
             %( mode, channel, scanDuration, scanCount))
+    Domoticz.Log("NwkScan - %s %s" %("004A", datas))
     sendZigateCmd(self, "004A", datas )
     return
 
