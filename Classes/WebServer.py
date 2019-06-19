@@ -1178,13 +1178,13 @@ class WebServer(object):
                 device = {}
                 device['_NwkId'] = x
 
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health'):
+                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health', 'RSSI', 'Battery'):
                     if item in self.ListOfDevices[x]:
                         if item != 'MacCapa':
                             if self.ListOfDevices[x][item] != {}:
                                 device[item.strip()] = self.ListOfDevices[x][item]
                             else:
-                                device[item.strip()] = ""
+                                device[item.strip()] = ''
                         else:
                                 device['MacCapa'] = []
                                 mac_capability = int(self.ListOfDevices[x][item],16)
@@ -1267,10 +1267,13 @@ class WebServer(object):
                     device = {}
                     device['_NwkId'] = item
                     # Main Attributes
-                    for attribut in ( 'ZDeviceName', 'Stamp', 'Health', 'Status', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
+                    for attribut in ( 'ZDeviceName', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
 
                         if attribut in self.ListOfDevices[item]:
-                            device[attribut] = self.ListOfDevices[item][attribut]
+                            if self.ListOfDevices[item][attribut] == {}:
+                                device[attribut] = ''
+                            else:
+                                device[attribut] = self.ListOfDevices[item][attribut]
                         else:
                             device[attribut] = ''
 
