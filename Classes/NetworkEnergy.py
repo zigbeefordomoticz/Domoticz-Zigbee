@@ -123,7 +123,6 @@ class NetworkEnergy():
 
         mask = maskChannel( channels )
         datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) 
-        #datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + '01'
     
         if len(self.nwkidInQueue) == 0:
             Domoticz.Debug("NwkScanReq - request a scan on channels %s for duration %s an count %s" \
