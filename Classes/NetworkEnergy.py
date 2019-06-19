@@ -199,7 +199,7 @@ class NetworkEnergy():
         storeEnergy[stamp] = []
         Domoticz.Status("Network Energy Level Report")
         Domoticz.Status("-----------------------------------------------")
-        Domoticz.Status("%5s %3s %8s %4s %4s %4s %4s %4s %4s" %('nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
+        Domoticz.Status("%5s %6s %8s %4s %4s %4s %4s %4s %4s" %('nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
         for nwkid in self.EnergyLevel:
             toprint =''
             if self.EnergyLevel[nwkid]['Status'] != 'Completed':
@@ -210,7 +210,7 @@ class NetworkEnergy():
             entry['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
             entry['Channels'] = []
 
-            toprint = "%5s %3s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
+            toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
             for c in self.EnergyLevel[ nwkid ]['Channels']:
                channels = {}
                channels['Channel'] = c
