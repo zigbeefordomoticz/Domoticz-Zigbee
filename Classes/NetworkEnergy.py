@@ -190,7 +190,6 @@ class NetworkEnergy():
 
     def finish_scan( self ):
 
-
         Domoticz.Debug("Finish_scan")
         self.ScanInProgress = False
 
@@ -201,24 +200,27 @@ class NetworkEnergy():
         Domoticz.Status("-----------------------------------------------")
         Domoticz.Status("%5s %6s %8s %4s %4s %4s %4s %4s %4s" %('nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
         for nwkid in self.EnergyLevel:
-            toprint =''
             if self.EnergyLevel[nwkid]['Status'] != 'Completed':
                 continue
             entry = {}
-            entry['_NwkId'] = nwkid
-            entry['Tx'] = self.EnergyLevel[ nwkid ][ 'Tx' ]
-            entry['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
-            entry['Channels'] = []
+            entry[nwkid] = {}
+            entry[nwkid]['Tx'] = self.EnergyLevel[ nwkid ][ 'Tx' ]
+            entry[nwkid]['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
+            entry[nwkid]['Channels'] = []
+            if 'ZDeviceName' in self.ListOfDevices[nwkid]:
+                if self.ListOfDevices[nwkid]['ZDeviceName'] != {}:
+                    entry[nwkid]['ZDeviceName'] = self.ListOfDevices[nwkid]['ZDeviceName']
+                else:
+                    entry[nwkid]['ZDeviceName'] = nwkid
 
             toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
             for c in self.EnergyLevel[ nwkid ]['Channels']:
                channels = {}
                channels['Channel'] = c
                channels['Level'] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
-               entry['Channels'].append( channels )
+               entry[nwkid]['Channels'].append( channels )
                toprint += " %4s" %self.EnergyLevel[ nwkid ]['Channels'][ c ]
             storeEnergy[stamp].append( entry )
-
             Domoticz.Status(toprint)
 
         Domoticz.Debug("Network Energly Level Report: %s" %storeEnergy)

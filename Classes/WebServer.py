@@ -747,7 +747,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'Network_scan-' + '%02d' %self.hardwareID + '.json'
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-' + '%02d' %self.hardwareID + '.json'
 
         _timestamps_lst = [] # Just the list of Timestamps
         _scan = {}
@@ -759,10 +759,7 @@ class WebServer(object):
                     entry = json.loads( line, encoding=dict )
                     for _ts in entry:
                         _timestamps_lst.append( _ts )
-                        NetworkScan = entry[_ts]
-                        _scan[_ts] = {}
-                        for item in NetworkScan:
-                            _scan[_ts][item] = NetworkScan[item]
+                        _scan[_ts] = entry[ _ts ]
 
         if verb == 'DELETE':
             if len(parameters) == 0:
