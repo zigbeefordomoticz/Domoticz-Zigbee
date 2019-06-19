@@ -466,7 +466,10 @@ def processListOfDevices( self , Devices ):
     
     if self.pluginconf.pluginConf['networkScan'] != 0 and \
         (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.pluginConf['networkScan'] ) // HEARTBEAT )) == 0) :
+        if self.ZigateComm.loadTransmit() < 2 :
+            self.networkenergy.do_scan()
+
+    if self.ZigateComm.loadTransmit() < 2 :
         self.networkenergy.do_scan()
-    self.networkenergy.do_scan()
 
     return True
