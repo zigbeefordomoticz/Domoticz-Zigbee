@@ -107,12 +107,12 @@ class NetworkEnergy():
     def prettyPrintNwkEnrgy( self ):
 
         for i in self.EnergyLevel:
-            Domoticz.Debug("%s : %s" %(i, self.EnergyLevel[i]['Status']))
+            Domoticz.Log("%s : %s" %(i, self.EnergyLevel[i]['Status']))
             if self.EnergyLevel[i]['Status'] == 'Completed':
-                Domoticz.Debug("---> Tx: %s" %(self.EnergyLevel[i]['Tx']))
-                Domoticz.Debug("---> Failure: %s" %(self.EnergyLevel[i]['Failure']))
+                Domoticz.Log("---> Tx: %s" %(self.EnergyLevel[i]['Tx']))
+                Domoticz.Log("---> Failure: %s" %(self.EnergyLevel[i]['Failure']))
                 for c in self.EnergyLevel[i]['Channels']:
-                    Domoticz.Debug("---> %s: %s" %(c, self.EnergyLevel[i]['Channels'][c]))
+                    Domoticz.Log("---> %s: %s" %(c, self.EnergyLevel[i]['Channels'][c]))
         Domoticz.Debug("")
 
     def NwkScanReq(self, target, channels):
@@ -192,12 +192,16 @@ class NetworkEnergy():
 
 
         Domoticz.Debug("Finish_scan")
-        self.prettyPrintNwkEnrgy()
         self.ScanInProgress = False
 
-        data = {}
-        data[int(time())] = []
+        stamp = int(time())
+        storeEnergy = {}
+        storeEnergy[stamp] = []
+        Domoticz.Status("Network Energy Level Report")
+        Domoticz.Status("-----------------------------------------------")
+        Domoticz.Status("%5s %3s %8s %4s %4s %4s %4s %4s %4s" %('nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
         for nwkid in self.EnergyLevel:
+            toprint =''
             if self.EnergyLevel[nwkid]['Status'] != 'Completed':
                 continue
             entry = {}
@@ -205,13 +209,27 @@ class NetworkEnergy():
             entry['Tx'] = self.EnergyLevel[ nwkid ][ 'Tx' ]
             entry['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
             entry['Channels'] = []
+
+            toprint = "%5s %3s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
             for c in self.EnergyLevel[ nwkid ]['Channels']:
                channels = {}
-               channels[ c ] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
+               channels['Channel'] = c
+               channels['Level'] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
                entry['Channels'].append( channels )
-            data[int(time())].append( entry )
+               toprint += " %4s" %self.EnergyLevel[ nwkid ]['Channels'][ c ]
+            storeEnergy[stamp].append( entry )
 
-        Domoticz.Log("%s" %data)
+            Domoticz.Status(toprint)
+
+        Domoticz.Debug("Network Energly Level Report: %s" %storeEnergy)
+
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-' + '%02d' %self.HardwareID + '.json'
+        if os.path.isdir( self.pluginconf.pluginConf['pluginReports'] ):
+            with open( _filename, 'at') as json_file:
+                json_file.write('\n')
+                json.dump( storeEnergy, json_file)
+        else:
+            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
         return
 

@@ -456,6 +456,8 @@ class BasePlugin:
                 self.networkmap.start_scan( ) 
 
         self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)
+        self.networkenergy.start_scan()
+
 
         self.busy = False
         return True
