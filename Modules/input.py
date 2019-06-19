@@ -469,11 +469,11 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
 
     if Status == "00": 
         if ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
-            Domoticz.Status("Permit Join: Off")
+            Domoticz.Status("Accepting new Hardware: Disable")
         self.Ping['Permit'] = 'Off'
     elif Status == "01" : 
         if (self.Ping['Permit'] is None) or ( self.permitTojoin['Starttime'] >= timestamp - 240):
-            Domoticz.Status("Zigate in Permit Join: On")
+            Domoticz.Status("Accepting new Hardware: On")
         self.Ping['Permit'] = 'On'
     else: 
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
