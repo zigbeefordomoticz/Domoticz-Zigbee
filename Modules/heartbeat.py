@@ -444,32 +444,20 @@ def processListOfDevices( self , Devices ):
         # Trigger Conifre Reporting to eligeable decices
         processConfigureReporting( self )
 
-    # LQI Scanner
-    #    - phase == 0 // Stop 
-    #    - phase == 1 // Start the process
-    #    - phase == 2 // Continue scanning
-
-    if self.networkmap:
-        phase = self.networkmap.NetworkMapPhase()
-        if phase == 1:
-            Domoticz.Log("Start NetworkMap process")
-            self.start_scan( )
-        elif phase == 2:
-            if self.pluginconf.pluginConf['enableWebServer']:
+    if self.HeartbeatCount > ( 120 // HEARTBEAT):
+        # Network Topology
+        if self.networkmap:
+            phase = self.networkmap.NetworkMapPhase()
+            if phase == 1:
+                Domoticz.Log("Start NetworkMap process")
+                self.start_scan( )
+            elif phase == 2:
                 if self.ZigateComm.loadTransmit() < 2 :
-                    self.networkmap.continue_scan( )
-            else:
-                if self.HeartbeatCount > (( 120 + self.pluginconf.pluginConf['logLQI']) // HEARTBEAT):
-                    if self.ZigateComm.loadTransmit() < 2 :
-                        self.networkmap.continue_scan( )
+                     self.networkmap.continue_scan( )
 
-    
-    if self.pluginconf.pluginConf['networkScan'] != 0 and \
-        (self.HeartbeatCount == ( 120 // HEARTBEAT ) or (self.HeartbeatCount % ((300+self.pluginconf.pluginConf['networkScan'] ) // HEARTBEAT )) == 0) :
-        if self.ZigateComm.loadTransmit() < 2 :
-            self.networkenergy.do_scan()
-
-    if self.ZigateComm.loadTransmit() < 2 :
-        self.networkenergy.do_scan()
+        # Network Energy Level
+        if self.networkenergy:
+            if self.ZigateComm.loadTransmit() < 2:
+                self.networkenergy.do_scan()
 
     return True
