@@ -310,3 +310,23 @@ class IAS_Zone_Management:
             del iter
 
         return
+
+
+
+    # IAS Warning Device Cluster
+    # https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
+    # Section 28 - page 545
+    def warningMode( self ):
+
+
+        return
+
+
+    def squawkMode( self ):
+
+        return
+
+
+    def eventIASWD( self ):
+
+        return
