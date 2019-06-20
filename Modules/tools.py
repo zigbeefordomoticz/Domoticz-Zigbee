@@ -17,6 +17,7 @@ import json
 import Domoticz
 
 from Classes.AdminWidgets import AdminWidgets
+from Modules.database import WriteDeviceList
 
 def is_hex(s):
     hex_digits = set("0123456789abcdefABCDEF")
@@ -75,7 +76,7 @@ def getClusterListforEP( self, NWKID, Ep ) :
 
     ClusterList = []
 
-    for cluster in ['fc00', '0500', '0406', '0402', '0400', '0001']:
+    for cluster in ['fc00', '0500', '0502', '0406', '0402', '0400', '0001']:
         if cluster in self.ListOfDevices[NWKID]['Ep'][Ep]:
             ClusterList.append(cluster)
 
@@ -169,6 +170,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Heartbeat'] = 0
+                    WriteDeviceList(self, 0)
 
                 found = True
                 break
@@ -269,48 +271,6 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['ZCL Version']=''
             self.ListOfDevices[Nwkid]['Health']=''
         
-
-
-def CheckDeviceList(self, key, val) :
-    '''
-        This function is call during DeviceList load
-    '''
-
-    Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
-    Domoticz.Debug("CheckDeviceList - with value : " + str(val))
-
-    DeviceListVal=eval(val)
-    # Do not load Devices in State == 'unknown' or 'left' 
-    if 'Status' in DeviceListVal:
-        if DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP' ):
-            Domoticz.Status("Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
-            return
-    if DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-        initDeviceInList(self, key)
-
-        self.ListOfDevices[key]['RIA']="10"
-
-        for attribute in ( 'App Version', 'Attributes List', 'Battery', 'Bind', 'ColorInfos', 'ConfigureReporting', 
-                'ClusterType', 'DeviceType', 'Ep', 'HW Version', 'Heartbeat', 'IAS',
-                'Last Cmds', 'Location', 'LogicalType', 'MacCapa', 'Manufacturer', 'Manufacturer Name', 'Model', 'NbEp',
-                'PowerSource', 'ProfileID', 'ReadAttributes', 'ReceiveOnIdle', 'Stack Version', 'RIA', 'RSSI',
-                'SQN', 'SWBUILD_1', 'SWBUILD_2', 'SWBUILD_3', 'Stamp', 'Stack Version', 'Stamp', 'Status', 'Type', 
-                'Version', 'ZCL Version', 'ZDeviceID', 'ZDeviceName', 'Health' ):
-            if attribute in DeviceListVal:
-                self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
-
-        self.ListOfDevices[key]['Health'] = ''
-
-        if 'IEEE' in DeviceListVal:
-            self.ListOfDevices[key]['IEEE'] = DeviceListVal['IEEE']
-            Domoticz.Debug("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
-            if  DeviceListVal['IEEE']:
-                IEEE = DeviceListVal['IEEE']
-                self.IEEE2NWK[IEEE] = key
-            else :
-                Domoticz.Debug("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
-
-
 def timeStamped( self, key, Type ):
     if key in self.ListOfDevices:
         if 'Stamp' not in self.ListOfDevices[key]:
@@ -541,3 +501,7 @@ def rgb_to_hsl(rgb):
         h /= 6
 
     return h, s, l
+
+
+
+

@@ -15,7 +15,8 @@ import os.path
 import datetime
 import json
 
-from Modules.tools import CheckDeviceList
+import Modules.tools
+#from Modules.tools import DeviceExist
 
 def _copyfile( source, dest ):
     copy_buffer =''
@@ -126,12 +127,13 @@ def WriteDeviceList(self, count):
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
+        Domoticz.Log("WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
 
         # To be written in the Reporting folder
-        json_filename = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName.replace('.txt','.json') 
-        Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
-        with open (json_filename, 'wt') as json_file:
-            json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
+        #json_filename = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName.replace('.txt','.json') 
+        #Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
+        #with open (json_filename, 'wt') as json_file:
+        #    json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
     else :
         self.HBcount=self.HBcount+1
 
@@ -195,3 +197,45 @@ def saveZigateNetworkData( self, nkwdata ):
         Domoticz.Debug("Write " + json_filename + " = " + str(self.ListOfDevices))
         with open (json_filename, 'wt') as json_file:
             json.dump(nkwdata, json_file, indent=4, sort_keys=True)
+
+
+def CheckDeviceList(self, key, val) :
+    '''
+        This function is call during DeviceList load
+    '''
+
+    Domoticz.Debug("CheckDeviceList - Address search : " + str(key))
+    Domoticz.Debug("CheckDeviceList - with value : " + str(val))
+
+    DeviceListVal=eval(val)
+    # Do not load Devices in State == 'unknown' or 'left' 
+    if 'Status' in DeviceListVal:
+        if DeviceListVal['Status'] in ( 'UNKNOW', 'failDB', 'DUP' ):
+            Domoticz.Status("Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
+            return
+
+    if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
+        Modules.tools.initDeviceInList(self, key)
+
+        self.ListOfDevices[key]['RIA']="10"
+
+        for attribute in ( 'App Version', 'Attributes List', 'Battery', 'Bind', 'ColorInfos', 'ConfigureReporting', 
+                'ClusterType', 'DeviceType', 'Ep', 'HW Version', 'Heartbeat', 'IAS',
+                'Last Cmds', 'Location', 'LogicalType', 'MacCapa', 'Manufacturer', 'Manufacturer Name', 'Model', 'NbEp',
+                'PowerSource', 'ProfileID', 'ReadAttributes', 'ReceiveOnIdle', 'Stack Version', 'RIA', 'RSSI',
+                'SQN', 'SWBUILD_1', 'SWBUILD_2', 'SWBUILD_3', 'Stamp', 'Stack Version', 'Stamp', 'Status', 'Type', 
+                'Version', 'ZCL Version', 'ZDeviceID', 'ZDeviceName', 'Health' ):
+            if attribute in DeviceListVal:
+                self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
+
+        self.ListOfDevices[key]['Health'] = ''
+
+        if 'IEEE' in DeviceListVal:
+            self.ListOfDevices[key]['IEEE'] = DeviceListVal['IEEE']
+            Domoticz.Debug("CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) )
+            if  DeviceListVal['IEEE']:
+                IEEE = DeviceListVal['IEEE']
+                self.IEEE2NWK[IEEE] = key
+            else :
+                Domoticz.Debug("CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) )
+
