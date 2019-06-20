@@ -58,6 +58,7 @@ READ_ATTRIBUTES_REQUEST = {
 # Ordered List - Important for binding
 CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0500',            # IAS Zone
+        '0502',            # IAS Zone
         '0406',            # Occupancy Sensing
         '0402',            # Temperature Measurement
         '0400',            # Illuminance Measurement
@@ -221,7 +222,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             #IAS Zone
-            if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+            if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
+                    '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
                 Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
                         %( RIA, NWKID, status))
