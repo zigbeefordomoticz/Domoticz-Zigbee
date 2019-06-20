@@ -237,6 +237,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "Alarm": # IAS object / matching 0x0502 Cluster / Alarm/Siren
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=243, Subtype=32, Switchtype=11)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                
             if t == "Door":  # capteur ouverture/fermeture xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -1576,6 +1589,7 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
     elif cluster == "0406": TypeFromCluster = "Motion"
     elif cluster == "0702": TypeFromCluster = "Power/Meter"
     elif cluster == "0500": TypeFromCluster = "Door"
+    elif cluster == "0502": TypeFromCluster = "Alarm"
 
     elif cluster == "fc00" : TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
 
