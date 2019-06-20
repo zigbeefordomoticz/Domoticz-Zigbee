@@ -1326,15 +1326,12 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             # No need to spend time as it is already in the state we want, go to next device
             continue
 
-        if self.domoticzdb_DeviceStatus:
-            from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
-                continue
 
         LUpdate = Devices[x].LastUpdate
         _tmpDeviceID_IEEE = Devices[x].DeviceID
         LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
         current = time.time()
+
         # Look for the corresponding ClusterType
         if _tmpDeviceID_IEEE in self.IEEE2NWK:
             NWKID = self.IEEE2NWK[_tmpDeviceID_IEEE]
@@ -1356,6 +1353,12 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             
             if DeviceType not in ('Motion', 'Vibration'):
                 continue
+
+            if self.domoticzdb_DeviceStatus:
+                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+                if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
+                    # This means that 
+                    continue
 
             # Takes the opportunity to update RSSI and Battery
             SignalLevel = ''

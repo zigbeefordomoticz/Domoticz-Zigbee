@@ -39,6 +39,8 @@ class DomoticzDB_Preferences:
 
     def retreiveAcceptNewHardware( self):
 
+        if  self.dbCursor is None:
+            return
         try:
             self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'" )
             value = self.dbCursor.fetchone()
@@ -56,6 +58,8 @@ class DomoticzDB_Preferences:
 
     def retreiveWebUserNamePassword( self ):
 
+        if  self.dbCursor is None:
+            return
         try:
             self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
             WebUserName = self.dbCursor.fetchone()
@@ -90,11 +94,15 @@ class DomoticzDB_Preferences:
 
     def unsetAcceptNewHardware( self):
 
+        if  self.dbCursor is None:
+            return
         self.dbCursor.execute("UPDATE Preferences Set nValue = '0' Where Key = 'AcceptNewHardware' " )
         self.dbConn.commit()
 
     def setAcceptNewHardware( self):
 
+        if  self.dbCursor is None:
+            return
         self.dbCursor.execute("UPDATE Preferences Set nValue = '1' Where Key = 'AcceptNewHardware' " )
         self.dbConn.commit()
 
@@ -124,6 +132,8 @@ class DomoticzDB_Hardware:
 
     def disableErasePDM( self):
 
+        if  self.dbCursor is None:
+            return
         # Permit to Join is stored in Mode3
         self.dbCursor.execute("UPDATE Hardware Set Mode3 = 'False' Where ID = '%s' " %self.HardwareID)
         self.dbConn.commit()
@@ -157,6 +167,8 @@ class DomoticzDB_DeviceStatus:
         Retreive the AddjValue of Device.ID
         """
 
+        if  self.dbCursor is None:
+            return
         try:
             self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
@@ -177,6 +189,10 @@ class DomoticzDB_DeviceStatus:
         Retreive the TmeeOut Motion value of Device.ID
         """
 
+        Domoticz.Log("retreiveTimeOut_Motion for ID: %s HardwareID: %s" %(ID, self.HardwareID))
+
+        if  self.dbCursor is None:
+            return
         try:
             self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
@@ -199,6 +215,8 @@ class DomoticzDB_DeviceStatus:
         Retreive the AddjValue of Device.ID
         """
 
+        if  self.dbCursor is None:
+            return
         try:
             self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
