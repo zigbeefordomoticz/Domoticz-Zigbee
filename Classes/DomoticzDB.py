@@ -189,8 +189,6 @@ class DomoticzDB_DeviceStatus:
         Retreive the TmeeOut Motion value of Device.ID
         """
 
-        Domoticz.Log("retreiveTimeOut_Motion for ID: %s HardwareID: %s" %(ID, self.HardwareID))
-
         if  self.dbCursor is None:
             return
         try:
@@ -203,10 +201,12 @@ class DomoticzDB_DeviceStatus:
 
         except sqlite3.Error as e:
             Domoticz.Error("retreiveTimeOut_Motion - Database error: %s" %e)
+            Domoticz.Log("retreiveTimeOut_Motion for ID: %s HardwareID: %s" %(ID, self.HardwareID))
             return 0
 
         except Exception as e:
             Domoticz.Error("retreiveTimeOut_Motion - Exception: %s" %e)
+            Domoticz.Log("retreiveTimeOut_Motion for ID: %s HardwareID: %s" %(ID, self.HardwareID))
             return 0
 
 
