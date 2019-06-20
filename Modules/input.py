@@ -592,31 +592,35 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8030 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+    Domoticz.Log("Decode8030 - MsgData lenght is : " + str(MsgLen) + " out of 4 ")
+    Domoticz.Log("Decode8030 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
-    
+
     if MsgLen > 4:
         # Firmware 3.1a
         MsgSrcEp = MsgData[4:6]
         MsgSrcAddrMode = MsgData[6:8]
-        if MsgDataDestMode == ADDRESS_MODE['short']:
-            MsgDataDestAddr=MsgData[8:12]
-            MsgDataSQN=MsgData[12:14]
-        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
-            MsgDataDestAddr=MsgData[8:24]
-            MsgDataSQN=MsgData[24:26]
+        if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
+            MsgSrcAddr=MsgData[8:12]
+            Domoticz.Log("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+        elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
+            MsgSrcAddr=MsgData[8:24]
+            Domoticz.Log("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+        else:
+            Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
 
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
-    Domoticz.Debug("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Log("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8031 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
+    Domoticz.Log("Decode8031 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -625,12 +629,16 @@ def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
         # Firmware 3.1a
         MsgSrcEp = MsgData[4:6]
         MsgSrcAddrMode = MsgData[6:8]
-        if MsgDataDestMode == ADDRESS_MODE['short']:
-            MsgDataDestAddr=MsgData[8:12]
+        if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
+            MsgSrcAddr=MsgData[8:12]
             MsgDataSQN=MsgData[12:14]
-        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
-            MsgDataDestAddr=MsgData[8:24]
+            Domoticz.Log("Decode8031 - Unbind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+        elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
+            MsgSrcAddr=MsgData[8:24]
             MsgDataSQN=MsgData[24:26]
+            Domoticz.Log("Decode8031 - Unbind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+        else:
+            Domoticz.Error("Decode8031 - Unknown addr mode %s in %s" %(MsgSrcAddr, MsgData))
 
     if MsgDataStatus != '00':
         Domoticz.Debug("Decode8031 - Unbind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
@@ -1351,11 +1359,16 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
         MsgSrcEp = MsgData[12:14]
         MsgClusterID = MsgData[14:18]
 
-        Domoticz.Debug("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s"
+        Domoticz.Log("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s"
             %( MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType))
+        
+        if MsgSrcAddr not in self.ListOfDevices:
+            return
 
         if 'Attributes List' not in  self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['Attributes List'] = {}
+            self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'] = {}
+        if 'Ep' not in self.ListOfDevices[MsgSrcAddr]['Attributes List']:
             self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'] = {}
         if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep']:
             self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp] = {}

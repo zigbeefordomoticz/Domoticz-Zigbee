@@ -688,10 +688,10 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         0x010F: 'remote_control',
         0x0115: 'key_fob',
         0x021D: 'key_pad',
-        0x0225: 'standar_warning',
+        0x0225: 'standard_warning',
         0xFFFF: 'invalid' }
 
-    Domoticz.Debug("ReadCluster0500 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" \
+    Domoticz.Log("ReadCluster0500 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" \
             %( MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ))
 
     if MsgSrcAddr not in self.ListOfDevices:
@@ -705,25 +705,29 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
          self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
 
     if MsgAttrID == "0000": # ZoneState ( 0x00 Not Enrolled / 0x01 Enrolled )
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
         if int(MsgClusterData,16) == 0x00:
-            Domoticz.Debug("ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)))
+            Domoticz.Log("ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)))
             self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
         elif  int(MsgClusterData,16) == 0x01:
-            Domoticz.Debug("ReadCluster0500 - Device: %s ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)))
+            Domoticz.Log("ReadCluster0500 - Device: %s ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)))
             self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
 
-    elif MsgAttrID == "0001": # ZoneType
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+
+    elif MsgAttrID == "0001": # ZoneType
         if int(MsgClusterData,16) in ZONE_TYPE:
             Domoticz.Log("ReadCluster0500 - Device: %s - ZoneType: %s" %(MsgSrcAddr, ZONE_TYPE[int(MsgClusterData,16)]))
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
         else: 
             Domoticz.Log("ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData))
 
+        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+
 
     elif MsgAttrID == "0002": # Zone Status
+
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+
         if MsgClusterData !='' and len(MsgClusterData) == 16:
             alarm1 = int(MsgClusterData,16) & 0x0000000000000001
             alarm2 = int(MsgClusterData,16) & 0x0000000000000010
@@ -872,15 +876,21 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 20151006091b090
         self.ListOfDevices[MsgSrcAddr]['SWBUILD_1'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID == '000a': # Product Code
-        Domoticz.Debug("ReadCluster - Product Code: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
-
-
     elif MsgAttrID == "0007": # Power Source
         Domoticz.Debug("ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
         # 0x03 stand for Battery
         if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['PowerSource'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == '0008': # 
+        Domoticz.Debug("ReadCluster - Attribute 0008: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
+    elif MsgAttrID == '0009': # 
+        Domoticz.Debug("ReadCluster - Attribute 0009: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
+    elif MsgAttrID == '000a': # Product Code
+        Domoticz.Debug("ReadCluster - Product Code: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+
 
     elif MsgAttrID == '0010': # LOCATION_DESCRIPTION
         Domoticz.Debug("ReadCluster - 0x0000 - Attribut 0010: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
@@ -993,6 +1003,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             # f400 --
             # 4602 --
             Domoticz.Debug("ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10))
+
+    elif MsgAttrID == "fffd": #
+        Domoticz.Log("ReadCluster - 0000 %s/%s attribute fffd: %s" %(MsgSrcAddr, MsgSrcEp, str(decodeAttribute( MsgAttType, MsgClusterData))))
 
     else:
         Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))

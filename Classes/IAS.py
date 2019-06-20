@@ -27,7 +27,7 @@ ZONE_TYPE = { 0x0000: 'standard',
         0x010F: 'remote_control',
         0x0115: 'key_fob',
         0x021D: 'key_pad',
-        0x0225: 'standar_warning',
+        0x0225: 'standard_warning',
         0xFFFF: 'invalid' }
 
 ENROLL_RESPONSE_CODE =  0x00
@@ -85,13 +85,13 @@ class IAS_Zone_Management:
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        Domoticz.Debug("setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
+        Domoticz.Log("setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
         return
 
     def setIASzoneControlerIEEE( self, key, Epout ):
 
-        Domoticz.Debug("setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
+        Domoticz.Log("setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
         manuf_id = "0000"
         if 'Manufacturer' in self.ListOfDevices[key]:
             manuf_id = self.ListOfDevices[key]['Manufacturer']
@@ -126,7 +126,7 @@ class IAS_Zone_Management:
             Domoticz.Log("IASZone_enroll_response - while not yet started")
             return
 
-        Domoticz.Debug("IASZone_enroll_response for %s" %nwkid)
+        Domoticz.Log("IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
@@ -145,7 +145,7 @@ class IAS_Zone_Management:
             Domoticz.Log("IASZone_enroll_response_zoneID - while not yet started")
             return
 
-        Domoticz.Debug("IASZone_enroll_response for %s" %nwkid)
+        Domoticz.Log("IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
@@ -170,7 +170,7 @@ class IAS_Zone_Management:
 
     def IASZone_triggerenrollement( self, nwkid, Epout):
 
-        Domoticz.Debug("IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
+        Domoticz.Log("IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
         if not self.ZigateIEEE:
             Domoticz.Log("IASZone_triggerenrollement - Zigate IEEE not yet known")
             return
@@ -186,7 +186,7 @@ class IAS_Zone_Management:
 
     def receiveIASmessages(self, nwkid , step, value):
 
-        Domoticz.Debug("receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
+        Domoticz.Log("receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
 
         if not self.ZigateIEEE:
             Domoticz.Log("receiveIASmessages - Zigate IEEE not yet known")
@@ -198,7 +198,7 @@ class IAS_Zone_Management:
         iterEp = self.devices[nwkid]['Ep']
 
         if  step == 3:  # Receive Write Attribute Message
-            Domoticz.Debug("receiveIASmessages - Write rAttribute Response: %s" %value)
+            Domoticz.Log("receiveIASmessages - Write rAttribute Response: %s" %value)
             self.HB = 0
             if self.devices[nwkid]['Step'] <= 4:
                 self.devices[nwkid]['Step'] = 4
@@ -207,12 +207,22 @@ class IAS_Zone_Management:
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
 
         elif step == 5: # Receive Attribute 0x0001 and 0x0002
+
+            if 'ticks_5' not in self.devices[nwkid]:
+                self.devices[nwkid]['ticks_5'] = 0
+            if self.devices[nwkid]['ticks_5'] > 3:
+                Domoticz.Log("receiveIASmessages - Timeout %s/%s at step 5" %(nwkid, iterEp))
+                del self.devices[nwkid]
+                return
+
             self.HB = 0
             if self.devices[nwkid]['Step'] <= 7:
                 self.devices[nwkid]['Step'] = 7
             self.IASZone_attributes( nwkid, iterEp)
             self.IASZone_enroll_response_zoneID( nwkid, iterEp )
             self.readConfirmEnroll(nwkid, iterEp)
+
+            self.devices[nwkid]['ticks_5'] += 1
 
         elif step == 7: # Receive Confirming Enrollement
             self.HB = 0
@@ -268,14 +278,14 @@ class IAS_Zone_Management:
         remove_devices =[]
         for iterKey in self.devices:
             iterEp = self.devices[iterKey]['Ep']
-            Domoticz.Debug("IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
+            Domoticz.Log("IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
             if self.devices[iterKey]['Step'] == 0:
                 continue
 
             if self.HB > 1 and self.devices[iterKey]['Step'] == 2:
                 self.HB = 0
                 self.devices[iterKey]['Ep'] = iterEp
-                Domoticz.Debug("IAS_heartbeat - TO restart self.IASZone_attributes")
+                Domoticz.Log("IAS_heartbeat - TO restart self.IASZone_attributes")
                 self.IASZone_enroll_response_zoneID( iterKey, iterEp)
                 self.IASZone_attributes( iterKey, iterEp)
 
@@ -284,7 +294,7 @@ class IAS_Zone_Management:
                 self.HB = 0
                 self.wip = True
                 iterEp = self.devices[iterKey]['Ep']
-                Domoticz.Debug("IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
+                Domoticz.Log("IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
                 if self.tryHB > 3:
                     self.tryHB = 0
                     self.devices[iterKey]['Step'] = 5
@@ -294,13 +304,13 @@ class IAS_Zone_Management:
                 self.HB = 0
                 iterEp = self.devices[iterKey]['Ep']
                 self.readConfirmEnroll(iterKey, iterEp)
-                Domoticz.Debug("IAS_heartbeat - TO restart self.readConfirmEnroll")
+                Domoticz.Log("IAS_heartbeat - TO restart self.readConfirmEnroll")
                 if self.tryHB > 3:
                     self.tryHB = 0
                     self.devices[iterKey]['Step'] = 7
 
             elif self.devices[iterKey]['Step'] == 7: # Receive Confirming Enrollement
-                Domoticz.Debug("IAS_heartbeat - Enrollment confirmed/completed")
+                Domoticz.Log("IAS_heartbeat - Enrollment confirmed/completed")
                 self.HB = 0
                 self.wip = False
                 self.devices[iterKey]['Step'] = 0
@@ -316,13 +326,73 @@ class IAS_Zone_Management:
     # IAS Warning Device Cluster
     # https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
     # Section 28 - page 545
-    def warningMode( self ):
+    def _write_IASWD( self, nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level):
 
+        """
+        Zigate -> Obj	0x0111 	Write Attribute request IAS_WD (from v3.1a)
+                            <address mode: uint8_t>
+			<target short address: uint16_t>
+			<source endpoint: uint8_t>
+			<destination endpoint: uint8_t>
+			<direction: uint8_t>
+			<manufacturer specific: uint8_t>
+			<manufacturer id: uint16_t>
+			<Warning Mode: uint8_t>
+			<Warning Duration: uint16_t>
+			<Strobe duty cycle : uint8_t>
+			<Strobe level : uint8_t>
+        """
+
+        direction = 0x01
+        manuf = 0x00
+        manufid = 0x0000
+    
+        datas  = "%02X" %ADDRESS_MODE['short']
+        datas += "%04X" %nwkid
+        datas += "%02X" %ep
+        datas += "%02x" %direction
+        datas += "%02X" %manuf
+        datas += "%04X" %manufid
+        datas += "%02X" %warning_mode
+        datas += "%04X" %warning_duration
+        datas += "%02X" %strobe_duty
+        datas += "%02X" %strobe_level
+    
+        Domoticz.Log("_write_IASWD - 0x0111 %s" %datas)
+        self.ZigateComm.sendData( "0111", datas )
+
+    def warningMode( self , nwkid, ep):
+
+        STROBE_LEVEL = { 'Low':0x00, 'Medium': 0x01 }
+
+        WARNING_MODE = { 'Stop': 0x00000000,
+                    'Burglar': 0x00000001,
+                    'Fire': 0x00000010,
+                    'Emergency': 0x00000011,
+                    'Police Panic': 0x00000100,
+                    'Fire Panic': 0x00000101,
+                    'Emergency': 0x00000111 }
+
+        STROBE_MODE = { 'No Strobe':0x00000000,
+                'Use Strobe':0x00010000 }
+
+        SIREN_LEVEL = { 'Low Level': 0x00000000,
+                'Medium Level': 0x01000000,
+                'High Level': 0x10000000,
+                'Very High': 0x11000000
+                }
+
+        warning_mode = WARNING_MODE['stop'] + STROBE_MODE['Use Strobe'] + SIREN_LEVEL['Low Level']
+        warning_duration = 0x01 # 1 seconde
+        strobe_duty = 0x1E  # % duty cycle in 10% steps
+        strobe_level = STROBE_LEVEL['Low']
+
+        self._write_IASWD( self, nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level)
 
         return
 
 
-    def squawkMode( self ):
+    def squawkMode( self , nwkid, ep):
 
         return
 

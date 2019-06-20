@@ -803,7 +803,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 def rebind_Clusters( self, NWKID):
 
     # Binding devices
-    CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001',
+    CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0402', '0400', '0001',
             '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
             'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
             'ff02'  # Used by Xiaomi devices for battery informations.
