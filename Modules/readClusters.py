@@ -173,6 +173,7 @@ def ReadCluster(self, Devices, MsgData):
             "0405": Cluster0405,
             "0406": Cluster0406,
             "0500": Cluster0500,
+            "0502": Cluster0502,
             "0702": Cluster0702,
             "0b04": Cluster0b04,
             "fc00": Clusterfc00
@@ -751,7 +752,23 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     return
 
+def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    Domoticz.Log("ReadCluster0502 - Security & Safety IAZ Zone - Device: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s" \
+            %( MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ))
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        Domoticz.Log("ReadCluster0502 - receiving a message from unknown device: %s" %MsgSrcAddr)
+        return
+
+    if 'IAS' not in  self.ListOfDevices[MsgSrcAddr]:
+         self.ListOfDevices[MsgSrcAddr]['IAS'] = {}
+         self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = {}
+         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = {}
+         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+
+
+    return
 
 def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # General Basic Cluster
