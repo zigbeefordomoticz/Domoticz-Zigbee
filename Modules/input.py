@@ -593,8 +593,8 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgLen=len(MsgData)
-    Domoticz.Log("Decode8030 - MsgData lenght is : " + str(MsgLen) + " out of 4 ")
-    Domoticz.Log("Decode8030 - Msgdata: %s" %(MsgData))
+    Domoticz.Debug("Decode8030 - MsgData lenght is : " + str(MsgLen) + " out of 4 ")
+    Domoticz.Debug("Decode8030 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -606,10 +606,10 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
             MsgSrcAddr=MsgData[8:12]
             nwkid = MsgSrcAddr
-            Domoticz.Log("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+            Domoticz.Debug("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
         elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
             MsgSrcAddr=MsgData[8:24]
-            Domoticz.Log("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+            Domoticz.Debug("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
             if MsgSrcAddr in self.IEEE2NWK:
                 nwkid = self.IEEE2NWK[MsgSrcAddr]
                 Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
