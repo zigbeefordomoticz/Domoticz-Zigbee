@@ -229,6 +229,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
                         %( RIA, NWKID, status))
                 self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
+                if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
+                        %( RIA, NWKID, status))
+                    self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             # ColorMode
