@@ -192,9 +192,14 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]).split(";")
     if len(oldValue) != 4:
+        # 1- mainVolt
+        # 2- battVolt
+        # 3- battRemainVolt
+        # 4- battRemainPer
         oldValue = '0;0;0;0'.split(';')
 
     value = decodeAttribute( MsgAttType, MsgClusterData)
+
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
         mainVolt = value
@@ -765,9 +770,14 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster0502 - receiving a message from unknown device: %s" %MsgSrcAddr)
         return
 
-    if MsgAttrID == "0000": # ZCL Version
+    if MsgAttrID == "0000": # Max Duration
         Domoticz.Log("ReadCluster - 0x0502 - Max Duration: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        if 'IAS WD' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['IAS WD'] = {}
+        self.ListOfDevices[MsgSrcAddr]['IAS WD']['MaxDuration'] = decodeAttribute( MsgAttType, MsgClusterData)
 
+    else:
+        Domoticz.Log("ReadCluster - 0x0502 - unknown attribute: %s value: %s " %(MsgAttrID, MsgClusterData)) 
 
     return
 
