@@ -54,12 +54,12 @@ def set_TxPower( self, powerlevel):
         powerlevel = 0
 
     setValue = POWER_LEVEL[powerlevel]
-    Domoticz.Log("set_TxPower - PowerLevel: %s Requesting %s dBm" %(powerlevel, MAPPED_dBm[powerlevel]))
+    Domoticz.Debug("set_TxPower - PowerLevel: %s Requesting %s dBm" %(powerlevel, MAPPED_dBm[powerlevel]))
 
     if self.pluginconf.pluginConf['TXpower_set']:
         attr_tx_power = '%02x' %self.pluginconf.pluginConf['TXpower_set']
         sendZigateCmd(self, "0806", attr_tx_power)
-        Domoticz.Log("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
+        Domoticz.Debug("Zigate switch to Power Mode value: 0x%s" %attr_tx_power)
 
 
 def get_TxPower( self ):
@@ -71,6 +71,10 @@ def get_TxPower( self ):
     0x8807 has only single parameter which is uint8 power. If 0x0807 fails 
     then response is going to be only status(0x8000) with status 1.
     """
+
+
+    Domoticz.Log("get_TxPower")
+    sendZigateCmd(self, "0807", "")
 
     return
 

@@ -62,7 +62,8 @@ def ZigateRead(self, Devices, Data):
         '8401': Decode8401,
         '8501': Decode8501,
         '8503': Decode8503,
-        '8701': Decode8701, '8702': Decode8702
+        '8701': Decode8701, '8702': Decode8702,
+        '8806': Decode8806, '8807': Decode8807
     }
     
     NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4', '80a6', 8007 )
@@ -604,17 +605,30 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         MsgSrcAddrMode = MsgData[6:8]
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
             MsgSrcAddr=MsgData[8:12]
+            nwkid = MsgSrcAddr
             Domoticz.Log("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
         elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
             MsgSrcAddr=MsgData[8:24]
             Domoticz.Log("Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+            if MsgSrcAddr in self.IEEE2NWK:
+                nwkid = self.IEEE2NWK[MsgSrcAddr]
+                Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
         else:
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
+            return
+
+        if 'Bind' in self.ListOfDevices[nwkid]:
+            for cluster in self.ListOfDevices[nwkid]['Bind']:
+                if self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] == 'requested':
+                    self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
+                    self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'received'
+                    self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = MsgDataStatus
+                    break
 
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
-    Domoticz.Log("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+    Domoticz.Debug("Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
@@ -1459,6 +1473,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         if int(MsgDataDestAddr,16) == ( int(MsgDataDestAddr,16) & 0xffff000000000000):
             MsgDataDestAddr = MsgDataDestAddr[0:4]
     else:    # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
+        Domoticz.Log("Decode8702 - with Firmware > 3.0f")
         if int(MsgDataDestMode,16) == ADDRESS_MODE['short']:
             MsgDataDestAddr=MsgData[8:12]
             MsgDataSQN=MsgData[12:14]
@@ -1719,4 +1734,19 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
 
 
 
+def Decode8806(self, Devices, MsgData, MsgRSSI) :
+
+    Domoticz.debug("Decode8806 - MsgData: %s" %MsgData)
+
+    TxPower = MsgData[0:2]
+    self.zigatedata['Tx-Power'] = TxPower
+    Domoticz.debug("Get TxPower : %s" %TxPower)
+
+def Decode8807(self, Devices, MsgData, MsgRSSI) :
+
+    Domoticz.debug("Decode8807 - MsgData: %s" %MsgData)
+
+    TxPower = MsgData[0:2]
+    self.zigatedata['Tx-Power'] = TxPower
+    Domoticz.debug("Get TxPower : %s" %TxPower)
 
