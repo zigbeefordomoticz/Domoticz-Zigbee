@@ -52,7 +52,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0403' : ( ReadAttributeRequest_0403, 900 ),
     '0405' : ( ReadAttributeRequest_0405, 900 ),
     '0406' : ( ReadAttributeRequest_0406, 900 ),
-    '0502' : ( ReadAttributeRequest_0502, 900 ),
+    '0502' : ( ReadAttributeRequest_0502, 86400 ),
     '0702' : ( ReadAttributeRequest_0702, 900 ),
     }
 

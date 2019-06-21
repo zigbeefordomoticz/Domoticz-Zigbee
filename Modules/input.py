@@ -15,7 +15,7 @@ import binascii
 import time
 import struct
 import queue
-import time
+from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
