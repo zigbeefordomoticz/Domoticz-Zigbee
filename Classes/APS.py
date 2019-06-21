@@ -118,8 +118,12 @@ class APSManagement(object):
         if cmd in CMD_NWK_2NDBytes:
             _cmdTxt += ':' + CMD_NWK_2NDBytes[cmd]
 
-        Domoticz.Error("Communication error Command: %s" %_cmdTxt) 
-        Domoticz.Error("- to Device: %s NwkID: %s IEEE: %s" %( _deviceName, nwk, ieee))
+        ZDeviceName =''
+        if 'ZDeviceName' in self.ListOfDevices[nwk]:
+            ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
+
+        Domoticz.Error("Command: %s failed on %s" %(_cmdTxt, ZDeviceName)) 
+        Domoticz.Error("- Device: %s NwkID: %s IEEE: %s" %( _deviceName, nwk, ieee))
         Domoticz.Error("- Code: %s Status: %s" %( aps_code, DisplayStatusCode( aps_code )))
         if 'Health' in self.ListOfDevices[nwk]:
             self.ListOfDevices[nwk]['Health'] = 'Not Reachable'
@@ -157,9 +161,13 @@ class APSManagement(object):
             if self.ListOfDevices[nwk]['PowerSource'] == 'Main':
                 _mainPowered = True
 
+        ZDeviceName = ''
+        if 'ZDeviceName' in  self.ListOfDevices[nwk]:
+            ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
+
         if self.pluginconf.pluginConf['enableAPSFailureLoging']:
-            Domoticz.Log("processAPSFailure - NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
-                    %( nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
+            Domoticz.Log("processAPSFailure - Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
+                    %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
 
         self._updateAPSrecord( nwk, aps_code)
 
@@ -176,5 +184,5 @@ class APSManagement(object):
             Domoticz.Debug("processAPSFailure - %s process %s - %s" %(nwk, iterTime, iterCmd))
             if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                 # That command has been issued in the APS time window
-                Domoticz.Log("processAPSFailure - %s found cmd: %s in the APS time window, age is: %s sec" %(nwk, iterCmd, round((_timeAPS - iterTime),2)))
+                Domoticz.Debug("processAPSFailure - %s found cmd: %s in the APS time window, age is: %s sec" %(nwk, iterCmd, round((_timeAPS - iterTime),2)))
                 self._errorMgt( iterCmd, nwk, ieee, aps_code)
