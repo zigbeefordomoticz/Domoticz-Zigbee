@@ -24,7 +24,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0702
+        ReadAttributeRequest_0406, ReadAttributeRequest_0502, ReadAttributeRequest_0702
 
 from Modules.tools import removeNwkInList
 from Modules.domoticz import CreateDomoDevice
