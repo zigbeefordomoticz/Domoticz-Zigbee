@@ -448,7 +448,7 @@ class BasePlugin:
         sendZigateCmd(self, "0015", "") # Request List of Active Device
 
         # Create IAS Zone object
-        self.iaszonemgt = IAS_Zone_Management( self.ZigateComm , self.ListOfDevices)
+        self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices)
 
         Domoticz.Status("Trigger a Topology Scan")
         self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)

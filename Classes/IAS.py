@@ -14,7 +14,8 @@
 import Domoticz
 
 from Modules.output import *
-
+from Modules.consts import ADDRESS_MODE
+from Classes.PluginConf import PluginConf
 
 ZONE_TYPE = { 0x0000: 'standard',
         0x000D: 'motion',
@@ -36,7 +37,7 @@ ZONE_ID = 0x00
 
 class IAS_Zone_Management:
 
-    def __init__( self , ZigateComm, ListOfDevices, ZigateIEEE = None):
+    def __init__( self , pluginconf, ZigateComm, ListOfDevices, ZigateIEEE = None):
         self.devices = {}
         self.ListOfDevices = ListOfDevices
         self.tryHB = 0
@@ -46,6 +47,7 @@ class IAS_Zone_Management:
         self.ZigateIEEE = None
         if ZigateIEEE != '':
             self.ZigateIEEE = ZigateIEEE
+        self.pluginconf = pluginconf
 
     def __write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
 
@@ -341,13 +343,14 @@ class IAS_Zone_Management:
 			<Strobe level : uint8_t>
         """
 
-        direction = 0x01
+        direction = 0x00
         manuf = 0x00
         manufid = 0x0000
     
         datas  = "%02X" %ADDRESS_MODE['short']
-        datas += "%04X" %nwkid
-        datas += "%02X" %ep
+        datas += nwkid
+        datas += ep
+        datas += '01'
         datas += "%02x" %direction
         datas += "%02X" %manuf
         datas += "%04X" %manufid
@@ -364,47 +367,52 @@ class IAS_Zone_Management:
 
         STROBE_LEVEL = { 'Low':0x00, 'Medium': 0x01 }
 
-        WARNING_MODE = { 'Stop': 0x00000000,
-                    'Burglar': 0x00000001,
-                    'Fire': 0x00000010,
-                    'Emergency': 0x00000011,
-                    'Police Panic': 0x00000100,
-                    'Fire Panic': 0x00000101,
-                    'Emergency': 0x00000111 }
-
-        STROBE_MODE = { 'No Strobe':0x00000000,
-                'Use Strobe':0x00010000 }
-
-        SIREN_LEVEL = { 'Low Level': 0x00000000,
-                'Medium Level': 0x01000000,
-                'High Level': 0x10000000,
-                'Very High': 0x11000000
-                }
+        WARNING_MODE = { 'Stop': 0b00000000,
+                    'Burglar': 0b00000001,
+                    'Fire': 0b00000010,
+                    'Emergency': 0b00000011,
+                    'Police Panic': 0b00000100,
+                    'Fire Panic': 0b00000101,
+                    'Emergency': 0b00000110 }
+        STROBE_MODE = { 'No Strobe':0b00000000,
+                'Use Strobe':0b00010000 }
 
         SIRENE_MODE = ( 'both', 'siren', 'strobe', 'stop')
 
         warning_duration = 0x00
         strobe_duty = 0x00
         strobe_level = 0x00
-        if mode in SIRENE_MODE:
+        warning_duration = 0x01 # 1 seconde
+        if self.ListOfDevices[nwkid]['Model'] == 'WarningDevice':
+            strobe_duty =  0x00
+            strobe_level = 0x01
             if mode == 'both':
-                warning_mode = WARNING_MODE['Fire'] + STROBE_MODE['Use Strobe'] + SIREN_LEVEL['Low Level']
-                warning_duration = 0x01 # 1 seconde
+                warning_mode = 0b00010111
+            elif mode == 'siren':
+                warning_mode = 0b00010011
+            elif mode == 'strobe':
+                warning_mode = 0b00000100
+            elif mode == 'stop':
+                warning_mode = 0b00000000
+
+        elif mode in SIRENE_MODE:
+            if mode == 'both':
+                warning_mode = WARNING_MODE['Fire'] + STROBE_MODE['Use Strobe']
                 strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL['Low']
-
             elif mode == 'siren':
-                warning_mode = WARNING_MODE['Fire'] + STROBE_MODE['No Strobe']
-                warning_duration = 0x01 # 1 seconde
-
+                warning_mode = WARNING_MODE['Fire'] + STROBE_MODE['No Strobe'] 
             elif mode == 'strobe':
-                warning_mode = WARNING_MODE['stop'] + STROBE_MODE['Use Strobe'] 
-                warning_duration = 0x01 # 1 seconde
+                warning_mode = WARNING_MODE['Stop'] + STROBE_MODE['Use Strobe'] 
                 strobe_duty = 0x1E  # % duty cycle in 10% steps
                 strobe_level = STROBE_LEVEL['Low']
             elif mode == 'stop':
-                warning_mode = WARNING_MODE['stop']
+                warning_mode = WARNING_MODE['Stop']
 
+        warning_duration = self.pluginconf.pluginConf['alarmDuration']
+
+        Domoticz.Log("warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" \
+                %(bin(warning_mode), warning_duration, strobe_duty, strobe_level))
         self._write_IASWD( nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level)
 
         return

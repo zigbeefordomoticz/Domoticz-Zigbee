@@ -237,11 +237,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "Alarm": # IAS object / matching 0x0502 Cluster / Alarm/Siren
+            if t == "AlarmWD": # IAS object / matching 0x0502 Cluster / Alarm/Siren
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Stop|Alarm|Siren|Strobe",
+                           "LevelOffHidden": "false", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                         Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -1589,7 +1591,7 @@ def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
     elif cluster == "0406": TypeFromCluster = "Motion"
     elif cluster == "0702": TypeFromCluster = "Power/Meter"
     elif cluster == "0500": TypeFromCluster = "Door"
-    elif cluster == "0502": TypeFromCluster = "Alarm"
+    elif cluster == "0502": TypeFromCluster = "AlarmWD"
 
     elif cluster == "fc00" : TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
 

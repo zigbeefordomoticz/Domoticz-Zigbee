@@ -19,10 +19,12 @@ import json
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.output import sendZigateCmd, thermostat_Setpoint
 from Modules.domoticz import UpdateDevice_v2
+from Classes.IAS import IAS_Zone_Management
 
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
-    Domoticz.Debug("onCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
+
+    Domoticz.Log("mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
 
     # As we can have a new Short address, we need to retreive it from self.ListOfDevices
     if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -80,8 +82,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType == 'Motion':
             ClusterSearch = '0406'
             DeviceType = tmpDeviceType
-
-
+        if tmpDeviceType == "AlarmWD":
+            ClusterSearch = '0502'
+            DeviceType = tmpDeviceType
 
     if DeviceType == '': 
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
@@ -122,6 +125,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
+
+        if DeviceType == "AlarmWD":
+            Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
+            self.iaszonemgt.alarm_off( NWKID, EPout)
 
         if Devices[Unit].SwitchType == 16 :
             UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
@@ -177,6 +184,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             value = '%02x' %Level
             Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+
+        elif DeviceType == "AlarmWD":
+            Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
+            if Level == 0: # Stop
+                self.iaszonemgt.alarm_off( NWKID, EPout)
+            elif Level == 10: # Alarm
+                self.iaszonemgt.alarm_on(  NWKID, EPout)
+            elif Level == 20: # Siren
+                self.iaszonemgt.siren_only( NWKID, EPout)
+            elif Level == 30: # Strobe
+                self.iaszonemgt.strobe_only( NWKID, EPout)
 
         else:
             OnOff = '01' # 00 = off, 01 = on
