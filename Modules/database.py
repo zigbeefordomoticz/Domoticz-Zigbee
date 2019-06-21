@@ -54,8 +54,6 @@ def LoadDeviceList( self ):
         return True    
 
     _versionFile( _DeviceListFileName , self.pluginconf.pluginConf['numDeviceListVersion'])
-    #_backup = _DeviceListFileName + "_" + str(datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S'))
-    #_copyfile( str(_DeviceListFileName) , str(_backup) )
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
