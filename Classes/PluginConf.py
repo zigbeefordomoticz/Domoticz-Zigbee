@@ -110,7 +110,7 @@ SETTINGS = {
             #Others
             'Others':
                 {
-                'alarmDuration': {'type':'int', 'default':60, 'current': None, 'restart':False , 'hidden':False}
+                'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False}
                 }
             }
 
