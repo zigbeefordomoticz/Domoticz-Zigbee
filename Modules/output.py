@@ -474,7 +474,7 @@ def ReadAttributeRequest_0406(self, key):
 def ReadAttributeRequest_0502(self, key):
     # Cluster 0x0006
 
-    Domoticz.Log("ReadAttributeRequest_0502 - Key: %s " %key)
+    Domoticz.Debug("ReadAttributeRequest_0502 - Key: %s " %key)
 
     EPin = "01"
     EPout= "01"
@@ -484,7 +484,8 @@ def ReadAttributeRequest_0502(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
         listAttributes.append( iterAttr )
-    ReadAttributeReq( self, key, "01", EPout, "00502", listAttributes)
+    Domoticz.Debug("ReadAttributeRequest_0502 - %s/%s - %s" %(key, EPout, listAttributes))
+    ReadAttributeReq( self, key, "01", EPout, "0502", listAttributes)
 
 
 def ReadAttributeRequest_0702(self, key):
