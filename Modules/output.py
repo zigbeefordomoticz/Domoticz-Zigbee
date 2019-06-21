@@ -155,6 +155,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0403': [ 0x0000],
             '0405': [ 0x0000],
             '0406': [ 0x0000],
+            '0502': [ 0x0000],
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
             }
 
@@ -469,6 +470,22 @@ def ReadAttributeRequest_0406(self, key):
 
     Domoticz.Debug("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
+
+def ReadAttributeRequest_0502(self, key):
+    # Cluster 0x0006
+
+    Domoticz.Log("ReadAttributeRequest_0502 - Key: %s " %key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0502" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
+        listAttributes.append( iterAttr )
+    ReadAttributeReq( self, key, "01", EPout, "00502", listAttributes)
+
 
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
