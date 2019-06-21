@@ -1736,11 +1736,11 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
 
 def Decode8806(self, Devices, MsgData, MsgRSSI) :
 
-    Domoticz.debug("Decode8806 - MsgData: %s" %MsgData)
+    Domoticz.Debug("Decode8806 - MsgData: %s" %MsgData)
 
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
-    Domoticz.debug("Get TxPower : %s" %TxPower)
+    Domoticz.Debug("Get TxPower : %s" %TxPower)
 
 def Decode8807(self, Devices, MsgData, MsgRSSI) :
 
@@ -1748,5 +1748,5 @@ def Decode8807(self, Devices, MsgData, MsgRSSI) :
 
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
-    Domoticz.debug("Get TxPower : %s" %TxPower)
+    Domoticz.Debug("Get TxPower : %s" %TxPower)
 
