@@ -156,6 +156,15 @@ class IAS_Zone_Management:
         self.ZigateComm.sendData( "0400", datas )
         return
 
+    def IASWD_enroll( self, nwkid, Epout):
+
+        cluster_id = "0502"
+        manuf_id = "00"
+        manuf_spec = "0000"
+        attribute = "0000"
+        data_type = "%02X" %0x21
+        data = "%04X" %0xFFFE
+        self.__write_attribute( nwkid, "01", Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
     def IASZone_attributes( self, nwkid, Epout):
 
