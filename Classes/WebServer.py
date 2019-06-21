@@ -1409,7 +1409,7 @@ class WebServer(object):
                         zgroup['Devices'].append( _dev )
                     # Let's check if we don't have an Ikea Remote in the group
                     if 'Tradfri Remote' in ListOfGroups[item]:
-                        Domoticz.Log("--> add Ikea Tradfri Remote")
+                        Domoticz.Debug("--> add Ikea Tradfri Remote")
                         _dev = {}
                         _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
                         _dev['Ep'] = "01"
