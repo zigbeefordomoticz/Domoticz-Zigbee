@@ -462,7 +462,7 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     Domoticz.Debug("Decode8014 - MsgData lenght is : " +MsgData + "len: "+ str(MsgLen) + " out of 2")
 
     Status=MsgData[0:2]
-    timestamp = int(time.time())
+    timestamp = int(time())
 
     Domoticz.Log("Permit Join status: %s" %Status)
     Domoticz.Log("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
@@ -481,7 +481,7 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
 
     Domoticz.Log("---> self.Ping['Permit']  (new )   : %s" %self.Ping['Permit'])
-    self.Ping['TimeStamp'] = int(time.time())
+    self.Ping['TimeStamp'] = int(time())
     self.Ping['Status'] = 'Receive'
     Domoticz.Debug("Ping - received")
 
