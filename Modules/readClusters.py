@@ -765,11 +765,8 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("ReadCluster0502 - receiving a message from unknown device: %s" %MsgSrcAddr)
         return
 
-    if 'IAS' not in  self.ListOfDevices[MsgSrcAddr]:
-         self.ListOfDevices[MsgSrcAddr]['IAS'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = {}
-         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+    if MsgAttrID == "0000": # ZCL Version
+        Domoticz.Log("ReadCluster - 0x0502 - Max Duration: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
 
 
     return
@@ -778,6 +775,9 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # General Basic Cluster
     # It might be good to make sure that we are on a Xiaomi device - A priori: 0x115f
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        Domoticz.Log("ReadCluster0000 - receiving a message from unknown device: %s" %MsgSrcAddr)
+        return
 
     if MsgAttrID == "0000": # ZCL Version
         Domoticz.Debug("ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
