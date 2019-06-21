@@ -29,6 +29,8 @@ import Domoticz
 from Modules.output import sendZigateCmd, maskChannel
 from Classes.AdminWidgets import AdminWidgets
 
+CHANNELS = [ '11','15','19','20','25','26']
+
 class NetworkEnergy():
 
     def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
@@ -147,7 +149,7 @@ class NetworkEnergy():
             target = '0000'
         if channels is None:
             # All channels
-            channels = [ '11','15','19','20','25','26']
+            channels = CHANNELS
         self._initNwkEnrgy( target, channels)
         self._next_scan()
 
@@ -278,10 +280,10 @@ class NetworkEnergy():
         self.EnergyLevel[ entry ][ 'Failure' ]  =  int(MsgTransmissionFailures,16)
 
         for chan, inter in zip( channelList, channelListInterferences ):
-            self.EnergyLevel[ entry ]['Channels'][ str(chan) ] = int(inter,16)
-            Domoticz.Debug("     Channel: %s Interference: : %s " %(chan, int(inter,16)))
+            if chan in CHANNELS:
+                self.EnergyLevel[ entry ]['Channels'][ str(chan) ] = int(inter,16)
+                Domoticz.Debug("     Channel: %s Interference: : %s " %(chan, int(inter,16)))
 
         self.EnergyLevel[ entry ]['Status'] = 'Completed'
-
         return
 
