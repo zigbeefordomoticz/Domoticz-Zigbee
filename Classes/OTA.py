@@ -687,7 +687,7 @@ class OTAManagement(object):
                         TO_notification = TO_BATTERYPOWERED_NOTIFICATION
 
                     if int(time()) > ( _notifiedTime + TO_notification):
-                            Domoticz.Log("OTA heartbeat - Timeout for %s Upgrade notified " \
+                            Domoticz.Debug("OTA heartbeat - Timeout for %s Upgrade notified " \
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None
