@@ -24,7 +24,7 @@ from Classes.IAS import IAS_Zone_Management
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
-    Domoticz.Log("mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
+    Domoticz.Debug("mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
 
     # As we can have a new Short address, we need to retreive it from self.ListOfDevices
     if Devices[Unit].DeviceID in self.IEEE2NWK:
