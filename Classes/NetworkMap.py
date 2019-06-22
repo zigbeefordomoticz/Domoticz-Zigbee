@@ -178,8 +178,10 @@ class NetworkMap():
             Domoticz.Debug("Commdand pending Timeout: %s" % entry)
             if self.Neighbours[entry]['Status'] == 'WaitResponse':
                 self.Neighbours[entry]['Status'] = 'ScanRequired2'
+                Domoticz.Error("LQI:continue_scan - Try one more for %s" %entry)
             elif self.Neighbours[entry]['Status'] == 'WaitResponse2':
                 self.Neighbours[entry]['Status'] = 'TimedOut'
+                Domoticz.Error("LQI:continue_scan - TimedOut for %s" %entry)
 
             self.LQIticks = 0
             Domoticz.Debug("continue_scan - %s" %( len(self.LQIreqInProgress) ))
@@ -211,20 +213,20 @@ class NetworkMap():
     def finish_scan( self ):
 
         # Write the report onto file
-        Domoticz.Log("Network Topology report")
-        Domoticz.Log("------------------------------------------------------------------------------------------")
-        Domoticz.Log("")
-        Domoticz.Log("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
+        Domoticz.Status("Network Topology report")
+        Domoticz.Status("------------------------------------------------------------------------------------------")
+        Domoticz.Status("")
+        Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
 
         for nwkid in self.Neighbours:
             for child in self.Neighbours[nwkid]['Neighbours']:
-                Domoticz.Log("%6s %6s %9s %11s %6d %4d %7s" \
+                Domoticz.Status("%6s %6s %9s %11s %6d %4d %7s" \
                     %( nwkid, child , self.Neighbours[nwkid]['Neighbours'][child]['_relationshp'],
                             self.Neighbours[nwkid]['Neighbours'][child]['_devicetype'],
                             int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
                             int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
                             self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
-        Domoticz.Log("--")
+        Domoticz.Status("--")
 
         self.prettyPrintNeighbours()
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.HardwareID + '.json'
@@ -238,7 +240,7 @@ class NetworkMap():
                 json.dump( storeLQI, json_file)
             #self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
         else:
-            Domoticz.Error("Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
+            Domoticz.Error("LQI:Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))
 
 
     def LQIresp(self, MsgData):
@@ -253,14 +255,14 @@ class NetworkMap():
         ListOfEntries = MsgData[10:len(MsgData)]
 
         if Status != '00':
-            Domoticz.Error("LQIresp - Status: %s for %s" %(Status, MsgData))
+            Domoticz.Error("LQI:LQIresp - Status: %s for %s" %(Status, MsgData))
             return
         if len(self.LQIreqInProgress) == 0:
-            Domoticz.Error("LQIresp - Receive unexpected message %s"  %(MsgData))
+            Domoticz.Error("LQI:LQIresp - Receive unexpected message %s"  %(MsgData))
             return
 
         if len(ListOfEntries)//42 != NeighbourTableListCount:
-            Domoticz.Log("LQIresp - missmatch. Expecting %s entries and found %s" \
+            Domoticz.Error("LQI:LQIresp - missmatch. Expecting %s entries and found %s" \
                     %(NeighbourTableListCount, len(ListOfEntries)//42))
 
         NwkIdSource = self.LQIreqInProgress.pop()
@@ -347,7 +349,7 @@ class NetworkMap():
             Domoticz.Debug("---> _rxonwhenidl: %s" %_rxonwhenidl)
         
             if _nwkid in self.Neighbours[ NwkIdSource ]['Neighbours']:
-                Domoticz.Log("LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))
+                Domoticz.Log("LQI:LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))
                 return
 
             self.Neighbours[NwkIdSource]['Neighbours'][_nwkid] = {}
