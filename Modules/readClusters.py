@@ -256,7 +256,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Debug("readCluster 0001 - %s Battery Quantity: %s " %(MsgSrcAddr, value) )
 
     else:
-        Domoticz.Log("readCluster 0001 - unexepected Attribute: %s %s %s %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+        Domoticz.Log("readCluster 0001 - %s/%s unexepected Attribute: %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Smart Energy Metering
@@ -777,7 +777,7 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['IAS WD']['MaxDuration'] = decodeAttribute( MsgAttType, MsgClusterData)
 
     else:
-        Domoticz.Log("ReadCluster - 0x0502 - unknown attribute: %s value: %s " %(MsgAttrID, MsgClusterData)) 
+        Domoticz.Log("ReadCluster - 0x0502 - %s/%s unknown attribute: %s value: %s " %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData)) 
 
     return
 
