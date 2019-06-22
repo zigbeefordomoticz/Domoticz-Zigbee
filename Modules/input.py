@@ -105,7 +105,7 @@ def ZigateRead(self, Devices, Data):
 #IAS Zone
 def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change notification
 
-    Domoticz.Log("Decode8401 - Reception Zone status change notification : " + MsgData)
+    Domoticz.Debug("Decode8401 - Reception Zone status change notification : " + MsgData)
     MsgSQN=MsgData[0:2]           # sequence number: uint8_t
     MsgEp=MsgData[2:4]            # endpoint : uint8_t
     MsgClusterId=MsgData[4:8]     # cluster id: uint16_t
@@ -146,7 +146,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         Domoticz.Log("Decode8401 - receive a message for an unknown device %s : %s" %( MsgSrcAddr, MsgData))
         return
 
-    Domoticz.Log("Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s" \
+    Domoticz.Debug("Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s" \
             %( MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay))
 
     if Model == "PST03A-v2.2.5" :
@@ -191,7 +191,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         test     = ( int(MsgZoneStatus,16) >> 8 ) & 1
         battdef  = ( int(MsgZoneStatus,16) >> 9 ) & 1
 
-        Domoticz.Status("IAS Zone change for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" \
+        Domoticz.Status("IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" \
                 %( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef))
 
         Domoticz.Log("Decode8401 MsgZoneStatus: %s " %MsgZoneStatus[2:4])
@@ -217,7 +217,6 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['acmain'] = acmain
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = battdef
-
 
     return
 
@@ -634,7 +633,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8031 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
-    Domoticz.Log("Decode8031 - Msgdata: %s" %(MsgData))
+    Domoticz.Debug("Decode8031 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -646,11 +645,11 @@ def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
             MsgSrcAddr=MsgData[8:12]
             MsgDataSQN=MsgData[12:14]
-            Domoticz.Log("Decode8031 - Unbind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+            Domoticz.Debug("Decode8031 - Unbind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
         elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
             MsgSrcAddr=MsgData[8:24]
             MsgDataSQN=MsgData[24:26]
-            Domoticz.Log("Decode8031 - Unbind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+            Domoticz.Debug("Decode8031 - Unbind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
         else:
             Domoticz.Error("Decode8031 - Unknown addr mode %s in %s" %(MsgSrcAddr, MsgData))
 
