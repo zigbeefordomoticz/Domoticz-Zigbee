@@ -693,10 +693,11 @@ class OTAManagement(object):
                             self.upgradeInProgress = None
                     elif self.pluginconf.pluginConf['batteryOTA']:
                         EPout = "01"
-                        for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
-                            if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
-                                EPout = x
-                                break
+                        if 'Ep' in self.ListOfDevices[self.upgradeInProgress]:
+                            for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
+                                if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
+                                    EPout = x
+                                    break
                         _key = self.upgradeOTAImage
                         self.ota_image_advertize(self.upgradeInProgress, EPout, \
                                 self.OTA['Images'][_key]['Decoded Header']['image_version'], \
