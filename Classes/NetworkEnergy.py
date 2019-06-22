@@ -217,6 +217,8 @@ class NetworkEnergy():
             toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
             for c in self.EnergyLevel[ nwkid ]['Channels']:
                channels = {}
+               if c not in CHANNELS:
+                   continue
                channels['Channel'] = c
                channels['Level'] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
                entry['Channels'].append( channels )
