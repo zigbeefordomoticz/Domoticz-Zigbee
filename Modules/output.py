@@ -629,6 +629,9 @@ def processConfigureReporting( self, NWKID=None ):
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # IAS Warning Devices
+        '0502': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
@@ -711,6 +714,8 @@ def processConfigureReporting( self, NWKID=None ):
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
                         continue
 
+                Domoticz.Debug("ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
+                        %(NWKID, self.busy, len(self.ZigateComm._normalQueue)))
                 if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE):
                     Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(self.busy, len(self.ZigateComm._normalQueue), key))
@@ -833,7 +838,8 @@ def rebind_Clusters( self, NWKID):
                 Domoticz.Debug('Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
                 if 'Bind' in self.ListOfDevices[NWKID]:
                     del self.ListOfDevices[NWKID]['Bind']
-                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                if self.pluginconf.pluginConf['doUnbindBind']:
+                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
