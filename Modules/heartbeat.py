@@ -451,7 +451,7 @@ def processListOfDevices( self , Devices ):
         # Trigger Conifre Reporting to eligeable decices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > ( 120 // HEARTBEAT):
+    if self.HeartbeatCount > ( 5 * 60 // HEARTBEAT):
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
@@ -462,6 +462,7 @@ def processListOfDevices( self , Devices ):
                 if self.ZigateComm.loadTransmit() < 2 :
                      self.networkmap.continue_scan( )
 
+    if self.HeartbeatCount > ( 3 * 60 // HEARTBEAT):
         # Network Energy Level
         if self.networkenergy:
             if self.ZigateComm.loadTransmit() < 2:
