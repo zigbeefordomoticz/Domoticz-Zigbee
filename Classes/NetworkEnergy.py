@@ -120,11 +120,11 @@ class NetworkEnergy():
     def NwkScanReq(self, target, channels):
 
         # Scan Duration
-        scanDuration = 0x04 #
+        scanDuration = 0x02 #
         scanCount = 1
 
         mask = maskChannel( channels )
-        datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) 
+        datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount)  + "00" + "0000"
     
         if len(self.nwkidInQueue) == 0:
             Domoticz.Debug("NwkScanReq - request a scan on channels %s for duration %s an count %s" \
@@ -272,7 +272,7 @@ class NetworkEnergy():
         if len(self.nwkidInQueue) > 0:
             entry = self.nwkidInQueue.pop()
         else:
-            Domoticz.Error("NwkScanResponse - unexected message %s" %MsgData)
+            Domoticz.Error("NwkScanResponse - unexpected message %s" %MsgData)
             return
 
         channelList = []
