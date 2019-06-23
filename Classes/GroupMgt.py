@@ -36,6 +36,7 @@ class GroupsManagement(object):
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, ScanGroupMembership, Devices, ListOfDevices, IEEE2NWK ):
         Domoticz.Debug("GroupsManagement __init__")
         self.StartupPhase = 'init'
+        self._SaveGroupFile = None
         self.ListOfGroups = {}      # Data structutre to store all groups
         self.TobeAdded = []         # List of IEEE/NWKID/EP/GROUP to be added
         self.TobeRemoved = []       # List of NWKID/EP/GROUP to be removed
@@ -1107,47 +1108,44 @@ class GroupsManagement(object):
                 self.updateDomoGroupDevice( group_nwkid)
 
         elif self.StartupPhase == 'init':
-
             # Check if there is an existing Pickle file. If this file is newer than ZigateConf, we can simply load it and finish the Group startup.
             # In case the file is older, this means that ZigateGroupConf is newer and has some changes, do the full process.
 
             # Check if the DeviceList file exist.
             Domoticz.Log("Group Management - Init phase")
             self.StartupPhase = 'discovery'
+            last_update_GroupList = 0
             if os.path.isfile( self.groupListFileName ) :
-                Domoticz.Debug("--->GroupList.pck exists")
+                Domoticz.Log("--->GroupList.pck exists")
                 last_update_GroupList = modification_date( self.groupListFileName )
-                Domoticz.Debug("--->Last Update of GroupList: %s" %last_update_GroupList)
+                Domoticz.Log("--->Last Update of GroupList: %s" %last_update_GroupList)
+            else:
+                Domoticz.Log("--->GroupList.pck doesn't exist")
 
-                if self.groupsConfigFilename or self.json_groupsConfigFilename :
-                    if self.groupsConfigFilename:
-                        if os.path.isfile( self.groupsConfigFilename ):
-                            Domoticz.Debug("------------>Config file exists")
-                            self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                            Domoticz.Debug("------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
-    
-                    if self.json_groupsConfigFilename:
-                        if os.path.isfile( self.json_groupsConfigFilename):
-                            Domoticz.Debug("------------>Json Config file exists")
-                            self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
-                            Domoticz.Debug("------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
-                    
-                    if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
-                        # GroupList is newer , just reload the file and exit
-                        Domoticz.Status("--------->No update of Groups needed")
-                        self.StartupPhase = 'end of group startup'
-                        self._load_GroupList()
-                else:   # No config file, so let's move on
-                    Domoticz.Debug("------>No Config file, let's use the GroupList")
-                    Domoticz.Debug("------>switch to end of Group Startup")
-                    self._load_GroupList()
+            if self.groupsConfigFilename or self.json_groupsConfigFilename :
+                if self.groupsConfigFilename:
+                    if os.path.isfile( self.groupsConfigFilename ):
+                        Domoticz.Log("------------>Config file exists %s" %self.groupsConfigFilename)
+                        self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
+                        Domoticz.Log("------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
+ 
+                if self.json_groupsConfigFilename:
+                    if os.path.isfile( self.json_groupsConfigFilename):
+                        Domoticz.Log("------------>Json Config file exists")
+                        self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
+                        Domoticz.Log("------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
+                
+                if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
+                    # GroupList is newer , just reload the file and exit
+                    Domoticz.Status("--------->No update of Groups needed")
                     self.StartupPhase = 'end of group startup'
-            else:   # GroupList exist but no config file
-                Domoticz.Debug("--->No Config file, let's use the GroupList")
-                Domoticz.Debug("--->switch to end of Group Startup")
+                    self._load_GroupList()
+            else:   # No config file, so let's move on
+                Domoticz.Log("------>No Config file, let's use the GroupList")
+                Domoticz.Log("------>switch to end of Group Startup")
                 self._load_GroupList()
                 self.StartupPhase = 'end of group startup'
-
+            
             if self.ScanGroupMembership == 'True' and self.StartupPhase != 'discovery':
                 self.StartupPhase = 'discovery'
                 Domoticz.Status("Going for a full group membership discovery. (User Request)")
@@ -1383,6 +1381,7 @@ class GroupsManagement(object):
             Domoticz.Log("  - To be added : %s" %self.TobeAdded)
             if len(self.TobeAdded) == 0 and len(self.TobeRemoved) == 0:
                 self.StartupPhase = 'check group list'
+                self._SaveGroupFile = True
                 Domoticz.Debug("Updated Groups are : %s" %self.UpdatedGroups)
                 self._write_GroupList()
                 for iterGroup in self.UpdatedGroups:
@@ -1495,6 +1494,7 @@ class GroupsManagement(object):
                     self.Cycle += 1
                     if self.Cycle > MAX_CYCLE:
                         Domoticz.Error("We reach the max number of Cycle and didn't succeed in the Group Creation")
+                        self._SaveGroupFile = False
                         self.StartupPhase = 'check group list'
                     else:
                         self.StartupPhase = 'discovery'
@@ -1534,7 +1534,9 @@ class GroupsManagement(object):
                     self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
 
             self.StartupPhase = 'end of group startup'
-            self._write_GroupList()
+            # We write GroupList to cash only if in case of success.
+            if self._SaveGroupFile:
+                self._write_GroupList()
 
         elif self.StartupPhase == 'end of group startup':
             for iterGrp in self.ListOfGroups:
@@ -1544,7 +1546,7 @@ class GroupsManagement(object):
                     if iterDev in self.ListOfDevices:
                         Domoticz.Log("  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
 
-            # Store Group in report under json format
+            # Store Group in report under json format (Debuging purpose)
             json_filename = self.groupListReport
             with open( json_filename, 'wt') as json_file:
                 json_file.write('\n')
