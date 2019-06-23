@@ -911,15 +911,19 @@ class WebServer(object):
                     for param in SETTINGS[_theme]:
                         if param != setting: continue
                         found = True
-                        if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: continue
                         upd = True
+                        if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: 
+                            #Nothing to do
+                            continue
                         Domoticz.Debug("Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
-                        self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                         if param == 'Certification':
                             if setting_lst[setting]['current'] in CERTIFICATION_CODE:
                                 self.pluginconf.pluginConf['CertificationCode'] = CERTIFICATION_CODE[setting_lst[setting]['current']]
                             else:
                                 Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" %(setting_lst[setting]['current']))
+                                continue
+                        else:
+                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
                         if SETTINGS[_theme][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
