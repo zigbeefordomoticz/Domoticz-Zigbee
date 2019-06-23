@@ -1293,6 +1293,13 @@ class WebServer(object):
                         if attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
                                 device[attribut] = ''
+                            elif self.ListOfDevices[item][attribut] == '' and self.ListOfDevices[item]['MacCapa'] == '8e':
+                                if attribut == 'DeviceType':
+                                    device[attribut] = 'FFD'
+                                elif attribut == 'LogicalType':
+                                    device[attribut] = 'Router'
+                                elif attribut == 'PowerSource':
+                                    device[attribut] = 'Main'
                             else:
                                 device[attribut] = self.ListOfDevices[item][attribut]
                         else:
