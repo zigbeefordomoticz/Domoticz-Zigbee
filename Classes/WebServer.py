@@ -668,19 +668,19 @@ class WebServer(object):
                     #end for item
 
                     # Sanity check, to see if all devices are part of the report.
-                    for iterDev in self.ListOfDevices:
-                        if iterDev in _nwkid_list: continue
-                        if 'Status' not in self.ListOfDevices[iterDev]: continue
-                        if self.ListOfDevices[iterDev]['Status'] != 'inDB': continue
-                        Domoticz.Debug("Nwkid %s has not been reported by this scan" %iterDev)
-                        _relation = {}
-                        _relation['Father'] = _relation['Child'] = iterDev
-                        _relation['_lnkqty'] = 0
-                        _relation['DeviceType'] = ''
-                        if 'ZDeviceName' in self.ListOfDevices[iterDev]:
-                            if self.ListOfDevices[iterDev]['ZDeviceName'] != "" and self.ListOfDevices[iterDev]['ZDeviceName'] != {}:
-                                _relation['Father'] = _relation['Child'] = self.ListOfDevices[iterDev]['ZDeviceName']
-                        _topo[_ts].append( _relation )
+                    # for iterDev in self.ListOfDevices:
+                    #     if iterDev in _nwkid_list: continue
+                    #     if 'Status' not in self.ListOfDevices[iterDev]: continue
+                    #     if self.ListOfDevices[iterDev]['Status'] != 'inDB': continue
+                    #    Domoticz.Debug("Nwkid %s has not been reported by this scan" %iterDev)
+                    #    _relation = {}
+                    #    _relation['Father'] = _relation['Child'] = iterDev
+                    #    _relation['_lnkqty'] = 0
+                    #    _relation['DeviceType'] = ''
+                    #    if 'ZDeviceName' in self.ListOfDevices[iterDev]:
+                    #        if self.ListOfDevices[iterDev]['ZDeviceName'] != "" and self.ListOfDevices[iterDev]['ZDeviceName'] != {}:
+                    #            _relation['Father'] = _relation['Child'] = self.ListOfDevices[iterDev]['ZDeviceName']
+                    #    _topo[_ts].append( _relation )
 
                 #end for _st
 
