@@ -219,13 +219,17 @@ class NetworkMap():
         Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
 
         for nwkid in self.Neighbours:
-            for child in self.Neighbours[nwkid]['Neighbours']:
-                Domoticz.Status("%6s %6s %9s %11s %6d %4d %7s" \
-                    %( nwkid, child , self.Neighbours[nwkid]['Neighbours'][child]['_relationshp'],
-                            self.Neighbours[nwkid]['Neighbours'][child]['_devicetype'],
-                            int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
-                            int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
-                            self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
+            if self.Neighbours[nwkid]['Status'] != 'Completed':
+                Domoticz.Error("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
+                    %( nwkid, '-' , '-','-','-','-','-' ))
+            else:
+                for child in self.Neighbours[nwkid]['Neighbours']:
+                    Domoticz.Status("%6s %6s %9s %11s %6d %4d %7s" \
+                        %( nwkid, child , self.Neighbours[nwkid]['Neighbours'][child]['_relationshp'],
+                                self.Neighbours[nwkid]['Neighbours'][child]['_devicetype'],
+                                int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
+                                int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
+                                self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
         Domoticz.Status("--")
 
         self.prettyPrintNeighbours()
