@@ -201,28 +201,39 @@ class NetworkEnergy():
         Domoticz.Status("-----------------------------------------------")
         Domoticz.Status("%5s %6s %8s %4s %4s %4s %4s %4s %4s" %('nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
         for nwkid in self.EnergyLevel:
-            if self.EnergyLevel[nwkid]['Status'] != 'Completed':
-                continue
             entry = {}
             entry['_NwkId'] = nwkid
-            entry['Tx'] = self.EnergyLevel[ nwkid ][ 'Tx' ]
-            entry['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
-            entry['Channels'] = []
             if 'ZDeviceName' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['ZDeviceName'] != {}:
                     entry['ZDeviceName'] = self.ListOfDevices[nwkid]['ZDeviceName']
                 else:
                     entry['ZDeviceName'] = nwkid
 
-            toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
-            for c in self.EnergyLevel[ nwkid ]['Channels']:
-               channels = {}
-               if c not in CHANNELS:
-                   continue
-               channels['Channel'] = c
-               channels['Level'] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
-               entry['Channels'].append( channels )
-               toprint += " %4s" %self.EnergyLevel[ nwkid ]['Channels'][ c ]
+            if self.EnergyLevel[nwkid]['Status'] != 'Completed':
+                entry['Tx'] = 0
+                entry['Failure'] = 0
+                entry['Channels'] = []
+                toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
+                for c in CHANNELS:
+                    channels = {}
+                    channels['Channel'] = c
+                    channels['Level'] = 0
+                    entry['Channels'].append( channels )
+                    toprint += " %4s" %0
+            else:
+                entry['Tx'] = self.EnergyLevel[ nwkid ][ 'Tx' ]
+                entry['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
+                entry['Channels'] = []
+
+                toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
+                for c in self.EnergyLevel[ nwkid ]['Channels']:
+                    channels = {}
+                    if c not in CHANNELS:
+                        continue
+                    channels['Channel'] = c
+                    channels['Level'] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
+                    entry['Channels'].append( channels )
+                    toprint += " %4s" %self.EnergyLevel[ nwkid ]['Channels'][ c ]
             storeEnergy[stamp].append( entry )
             Domoticz.Status(toprint)
 
