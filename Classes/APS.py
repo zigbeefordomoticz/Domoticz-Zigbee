@@ -33,7 +33,9 @@ CMD_NWK_2NDBytes = {
         '0092':'On/Off', 
         '0093':'On/Off Timed send', 
         '0094':'On/Off with effect',
-        '00B0':'Move tço Hue', 
+        '004A':'Management Network Update request',
+        '004E':'Management LQI request',
+        '00B0':'Move to Hue', 
         '00B1':'Move Hue',
         '00B2':'Step Hue', 
         '00B3':'Move to saturation', 
@@ -125,8 +127,7 @@ class APSManagement(object):
         Domoticz.Error("Command: %s failed on %s" %(_cmdTxt, ZDeviceName)) 
         Domoticz.Error("- Device: %s NwkID: %s IEEE: %s" %( _deviceName, nwk, ieee))
         Domoticz.Error("- Code: %s Status: %s" %( aps_code, DisplayStatusCode( aps_code )))
-        if 'Health' in self.ListOfDevices[nwk]:
-            self.ListOfDevices[nwk]['Health'] = 'Not Reachable'
+        self.ListOfDevices[nwk]['Health'] = 'Not Reachable'
 
     def _updateAPSrecord( self, nwk, aps_code):
         """ Update APS Failure record in DeviceList """
