@@ -18,7 +18,7 @@ import json
 import queue
 import string
 
-from Modules.domoticz import MajDomoDevice
+from Modules.domoticz import MajDomoDevice, lastSeenUpdate
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex
 from Modules.output import ReadAttributeRequest_Ack
 
@@ -120,6 +120,8 @@ def ReadCluster(self, Devices, MsgData):
     tmpClusterid=""
 
     self.statistics._clusterOK += 1
+
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
     if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
         if 'Ep' in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']:
