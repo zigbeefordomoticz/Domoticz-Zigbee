@@ -339,6 +339,7 @@ class WebServer(object):
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
+                'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
                 'restart-needed':{'Name':'restart-needed','Verbs':{'GET'}, 'function':self.rest_restart_needed},
                 'req-nwk-inter': {'Name':'nwk-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
                 'req-topologie': {'Name':'req-topologie', 'Verbs':{'GET'}, 'function':self.rest_req_topologie},
@@ -486,6 +487,25 @@ class WebServer(object):
             if self.pluginparameters['Mode1'] != 'None':
                 start_Zigate( self )
         return _response
+
+    def rest_rescan_group( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
+            Domoticz.Log("rest_rescan_group - Removing file: %s" %self.groupListFileName)
+            os.remove( self.groupListFileName )
+            action = {}
+            action['Name'] = 'Groups file removed.'
+            action['TimeStamp'] = int(time())
+        return _response
+
 
     def rest_reset_zigate( self, verb, data, parameters):
 
