@@ -1447,6 +1447,7 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
         if 'IEEE' not in self.ListOfDevices[NwkId]:
             return
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
+        self.ListOfDevices[NwkId]['Health'] = 'TimedOut'
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
                 _nValue = Devices[x].nValue
@@ -1484,6 +1485,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
         if 'LastSeen' not in self.ListOfDevices[NwkId]['Stamp']:
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+        self.ListOfDevices[NwkId]['Health'] = 'Live'
 
         if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
             Domoticz.Debug("Too early for a new update of LastSeen %s" %NwkId)
