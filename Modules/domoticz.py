@@ -1673,6 +1673,9 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
         elif ZDeviceID == '0102': # Color dimable light
             Subtype = ColorControlFull
             pass
+        elif ZDeviceID == '010d': # Extended color light
+            # ZBT-ExtendedColor /  Müller-Licht 44062 "tint white + color" (LED E27 9,5W 806lm 1.800-6.500K RGB)
+            Subtype = ColorControlRGBWW
 
 
     if Subtype is None and ColorInfos:
