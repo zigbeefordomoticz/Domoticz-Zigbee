@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 24 June 2019 - 4.3.3
+- [Issue] - Fix Issue #452
+
 ## 13 June 2019 - 4.3.2
 - [Issue] - Problem with lumi.ctrl_neutral2 . Left switch not working
 - [Hardware] - #451 - Handle Philips Hue GU10 as a WW
