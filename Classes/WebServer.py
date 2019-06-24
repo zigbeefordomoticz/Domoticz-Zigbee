@@ -738,7 +738,7 @@ class WebServer(object):
                     action['Name'] = 'Report %s removed' %timestamp
                     _response['Data'] = json.dumps( action , sort_keys=True)
                 else:
-                    Domoticz.Error("Timestamp: %s not found" %timestamp)
+                    Domoticz.Error("Removing Topo Report %s not found" %timestamp )
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
 
@@ -815,7 +815,7 @@ class WebServer(object):
                     action['Name'] = 'Report %s removed' %timestamp
                     _response['Data'] = json.dumps( action , sort_keys=True)
                 else:
-                    Domoticz.Error("Timestamp: %s not found" %timestamp)
+                    Domoticz.Error("Removing Nwk-Energy %s not found" %timestamp )
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
         elif verb == 'GET':
