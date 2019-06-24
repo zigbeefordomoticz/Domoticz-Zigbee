@@ -307,8 +307,13 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "SwitchAQ2":  # interrupteur multi lvl lumi.sensor_switch.aq2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Click|3 Click|4 Click",
-                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                if self.ListOfDevices[NWKID]['Model'] == 'lumi.sensor_switch':
+                    Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
+                            "LevelOffHidden": "false", "SelectorStyle": "1"}
+                else:
+                    Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
+                            "LevelOffHidden": "false", "SelectorStyle": "0"}
+
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
@@ -1011,11 +1016,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
-                    Domoticz.Log("SwitchAQ2 : Value -> %s" %value)
+                    Domoticz.Debug("SwitchAQ2 : Value -> %s" %value)
                     if value == 1: state = "00"
                     elif value == 2: state = "10"
                     elif value == 3: state = "20"
                     elif value == 4: state = "30"
+                    elif value == 80: state = "30"
                     elif value == 255: state = "30"
                     else:
                         return  # Simply return and don't process any other values than the above
