@@ -607,12 +607,12 @@ def processConfigureReporting( self, NWKID=None ):
                                  '001B': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '001C': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color Temp
-                                 #'0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 #'0001': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, 
-                                 '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color X
-                                 '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color Y
-                                 '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}, # Color Mode
+        '0300': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "010D", "0210", "0105", "0200"}},
+                                 '0001': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "0105", "010D", "0210", "0200"}},
+                                 '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color X
+                                 '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color Y
+                                 '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "0102", "010D", "0210", "0220"}}, # Color Temp
+                                 '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ }}}}, # Color Mode
         # Illuminance Measurement
         '0400': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
         # Temperature
@@ -687,6 +687,7 @@ def processConfigureReporting( self, NWKID=None ):
                 if cluster not in ATTRIBUTESbyCLUSTERS:
                     continue
 
+
                 Domoticz.Debug("Configurereporting - processing %s/%s - %s" %(key,Ep,cluster))
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
@@ -740,6 +741,14 @@ def processConfigureReporting( self, NWKID=None ):
                 for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
                     # Check if the Attribute is listed in the Attributes List (provided by the Device
                     # In case Attributes List exists, we have git the list of reported attribute.
+                    if cluster == '0300': 
+                        # We need to evaluate the Attribute on ZDevice basis
+                        ZDeviceID = self.ListOfDevices[key]['ZDeviceID']
+                        if 'ZDeviceID' in  ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]:
+                            if ZDeviceID not in ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] and \
+                                    len( ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] ) != 0:
+                                Domoticz.Log("configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID))
+                                continue
                    
                     if 'Attributes List' in self.ListOfDevices[key]:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
