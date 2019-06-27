@@ -1510,9 +1510,41 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
 
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
+
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
+
+    def decodeMacCapa( maccap ):
+
+        maccap = int(maccap,16)
+        alternatePANCOORDInator = maccap & 0b00000001
+        deviceType              = maccap & 0b00000010 >> 1
+        powerSource             = maccap & 0b00000100 >> 2
+        receiveOnIddle          = maccap & 0b00001000 >> 3
+        securityCap             = maccap & 0b01000000 >> 6
+        allocateAddress         = maccap & 0b10000000 >> 7
+
+        MacCapa = []
+        if alternatePANCOORDInator:
+            MacCapa.append('Able to act Coordinator')
+        if deviceType:
+            MacCapa.append('Full-Function Device')
+        else:
+            MacCapa.append('Reduced-Function Device')
+        if powerSource:
+            MacCapa.append('Main Powered')
+        if receiveOnIddle:
+            MacCapa.append('Receiver during Idle')
+        if securityCap:
+            MacCapa.append('High security')
+        else:
+            MacCapa.append('Standard security')
+        if allocateAddress:
+            MacCapa.append('NwkAddr should be allocated')
+        else:
+            MacCapa.append('NwkAddr need to be allocated')
+        return MacCapa
 
     if MsgSrcAddr in self.ListOfDevices:
         if self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
@@ -1535,6 +1567,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
             self.CommiSSionning = True
             self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
+            self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
             self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
         else:
             # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
@@ -1544,7 +1577,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
-
         Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 
     else:
