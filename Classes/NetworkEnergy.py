@@ -36,7 +36,6 @@ class NetworkEnergy():
     def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
 
         self.pluginconf = PluginConf
-        self.debugNetworkEnergy = self.pluginconf.pluginConf['debugNetworkEnergy']
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
@@ -49,6 +48,7 @@ class NetworkEnergy():
 
     def logging( self, logType, message):
 
+        self.debugNetworkEnergy = self.pluginconf.pluginConf['debugNetworkEnergy']
         if logType == 'Debug' and self.debugNetworkEnergy:
             Domoticz.Log( message)
         elif logType == 'Log':

@@ -73,7 +73,6 @@ class WebServer(object):
         self.WebUsername = WebUserName
         self.WebPassword = WebPassword
         self.pluginconf = PluginConf
-        self.debugWebServer = self.pluginconf.pluginConf['debugWebServer']
         self.zigatedata = ZigateData
         self.adminWidget = adminWidgets
         self.ZigateComm = ZigateComm
@@ -102,6 +101,7 @@ class WebServer(object):
         
     def logging( self, logType, message):
 
+        self.debugWebServer = self.pluginconf.pluginConf['debugWebServer']
         if logType == 'Debug' and self.debugWebServer:
             Domoticz.Log( message)
         elif logType == 'Log':

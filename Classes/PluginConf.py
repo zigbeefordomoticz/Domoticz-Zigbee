@@ -106,7 +106,10 @@ SETTINGS = {
             'Debuging': 
                 {
                 'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+                'debugOutput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+                'debugInput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
+                'debugNwkIDMatch':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False},
                 'debugNetworkMap':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'debugNetworkEnergy':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'debugGroups':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},

@@ -56,7 +56,6 @@ class GroupsManagement(object):
 
         self.pluginconf = PluginConf
 
-        self.debugGroups = self.pluginconf.pluginConf['debugGroups']
         self.Firmware = None
         self.homeDirectory = HomeDirectory
 
@@ -79,6 +78,7 @@ class GroupsManagement(object):
 
     def logging( self, logType, message):
 
+        self.debugGroups = self.pluginconf.pluginConf['debugGroups']
         if logType == 'Debug' and self.debugGroups:
             Domoticz.Log( message)
         elif logType == 'Log':

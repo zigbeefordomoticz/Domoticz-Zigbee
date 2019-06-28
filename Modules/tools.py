@@ -514,15 +514,42 @@ def loggingPairing( self, logType, message):
 
     return
 
+def _logginfilter( self, message, nwkid):
+
+        if nwkid is None:
+            Domoticz.Log( message )
+        else:
+            if  self.pluginconf.pluginConf['debugNwkIDMatch'] != 'ffff' and nwkid.lower() != self.pluginconf.pluginConf['debugNwkIDMatch']:
+                return
+        Domoticz.Log( message )
 
 def loggingCluster( self, logType, message, nwkid=None):
 
     if self.pluginconf.pluginConf['debugCluster'] and logType == 'Debug':
-        Domoticz.Log( message )
+        _logginfilter( self, message, nwkid)
     elif  logType == 'Log':
         Domoticz.Log( message )
     elif logType == 'Status':
         Domoticz.Status( message )
+    return
 
+def loggingOutput( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugOutput'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+    return
+
+def loggingInput( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugInput'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
     return
 

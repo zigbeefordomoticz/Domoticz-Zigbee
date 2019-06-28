@@ -38,7 +38,6 @@ class NetworkMap():
     def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
 
         self.pluginconf = PluginConf
-        self.debugNetworkMap = self.pluginconf.pluginConf['debugNetworkMap']
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
@@ -52,6 +51,7 @@ class NetworkMap():
 
     def logging( self, logType, message):
 
+        self.debugNetworkMap = self.pluginconf.pluginConf['debugNetworkMap']
         if logType == 'Debug' and self.debugNetworkMap:
             Domoticz.Log( message)
         elif logType == 'Log':
