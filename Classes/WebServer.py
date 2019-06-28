@@ -919,6 +919,7 @@ class WebServer(object):
                             setting['default_value'] = SETTINGS[_theme][param]['default']
                             setting['DataType'] = SETTINGS[_theme][param]['type']
                             setting['restart_need'] = SETTINGS[_theme][param]['restart']
+                            setting['Advanced'] = SETTINGS[_theme][param]['Advanced']
                             setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
