@@ -515,7 +515,7 @@ def loggingPairing( self, logType, message):
     return
 
 
-def loggingCluster( self, logType, message):
+def loggingCluster( self, logType, message, nwkid=None):
 
     if self.pluginconf.pluginConf['debugCluster'] and logType == 'Debug':
         Domoticz.Log( message )

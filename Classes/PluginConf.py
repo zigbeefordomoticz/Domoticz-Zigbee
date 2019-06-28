@@ -106,7 +106,7 @@ SETTINGS = {
             'Debuging': 
                 {
                 'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-                'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True},
+                'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'debugNetworkMap':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'debugNetworkEnergy':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
                 'debugGroups':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
