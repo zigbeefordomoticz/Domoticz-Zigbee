@@ -38,6 +38,7 @@ class NetworkMap():
     def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
 
         self.pluginconf = PluginConf
+        self.debugNetworkMap = self.pluginconf.pluginConf['debugNetworkMap']
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
@@ -49,6 +50,16 @@ class NetworkMap():
         self.Neighbours = {}                   # Table of Neighbours
 
 
+    def logging( self, logType, message):
+
+        if logType == 'Debug' and self.debugNetworkMap:
+            Domoticz.Log( message)
+        elif logType == 'Log':
+            Domoticz.Log( message )
+        elif logType == 'Status':
+            Domoticz.Status( message)
+        return
+
     def NetworkMapPhase( self ):
 
         return self._NetworkMapPhase
@@ -56,7 +67,7 @@ class NetworkMap():
     def _initNeighbours( self):
 
         # Will popoulate the Neghours dict with all Main Powered Devices
-        Domoticz.Debug("_initNeighbours")
+        self.logging( 'Debug', "_initNeighbours")
 
         for nwkid in self.ListOfDevices:
             router = False
@@ -81,7 +92,7 @@ class NetworkMap():
 
     def _initNeighboursTableEntry( self, nwkid):
 
-        Domoticz.Debug("_initNeighboursTableEntry - %s" %nwkid)
+        self.logging( 'Debug', "_initNeighboursTableEntry - %s" %nwkid)
         self.Neighbours[ nwkid ] = {}
         self.Neighbours[ nwkid ]['Status'] = 'ScanRequired'
         self.Neighbours[ nwkid ]['TableMaxSize'] = 0
@@ -91,11 +102,11 @@ class NetworkMap():
     def prettyPrintNeighbours( self ):
 
         for nwkid in self.Neighbours:
-            Domoticz.Debug("Neighbours table: %s, %s out of %s - Status: %s" \
+            self.logging( 'Debug', "Neighbours table: %s, %s out of %s - Status: %s" \
                     %(nwkid,self.Neighbours[ nwkid ]['TableCurSize'], self.Neighbours[ nwkid ]['TableMaxSize'], self.Neighbours[ nwkid ]['Status']))
             for entry in self.Neighbours[ nwkid ]['Neighbours']:
-                Domoticz.Debug("---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
-        Domoticz.Debug("")
+                self.logging( 'Debug', "---> Neighbour %s ( %s )" %( entry, self.Neighbours[ nwkid ]['Neighbours'][entry]['_relationshp']))
+        self.logging( 'Debug', "")
 
 
     def LQIreq(self, nwkid='0000'):
@@ -108,7 +119,7 @@ class NetworkMap():
          <Start Index: uint8_t>
         """
 
-        Domoticz.Debug("LQIreq - nwkid: %s" %nwkid)
+        self.logging( 'Debug', "LQIreq - nwkid: %s" %nwkid)
 
         if nwkid not in self.Neighbours:
             self._initNeighboursTableEntry( nwkid)
@@ -132,7 +143,7 @@ class NetworkMap():
                     router = True
 
         if not router:
-            Domoticz.Debug("Skiping %s as it's not a Router nor Coordinator" %nwkid)
+            self.logging( 'Debug', "Skiping %s as it's not a Router nor Coordinator" %nwkid)
             return
 
         index = self.Neighbours[ nwkid ]['TableCurSize']
@@ -141,7 +152,7 @@ class NetworkMap():
         self.LQIreqInProgress.append ( nwkid )
         datas = "%s%02X" %(nwkid, index)
 
-        Domoticz.Debug("LQIreq - from: %s start at index: %s" %( nwkid, index ))
+        self.logging( 'Debug', "LQIreq - from: %s start at index: %s" %( nwkid, index ))
         if self.Neighbours[ nwkid ]['Status'] == 'ScanRequired':
             self.Neighbours[ nwkid ]['Status'] = 'WaitResponse'
         elif self.Neighbours[ nwkid ]['Status'] == 'ScanRequired2':
@@ -155,7 +166,7 @@ class NetworkMap():
     def start_scan(self):
 
         if len(self.Neighbours) != 0:
-            Domoticz.Debug("start_scan - initialize data")
+            self.logging( 'Debug', "start_scan - initialize data")
             del self.Neighbours
             self.Neighbours = {}
 
@@ -167,15 +178,15 @@ class NetworkMap():
 
     def continue_scan(self):
 
-        Domoticz.Debug("continue_scan - %s" %( len(self.LQIreqInProgress) ))
+        self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
         self.prettyPrintNeighbours()
         if len(self.LQIreqInProgress) > 0 and self.LQIticks < 2:
-            Domoticz.Debug("Command pending")
+            self.logging( 'Debug', "Command pending")
             self.LQIticks += 1
             return
         elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
             entry = self.LQIreqInProgress.pop()
-            Domoticz.Debug("Commdand pending Timeout: %s" % entry)
+            self.logging( 'Debug', "Commdand pending Timeout: %s" % entry)
             if self.Neighbours[entry]['Status'] == 'WaitResponse':
                 self.Neighbours[entry]['Status'] = 'ScanRequired2'
                 Domoticz.Error("LQI:continue_scan - Try one more for %s" %entry)
@@ -184,7 +195,7 @@ class NetworkMap():
                 Domoticz.Error("LQI:continue_scan - TimedOut for %s" %entry)
 
             self.LQIticks = 0
-            Domoticz.Debug("continue_scan - %s" %( len(self.LQIreqInProgress) ))
+            self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
 
         waitResponse = False
         for entry in self.Neighbours:
@@ -205,7 +216,7 @@ class NetworkMap():
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:
-                Domoticz.Debug("continue_scan - scan completed, all Neighbour tables received.")
+                self.logging( 'Debug', "continue_scan - scan completed, all Neighbour tables received.")
                 self._NetworkMapPhase = 0
                 self.finish_scan()
         return
@@ -249,7 +260,7 @@ class NetworkMap():
 
     def LQIresp(self, MsgData):
 
-        Domoticz.Debug("LQIresp - MsgData = " +str(MsgData))
+        self.logging( 'Debug', "LQIresp - MsgData = " +str(MsgData))
 
         SQN = MsgData[0:2]
         Status = MsgData[2:4]
@@ -270,8 +281,8 @@ class NetworkMap():
                     %(NeighbourTableListCount, len(ListOfEntries)//42))
 
         NwkIdSource = self.LQIreqInProgress.pop()
-        Domoticz.Debug("self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
-        Domoticz.Debug("LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
+        self.logging( 'Debug', "self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
+        self.logging( 'Debug', "LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
                 %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
 
         if not self.Neighbours[ NwkIdSource ]['TableMaxSize']  and NeighbourTableEntries:
@@ -279,21 +290,21 @@ class NetworkMap():
 
         if not NeighbourTableListCount and not NeighbourTableEntries:
             # No element in that list
-            Domoticz.Debug("LQIresp -  No element in that list ")
+            self.logging( 'Debug', "LQIresp -  No element in that list ")
             self.Neighbours[NwkIdSource]['Status'] = 'Completed'
             return
 
         if (StartIndex + NeighbourTableListCount) == NeighbourTableEntries:
-            Domoticz.Debug("mgtLQIresp - We have received %3s entries out of %3s" %( NeighbourTableListCount, NeighbourTableEntries))
+            self.logging( 'Debug', "mgtLQIresp - We have received %3s entries out of %3s" %( NeighbourTableListCount, NeighbourTableEntries))
             self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
             self.Neighbours[NwkIdSource]['Status'] = 'Completed'
         else:
-            Domoticz.Debug("mgtLQIresp - We have received %3s entries out of %3s" %( NeighbourTableListCount, NeighbourTableEntries))
+            self.logging( 'Debug', "mgtLQIresp - We have received %3s entries out of %3s" %( NeighbourTableListCount, NeighbourTableEntries))
             self.Neighbours[NwkIdSource]['Status'] = 'ScanRequired'
             self.Neighbours[NwkIdSource]['TableCurSize'] = StartIndex + NeighbourTableListCount
 
         # Decoding the Table
-        Domoticz.Debug("mgtLQIresp - ListOfEntries: %s" %len(ListOfEntries))
+        self.logging( 'Debug', "mgtLQIresp - ListOfEntries: %s" %len(ListOfEntries))
         n = 0
         while n < ((NeighbourTableListCount * 42)):
             _nwkid    = ListOfEntries[n:n+4]        # uint16
@@ -312,11 +323,11 @@ class NetworkMap():
             _permitjnt    = (_bitmap & 0b00001100) >> 2
             _relationshp  = (_bitmap & 0b00110000) >> 4
             _rxonwhenidl  = (_bitmap & 0b11000000) >> 6
-            Domoticz.Debug("bitmap         : {0:{fill}8b}".format(_bitmap, fill='0') + " - %0X for ( %s, %s)" %(_bitmap, NwkIdSource, _nwkid))
-            Domoticz.Debug("--> _devicetype: | | |- %s" %_devicetype)
-            Domoticz.Debug("--> _permitjnt:  | | -%s" %_permitjnt)
-            Domoticz.Debug("--> _relationshp:| -%s" %_relationshp)
-            Domoticz.Debug("--> _rxonwhenidl:-%s" %_rxonwhenidl)
+            self.logging( 'Debug', "bitmap         : {0:{fill}8b}".format(_bitmap, fill='0') + " - %0X for ( %s, %s)" %(_bitmap, NwkIdSource, _nwkid))
+            self.logging( 'Debug', "--> _devicetype: | | |- %s" %_devicetype)
+            self.logging( 'Debug', "--> _permitjnt:  | | -%s" %_permitjnt)
+            self.logging( 'Debug', "--> _relationshp:| -%s" %_relationshp)
+            self.logging( 'Debug', "--> _rxonwhenidl:-%s" %_rxonwhenidl)
 
             # s a 2-bit value representing the ZigBee device type of the neighbouring node
             if  _devicetype   == 0x00: _devicetype = 'Coordinator'
@@ -341,16 +352,16 @@ class NetworkMap():
             elif _rxonwhenidl == 0x01: _rxonwhenidl = 'Rx-On'
             elif _rxonwhenidl == 0x02: _rxonwhenidl = '--'
             n = n + 42
-            Domoticz.Debug("mgtLQIresp - capture a new neighbour %s from %s" %(_nwkid, NwkIdSource))
-            Domoticz.Debug("---> _nwkid: %s" %(_nwkid))
-            Domoticz.Debug("---> _extPANID: %s" %_extPANID)
-            Domoticz.Debug("---> _ieee: %s" %_ieee)
-            Domoticz.Debug("---> _depth: %s" %_depth)
-            Domoticz.Debug("---> _lnkqty: %s" %_lnkqty)
-            Domoticz.Debug("---> _devicetype: %s" %_devicetype)
-            Domoticz.Debug("---> _permitjnt: %s" %_permitjnt)
-            Domoticz.Debug("---> _relationshp: %s" %_relationshp)
-            Domoticz.Debug("---> _rxonwhenidl: %s" %_rxonwhenidl)
+            self.logging( 'Debug', "mgtLQIresp - capture a new neighbour %s from %s" %(_nwkid, NwkIdSource))
+            self.logging( 'Debug', "---> _nwkid: %s" %(_nwkid))
+            self.logging( 'Debug', "---> _extPANID: %s" %_extPANID)
+            self.logging( 'Debug', "---> _ieee: %s" %_ieee)
+            self.logging( 'Debug', "---> _depth: %s" %_depth)
+            self.logging( 'Debug', "---> _lnkqty: %s" %_lnkqty)
+            self.logging( 'Debug', "---> _devicetype: %s" %_devicetype)
+            self.logging( 'Debug', "---> _permitjnt: %s" %_permitjnt)
+            self.logging( 'Debug', "---> _relationshp: %s" %_relationshp)
+            self.logging( 'Debug', "---> _rxonwhenidl: %s" %_rxonwhenidl)
         
             if _nwkid in self.Neighbours[ NwkIdSource ]['Neighbours']:
                 Domoticz.Log("LQI:LQIresp - %s already in Neighbours Table for %s" %(_nwkid, NwkIdSource))

@@ -36,6 +36,7 @@ class NetworkEnergy():
     def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
 
         self.pluginconf = PluginConf
+        self.debugNetworkEnergy = self.pluginconf.pluginConf['debugNetworkEnergy']
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
@@ -46,10 +47,20 @@ class NetworkEnergy():
         self.nwkidInQueue = []
         self.ticks = 0
 
+    def logging( self, logType, message):
+
+        if logType == 'Debug' and self.debugNetworkEnergy:
+            Domoticz.Log( message)
+        elif logType == 'Log':
+            Domoticz.Log( message )
+        elif logType == 'Status':
+            Domoticz.Status( message)
+        return
+
 
     def _initNwkEnrgy( self, target='0000', channels=0):
 
-        Domoticz.Debug("_initNwkEnrgy - target: %s, channels: %s" %(target, channels))
+        self.logging( 'Debug', "_initNwkEnrgy - target: %s, channels: %s" %(target, channels))
 
         if self.EnergyLevel:
             del self.EnergyLevel
@@ -115,7 +126,7 @@ class NetworkEnergy():
                 Domoticz.Log("---> Failure: %s" %(self.EnergyLevel[i]['Failure']))
                 for c in self.EnergyLevel[i]['Channels']:
                     Domoticz.Log("---> %s: %s" %(c, self.EnergyLevel[i]['Channels'][c]))
-        Domoticz.Debug("")
+        self.logging( 'Debug', "")
 
     def NwkScanReq(self, target, channels):
 
@@ -127,9 +138,9 @@ class NetworkEnergy():
         datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount)  + "00" + "0000"
     
         if len(self.nwkidInQueue) == 0:
-            Domoticz.Debug("NwkScanReq - request a scan on channels %s for duration %s an count %s" \
+            self.logging( 'Debug', "NwkScanReq - request a scan on channels %s for duration %s an count %s" \
                 %( channels, scanDuration, scanCount))
-            Domoticz.Debug("NwkScan - %s %s" %("004A", datas))
+            self.logging( 'Debug', "NwkScan - %s %s" %("004A", datas))
             self.nwkidInQueue.append( target )
             sendZigateCmd(self, "004A", datas )
             self.EnergyLevel[ target ]['Status'] = 'WaitResponse'
@@ -138,7 +149,7 @@ class NetworkEnergy():
 
     def start_scan( self, target=None, channels=None):
 
-        Domoticz.Debug("start_scan")
+        self.logging( 'Debug', "start_scan")
         if self.ScanInProgress:
             Domoticz.Log("a Scan is already in progress")
             return
@@ -191,7 +202,7 @@ class NetworkEnergy():
 
     def finish_scan( self ):
 
-        Domoticz.Debug("Finish_scan")
+        self.logging( 'Debug', "Finish_scan")
         self.ScanInProgress = False
 
         stamp = int(time())
@@ -237,7 +248,7 @@ class NetworkEnergy():
             storeEnergy[stamp].append( entry )
             Domoticz.Status(toprint)
 
-        Domoticz.Debug("Network Energly Level Report: %s" %storeEnergy)
+        self.logging( 'Debug', "Network Energly Level Report: %s" %storeEnergy)
 
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-' + '%02d' %self.HardwareID + '.json'
         if os.path.isdir( self.pluginconf.pluginConf['pluginReports'] ):
@@ -286,7 +297,7 @@ class NetworkEnergy():
             channelListInterferences.append( "%X" %(int(MsgChannelListInterference[idx:idx+2],16)))
             idx += 2
 
-        Domoticz.Debug("NwkScanResponse - SQN: %s, Tx: %s , Failures: %s , Status: %s) " \
+        self.logging( 'Debug', "NwkScanResponse - SQN: %s, Tx: %s , Failures: %s , Status: %s) " \
                 %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), MsgDataStatus) )
 
         self.EnergyLevel[ entry ][ 'Tx' ]  =   int(MsgTotalTransmission,16)
@@ -295,7 +306,7 @@ class NetworkEnergy():
         for chan, inter in zip( channelList, channelListInterferences ):
             if chan in CHANNELS:
                 self.EnergyLevel[ entry ]['Channels'][ str(chan) ] = int(inter,16)
-                Domoticz.Debug("     Channel: %s Interference: : %s " %(chan, int(inter,16)))
+                self.logging( 'Debug', "     Channel: %s Interference: : %s " %(chan, int(inter,16)))
 
         self.EnergyLevel[ entry ]['Status'] = 'Completed'
         return
