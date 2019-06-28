@@ -106,7 +106,9 @@ SETTINGS = {
             'Debuging': 
                 {
                 'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False},
-                'debugReadCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True}
+                'debugReadCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True},
+                'debugGroups':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False},
+                'debugWebServer':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False}
                 },
             #Others
             'Others':
