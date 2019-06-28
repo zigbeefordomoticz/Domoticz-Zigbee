@@ -907,7 +907,7 @@ class WebServer(object):
             if len(parameters) == 0:
                 setting_lst = []
                 for _theme in SETTINGS:
-                    if _theme in ( 'Debuging', 'PluginTransport'): continue
+                    if _theme in ( 'PluginTransport'): continue
                     theme = {}
                     theme['_Theme'] = _theme
                     theme['ListOfSettings'] = []
@@ -949,6 +949,7 @@ class WebServer(object):
                         self.logging( 'Debug', "Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
                         if param == 'Certification':
                             if setting_lst[setting]['current'] in CERTIFICATION_CODE:
+                                self.pluginconf.pluginConf['Certification'] = setting_lst[setting]['current']
                                 self.pluginconf.pluginConf['CertificationCode'] = CERTIFICATION_CODE[setting_lst[setting]['current']]
                             else:
                                 Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" %(setting_lst[setting]['current']))
