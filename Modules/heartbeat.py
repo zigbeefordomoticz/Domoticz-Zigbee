@@ -26,7 +26,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0502, ReadAttributeRequest_0702
 
-from Modules.tools import removeNwkInList
+from Modules.tools import removeNwkInList, loggingPairing
 from Modules.domoticz import CreateDomoDevice
 from Modules.consts import HEARTBEAT, MAX_LOAD_ZIGATE
 
@@ -179,7 +179,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         return
 
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
-    Domoticz.Debug("processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
+    loggingPairing( self, 'Debug', "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
     if self.ListOfDevices[NWKID]['Model'] != {}:
         Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
 
@@ -299,7 +299,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
             Domoticz.Log("Too early, let's try to get the Model")
             return
-        Domoticz.Debug("[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
+        loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
         IsCreated=False
         # Let's check if the IEEE is not known in Domoticz
         for x in Devices:
@@ -315,7 +315,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         break
 
         if IsCreated == False:
-            Domoticz.Debug("processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
+            loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
             CreateDomoDevice(self, Devices, NWKID)
 
             # Post creation widget
@@ -327,7 +327,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 return
                 
             if 'ConfigSource' in self.ListOfDevices[NWKID]:
-                Domoticz.Debug("Device: %s - Config Source: %s Ep Details: %s" \
+                loggingPairing( self, 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
                         %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
@@ -356,7 +356,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             identifyEffect( self, NWKID, ep , effect='Blink' )
 
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                Domoticz.Debug('looking for List of Attributes ep: %s' %iterEp)
+                loggingPairing( self, 'Debug', 'looking for List of Attributes ep: %s' %iterEp)
                 for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                         continue

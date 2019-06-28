@@ -19,7 +19,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList
+from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -797,13 +797,13 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
 
 def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor response
     MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8043 - MsgData lenght is : " + str(MsgLen) )
+    loggingPairing( self, 'Debug', "Decode8043 - MsgData lenght is : " + str(MsgLen) )
 
     MsgDataSQN=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
-    Domoticz.Debug("Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + \
+    loggingPairing( self, 'Debug', "Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + \
             ", Status : " + DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght)
 
     updSQN( self, MsgDataShAddr, MsgDataSQN)
@@ -859,7 +859,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
-                    Domoticz.Debug("[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
+                    loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             else: # Not 'ConfigSource'
                 self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
@@ -925,7 +925,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     else :
         updSQN( self, MsgDataShAddr, MsgDataSQN)
 
-    Domoticz.Debug("Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
+    loggingPairing( self, 'Debug', "Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
     return
 
 def Decode8044(self, Devices, MsgData, MsgRSSI): # Power Descriptior response
@@ -946,7 +946,7 @@ def Decode8044(self, Devices, MsgData, MsgRSSI): # Power Descriptior response
 
 def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint response
     MsgLen=len(MsgData)
-    Domoticz.Debug("Decode8045 - MsgData lenght is : " + str(MsgLen) )
+    loggingPairing( self, 'Debug', "Decode8045 - MsgData lenght is : " + str(MsgLen) )
 
     MsgDataSQN=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -955,7 +955,7 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
     MsgDataEPlist=MsgData[10:len(MsgData)]
 
-    Domoticz.Debug("Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+    loggingPairing( self, 'Debug', "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
     OutEPlist=""
     
@@ -984,7 +984,7 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
             self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
             self.ListOfDevices[MsgDataShAddr]['Status'] = "0043"
 
-        Domoticz.Debug("Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
+        loggingPairing( self, 'Debug', "Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
         if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
             self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
@@ -1551,20 +1551,20 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             # Let's skip it has this is a duplicate message from the device
             return
 
-    Domoticz.Status("Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
+    loggingPairing( self, 'Status', "Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
 
     if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
-        Domoticz.Log("Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
+        loggingPairing( self, 'Log', "Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if not DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
         if MsgIEEE in self.IEEE2NWK :
             if self.IEEE2NWK[MsgIEEE] :
-                Domoticz.Log("Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
+                loggingPairing( self, 'Log', "Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
         if not IEEEExist( self, MsgIEEE ):
             initDeviceInList(self, MsgSrcAddr)
-            Domoticz.Debug("Decode004d - Looks like it is a new device sent by Zigate")
+            loggingPairing( self, 'Debug',"Decode004d - Looks like it is a new device sent by Zigate")
             self.CommiSSionning = True
             self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
             self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
@@ -1572,18 +1572,18 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         else:
             # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
-                Domoticz.Log("Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
+                loggingPairing( self, 'Log', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
         # We will request immediatly the List of EndPoints
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
-        Domoticz.Debug("Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
+        loggingPairing( self, 'Debug', "Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 
     else:
         # Device exist
         # We will also reset ReadAttributes
         if self.pluginconf.pluginConf['allowReBindingClusters']:
-            Domoticz.Log("Decode004d - rebind clusters for %s" %MsgSrcAddr)
+            loggingPairing( self, 'Log', "Decode004d - rebind clusters for %s" %MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
 
             if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:

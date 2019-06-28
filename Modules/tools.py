@@ -503,5 +503,26 @@ def rgb_to_hsl(rgb):
     return h, s, l
 
 
+def loggingPairing( self, logType, message):
 
+    if self.pluginconf.pluginConf['debugPairing'] and logType == 'Debug':
+        Domoticz.Log( message )
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+
+    return
+
+
+def loggingCluster( self, logType, message):
+
+    if self.pluginconf.pluginConf['debugCluster'] and logType == 'Debug':
+        Domoticz.Log( message )
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+
+    return
 
