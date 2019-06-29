@@ -39,7 +39,7 @@ def ZigateRead(self, Devices, Data):
     DECODERS = {
         '004d': Decode004D,
         '8000': Decode8000_v2, '8001': Decode8001, '8002': Decode8002, '8003': Decode8003, '8004': Decode8004,
-        '8005': Decode8005, '8006': Decode8006,
+        '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
         '8009': Decode8009, '8010': Decode8010,
         '8014': Decode8014, '8015': Decode8015,
         '8024': Decode8024,
@@ -66,7 +66,7 @@ def ZigateRead(self, Devices, Data):
         '8806': Decode8806, '8807': Decode8807
     }
     
-    NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4', '80a6', 8007 )
+    NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4', '80a6' )
 
     Domoticz.Debug("ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
 
@@ -383,6 +383,21 @@ def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
         Status = "RUNNING"
     Domoticz.Status("Non 'Factory new' Restart status: %s" %(Status) )
 
+def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
+
+    Domoticz.Debug("Decode8007 - MsgData: %s" %(MsgData))
+
+    Status = MsgData[0:2]
+    if MsgData[0:2] == "00":
+        Status = "STARTUP"
+    elif MsgData[0:2] == "01":
+        Status = "RUNNING"
+    elif MsgData[0:2] == "02":
+        Status = "NFN_START"
+    elif MsgData[0:2] == "06":
+        Status = "RUNNING"
+    Domoticz.Status("'Factory new' Restart status: %s" %(Status) )
+
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
     MsgLen=len(MsgData)
     Domoticz.Debug("Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
@@ -416,6 +431,9 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
     self.currentChannel = int(Channel,16)
 
     self.iaszonemgt.setZigateIEEE( extaddr )
+
+    if self.ZigateNWKID != '0000':
+        Domoticz.Error("Zigate not correctly initialized")
 
     Domoticz.Status("Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
 
