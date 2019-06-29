@@ -218,17 +218,12 @@ class NetworkEnergy():
                     break
             else:
                 if not waitResponse:
-                    self.logging( 'Debug', "----> %s <-> %s Fully Completed" %(r,i))
                     continue
-            self.logging( 'Debug', "----> allRootCompleted: %s, breakfromabove: %s, waitResponse: %s" %(allRootCompleted, breakfromabove, waitResponse))
             if breakfromabove:
                 break
         else:
-            self.logging( 'Debug', "--> allRootCompleted: %s, breakfromabove: %s, waitResponse: %s" %(allRootCompleted, breakfromabove, waitResponse))
             if allRootCompleted:
-                self.logging( 'Debug', "--> All scan completed")
                 self.finish_scan()
-        self.logging( 'Debug', "allRootCompleted: %s, breakfromabove: %s, waitResponse: %s" %(allRootCompleted, breakfromabove, waitResponse))
 
 
     def finish_scan( self ):
