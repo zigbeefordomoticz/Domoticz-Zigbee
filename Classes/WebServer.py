@@ -836,7 +836,10 @@ class WebServer(object):
             elif len(parameters) == 1:
                 timestamp = parameters[0]
                 if timestamp in _scan:
-                    _response['Data'] = json.dumps( _scan[timestamp] , sort_keys=True)
+                    for r in _scan[timestamp]:
+                        self.logging( "Debug", "report: %s" %r)
+                        if r['_NwkId'] == '0000':
+                            _response['Data'] = json.dumps( r['MeshRouters'] )
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
         return _response

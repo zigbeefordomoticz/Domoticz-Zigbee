@@ -243,6 +243,9 @@ class NetworkEnergy():
             Domoticz.Status("Network Energy Level Report: %s" %r)
             Domoticz.Status("-----------------------------------------------")
             Domoticz.Status("%6s <- %5s %6s %8s %4s %4s %4s %4s %4s %4s" %('router', 'nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
+            router = {}
+            router['_NwkId'] = r
+            router['MeshRouters'] = []
             for nwkid in self.EnergyLevel[ r ]:
                 entry = {}
                 entry['_NwkId'] = nwkid
@@ -276,9 +279,9 @@ class NetworkEnergy():
                         channels['Level'] = self.EnergyLevel[ r ][ nwkid ]['Channels'][ c ]
                         entry['Channels'].append( channels )
                         toprint += " %4s" %self.EnergyLevel[ r ][ nwkid ]['Channels'][ c ]
-                if r == '0000':
-                    storeEnergy[stamp].append( entry )
+                router['MeshRouters'].append ( entry )
                 Domoticz.Status(toprint)
+            storeEnergy[stamp].append( router )
 
         self.logging( 'Debug', "Network Energly Level Report: %s" %storeEnergy)
 
