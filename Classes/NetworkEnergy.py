@@ -58,96 +58,105 @@ class NetworkEnergy():
         return
 
 
-    def _initNwkEnrgy( self, target='0000', channels=0):
+    def _initNwkEnrgy( self, root='0000', target='0000', channels=0):
 
-        self.logging( 'Debug', "_initNwkEnrgy - target: %s, channels: %s" %(target, channels))
+        def isRouter( nwkid ):
+            router = False
+            if nwkid == '0000': 
+                router = True
+            else:
+                if 'LogicalType' in self.ListOfDevices[nwkid]:
+                    if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
+                        router = True
+                if 'DeviceType' in self.ListOfDevices[nwkid]:
+                    if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
+                        router = True
+                if 'MacCapa' in self.ListOfDevices[nwkid]:
+                    if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
+                        router = True
+            return router
 
+
+        self.logging( 'Debug', "_initNwkEnrgy - root: %s target: %s, channels: %s" %(root, target, channels))
         if self.EnergyLevel:
             del self.EnergyLevel
 
         self.EnergyLevel = {}
-
-
-        if target == '0000':
+        
+        if target == root == '0000':
+            lstdev = list(self.ListOfDevices)
+            if '0000' not in lstdev:
+                lstdev.append( '0000' )
+            for r in lstdev:
+                if isRouter( r ):
+                    self.EnergyLevel[ r ] = {}
+                    for nwkid in self.ListOfDevices:
+                        if nwkid == '0000': continue
+                        if nwkid == r: continue
+                        if not isRouter( nwkid ):
+                            continue
+                        self._initNwkEnrgyRecord( r, nwkid , channels)
+        elif target == '0000':
             # We do a full scan
+            self.EnergyLevel[root] = {}
             for nwkid in self.ListOfDevices:
-
-                router = False
-                if nwkid == '0000':
+                if nwkid == '0000': continue
+                if not isRouter( nwkid ):
                     continue
-                if 'LogicalType' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
-                        router = True
-                if 'DeviceType' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
-                        router = True
-                if 'MacCapa' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-                        router = True
-   
-                if not router:
-                    continue
-                self._initNwkEnrgyRecord( nwkid , channels)
+                self._initNwkEnrgyRecord( root, nwkid , channels)
         else:
             # We target only this target
-            router = False
             if target in self.ListOfDevices:
-                if 'LogicalType' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
-                        router = True
-                if 'DeviceType' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
-                        router = True
-                if 'MacCapa' in self.ListOfDevices[nwkid]:
-                    if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-                        router = True
-                if router:
-                    self._initNwkEnrgyRecord( target, channels )
+                if isRouter( target ):
+                    self._initNwkEnrgyRecord( root, target, channels )
         return
 
 
-    def _initNwkEnrgyRecord( self, nwkid, channels):
+    def _initNwkEnrgyRecord( self, root, nwkid, channels):
 
-        self.EnergyLevel[ nwkid ] = {}
-        self.EnergyLevel[ nwkid ][ 'Status' ]  = 'ScanRequired'
-        self.EnergyLevel[ nwkid ][ 'Tx' ]  =  None
-        self.EnergyLevel[ nwkid ][ 'Failure' ]  = None
-        self.EnergyLevel[ nwkid ][ 'Channels' ]  = {}
+        self.logging( 'Debug', "_initNwkEnrgyRecord %s <-> %s" %(root, nwkid))
+
+        if nwkid not in self.EnergyLevel[root]:
+            self.EnergyLevel[ root ][ nwkid ] = {}
+        self.EnergyLevel[ root ][ nwkid ][ 'Status' ]  = 'ScanRequired'
+        self.EnergyLevel[ root ][ nwkid ][ 'Tx' ]  =  None
+        self.EnergyLevel[ root ][ nwkid ][ 'Failure' ]  = None
+        self.EnergyLevel[ root ][ nwkid ][ 'Channels' ]  = {}
         for i in channels:
-            self.EnergyLevel[ nwkid ][ 'Channels' ][ i ]  = None
-
+            self.EnergyLevel[ root ][ nwkid ][ 'Channels' ][ i ]  = None
 
     def prettyPrintNwkEnrgy( self ):
 
-        for i in self.EnergyLevel:
-            Domoticz.Log("%s : %s" %(i, self.EnergyLevel[i]['Status']))
-            if self.EnergyLevel[i]['Status'] == 'Completed':
-                Domoticz.Log("---> Tx: %s" %(self.EnergyLevel[i]['Tx']))
-                Domoticz.Log("---> Failure: %s" %(self.EnergyLevel[i]['Failure']))
-                for c in self.EnergyLevel[i]['Channels']:
-                    Domoticz.Log("---> %s: %s" %(c, self.EnergyLevel[i]['Channels'][c]))
+        for r in self.EnergyLevel:
+            for i in self.EnergyLevel[ r ]:
+                Domoticz.Log("%s <-> %s : %s" %(r, i, self.EnergyLevel[r][i]['Status']))
+                if self.EnergyLevel[i]['Status'] == 'Completed':
+                    Domoticz.Log("---> Tx: %s" %(self.EnergyLevel[r][i]['Tx']))
+                    Domoticz.Log("---> Failure: %s" %(self.EnergyLevel[r][i]['Failure']))
+                    for c in self.EnergyLevel[r][i]['Channels']:
+                        Domoticz.Log("---> %s: %s" %(c, self.EnergyLevel[r][i]['Channels'][c]))
         self.logging( 'Debug', "")
 
-    def NwkScanReq(self, target, channels):
+    def NwkScanReq(self, root, target, channels):
 
         # Scan Duration
         scanDuration = 0x02 #
         scanCount = 1
 
         mask = maskChannel( channels )
-        datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount)  + "00" + "0000"
+        datas = target + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount)  + "00" + root
     
         if len(self.nwkidInQueue) == 0:
             self.logging( 'Debug', "NwkScanReq - request a scan on channels %s for duration %s an count %s" \
                 %( channels, scanDuration, scanCount))
             self.logging( 'Debug', "NwkScan - %s %s" %("004A", datas))
-            self.nwkidInQueue.append( target )
+            self.nwkidInQueue.append( ( root, target) )
             sendZigateCmd(self, "004A", datas )
-            self.EnergyLevel[ target ]['Status'] = 'WaitResponse'
+            self.EnergyLevel[ root ][ target ]['Status'] = 'WaitResponse'
             self.ticks = 0
 
 
-    def start_scan( self, target=None, channels=None):
+    def start_scan( self, root=None, target=None, channels=None):
 
         self.logging( 'Debug', "start_scan")
         if self.ScanInProgress:
@@ -155,50 +164,72 @@ class NetworkEnergy():
             return
         self.ScanInProgress = True
 
+        if root is None:
+            # We will do a full cross-scan
+            root = '0000'
         if target is None:
             # Target will be all Routers
             target = '0000'
         if channels is None:
             # All channels
             channels = CHANNELS
-        self._initNwkEnrgy( target, channels)
+        self._initNwkEnrgy( root, target, channels)
         self._next_scan()
 
-    def do_scan(self, target=None, channels=None):
+    def do_scan(self, root=None, target=None, channels=None):
 
         if self.ScanInProgress:
             self._next_scan()
 
     def _next_scan( self ):
 
+        self.logging( 'Debug', "_next_scan")
         self.ticks += 1
-        waitResponse = False
-        for i in self.EnergyLevel:
-            if self.EnergyLevel[ i ]['Status'] == 'Completed':
-                continue
-            elif self.EnergyLevel[ i ]['Status'] == 'TimedOut':
-                continue
-            elif self.EnergyLevel[ i ]['Status'] == 'WaitResponse':
-                waitResponse = True
-                if self.ticks > 2:
-                    self.EnergyLevel[ i ]['Status'] = 'TimedOut'
-                    if len(self.nwkidInQueue) > 0:
-                        entry = self.nwkidInQueue.pop()
-                        if i != entry:
-                            Domoticz.Error("Mismatch %s versus %s" %(i, entry))
-                continue
-            elif self.EnergyLevel[ i ]['Status'] == 'ScanRequired':
-                _channels = []
-                for c in self.EnergyLevel[ i ]['Channels']:
-                    _channels.append( c )
-                self.NwkScanReq( i, _channels)
+        allRootCompleted = True
+        self.logging( 'Debug', "_next_scan - To be scan: %s" %list(self.EnergyLevel))
+        for r in self.EnergyLevel:
+            waitResponse = False
+            breakfromabove = False
+            self.logging( 'Debug', "_next_scan - %s against %s" %(r, list(self.EnergyLevel[ r ])))
+            for i in self.EnergyLevel[ r ]:
+                self.logging( 'Debug', "--> _next_scan - %s <-> %s %s" %(r,i,self.EnergyLevel[ r ][ i ]['Status']))
+                if self.EnergyLevel[ r ][ i ]['Status'] == 'Completed':
+                    continue
+                elif self.EnergyLevel[ r ][ i ]['Status'] == 'TimedOut':
+                    continue
+                elif self.EnergyLevel[ r ][ i ]['Status'] == 'WaitResponse':
+                    waitResponse = True
+                    allRootCompleted = False
+                    if self.ticks > 2:
+                        self.logging( 'Debug', "--> _next_scan - %s <-> %s %s --> TimedOut" %(r,i,self.EnergyLevel[ r ][ i ]['Status']))
+                        self.EnergyLevel[ r ][ i ]['Status'] = 'TimedOut'
+                        if len(self.nwkidInQueue) > 0:
+                            root, entry = self.nwkidInQueue.pop()
+                            if r != root and i != entry:
+                                Domoticz.Error("Mismatch %s versus %s" %(i, entry))
+                    continue
+                elif self.EnergyLevel[ r ][ i ]['Status'] == 'ScanRequired':
+                    _channels = []
+                    for c in self.EnergyLevel[ r ][ i ]['Channels']:
+                        _channels.append( c )
+                    self.NwkScanReq( r, i, _channels)
+                    breakfromabove = True
+                    allRootCompleted = False
+                    break
+            else:
+                if not waitResponse:
+                    self.logging( 'Debug', "----> %s <-> %s Fully Completed" %(r,i))
+                    continue
+            self.logging( 'Debug', "----> allRootCompleted: %s, breakfromabove: %s, waitResponse: %s" %(allRootCompleted, breakfromabove, waitResponse))
+            if breakfromabove:
                 break
         else:
-            #No more to Scan
-            if not waitResponse:
+            self.logging( 'Debug', "--> allRootCompleted: %s, breakfromabove: %s, waitResponse: %s" %(allRootCompleted, breakfromabove, waitResponse))
+            if allRootCompleted:
+                self.logging( 'Debug', "--> All scan completed")
                 self.finish_scan()
+        self.logging( 'Debug', "allRootCompleted: %s, breakfromabove: %s, waitResponse: %s" %(allRootCompleted, breakfromabove, waitResponse))
 
-            
 
     def finish_scan( self ):
 
@@ -208,45 +239,46 @@ class NetworkEnergy():
         stamp = int(time())
         storeEnergy = {}
         storeEnergy[stamp] = []
-        Domoticz.Status("Network Energy Level Report")
-        Domoticz.Status("-----------------------------------------------")
-        Domoticz.Status("%5s %6s %8s %4s %4s %4s %4s %4s %4s" %('nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
-        for nwkid in self.EnergyLevel:
-            entry = {}
-            entry['_NwkId'] = nwkid
-            if 'ZDeviceName' in self.ListOfDevices[nwkid]:
-                if self.ListOfDevices[nwkid]['ZDeviceName'] != {}:
-                    entry['ZDeviceName'] = self.ListOfDevices[nwkid]['ZDeviceName']
+        for r in self.EnergyLevel:
+            Domoticz.Status("Network Energy Level Report: %s" %r)
+            Domoticz.Status("-----------------------------------------------")
+            Domoticz.Status("%6s <- %5s %6s %8s %4s %4s %4s %4s %4s %4s" %('router', 'nwkid', 'Tx', 'Failure', '11','15','19','20','25','26'))
+            for nwkid in self.EnergyLevel[ r ]:
+                entry = {}
+                entry['_NwkId'] = nwkid
+                if 'ZDeviceName' in self.ListOfDevices[nwkid]:
+                    if self.ListOfDevices[nwkid]['ZDeviceName'] != {}:
+                        entry['ZDeviceName'] = self.ListOfDevices[nwkid]['ZDeviceName']
+                    else:
+                        entry['ZDeviceName'] = nwkid
+                if self.EnergyLevel[ r ][nwkid]['Status'] != 'Completed':
+                    entry['Tx'] = 0
+                    entry['Failure'] = 0
+                    entry['Channels'] = []
+                    toprint = "%6s <- %5s %6s %8s" %(r, nwkid, self.EnergyLevel[ r ][ nwkid ][ 'Tx' ], self.EnergyLevel[ r ][ nwkid ][ 'Failure' ])
+                    for c in CHANNELS:
+                        channels = {}
+                        channels['Channel'] = c
+                        channels['Level'] = 0
+                        entry['Channels'].append( channels )
+                        toprint += " %4s" %0
                 else:
-                    entry['ZDeviceName'] = nwkid
-
-            if self.EnergyLevel[nwkid]['Status'] != 'Completed':
-                entry['Tx'] = 0
-                entry['Failure'] = 0
-                entry['Channels'] = []
-                toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
-                for c in CHANNELS:
-                    channels = {}
-                    channels['Channel'] = c
-                    channels['Level'] = 0
-                    entry['Channels'].append( channels )
-                    toprint += " %4s" %0
-            else:
-                entry['Tx'] = self.EnergyLevel[ nwkid ][ 'Tx' ]
-                entry['Failure'] = self.EnergyLevel[ nwkid ][ 'Failure' ]
-                entry['Channels'] = []
-
-                toprint = "%5s %6s %8s" %(nwkid, self.EnergyLevel[ nwkid ][ 'Tx' ], self.EnergyLevel[ nwkid ][ 'Failure' ])
-                for c in self.EnergyLevel[ nwkid ]['Channels']:
-                    channels = {}
-                    if c not in CHANNELS:
-                        continue
-                    channels['Channel'] = c
-                    channels['Level'] = self.EnergyLevel[ nwkid ]['Channels'][ c ]
-                    entry['Channels'].append( channels )
-                    toprint += " %4s" %self.EnergyLevel[ nwkid ]['Channels'][ c ]
-            storeEnergy[stamp].append( entry )
-            Domoticz.Status(toprint)
+                    entry['Tx'] = self.EnergyLevel[ r ][ nwkid ][ 'Tx' ]
+                    entry['Failure'] = self.EnergyLevel[ r ][ nwkid ][ 'Failure' ]
+                    entry['Channels'] = []
+    
+                    toprint = "%6s <- %5s %6s %8s" %(r, nwkid, self.EnergyLevel[ r ][ nwkid ][ 'Tx' ], self.EnergyLevel[ r ][ nwkid ][ 'Failure' ])
+                    for c in self.EnergyLevel[ r ][ nwkid ]['Channels']:
+                        channels = {}
+                        if c not in CHANNELS:
+                            continue
+                        channels['Channel'] = c
+                        channels['Level'] = self.EnergyLevel[ r ][ nwkid ]['Channels'][ c ]
+                        entry['Channels'].append( channels )
+                        toprint += " %4s" %self.EnergyLevel[ r ][ nwkid ]['Channels'][ c ]
+                if r == '0000':
+                    storeEnergy[stamp].append( entry )
+                Domoticz.Status(toprint)
 
         self.logging( 'Debug', "Network Energly Level Report: %s" %storeEnergy)
 
@@ -281,7 +313,7 @@ class NetworkEnergy():
             Domoticz.Error("NwkScanResponse - Status: %s with Data: %s" %(MsgDataStatus, MsgData))
 
         if len(self.nwkidInQueue) > 0:
-            entry = self.nwkidInQueue.pop()
+            root, entry = self.nwkidInQueue.pop()
         else:
             Domoticz.Error("NwkScanResponse - unexpected message %s" %MsgData)
             return
@@ -300,14 +332,14 @@ class NetworkEnergy():
         self.logging( 'Debug', "NwkScanResponse - SQN: %s, Tx: %s , Failures: %s , Status: %s) " \
                 %(MsgSequenceNumber, int(MsgTotalTransmission,16), int(MsgTransmissionFailures,16), MsgDataStatus) )
 
-        self.EnergyLevel[ entry ][ 'Tx' ]  =   int(MsgTotalTransmission,16)
-        self.EnergyLevel[ entry ][ 'Failure' ]  =  int(MsgTransmissionFailures,16)
+        self.EnergyLevel[ root ][ entry ][ 'Tx' ]  =   int(MsgTotalTransmission,16)
+        self.EnergyLevel[ root ][ entry ][ 'Failure' ]  =  int(MsgTransmissionFailures,16)
 
         for chan, inter in zip( channelList, channelListInterferences ):
             if chan in CHANNELS:
-                self.EnergyLevel[ entry ]['Channels'][ str(chan) ] = int(inter,16)
-                self.logging( 'Debug', "     Channel: %s Interference: : %s " %(chan, int(inter,16)))
+                self.EnergyLevel[ root ][ entry ]['Channels'][ str(chan) ] = int(inter,16)
+                self.logging( 'Debug', "     %s <- %s Channel: %s Interference: : %s " %(root, entry, chan, int(inter,16)))
 
-        self.EnergyLevel[ entry ]['Status'] = 'Completed'
+        self.EnergyLevel[ root ][ entry ]['Status'] = 'Completed'
         return
 
