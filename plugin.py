@@ -273,6 +273,7 @@ class BasePlugin:
         self.statistics = TransportStatistics(self.pluginconf)
 
         # Connect to Zigate only when all initialisation are properly done.
+        Domoticz.Log("Transport mode: %s" %self.transport)
         if  self.transport == "USB":
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
@@ -280,18 +281,18 @@ class BasePlugin:
             Domoticz.Status("Switch PiZigate in RUN mode")
             import os
 
-            GPIO_CMD = '/usr/bin/gpio'
+            GPIO_CMD = "/usr/bin/gpio"
             if os.path.isfile( GPIO_CMD ):
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " gpio mode 0 out")
+                os.system( GPIO_CMD + " mode 0 out")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " gpio mode 2 out")
+                os.system( GPIO_CMD + " mode 2 out")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " gpio write 2 1")
+                os.system( GPIO_CMD + " write 2 1")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " gpio write 0 0")
+                os.system( GPIO_CMD + " write 0 0")
                 Domoticz.Log(".")
-                os.system( GPIO_CMD + " gpio write 0 1")
+                os.system( GPIO_CMD + " write 0 1")
             else:
                 Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
