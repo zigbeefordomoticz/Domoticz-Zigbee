@@ -58,7 +58,7 @@ class NetworkEnergy():
         return
 
 
-    def _initNwkEnrgy( self, root='0000', target='0000', channels=0):
+    def _initNwkEnrgy( self, root=None, target=None, channels=0):
 
         def isRouter( nwkid ):
             router = False
@@ -97,14 +97,15 @@ class NetworkEnergy():
                             continue
                         self._initNwkEnrgyRecord( r, nwkid , channels)
         elif target == '0000':
-            # We do a full scan
+            # We do a full scan but only for the Zigate controller
+            root = '0000'
             self.EnergyLevel[root] = {}
             for nwkid in self.ListOfDevices:
                 if nwkid == '0000': continue
                 if not isRouter( nwkid ):
                     continue
                 self._initNwkEnrgyRecord( root, nwkid , channels)
-        else:
+        elif target is not None and root is not None:
             # We target only this target
             if target in self.ListOfDevices:
                 if isRouter( target ):
@@ -164,16 +165,18 @@ class NetworkEnergy():
             return
         self.ScanInProgress = True
 
-        if root is None:
-            # We will do a full cross-scan
-            root = '0000'
-        if target is None:
-            # Target will be all Routers
-            target = '0000'
         if channels is None:
             # All channels
             channels = CHANNELS
-        self._initNwkEnrgy( root, target, channels)
+        if root == target == '0000':
+            # We will do a full cross-scan
+            self._initNwkEnrgy( root, target, channels)
+
+        elif root is None and target is None:
+            # Default
+            # Target will be all Routers with Zigate
+            self._initNwkEnrgy( None, '0000', channels)
+
         self._next_scan()
 
     def do_scan(self, root=None, target=None, channels=None):
