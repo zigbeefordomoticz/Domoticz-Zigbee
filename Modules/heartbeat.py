@@ -169,6 +169,18 @@ def processKnownDevices( self, Devices, NWKID ):
                 %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
             self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
     
+def writeDiscoveryInfos( self ):
+
+        if self.pluginconf.pluginConf['capturePairingInfos']:
+            for dev in self.DiscoveryDevices:
+                if 'IEEE' in self.DiscoveryDevices[dev]:
+                    _filename = self.pluginconf.pluginConf['pluginReports'] + 'PairingInfos-' + '%02d' %self.HardwareID + '-%s' %self.DiscoveryDevices[dev]['IEEE'] + '.json'
+                else:
+                    _filename = self.pluginconf.pluginConf['pluginReports'] + 'PairingInfos-' + '%02d' %self.HardwareID + '-%s' %dev + '.json'
+
+                with open ( _filename, 'wt') as json_file:
+                    json.dump(self.DiscoveryDevices[dev],json_file, indent=2, sort_keys=True)
+
 def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     # Starting V 4.1.x
@@ -180,6 +192,18 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
     loggingPairing( self, 'Debug', "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
+    if self.pluginconf.pluginConf['capturePairingInfos']:
+        if NWKID not in self.DiscoveryDevices:
+            self.DiscoveryDevices[NWKID] = {}
+        self.DiscoveryDevices[NWKID]['CaptureProcess'] = {}
+        self.DiscoveryDevices[NWKID]['CaptureProcess']['Status'] = status
+        self.DiscoveryDevices[NWKID]['CaptureProcess']['RIA'] = RIA
+        self.DiscoveryDevices[NWKID]['CaptureProcess']['HB_'] = HB_
+        if 'Steps' not in self.DiscoveryDevices[NWKID]['CaptureProcess']:
+            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'] = []
+
+
+
     if self.ListOfDevices[NWKID]['Model'] != {}:
         Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
 
@@ -191,7 +215,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # Let's check if this Model is known
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                if not self.pluginconf.pluginConf['allowStoreDiscoveryFrames']:
+                if not self.pluginconf.pluginConf['capturePairingInfos']:
                     status = 'createDB' # Fast track
 
     waitForDomoDeviceCreation = False
@@ -214,6 +238,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
+                if self.pluginconf.pluginConf['capturePairingInfos']:
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
                 sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
                 Domoticz.Debug("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']))
@@ -225,10 +251,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
                 Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
                         %( RIA, NWKID, status))
+                if self.pluginconf.pluginConf['capturePairingInfos']:
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
                 self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
                 if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
                         %( RIA, NWKID, status))
+                    if self.pluginconf.pluginConf['capturePairingInfos']:
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
                     self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
@@ -251,6 +281,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if reqColorModeAttribute:
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA-0300' )
             ReadAttributeRequest_0300(self, NWKID )
             if  self.ListOfDevices[NWKID]['RIA'] < '2':
                 return
@@ -265,7 +297,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                if self.pluginconf.pluginConf['capturePairingInfos']:
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA-00' )
                 ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+        if self.pluginconf.pluginConf['capturePairingInfos']:
+            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0045' )
         sendZigateCmd(self,"0045", str(NWKID))
         return
 
@@ -277,9 +313,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
+                if self.pluginconf.pluginConf['capturePairingInfos']:
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA-0000' )
                 ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0043' )
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
@@ -287,11 +327,14 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
-        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, allowStoreDiscoveryFrames: %s Model: %s " \
-                %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.pluginConf['allowStoreDiscoveryFrames'], self.ListOfDevices[NWKID]['Model']))
+        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, capturePairingInfos: %s Model: %s " \
+                %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.pluginConf['capturePairingInfos'], self.ListOfDevices[NWKID]['Model']))
         Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
         self.adminWidgets.updateNotificationWidget( Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
         self.CommiSSionning = False
+        if self.pluginconf.pluginConf['capturePairingInfos']:
+            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'UNKNOW' )
+        writeDiscoveryInfos( self )
         return
 
     if status in ( 'createDB', '8043' ):
@@ -305,7 +348,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         for x in Devices:
             if self.ListOfDevices[NWKID].get('IEEE'):
                 if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                    if self.pluginconf.pluginConf['allowForceCreationDomoDevice'] == 1:
+                    if self.pluginconf.pluginConf['capturePairingInfos'] == 1:
                         Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
                         Domoticz.Log("processNotinDBDevices - ForceCreationDevice enable, we continue")
                     else:
@@ -316,6 +359,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
         if IsCreated == False:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
             CreateDomoDevice(self, Devices, NWKID)
 
             # Post creation widget
@@ -335,9 +380,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                        if self.pluginconf.pluginConf['capturePairingInfos']:
+                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND' )
                         bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
             processConfigureReporting( self, NWKID )  
 
             for iterReadAttrCluster in CLUSTERS_LIST:
@@ -360,6 +409,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                         continue
+                    if self.pluginconf.pluginConf['capturePairingInfos']:
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR' )
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # Set the sensitivity for Xiaomi Vibration
@@ -371,6 +422,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
             self.CommiSSionning = False
+            writeDiscoveryInfos( self )
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
     #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
@@ -466,3 +518,5 @@ def processListOfDevices( self , Devices ):
                 self.networkenergy.do_scan()
 
     return True
+
+

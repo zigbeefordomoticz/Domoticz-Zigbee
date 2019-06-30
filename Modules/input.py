@@ -130,7 +130,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
 
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" %sMsgSrcAddr)
+        Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" %MsgSrcAddr)
         return
     if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
@@ -839,6 +839,19 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
         Domoticz.Log("Decode8043 - receive message for non existing device")
         return
 
+    if self.pluginconf.pluginConf['capturePairingInfos']:
+        if MsgDataShAddr not in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgDataShAddr] = {}
+        if 'Ep' not in self.DiscoveryDevices[MsgDataShAddr]:
+            self.DiscoveryDevices[MsgDataShAddr]['Ep'] = {}
+        if MsgDataEp not in self.DiscoveryDevices[MsgDataShAddr]['Ep']:
+            self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ProfileID'] = ''
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ZDeviceID'] = ''
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ClusterIN'] = []
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ClusterOUT'] = []
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['8043'] = MsgData  
+
     if int(MsgDataProfile,16) == 0xC05E and int(MsgDataDeviceId,16) == 0xE15E:
         # ZLL Commissioning EndPoint / Jaiwel
         Domoticz.Log("Decode8043 - Received ProfileID: %s, ZDeviceID: %s - skip" %(MsgDataProfile, MsgDataDeviceId))
@@ -858,12 +871,18 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     self.ListOfDevices[MsgDataShAddr]['ProfileID'] = MsgDataProfile
     Domoticz.Status("[%s] NEW OBJECT: %s ProfileID %s" %('-', MsgDataShAddr, MsgDataProfile))
 
+    if self.pluginconf.pluginConf['capturePairingInfos']:
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ProfileID'] = MsgDataProfile
+
     if 'ZDeviceID' in self.ListOfDevices[MsgDataShAddr]:
         if self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] != MsgDataDeviceId:
             Domoticz.Log("Decode8043 - Overwrite ZDeviceID %s with %s from Ep: %s " \
                     %( self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] , MsgDataProfile, MsgDataEp))
     self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] = MsgDataDeviceId
     Domoticz.Status("[%s] NEW OBJECT: %s ZDeviceID %s" %('-', MsgDataShAddr, MsgDataDeviceId))
+
+    if self.pluginconf.pluginConf['capturePairingInfos']:
+        self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
 
     # Decoding Cluster IN
     Domoticz.Status("[%s] NEW OBJECT: %s Cluster IN Count: %s" %('-', MsgDataShAddr, MsgDataInClusterCount))
@@ -887,8 +906,12 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                 Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
             else:
                 Domoticz.Status("[%s] NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ClusterIN'].append( MsgDataCluster )
             MsgDataCluster=""
             i=i+1
+
 
     # Decoding Cluster Out
     idx = 24 + int(MsgDataInClusterCount,16) *4
@@ -915,27 +938,12 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                 Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
             else:
                 Domoticz.Status("[%s] NEW OBJECT: %s Cluster Out %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ClusterOUT'].append( MsgDataCluster )
+
             MsgDataCluster=""
             i=i+1
-
-    if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
-        self.DiscoveryDevices[MsgDataShAddr]['ProfileID'][MsgDataProfile] = MsgDataEp
-        self.DiscoveryDevices[MsgDataShAddr]['ZDeviceID'][MsgDataDeviceId] = MsgDataEp
-        if self.DiscoveryDevices[MsgDataShAddr].get('8043') :
-            self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
-            self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
-        else :
-            self.DiscoveryDevices[MsgDataShAddr]['8043'] = {}
-            self.DiscoveryDevices[MsgDataShAddr]['8043'][MsgDataEp] = str(MsgData)
-            self.DiscoveryDevices[MsgDataShAddr]['Ep'] = dict( self.ListOfDevices[MsgDataShAddr]['Ep'] )
-        
-        if 'IEEE' in self.ListOfDevices[MsgDataShAddr]:
-            _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgDataShAddr]['IEEE']) + ".json"
-        else:
-            _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(MsgDataShAddr) + ".json"
-
-        with open ( _jsonFilename, 'at') as json_file:
-            json.dump(self.DiscoveryDevices[MsgDataShAddr],json_file, indent=4, sort_keys=True)
 
     if self.ListOfDevices[MsgDataShAddr]['Status'] != "inDB" :
         self.ListOfDevices[MsgDataShAddr]['Status'] = "8043"
@@ -975,6 +983,11 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
     loggingPairing( self, 'Debug', "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
+    if self.pluginconf.pluginConf['capturePairingInfos']:
+        if MsgDataShAddr not in self.DiscoveryDevices:
+            self.DiscoveryDevices[MsgDataShAddr] = {}
+        self.DiscoveryDevices[MsgDataShAddr]['8045'] = MsgData
+
     OutEPlist=""
     
     if DeviceExist(self, Devices, MsgDataShAddr) == False:
@@ -992,8 +1005,12 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
             tmpEp = MsgDataEPlist[i:i+2]
             if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(tmpEp) :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
             i = i + 2
         self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16))     # Store the number of EPs
+        if self.pluginconf.pluginConf['capturePairingInfos']:
+            self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
 
         for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
@@ -1003,10 +1020,6 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
             self.ListOfDevices[MsgDataShAddr]['Status'] = "0043"
 
         loggingPairing( self, 'Debug', "Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
-
-        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgDataShAddr in self.DiscoveryDevices :
-            self.DiscoveryDevices[MsgDataShAddr]['8045'] = str(MsgData)
-            self.DiscoveryDevices[MsgDataShAddr]['NbEP'] = str(int(MsgDataEpCount,16))
 
     return
 
@@ -1597,13 +1610,22 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingPairing( self, 'Debug', "Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
 
+        # Store the Pairing info if needed
+        if self.pluginconf.pluginConf['capturePairingInfos']:
+            if MsgSrcAddr not in self.DiscoveryDevices:
+                self.DiscoveryDevices[MsgSrcAddr] = {}
+                self.DiscoveryDevices[MsgSrcAddr]['Ep']={}
+            self.DiscoveryDevices[MsgSrcAddr]['004D'] = MsgData
+            self.DiscoveryDevices[MsgSrcAddr]['NWKID'] = MsgSrcAddr
+            self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
+            self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
+            self.DiscoveryDevices[MsgSrcAddr]['Decode-MacCapa'] = list(decodeMacCapa( MsgMacCapa ))
     else:
         # Device exist
         # We will also reset ReadAttributes
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingPairing( self, 'Log', "Decode004d - rebind clusters for %s" %MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
-
             if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
                 del self.ListOfDevices[MsgSrcAddr]['ReadAttributes']
     
@@ -1617,19 +1639,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
-    if self.pluginconf.pluginConf['allowStoreDiscoveryFrames']:
-        self.DiscoveryDevices[MsgSrcAddr] = {}
-        self.DiscoveryDevices[MsgSrcAddr]['004d']={}
-        self.DiscoveryDevices[MsgSrcAddr]['8043']={}
-        self.DiscoveryDevices[MsgSrcAddr]['8045']={}
-        self.DiscoveryDevices[MsgSrcAddr]['Ep']={}
-        self.DiscoveryDevices[MsgSrcAddr]['MacCapa']={}
-        self.DiscoveryDevices[MsgSrcAddr]['IEEE']={}
-        self.DiscoveryDevices[MsgSrcAddr]['ProfileID']={}
-        self.DiscoveryDevices[MsgSrcAddr]['ZDeviceID']={}
-        self.DiscoveryDevices[MsgSrcAddr]['004d'] = str(MsgData)
-        self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = str(MsgIEEE)
-        self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = str(MsgMacCapa)
+
     
     return
 

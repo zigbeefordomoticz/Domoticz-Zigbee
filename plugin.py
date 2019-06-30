@@ -115,7 +115,7 @@ class BasePlugin:
 
     def __init__(self):
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
-        self.DiscoveryDevices = {}
+        self.DiscoveryDevices = {} # Used to collect pairing information
         self.IEEE2NWK = {}
         self.networkmap = None
         self.networkenergy = None
@@ -237,7 +237,7 @@ class BasePlugin:
         self.DeviceListName = "DeviceList-" + str(Parameters['HardwareID']) + ".txt"
         Domoticz.Status("Plugin Database: %s" %self.DeviceListName)
 
-        if  self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] == 1 :
+        if  self.pluginconf.pluginConf['capturePairingInfos'] == 1 :
             self.DiscoveryDevices = {}
 
         # Initialise APS Object
