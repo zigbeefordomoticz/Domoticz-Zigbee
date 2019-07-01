@@ -202,8 +202,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Steps' not in self.DiscoveryDevices[NWKID]['CaptureProcess']:
             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'] = []
 
-
-
     if self.ListOfDevices[NWKID]['Model'] != {}:
         Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
 
@@ -282,7 +280,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
             if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA-0300' )
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0300' )
             ReadAttributeRequest_0300(self, NWKID )
             if  self.ListOfDevices[NWKID]['RIA'] < '2':
                 return
@@ -298,7 +296,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA-00' )
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
                 ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
         if self.pluginconf.pluginConf['capturePairingInfos']:
             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0045' )
@@ -314,7 +312,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.ListOfDevices[NWKID]['Model'] == {}:
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA-0000' )
+                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
                 ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
@@ -381,7 +379,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
                         if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND' )
+                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
                         bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
@@ -393,6 +391,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
                     if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
+                            if self.pluginconf.pluginConf['capturePairingInfos']:
+                                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
 
@@ -410,7 +410,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
                         continue
                     if self.pluginconf.pluginConf['capturePairingInfos']:
-                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR' )
+                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR_' + iterEp + '_' + iterCluster )
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # Set the sensitivity for Xiaomi Vibration
@@ -422,6 +422,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
                     %(self.ListOfDevices[NWKID]['Model'], NWKID))
             self.CommiSSionning = False
+            if self.pluginconf.pluginConf['capturePairingInfos']:
+                self.DiscoveryDevices[NWKID]['CaptureProcess']['ListOfDevice'] = dict( self.ListOfDevices[NWKID] )
+
             writeDiscoveryInfos( self )
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
