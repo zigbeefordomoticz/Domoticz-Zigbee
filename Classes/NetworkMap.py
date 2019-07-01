@@ -262,12 +262,18 @@ class NetworkMap():
 
         self.logging( 'Debug', "LQIresp - MsgData = " +str(MsgData))
 
+        MsgSrc = None
         SQN = MsgData[0:2]
         Status = MsgData[2:4]
         NeighbourTableEntries = int(MsgData[4:6], 16)
         NeighbourTableListCount = int(MsgData[6:8], 16)
         StartIndex = int(MsgData[8:10], 16)
-        ListOfEntries = MsgData[10:len(MsgData)]
+        ListOfEntries = MsgData[ 10 : 10 + 42*NeighbourTableListCount]
+
+        if len(MsgData) == ( 10 + 42*NeighbourTableListCount + 4 ):
+            # Firmware 3.1a and aboce
+            MsgSrc = MsgData[ 10 + 42*NeighbourTableListCount: len(MsgData)]
+            self.logging( 'Debug', "LQIresp - Firmware 3.1a - MsgSrc: %s" %MsgSrc)
 
         if Status != '00':
             Domoticz.Error("LQI:LQIresp - Status: %s for %s" %(Status, MsgData))
@@ -281,6 +287,10 @@ class NetworkMap():
                     %(NeighbourTableListCount, len(ListOfEntries)//42))
 
         NwkIdSource = self.LQIreqInProgress.pop()
+        if MsgSrc:
+            if MsgSrc != NwkIdSource:
+                Domoticz.Log("LQIresp - Receive %s but expect %s" %(MsgSrc, NwkIdSource))
+
         self.logging( 'Debug', "self.LQIreqInProgress = %s" %len(self.LQIreqInProgress))
         self.logging( 'Debug', "LQIresp - %s Status: %s, NeighbourTableEntries: %s, StartIndex: %s, NeighbourTableListCount: %s" \
                 %(NwkIdSource, Status, NeighbourTableEntries, StartIndex, NeighbourTableListCount))
