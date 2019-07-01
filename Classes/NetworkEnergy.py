@@ -296,13 +296,22 @@ class NetworkEnergy():
 
     def NwkScanResponse(self, MsgData):
 
+        self.logging( 'Debug', "NwkScanResponse >%s<" %MsgData)
+
+        MsgSrc = None
         MsgSequenceNumber=MsgData[0:2]
         MsgDataStatus=MsgData[2:4]
         MsgTotalTransmission=MsgData[4:8]
         MsgTransmissionFailures=MsgData[8:12]
         MsgScannedChannel=MsgData[12:20]
         MsgScannedChannelListCount=MsgData[20:22]
-        MsgChannelListInterference=MsgData[22:len(MsgData)]
+        MsgChannelListInterference=MsgData[22:22+(2*int(MsgScannedChannelListCount,16))]
+
+        self.logging( 'Debug', "NwkScanResponse Channels: %s, Len: %s " %( MsgScannedChannelListCount, len(MsgData) ))
+        if len(MsgData) == ( 22 + 2*int(MsgScannedChannelListCount,16) + 4 ):
+            # Firmware 3.1a and aboce
+            MsgSrc = MsgData[ 22 + (2*int(MsgScannedChannelListCount,16)): 22 + (2*int(MsgScannedChannelListCount,16)) + 4]
+            self.logging( 'Debug', "NwkScanResponse - Firmware 3.1a - MsgSrc: %s" %MsgSrc)
 
         #Decode the Channel mask received
         CHANNELS = { 11: 0x00000800, 12: 0x00001000, 13: 0x00002000, 14: 0x00004000,
@@ -315,6 +324,10 @@ class NetworkEnergy():
 
         if len(self.nwkidInQueue) > 0:
             root, entry = self.nwkidInQueue.pop()
+            if MsgSrc:
+                if entry != MsgSrc:
+                    Domoticz.Log("Unexpected message >%s< from %s, expecting %s" %( MsgData, MsgSrc, entry))
+
         else:
             Domoticz.Error("NwkScanResponse - unexpected message %s" %MsgData)
             return
