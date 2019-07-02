@@ -273,7 +273,7 @@ class BasePlugin:
         self.statistics = TransportStatistics(self.pluginconf)
 
         # Connect to Zigate only when all initialisation are properly done.
-        Domoticz.Log("Transport mode: %s" %self.transport)
+        Domoticz.Status("Transport mode: %s" %self.transport)
         if  self.transport == "USB":
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
@@ -283,15 +283,10 @@ class BasePlugin:
 
             GPIO_CMD = "/usr/bin/gpio"
             if os.path.isfile( GPIO_CMD ):
-                Domoticz.Log(".")
                 os.system( GPIO_CMD + " mode 0 out")
-                Domoticz.Log(".")
                 os.system( GPIO_CMD + " mode 2 out")
-                Domoticz.Log(".")
                 os.system( GPIO_CMD + " write 2 1")
-                Domoticz.Log(".")
                 os.system( GPIO_CMD + " write 0 0")
-                Domoticz.Log(".")
                 os.system( GPIO_CMD + " write 0 1")
             else:
                 Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
@@ -329,7 +324,7 @@ class BasePlugin:
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
-                    Domoticz.Log("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
+                    Domoticz.Error("'"+thread.name+"' is running, it must be shutdown otherwise Domoticz will abort on plugin exit.")
 
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, 0)
@@ -344,20 +339,20 @@ class BasePlugin:
         # Let's check if this is End Node, or Group related.
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
-            Domoticz.Log("onDeviceRemoved - removing End Device")
+            Domoticz.Status("onDeviceRemoved - removing End Device")
             removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
             if self.pluginconf.pluginConf['allowRemoveZigateDevice'] == 1:
                 IEEE = Devices[Unit].DeviceID
                 removeZigateDevice( self, IEEE )
-                Domoticz.Log("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+                Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
 
         if self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt:
             if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
-                Domoticz.Log("onDeviceRemoved - removing Group of Devices")
+                Domoticz.Status("onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
                 self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
 
@@ -435,7 +430,7 @@ class BasePlugin:
         if Parameters['Mode2'].isdigit(): # Permit to join
             self.permitToJoin = int(Parameters['Mode2'])
             if self.permitToJoin != 0:
-                Domoticz.Log("Configure Permit To Join")
+                Domoticz.Status("Configure Permit To Join")
                 self.Ping['Permit'] = None
                 ZigatePermitToJoin(self, self.permitToJoin)
                 if Settings["AcceptNewHardware"] != "1":
@@ -470,7 +465,7 @@ class BasePlugin:
             return
 
         if len(Data) == 0:
-            Domoticz.Log("onMessage - empty message received on %s" %Connection)
+            Domoticz.Error("onMessage - empty message received on %s" %Connection)
 
         self.Ping['Nb Ticks'] = 0
         self.ZigateComm.onMessage(Data)
@@ -491,11 +486,11 @@ class BasePlugin:
         elif self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt:
             #if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
-            Domoticz.Log("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
+            Domoticz.Debug("Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
             self.groupmgt.processCommand( Unit, Devices[Unit].DeviceID, Command, Level, Color )
 
         elif Devices[Unit].DeviceID.find('Zigate-01-') != -1:
-            Domoticz.Log("onCommand - Command adminWidget: %s " %Command)
+            Domoticz.Debug("onCommand - Command adminWidget: %s " %Command)
             self.adminWidgets.handleCommand( self, Command)
 
         else:
@@ -546,9 +541,9 @@ class BasePlugin:
             return
 
         if self.FirmwareVersion is None and self.transport != 'None':
-            Domoticz.Log("FirmwareVersion not ready")
+            Domoticz.Log("No Firmware Version received from Zigate")
             if self.HeartbeatCount in ( 4, 8 ): # Try to get Firmware version once more time.
-                Domoticz.Log("Try to get Firmware version once more %s" %self.HeartbeatCount)
+                Domoticz.Log("Try to get Firmware version once more HB:%s" %self.HeartbeatCount)
                 sendZigateCmd(self, "0010", "") # Get Firmware version
             elif self.HeartbeatCount > 10:
                 Domoticz.Error("Plugin is not started ...")
@@ -579,14 +574,14 @@ class BasePlugin:
                     int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and\
                     self.transport != 'None':
                 if self.pluginconf.pluginConf['blueLedOff']:
-                    Domoticz.Log("Switch Blue Led off")
+                    Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
                 if self.pluginconf.pluginConf['TXpower_set'] and self.transport != 'None':
                     set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
 
                 if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION and self.transport != 'None':
-                    Domoticz.Log("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
+                    Domoticz.Status("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
                     sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
                 if self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
