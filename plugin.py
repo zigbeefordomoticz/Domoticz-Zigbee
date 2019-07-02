@@ -279,15 +279,24 @@ class BasePlugin:
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
             Domoticz.Status("Switch PiZigate in RUN mode")
+            from subprocess import run
             import os
 
             GPIO_CMD = "/usr/bin/gpio"
             if os.path.isfile( GPIO_CMD ):
-                os.system( GPIO_CMD + " mode 0 out")
-                os.system( GPIO_CMD + " mode 2 out")
-                os.system( GPIO_CMD + " write 2 1")
-                os.system( GPIO_CMD + " write 0 0")
-                os.system( GPIO_CMD + " write 0 1")
+                Domoticz.Log("+ Checkint GPIO PINs")
+                run( GPIO_CMD + " read 0", shell=True, check=True)
+                run( GPIO_CMD + " read 2", shell=True, check=True)
+			
+                run( GPIO_CMD + " mode 0 out", shell=True, check=True)
+                run( GPIO_CMD + " mode 2 out", shell=True, check=True)
+                run( GPIO_CMD + " write 2 1", shell=True, check=True)
+                run( GPIO_CMD + " write 0 0", shell=True, check=True)
+                run( GPIO_CMD + " write 0 1", shell=True, check=True)
+
+                Domoticz.Log("+ Checkint GPIO PINs")
+                #run( GPIO_CMD + " read 0", shell=True, check=True)
+                run( GPIO_CMD + " read 2", shell=True, check=True)
             else:
                 Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
@@ -534,9 +543,9 @@ class BasePlugin:
         self.HeartbeatCount += 1
 
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
-        if self.ZigateIEEE is None and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
+        if (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
             sendZigateCmd(self, "0009","")
-        elif self.ZigateIEEE is None and self.HeartbeatCount == 5 and self.transport != 'None':
+        elif (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount == 5 and self.transport != 'None':
             start_Zigate( self )
             return
 
@@ -551,7 +560,6 @@ class BasePlugin:
                 Domoticz.Error(" - restart once the plugin, and if this remain the same")
                 Domoticz.Error(" - unplug/plug the zigate")
             return
-
 
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
