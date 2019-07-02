@@ -797,7 +797,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     loggingInput( self, 'Debug', "Decode8042 - Logical Type = " +str(LogicalType) , addr)
 
     if self.ListOfDevices[addr]['Status'] != "inDB" :
-        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and addr in self.DiscoveryDevices :
+        if self.pluginconf.pluginConf['capturePairingInfos'] and addr in self.DiscoveryDevices :
             self.DiscoveryDevices[addr]['Manufacturer'] = manufacturer
             self.DiscoveryDevices[addr]['8042'] = MsgData
             self.DiscoveryDevices[addr]['DeviceType'] = str(DeviceType)
@@ -1421,7 +1421,7 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
         if MsgAttID not in self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID]:
             self.ListOfDevices[MsgSrcAddr]['Attributes List']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
 
-        if self.pluginconf.pluginConf['allowStoreDiscoveryFrames'] and MsgSrcAddr in self.DiscoveryDevices :
+        if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices :
             if 'Attribute Discovery' not in  self.DiscoveryDevices[MsgSrcAddr]:
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery'] = {}
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'] = {}
@@ -1469,7 +1469,7 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
         Status=MsgData[2:4]
         NwkStatus=MsgData[0:2]
     
-    loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
+    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
             %( Status, NwkStatus))
 
     if NwkStatus != "00" :
