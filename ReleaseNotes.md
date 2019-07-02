@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 2 July 2019 - 4.3.5
+- [Issue] - Remaining issue with PiZigate and gpio set. Should be closed now.
+
 ##    29 June 2019 - 4.3.4
 - [Hardware] - Müller-Licht 44062 "tint white + color" (LED E27 9,5W 806lm 1.800-6.500K RGB). 
 - [Issue] - Fix an issue when seting gpio for PiZigate

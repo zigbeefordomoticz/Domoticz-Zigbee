@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.3.4" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.3.5" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
     <h3> Short description </h3>
@@ -163,7 +163,7 @@ class BasePlugin:
 
     def onStart(self):
 
-        Domoticz.Status("Zigate plugin 4.3.4 started")
+        Domoticz.Status("Zigate plugin 4.3.5 started")
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
@@ -270,6 +270,9 @@ class BasePlugin:
 
             GPIO_CMD = '/usr/bin/gpio'
             if os.path.isfile( GPIO_CMD ):
+                os.system( GPIO_CMD + " read 0")
+                os.system( GPIO_CMD + " read 2")
+
                 Domoticz.Log(".")
                 os.system( GPIO_CMD + " mode 0 out")
                 Domoticz.Log(".")
@@ -280,6 +283,9 @@ class BasePlugin:
                 os.system( GPIO_CMD + " write 0 0")
                 Domoticz.Log(".")
                 os.system( GPIO_CMD + " write 0 1")
+
+                os.system( GPIO_CMD + " read 0")
+                os.system( GPIO_CMD + " read 2")
             else:
                 Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
