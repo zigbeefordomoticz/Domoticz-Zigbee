@@ -68,7 +68,6 @@ def getEPforClusterType( self, NWKID, ClusterType ) :
             for key in self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'] :
                 if self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType'][key].find(ClusterType) >= 0 :
                     EPlist.append(str(EPout))
-                    Domoticz.Debug("We found " + ClusterType +  " in " + str(self.ListOfDevices[NWKID]['Ep'][EPout]['ClusterType']) )    
                     break
     return EPlist
 
@@ -101,7 +100,6 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
         if 'Status' in self.ListOfDevices[newNWKID] :
             if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
                 found = True
-                Domoticz.Debug("DeviceExist - Found in ListOfDevices with status = " +str(self.ListOfDevices[newNWKID]['Status']) )
 
                 if not IEEE :
                     return True
@@ -115,14 +113,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 if existingNWKkey == newNWKID :        #Check that I'm not myself
                     continue
 
-                if existingNWKkey in self.ListOfDevices:
-                    if 'Status' in self.ListOfDevices[existingNWKkey]:
-                        Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: %s"
-                            %( newNWKID, IEEE, existingNWKkey, self.ListOfDevices[existingNWKkey]['Status']))
-                    else:
-                        Domoticz.Debug("DeviceExist - given NWKID/IEEE = %s / %s found as %s status: unknown"
-                            %( newNWKID, IEEE, existingNWKkey))
-                else:
+                if existingNWKkey not in self.ListOfDevices:
                     # In fact this device doesn't really exist ... The cleanup was not correctly done in IEEE2NWK
                     del self.IEEE2NWK[IEEE]
                     found = False
@@ -134,15 +125,10 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 # We got a new Network ID for an existing IEEE. So just re-connect.
                 # - mapping the information to the new newNWKID
 
-                Domoticz.Debug("DeviceExist - update self.ListOfDevices[" + newNWKID + "] with " + str(existingIEEEkey) )
                 self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[existingNWKkey])
 
-                Domoticz.Debug("DeviceExist - update self.IEEE2NWK[" + IEEE + "] from " +str(existingIEEEkey) + " to " + str(newNWKID) )
                 self.IEEE2NWK[IEEE] = newNWKID
 
-                Domoticz.Debug("DeviceExist - new device " +str(newNWKID) +" : " + str(self.ListOfDevices[newNWKID]) )
-                Domoticz.Debug("DeviceExist - device " +str(IEEE) +" mapped to  " + str(newNWKID) )
-                Domoticz.Debug("DeviceExist - old device " +str(existingNWKkey) +" : " + str(self.ListOfDevices[existingNWKkey]) )
                 Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
                 devName = ''
                 for x in Devices:
@@ -179,7 +165,6 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
 def removeNwkInList( self, NWKID) :
 
-    Domoticz.Debug("removeNwkInList - remove " +str(NWKID) + " => " +str( self.ListOfDevices[NWKID] ) ) 
     del self.ListOfDevices[NWKID]
 
 
@@ -202,10 +187,8 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
                 del self.ListOfDevices[key]['ClusterType'][ID] # Let's remove that entry
         else :
             for tmpEp in self.ListOfDevices[key]['Ep'] : 
-                Domoticz.Debug("removeDeviceInList - searching Ep " +str(tmpEp) )
                 # Search this DeviceID in ClusterType
                 if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
-                    Domoticz.Debug("removeDeviceInList - searching ClusterType " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
                     if str(ID) in self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] :
                         Domoticz.Log("removeDeviceInList - removing : "+str(ID) +" in " +str(tmpEp) + " - " +str(self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType']) )
                         del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
@@ -215,19 +198,15 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
         if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
             Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
             if self.ListOfDevices[key]['ClusterType'] != {}:
-                Domoticz.Debug("removeDeviceInList - exitsing Global 'ClusterTpe' not empty")
                 emptyCT = 0
         for tmpEp in self.ListOfDevices[key]['Ep'] : 
             if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
                 Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
                 if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
-                    Domoticz.Debug("removeDeviceInList - exitsing Ep 'ClusterTpe' not empty")
                     emptyCT = 0
         
         if emptyCT == 1 :     # There is still something in the ClusterType either Global or at Ep level
-            Domoticz.Debug("removeDeviceInList - removing ListOfDevices["+str(key)+"] : "+str(self.ListOfDevices[key]) )
             del self.ListOfDevices[key]
-            Domoticz.Debug("removeDeviceInList - removing IEEE2NWK ["+str(IEEE)+"] : "+str(self.IEEE2NWK[IEEE]) )
             del self.IEEE2NWK[IEEE]
 
             self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
@@ -295,13 +274,11 @@ def updSQN_battery(self, key, newSQN):
 
     try:
         if int(oldSQN,16) != int(newSQN,16) :
-            Domoticz.Debug("updSQN - Device : " + key + " updating SQN to " + str(newSQN) )
             self.ListOfDevices[key]['SQN'] = newSQN
             if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                Domoticz.Debug("Out of sequence for Device: " + str(key) + " SQN move from " +str(oldSQN) + " to " 
-                                + str(newSQN) + " gap of : " + str(int(newSQN,16) - int(oldSQN,16)))
+                # Out of seq
+                return
     except:
-        Domoticz.Debug("updSQN - Device:  %s oldSQN: %s newSQN: %s" %(key, oldSQN, newSQN))
         self.ListOfDevices[key]['SQN'] = {}
     return
 
@@ -310,9 +287,6 @@ def updSQN( self, key, newSQN) :
     if key not in self.ListOfDevices or \
              newSQN == {} or newSQN == '' or newSQN is None:
         return
-
-    # For now, we are simply updating the SQN. When ready we will be able to implement a cross-check in SQN sequence
-    Domoticz.Debug("Device : " + key + " MacCapa : " + self.ListOfDevices[key]['MacCapa'] + " updating SQN to " + str(newSQN) )
 
     if 'PowerSource' in self.ListOfDevices[key] :
         if self.ListOfDevices[key]['PowerSource'] == 'Main':
@@ -333,7 +307,6 @@ def updSQN( self, key, newSQN) :
             updSQN_battery( self, key, newSQN)
         else:
             self.ListOfDevices[key]['SQN'] = {}
-            Domoticz.Debug("updSQN - unknown PowerSource %s" %self.ListOfDevices[key]['MacCapa'] )
 
 
 #### Those functions will be use with the new DeviceConf structutre
@@ -517,15 +490,17 @@ def loggingPairing( self, logType, message):
 def _logginfilter( self, message, nwkid):
 
     if nwkid:
-        if len(self.pluginconf.pluginConf['debugNwkIDMatch']) == 4:
+        nwkid = nwkid.lower()
+        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower()
+        if len( _debugMatchId ) == 4:
             # expect a Short address
-            if self.pluginconf.pluginConf['debugNwkIDMatch'] != 'ffff' and \
-                    nwkid.lower() != self.pluginconf.pluginConf['debugNwkIDMatch']:
+            if _debugMatchId != 'ffff' and \
+                    nwkid != _debugMatchId:
                 return
-        elif self.pluginconf.pluginConf['debugNwkIDMatch'].lower() in self.IEEE2NWK:
+        elif _debugMatchId in self.IEEE2NWK:
             # Expect an IEEE
-            match_nwkid = self.IEEE2NWK[ self.pluginconf.pluginConf['debugNwkIDMatch'].lower() ]
-            if nwkid.lower() != match_nwkid:
+            match_nwkid = self.IEEE2NWK[ _debugMatchId ]
+            if nwkid != match_nwkid:
                 return
 
         Domoticz.Log( message )
@@ -572,3 +547,13 @@ def loggingWidget( self, logType, message, nwkid=None):
         Domoticz.Status( message )
     return
 
+
+def loggingHeartbeat( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugHeartbeat'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+    return

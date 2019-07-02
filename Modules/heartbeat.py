@@ -26,7 +26,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0502, ReadAttributeRequest_0702
 
-from Modules.tools import removeNwkInList, loggingPairing
+from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice
 from Modules.consts import HEARTBEAT, MAX_LOAD_ZIGATE
 
@@ -102,8 +102,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
                     if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                        Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                                %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                        loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                                %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
@@ -113,8 +113,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 'PowerSource' not in self.ListOfDevices[NWKID] or \
                 'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
             if not self.busy and  len(self.ZigateComm._normalQueue) <= MAX_LOAD_ZIGATE:
-                Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                        %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                        %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
                 Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
                 sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
@@ -130,8 +130,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
                 if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                    Domoticz.Debug('processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                            %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+                    loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                            %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
                     if intHB != 0:
                         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
                     break # Will do at the next round
@@ -144,13 +144,13 @@ def processKnownDevices( self, Devices, NWKID ):
                 if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
                     _idx = tmpEp + '-' + str(Cluster)
                     if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                        Domoticz.Debug("processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                                %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now))
+                        loggingHeartbeat( self, 'Debug', "processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                                %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
                                 continue
 
-                Domoticz.Debug("%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ))
+                loggingHeartbeat( self, 'Debug', "%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
 
     # Checking current state of the this Nwk
@@ -240,7 +240,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
                 sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
             else:
-                Domoticz.Debug("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']))
+                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
 
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             #IAS Zone
@@ -440,7 +440,7 @@ def processListOfDevices( self , Devices ):
         if NWKID in ('ffff', '0000'): continue
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
-            Domoticz.Debug("Bad devices detected (empty one), remove it, adr:" + str(NWKID))
+            loggingHeartbeat( self, 'Debug', "Bad devices detected (empty one), remove it, adr:" + str(NWKID), NWKID)
             entriesToBeRemoved.append( NWKID )
             continue
             
@@ -465,8 +465,8 @@ def processListOfDevices( self , Devices ):
                 # Let's check if the device still exist in Domoticz
                 for Unit in Devices:
                     if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID:
-                        Domoticz.Debug("processListOfDevices - %s  is still connected cannot remove. NwkId: %s IEEE: %s " \
-                                %(Devices[Unit].Name, NWKID, self.ListOfDevices[NWKID]['IEEE']))
+                        loggingHeartbeat( self, 'Debug', "processListOfDevices - %s  is still connected cannot remove. NwkId: %s IEEE: %s " \
+                                %(Devices[Unit].Name, NWKID, self.ListOfDevices[NWKID]['IEEE']), NWKID)
                         fnd = True
                         break
                 else: #We browse the all Devices and didn't find any IEEE.
@@ -496,7 +496,7 @@ def processListOfDevices( self , Devices ):
         del self.ListOfDevices[iter]
 
     if self.CommiSSionning or self.busy:
-        Domoticz.Debug("Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
+        loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning), NWKID)
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
