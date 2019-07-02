@@ -572,10 +572,12 @@ class BasePlugin:
             if self.FirmwareVersion and self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
                 Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
         
-            if self.FirmwareVersion and self.FirmwareVersion.lower() > '0310':
+            if self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031a:
                 Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
-            if self.FirmwareVersion and self.FirmwareVersion.lower() >= '030f' and self.FirmwareMajorVersion >= '0003' and self.transport != 'None':
+            if self.FirmwareVersion and \
+                    int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and\
+                    self.transport != 'None':
                 if self.pluginconf.pluginConf['blueLedOff']:
                     Domoticz.Log("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
