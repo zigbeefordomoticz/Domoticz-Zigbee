@@ -66,8 +66,14 @@ class WebServer(object):
     def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
 
         self.httpServerConn = None
-        self.httpServerConns = {}
         self.httpClientConn = None
+        self.httpServerConns = {}
+        self.httpPort = None
+
+        self.httpsServerConn = None
+        self.httpsClientConn = None
+        self.httpsServerConns = {}
+        self.httpsPort = None
 
         self.PluginHealth = PluginHealth
         self.WebUsername = WebUserName
@@ -102,7 +108,7 @@ class WebServer(object):
     def logging( self, logType, message):
 
         self.debugWebServer = self.pluginconf.pluginConf['debugWebServer']
-        if logType == 'Debug' and self.debugWebServer:
+        if self.debugWebServer and logType == 'Debug':
             Domoticz.Log( message)
         elif logType == 'Log':
             Domoticz.Log( message )
@@ -113,31 +119,61 @@ class WebServer(object):
 
     def  startWebServer( self ):
 
-        self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port='9440')
+        self.httpPort = '9440'
+        self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
         self.httpServerConn.Listen()
-        self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %9440)
+        self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
+
+        self.httpsPort = '9443'
+        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
+        #self.httpsServerConn.Listen()
+        #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
 
 
     def onConnect(self, Connection, Status, Description):
 
-        if (Status == 0):
-            self.logging( 'Debug', "Connected successfully to: "+Connection.Address+":"+Connection.Port)
+        self.logging( 'Debug', "Connection: %s, description: %s" %(Connection, Description))
+        if Status != 0:
+            Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
+            return
+
+        # Search for Protocol
+        for item in str(Connection).split(','):
+            if item.find('Protocol') != -1:
+                label, protocol = item.split(':')
+                protocol = protocol.strip().strip("'")
+                self.logging( 'Debug', '%s:>%s' %(label, protocol))
+
+        if protocol == 'HTTP':
+            # http connection
             if Connection.Name not in self.httpServerConns:
+                self.logging( 'Debug', "New Connection: %s" %(Connection.Name))
+                self.httpServerConns[Connection.Name] = Connection
+        elif protocol == 'HTTPS':
+            # https connection
+            if Connection.Name not in self.httpsServerConns:
+                self.logging( 'Debug', "New Connection: %s" %(Connection.Name))
                 self.httpServerConns[Connection.Name] = Connection
         else:
-            Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
-        self.logging( 'Debug', "Number of Connection : %s" %len(self.httpServerConns))
+            Domoticz.Error("onConnect - unexpected protocol for connection: %s" %(Connection))
+
+        self.logging( 'Debug', "Number of http  Connections : %s" %len(self.httpServerConns))
+        self.logging( 'Debug', "Number of https Connections : %s" %len(self.httpsServerConns))
 
     def onDisconnect ( self, Connection ):
 
         self.logging( 'Debug', "onDisconnect %s" %(Connection))
+
         if Connection.Name in self.httpServerConns:
+            self.logging( 'Debug', "onDisconnect - removing from list : %s" %Connection.Name)
             del self.httpServerConns[Connection.Name]
+        elif Connection.Name in self.httpsServerConns:
+            self.logging( 'Debug', "onDisconnect - removing from list : %s" %Connection.Name)
+            del self.httpsServerConns[Connection.Name]
         else:
-            if (Connection != self.httpServerConn):
-                Domoticz.Error("Connection not in client list .... %s" %Connection)
-                for x in self.httpServerConns:
-                    self.logging( 'Log', "--> "+str(x)+"'.")
+            # Most likely it is about closing the Server
+            self.logging( "Log", "onDisconnect - Closing something else than client .... %s" %Connection)
+
 
     def onMessage( self, Connection, Data ):
 
