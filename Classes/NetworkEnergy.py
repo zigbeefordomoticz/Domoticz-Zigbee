@@ -321,15 +321,24 @@ class NetworkEnergy():
 
         if MsgDataStatus != '00':
             Domoticz.Error("NwkScanResponse - Status: %s with Data: %s" %(MsgDataStatus, MsgData))
+            return
 
-        if len(self.nwkidInQueue) > 0:
+        if len(self.nwkidInQueue) == 0 and MsgSrc:
+            self.logging( 'Log', "NwkScanResponse - Empty Queue, Receive infos from %s" %MsgSrc)
+            return
+        elif len(self.nwkidInQueue) == 0:
+            self.logging( 'Log', "NwkScanResponse - Empty Queue ")
+            return
+        elif len(self.nwkidInQueue) > 0 and MsgSrc:
             root, entry = self.nwkidInQueue.pop()
-            if MsgSrc:
-                if entry != MsgSrc:
-                    Domoticz.Log("Unexpected message >%s< from %s, expecting %s" %( MsgData, MsgSrc, entry))
-
+            self.logging( 'Debug', "NwkScanResponse - Root: %s, Entry: %s, MsgSrc: %s" %(root, entry, MsgSrc))
+            if entry != MsgSrc:
+                Domoticz.Log("NwkScanResponse - Unexpected message >%s< from %s, expecting %s" %( MsgData, MsgSrc, entry))
+        elif  len(self.nwkidInQueue) > 0 :
+            root, entry = self.nwkidInQueue.pop()
+            self.logging( 'Debug', "NwkScanResponse - Root: %s, Entry: %s" %(root, entry))
         else:
-            Domoticz.Error("NwkScanResponse - unexpected message %s" %MsgData)
+            self.logging( 'Log', "NwkScanResponse - Unexpected: len: %s, MsgSrc: %s" %(len(self.nwkidInQueue), MsgSrc))
             return
 
         channelList = []
