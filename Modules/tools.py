@@ -516,12 +516,21 @@ def loggingPairing( self, logType, message):
 
 def _logginfilter( self, message, nwkid):
 
-        if nwkid is None:
-            Domoticz.Log( message )
-        else:
-            if  self.pluginconf.pluginConf['debugNwkIDMatch'] != 'ffff' and nwkid.lower() != self.pluginconf.pluginConf['debugNwkIDMatch']:
+    if nwkid:
+        if len(self.pluginconf.pluginConf['debugNwkIDMatch']) == 4:
+            # expect a Short address
+            if self.pluginconf.pluginConf['debugNwkIDMatch'] != 'ffff' and \
+                    nwkid.lower() != self.pluginconf.pluginConf['debugNwkIDMatch']:
                 return
+        elif self.pluginconf.pluginConf['debugNwkIDMatch'].lower() in self.IEEE2NWK:
+            # Expect an IEEE
+            match_nwkid = self.IEEE2NWK[ self.pluginconf.pluginConf['debugNwkIDMatch'].lower() ]
+            if nwkid.lower() != match_nwkid:
+                return
+
         Domoticz.Log( message )
+        return
+
 
 def loggingCluster( self, logType, message, nwkid=None):
 

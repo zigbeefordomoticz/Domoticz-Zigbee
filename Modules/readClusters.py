@@ -32,11 +32,11 @@ def retreive8Tag(tag,chain):
     if c == 3: return ''
     return chain[c:(c+8)]
 
-def decodeAttribute(AttType, Attribute, handleErrors=False):
+def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
         return
-    Domoticz.Debug("decodeAttribute( %s, %s) " %(AttType, Attribute) )
+    loggingCluster( self, 'Debug', "decodeAttribute( %s, %s) " %(AttType, Attribute) )
 
     if int(AttType,16) == 0x10:    # Boolean
         return Attribute
@@ -49,7 +49,7 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
     elif int(AttType,16) == 0x22:   # ZigBee_24BitUint
             return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
     elif int(AttType,16) == 0x23:   # 32BitUint
-            Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
@@ -59,15 +59,15 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
     elif int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
         return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x2a:   # ZigBee_24BitInt
-        Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+        loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                 str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])))
         return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
     elif int(AttType,16) == 0x2b:   # 32Bitint
-            Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x2d:   # ZigBee_48Bitint
-            Domoticz.Debug("decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
             return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x30:  # 8BitEnum
@@ -86,14 +86,14 @@ def decodeAttribute(AttType, Attribute, handleErrors=False):
                 decode = ''
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
-                Domoticz.Debug("decodeAttribute - seems errors, returning with errors ignore")
+                loggingCluster( self, 'Debug', "decodeAttribute - seems errors, returning with errors ignore")
 
         # Cleaning
         decode = decode.strip('\x00')
         decode = decode.strip()
         return decode
     else:
-        Domoticz.Debug("decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+        loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
         return Attribute
 
 def ReadCluster(self, Devices, MsgData):
@@ -200,7 +200,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 4- battRemainPer
         oldValue = '0;0;0;0'.split(';')
 
-    value = decodeAttribute( MsgAttType, MsgClusterData)
+    value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
@@ -267,7 +267,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
 
-    value = int(decodeAttribute( MsgAttType, MsgClusterData ))
+    value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
     loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     if MsgAttrID == "0000": 
@@ -311,18 +311,18 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if 'ColorInfos' not in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
 
-    value = decodeAttribute( MsgAttType, MsgClusterData)
+    value = decodeAttribute( self, MsgAttType, MsgClusterData)
     if MsgAttrID == "0000":     # CurrentHue
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Hue'] = value
         loggingCluster( self, 'Debug', "ReadCluster0300 - CurrentHue: %s" %value, MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Hue']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Hue']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0001":   # CurrentSaturation
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Saturation'] = value
         loggingCluster( self, 'Debug', "ReadCluster0300 - CurrentSaturation: %s" %value, MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Saturation']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0002":   
         loggingCluster( self, 'Debug', "ReadCluster0300 - %s/%s RemainingTime: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
@@ -331,19 +331,19 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['X'] = value
         loggingCluster( self, 'Debug', "ReadCluster0300 - CurrentX: %s" %value, MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-X']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-X']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004":   # CurrentY
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['Y'] = value
         loggingCluster( self, 'Debug', "ReadCluster0300 - CurrentY: %s" %value, MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Y']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-Y']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0007":   # ColorTemperatureMireds
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorTemperatureMireds'] = value
         loggingCluster( self, 'Debug', "ReadCluster0300 - ColorTemperatureMireds: %s" %value, MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorTemperatureMireds']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorTemperatureMireds']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0008":   # Color Mode 
                                 # 0x00: CurrentHue and CurrentSaturation
@@ -352,7 +352,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = value
         loggingCluster( self, 'Debug', "ReadCluster0300 - Color Mode: %s" %value, MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] == 1 and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ColorInfos-ColorMode']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '000f':
         loggingCluster( self, 'Debug', "ReadCluster0300 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value), MsgSrcAddr)
@@ -406,7 +406,7 @@ def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,"80")
 
         elif len(EPforPower) > 0 or len(EPforMeter) > 0 or len(EPforPowerMeter) > 0 : # We have several EPs in Power/Meter
-            value = round(float(decodeAttribute( MsgAttType, MsgClusterData )),3)
+            value = round(float(decodeAttribute( self, MsgAttType, MsgClusterData )),3)
             loggingCluster( self, 'Debug', "ReadCluster - ClusterId=000c - MsgAttrID=0055 - on Ep " +str(MsgSrcEp) + " reception Conso Prise Xiaomi: " + str(value), MsgSrcAddr)
             loggingCluster( self, 'Debug', "ReadCluster - ClusterId=000c - List of Power/Meter EPs" +str( EPforPower ) + str(EPforMeter) +str(EPforPowerMeter) , MsgSrcAddr)
             for ep in EPforPower + EPforMeter:
@@ -500,7 +500,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - reception General: On/Off: " + str(MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == "f000" and MsgAttType == "0023" and MsgAttSize == "0004":
-        value = int(decodeAttribute( MsgAttType, MsgClusterData ))
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug', "ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
                 " decoded: " + str(value) , MsgSrcAddr)
     else:
@@ -572,7 +572,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
 def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Windows Covering / Shutter
-    value = decodeAttribute(MsgAttType, MsgClusterData)
+    value = decodeAttribute(self, MsgAttType, MsgClusterData)
     loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Attribute: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
 
@@ -616,7 +616,7 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # (Measurement: LUX)
     # Input on Lux calculation is coming from PhilipsHue / Domoticz integration.
 
-    value = int(decodeAttribute( MsgAttType, MsgClusterData))
+    value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
     if 'Model' in self.ListOfDevices[MsgSrcAddr]:
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('lumi.sensor') != -1:
             # In case of Xiaomi, we got direct value
@@ -632,7 +632,7 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Temperature Measurement Cluster
 
     if MsgClusterData != '':
-        value = round(int(decodeAttribute( MsgAttType, MsgClusterData))/100,1)
+        value = round(int(decodeAttribute( self, MsgAttType, MsgClusterData))/100,1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=value
     else:
@@ -645,7 +645,7 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # seems to be a boolean . May be a beacon ...
         return
 
-    value = int(decodeAttribute( MsgAttType, MsgClusterData ))
+    value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
     loggingCluster( self, 'Debug', "Cluster0403 - decoded value: from:%s to %s" %( MsgClusterData, value) , MsgSrcAddr)
 
     if MsgAttrID == "0000": # Atmo in mb
@@ -664,7 +664,7 @@ def Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Measurement Umidity Cluster
 
     if MsgClusterData != '':
-        value = round(int(decodeAttribute( MsgAttType, MsgClusterData))/100,1)
+        value = round(int(decodeAttribute( self, MsgAttType, MsgClusterData))/100,1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
 
@@ -773,10 +773,10 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     if MsgAttrID == "0000": # Max Duration
-        Domoticz.Log("ReadCluster - 0x0502 - Max Duration: " +str(decodeAttribute( MsgAttType, MsgClusterData) ))
+        Domoticz.Log("ReadCluster - 0x0502 - Max Duration: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
         if 'IAS WD' not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['IAS WD'] = {}
-        self.ListOfDevices[MsgSrcAddr]['IAS WD']['MaxDuration'] = decodeAttribute( MsgAttType, MsgClusterData)
+        self.ListOfDevices[MsgSrcAddr]['IAS WD']['MaxDuration'] = decodeAttribute( self, MsgAttType, MsgClusterData)
 
     else:
         Domoticz.Log("ReadCluster - 0x0502 - %s/%s unknown attribute: %s value: %s " %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData)) 
@@ -792,31 +792,31 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     if MsgAttrID == "0000": # ZCL Version
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['ZCL Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - ZCL Version: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['ZCL Version'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['ZCL_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['ZCL_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0001": # Application Version
-        loggingCluster( self, 'Debug', "ReadCluster - Application version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - Application version: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['App_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
-        self.ListOfDevices[MsgSrcAddr]['App Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['App_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['App Version'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0002": # Stack Version
-        loggingCluster( self, 'Debug', "ReadCluster - Stack version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Stack Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        loggingCluster( self, 'Debug', "ReadCluster - Stack version: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Stack Version'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['Stack_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['Stack_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0003": # Hardware version
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Hardware version: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['HW Version'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Hardware version: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['HW Version'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004": # Manufacturer
-        _manufcode = str(decodeAttribute( MsgAttType, MsgClusterData))
+        _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Manufacturer: " + _manufcode, MsgSrcAddr)
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode
@@ -824,11 +824,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] = _manufcode
 
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['Manufacturer']=str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['Manufacturer']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
-            modelName = decodeAttribute( MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
+            modelName = decodeAttribute( self, MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
             loggingCluster( self, 'Debug', "ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
             if modelName != '':
 
@@ -888,40 +888,40 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0006': # CLD_BAS_ATTR_DATE_CODE
         # 20151006091b090
-        self.ListOfDevices[MsgSrcAddr]['SWBUILD_1'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_1'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0007": # Power Source
-        loggingCluster( self, 'Debug', "ReadCluster - Power Source: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - Power Source: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         # 0x03 stand for Battery
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['PowerSource'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['PowerSource'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '0008': # 
-        loggingCluster( self, 'Debug', "ReadCluster - Attribute 0008: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - Attribute 0008: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
 
     elif MsgAttrID == '0009': # 
-        loggingCluster( self, 'Debug', "ReadCluster - Attribute 0009: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - Attribute 0009: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
 
     elif MsgAttrID == '000a': # Product Code
-        loggingCluster( self, 'Debug', "ReadCluster - Product Code: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - Product Code: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
 
 
     elif MsgAttrID == '0010': # LOCATION_DESCRIPTION
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0010: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0010: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '0015': # SW_BUILD_ID
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0015: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['SWBUILD_2'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0015: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_2'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0016": # Battery
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0016 : " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0016 : " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
-            self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+            self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "4000": # 
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 4000: " +str(decodeAttribute( MsgAttType, MsgClusterData) ), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( MsgAttType, MsgClusterData) )
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 4000: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID in ( 'ff01', 'ff02'):
         
@@ -1019,10 +1019,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10), MsgSrcAddr)
 
     elif MsgAttrID == "fffd": #
-        Domoticz.Log("ReadCluster - 0000 %s/%s attribute fffd: %s" %(MsgSrcAddr, MsgSrcEp, str(decodeAttribute( MsgAttType, MsgClusterData))))
+        Domoticz.Log("ReadCluster - 0000 %s/%s attribute fffd: %s" %(MsgSrcAddr, MsgSrcEp, str(decodeAttribute( self, MsgAttType, MsgClusterData))))
 
     else:
-        Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( MsgAttType, MsgClusterData))))
+        Domoticz.Log("ReadCluster %s - %s/%s Unknown attribute: %s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData))))
     
 
 def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -1070,20 +1070,20 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 1 -> Short Release
         # 2 -> Double press
         # 255 -> Long Release
-        value = decodeAttribute( MsgAttType, MsgClusterData )
+        value = decodeAttribute( self, MsgAttType, MsgClusterData )
         Domoticz.Log("ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value))
         value = int(value)
         if value == 0: value = 3
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
-        value = decodeAttribute( MsgAttType, MsgClusterData )
+        value = decodeAttribute( self, MsgAttType, MsgClusterData )
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
         value = int(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.ctrl_ln2.aq1'):
-        value = decodeAttribute( MsgAttType, MsgClusterData )
+        value = decodeAttribute( self, MsgAttType, MsgClusterData )
         value = int(value)
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara lumi.ctrl_ln2.aq1: EP: %s Attr: %s Value: %s " %(MsgSrcEp,MsgAttrID, value), MsgSrcAddr)
 
@@ -1108,7 +1108,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     loggingCluster( self, 'Debug', "ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    value = decodeAttribute( MsgAttType, MsgClusterData)
+    value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
     if MsgAttrID =='0000':  # Local Temperature (Zint16)
         ValueTemp=round(int(value)/100,1)
@@ -1178,11 +1178,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 403: %s" %value, MsgSrcAddr)
 
     elif MsgAttrID == '0408':
-        value = int(decodeAttribute( MsgAttType, MsgClusterData))
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 408: %s" %value, MsgSrcAddr)
 
     elif MsgAttrID == '0409':
-        value = int(decodeAttribute( MsgAttType, MsgClusterData))
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 409: %s" %value, MsgSrcAddr)
 
     elif MsgAttrID == '4000': # TRV Mode
@@ -1224,7 +1224,7 @@ def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if MsgAttrID == '0001':
         # Lock Mode
-        value = decodeAttribute( MsgAttType, MsgClusterData)
+        value = decodeAttribute( self, MsgAttType, MsgClusterData)
         Domoticz.Log("ReadCluster 0204 - Lokc Mode: %s" %value)
     else:
         Domoticz.Log("ReadCluster 0204 - Unexpected Attribute: %s Type: %s lenght: %s Value:%s  " %(MsgAttrID,MsgAttType,MsgAttSize,MsgClusterData))
