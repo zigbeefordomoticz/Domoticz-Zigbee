@@ -553,3 +553,13 @@ def loggingInput( self, logType, message, nwkid=None):
         Domoticz.Status( message )
     return
 
+def loggingWidget( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugWidget'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+    return
+

@@ -14,6 +14,8 @@ import time
 import struct
 import json
 
+from Modules.tools import loggingWidget
+
 def CreateDomoDevice(self, Devices, NWKID):
     """
     CreateDomoDevice
@@ -29,15 +31,15 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         _Model = _NickName = None
         devName = ''
-        Domoticz.Debug("deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, type_))
+        loggingWidget( self, "Debug", "deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, type_), NWKID)
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] != {}:
                 _Model = self.ListOfDevices[NWKID]['Model']
-                Domoticz.Debug("deviceName - Model found: %s" %_Model)
+                loggingWidget( self, "Debug", "deviceName - Model found: %s" %_Model, NWKID)
                 if _Model in self.DeviceConf:
                     if 'NickName' in self.DeviceConf[_Model]:
                         _NickName = self.DeviceConf[_Model]['NickName']
-                        Domoticz.Debug("deviceName - NickName found %s" %_NickName)
+                        loggingWidget( self, "Debug", "deviceName - NickName found %s" %_NickName, NWKID)
 
         if _NickName is None and _Model is None:
             _Model = ''
@@ -47,7 +49,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             devName = _Model+ '_'
 
         devName +=  type_ + "-" + IEEE_ + "-" + EP_
-        Domoticz.Debug("deviceName - Dev Name: %s" %devName)
+        loggingWidget( self, "Debug", "deviceName - Dev Name: %s" %devName, NWKID)
 
         return devName
 
@@ -78,11 +80,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                     else: 
                         break
                     if nb == nbunit_: # We have found nbunit consecutive slots
-                        Domoticz.Debug("FreeUnit - device " + str(x) + " available")
+                        loggingWidget( self, "Debug", "FreeUnit - device " + str(x) + " available")
                         return x
 
         else:
-            Domoticz.Debug("FreeUnit - device " + str(len(Devices) + 1))
+            loggingWidget( self, "Debug", "FreeUnit - device " + str(len(Devices) + 1))
             return len(Devices) + 1
 
     # Sanity check before starting the processing 
@@ -99,24 +101,24 @@ def CreateDomoDevice(self, Devices, NWKID):
     for Ep in self.ListOfDevices[NWKID]['Ep']:
         dType = aType = Type = ''
         # Use 'type' at level EndPoint if existe
-        Domoticz.Debug("CreatDomoDevice - Process EP : " + str(Ep))
+        loggingWidget( self, "Debug", "CreatDomoDevice - Process EP : " + str(Ep), NWKID)
         if not GlobalEP:  # First time, or we dont't GlobalType
             if 'Type' in self.ListOfDevices[NWKID]['Ep'][Ep]:
                 if self.ListOfDevices[NWKID]['Ep'][Ep]['Type'] != "":
                     dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
                     aType = str(dType)
                     Type = aType.split("/")
-                    Domoticz.Debug("CreateDomoDevice - Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep))
+                    loggingWidget( self, "Debug", "CreateDomoDevice - Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep), NWKID)
             else:
                 if self.ListOfDevices[NWKID]['Type'] == {} or self.ListOfDevices[NWKID]['Type'] == '':
                     Type = GetType(self, NWKID, Ep).split("/")
-                    Domoticz.Debug("CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep))
+                    loggingWidget( self, "Debug", "CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep), NWKID)
                 else:
                     GlobalEP = True
                     if 'Type' in self.ListOfDevices[NWKID]:
                         if self.ListOfDevices[NWKID]['Type'] != '':
                             Type = self.ListOfDevices[NWKID]['Type'].split("/")
-                            Domoticz.Debug("CreateDomoDevice - Type : '" + str(Type) + "'")
+                            loggingWidget( self, "Debug", "CreateDomoDevice - Type : '" + str(Type) + "'", NWKID)
         else:
             break  # We have created already the Devices (as GlobalEP is set)
 
@@ -126,10 +128,10 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         for iterType in Type:
             if iterType not in GlobalType and iterType != '': 
-                Domoticz.Debug("adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)))
+                loggingWidget( self, "Debug", "adding Type : %s to Global Type: %s" %(iterType, str(GlobalType)), NWKID)
                 GlobalType.append(iterType)
 
-        Domoticz.Debug("CreateDomoDevice - Creating devices based on Type: %s" % Type)
+        loggingWidget( self, "Debug", "CreateDomoDevice - Creating devices based on Type: %s" % Type, NWKID)
 
         if 'ClusterType' not in self.ListOfDevices[NWKID]['Ep'][Ep]:
             self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'] = {}
@@ -137,7 +139,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         if "Humi" in Type and "Temp" in Type and "Baro" in Type:
             t = "Temp+Hum+Baro"  # Detecteur temp + Hum + Baro
             unit = FreeUnit(self, Devices)
-            Domoticz.Debug("CreateDomoDevice - unit: %s" %unit)
+            loggingWidget( self, "Debug", "CreateDomoDevice - unit: %s" %unit, NWKID)
             myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, TypeName=t)
             myDev.Create()
@@ -169,7 +171,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Type = ['LvlControl']
 
         for t in Type:
-            Domoticz.Debug("CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t))
+            loggingWidget( self, "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             if t == "ThermoSetpoint":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -697,7 +699,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
 
     # for Ep
-    Domoticz.Debug("GlobalType: %s" %(str(GlobalType)))
+    loggingWidget( self, "Debug", "GlobalType: %s" %(str(GlobalType)), NWKID)
     if len(GlobalType) != 0:
         self.ListOfDevices[NWKID]['Type'] = ''
         for iterType in GlobalType:
@@ -705,7 +707,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Type'] = iterType 
             else:
                 self.ListOfDevices[NWKID]['Type'] = self.ListOfDevices[NWKID]['Type'] + '/' + iterType 
-        Domoticz.Debug("CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'])
+        loggingWidget( self, "Debug", "CreatDomoDevice - Set Type to : %s" %self.ListOfDevices[NWKID]['Type'], NWKID)
 
 def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Color_=''):
     '''
@@ -721,22 +723,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         return
 
     DeviceID_IEEE = self.ListOfDevices[NWKID]['IEEE']
-    Domoticz.Debug(
+    loggingWidget( self, "Debug", 
         "MajDomoDevice - Device ID : " + str(DeviceID_IEEE) + " - Device EP : " + str(Ep) + " - Type : " + str(
-            clusterID) + " - Value : " + str(value) + " - Hue : " + str(Color_) + "  - Attribute_ : " +str(Attribute_))
+            clusterID) + " - Value : " + str(value) + " - Hue : " + str(Color_) + "  - Attribute_ : " +str(Attribute_), NWKID)
 
-    ClusterType = TypeFromCluster(clusterID)
-    Domoticz.Debug("MajDomoDevice - Type = " + str(ClusterType))
+    ClusterType = TypeFromCluster(self, clusterID)
+    loggingWidget( self, "Debug", "MajDomoDevice - Type = " + str(ClusterType), NWKID)
 
     x = 0
     for x in Devices:
         if Devices[x].DeviceID == DeviceID_IEEE:
-            Domoticz.Debug("MajDomoDevice - NWKID = " + str(NWKID) + " IEEE = " + str(DeviceID_IEEE) + " Unit = " + str(
-                Devices[x].ID))
+            loggingWidget( self, "Debug", "MajDomoDevice - NWKID = " + str(NWKID) + " IEEE = " + str(DeviceID_IEEE) + " Unit = " + str(
+                Devices[x].ID), NWKID)
 
             ID = Devices[x].ID
             DeviceType = ""
-            Domoticz.Debug("MajDomoDevice - " + str(self.ListOfDevices[NWKID]['Ep'][Ep]))
+            loggingWidget( self, "Debug", "MajDomoDevice - " + str(self.ListOfDevices[NWKID]['Ep'][Ep]), NWKID)
 
 
             if 'ClusterType' in self.ListOfDevices[NWKID]:
@@ -745,8 +747,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Domoticz.Error("MajDomoDevice - inconsistency on ClusterType. Id: %s not found in %s" \
                             %( str(ID), str(self.ListOfDevices[NWKID]['ClusterType'])))
                     return
-                Domoticz.Debug("MajDomoDevice - search ClusterType in : " + str(
-                    self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID))
+                loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
+                    self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID), NWKID)
                 DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
             else:
                 # Are we in a situation with one Devices whatever Eps are ?
@@ -758,7 +760,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         nbClusterType = nbClusterType + 1
                         ptEP_single = tmpEp
 
-                Domoticz.Debug("MajDomoDevice - We have " + str(nbClusterType) + " EPs with ClusterType")
+                loggingWidget( self, "Debug", "MajDomoDevice - We have " + str(nbClusterType) + " EPs with ClusterType", NWKID)
 
                 if nbClusterType == 1:  # All Updates are redirected to the same EP
                     # We must redirect all to the EP where there is a ClusterType
@@ -769,24 +771,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 else:
                     ptEp_multi = Ep
-                    Domoticz.Debug("MajDomoDevice - search ClusterType in : " + str(
-                        self.ListOfDevices[NWKID]['Ep'][ptEp_multi]) + " for : " + str(ID))
+                    loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
+                        self.ListOfDevices[NWKID]['Ep'][ptEp_multi]) + " for : " + str(ID), NWKID)
                     if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][ptEp_multi]:
-                        Domoticz.Debug("MajDomoDevice - search ClusterType in : " + str(
-                            self.ListOfDevices[NWKID]['Ep'][ptEp_multi]['ClusterType']) + " for : " + str(ID))
+                        loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
+                            self.ListOfDevices[NWKID]['Ep'][ptEp_multi]['ClusterType']) + " for : " + str(ID), NWKID)
                         for key in self.ListOfDevices[NWKID]['Ep'][ptEp_multi]['ClusterType']:
                             if str(ID) == str(key):
                                 DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEp_multi]['ClusterType'][key])
                     else:
-                        Domoticz.Debug("MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !")
-                        Domoticz.Debug("MajDomoDevice - Network Id : " + NWKID + " Ep : " + str(
-                            ptEp_multi) + " Expected Cluster is " + str(clusterID))
+                        loggingWidget( self, "Debug", "MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !", NWKID)
+                        loggingWidget( self, "Debug", "MajDomoDevice - Network Id : " + NWKID + " Ep : " + str(
+                            ptEp_multi) + " Expected Cluster is " + str(clusterID), NWKID)
                         continue
             if DeviceType == "":  # No match with ClusterType
                 continue
 
-            Domoticz.Debug("MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
-                         % (NWKID, Devices[x].SwitchType, DeviceType, ClusterType, Devices[x].nValue, Devices[x].sValue))
+            loggingWidget( self, "Debug", "MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
+                         % (NWKID, Devices[x].SwitchType, DeviceType, ClusterType, Devices[x].nValue, Devices[x].sValue), NWKID)
 
             if self.ListOfDevices[NWKID]['RSSI'] != 0:
                 SignalLevel = self.ListOfDevices[NWKID]['RSSI']
@@ -804,7 +806,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     (clusterID == "000c" and DeviceType == "Power"):  # kWh
                 nValue = round(float(value),2)
                 sValue = value
-                Domoticz.Debug("MajDomoDevice Power : " + sValue)
+                loggingWidget( self, "Debug", "MajDomoDevice Power : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel)
 
                 # if DeviceType=="Meter" and clusterID == "000c": # kWh
@@ -812,13 +814,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     (clusterID == "000c" and DeviceType == "Power"):  # kWh
                 nValue = round(float(value),2)
                 sValue = "%s;%s" % (nValue, nValue)
-                Domoticz.Debug("MajDomoDevice Meter : " + sValue)
+                loggingWidget( self, "Debug", "MajDomoDevice Meter : " + sValue)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Voltage":  # Volts
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
-                Domoticz.Debug("MajDomoDevice Voltage : " + sValue)
+                loggingWidget( self, "Debug", "MajDomoDevice Voltage : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint':
@@ -831,7 +833,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_temp( Devices[x].ID),1)
-                Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
+                loggingWidget( self, "Debug", "Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)), NWKID)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -892,7 +894,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
-                Domoticz.Debug("Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)))
+                loggingWidget( self, "Debug", "Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)), NWKID)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -1016,7 +1018,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
-                    Domoticz.Debug("SwitchAQ2 : Value -> %s" %value)
+                    loggingWidget( self, "Debug", "SwitchAQ2 : Value -> %s" %value, NWKID)
                     if value == 1: state = "00"
                     elif value == 2: state = "10"
                     elif value == 3: state = "20"
@@ -1206,7 +1208,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "02":  # Magic Cube Acara
-                Domoticz.Debug("MajDomoDevice - XCube update device with data = " + str(value))
+                loggingWidget( self, "Debug", "MajDomoDevice - XCube update device with data = " + str(value), NWKID)
                 UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == "XCube" and DeviceType == "Aqara" and Ep == "03":  # Magic Cube Acara Rotation
@@ -1221,7 +1223,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         data = 8
                     elif value == "90":
                         data = 9
-                    Domoticz.Debug("MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state))
+                    loggingWidget( self, "Debug", "MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state), NWKID)
                     UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             if ClusterType == DeviceType == "XCube" and Ep == "02":  # cube xiaomi
@@ -1400,19 +1402,19 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             #    _timeout = resetMotionDelay
 
             if (current - LUpdate) >= _timeout: 
-                Domoticz.Debug("Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
-                    current) + " this was : " + str(current - LUpdate) + " secondes ago")
+                loggingWidget( self, "Debug", "Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
+                    current) + " this was : " + str(current - LUpdate) + " secondes ago", NWKID)
                 UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
     return
 
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
-    Domoticz.Debug(
+    loggingWidget( self, "Debug", 
         "UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(
             SignalLvl))
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)
-        Domoticz.Debug("UpdateDevice_v2 for : " + str(Unit) + " RSSI = " + str(rssi))
+        loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Unit) + " RSSI = " + str(rssi))
     else:
         rssi = 12
 
@@ -1427,7 +1429,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             Devices[Unit].TimedOut:
 
             Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
-            Domoticz.Debug("Update Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[Unit].Name + ")")
+            loggingWidget( self, "Debug", "Update Values " + str(nValue) + ":'" + str(sValue) + ":" + str(Color_) + "' (" + Devices[Unit].Name + ")")
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi),
                                      BatteryLevel=int(BatteryLvl), TimedOut=0)
@@ -1470,9 +1472,9 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
     # It might required to call Touch everytime we receive a message from the device and not only when update is requested.
 
     if Unit:
-        Domoticz.Debug("Touch unit %s" %( Devices[Unit].Name ))
+        loggingWidget( self, "Debug", "Touch unit %s" %( Devices[Unit].Name ))
         if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
-            Domoticz.Debug("Not the good Domoticz level for Touch")
+            loggingWidget( self, "Debug", "Not the good Domoticz level for Touch")
             return
         if Devices[Unit].TimedOut:
             timedOutDevice( self, Devices, Unit=Unit, TO=0)
@@ -1494,18 +1496,18 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         self.ListOfDevices[NwkId]['Health'] = 'Live'
 
         if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
-            Domoticz.Debug("Too early for a new update of LastSeen %s" %NwkId)
+            loggingWidget( self, "Debug", "Too early for a new update of LastSeen %s" %NwkId, NwkId)
             return
 
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
 
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
-            Domoticz.Debug("Not the good Domoticz level for Touch")
+            loggingWidget( self, "Debug", "Not the good Domoticz level for Touch", NwkId)
             return
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
-                Domoticz.Debug( "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ))
+                loggingWidget( self, "Debug",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                 if Devices[x].TimedOut:
                     timedOutDevice( self, Devices, Unit=x, TO=0)
                 else:
@@ -1522,12 +1524,12 @@ def GetType(self, Addr, Ep):
         if Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:
             if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
                 if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                    Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
+                    loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
                         self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
                     Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
                     Type = str(Type)
         else:
-            Domoticz.Debug("GetType - Found Type in DeviceConf : " + str(
+            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
                 self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
             Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
     else:
@@ -1550,11 +1552,11 @@ def GetType(self, Addr, Ep):
         # Finaly Chec on Cluster
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
             if cluster in ('Type', 'ClusterType', 'ColorMode'): continue
-            Domoticz.Debug("GetType - check Type for Cluster : " + str(cluster))
+            loggingWidget( self, "Debug", "GetType - check Type for Cluster : " + str(cluster))
             if Type != "" and Type[:1] != "/":
                 Type += "/"
-            Type += TypeFromCluster(cluster, create_=True)
-            Domoticz.Debug("GetType - Type will be set to : " + str(Type))
+            Type += TypeFromCluster(self, cluster, create_=True)
+            loggingWidget( self, "Debug", "GetType - Type will be set to : " + str(Type))
 
         # Type+=Type
         # Ne serait-il pas plus simple de faire un .split( '/' ), puis un join ('/')
@@ -1574,9 +1576,9 @@ def GetType(self, Addr, Ep):
     return Type
 
 
-def TypeFromCluster(cluster, create_=False, ProfileID_='', ZDeviceID_=''):
+def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
-    Domoticz.Debug("ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
+    loggingWidget( self, "Debug", "ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
 
     TypeFromCluster = ''
     if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':
