@@ -28,16 +28,15 @@ def switchPiZigate_mode( self, mode='run' ):
         % ( sys.version.split('\n'), str(platform.dist()), linux_distribution(), platform.system(), platform.machine(),
             platform.platform(), platform.uname(), platform.version(), platform.mac_ver(),))
 
-    Domoticz.Status("Switch PiZigate in RUN mode")
     if platform.dist()[0] in ( 'fedora' ):
         try:
             import RPi.GPIO as GPIO
         except RuntimeError:
-            Domoticz.Log("Error importing RPi.GPIO!")
+            Domoticz.Error("Error importing RPi.GPIO!")
             return
         except:
-            Domoticz.Log("Fail to import RPi.GPIO")
-            Domoticz.Log("+ make sure to set the PiZigate in run mode")
+            Domoticz.Error("Fail to import RPi.GPIO")
+            Domoticz.Error("+ make sure to set the PiZigate in run mode")
             return
         Domoticz.Log("Set PiZigate Channels 11 and 17")
         channel_lst = [ 17, 27]
@@ -54,16 +53,17 @@ def switchPiZigate_mode( self, mode='run' ):
              
             ei0 = GPIO.input( 17 )
             ei2 = GPIO.input( 27 )
+            Domoticz.Status("Switch PiZigate in RUN mode")
             if ei0: Domoticz.Log(" + GPIO(RUN) OK")
             else: Domoticz.Log(" + GPIO(RUN) KO")
             if ei2: Domoticz.Log(" + GPIO(FLASH) OK")
             else: Domoticz.Log(" + GPIO(FLASH) KO")
         except RuntimeError:
-            Domoticz.Log("Error importing RPi.GPIO!")
+            Domoticz.Error("Error importing RPi.GPIO!")
             return
         except:
-            Domoticz.Log("Unable to set GPIO")
-            Domoticz.Log("+ make sure to set the PiZigate in run mode")
+            Domoticz.Error("Unable to set GPIO")
+            Domoticz.Error("+ make sure to set the PiZigate in run mode")
 
     elif platform.dist()[0] in ( 'debian' ):
         from subprocess import run
