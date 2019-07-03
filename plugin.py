@@ -86,6 +86,7 @@ import json
 import queue
 import sys
 
+from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
 from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID
 from Modules.input import ZigateRead
@@ -278,28 +279,7 @@ class BasePlugin:
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
-            Domoticz.Status("Switch PiZigate in RUN mode")
-            from subprocess import run
-            import os
-
-            GPIO_CMD = "/usr/bin/gpio"
-            if os.path.isfile( GPIO_CMD ):
-                Domoticz.Log("+ Checkint GPIO PINs")
-                run( GPIO_CMD + " read 0", shell=True, check=True)
-                run( GPIO_CMD + " read 2", shell=True, check=True)
-			
-                run( GPIO_CMD + " mode 0 out", shell=True, check=True)
-                run( GPIO_CMD + " mode 2 out", shell=True, check=True)
-                run( GPIO_CMD + " write 2 1", shell=True, check=True)
-                run( GPIO_CMD + " write 0 0", shell=True, check=True)
-                run( GPIO_CMD + " write 0 1", shell=True, check=True)
-
-                Domoticz.Log("+ Checkint GPIO PINs")
-                #run( GPIO_CMD + " read 0", shell=True, check=True)
-                run( GPIO_CMD + " read 2", shell=True, check=True)
-            else:
-                Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
-
+            switchPiZigate_mode( self, 'run' )
             self.ZigateComm = ZigateTransport( self.transport, self.statistics, self.APS, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
