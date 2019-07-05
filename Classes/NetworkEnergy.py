@@ -30,6 +30,7 @@ from Modules.output import sendZigateCmd, maskChannel
 from Classes.AdminWidgets import AdminWidgets
 
 CHANNELS = [ '11','15','19','20','25','26']
+DURATION = 0x01
 
 class NetworkEnergy():
 
@@ -141,7 +142,7 @@ class NetworkEnergy():
     def NwkScanReq(self, root, target, channels):
 
         # Scan Duration
-        scanDuration = 0x02 #
+        scanDuration = DURATION
         scanCount = 1
 
         mask = maskChannel( channels )

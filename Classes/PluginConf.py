@@ -69,15 +69,16 @@ SETTINGS = {
             'ZigateConfiguration': {
                     'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                     'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'allowAutoPairing': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'CertificationCode':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                    'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                    'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                    'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                    'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                    'allowAutoPairing': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
                 },
 

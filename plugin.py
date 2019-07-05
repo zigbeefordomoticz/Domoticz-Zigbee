@@ -96,6 +96,7 @@ from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.consts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
 from Modules.txPower import set_TxPower
+from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 
 from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
@@ -115,6 +116,7 @@ class BasePlugin:
     enabled = False
 
     def __init__(self):
+
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.DiscoveryDevices = {} # Used to collect pairing information
         self.IEEE2NWK = {}
@@ -171,12 +173,24 @@ class BasePlugin:
         self.WebUsername = None
         self.WebPassword = None
 
+        self.pluginVersion = {}
         return
 
     def onStart(self):
 
-        Domoticz.Status("Zigate plugin beta-4.4 started")
-        self.pluginParameters = Parameters
+        self.pluginParameters = dict(Parameters)
+        self.pluginParameters['PluginBranch'] = 'beta'
+        self.pluginParameters['PluginVersion'] = '4.4.4'
+        self.pluginParameters['TimeStamp'] = 0
+        self.pluginParameters['available'] =  None
+        self.pluginParameters['available-firmMajor'] =  None
+        self.pluginParameters['available-firmMinor'] =  None
+        self.pluginParameters['FirmwareVersion'] = None
+        self.pluginParameters['FirmwareUpdate'] = None
+        self.pluginParameters['PluginUpdate'] = None
+
+        Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
+
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
@@ -520,6 +534,7 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
+
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
             sendZigateCmd(self, "0009","")
@@ -538,6 +553,21 @@ class BasePlugin:
                 Domoticz.Error(" - restart once the plugin, and if this remain the same")
                 Domoticz.Error(" - unplug/plug the zigate")
             return
+
+        if self.pluginconf.pluginConf['internetAccess'] and ( self.pluginParameters['available'] is None or self.HeartbeatCount % ( 12 * 3600 // HEARTBEAT) == 0 ):
+            self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
+            self.pluginParameters['FirmwareUpdate'] = False
+            self.pluginParameters['PluginUpdate'] = False
+            self.pluginParameters['TimeStamp'] = int(time.time())
+            self.pluginParameters['available'] , self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor'] = checkPluginVersion( self.pluginParameters['PluginBranch'] )
+    
+            if checkPluginUpdate( self.pluginParameters['PluginVersion'], self.pluginParameters['available']):
+                Domoticz.Status("There is a newer plugin version available on gitHub")
+                self.pluginParameters['PluginUpdate'] = True
+
+            if checkFirmwareUpdate( self.FirmwareMajorVersion, self.FirmwareVersion, self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor']):
+                Domoticz.Status("There is a newer Zigate Firmware version available")
+                self.pluginParameters['FirmwareUpdate'] = True
 
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
