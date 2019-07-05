@@ -13,6 +13,7 @@
 - [Hardware] - Certify WXKG11LM (up to 4 clicks), Warning Device HEIMAN
 - [Technical] - Refactor the PiZigate setup
 - [Technical] - Tools to get PiZigate running on Fedora distribution
+- [Technical] - Plugin version and Firmware Version check. Will required Internet access (which is currently enable by default in PluginConf)
 
 ## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
