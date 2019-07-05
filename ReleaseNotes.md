@@ -7,6 +7,12 @@
 - [Technical] - Full re-factory of Network Energy Level scanner
 - [technical] - Topology and Energy Level scan are now automaticlay started a launch of plugn + 120s, and then will be trogger manually by Web Interface
 - [Technical] - enable live debug switch (with nwkid filtering) from the Web Admin Interface
+- [Technical] - Refactor the Read Attribute mechanism. Enable Polling parameters for ON/OFF and LvlControl from the User Interface or Configuration file
+- [Technical] - Implement ReJoin capabilities. When a device is sending a un-expected Leave (not following a remove).
+- [Technical] - Refactor logFORMAT 
+- [Hardware] - Certify WXKG11LM (up to 4 clicks), Warning Device HEIMAN
+- [Technical] - Refactor the PiZigate setup
+- [Technical] - Tools to get PiZigate running on Fedora distribution
 
 ## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
