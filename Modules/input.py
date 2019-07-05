@@ -1399,14 +1399,6 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
             if MsgAttID not in self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID]:
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID] = {}
                 self.DiscoveryDevices[MsgSrcAddr]['Attribute Discovery']['Ep'][MsgSrcEp][MsgClusterID][MsgAttID] = MsgAttType
-
-            if 'IEEE' in self.ListOfDevices[MsgSrcAddr]:
-                _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(self.ListOfDevices[MsgSrcAddr]['IEEE']) + ".json"
-            else:
-                _jsonFilename = self.pluginconf.pluginConf['pluginZData'] + "/DiscoveryDevice-" + str(MsgSrcAddr) + ".json"
-            with open ( _jsonFilename, 'at') as json_file:
-                json.dump(self.DiscoveryDevices[MsgSrcAddr],json_file, indent=4, sort_keys=True)
-
     return
 
 # OTA and Remote decoding kindly authorized by https://github.com/ISO-B
