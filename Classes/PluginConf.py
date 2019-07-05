@@ -104,7 +104,6 @@ SETTINGS = {
                         'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
                         'homedirectory':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
                         'pluginData':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                        'pluginZData': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                         'pluginConfig': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                         'pluginOTAFirmware': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                         'pluginReports':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
@@ -157,8 +156,6 @@ class PluginConf:
                     self.pluginConf[param] = homedir
                 elif param == 'pluginData':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
-                elif param == 'pluginZData':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Zdatas/'
                 elif param == 'pluginConfig':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
                 elif param == 'pluginWWW':
