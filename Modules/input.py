@@ -1456,7 +1456,12 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
     MsgDataDestEp=MsgData[4:6]
     MsgDataDestMode=MsgData[6:8]
 
-    if self.FirmwareVersion.lower() <= '030f':
+    if not self.FirmwareVersion:
+        MsgDataDestAddr=MsgData[8:24]
+        MsgDataSQN=MsgData[24:26]
+        if int(MsgDataDestAddr,16) == ( int(MsgDataDestAddr,16) & 0xffff000000000000):
+            MsgDataDestAddr = MsgDataDestAddr[0:4]
+    elif self.FirmwareVersion.lower() <= '030f':
         MsgDataDestAddr=MsgData[8:24]
         MsgDataSQN=MsgData[24:26]
         if int(MsgDataDestAddr,16) == ( int(MsgDataDestAddr,16) & 0xffff000000000000):
