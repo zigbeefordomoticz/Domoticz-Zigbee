@@ -35,26 +35,45 @@ from Classes.Transport import ZigateTransport
 from Classes.AdminWidgets import AdminWidgets
 from Classes.NetworkMap import NetworkMap
 
+                    'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'polling0000':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0001':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'pollingONOFF':         { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'pollingLvlControl':    { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'polling000C':          { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0102':          { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0201':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0204':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0300':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0400':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0402':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0403':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0405':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0406':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0500':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0502':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0702':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
+
 
 READ_ATTRIBUTES_REQUEST = {
     # Cluster : ( ReadAttribute function, Frequency )
-    '0000' : ( ReadAttributeRequest_0000, 86400 ),
-    '0001' : ( ReadAttributeRequest_0001, 86400 ),
-    '0006' : ( ReadAttributeRequest_0006, 900 ),
-    '0008' : ( ReadAttributeRequest_0008, 900 ),
-    '000C' : ( ReadAttributeRequest_000C, 3600 ),
-    '0102' : ( ReadAttributeRequest_0102, 300 ),
-    '0201' : ( ReadAttributeRequest_0201, 900 ),
-    '0204' : ( ReadAttributeRequest_0204, 86400 ),
-    '0300' : ( ReadAttributeRequest_0300, 900 ),
-    '0400' : ( ReadAttributeRequest_0400, 900 ),
-    '0402' : ( ReadAttributeRequest_0402, 900 ),
-    '0403' : ( ReadAttributeRequest_0403, 900 ),
-    '0405' : ( ReadAttributeRequest_0405, 900 ),
-    '0406' : ( ReadAttributeRequest_0406, 900 ),
-    '0500' : ( ReadAttributeRequest_0500, 86400 ),
-    '0502' : ( ReadAttributeRequest_0502, 86400 ),
-    '0702' : ( ReadAttributeRequest_0702, 900 ),
+    '0000' : ( ReadAttributeRequest_0000, 'polling0000' ),
+    '0001' : ( ReadAttributeRequest_0001, 'polling0001' ),
+    '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
+    '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
+    '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
+    '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
+    '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
+    '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
+    '0300' : ( ReadAttributeRequest_0300, 'polling0300' ),
+    '0400' : ( ReadAttributeRequest_0400, 'polling0400' ),
+    '0402' : ( ReadAttributeRequest_0402, 'polling0402' ),
+    '0403' : ( ReadAttributeRequest_0403, 'polling0403' ),
+    '0405' : ( ReadAttributeRequest_0405, 'polling0405' ),
+    '0406' : ( ReadAttributeRequest_0406, 'polling0406' ),
+    '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
+    '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
+    '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
     }
 
 # Ordered List - Important for binding
@@ -138,7 +157,14 @@ def processKnownDevices( self, Devices, NWKID ):
                     break # Will do at the next round
 
                 func = READ_ATTRIBUTES_REQUEST[Cluster][0]
-                timing = READ_ATTRIBUTES_REQUEST[Cluster][1]
+
+                # For now it is a bid hack, but later we might put all parameters 
+                if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
+                    timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST[Cluster][1] ]
+                else:
+                    Domoticz.Error("processKnownDevices - missing timing attribute for Cluster: %s - %s" %(Cluster,  READ_ATTRIBUTES_REQUEST[Cluster][1]))
+                    continue
+
                 if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
                     self.ListOfDevices[NWKID]['ReadAttributes'] = {}
                     self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
