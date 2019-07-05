@@ -564,16 +564,21 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
         return
     if sAddr == ieee == None:
         return
+    _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower()
     if sAddr is None:
         # Get sAddr from IEEE
         sAddr = ''
         if ieee in self.IEEE2NWK:
             sAddr = self.IEEE2NWK[ieee]
-        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower()
     if ieee is None:
+        # Get ieee from sAddr
         ieee = ''
         if sAddr in self.ListOfDevices:
             ieee = self.ListOfDevices[sAddr]['IEEE']
+    if _debugMatchId != 'ffff' and _debugMatchId != sAddr:
+        # If not matching _debugMatchId
+        return
+
     zdevname = ''
     if sAddr in self.ListOfDevices:
         if 'ZDeviceName' in  self.ListOfDevices[sAddr]:
