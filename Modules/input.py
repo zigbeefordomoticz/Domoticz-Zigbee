@@ -19,7 +19,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput
+from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -711,8 +711,7 @@ def Decode8041(self, Devices, MsgData, MsgRSSI) : # IEEE Address response
                     + " number of associated devices : " + MsgNumAssocDevices + " Start Index : " + MsgStartIndex + " Device List : " + MsgDeviceList)
 
 
-    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
-        Domoticz.Log("Zigate activity for | 8041 " +str(MsgShortAddress) + " | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " | " +str(MsgSequenceNumber) +" | ")
+    loggingMessages( self, '8041', MsgShortAddress, MsgIEEE, MsgRSSI, MsgSequenceNumber)
 
     if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :        # We have requested a IEEE address for a Short Address, 
                                                                         # hoping that we can reconnect to an existing Device
@@ -1041,8 +1040,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             break
     self.adminWidgets.updateNotificationWidget( Devices, 'Leave indication from %s for %s ' %(MsgExtAddress, devName) )
 
-    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
-        Domoticz.Log("Zigate activity for | 8048 |  | " + str(MsgExtAddress) + " | " + str(int(MsgRSSI,16)) + " |  | ")
+    loggingMessages( self, '8048', None, MsgExtAddress, MsgRSSI, None)
 
     if MsgExtAddress not in self.IEEE2NWK: # Most likely this object has been removed and we are receiving the confirmation.
         return
@@ -1209,8 +1207,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8100)
-    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
-        Domoticz.Log("Zigate activity for | 8100 | " +str(MsgSrcAddr) +" |  | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+    loggingMessages( self, '8100', MsgSrcAddr, None, MsgRSSI, MsgSQN)
     try :
         self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
     except : 
@@ -1248,11 +1245,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     loggingInput( self, 'Debug', "Decode8102 - Individual Attribute response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
-    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
-        if 'IEEE' in self.ListOfDevices[MsgSrcAddr]:
-            Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" | " +str(self.ListOfDevices[MsgSrcAddr]['IEEE']) +" | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
-        else:
-            Domoticz.Log("Zigate activity for | 8102 | " +str(MsgSrcAddr) +" | - | " + str(int(MsgRSSI,16)) + " | " +str(MsgSQN) + "  | ")
+    loggingMessages( self, '8102', MsgSrcAddr, None, MsgRSSI, MsgSQN)
 
     if DeviceExist(self, Devices, MsgSrcAddr) == True :
         try:
@@ -1558,8 +1551,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     loggingPairing( self, 'Status', "Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
 
-    if ( self.pluginconf.pluginConf['logFORMAT'] == 1 ) :
-        loggingPairing( self, 'Log', "Zigate activity for | 004d | " +str(MsgSrcAddr) +" | " + str(MsgIEEE) + " | " + str(int(MsgRSSI,16)) + " |  | ")
+    loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if not DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):

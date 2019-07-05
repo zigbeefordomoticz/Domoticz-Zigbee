@@ -557,3 +557,26 @@ def loggingHeartbeat( self, logType, message, nwkid=None):
     elif logType == 'Status':
         Domoticz.Status( message )
     return
+
+def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
+
+    if not self.pluginconf.pluginConf['logFORMAT']:
+        return
+    if sAddr == ieee == None:
+        return
+    if sAddr is None:
+        # Get sAddr from IEEE
+        sAddr = ''
+        if ieee in self.IEEE2NWK:
+            sAddr = self.IEEE2NWK[ieee]
+        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower()
+    if ieee is None:
+        ieee = ''
+        if sAddr in self.ListOfDevices:
+            ieee = self.ListOfDevices[sAddr]['IEEE']
+    zdevname = ''
+    if 'ZDeviceName' in  self.ListOfDevices[sAddr]:
+        zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
+
+    Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
+        %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
