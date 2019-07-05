@@ -205,7 +205,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
                 if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
                     emptyCT = 0
         
-        if emptyCT == 1 :     # There is still something in the ClusterType either Global or at Ep level
+        if emptyCT == 1 :     
             del self.ListOfDevices[key]
             del self.IEEE2NWK[IEEE]
 

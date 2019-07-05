@@ -331,10 +331,11 @@ class BasePlugin:
             Domoticz.Status("onDeviceRemoved - removing End Device")
             removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
-            if self.pluginconf.pluginConf['allowRemoveZigateDevice'] == 1:
-                IEEE = Devices[Unit].DeviceID
-                removeZigateDevice( self, IEEE )
-                Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+            # We should call this only if All Widgets have been remved !
+            #if self.pluginconf.pluginConf['allowRemoveZigateDevice'] == 1:
+            #    IEEE = Devices[Unit].DeviceID
+            #    removeZigateDevice( self, IEEE )
+            #    Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             Domoticz.Debug("ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
@@ -345,9 +346,6 @@ class BasePlugin:
                 # Command belongs to a Zigate group
                 self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
 
-        # We might evaluate teh removal of the physical device from Zigate.
-        # Could be done if a Flag is enabled in the PluginConf.txt.
-        
     def onConnect(self, Connection, Status, Description):
 
         Domoticz.Debug("onConnect called with status: %s" %Status)
