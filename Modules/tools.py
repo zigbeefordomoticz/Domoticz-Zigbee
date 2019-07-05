@@ -575,8 +575,9 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
         if sAddr in self.ListOfDevices:
             ieee = self.ListOfDevices[sAddr]['IEEE']
     zdevname = ''
-    if 'ZDeviceName' in  self.ListOfDevices[sAddr]:
-        zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
+    if sAddr in self.ListOfDevices:
+        if 'ZDeviceName' in  self.ListOfDevices[sAddr]:
+            zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
