@@ -155,6 +155,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0403': [ 0x0000],
             '0405': [ 0x0000],
             '0406': [ 0x0000],
+            '0500': [ 0x0000, 0x0002],
             '0502': [ 0x0000],
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
             }
@@ -470,6 +471,21 @@ def ReadAttributeRequest_0406(self, key):
 
     loggingOutput( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
+
+def ReadAttributeRequest_0500(self, key):
+
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0500 - Key: %s " %key, nwkid=key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0500" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0500'):
+        listAttributes.append( iterAttr )
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0500 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
+    ReadAttributeReq( self, key, "01", EPout, "0500", listAttributes)
 
 def ReadAttributeRequest_0502(self, key):
     # Cluster 0x0006
@@ -837,7 +853,7 @@ def rebind_Clusters( self, NWKID):
 
     # Binding devices
     CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0402', '0400', '0001',
-            '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
+            '0102', '0403', '0405', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
             'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
             'ff02'  # Used by Xiaomi devices for battery informations.
             ]
@@ -998,19 +1014,42 @@ def setExtendedPANID(self, extPANID):
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
-    return
-    Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
-    # Request a Re-Join and Do not remove children
-    #if rejoin:
-    #    if self.permitTojoin != 0xff:
-    #        Domoticz.Log("Switch to Permit to Join for 30s, to allow rejoin")
-    #        discover = "%02.X" %int(30)
-    #        sendZigateCmd(self, "0049","FFFC" + discover + "00")
-    #    datas = saddr + ieee + '01' + '00'
-    #else:
-    #    datas = saddr + ieee + '00' + '00'
+    Domoticz.Log("leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
+    if self.pluginconf.pluginConf['allowAutoPairing'] and rejoin:
+        Domoticz.Status("Switching Zigate in pairing mode to allow %s (%s) coming back" %(saddr, ieee))
 
-    #sendZigateCmd(self, "0047", datas )
+        # If Zigate not in Permit to Join, let's switch it to Permit to Join for 60'
+        duration = self.permitTojoin['Duration']
+        stamp = self.permitTojoin['Starttime']
+        if self.permitTojoin['Duration'] == 0:
+            dur_req = 60
+            self.permitTojoin['Duration'] = 60
+            self.permitTojoin['Starttime'] = int(time())
+            loggingOutput( self, 'Debug', "leaveMgtReJoin - switching Zigate in Pairing for %s sec" % dur_req)
+            sendZigateCmd(self, "0049","FFFC" + '%02x' %dur_req + "00")
+            loggingOutput( self, 'Debug', "leaveMgtReJoin - Request Pairing Status")
+            sendZigateCmd( self, "0014", "" ) # Request status
+        elif self.permitTojoin['Duration'] != 255:
+            if  int(time()) >= ( self.permitTojoin['Starttime'] + 60):
+                dur_req = 60
+                self.permitTojoin['Duration'] = 60
+                self.permitTojoin['Starttime'] = int(time())
+                loggingOutput( self, 'Debug', "leaveMgtReJoin - switching Zigate in Pairing for %s sec" % dur_req)
+                sendZigateCmd(self, "0049","FFFC" + '%02x' %dur_req + "00")
+                loggingOutput( self, 'Debug', "leaveMgtReJoin - Request Pairing Status")
+                sendZigateCmd( self, "0014", "" ) # Request status
+
+        #Request a Re-Join and Do not remove children
+        _leave = '01'
+        _rejoin = '01'
+        _rmv_children = '01'
+        _dnt_rmv_children = '00'
+
+        datas = saddr + ieee + _rejoin + _dnt_rmv_children
+        Domoticz.Status("Request a rejoin of (%s/%s)" %(saddr, ieee))
+        sendZigateCmd(self, "0047", datas )
+
+
 
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 

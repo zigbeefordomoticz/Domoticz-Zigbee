@@ -730,11 +730,8 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
 
-
     elif MsgAttrID == "0002": # Zone Status
-
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
-
         if MsgClusterData !='' and len(MsgClusterData) == 16:
             alarm1 = int(MsgClusterData,16) & 0x0000000000000001
             alarm2 = int(MsgClusterData,16) & 0x0000000000000010
@@ -751,7 +748,6 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             #self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = int(MsgClusterData,16)
             self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
-
         else:
             loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s empty data: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
 
@@ -773,7 +769,8 @@ def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         return
 
     if MsgAttrID == "0000": # Max Duration
-        Domoticz.Log("ReadCluster - 0x0502 - Max Duration: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
+        Domoticz.Log("ReadCluster - 0x0502 - %s/%s Max Duration: %s" \
+                %( MsgSrcAddr, MsgSrcEp, str(decodeAttribute( self, MsgAttType, MsgClusterData) )))
         if 'IAS WD' not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['IAS WD'] = {}
         self.ListOfDevices[MsgSrcAddr]['IAS WD']['MaxDuration'] = decodeAttribute( self, MsgAttType, MsgClusterData)

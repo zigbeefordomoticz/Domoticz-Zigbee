@@ -224,7 +224,6 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
 #Responses
 def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8000_v2 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
     if MsgLen < 8 :
         Domoticz.Log("Decode8000 - uncomplete message : %s" %MsgData)
@@ -265,7 +264,6 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8001 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgLogLvl=MsgData[0:2]
     MsgDataMessage=MsgData[2:len(MsgData)]
@@ -275,7 +273,6 @@ def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
 
 def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8002 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgLogLvl=MsgData[0:2]
     MsgProfilID=MsgData[2:6]
@@ -311,7 +308,6 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
 
 def Decode8003(self, Devices, MsgData, MsgRSSI) : # Device cluster list
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8003 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSourceEP=MsgData[0:2]
     MsgProfileID=MsgData[2:6]
@@ -330,7 +326,6 @@ def Decode8003(self, Devices, MsgData, MsgRSSI) : # Device cluster list
 
 def Decode8004(self, Devices, MsgData, MsgRSSI) : # Device attribut list
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8004 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSourceEP=MsgData[0:2]
     MsgProfileID=MsgData[2:6]
@@ -350,7 +345,6 @@ def Decode8004(self, Devices, MsgData, MsgRSSI) : # Device attribut list
 
 def Decode8005(self, Devices, MsgData, MsgRSSI) : # Command list
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8005 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSourceEP=MsgData[0:2]
     MsgProfileID=MsgData[2:6]
@@ -400,7 +394,6 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8009 - MsgData lenght is : " + str(MsgLen) + " out of 42")
     addr=MsgData[0:4]
     extaddr=MsgData[4:20]
     PanID=MsgData[20:24]
@@ -457,7 +450,6 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
 
 def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8010 - MsgData lenght is : " + str(MsgLen) + " out of 8")
 
     MajorVersNum=MsgData[0:4]
     InstaVersNum=MsgData[4:8]
@@ -476,7 +468,6 @@ def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8014 - MsgData lenght is : " +MsgData + "len: "+ str(MsgLen) + " out of 2")
 
     Status=MsgData[0:2]
     timestamp = int(time())
@@ -570,7 +561,6 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
 
 def Decode8028(self, Devices, MsgData, MsgRSSI) : # Authenticate response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8028 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgGatewayIEEE=MsgData[0:16]
     MsgEncryptKey=MsgData[16:32]
@@ -586,7 +576,6 @@ def Decode8028(self, Devices, MsgData, MsgRSSI) : # Authenticate response
 
 def Decode802B(self, Devices, MsgData, MsgRSSI) : # User Descriptor Notify
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode802B - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -597,7 +586,6 @@ def Decode802B(self, Devices, MsgData, MsgRSSI) : # User Descriptor Notify
 
 def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode802C - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -610,7 +598,6 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8030 - MsgData lenght is : " + str(MsgLen) + " out of 4 ")
     loggingInput( self, 'Debug', "Decode8030 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
@@ -650,7 +637,6 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8031 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
     loggingInput( self, 'Debug', "Decode8031 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
@@ -679,7 +665,6 @@ def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
 
 def Decode8034(self, Devices, MsgData, MsgRSSI) : # Complex Descriptor response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8034 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -696,7 +681,6 @@ def Decode8034(self, Devices, MsgData, MsgRSSI) : # Complex Descriptor response
 
 def Decode8040(self, Devices, MsgData, MsgRSSI) : # Network Address response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8040 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -742,7 +726,6 @@ def Decode8041(self, Devices, MsgData, MsgRSSI) : # IEEE Address response
 def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
 
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8042 - MsgData lenght is : " + str(MsgLen) + " out of 34")
 
     sequence=MsgData[0:2]
     status=MsgData[2:4]
@@ -815,7 +798,6 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
 
 def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor response
     MsgLen=len(MsgData)
-    loggingPairing( self, 'Debug', "Decode8043 - MsgData lenght is : " + str(MsgLen) )
 
     MsgDataSQN=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -972,7 +954,6 @@ def Decode8044(self, Devices, MsgData, MsgRSSI): # Power Descriptior response
 
 def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint response
     MsgLen=len(MsgData)
-    loggingPairing( self, 'Debug', "Decode8045 - MsgData lenght is : " + str(MsgLen) )
 
     MsgDataSQN=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -1025,7 +1006,6 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
 def Decode8046(self, Devices, MsgData, MsgRSSI) : # Match Descriptor response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8046 - MsgData lenght is : " + str(MsgLen) )
 
     MsgDataSQN=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -1039,7 +1019,6 @@ def Decode8046(self, Devices, MsgData, MsgRSSI) : # Match Descriptor response
 
 def Decode8047(self, Devices, MsgData, MsgRSSI) : # Management Leave response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8047 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -1051,12 +1030,10 @@ def Decode8047(self, Devices, MsgData, MsgRSSI) : # Management Leave response
 
 def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8048 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgExtAddress=MsgData[0:16]
     MsgDataStatus=MsgData[16:18]
     
-    Domoticz.Status("Leave indication from IEEE: %s , Status: %s " %(MsgExtAddress, MsgDataStatus))
     devName = ''
     for x in Devices:
         if Devices[x].DeviceID == MsgExtAddress:
@@ -1071,11 +1048,15 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         return
     sAddr = getSaddrfromIEEE( self, MsgExtAddress )
 
+    loggingInput( self, 'Debug', "Leave indication from IEEE: %s , Status: %s " %(MsgExtAddress, MsgDataStatus), sAddr)
     if sAddr == '' :
         Domoticz.Log("Decode8048 - device not found with IEEE = " +str(MsgExtAddress) )
     else :
         timeStamped(self, sAddr, 0x8048)
-        Domoticz.Status("device " +str(sAddr) + " annouced to leave" )
+        zdevname = ''
+        if 'ZDeviceName' in self.ListOfDevices[sAddr]:
+            zdevname = self.ListOfDevices[sAddr]['ZDeviceName']
+        Domoticz.Status("%s (%s/%s) send a Leave indication and will be outside of the network" %(zdevname, sAddr, MsgExtAddress))
         if self.ListOfDevices[sAddr]['Status'] == 'inDB':
             self.ListOfDevices[sAddr]['Status'] = 'Left'
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
@@ -1091,7 +1072,6 @@ def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update re
 
 def Decode804B(self, Devices, MsgData, MsgRSSI) : # System Server Discovery response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode804B - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -1129,7 +1109,6 @@ def Decode8063( self, Devices, MsgData, MsgRSSI):
 def Decode80A0(self, Devices, MsgData, MsgRSSI) : # View Scene response
 
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode80A0 - MsgData lenght is : " + str(MsgLen) + " out of 24" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
@@ -1150,7 +1129,6 @@ def Decode80A0(self, Devices, MsgData, MsgRSSI) : # View Scene response
 
 def Decode80A1(self, Devices, MsgData, MsgRSSI) : # Add Scene response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode80A1 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
@@ -1164,7 +1142,6 @@ def Decode80A1(self, Devices, MsgData, MsgRSSI) : # Add Scene response
 
 def Decode80A2(self, Devices, MsgData, MsgRSSI) : # Remove Scene response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode80A2 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
@@ -1178,7 +1155,6 @@ def Decode80A2(self, Devices, MsgData, MsgRSSI) : # Remove Scene response
 
 def Decode80A3(self, Devices, MsgData, MsgRSSI) : # Remove All Scene response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode80A3 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
@@ -1191,7 +1167,6 @@ def Decode80A3(self, Devices, MsgData, MsgRSSI) : # Remove All Scene response
 
 def Decode80A4(self, Devices, MsgData, MsgRSSI) : # Store Scene response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode80A4 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
@@ -1205,7 +1180,6 @@ def Decode80A4(self, Devices, MsgData, MsgRSSI) : # Store Scene response
     
 def Decode80A6(self, Devices, MsgData, MsgRSSI) : # Scene Membership response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode80A6 - MsgData lenght is : " + str(MsgLen) + " out of 2" )
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]

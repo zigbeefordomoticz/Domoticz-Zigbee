@@ -24,7 +24,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0502, ReadAttributeRequest_0702
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702
 
 from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice
@@ -52,6 +52,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0403' : ( ReadAttributeRequest_0403, 900 ),
     '0405' : ( ReadAttributeRequest_0405, 900 ),
     '0406' : ( ReadAttributeRequest_0406, 900 ),
+    '0500' : ( ReadAttributeRequest_0500, 86400 ),
     '0502' : ( ReadAttributeRequest_0502, 86400 ),
     '0702' : ( ReadAttributeRequest_0702, 900 ),
     }
@@ -59,7 +60,7 @@ READ_ATTRIBUTES_REQUEST = {
 # Ordered List - Important for binding
 CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0500',            # IAS Zone
-        '0502',            # IAS Zone
+        '0502',            # IAS WD Zone
         '0406',            # Occupancy Sensing
         '0402',            # Temperature Measurement
         '0400',            # Illuminance Measurement
