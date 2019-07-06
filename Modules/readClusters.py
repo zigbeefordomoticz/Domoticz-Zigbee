@@ -248,6 +248,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], battRemainPer)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         self.ListOfDevices[MsgSrcAddr]['Battery'] = value
+        self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0031": # Battery Size
@@ -711,6 +712,9 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
          self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = {}
          self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
 
+    if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
+        self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+
     if MsgAttrID == "0000": # ZoneState ( 0x00 Not Enrolled / 0x01 Enrolled )
         if int(MsgClusterData,16) == 0x00:
             Domoticz.Log("ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)))
@@ -734,20 +738,49 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
         if MsgClusterData !='' and len(MsgClusterData) == 16:
             alarm1 = int(MsgClusterData,16) & 0x0000000000000001
-            alarm2 = int(MsgClusterData,16) & 0x0000000000000010
-            tamper = int(MsgClusterData,16) & 0x0000000000000100
-            batter = int(MsgClusterData,16) & 0x0000000000001000
-            srepor = int(MsgClusterData,16) & 0x0000000000010000
-            rrepor = int(MsgClusterData,16) & 0x0000000000100000
-            troubl = int(MsgClusterData,16) & 0x0000000001000000
-            acmain = int(MsgClusterData,16) & 0x0000000010000000
-            test   = int(MsgClusterData,16) & 0x0000000100000000
-            batdef = int(MsgClusterData,16) & 0x0000001000000000
-            Domoticz.Log("IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
+            alarm2 = int(MsgClusterData,16) & 0x0000000000000010 >> 1
+            tamper = int(MsgClusterData,16) & 0x0000000000000100 >> 2
+            batter = int(MsgClusterData,16) & 0x0000000000001000 >> 3
+            srepor = int(MsgClusterData,16) & 0x0000000000010000 >> 4
+            rrepor = int(MsgClusterData,16) & 0x0000000000100000 >> 5
+            troubl = int(MsgClusterData,16) & 0x0000000001000000 >> 6
+            acmain = int(MsgClusterData,16) & 0x0000000010000000 >> 7
+            test   = int(MsgClusterData,16) & 0x0000000100000000 >> 8
+            batdef = int(MsgClusterData,16) & 0x0000001000000000 >> 9
+            Domoticz.Log("ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
                     %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef))
 
-            #self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = int(MsgClusterData,16)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
+        elif MsgClusterData != '' and MsgAttType == '19':
+            alarm1 = int(MsgClusterData,16) & 0b0000000000000001
+            alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
+            tamper = (int(MsgClusterData,16) & 0b0000000000000100 ) >> 2
+            batter = (int(MsgClusterData,16) & 0b0000000000001000 ) >> 3
+            srepor = (int(MsgClusterData,16) & 0b0000000000010000 ) >> 4
+            rrepor = (int(MsgClusterData,16) & 0b0000000000100000 ) >> 5
+            troubl = (int(MsgClusterData,16) & 0b0000000001000000 ) >> 6
+            acmain = (int(MsgClusterData,16) & 0b0000000010000000 ) >> 7
+            test   = (int(MsgClusterData,16) & 0b0000000100000000 ) >> 8
+            batdef = (int(MsgClusterData,16) & 0b0000001000000000 ) >> 9
+
+            Domoticz.Log("ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
+                    %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef))
+
+            if 'IAS' in self.ListOfDevices[MsgSrcAddr]:
+                if 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm1'] = alarm1
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm2'] = alarm2
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['tamper'] = tamper
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battery'] = batter
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Support Reporting'] = srepor
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['Restore Reporting'] = rrepor
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['trouble'] = troubl
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['acmain'] = acmain
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = batdef
+
+            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['GlobalInfos'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" \
+                    %( alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef)
+            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time.time())
         else:
             loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s empty data: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
 
@@ -915,6 +948,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0016 : " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Battery'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['Battery0016'] = decodeAttribute( self, MsgAttType, MsgClusterData)
+        self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
 
     elif MsgAttrID == "4000": # 
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 4000: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
@@ -957,6 +992,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s OldValue: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, ValueBattery_old, voltage), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
+            self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
 
             # Store Voltage in 0x0001
             if '0001' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
