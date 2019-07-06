@@ -207,6 +207,9 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
 
         if 'IAS' in self.ListOfDevices[MsgSrcAddr]:
             if 'ZoneStatus' in self.ListOfDevices[MsgSrcAddr]['IAS']:
+                if not isinstance(self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'], dict):
+                    self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
+
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm1'] = alarm1
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['alarm2'] = alarm2
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['tamper'] = tamper
@@ -217,6 +220,8 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['acmain'] = acmain
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['test'] = test
                 self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['battdef'] = battdef
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['GlobalInfos'] = "%s;%s;%s;%s;%s;%s;%s;%s;%s;%s" %( alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef)
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus']['TimeStamp'] = int(time())
 
     return
 
