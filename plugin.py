@@ -554,26 +554,15 @@ class BasePlugin:
                 Domoticz.Error(" - unplug/plug the zigate")
             return
 
-        if self.pluginconf.pluginConf['internetAccess'] and ( self.pluginParameters['available'] is None or self.HeartbeatCount % ( 12 * 3600 // HEARTBEAT) == 0 ):
-            self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
-            self.pluginParameters['FirmwareUpdate'] = False
-            self.pluginParameters['PluginUpdate'] = False
-            self.pluginParameters['TimeStamp'] = int(time.time())
-            self.pluginParameters['available'] , self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor'] = checkPluginVersion( self.pluginParameters['PluginBranch'] )
-    
-            if checkPluginUpdate( self.pluginParameters['PluginVersion'], self.pluginParameters['available']):
-                Domoticz.Status("There is a newer plugin version available on gitHub")
-                self.pluginParameters['PluginUpdate'] = True
-
-            if checkFirmwareUpdate( self.FirmwareMajorVersion, self.FirmwareVersion, self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor']):
-                Domoticz.Status("There is a newer Zigate Firmware version available")
-                self.pluginParameters['FirmwareUpdate'] = True
 
         if not self.initdone:
             # We can now do what must be done when we known the Firmware version
             self.initdone = True
 
-            # Ceck Firmware version
+            if self.FirmwareVersion:
+                self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
+
+            # Check Firmware version
             if self.FirmwareVersion and self.FirmwareVersion.lower() < '030f':
                 Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
 
@@ -606,6 +595,20 @@ class BasePlugin:
                             self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
+        if self.pluginconf.pluginConf['internetAccess'] and \
+                ( self.pluginParameters['available'] is None or self.HeartbeatCount % ( 12 * 3600 // HEARTBEAT) == 0 ):
+            self.pluginParameters['TimeStamp'] = int(time.time())
+            self.pluginParameters['available'] , self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor'] = checkPluginVersion( self.pluginParameters['PluginBranch'] )
+            self.pluginParameters['FirmwareUpdate'] = False
+            self.pluginParameters['PluginUpdate'] = False
+    
+            if checkPluginUpdate( self.pluginParameters['PluginVersion'], self.pluginParameters['available']):
+                Domoticz.Status("There is a newer plugin version available on gitHub")
+                self.pluginParameters['PluginUpdate'] = True
+
+            if checkFirmwareUpdate( self.FirmwareMajorVersion, self.FirmwareVersion, self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor']):
+                Domoticz.Status("There is a newer Zigate Firmware version available")
+                self.pluginParameters['FirmwareUpdate'] = True
             # In case we have Transport = None , let's check if we have to active Group management or not.
             if self.transport == 'None' and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
                     Domoticz.Status("Start Group Management")
