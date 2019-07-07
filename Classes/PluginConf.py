@@ -82,7 +82,6 @@ SETTINGS = {
                     'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'allowAutoPairing': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                    'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'CertificationCode':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
@@ -119,11 +118,6 @@ SETTINGS = {
                     'pluginWWW':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
                 },
 
-            # Groups Management
-            'GroupManagement': {
-                    'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
-                },
-    
             # Verbose
             'VerboseLogging': {
                     'debugMatchId':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
