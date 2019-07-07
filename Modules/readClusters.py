@@ -736,21 +736,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0002": # Zone Status
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
-        if MsgClusterData !='' and len(MsgClusterData) == 16:
-            alarm1 = int(MsgClusterData,16) & 0x0000000000000001
-            alarm2 = int(MsgClusterData,16) & 0x0000000000000010 >> 1
-            tamper = int(MsgClusterData,16) & 0x0000000000000100 >> 2
-            batter = int(MsgClusterData,16) & 0x0000000000001000 >> 3
-            srepor = int(MsgClusterData,16) & 0x0000000000010000 >> 4
-            rrepor = int(MsgClusterData,16) & 0x0000000000100000 >> 5
-            troubl = int(MsgClusterData,16) & 0x0000000001000000 >> 6
-            acmain = int(MsgClusterData,16) & 0x0000000010000000 >> 7
-            test   = int(MsgClusterData,16) & 0x0000000100000000 >> 8
-            batdef = int(MsgClusterData,16) & 0x0000001000000000 >> 9
-            Domoticz.Log("ReadCluster 0500/0002 - IAS Zone - Device:%s status alarm1: %s, alarm2: %s, tamper: %s, batter: %s, srepor: %s, rrepor: %s, troubl: %s, acmain: %s, test: %s, batdef: %s" \
-                    %( MsgSrcAddr, alarm1, alarm2, tamper, batter, srepor, rrepor, troubl, acmain, test, batdef))
-
-        elif MsgClusterData != '' and MsgAttType == '19':
+        if MsgClusterData != '' and MsgAttType == '19':
             alarm1 = int(MsgClusterData,16) & 0b0000000000000001
             alarm2 = (int(MsgClusterData,16) & 0b0000000000000010 ) >> 1
             tamper = (int(MsgClusterData,16) & 0b0000000000000100 ) >> 2
