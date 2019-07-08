@@ -235,6 +235,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
 
     if MsgLen > 8 :
         Domoticz.Log("Decode8000 - More information . New Firmware ???")
+        Domoticz.Log("Decode8000 - %s" %MsgData)
 
     Status=MsgData[0:2]
     SEQ=MsgData[2:4]
@@ -1629,6 +1630,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             '07':'release_up'
             }
 
+    loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
     loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
@@ -1639,8 +1641,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'TRADFRI remote control', 'RC 110'):
-
+    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
         if MsgClusterId == '0008':
             if MsgCmd in TYPE_ACTIONS:
                 selector = TYPE_ACTIONS[MsgCmd]
@@ -1652,6 +1653,39 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         else:
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
+        if MsgClusterId != '0008':
+            Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
+                    %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+            return
+
+        step_mod = MsgData[14:16]
+        up_down = step_size = transition = None
+        if len(MsgData) >= 18:
+            up_down = MsgData[16:18]
+        if len(MsgData) >= 20:
+            step_size = MsgData[18:20]
+        if len(MsgData) >= 22:
+            transition = MsgData[20:22]
+
+        loggingInput( self, 'Debug', "Decode8085 - INNR RC 110 step_mod: %s direction: %s, size: %s, transition: %s" \
+                %(step_mod, up_down, step_size, transition), MsgSrcAddr)
+
+        TYPE_ACTIONS = { None: '', '01': 'move', '02': 'click', '03': 'stop', '04': 'move_to', }
+        DIRECTION = { None: '', '00': 'up', '01': 'down'}
+        SCENES = { None: '', '02': 'scene1', '34': 'scene2', '66': 'scene3',
+                '99': 'scene4', 'c2': 'scene5', 'fe': 'scene6' }
+
+        if TYPE_ACTIONS[step_mod] in ( 'click', 'move'):
+            selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down] 
+        elif TYPE_ACTIONS[step_mod] in 'move_to':
+            selector = SCENES[up_down]
+        elif TYPE_ACTIONS[step_mod] in 'stop':
+            selector = TYPE_ACTIONS[step_mod]
+
+        Domoticz.Log("Decode8085 - INNR RC 110 selector: %s" %selector)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
+
     else:
        Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
                %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
@@ -1667,6 +1701,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
+    loggingInput( self, 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
     loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
@@ -1696,6 +1731,20 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0406", '01')
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
+        
+        ONOFF_TYPE = { '40': 'onoff_with_effect',
+                '00': 'off',
+                '01': 'on' }
+        delayed_all_off = effect_variant = None
+        if len(MsgData) >= 16:
+            delayed_all_off = MsgData[16:18]
+        if len(MsgData) >= 18:
+            effect_variant = MsgData[18:20]
+       
+        if ONOFF_TYPE[MsgCmd] in ( 'on', 'off' ):
+            MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
+
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)

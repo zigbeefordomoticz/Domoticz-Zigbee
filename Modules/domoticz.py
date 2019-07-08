@@ -669,6 +669,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == 'INNR_RC110': # INNR Remote Control
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "||||||||||||", "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6", \
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == 'Ikea_Round_OnOff': # Ikea On/off Remote
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -733,8 +748,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     x = 0
     for x in Devices:
         if Devices[x].DeviceID == DeviceID_IEEE:
-            loggingWidget( self, "Debug", "MajDomoDevice - NWKID = " + str(NWKID) + " IEEE = " + str(DeviceID_IEEE) + " Unit = " + str(
-                Devices[x].ID), NWKID)
+            loggingWidget( self, "Debug", "MajDomoDevice - NWKID = " + str(NWKID) + " IEEE = " + str(DeviceID_IEEE) + " Unit = " + str(Devices[x].ID), NWKID)
 
             ID = Devices[x].ID
             DeviceType = ""
@@ -1112,6 +1126,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                 # We do update only if this is a On/off
                                 UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
+                elif DeviceType == "INNR_RC110":
+                    if value == '01': nValue = 1 ; sValue= "10"
+                    elif value == '00': nValue = 0; sValue = "00"
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
             elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
                 
@@ -1189,8 +1208,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             if sValue > 100: sValue = 100
                             if sValue == 0 and analogValue > 0:
                                 sValue = 1
-
                         UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
+
+                elif DeviceType == "INNR_RC110":
+                    if value == "Off": nValue = 0
+                    elif value == "On": nValue = 1
+                    elif value == "clickup": nValue = 2
+                    elif value == "clickdown": nValue = 3
+                    elif value == "moveup": nValue = 4
+                    elif value == "movedown": nValue = 5
+                    elif value == "stop":   nValue = 6
+                    elif value == "scene1": nValue = 7
+                    elif value == "scene2": nValue = 8
+                    elif value == "scene3": nValue = 9
+                    elif value == "scene4": nValue = 10
+                    elif value == "scene5": nValue = 11
+                    elif value == "scene6": nValue = 12
+                    sValue = "%s" %(10 * nValue)
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') and  \
                     ClusterType == DeviceType:
