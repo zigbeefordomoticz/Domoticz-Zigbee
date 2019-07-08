@@ -233,9 +233,9 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         Domoticz.Log("Decode8000 - uncomplete message : %s" %MsgData)
         return
 
-    if MsgLen > 8 :
-        Domoticz.Log("Decode8000 - More information . New Firmware ???")
-        Domoticz.Log("Decode8000 - %s" %MsgData)
+    #if MsgLen > 8 :
+    #    Domoticz.Log("Decode8000 - More information . New Firmware ???")
+    #    Domoticz.Log("Decode8000 - %s" %MsgData)
 
     Status=MsgData[0:2]
     SEQ=MsgData[2:4]
