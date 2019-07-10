@@ -191,8 +191,8 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         test     = ( int(MsgZoneStatus,16) >> 8 ) & 1
         battdef  = ( int(MsgZoneStatus,16) >> 9 ) & 1
 
-        Domoticz.Log("IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" \
-                %( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef))
+        loggingInput( self, 'Debug', "IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" \
+                %( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef), MsgSrcAddr)
 
         Domoticz.Log("Decode8401 MsgZoneStatus: %s " %MsgZoneStatus[2:4])
         value = MsgZoneStatus[2:4]
