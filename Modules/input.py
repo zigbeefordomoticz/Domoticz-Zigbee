@@ -1552,7 +1552,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             return
 
     loggingPairing( self, 'Status', "Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
-
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
@@ -1591,6 +1590,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     else:
         # Device exist
         # We will also reset ReadAttributes
+        if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
+            self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
+
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingPairing( self, 'Log', "Decode004d - rebind clusters for %s" %MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
@@ -1607,8 +1609,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
-
-    
     return
 
 def Decode8085(self, Devices, MsgData, MsgRSSI) :
