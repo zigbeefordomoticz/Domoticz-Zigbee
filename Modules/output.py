@@ -145,7 +145,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0003': [ 0x0000],
             '0004': [ 0x0000],
             '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
-            '0006': [ 0x0000],
+            '0006': [ 0x0000, 0x4000, 0x4001, 0x4002, 0x4003],
             '0008': [ 0x0000],
             '000a': [ 0x0000],
             '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011],
@@ -530,7 +530,35 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas = addr_mode + key + EPin + EPout + clusterID 
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
+    loggingOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
     sendZigateCmd(self, "0110", str(datas) )
+
+def setPowerOn_OnOff( self, key, OnOffMode=0xff):
+
+    # Tested on Ikea Bulb without any results !
+    POWERON_MODE = ( 0x00, # Off
+            0x01, # On
+            0xff # Previous state
+            )
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "0006"
+    attribute = "4003"
+    data_type = "30" # 
+    data = "ff"
+    if OnOffMode in POWERON_MODE:
+        data = "%02x" %OnOffMode
+    else:
+        data = "%02x" %0xff
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
 
