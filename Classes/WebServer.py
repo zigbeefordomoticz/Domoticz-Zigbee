@@ -1020,6 +1020,24 @@ class WebServer(object):
                             else:
                                 Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" %(setting_lst[setting]['current']))
                                 continue
+
+                        elif param == 'debugMatchId':
+                            if setting_lst[setting]['current'] == 'ffff':
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            else:
+                                self.pluginconf.pluginConf['debugMatchId'] = ""
+                                matchID = setting_lst[setting]['current'].lower().split(',')
+                                for key in matchID:
+                                    if len(key) == 4:
+                                        if key not in self.ListOfDevices:
+                                            continue
+                                        self.pluginconf.pluginConf['debugMatchId'] += key + ","
+                                    if len(key) == 16:
+                                        # Expect an IEEE
+                                        if key not in self.IEEE2NWK:
+                                            continue
+                                        self.pluginconf.pluginConf['debugMatchId'] += self.IEEE2NWK[key] + ","
+                                self.pluginconf.pluginConf['debugMatchId'] = self.pluginconf.pluginConf['debugMatchId'][:-1] # Remove the last ,
                         else:
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 

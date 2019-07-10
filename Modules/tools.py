@@ -491,23 +491,11 @@ def _logginfilter( self, message, nwkid):
 
     if nwkid:
         nwkid = nwkid.lower()
-        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower()
-        if len( _debugMatchId ) == 4:
-            # expect a Short address
-            if _debugMatchId != 'ffff' and \
-                    nwkid != _debugMatchId:
-                return
-        elif len(_debugMatchId) == 16:
-            if _debugMatchId in self.IEEE2NWK:
-                # Expect an IEEE
-                match_nwkid = self.IEEE2NWK[ _debugMatchId ]
-                if nwkid != match_nwkid:
-                    return
-        else:
-            Domoticz.Log("_logginfilter - debugMatchId has a wrong len. ShortId == 4, IEEE == 16, %s is %s" %(_debugMatchId, len(_debugMatchId)))
-            return
-
-        Domoticz.Log( message )
+        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower().split(',')
+        if 'ffff' in _debugMatchId:
+            Domoticz.Log( message )
+        elif nwkid in _debugMatchId:
+            Domoticz.Log( message )
         return
 
 
