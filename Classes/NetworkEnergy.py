@@ -248,6 +248,8 @@ class NetworkEnergy():
             for nwkid in self.EnergyLevel[ r ]:
                 entry = {}
                 entry['_NwkId'] = nwkid
+                if nwkid not in self.ListOfDevices:
+                    continue
                 if 'ZDeviceName' in self.ListOfDevices[nwkid]:
                     if self.ListOfDevices[nwkid]['ZDeviceName'] != {}:
                         entry['ZDeviceName'] = self.ListOfDevices[nwkid]['ZDeviceName']
