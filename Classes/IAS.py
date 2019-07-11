@@ -332,6 +332,57 @@ class IAS_Zone_Management:
 
         return
 
+    def write_IAS_WD_Squawk( self, nwkid, ep, SquawkMode):
+
+        """
+        <address mode: uint8_t>
+        <target short address: uint16_t>
+        <source endpoint: uint8_t>
+        <destination endpoint: uint8_t>
+        <direction: uint8_t>
+        <manufacturer specific: uint8_t>
+        <manufacturer id: uint16_t>
+        <SquawkModeStrobeAndLevel: uint8_t>
+
+        Bits 	Description
+        0-3 	Squawk Mode - indicates the meaning of the required ‘squawk’:
+            0 - System is armed
+            1 - System is disarmed
+        All other values are reserved
+        4 	Strobe - indicates whether a visual strobe indication of the ‘squawk’ is required:
+            0 - No strobe
+            1 - Use strobe
+            5 	Reserved
+        6-7 	Squawk Level - indicates the requested level of the audible squawk sound:
+            0 - Low level
+            1 - Medium level
+            2 - High level
+            3 - Very high level
+        """
+        SQUAWKMODE = { 'disarmed': 0b00000000,
+                       'armed':    0b01010001
+                       }
+
+        if SquawkMode not in SQUAWKMODE:
+            Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %" %(nwkid, ep,SquawkMode))
+
+        Domoticz.Log("write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" %(nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]))
+        direction = 0x00
+        manuf = 0x00
+        manufid = 0x0000
+
+        datas  = "%02X" %ADDRESS_MODE['short']
+        datas += nwkid
+        datas += '01'
+        datas += ep
+        datas += "%02x" %direction
+        datas += "%02X" %manuf
+        datas += "%04X" %manufid
+        datas += "%02X" %SQUAWKMODE[SquawkMode]
+    
+        Domoticz.Log("_write_IASWD - 0x0112 %s" %datas)
+        self.ZigateComm.sendData( "0112", datas )
+
     # IAS Warning Device Cluster
     # https://www.nxp.com/docs/en/user-guide/JN-UG-3077.pdf
     # Section 28 - page 545
@@ -358,8 +409,8 @@ class IAS_Zone_Management:
     
         datas  = "%02X" %ADDRESS_MODE['short']
         datas += nwkid
-        datas += ep
         datas += '01'
+        datas += ep
         datas += "%02x" %direction
         datas += "%02X" %manuf
         datas += "%04X" %manufid

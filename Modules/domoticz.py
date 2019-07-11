@@ -241,7 +241,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "AlarmWD": # IAS object / matching 0x0502 Cluster / Alarm/Siren
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||", "LevelNames": "Stop|Alarm|Siren|Strobe",
+                Options = {"LevelActions": "|||||", "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
                            "LevelOffHidden": "false", "SelectorStyle": "0"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
