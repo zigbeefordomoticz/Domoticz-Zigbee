@@ -34,11 +34,11 @@ SETTINGS = {
                 },
 
             'WebInterface': {
-                    'enableWebServer': { 'type':'bool', 'default':0, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'enableGzip':      { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
                     'enableDeflate':   { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
                     'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
-                    'enableKeepalive': { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
+                    'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
                     'enableCache':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False}
                 },
 
