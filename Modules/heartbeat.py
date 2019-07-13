@@ -295,7 +295,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     # end if status== "8043"
 
     # Timeout management
-    if (status == "004d" or status == "0045") and HB_ > 2 and status != 'createDB':
+    if (status == "004d" or status == "0045") and HB_ > 2 and status != 'createDB' and self.ListOfDevices[NWKID]['Model'] not in self.DeviceConf:
         Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" %(RIA, NWKID, status))
         self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
         self.ListOfDevices[NWKID]['Heartbeat']="0"
@@ -329,7 +329,12 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
+    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf and self.ListOfDevices[NWKID]['RIA'] > '3' and status != 'UNKNOW' and status != 'inDB':
+        # We have done several retry to get Ep ...
+        Domoticz.Log("processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
+        status = 'createDB'
+
+    elif self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
         Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
