@@ -210,17 +210,16 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Steps' not in self.DiscoveryDevices[NWKID]['CaptureProcess']:
             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'] = []
 
-    if self.ListOfDevices[NWKID]['Model'] != {}:
-        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
-
     if status not in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
         return
 
+    knownModel = False
     if self.ListOfDevices[NWKID]['Model'] != {}:
         Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
         # Let's check if this Model is known
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                knownModel = True
                 if not self.pluginconf.pluginConf['capturePairingInfos']:
                     status = 'createDB' # Fast track
                 else:
@@ -240,7 +239,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             else: 
                 Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
                 # Let's check if this Model is known
-                if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                if knownModel:
                     status = 'createDB' # Fast track
 
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
@@ -297,7 +296,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     # end if status== "8043"
 
     # Timeout management
-    if (status == "004d" or status == "0045") and HB_ > 2 and status != 'createDB' and self.ListOfDevices[NWKID]['Model'] not in self.DeviceConf:
+    if (status == "004d" or status == "0045") and HB_ > 2 and status != 'createDB' and not knownModel: 
         Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" %(RIA, NWKID, status))
         self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
         self.ListOfDevices[NWKID]['Heartbeat']="0"
@@ -331,7 +330,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
+    if knownModel and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
         # We have done several retry to get Ep ...
         Domoticz.Log("processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
         status = 'createDB'

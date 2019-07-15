@@ -121,6 +121,7 @@ class BasePlugin:
         self.DiscoveryDevices = {} # Used to collect pairing information
         self.IEEE2NWK = {}
         self.zigatedata = {}
+        self.DeviceConf = {} # Store DeviceConf.txt, all known devices configuration
 
         # Objects from Classe
         self.ZigateComm = None
@@ -264,8 +265,9 @@ class BasePlugin:
 
         #Import DeviceConf.txt
         importDeviceConf( self ) 
-
-        if type(self.DeviceConf) is not dict:
+    
+        #if type(self.DeviceConf) is not dict:
+        if not isinstance(self.DeviceConf, dict):
             Domoticz.Error("DeviceConf initialisatio failure!!! %s" %type(self.DeviceConf))
             return
 
