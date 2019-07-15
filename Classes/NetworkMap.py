@@ -189,10 +189,10 @@ class NetworkMap():
             self.logging( 'Debug', "Commdand pending Timeout: %s" % entry)
             if self.Neighbours[entry]['Status'] == 'WaitResponse':
                 self.Neighbours[entry]['Status'] = 'ScanRequired2'
-                Domoticz.Error("LQI:continue_scan - Try one more for %s" %entry)
+                self.logging( 'Debug', "LQI:continue_scan - Try one more for %s" %entry)
             elif self.Neighbours[entry]['Status'] == 'WaitResponse2':
                 self.Neighbours[entry]['Status'] = 'TimedOut'
-                Domoticz.Error("LQI:continue_scan - TimedOut for %s" %entry)
+                self.logging( 'Debug', "LQI:continue_scan - TimedOut for %s" %entry)
 
             self.LQIticks = 0
             self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
@@ -201,18 +201,14 @@ class NetworkMap():
         for entry in self.Neighbours:
             if self.Neighbours[entry]['Status'] == 'Completed':
                 continue
-
             elif self.Neighbours[entry]['Status'] in ( 'TimedOut'):
                 continue
-
             elif self.Neighbours[entry]['Status'] in ( 'WaitResponse', 'WaitResponse2'):
                 waitResponse = True
                 continue
-
             elif self.Neighbours[entry]['Status'] in ( 'ScanRequired', 'ScanRequired2') :
                     self.LQIreq( entry )
                     return
-
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:
@@ -231,7 +227,7 @@ class NetworkMap():
 
         for nwkid in self.Neighbours:
             if self.Neighbours[nwkid]['Status'] != 'Completed':
-                Domoticz.Error("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
+                Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
             else:
                 for child in self.Neighbours[nwkid]['Neighbours']:
