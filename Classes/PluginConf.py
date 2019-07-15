@@ -22,7 +22,7 @@ SETTINGS = {
             'Services': {
                     'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                    'enableWebServer': { 'type':'bool', 'default':0, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
                 },
@@ -35,10 +35,10 @@ SETTINGS = {
 
             'WebInterface': {
                     'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
-                    'enableGzip':      { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
-                    'enableDeflate':   { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
+                    'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
+                    'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
-                    'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
+                    'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableCache':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False}
                 },
 
@@ -122,7 +122,7 @@ SETTINGS = {
             'VerboseLogging': {
                     'debugMatchId':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                    'capturePairingInfos': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'capturePairingInfos': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'debugInput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugOutput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
