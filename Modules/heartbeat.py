@@ -510,7 +510,7 @@ def processListOfDevices( self , Devices ):
         del self.ListOfDevices[iter]
 
     if self.CommiSSionning or self.busy:
-        loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning), NWKID)
+        loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
