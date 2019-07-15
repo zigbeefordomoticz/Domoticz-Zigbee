@@ -197,7 +197,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     # In case Model is defined and is in DeviceConf, we will short cut the all process and go to the Widget creation
     if status == 'UNKNOW':
         return
-
+    
     HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
     loggingPairing( self, 'Debug', "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
     if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -223,6 +223,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
                 if not self.pluginconf.pluginConf['capturePairingInfos']:
                     status = 'createDB' # Fast track
+                else:
+                    self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
 
     waitForDomoDeviceCreation = False
     if status == "8043": # We have at least receive 1 EndPoint
@@ -329,7 +331,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
         return
 
-    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf and self.ListOfDevices[NWKID]['RIA'] > '3' and status != 'UNKNOW' and status != 'inDB':
+    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
         # We have done several retry to get Ep ...
         Domoticz.Log("processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
         status = 'createDB'

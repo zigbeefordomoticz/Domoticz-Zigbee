@@ -233,9 +233,9 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         Domoticz.Log("Decode8000 - uncomplete message : %s" %MsgData)
         return
 
-    #if MsgLen > 8 :
-    #    Domoticz.Log("Decode8000 - More information . New Firmware ???")
-    #    Domoticz.Log("Decode8000 - %s" %MsgData)
+    if MsgLen > 8 :
+        Domoticz.Log("Decode8000 - More information . New Firmware ???")
+        Domoticz.Log("Decode8000 - %s" %MsgData)
 
     Status=MsgData[0:2]
     SEQ=MsgData[2:4]
@@ -626,13 +626,14 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
             return
 
-        if 'Bind' in self.ListOfDevices[nwkid]:
-            for cluster in self.ListOfDevices[nwkid]['Bind']:
-                if self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] == 'requested':
-                    self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
-                    self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'received'
-                    self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = MsgDataStatus
-                    break
+        if nwkid in self.ListOfDevices:
+            if 'Bind' in self.ListOfDevices[nwkid]:
+                for cluster in self.ListOfDevices[nwkid]['Bind']:
+                    if self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] == 'requested':
+                        self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
+                        self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'received'
+                        self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = MsgDataStatus
+                        break
 
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
