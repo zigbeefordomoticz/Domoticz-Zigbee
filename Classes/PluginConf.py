@@ -288,12 +288,19 @@ class PluginConf:
 
 
     def _load_Settings(self):
+
         ' deserialize json format of pluginConf'
         ' load parameters '
 
         with open( self.pluginConf['filename'] , 'rt') as handle:
             _pluginConf = {}
-            _pluginConf = json.load( handle, encoding=dict)
+            try:
+                _pluginConf = json.load( handle, encoding=dict)
+
+            except json.decoder.JSONDecodeError as e:
+                Domoticz.Error("poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
+                return
+
             for param in _pluginConf:
                 self.pluginConf[param] = _pluginConf[param]
 
