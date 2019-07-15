@@ -348,7 +348,7 @@ class IAS_Zone_Management:
         0-3 	Squawk Mode - indicates the meaning of the required ‘squawk’:
             0 - System is armed
             1 - System is disarmed
-        All other values are reserved
+            All other values are reserved
         4 	Strobe - indicates whether a visual strobe indication of the ‘squawk’ is required:
             0 - No strobe
             1 - Use strobe
@@ -360,13 +360,13 @@ class IAS_Zone_Management:
             3 - Very high level
         """
         SQUAWKMODE = { 'disarmed': 0b00000000,
-                       'armed':    0b01010001
+                       'armed':    0b00000001
                        }
 
         if SquawkMode not in SQUAWKMODE:
             Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %" %(nwkid, ep,SquawkMode))
 
-        Domoticz.Log("write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" %(nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]))
+        Domoticz.Debug("write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" %(nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]))
         direction = 0x00
         manuf = 0x00
         manufid = 0x0000
@@ -380,7 +380,7 @@ class IAS_Zone_Management:
         datas += "%04X" %manufid
         datas += "%02X" %SQUAWKMODE[SquawkMode]
     
-        Domoticz.Log("_write_IASWD - 0x0112 %s" %datas)
+        Domoticz.Debug("_write_IASWD - 0x0112 %s" %datas)
         self.ZigateComm.sendData( "0112", datas )
 
     # IAS Warning Device Cluster
