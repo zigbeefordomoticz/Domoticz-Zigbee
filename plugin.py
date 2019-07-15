@@ -120,43 +120,46 @@ class BasePlugin:
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
         self.DiscoveryDevices = {} # Used to collect pairing information
         self.IEEE2NWK = {}
-        self.networkmap = None
-        self.networkenergy = None
         self.zigatedata = {}
 
+        # Objects from Classe
         self.ZigateComm = None
+        self.groupmgt = None
+        self.APS = None
+        self.networkmap = None
+        self.networkenergy = None
+        self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
+        self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
+        self.domoticzdb_Preferences = None         # Object allowing direct access to Domoticz DB Preferences
+        self.adminWidgets = None   # Manage AdminWidgets object
+        self.pluginconf = None     # PlugConf object / all configuration parameters
+        self.OTA = None
+        self.statistics = None
+        self.iaszonemgt = None      # Object to manage IAS Zone
+        self.webserver = None
+
         self.transport = None         # USB or Wifi
-        self._ReqRcv = bytearray()
+        #self._ReqRcv = bytearray()
         self.permitTojoin = {}
         self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
-        self.groupmgt = None
         self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
 
-        self.APS = None
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
         self.homedirectory = None
         self.HardwareID = None
         self.Key = None
         self.DomoticzVersion = None
         self.StartupFolder = None
-        self.domoticzdb_DeviceStatus = None      # Object allowing direct access to Domoticz DB DeviceSatus
-        self.domoticzdb_Hardware = None         # Object allowing direct access to Domoticz DB Hardware
-        self.domoticzdb_Preferences = None         # Object allowing direct access to Domoticz DB Preferences
-        self.adminWidgets = None   # Manage AdminWidgets object
         self.DeviceListName = None
-        self.pluginconf = None     # PlugConf object / all configuration parameters
         self.pluginParameters = None
 
-        self.OTA = None
 
         self.PluginHealth = {}
         self.Ping = {}
         self.connectionState = None
         self.initdone = None
-        self.statistics = None
-        self.iaszonemgt = None      # Object to manage IAS Zone
         self.HBcount = 0
         self.HeartbeatCount = 0
         self.currentChannel = None  # Curent Channel. Set in Decode8009/Decode8024
@@ -165,7 +168,7 @@ class BasePlugin:
         self.FirmwareVersion = None
         self.FirmwareMajorVersion = None
         self.mainpowerSQN = None    # Tracking main Powered SQN
-        self.ForceCreationDevice = None   # 
+        #self.ForceCreationDevice = None   # 
 
         self.DomoticzMajor = None
         self.DomoticzMinor = None
@@ -173,7 +176,6 @@ class BasePlugin:
         self.WebUsername = None
         self.WebPassword = None
 
-        self.webserver = None
         self.pluginVersion = {}
         return
 
