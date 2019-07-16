@@ -988,7 +988,7 @@ class WebServer(object):
                             setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
-                _response["Data"] = json.dumps( setting_lst, sort_keys=True )
+                _response["Data"] = json.dumps( setting_lst, sort_keys=False )
 
         elif verb == 'PUT':
             _response["Data"] = None
