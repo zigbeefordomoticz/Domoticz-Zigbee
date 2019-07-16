@@ -787,6 +787,9 @@ def processConfigureReporting( self, NWKID=None ):
                     # In case Attributes List exists, we have git the list of reported attribute.
                     if cluster == '0300': 
                         # We need to evaluate the Attribute on ZDevice basis
+                        if self.ListOfDevices[key]['ZDeviceID'] == {}:
+                            continue
+
                         ZDeviceID = self.ListOfDevices[key]['ZDeviceID']
                         if 'ZDeviceID' in  ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]:
                             if ZDeviceID not in ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] and \
