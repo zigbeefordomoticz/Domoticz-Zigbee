@@ -71,10 +71,21 @@ class APSManagement(object):
         self.pluginconf = pluginconf
         return
 
+    def logging( self, logType, message):
+
+        self.debugAPS = self.pluginconf.pluginConf['debugAPS']
+        if logType == 'Debug' and self.debugAPS:
+            Domoticz.Log( message)
+        elif logType == 'Log':
+            Domoticz.Log( message )
+        elif logType == 'Status':
+            Domoticz.Status( message)
+        return
+
     def _addNewCmdtoDevice(self, nwk, cmd):
         """ Add Cmd to the nwk list of Command FIFO mode """
 
-        Domoticz.Debug("addNewCmdtoDevice - %s %s" %(nwk, cmd))
+        self.logging( 'Debug', "addNewCmdtoDevice - %s %s" %(nwk, cmd))
 
         if nwk not in self.ListOfDevices:
             return
@@ -92,18 +103,18 @@ class APSManagement(object):
         _tuple = ( time(), cmd )
         # Add element at the end of the List
         self.ListOfDevices[nwk]['Last Cmds'].append( _tuple )
-        Domoticz.Debug("addNewCmdtoDevice - %s adding cmd: %s into the Last Cmds list %s" \
+        self.logging( 'Debug', "addNewCmdtoDevice - %s adding cmd: %s into the Last Cmds list %s" \
                 %(nwk, cmd, self.ListOfDevices[nwk]['Last Cmds']))
 
     def processCMD( self, cmd, payload):
         """ extract from Payload the NetworkID of the interested commands"""
 
-        Domoticz.Debug("processCMD - cmd: %s, payload: %s" %(cmd, payload))
+        self.logging( 'Debug', "processCMD - cmd: %s, payload: %s" %(cmd, payload))
         if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
             return
 
         nwkid = payload[2:6]
-        Domoticz.Debug("processCMD - Retreive NWKID: %s" %nwkid)
+        self.logging( 'Debug', "processCMD - Retreive NWKID: %s" %nwkid)
         if nwkid in self.ListOfDevices:
             self._addNewCmdtoDevice( nwkid, cmd )
 
@@ -147,7 +158,7 @@ class APSManagement(object):
         - Let's check if we have sent a command in the last window
         """
 
-        Domoticz.Debug("processAPSFailure - %s %s %s" %(nwk, ieee, aps_code))
+        self.logging( 'Debug', "processAPSFailure - %s %s %s" %(nwk, ieee, aps_code))
 
         if nwk not in self.ListOfDevices:
             return
@@ -180,10 +191,10 @@ class APSManagement(object):
         _timeAPS = (time())
         _lastCmds = self.ListOfDevices[nwk]['Last Cmds']
 
-        Domoticz.Debug("processAPSFailure - %s Last Cmds: %s" %(nwk, _lastCmds))
+        self.logging( 'Debug', "processAPSFailure - %s Last Cmds: %s" %(nwk, _lastCmds))
         for iterTime, iterCmd in reversed(_lastCmds):
-            Domoticz.Debug("processAPSFailure - %s process %s - %s" %(nwk, iterTime, iterCmd))
+            self.logging( 'Debug', "processAPSFailure - %s process %s - %s" %(nwk, iterTime, iterCmd))
             if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                 # That command has been issued in the APS time window
-                Domoticz.Debug("processAPSFailure - %s found cmd: %s in the APS time window, age is: %s sec" %(nwk, iterCmd, round((_timeAPS - iterTime),2)))
+                self.logging( 'Debug', "processAPSFailure - %s found cmd: %s in the APS time window, age is: %s sec" %(nwk, iterCmd, round((_timeAPS - iterTime),2)))
                 self._errorMgt( iterCmd, nwk, ieee, aps_code)

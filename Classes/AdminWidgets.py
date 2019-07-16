@@ -22,7 +22,6 @@ DEVICEID_TXT_WIDGET_TXT = 'Zigate Notifications'
 class AdminWidgets:
 
     def __init__( self, PluginConf, Devices, ListOfDevices , HardwareID):
-        Domoticz.Debug("AdminWidget __init__")
 
         self.pluginconf = PluginConf
         self.Devices = Devices              # Point to the List of Domoticz Devices
@@ -39,10 +38,8 @@ class AdminWidgets:
         '''
         for x in range(1, 255):
             if x not in Devices:
-                Domoticz.Debug("FreeUnit - device " + str(x) + " available")
                 return x
         else:
-            Domoticz.Debug("FreeUnit - device " + str(len(Devices) + 1))
             return len(Devices) + 1
 
     def createAdminWidget( self, Devices ):
@@ -82,7 +79,6 @@ class AdminWidgets:
         for x in Devices:
             if Devices[x].DeviceID == deviceid_status_widget:
                 unit = x
-                Domoticz.Debug("createStatusWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
                 break
         if unit != 0:
             return
@@ -107,7 +103,6 @@ class AdminWidgets:
         for x in Devices:
             if Devices[x].DeviceID == deviceid_txt_widget:
                 unit = x
-                Domoticz.Debug("createNotificationWidget - existing %s -> %s" %(x, Devices[x].DeviceID))
                 break
         if unit != 0:
             return
@@ -156,14 +151,11 @@ class AdminWidgets:
                 unit = x
                 break
         if unit == 0: 
-            Domoticz.Debug("updateNotificationWidget - didn't find the Widget: %s" %deviceid_status_widget)
             return
 
         nValue = STATUS_WIDGET[statusType]
         sValue = str(statusType)
         if sValue != Devices[unit].sValue:
-            Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s" 
-                    %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
             Devices[unit].Update( nValue =nValue , sValue=sValue)
 
         return
@@ -177,16 +169,12 @@ class AdminWidgets:
                 unit = x
                 break
         if unit == 0:
-            Domoticz.Debug("updateNotificationWidget - didn't find the Widget: %s" %deviceid_txt_widget)
             return
 
         nValue = 0
         sValue = str(notification)
         if sValue != Devices[unit].sValue:
-            Domoticz.Debug("updateNotificationWidget - %s nValue: %s, sValue: %s/%s"
-                    %(Devices[unit].DeviceID, nValue, sValue, Devices[unit].sValue))
             Devices[unit].Update( nValue =nValue , sValue=sValue)
-
 
     def handleCommand( self, Command):
 

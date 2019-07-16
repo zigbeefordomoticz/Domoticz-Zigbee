@@ -71,7 +71,6 @@ class OTAManagement(object):
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
 
-        Domoticz.Debug("OTAManagement __init__")
         self.HB = 0
         self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
         self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
@@ -93,6 +92,17 @@ class OTAManagement(object):
         self.stopOTA = None
 
         self.ota_scan_folder()
+
+    def logging( self, logType, message):
+
+        self.debugOTA = self.pluginconf.pluginConf['debugOTA']
+        if logType == 'Debug' and self.debugOTA:
+            Domoticz.Log( message)
+        elif logType == 'Log':
+            Domoticz.Log( message )
+        elif logType == 'Status':
+            Domoticz.Status( message)
+        return
 
     # Low level commands/messages
     def ota_decode_new_image( self, image ):
@@ -119,7 +129,7 @@ class OTAManagement(object):
             if header_data[i] == 0x00:
                 header_data[i] = 0x20
 
-        Domoticz.Debug("ota_decode_new_image - header_data: %s" %str(header_data))
+        self.logging( 'Debug', "ota_decode_new_image - header_data: %s" %str(header_data))
         header_data_compact = header_data[0:8] + [header_data[8:40]] + header_data[40:]
         header_headers = [ 'file_id', 'header_version', 'header_length', 'header_fctl', 
                 'manufacturer_code', 'image_type', 'image_version', 
@@ -145,9 +155,9 @@ class OTAManagement(object):
                 %( headers['image_type'], headers['image_version'], image, headers['size']))
         for x in header_headers:
             if x == 'header_str':
-                Domoticz.Debug("ota_decode_new_image - %21s : %s " %(x,str(struct.pack('B'*32,*headers[x]))))
+                self.logging( 'Debug', "ota_decode_new_image - %21s : %s " %(x,str(struct.pack('B'*32,*headers[x]))))
             else:
-                Domoticz.Debug("ota_decode_new_image - %21s : 0x%X " %(x,headers[x]))
+                self.logging( 'Debug', "ota_decode_new_image - %21s : 0x%X " %(x,headers[x]))
 
         # For DEV only in order to force Upgrade
         # Domoticz.Log('Force Image Version to +10 - MUST BE REMOVED BEFORE PRODUCTION')
@@ -164,7 +174,7 @@ class OTAManagement(object):
             self.availableManufCode.append( self.OTA['Images'][key]['Decoded Header']['manufacturer_code'])
 
         if key in BATTERY_TYPES:    # In such case let's pile it so we will expsoe it a while after the powered Devices Type.
-            Domoticz.Debug("ota_decode_new_image - Firmware for battery type detected - %s %s" %(key, image))
+            self.logging( 'Debug', "ota_decode_new_image - Firmware for battery type detected - %s %s" %(key, image))
             self.batteryTypeFirmware.append( key )
 
         return key
@@ -195,14 +205,14 @@ class OTAManagement(object):
         datas += stack_version + header_str + size 
         datas += security_cred_version + upgrade_file_dest + min_hw_version + max_hw_version
 
-        Domoticz.Debug("ota_load_new_image: - len:%s datas: %s" %(len(datas),datas))
+        self.logging( 'Debug', "ota_load_new_image: - len:%s datas: %s" %(len(datas),datas))
         self.ZigateComm.sendData( "0500", datas)
         return
 
     def ota_request_firmware( self , MsgData):
         'BLOCK_REQUEST 	0x8501 	ZiGate will receive this command when device asks OTA firmware'
 
-        Domoticz.Debug("Decode8501 - Request Firmware Block %s/%s" %(MsgData, len(MsgData)))
+        self.logging( 'Debug', "Decode8501 - Request Firmware Block %s/%s" %(MsgData, len(MsgData)))
 
         MsgSQN = MsgData[0:2]
         MsgEP = MsgData[2:4]
@@ -218,7 +228,7 @@ class OTAManagement(object):
         MsgMaxDataSize = MsgData[58:60]
         MsgFieldControl = int(MsgData[60:62],16)
 
-        Domoticz.Debug("Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
+        self.logging( 'Debug', "Decode8501 - OTA image Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
 
         block_request = {}
@@ -241,7 +251,7 @@ class OTAManagement(object):
             _completion = round(((int(MsgFileOffset,16) / _size ) * 100),1)
         else:
             Domoticz.Error("ota_request_firmware - Unexpected Image Type: %s/0x%X" %(MsgImageType, MsgImageType))
-            Domoticz.Debug("ota_request_firmware - Unexpected Image Type on Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
+            self.logging( 'Debug', "ota_request_firmware - Unexpected Image Type on Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
                 %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
             return
 
@@ -250,7 +260,7 @@ class OTAManagement(object):
         if (_completion % 5) == 0:
             Domoticz.Log("Firmware transfert for %s/%s - Progress: %4s %%" %(MsgSrcAddr, MsgEP, _completion))
 
-        Domoticz.Debug("ota_request_firmware - Block Request for %s/%s Image Type: 0x%X Image Version: %s Seq: %s Offset: %s Size: %s FieldCtrl: %s" \
+        self.logging( 'Debug', "ota_request_firmware - Block Request for %s/%s Image Type: 0x%X Image Version: %s Seq: %s Offset: %s Size: %s FieldCtrl: %s" \
             %(MsgSrcAddr, block_request['ReqEp'], block_request['ImageType'], \
             block_request['ImageVersion'], MsgSQN, block_request['Offset'], 
                block_request['MaxDataSize'], block_request['FieldControl']))
@@ -281,7 +291,7 @@ class OTAManagement(object):
     def ota_block_send( self , dest_addr, dest_ep, image, block_request):
         'BLOCK_SEND 	0x0502 	This is used to transfer firmware BLOCKS to device when it sends request 0x8501.'
 
-        Domoticz.Debug("ota_block_send - Addr: %s/%s Type: 0x%X" %(dest_addr, dest_ep, image))
+        self.logging( 'Debug', "ota_block_send - Addr: %s/%s Type: 0x%X" %(dest_addr, dest_ep, image))
         if image not in self.OTA['Images']:
             Domoticz.Error("ota_block_send - unknown image %s" %image)
             return
@@ -339,7 +349,7 @@ class OTAManagement(object):
         self.OTA['Upgraded Device'][dest_addr]['received'] = _offset
         self.OTA['Upgraded Device'][dest_addr]['sent'] = _offset + _lenght
 
-        Domoticz.Debug("ota_block_send - Block sent to %s/%s Received yet: %s Sent now: %s" 
+        self.logging( 'Debug', "ota_block_send - Block sent to %s/%s Received yet: %s Sent now: %s" 
                 %( dest_addr, dest_ep, _offset, _lenght))
         return 
 
@@ -365,7 +375,7 @@ class OTAManagement(object):
         datas += "%04x" %_ImageType
         datas += "%04x" %_ManufacturerCode
 
-        Domoticz.Debug("ota_management - sending Upgrade End Response")
+        self.logging( 'Debug', "ota_management - sending Upgrade End Response")
         self.ZigateComm.sendData( "0504", datas)
 
         return
@@ -404,7 +414,7 @@ class OTAManagement(object):
         datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + "01" + dest_ep + "%02x" %IMG_NTFY_PAYLOAD_TYPE
         datas += '%08X' %image_version + '%4X' %image_type + '%4X' %manufacturer_code 
         datas += "%02x" %JITTER_OPTION
-        Domoticz.Debug("ota_image_advertize - Type: 0x%0X, Version: 0x%0X => datas: %s" %(image_type, image_version, datas))
+        self.logging( 'Debug', "ota_image_advertize - Type: 0x%0X, Version: 0x%0X => datas: %s" %(image_type, image_version, datas))
 
         if not Flag_:
             self.OTA['Upgraded Device'][dest_addr] = {}
@@ -442,7 +452,7 @@ class OTAManagement(object):
         datas += "%08X" %_RequestTime
         datas += "%04X" %_BlockRequestDelayMs
 
-        Domoticz.Debug("ota_management - Reduce Block request to a rate of %s ms" %_BlockRequestDelayMs)
+        self.logging( 'Debug', "ota_management - Reduce Block request to a rate of %s ms" %_BlockRequestDelayMs)
         self.ZigateComm.sendData( "0506", datas)
 
         return 
@@ -450,7 +460,7 @@ class OTAManagement(object):
     def ota_request_firmware_completed( self , MsgData):
         'UPGRADE_END_REQUEST 	0x8503 	Device will send this when it has received last part of firmware'
 
-        Domoticz.Debug("Decode8503 - Request Firmware Block %s/%s" %(MsgData, len(MsgData)))
+        self.logging( 'Debug', "Decode8503 - Request Firmware Block %s/%s" %(MsgData, len(MsgData)))
         MsgSQN = MsgData[0:2]
         MsgEP = MsgData[2:4]
         MsgClusterId = MsgData[4:8]
@@ -553,9 +563,9 @@ class OTAManagement(object):
             return
 
         if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-            Domoticz.Debug("normalQueue: %s" %len(self.ZigateComm._normalQueue))
-            Domoticz.Debug("normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
-            Domoticz.Debug("Too busy, will come back later")
+            self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm._normalQueue))
+            self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
+            self.logging( 'Debug', "Too busy, will come back later")
             return
 
         if len(self.OTA['Images']) == 0 and \
@@ -607,21 +617,21 @@ class OTAManagement(object):
                         if (self.ListOfDevices[iterDev]['PowerSource']) == 'Main':
                             _mainPowered = True
                     if not _mainPowered:
-                        Domoticz.Debug("OTA heartbeat - skip %s not main powered" %iterDev)
+                        self.logging( 'Debug', "OTA heartbeat - skip %s not main powered" %iterDev)
                         continue
 
                 if 'Manufacturer' not in self.ListOfDevices[iterDev]:
-                    Domoticz.Debug("OTA heartbeat - skip %s No Manufacturer code !!!" %iterDev)
+                    self.logging( 'Debug', "OTA heartbeat - skip %s No Manufacturer code !!!" %iterDev)
                     continue
                                 
                 if self.ListOfDevices[iterDev]['Manufacturer'] not in ( 'IKEA of Sweden', '117c'):
-                    Domoticz.Debug("OTA heartbeat - skip %s Not an IKEA products" %iterDev)
+                    self.logging( 'Debug', "OTA heartbeat - skip %s Not an IKEA products" %iterDev)
                     continue
             
                 if 0x117c in self.availableManufCode:
                     self.upgradableDev.append( iterDev )
                 else:
-                    Domoticz.Debug("OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, 0x117c, self.availableManufCode))
+                    self.logging( 'Debug', "OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, 0x117c, self.availableManufCode))
         else:
             if self.upgradeInProgress is None and len(self.upgradableDev) > 0 :
                 if self.upgradeOTAImage is None:
@@ -660,7 +670,7 @@ class OTAManagement(object):
                     if 0x117c == self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] and \
                             self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
                         self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
-                        Domoticz.Debug("OTA hearbeat - Request Advertizement for %s %s" \
+                        self.logging( 'Debug', "OTA hearbeat - Request Advertizement for %s %s" \
                                 %(self.upgradeInProgress, EPout))
 
                         self.ota_image_advertize(self.upgradeInProgress, EPout, \
@@ -687,7 +697,7 @@ class OTAManagement(object):
                         TO_notification = TO_BATTERYPOWERED_NOTIFICATION
 
                     if int(time()) > ( _notifiedTime + TO_notification):
-                            Domoticz.Debug("OTA heartbeat - Timeout for %s Upgrade notified " \
+                            self.logging( 'Debug', "OTA heartbeat - Timeout for %s Upgrade notified " \
                                     %self.upgradeInProgress)
                             self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] = 'Timeout'
                             self.upgradeInProgress = None

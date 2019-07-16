@@ -497,7 +497,37 @@ def _logginfilter( self, message, nwkid):
         elif nwkid in _debugMatchId:
             Domoticz.Log( message )
         return
+    else:
+        Domoticz.Log( message )
 
+
+def loggingCommand( self, logType, message, nwkid=None):
+    if self.pluginconf.pluginConf['debugCommand'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+    return
+
+def loggingDatabase( self, logType, message, nwkid=None):
+    if self.pluginconf.pluginConf['debugDatabase'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+    return
+
+def loggingPlugin( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugPlugin'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        Domoticz.Log( message )
+    elif logType == 'Status':
+        Domoticz.Status( message )
+    return
 
 def loggingCluster( self, logType, message, nwkid=None):
 

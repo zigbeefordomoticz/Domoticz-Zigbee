@@ -16,7 +16,7 @@ import time
 import struct
 import json
 
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
@@ -24,7 +24,7 @@ from Classes.IAS import IAS_Zone_Management
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
-    Domoticz.Debug("mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
+    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
 
     # As we can have a new Short address, we need to retreive it from self.ListOfDevices
     if Devices[Unit].DeviceID in self.IEEE2NWK:
@@ -32,7 +32,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     else :
         Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
         return
-    Domoticz.Debug("mgtCommand - NWKID = " +str(NWKID) )
+    loggingCommand( self, 'Debug', "mgtCommand - NWKID = " +str(NWKID) , NWKID)
 
     if self.ListOfDevices[NWKID]['RSSI'] != '' :
         SignalLevel = self.ListOfDevices[NWKID]['RSSI']
@@ -51,14 +51,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                 for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                     if str(Devices[Unit].ID) == str(key) :
-                        Domoticz.Debug("mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  )
+                        loggingCommand( self, 'Debug', "mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  , NWKID)
                         DeviceTypeList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
     
     if len(DeviceTypeList) == 0 :    # No match with ClusterType
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    Domoticz.Debug("mgtCommand - List of TypeName : " +str(DeviceTypeList) )
+    loggingCommand( self, 'Debug', "mgtCommand - List of TypeName : " +str(DeviceTypeList) , NWKID)
     # We have list of DeviceType, let's see which one are matching Command style
 
     ClusterSearch = ''
@@ -90,7 +90,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
-    Domoticz.Debug("mgtCommand - DeviceType : " +str(DeviceType) )
+    loggingCommand( self, 'Debug', "mgtCommand - DeviceType : " +str(DeviceType) , NWKID)
 
     # A ce stade ClusterSearch est connu
     EPin="01"
@@ -106,11 +106,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                         if str(Devices[Unit].ID) == str(key) :
-                            Domoticz.Debug("mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) )
+                            loggingCommand( self, 'Debug', "mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
                             EPout = tmpEp
 
 
-    Domoticz.Debug("EPout = " +str(EPout) )
+    loggingCommand( self, 'Debug', "EPout = " +str(EPout) , NWKID)
 
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
@@ -220,7 +220,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
 
     if Command == "Set Color" :
-        Domoticz.Debug("onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) )
+        loggingCommand( self, 'Debug', "onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) , NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         Hue_List = json.loads(Color)
         
@@ -247,7 +247,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
             #TODO : Jamais vu un device avec ca encore
-            Domoticz.Debug("Not implemented device color 1")    
+            loggingCommand( self, 'Debug', "Not implemented device color 1", NWKID)
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
             #Value is in mireds (not kelvin)
@@ -270,7 +270,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             cw = int(Hue_List['cw'])
             x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
             #TODO, Pas trouve de device avec ca encore ...
-            Domoticz.Debug("Not implemented device color 2")
+            loggingCommand( self, 'Debug', "Not implemented device color 2", NWKID)
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
             h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))

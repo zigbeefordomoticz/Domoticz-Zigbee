@@ -49,6 +49,17 @@ class IAS_Zone_Management:
             self.ZigateIEEE = ZigateIEEE
         self.pluginconf = pluginconf
 
+    def logging( self, logType, message):
+
+        self.debugIAS = self.pluginconf.pluginConf['debugIAS']
+        if logType == 'Debug' and self.debugIAS:
+            Domoticz.Log( message)
+        elif logType == 'Log':
+            Domoticz.Log( message )
+        elif logType == 'Status':
+            Domoticz.Status( message)
+        return
+
     def __write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
 
         addr_mode = "02" # Short address
@@ -87,13 +98,13 @@ class IAS_Zone_Management:
 
     def setZigateIEEE(self, ZigateIEEE):
 
-        Domoticz.Debug("setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
+        self.logging( 'Debug', "setZigateIEEE - Set Zigate IEEE: %s" %ZigateIEEE)
         self.ZigateIEEE = ZigateIEEE
         return
 
     def setIASzoneControlerIEEE( self, key, Epout ):
 
-        Domoticz.Debug("setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
+        self.logging( 'Debug', "setIASzoneControlerIEEE for %s allow: %s" %(key, Epout))
         manuf_id = "0000"
         if 'Manufacturer' in self.ListOfDevices[key]:
             manuf_id = self.ListOfDevices[key]['Manufacturer']
@@ -108,10 +119,10 @@ class IAS_Zone_Management:
     def readConfirmEnroll( self, key, Epout ):
 
         if not self.ZigateIEEE:
-            Domoticz.Log("readConfirmEnroll - Zigate IEEE not yet known")
+            self.logging( 'Log', "readConfirmEnroll - Zigate IEEE not yet known")
             return
         if key not in self.devices:
-            Domoticz.Log("readConfirmEnroll - while not yet started")
+            self.logging( 'Log', "readConfirmEnroll - while not yet started")
             return
 
         cluster_id = "%04x" %0x0500
@@ -122,13 +133,13 @@ class IAS_Zone_Management:
         '''2.the CIE sends a ‘enroll’ message to the IAS Zone device'''
 
         if not self.ZigateIEEE:
-            Domoticz.Log("IASZone_enroll_response_ - Zigate IEEE not yet known")
+            self.logging( 'Log', "IASZone_enroll_response_ - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
-            Domoticz.Log("IASZone_enroll_response - while not yet started")
+            self.logging( 'Log', "IASZone_enroll_response - while not yet started")
             return
 
-        Domoticz.Debug("IASZone_enroll_response for %s" %nwkid)
+        self.logging( 'Debug', "IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
@@ -141,13 +152,13 @@ class IAS_Zone_Management:
         '''4.the CIE sends again a ‘response’ message to the IAS Zone device with ZoneID'''
 
         if not self.ZigateIEEE:
-            Domoticz.Log("IASZone_enroll_response_zoneID - Zigate IEEE not yet known")
+            self.logging( 'Log', "IASZone_enroll_response_zoneID - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
-            Domoticz.Log("IASZone_enroll_response_zoneID - while not yet started")
+            self.logging( 'Log', "IASZone_enroll_response_zoneID - while not yet started")
             return
 
-        Domoticz.Debug("IASZone_enroll_response for %s" %nwkid)
+        self.logging( 'Debug', "IASZone_enroll_response for %s" %nwkid)
         addr_mode = "02"
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
@@ -169,10 +180,10 @@ class IAS_Zone_Management:
     def IASZone_attributes( self, nwkid, Epout):
 
         if not self.ZigateIEEE:
-            Domoticz.Log("IASZone_attributes - Zigate IEEE not yet known")
+            self.logging( 'Log', "IASZone_attributes - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
-            Domoticz.Log("IASZone_attributes - while not yet started")
+            self.logging( 'Log', "IASZone_attributes - while not yet started")
             return
 
         cluster_id = "%04x" %0x0500
@@ -181,9 +192,9 @@ class IAS_Zone_Management:
 
     def IASZone_triggerenrollement( self, nwkid, Epout):
 
-        Domoticz.Debug("IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
+        self.logging( 'Debug', "IASZone_triggerenrollement - Addr: %s Ep: %s" %(nwkid, Epout))
         if not self.ZigateIEEE:
-            Domoticz.Log("IASZone_triggerenrollement - Zigate IEEE not yet known")
+            self.logging( 'Log', "IASZone_triggerenrollement - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
             self.devices[nwkid] = {}
@@ -197,19 +208,19 @@ class IAS_Zone_Management:
 
     def receiveIASmessages(self, nwkid , step, value):
 
-        Domoticz.Debug("receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
+        self.logging( 'Debug', "receiveIASmessages - from: %s Step: %s Value: %s" %(nwkid, step, value))
 
         if not self.ZigateIEEE:
-            Domoticz.Debug("receiveIASmessages - Zigate IEEE not yet known")
+            self.logging( 'Debug', "receiveIASmessages - Zigate IEEE not yet known")
             return
         if nwkid not in self.devices:
-            Domoticz.Debug("receiveIASmessages - %s not in %s" %(nwkid, self.devices))
+            self.logging( 'Debug', "receiveIASmessages - %s not in %s" %(nwkid, self.devices))
             return
 
         iterEp = self.devices[nwkid]['Ep']
 
         if  step == 3:  # Receive Write Attribute Message
-            Domoticz.Debug("receiveIASmessages - Write rAttribute Response: %s" %value)
+            self.logging( 'Debug', "receiveIASmessages - Write rAttribute Response: %s" %value)
             self.HB = 0
             if self.devices[nwkid]['Step'] <= 4:
                 self.devices[nwkid]['Step'] = 4
@@ -222,7 +233,7 @@ class IAS_Zone_Management:
             if 'ticks_5' not in self.devices[nwkid]:
                 self.devices[nwkid]['ticks_5'] = 0
             if self.devices[nwkid]['ticks_5'] > 3:
-                Domoticz.Debug("receiveIASmessages - Timeout %s/%s at step 5" %(nwkid, iterEp))
+                self.logging( 'Debug', "receiveIASmessages - Timeout %s/%s at step 5" %(nwkid, iterEp))
                 del self.devices[nwkid]
                 return
 
@@ -282,21 +293,21 @@ class IAS_Zone_Management:
 
         if not self.wip:
             return
-        Domoticz.Debug("IAS_heartbeat ")
+        self.logging( 'Debug', "IAS_heartbeat ")
         if not self.ZigateIEEE:
-            Domoticz.Log("IAS_heartbeat - Zigate IEEE not yet known")
+            self.logging( 'Log', "IAS_heartbeat - Zigate IEEE not yet known")
             return
         remove_devices =[]
         for iterKey in self.devices:
             iterEp = self.devices[iterKey]['Ep']
-            Domoticz.Debug("IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
+            self.logging( 'Debug', "IAS_heartbeat - processing %s step: %s" %(iterKey, self.devices[iterKey]['Step']))
             if self.devices[iterKey]['Step'] == 0:
                 continue
 
             if self.HB > 1 and self.devices[iterKey]['Step'] == 2:
                 self.HB = 0
                 self.devices[iterKey]['Ep'] = iterEp
-                Domoticz.Debug("IAS_heartbeat - TO restart self.IASZone_attributes")
+                self.logging( 'Debug', "IAS_heartbeat - TO restart self.IASZone_attributes")
                 self.IASZone_enroll_response_zoneID( iterKey, iterEp)
                 self.IASZone_attributes( iterKey, iterEp)
 
@@ -305,7 +316,7 @@ class IAS_Zone_Management:
                 self.HB = 0
                 self.wip = True
                 iterEp = self.devices[iterKey]['Ep']
-                Domoticz.Debug("IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
+                self.logging( 'Debug', "IAS_heartbeat - TO restart self.setIASzoneControlerIEEE")
                 if self.tryHB > 3:
                     self.tryHB = 0
                     self.devices[iterKey]['Step'] = 5
@@ -315,13 +326,13 @@ class IAS_Zone_Management:
                 self.HB = 0
                 iterEp = self.devices[iterKey]['Ep']
                 self.readConfirmEnroll(iterKey, iterEp)
-                Domoticz.Debug("IAS_heartbeat - TO restart self.readConfirmEnroll")
+                self.logging( 'Debug', "IAS_heartbeat - TO restart self.readConfirmEnroll")
                 if self.tryHB > 3:
                     self.tryHB = 0
                     self.devices[iterKey]['Step'] = 7
 
             elif self.devices[iterKey]['Step'] == 7: # Receive Confirming Enrollement
-                Domoticz.Debug("IAS_heartbeat - Enrollment confirmed/completed")
+                self.logging( 'Debug', "IAS_heartbeat - Enrollment confirmed/completed")
                 self.HB = 0
                 self.wip = False
                 self.devices[iterKey]['Step'] = 0
@@ -366,7 +377,7 @@ class IAS_Zone_Management:
         if SquawkMode not in SQUAWKMODE:
             Domoticz.Error("_write_IAS_WD_Squawk - %s/%s Unknown Squawk Mode: %" %(nwkid, ep,SquawkMode))
 
-        Domoticz.Debug("write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" %(nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]))
+        self.logging( 'Debug', "write_IAS_WD_Squawk - %s/%s - Squawk Mode: %s >%s<" %(nwkid, ep, SquawkMode, SQUAWKMODE[SquawkMode]))
         direction = 0x00
         manuf = 0x00
         manufid = 0x0000
@@ -380,7 +391,7 @@ class IAS_Zone_Management:
         datas += "%04X" %manufid
         datas += "%02X" %SQUAWKMODE[SquawkMode]
     
-        Domoticz.Debug("_write_IASWD - 0x0112 %s" %datas)
+        self.logging( 'Debug', "_write_IASWD - 0x0112 %s" %datas)
         self.ZigateComm.sendData( "0112", datas )
 
     # IAS Warning Device Cluster
@@ -419,7 +430,7 @@ class IAS_Zone_Management:
         datas += "%02X" %strobe_duty
         datas += "%02X" %strobe_level
     
-        Domoticz.Log("_write_IASWD - 0x0111 %s" %datas)
+        self.logging( 'Debug', "_write_IASWD - 0x0111 %s" %datas)
         self.ZigateComm.sendData( "0111", datas )
 
     def warningMode( self , nwkid, ep, mode='both'):
@@ -471,7 +482,7 @@ class IAS_Zone_Management:
 
         warning_duration = self.pluginconf.pluginConf['alarmDuration']
 
-        Domoticz.Log("warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" \
+        self.logging( 'Debug', "warningMode - Mode: %s, Duration: %s, Duty: %s, Level: %s" \
                 %(bin(warning_mode), warning_duration, strobe_duty, strobe_level))
         self._write_IASWD( nwkid, ep, warning_mode, warning_duration, strobe_duty, strobe_level)
 
@@ -479,19 +490,19 @@ class IAS_Zone_Management:
 
     def siren_both( self, nwkid, ep):
 
-        Domoticz.Log("Device Alarm On ( Siren + Strobe)")
+        self.logging( 'Debug', "Device Alarm On ( Siren + Strobe)")
         self.warningMode( nwkid, ep, 'both' )
         return
 
     def siren_only( self, nwkid, ep):
 
-        Domoticz.Log("Device Alarm On (Siren)")
+        self.logging( 'Debug', "Device Alarm On (Siren)")
         self.warningMode( nwkid, ep, 'siren' )
         return
 
     def strobe_only( self, nwkid, ep):
 
-        Domoticz.Log("Device Alarm On ( Strobe)")
+        self.logging( 'Debug', "Device Alarm On ( Strobe)")
         self.warningMode( nwkid, ep, 'strobe' )
         return
 
@@ -502,7 +513,7 @@ class IAS_Zone_Management:
 
     def alarm_off( self, nwkid, ep):
 
-        Domoticz.Log("Device Alarm Off")
+        self.logging( 'Debug', "Device Alarm Off")
         self.warningMode( nwkid, ep, 'stop' )
         return
 

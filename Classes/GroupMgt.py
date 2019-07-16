@@ -34,7 +34,6 @@ MAX_CYCLE = 3
 class GroupsManagement(object):
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, ScanGroupMembership, Devices, ListOfDevices, IEEE2NWK ):
-        Domoticz.Debug("GroupsManagement __init__")
         self.StartupPhase = 'init'
         self._SaveGroupFile = None
         self.ListOfGroups = {}      # Data structutre to store all groups
@@ -63,7 +62,6 @@ class GroupsManagement(object):
         if not os.path.isfile(self.groupsConfigFilename) :
             self.groupsConfigFilename = self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + ".txt"
             if not os.path.isfile(self.groupsConfigFilename):
-                Domoticz.Debug("No Groups Configuration File")
                 self.groupsConfigFilename = None
 
         self.json_groupsConfigFilename = self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json"

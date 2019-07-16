@@ -77,8 +77,8 @@ SETTINGS = {
             'ZigateConfiguration': {
                     'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                     'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                    'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                    'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'allowAutoPairing': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -128,10 +128,16 @@ SETTINGS = {
                     'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugHeartbeat':{ 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugWidget':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugPlugin':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugDatabase':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugCommand':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugPairing':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugNetworkMap':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugNetworkEnergy':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugGroups':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugIAS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugAPS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugWebServer':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
                 },
             #Others
@@ -169,7 +175,6 @@ class PluginConf:
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
                 else:
                     self.pluginConf[param] = SETTINGS[theme][param]['default']
-                Domoticz.Debug("pluginConf[%s] initialized to: %s" %(param, self.pluginConf[param]))
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
         if not os.path.isfile(self.pluginConf['filename']):
@@ -183,7 +188,6 @@ class PluginConf:
         # Sanity Checks
         if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
-            Domoticz.Debug(" -TradfriKelvinStep corrected: %s" %self.pluginConf['TradfriKelvinStep'])
 
         if self.pluginConf['Certification'] == 'CE':
             self.pluginConf['CertificationCode'] = 0x01
@@ -195,7 +199,6 @@ class PluginConf:
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
-            Domoticz.Debug(" -zmod corrected: %s" %self.pluginConf['zmod'])
 
         # Check Path
         for theme in SETTINGS:
@@ -220,18 +223,15 @@ class PluginConf:
             if not os.path.isfile(self.pluginConf['filename']) :
                 self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf.txt"
                 if not os.path.isfile(self.pluginConf['filename']) :
-                    Domoticz.Debug("No PluginConf.txt , using default values")
                     self.write_Settings( )
                     return
 
-        Domoticz.Debug("PluginConfig: %s" %self.pluginConf['filename'])
         tmpPluginConf = ""
         if not os.path.isfile( self.pluginConf['filename'] ) :
             return
         with open( self.pluginConf['filename'], 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
-        Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
         PluginConf = {}
 
         try:
@@ -243,12 +243,10 @@ class PluginConf:
         else:
             for theme in SETTINGS:
                 for param in SETTINGS[theme]:
-                    Domoticz.Debug("Processing: %s" %param)
                     if PluginConf.get( param ):
                         if SETTINGS[theme][param]['type'] == 'hex':
                             if is_hex( PluginConf.get( param ) ):
                                 self.pluginConf[param] = int(PluginConf[ param ], 16)
-                                Domoticz.Debug(" -%s: %s" %(param, self.pluginConf[param]))
                             else:
                                 Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                         %( param, self.pluginConf[param]['default']))
@@ -257,7 +255,6 @@ class PluginConf:
                         elif SETTINGS[theme][param]['type'] in ( 'bool', 'int'):
                             if PluginConf.get( param).isdigit():
                                 self.pluginConf[param] = int(PluginConf[ param ])
-                                Domoticz.Debug(" -%s: %s" %(param, self.pluginConf[param]))
                             else:
                                 Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                     %( param, self.pluginConf[param]['default']))
@@ -274,15 +271,12 @@ class PluginConf:
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %self.hardwareid
         pluginConfFile = self.pluginConf['filename']
-        Domoticz.Debug("Write %s" %pluginConfFile)
         write_pluginConf = {}
         for theme in SETTINGS:
             for param in SETTINGS[theme]:
                 if self.pluginConf[param] != SETTINGS[theme][param]['default']:
                     write_pluginConf[param] = self.pluginConf[param]
-                    Domoticz.Debug("archive %s" %param)
 
-        Domoticz.Debug("Number elements to write: %s" %len(write_pluginConf))
         with open( pluginConfFile , 'wt') as handle:
             json.dump( write_pluginConf, handle, sort_keys=True, indent=2)
 
