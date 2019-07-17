@@ -1415,7 +1415,6 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if self.domoticzdb_DeviceStatus:
                 from Classes.DomoticzDB import DomoticzDB_DeviceStatus
                 if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
-                    # This means that 
                     continue
 
             # Takes the opportunity to update RSSI and Battery

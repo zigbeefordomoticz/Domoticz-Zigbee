@@ -40,7 +40,7 @@ class DomoticzDB_Preferences:
     def retreiveAcceptNewHardware( self):
 
         if  self.dbCursor is None:
-            return
+            return 0
         try:
             self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'" )
             value = self.dbCursor.fetchone()
@@ -59,7 +59,7 @@ class DomoticzDB_Preferences:
     def retreiveWebUserNamePassword( self ):
 
         if  self.dbCursor is None:
-            return
+            return ( None, None)
         try:
             self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
             WebUserName = self.dbCursor.fetchone()
@@ -168,7 +168,7 @@ class DomoticzDB_DeviceStatus:
         """
 
         if  self.dbCursor is None:
-            return
+            return 0
         try:
             self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
@@ -190,7 +190,7 @@ class DomoticzDB_DeviceStatus:
         """
 
         if  self.dbCursor is None:
-            return
+            return 0
         try:
             self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
@@ -216,7 +216,7 @@ class DomoticzDB_DeviceStatus:
         """
 
         if  self.dbCursor is None:
-            return
+            return 0
         try:
             self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
@@ -232,14 +232,3 @@ class DomoticzDB_DeviceStatus:
         except Exception as e:
             Domoticz.Error("retreiveAddjValue_temp - Exception: %s" %e)
             return 0
-
-
-if __name__ == '__main__':
-
-
-    tstdevice = DomoticzDB_DeviceStatus("/var/lib/domoticz/domoticz.db", "35")
-    print(tstdevice.retreiveAddjValue_temp("35"))
-
-
-    hardwaretable = DomoticzDB_Hardware("/var/lib/domoticz/domoticz.db", "35")
-    hardwaretable.disablePermitToJoin()

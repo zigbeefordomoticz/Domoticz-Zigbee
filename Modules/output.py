@@ -148,9 +148,9 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0006': [ 0x0000, 0x4000, 0x4001, 0x4002, 0x4003],
             '0008': [ 0x0000],
             '000a': [ 0x0000],
-            '000c': [ 0x0055],
+            '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
             '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011],
-            '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0008],
+            '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008],
             '0400': [ 0x0000],
             '0402': [ 0x0000],
             '0403': [ 0x0000],
@@ -332,26 +332,19 @@ def ReadAttributeRequest_000C(self, key):
     EPout= "02"
 
     """
-     Attribute Type: 39 Attribut ID: 0041
      Attribute Type: 10 Attribut ID: 0051
      Attribute Type: 39 Attribut ID: 0055
      Attribute Type: 18 Attribut ID: 006f
-     Attribute Type: 23 Attribut ID: 0100
-     Attribute Type: 39 Attribut ID: 0105
-     Attribute Type: 39 Attribut ID: 0106
     """
 
     EPin = "01"
     EPout= "01"
     loggingOutput( self, 'Debug', "Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     listAttributes = []
-    listAttributes.append(0x41)
-    listAttributes.append(0x51)
-    listAttributes.append(0x55)
-    listAttributes.append(0x6f)
-    listAttributes.append(0x100)
-    listAttributes.append(0x105)
-    listAttributes.append(0x106)
+    listAttributes.append(0x0051)
+    listAttributes.append(0x0055)
+    listAttributes.append(0x006f)
+    listAttributes.append(0xff05)
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
