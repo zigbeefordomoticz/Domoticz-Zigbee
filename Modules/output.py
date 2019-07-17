@@ -148,6 +148,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0006': [ 0x0000, 0x4000, 0x4001, 0x4002, 0x4003],
             '0008': [ 0x0000],
             '000a': [ 0x0000],
+            '000c': [ 0x0055],
             '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0008],
             '0400': [ 0x0000],
@@ -885,6 +886,7 @@ def rebind_Clusters( self, NWKID):
     # Binding devices
     CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0402', '0400', '0001',
             '0102', '0403', '0405', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
+            '000c',
             'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
             'ff02'  # Used by Xiaomi devices for battery informations.
             ]
