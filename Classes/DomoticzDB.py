@@ -181,7 +181,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Baro'][ID]['Stamp'] = 0
 
         Domoticz.Debug("Baro - Value: %s, Stamp: %s, Today: %s" %(self.AdjValue['Baro'][ID]['Value'], self.AdjValue['Baro'][ID]['Stamp'], int(time() )))
-        if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + 900):
+        if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + 903):
             Domoticz.Debug("Return from Baro cache")
             return self.AdjValue['Baro'][ID]['Value']
 
@@ -222,7 +222,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['TimeOutMotion'][ID]['Stamp'] = 0
 
         Domoticz.Debug("TimeOut - Value: %s, Stamp: %s, Today: %s" %(self.AdjValue['TimeOutMotion'][ID]['Value'], self.AdjValue['TimeOutMotion'][ID]['Stamp'], int(time() )))
-        if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + 900):
+        if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + 905):
             Domoticz.Debug("Return from Timeout cache")
             return self.AdjValue['TimeOutMotion'][ID]['Value']
 
@@ -260,7 +260,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Temp'][ID]['Value'] = None
             self.AdjValue['Temp'][ID]['Stamp'] = 0
 
-        if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + 900):
+        if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + 909):
             Domoticz.Debug("Return from Temp cache")
             return self.AdjValue['Temp'][ID]['Value']
 
