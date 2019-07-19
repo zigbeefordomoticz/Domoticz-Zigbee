@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 19 July 2019 - 4.3.6
+- [Technical] - Reduce database access, by introducing cach mechanism in Domoticz.py
+
 ## 2 July 2019 - 4.3.5
 - [Issue] - Remaining issue with PiZigate and gpio set. Should be closed now.
 
