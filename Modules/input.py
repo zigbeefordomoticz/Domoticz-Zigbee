@@ -593,10 +593,10 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         # Firmware 3.1a
         MsgSrcEp = MsgData[4:6]
         MsgSrcAddrMode = MsgData[6:8]
-        if MsgDataDestMode == ADDRESS_MODE['short']:
+        if MsgSrcAddrMode == ADDRESS_MODE['short']:
             MsgDataDestAddr=MsgData[8:12]
             MsgDataSQN=MsgData[12:14]
-        elif MsgDataDestMode == ADDRESS_MODE['ieee']:
+        elif MsgSrcAddrMode == ADDRESS_MODE['ieee']:
             MsgDataDestAddr=MsgData[8:24]
             MsgDataSQN=MsgData[24:26]
 
