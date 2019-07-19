@@ -240,15 +240,32 @@ class NetworkMap():
         Domoticz.Status("--")
 
         self.prettyPrintNeighbours()
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.HardwareID + '.json'
 
         storeLQI = {}
         storeLQI[int(time.time())] = dict(self.Neighbours)
 
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-v3-' + '%02d' %self.HardwareID + '.json'
         if os.path.isdir( self.pluginconf.pluginConf['pluginReports'] ):
-            with open( _filename, 'at') as json_file:
-                json_file.write('\n')
-                json.dump( storeLQI, json_file)
+
+            nbentries = 0
+            if os.path.isfile( _filename ):
+                with open( _filename, 'r') as fin:
+                    data = fin.read().splitlines(True)
+                    nbentries = len(data)
+
+            with open( _filename, 'w') as fout:
+                # we need to short the list by todayNumReports - todayNumReports - 1
+                maxNumReports = self.pluginconf.pluginConf['numTopologyReports']
+                start = 0
+                if nbentries >= maxNumReports:
+                    start = (nbentries - maxNumReports)+ 1
+                self.logging( 'Log', "Rpt max: %s , New Start: %s, Len:%s " %(maxNumReports, start, nbentries))
+
+                if nbentries != 0:
+                    fout.write('\n')
+                    fout.writelines(data[start:])
+                fout.write('\n')
+                json.dump( storeLQI, fout)
             #self.adminWidgets.updateNotificationWidget( Devices, 'A new LQI report is available')
         else:
             Domoticz.Error("LQI:Unable to get access to directory %s, please check PluginConf.txt" %(self.pluginconf.pluginConf['pluginReports']))

@@ -660,7 +660,7 @@ class WebServer(object):
 
     def rest_netTopologie( self, verb, data, parameters):
 
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-' + '%02d' %self.hardwareID + '.json'
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-v3-' + '%02d' %self.hardwareID + '.json'
         self.logging( 'Debug', "Filename: %s" %_filename)
 
         _response = setupHeadersResponse()
@@ -840,7 +840,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-' + '%02d' %self.hardwareID + '.json'
+        _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-v3-' + '%02d' %self.hardwareID + '.json'
 
         _timestamps_lst = [] # Just the list of Timestamps
         _scan = {}
