@@ -890,7 +890,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 if DeviceType == "Humi":
                     NewNvalue = value
-                    NewSvalue = "0"
+                    NewSvalue = "%s" %humiStatus
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":  # temp+hum xiaomi
