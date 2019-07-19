@@ -40,9 +40,21 @@ def checkPluginVersion( branch ):
 
 def checkPluginUpdate( currentVersion, availVersion):
 
-    if availVersion > currentVersion:
+    Domoticz.Log("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
+    currentMaj, currentMin, currentUpd = currentVersion.split('.')
+    availMaj, availMin, availUpd = availVersion.split('.')
+
+    if availMaj > currentMaj:
         Domoticz.Log("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
+    elif availMaj == currentMaj:
+        if availMin > currentMin:
+            Domoticz.Log("checkPluginVersion - Upgrade available: %s" %availVersion)
+            return True
+        elif availMin == currentMin:
+            if availUpd > currentUpd:
+                Domoticz.Log("checkPluginVersion - Upgrade available: %s" %availVersion)
+                return True
     return False
 
 
