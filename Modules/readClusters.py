@@ -122,6 +122,10 @@ def ReadCluster(self, Devices, MsgData):
 
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
+    if MsgSrcAddr not in self.ListOfDevices:
+        Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
+        return
+
     if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
         if 'Ep' in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']:
             if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep']:
