@@ -15,6 +15,8 @@ import Domoticz
 import os.path
 from time import time
 
+CACHE_TIMEOUD = 300   # nu, seconds
+
 class DomoticzDB_Preferences:
 
     def __init__(self, database):
@@ -143,6 +145,7 @@ class DomoticzDB_DeviceStatus:
 
     def __init__(self, database, hardwareID ):
         Domoticz.Debug("DomoticzDB_DeviceStatus - Init")
+        self.database = database
         self.Devices = {}
         self.dbConn = None
         self.dbCursor = None
@@ -156,17 +159,20 @@ class DomoticzDB_DeviceStatus:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             return
-        self._openDB( database )
 
-    def _openDB( self, database):
+    def _openDB( self):
 
-        Domoticz.Debug("Opening %s" %database)
-        self.dbConn = sqlite3.connect(database)
+        # Check if we have access to the database, if not Error and return
+        if not os.path.isfile( self.database ) :
+            return
+        Domoticz.Log("Opening %s" %self.database)
+        self.dbConn = sqlite3.connect(self.database)
         self.dbCursor = self.dbConn.cursor()
 
     def closeDB( self ):
 
         self.dbConn.close()
+        Domoticz.Log("Closing %s" %self.database)
 
 
     def retreiveAddjValue_baro( self, ID):
@@ -181,7 +187,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Baro'][ID]['Stamp'] = 0
 
         Domoticz.Debug("Baro - Value: %s, Stamp: %s, Today: %s" %(self.AdjValue['Baro'][ID]['Value'], self.AdjValue['Baro'][ID]['Stamp'], int(time() )))
-        if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + 903):
+        if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + CACHE_TIMEOUD):
             Domoticz.Debug("Return from Baro cache")
             return self.AdjValue['Baro'][ID]['Value']
 
@@ -191,23 +197,28 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Baro'][ID]['Stamp'] = int(time())
             return 0
         try:
+            self._openDB( )
             Domoticz.Debug("DB AddjValue2 access for %s" %ID)
             self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
             if value == None:
                 self.AdjValue['Baro'][ID]['Value'] = 0
                 self.AdjValue['Baro'][ID]['Stamp'] = int(time())
+                self.closeDB()
                 return 0
             else:
                 self.AdjValue['Baro'][ID]['Value'] = value[0]
                 self.AdjValue['Baro'][ID]['Stamp'] = int(time())
+                self.closeDB()
                 return value[0]
         except sqlite3.Error as e:
             Domoticz.Error("retreiveAddjValue_baro - Database error: %s" %e)
+            self.closeDB()
             return 0
 
         except Exception as e:
             Domoticz.Error("retreiveAddjValue_baro - Exception: %s" %e)
+            self.closeDB()
             return 0
 
     def retreiveTimeOut_Motion( self, ID):
@@ -222,31 +233,34 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['TimeOutMotion'][ID]['Stamp'] = 0
 
         Domoticz.Debug("TimeOut - Value: %s, Stamp: %s, Today: %s" %(self.AdjValue['TimeOutMotion'][ID]['Value'], self.AdjValue['TimeOutMotion'][ID]['Stamp'], int(time() )))
-        if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + 905):
+        if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + CACHE_TIMEOUD):
             Domoticz.Debug("Return from Timeout cache")
             return self.AdjValue['TimeOutMotion'][ID]['Value']
 
-        if  self.dbCursor is None:
-            return 0
         try:
             Domoticz.Debug("DB access AddjValue for %s" %ID)
+            self._openDB()
             self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
             if value == None:
+                self.closeDB()
                 return 0
             else:
                 self.AdjValue['TimeOutMotion'][ID]['Value'] = value[0]
                 self.AdjValue['TimeOutMotion'][ID]['Stamp'] = int(time())
+                self.closeDB()
                 return value[0]
 
         except sqlite3.Error as e:
             Domoticz.Error("retreiveTimeOut_Motion - Database error: %s" %e)
             Domoticz.Debug("retreiveTimeOut_Motion for ID: %s HardwareID: %s" %(ID, self.HardwareID))
+            self.closeDB()
             return 0
 
         except Exception as e:
             Domoticz.Error("retreiveTimeOut_Motion - Exception: %s" %e)
             Domoticz.Debug("retreiveTimeOut_Motion for ID: %s HardwareID: %s" %(ID, self.HardwareID))
+            self.closeDB()
             return 0
 
 
@@ -260,27 +274,30 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Temp'][ID]['Value'] = None
             self.AdjValue['Temp'][ID]['Stamp'] = 0
 
-        if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + 909):
+        if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + CACHE_TIMEOUD):
             Domoticz.Debug("Return from Temp cache")
             return self.AdjValue['Temp'][ID]['Value']
 
-        if  self.dbCursor is None:
-            return 0
         try:
             Domoticz.Debug("DB access AddjValue for %s" %ID)
+            self._openDB()
             self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
             value = self.dbCursor.fetchone()
             if value == None:
+                self.closeDB()
                 return 0
             else:
                 self.AdjValue['Temp'][ID]['Value'] = value[0]
                 self.AdjValue['Temp'][ID]['Stamp'] = int(time())
+                self.closeDB()
                 return value[0]
 
         except sqlite3.Error as e:
             Domoticz.Error("retreiveAddjValue_temp - Database error: %s" %e)
+            self.closeDB()
             return 0
 
         except Exception as e:
             Domoticz.Error("retreiveAddjValue_temp - Exception: %s" %e)
+            self.closeDB()
             return 0
