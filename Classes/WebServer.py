@@ -1459,7 +1459,10 @@ class WebServer(object):
                     # Last Commands
                     lastcmd_lst = []
                     if 'Last Cmds' in self.ListOfDevices[item]:
-                        for timestamp, cmd in self.ListOfDevices[item]['Last Cmds']:
+                        for lastCmd in self.ListOfDevices[item]['Last Cmds']:
+                            timestamp = lastCmd[0]
+                            cmd = lastCmd[1]
+                            #payload = lastCmd[2]
                             _cmd = {}
                             _cmd['CmdCode'] = cmd
                             _cmd['TimeStamps'] =  timestamp
