@@ -15,7 +15,7 @@ import Domoticz
 import os.path
 from time import time
 
-CACHE_TIMEOUD = (15 * 60 * 15)   # num seconds
+CACHE_TIMEOUD = ((15 * 60) + 15)   # num seconds
 
 class DomoticzDB_Preferences:
 
