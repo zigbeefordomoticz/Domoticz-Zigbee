@@ -184,7 +184,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.4.13'
+        self.pluginParameters['PluginVersion'] = '4.4.14'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -261,9 +261,6 @@ class BasePlugin:
         if  self.pluginconf.pluginConf['capturePairingInfos'] == 1 :
             self.DiscoveryDevices = {}
 
-        # Initialise APS Object
-        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
-            self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf)
 
         #Import DeviceConf.txt
         importDeviceConf( self ) 
@@ -294,6 +291,10 @@ class BasePlugin:
         # Create Statistics object
         self.statistics = TransportStatistics(self.pluginconf)
 
+        # Create APS object to manage Transmission Errors
+        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+            self.APS = APSManagement( self.ListOfDevices , Devices, self.pluginconf)
+
         # Connect to Zigate only when all initialisation are properly done.
         Domoticz.Status("Transport mode: %s" %self.transport)
         if  self.transport == "USB":
@@ -316,6 +317,9 @@ class BasePlugin:
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
         self.ZigateComm.openConn()
         self.busy = False
+
+        # Update APS Object with ZigateComm
+        self.APS.updateZigateComm( self.ZigateComm)
         return
 
     def onStop(self):
