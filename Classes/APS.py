@@ -209,7 +209,13 @@ class APSManagement(object):
         _lastCmds = self.ListOfDevices[nwk]['Last Cmds']
 
         self.logging( 'Debug', "processAPSFailure - %s Last Cmds: %s" %(nwk, _lastCmds))
-        for iterTime, iterCmd , iterpayLoad in reversed(_lastCmds):
+        for iterItem in reversed(_lastCmds):
+            iterTime = iterItem[0]
+            iterCmd =iterItem[1]
+            iterpayLoad = None
+            if len(iterItem) == 3:
+                iterpayLoad =iterItem[2]
+            
             self.logging( 'Debug', "processAPSFailure - %s process %18s %s - %s[%s]" %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
             if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                 # That command has been issued in the APS time window
