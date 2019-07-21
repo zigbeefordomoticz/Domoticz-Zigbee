@@ -319,7 +319,8 @@ class BasePlugin:
         self.busy = False
 
         # Update APS Object with ZigateComm
-        self.APS.updateZigateComm( self.ZigateComm)
+        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+            self.APS.updateZigateComm( self.ZigateComm)
         return
 
     def onStop(self):
