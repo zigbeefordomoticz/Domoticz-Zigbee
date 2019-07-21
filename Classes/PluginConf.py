@@ -66,6 +66,7 @@ SETTINGS = {
             # Device Management
             'DeviceManagement': {
                     'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
+                    'resetPluginDS': { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':True, 'Advanced':True},
                     'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False, 'Advanced':False},
                     'resetReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':False},
                     'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
