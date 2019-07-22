@@ -1,24 +1,21 @@
 # Release Notes 
 
-## 19 July 2019 - 4.3.6
-- [Technical] - Reduce database access, by introducing cach mechanism in Domoticz.py
-
-## 2 July 2019 - 4.3.5
-- [Issue] - Remaining issue with PiZigate and gpio set. Should be closed now.
-
-##    29 June 2019 - 4.3.4
-- [Hardware] - Müller-Licht 44062 "tint white + color" (LED E27 9,5W 806lm 1.800-6.500K RGB). 
-- [Issue] - Fix an issue when seting gpio for PiZigate
-
-## 24 June 2019 - 4.3.3
-- [Issue] - Fix Issue #452
-
-## 13 June 2019 - 4.3.2
-- [Issue] - Problem with lumi.ctrl_neutral2 . Left switch not working
-- [Hardware] - #451 - Handle Philips Hue GU10 as a WW
-
-##  4 June 2019 - 4.3.1
-- [Issue] - #449 fix an issue when a new device is paired and not identified in DeviceConf.txt
+##             - beta4.4 ( Web User Interface )
+- [Technical] - Web Server Class
+- [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.
+- [Technical] - Full re-factory of Network Toplogy scanner
+- [Technical] - Full re-factory of Network Energy Level scanner
+- [technical] - Topology and Energy Level scan are now automaticlay started a launch of plugn + 120s, and then will be trogger manually by Web Interface
+- [Technical] - enable live debug switch (with nwkid filtering) from the Web Admin Interface
+- [Technical] - Refactor the Read Attribute mechanism. Enable Polling parameters for ON/OFF and LvlControl from the User Interface or Configuration file
+- [Technical] - Implement ReJoin capabilities. When a device is sending a un-expected Leave (not following a remove).
+- [Technical] - Refactor logFORMAT 
+- [Hardware] - Certify WXKG11LM (up to 4 clicks), Warning Device HEIMAN
+- [Technical] - Refactor the PiZigate setup
+- [Technical] - Tools to get PiZigate running on Fedora distribution
+- [Technical] - Plugin version and Firmware Version check. Will required Internet access (which is currently enable by default in PluginConf)
+- [Technical] - Allow debug Match with several device address
+- [Technical] - decode more Attribute for Cluster 0x0006
 
 ## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)

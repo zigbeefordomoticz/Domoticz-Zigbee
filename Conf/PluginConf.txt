@@ -1,8 +1,0 @@
-{
-'channel':'11,15,19,20,25,26',
-'vibrationAqarasensitivity':'medium',
-'resetMotiondelay':'30',
-'enablegroupmanagement':'0',
-'logLQI':'0',
-'logFORMAT':'0'
-}

@@ -13,350 +13,291 @@ Parameters not define in the PluginConf.txt file will be set to their default va
 
 import Domoticz
 import os.path
+import json
 
 from Modules.tools import is_hex
+
+
+SETTINGS = { 
+            'Services': {
+                    'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
+                },
+
+            'DomoticzEnvironment': {
+                    'proto': { 'type':'str', 'default':'http', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
+                    'host': { 'type':'str', 'default':'127.0.0.1', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
+                    'port': { 'type':'str', 'default':'8080', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False}
+                },
+
+            'WebInterface': {
+                    'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
+                    'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
+                    'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
+                    'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
+                    'enableCache':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False}
+                },
+
+            # Polling
+            'DevicePolling': {
+                    'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'polling0000':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0001':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'pollingONOFF':         { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'pollingLvlControl':    { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'polling000C':          { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0102':          { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0201':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0204':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0300':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0400':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0402':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0403':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0405':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0406':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0500':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0502':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0702':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
+                },
+            # Device Management
+            'DeviceManagement': {
+                    'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
+                    'resetPluginDS': { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':True, 'Advanced':True},
+                    'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False, 'Advanced':False},
+                    'resetReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':False},
+                    'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'doUnbindBind':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
+                    'allowReBindingClusters':  { 'type':'bool', 'default':1 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True}
+                    },
+
+            # Zigate Configuration
+            'ZigateConfiguration': {
+                    'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+                    'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'allowAutoPairing': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'CertificationCode':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                    'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
+                },
+
+                #Over The Air Upgrade
+            'OverTheAirUpgrade': {
+                    'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                    'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
+                },
+
+            # Plugin Transport
+            'PluginTransport': {
+                    'CrcCheck':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                    'reTransmit':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                    'sendDelay':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                    'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                    'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False}
+                },
+
+            # Plugin Directories
+            'PluginConfiguration': {
+                    'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                    'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                    'homedirectory':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                    'pluginData':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'pluginConfig': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'pluginOTAFirmware': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'pluginReports':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                    'pluginWWW':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
+                },
+
+            # Verbose
+            'VerboseLogging': {
+                    'debugMatchId':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'capturePairingInfos': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'debugInput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugOutput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugHeartbeat':{ 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugWidget':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugPlugin':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugDatabase':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugCommand':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugPairing':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugNetworkMap':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugNetworkEnergy':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugGroups':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugIAS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugAPS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'debugWebServer':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
+                },
+            #Others
+            'Others': {
+                    'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
+                }
+            }
 
 class PluginConf:
 
     def __init__(self, homedir, hardwareid):
 
-        self.logFORMAT = 0
+        self.pluginConf = {}
+        self.homedir = homedir
+        self.hardwareid = hardwareid
+        self.pluginConf["pluginHome"] = homedir
 
-        self.enableWebServer = 0
+        for theme in SETTINGS:
+            for param in SETTINGS[theme]:
+                if param == 'pluginHome':
+                    pass
+                elif param == 'homedirectory':
+                    self.pluginConf[param] = homedir
+                elif param == 'pluginData':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
+                elif param == 'pluginConfig':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
+                elif param == 'pluginWWW':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
+                elif param == 'pluginReports':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
+                elif param == 'pluginOTAFirmware':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+                else:
+                    self.pluginConf[param] = SETTINGS[theme][param]['default']
 
-        # Device Management
-        self.allowStoreDiscoveryFrames = 0
-        self.allowForceCreationDomoDevice = 0
-        self.allowReBindingClusters = 1  # When receiving a Device Annouced, allow rebinding on clustered.
-        self.resetConfigureReporting = 0 # Allow to reset the Configure Reporting record
-        self.resetReadAttributes = 0 # Allow to reset the ReadAttribute
-        self.enableReadAttributes = 0 # Enable the plugin to poll information from the devices.
-        self.resetMotiondelay = 30
-        self.vibrationAqarasensitivity = 'medium' # Possible values are 'high', 'medium', 'low'
-        self.TradfriKelvinStep = 51
-        self.numDeviceListVersion = 12
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
+        if not os.path.isfile(self.pluginConf['filename']):
+            self._load_oldfashon( homedir, hardwareid)
+        else:
+            self._load_Settings()
 
-        # Zigate Configuration
-        self.channel = 0
-        self.allowRemoveZigateDevice = 0
-        self.eraseZigatePDM = 0
-        self.blueLedOff = 0
-        self.TXpower_set = 0
-        self.Certification = 0  # 1- CE; 2- FCC
-        self.enableAPSFailureLoging = 0
-        self.enableAPSFailureReporting = 0
-        self.allowOTA = 0
-        self.waitingOTA = 3600
-        self.batteryOTA = 0
-        self.extendedPANID = None
+        # Reset eraseZigatePDM to default
+        self.pluginConf['eraseZigatePDM'] = 0
 
-        # Plugin Transport
-        self.zmode = 'ZigBee'  # Default mode. Cmd -> Ack -> Data
-        self.reTransmit = 1  # Default mode, we do one retransmit if Data not reach at TO
-        self.zTimeOut = 2  # 2'' Tiemout to get Ack and Data
-        self.CrcCheck = 1
-        self.sendDelay = 0
-        self.Ping = 1
+        # Sanity Checks
+        if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
+            self.pluginConf['TradfriKelvinStep'] = 75
 
-        # Plugin Directories
-        self.pluginHome = homedir
-        self.homedirectory = homedir
-        self.pluginData = self.pluginHome + 'Data/'
-        self.pluginZData = self.pluginHome + 'Zdatas/'
-        self.pluginConfig = self.pluginHome + 'Conf/'
-        self.pluginWWW = self.pluginHome + 'www/'
-        #self.pluginReports = self.pluginWWW + 'zigate/reports/'
-        self.pluginReports = self.pluginHome + 'Reports/'
-        self.pluginOTAFirmware = self.pluginHome + 'OTAFirmware/'
+        if self.pluginConf['Certification'] == 'CE':
+            self.pluginConf['CertificationCode'] = 0x01
 
-        self.filename = None
+        elif self.pluginConf['Certification'] == 'FCC':
+            self.pluginConf['CertificationCode'] = 0x02
+        else:
+            self.pluginConf['CertificationCode'] = 0x01
 
-        # Groups Management
-        self.enablegroupmanagement = 0
-        self.discoverZigateGroups = 1
-        self.enableConfigGroups = 1
+        if self.pluginConf['zmode'] == 'Agressive':
+            self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
 
-        # Network Topoology
-        self.logLQI = 0
-        self.networkScan = 0
+        # Check Path
+        for theme in SETTINGS:
+            for param in SETTINGS[theme]:
+                if SETTINGS[theme][param]['type'] == 'path':
+                    if not os.path.exists( self.pluginConf[ param] ):
+                        Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
 
-        # Debugging
-        self.debugReadCluster = 0
+        for theme in SETTINGS:
+            for param in SETTINGS[theme]:
+                if self.pluginConf[param] != SETTINGS[theme][param]['default']:
+                    Domoticz.Status("%s set to %s" %(param, self.pluginConf[param]))
 
-        # Zigate
+
+    def _load_oldfashon( self, homedir, hardwareid):
 
         # Import PluginConf.txt
-        self.filename = self.pluginConfig + "PluginConf-%02d.txt" %hardwareid
-        if not os.path.isfile(self.filename) :
-            self.filename = self.pluginConfig + "PluginConf-%d.txt" %hardwareid
-            if not os.path.isfile(self.filename) :
-                self.filename = self.pluginConfig + "PluginConf.txt"
+        # Migration 
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.txt" %hardwareid
+        if not os.path.isfile(self.pluginConf['filename']) :
+            self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%d.txt" %hardwareid
+            if not os.path.isfile(self.pluginConf['filename']) :
+                self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf.txt"
+                if not os.path.isfile(self.pluginConf['filename']) :
+                    self.write_Settings( )
+                    return
 
-        Domoticz.Status("PluginConf: %s" %self.filename)
         tmpPluginConf = ""
-        self.PluginConf = {}
-        if not os.path.isfile( self.filename ) :
+        if not os.path.isfile( self.pluginConf['filename'] ) :
             return
-
-        with open( self.filename, 'r') as myPluginConfFile:
+        with open( self.pluginConf['filename'], 'r') as myPluginConfFile:
             tmpPluginConf += myPluginConfFile.read().replace('\n', '')
 
-        Domoticz.Debug("PluginConf.txt = " + str(tmpPluginConf))
+        PluginConf = {}
 
         try:
-            self.PluginConf = eval(tmpPluginConf)
-
+            PluginConf = eval(tmpPluginConf)
         except SyntaxError:
             Domoticz.Error("Syntax Error in %s, all plugin parameters set to default" %self.filename)
         except (NameError, TypeError, ZeroDivisionError):
             Domoticz.Error("Error while importing %s, all plugin parameters set to default" %self.filename)
-            
         else:
-            if self.PluginConf.get('enableWebServer'):
-                if self.PluginConf.get('enableWebServer').isdigit():
-                    self.enableWebServer = int(self.PluginConf['enableWebServer'])
-                    Domoticz.Status(" -enableWebServer: %s" %self.enableWebServer)
+            for theme in SETTINGS:
+                for param in SETTINGS[theme]:
+                    if PluginConf.get( param ):
+                        if SETTINGS[theme][param]['type'] == 'hex':
+                            if is_hex( PluginConf.get( param ) ):
+                                self.pluginConf[param] = int(PluginConf[ param ], 16)
+                            else:
+                                Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
+                                        %( param, self.pluginConf[param]['default']))
+                                self.pluginConf[param] = self.pluginConf[param]['default']
+    
+                        elif SETTINGS[theme][param]['type'] in ( 'bool', 'int'):
+                            if PluginConf.get( param).isdigit():
+                                self.pluginConf[param] = int(PluginConf[ param ])
+                            else:
+                                Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
+                                    %( param, self.pluginConf[param]['default']))
+                                self.pluginConf[param] = self.pluginConf[param]['default']
+                        elif SETTINGS[theme][param]['type'] == ( 'path', 'str'):
+                            self.pluginConf[param] = PluginConf[ param ]
 
-            if self.PluginConf.get('vibrationAqarasensitivity'):
-                self.vibrationAqarasensitivity = self.PluginConf['vibrationAqarasensitivity']
-                Domoticz.Status(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
+        self.write_Settings( )
 
-            if self.PluginConf.get('TradfriKelvinStep') and \
-                    self.PluginConf.get('TradfriKelvinStep').isdigit():
-                self.TradfriKelvinStep = int(self.PluginConf['TradfriKelvinStep'], 10)
-                if self.TradfriKelvinStep < 0 or self.TradfriKelvinStep > 255:
-                    self.TradfriKelvinStep = 75
 
-            if self.PluginConf.get('pluginData'):
-                self.pluginData = self.PluginConf['pluginData']
+    def write_Settings(self):
+        ' serialize json format the pluginConf '
+        ' Only the arameters which are different than default '
 
-            if self.PluginConf.get('pluginZData'):
-                self.pluginZData = self.PluginConf['pluginZData']
-                Domoticz.Status(" -pluginData: %s" %self.pluginData)
+        self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %self.hardwareid
+        pluginConfFile = self.pluginConf['filename']
+        write_pluginConf = {}
+        for theme in SETTINGS:
+            for param in SETTINGS[theme]:
+                if self.pluginConf[param] != SETTINGS[theme][param]['default']:
+                    write_pluginConf[param] = self.pluginConf[param]
 
-            if self.PluginConf.get('pluginReports'):
-                self.pluginReports = self.PluginConf['pluginReports']
-                Domoticz.Status(" -pluginReports: %s" %self.pluginReports)
+        with open( pluginConfFile , 'wt') as handle:
+            json.dump( write_pluginConf, handle, sort_keys=True, indent=2)
 
-            if self.PluginConf.get('pluginOTAFirmware'):
-                self.pluginOTAFirmware = self.PluginConf['pluginOTAFirmware']
-                Domoticz.Status(" -pluginOTAFirmware: %s" %self.pluginOTAFirmware)
 
-            if self.PluginConf.get('pluginConfig'):
-                self.pluginConfig = self.PluginConf['pluginConfig']
-                Domoticz.Status(" -pluginConfig: %s" %self.pluginConfig)
+    def _load_Settings(self):
 
-            if self.PluginConf.get('pluginWWW'):
-                self.pluginWWW = self.PluginConf['pluginWWW']
-                Domoticz.Status(" -pluginWWW: %s" %self.pluginWWW)
+        ' deserialize json format of pluginConf'
+        ' load parameters '
 
-            if self.PluginConf.get('enablegroupmanagement') and \
-                    self.PluginConf.get('enablegroupmanagement').isdigit():
-                self.enablegroupmanagement = int(self.PluginConf['enablegroupmanagement'], 10)
-                Domoticz.Status(" -enablegroupmanagement: %s" %self.enablegroupmanagement)
+        with open( self.pluginConf['filename'] , 'rt') as handle:
+            _pluginConf = {}
+            try:
+                _pluginConf = json.load( handle, encoding=dict)
 
-            if self.PluginConf.get('debugReadCluster') and \
-                    self.PluginConf.get('debugReadCluster').isdigit():
-                self.debugReadCluster = int(self.PluginConf['debugReadCluster'], 10)
+            except json.decoder.JSONDecodeError as e:
+                Domoticz.Error("poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
+                return
 
-            if self.PluginConf.get('resetMotiondelay') and \
-                    self.PluginConf.get('resetMotiondelay').isdigit():
-                self.resetMotiondelay = int(self.PluginConf['resetMotiondelay'], 10)
-                Domoticz.Status(" -resetMotiondelay: %s" %self.resetMotiondelay)
+            for param in _pluginConf:
+                self.pluginConf[param] = _pluginConf[param]
 
-            if self.PluginConf.get('sendDelay') and \
-                    self.PluginConf.get('sendDelay').isdigit():
-                self.sendDelay = int(self.PluginConf['sendDelay'], 10)
-                Domoticz.Status(" -sendDelay: %s" %self.sendDelay)
-
-            if self.PluginConf.get('Ping') and \
-                    self.PluginConf.get('Ping').isdigit():
-                self.Ping = int(self.PluginConf['Ping'], 10)
-                Domoticz.Status(" -Ping: %s" %self.Ping)
-
-            if self.PluginConf.get('numDeviceListVersion') and \
-                    self.PluginConf.get('numDeviceListVersion').isdigit():
-                self.numDeviceListVersion = int(self.PluginConf['numDeviceListVersion'], 10)
-                Domoticz.Status(" -numDeviceListVersion : %s" %self.numDeviceListVersion)
-
-            if self.PluginConf.get('allowStoreDiscoveryFrames') and \
-                    self.PluginConf.get('allowStoreDiscoveryFrames').isdigit():
-                self.allowStoreDiscoveryFrames = int(self.PluginConf['allowStoreDiscoveryFrames'], 10)
-                Domoticz.Status(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
-
-            if self.PluginConf.get('allowReBindingClusters') and \
-                    self.PluginConf.get('allowReBindingClusters').isdigit():
-                self.allowReBindingClusters = int(self.PluginConf['allowReBindingClusters'], 10)
-                Domoticz.Status(" -allowReBindingClusters: %s" %self.allowReBindingClusters)
-
-            if self.PluginConf.get('resetConfigureReporting') and \
-                    self.PluginConf.get('resetConfigureReporting').isdigit():
-                self.resetConfigureReporting = int(self.PluginConf['resetConfigureReporting'], 10)
-                Domoticz.Status(" -resetConfigureReporting: %s" %self.resetConfigureReporting)
-
-            if self.PluginConf.get('resetReadAttributes') and \
-                    self.PluginConf.get('resetReadAttributes').isdigit():
-                self.resetReadAttributes = int(self.PluginConf['resetReadAttributes'], 10)
-                Domoticz.Status(" -resetReadAttributes: %s" %self.resetReadAttributes)
-
-            if self.PluginConf.get('enableReadAttributes') and \
-                    self.PluginConf.get('enableReadAttributes').isdigit():
-                self.enableReadAttributes = int(self.PluginConf['enableReadAttributes'], 10)
-                Domoticz.Status(" -enableReadAttributes: %s" %self.enableReadAttributes)
-
-            if self.PluginConf.get('logFORMAT') and \
-                    self.PluginConf.get('logFORMAT').isdigit():
-                self.logFORMAT = int(self.PluginConf['logFORMAT'], 10)
-                Domoticz.Status(" -logFORMAT: %s" %self.logFORMAT)
-
-            if self.PluginConf.get('logLQI') and self.PluginConf.get('logLQI').isdigit():
-                self.logLQI = int(self.PluginConf['logLQI'], 10)
-                Domoticz.Status(" -logLQI: %s"% self.logLQI)
-
-            if self.PluginConf.get('allowRemoveZigateDevice') and \
-                    self.PluginConf.get('allowRemoveZigateDevice').isdigit():
-                self.allowRemoveZigateDevice = int(self.PluginConf['allowRemoveZigateDevice'], 10)
-                Domoticz.Status(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
-
-            if self.PluginConf.get('allowForceCreationDomoDevice') and \
-                    self.PluginConf.get('allowForceCreationDomoDevice').isdigit():
-                self.allowForceCreationDomoDevice = int(self.PluginConf['allowForceCreationDomoDevice'], 10)
-                Domoticz.Status(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
-
-            if self.PluginConf.get('networkScan') and \
-                    self.PluginConf.get('networkScan').isdigit():
-                self.networkScan = int(self.PluginConf['networkScan'], 10)
-                Domoticz.Status(" -networkScan: %s" %self.networkScan)
-
-            if self.PluginConf.get('channel'): 
-                self.channel = self.PluginConf.get('channel')
-                self.channel = [c.strip() for c in self.channel.split(',')]
-                Domoticz.Status(" -channel: %s" %self.channel)
-
-            if self.PluginConf.get('enableAPSFailureReporting') and \
-                    self.PluginConf.get('enableAPSFailureReporting').isdigit():
-                self.enableAPSFailureReporting = int(self.PluginConf.get('enableAPSFailureReporting'))
-                Domoticz.Status(" -enableAPSFailureReporting: %s" %self.enableAPSFailureReporting)
-
-            if self.PluginConf.get('enableAPSFailureLoging') and \
-                    self.PluginConf.get('enableAPSFailureLoging').isdigit():
-                self.enableAPSFailureLoging = int(self.PluginConf.get('enableAPSFailureLoging'))
-                Domoticz.Status(" -enableAPSFailureLogin: %s" %self.enableAPSFailureLoging)
-
-            if self.PluginConf.get('blueLedOff') and \
-                    self.PluginConf.get('blueLedOff').isdigit():
-                self.blueLedOff = int(self.PluginConf.get('blueLedOff'))
-                Domoticz.Status(" -blueLedOff: %s" %self.blueLedOff)
-
-            if self.PluginConf.get('TXpower') and \
-                    self.PluginConf.get('TXpower').isdigit():
-                self.TXpower_set = int(self.PluginConf.get('TXpower'))
-                Domoticz.Status(" -TXpower: %s" %self.TXpower_set)
-
-            if self.PluginConf.get('allowOTA') and \
-                    self.PluginConf.get('allowOTA').isdigit():
-                self.allowOTA = int(self.PluginConf.get('allowOTA'))
-                Domoticz.Status(" -allowOTA: %s" %self.allowOTA)
-
-            if self.PluginConf.get('waitingOTA') and \
-                    self.PluginConf.get('waitingOTA').isdigit():
-                self.waitingOTA = int(self.PluginConf.get('waitingOTA'))
-                Domoticz.Status(" -waitingOTA: %s" %self.waitingOTA)
-
-            if self.PluginConf.get('batteryOTA') and \
-                    self.PluginConf.get('batteryOTA').isdigit():
-                self.batteryOTA = int(self.PluginConf.get('batteryOTA'))
-                Domoticz.Status(" -batteryOTA: %s" %self.batteryOTA)
-
-            if self.PluginConf.get('Certification'):
-                if self.PluginConf.get('Certification') == 'CE':
-                    self.Certification = 0x01
-                elif self.PluginConf.get('Certification') == 'FCC':
-                    self.Certification = 0x02
-                else:
-                    self.Certification = 0
-                Domoticz.Status(" -Certification: %s" %self.Certification)
-
-            if self.PluginConf.get('zmode'):
-                if self.PluginConf.get('zmode') == 'Agressive':
-                    self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
-                Domoticz.Status(" -zmode: %s" %self.zmode)
-
-            if self.PluginConf.get('reTransmit') and \
-                    self.PluginConf.get('reTransmit').isdigit():
-                self.reTransmit = int(self.PluginConf.get('reTransmit'))
-                Domoticz.Status(" -reTransmit: %s" %self.reTransmit)
-
-            if self.PluginConf.get('zTimeOut') and \
-                    self.PluginConf.get('zTimeOut').isdigit():
-                self.zTimeOut = int(self.PluginConf.get('zTimeOut'))
-                Domoticz.Status(" -zTimeOut: %s" %self.zTimeOut)
-
-            if self.PluginConf.get('extendedPANID'):
-                if is_hex( self.PluginConf.get('extendedPANID') ):
-                    self.extendedPANID = int(self.PluginConf.get('extendedPANID'), 16)
-                    Domoticz.Status(" -extendedPANID: 0x%x" %self.extendedPANID)
-                else:
-                    Domoticz.Error("PluginConf - wrong parameter extendedPANID must be hex. %s" \
-                            %self.PluginConf.get('extendedPANID'))
-
-        Domoticz.Debug("Device Management:")
-        Domoticz.Debug(" -allowStoreDiscoveryFrames : %s" %self.allowStoreDiscoveryFrames)
-        Domoticz.Debug(" -allowForceCreationDomoDevice: %s" %self.allowForceCreationDomoDevice)
-        Domoticz.Debug(" -allowReBindingClusters: %s" %self.allowReBindingClusters)
-        Domoticz.Debug(" -resetConfigureReporting: %s" %self.resetConfigureReporting)
-        Domoticz.Debug(" -resetReadAttributes: %s" %self.resetReadAttributes)
-        Domoticz.Debug(" -enableReadAttributes: %s" %self.enableReadAttributes)
-        Domoticz.Debug(" -resetMotiondelay: %s" %self.resetMotiondelay)
-        Domoticz.Debug(" -vibrationAqarasensitivity: %s" %self.vibrationAqarasensitivity)
-
-        Domoticz.Debug("Zigate Configuration")
-        Domoticz.Debug(" -channel: %s" %self.channel)
-        Domoticz.Debug(" -allowRemoveZigateDevice: %s" %self.allowRemoveZigateDevice)
-        Domoticz.Debug(" -eraseZigatePDM: %s" %self.eraseZigatePDM)
-        Domoticz.Debug(" -blueLedOff: %s" %self.blueLedOff)
-        Domoticz.Debug(" -TXpower: %s" %self.TXpower_set)
-        Domoticz.Debug(" -Certification: %s" %self.Certification)
-        Domoticz.Debug(" -allowOTA: %s" %self.allowOTA)
-
-        Domoticz.Debug("Plugin Transport")
-        Domoticz.Debug(" -zmode: %s" %self.zmode)
-        Domoticz.Debug(" -reTransmit: %s" %self.reTransmit)
-        Domoticz.Debug(" -zTimeOut: %s" %self.zTimeOut)
-        Domoticz.Debug(" -CrcCheck: %s" %self.CrcCheck)
-        Domoticz.Debug(" -sendDelay: %s" %self.sendDelay)
-        Domoticz.Debug(" -Ping: %s" %self.Ping)
-
-        Domoticz.Debug("Plugin Directories")
-        Domoticz.Debug(" -pluginHome: %s" %self.pluginHome)
-        Domoticz.Debug(" -pluginData: %s" %self.pluginData)
-        Domoticz.Debug(" -pluginZData: %s" %self.pluginZData)
-        Domoticz.Debug(" -pluginReports: %s" %self.pluginReports)
-        Domoticz.Debug(" -pluginConfig: %s" %self.pluginConfig)
-        Domoticz.Debug(" -pluginWWW: %s" %self.pluginWWW)
-        Domoticz.Debug(" -homedirectory: %s" %self.homedirectory)
-        Domoticz.Debug(" -filename: %s" %self.filename)
-
-        # Groups Management
-        Domoticz.Debug("Groups Management")
-        Domoticz.Debug(" -enablegroupmanagement: %s" %self.enablegroupmanagement)
-        Domoticz.Debug(" -discoverZigateGroups: %s" %self.discoverZigateGroups)
-        Domoticz.Debug(" -enableConfigGroups: %s" %self.enableConfigGroups)
-
-        # Network Topoology
-        Domoticz.Debug("Reportings and Statistics")
-        Domoticz.Debug(" -logLQI: %s"% self.logLQI)
-        Domoticz.Debug(" -networkScan: %s" %self.networkScan)
-
-        if not os.path.exists( self.pluginData ):
-            Domoticz.Error( "Cannot access pluginData: %s" %self.pluginData)
-        if not os.path.exists( self.pluginZData ):
-            Domoticz.Error( "Cannot access pluginZData: %s" %self.pluginZData)
-        if not os.path.exists( self.pluginConfig ):
-            Domoticz.Error( "Cannot access pluginConfig: %s" %self.pluginConfig)
-        if not os.path.exists( self.pluginWWW ):
-            Domoticz.Error( "Cannot access pluginWWW: %s" %self.pluginWWW)
-        if not os.path.exists( self.pluginReports ):
-            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginReports)
-        if not os.path.exists( self.pluginOTAFirmware ):
-            Domoticz.Error( "Cannot access pluginReports: %s" %self.pluginOTAFirmware)

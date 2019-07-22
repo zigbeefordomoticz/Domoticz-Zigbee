@@ -20,20 +20,23 @@ from datetime import datetime
 from time import time
 
 from Modules.consts import ZLL_DEVICES, MAX_LOAD_ZIGATE
-from Modules.tools import getClusterListforEP
+from Modules.tools import getClusterListforEP, loggingOutput
 
 def ZigatePermitToJoin( self, permit ):
 
     if permit:
-        self.permitTojoin = permit
-        Domoticz.Log("Request discovery mode for %s seconds " %permit)
+        Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
+        self.permitTojoin['Starttime'] = int(time())
+        self.permitTojoin['Duration'] = permit
         sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
     else: 
-        self.permitTojoin = 0x00
-        Domoticz.Log("Request stop discovery mode")
-        #sendZigateCmd(self, "0049","FFFC" + '01' + "00")
-        sendZigateCmd( self, "0014", "" ) # Request status
+        if self.permitTojoin['Duration'] != 0:
+            self.permitTojoin['Starttime'] = int(time())
+            self.permitTojoin['Duration'] = 0
+            sendZigateCmd(self, "0049","FFFC" + '00' + "00")
+            sendZigateCmd( self, "0014", "" ) # Request status
+        Domoticz.Status("Request Disabling Accepting new Hardware")
 
 def start_Zigate(self, Mode='Controller'):
     """
@@ -49,8 +52,8 @@ def start_Zigate(self, Mode='Controller'):
         return
 
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
-            %self.pluginconf.channel)
-    setChannel(self, self.pluginconf.channel)
+            %self.pluginconf.pluginConf['channel'])
+    setChannel(self, self.pluginconf.pluginConf['channel'])
     
     if Mode == 'Controller':
         Domoticz.Status("Set Zigate as a Coordinator")
@@ -64,7 +67,7 @@ def start_Zigate(self, Mode='Controller'):
         Domoticz.Status("Start network")
         sendZigateCmd(self, "0024", "" )   # Start Network
     
-        Domoticz.Debug("Request network Status")
+        loggingOutput( self, 'Debug', "Request network Status", '0000')
         sendZigateCmd( self, "0014", "" ) # Request status
         sendZigateCmd( self, "0009", "" ) # Request status
 
@@ -107,29 +110,29 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
             if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-                Domoticz.Debug("ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
-                         %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ))
+                loggingOutput( self, 'Debug', "ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                         %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
                 return
-            Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]))
+            loggingOutput( self, 'Debug', "ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]), nwkid=addr)
     else:
         lenAttr = 0
         weight = int ((lenAttr ) / 2) + 1
         Attr =''
-        Domoticz.Debug("attributes: " +str(ListOfAttributes))
+        loggingOutput( self, 'Debug', "attributes: " +str(ListOfAttributes), nwkid=addr)
         for x in ListOfAttributes:
             Attr_ = "%04x" %(x)
             if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
                 if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' and \
                         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != {} :
                     continue
-                Domoticz.Debug("ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]))
+                loggingOutput( self, 'Debug', "ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
             Attr += Attr_
             lenAttr += 1
 
         if lenAttr == 0:
             return
 
-    Domoticz.Debug("ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes) ) 
+    loggingOutput( self, 'Debug', "ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -142,16 +145,19 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0003': [ 0x0000],
             '0004': [ 0x0000],
             '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
-            '0006': [ 0x0000],
+            '0006': [ 0x0000, 0x4000, 0x4001, 0x4002, 0x4003],
             '0008': [ 0x0000],
             '000a': [ 0x0000],
+            '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
             '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011],
-            '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0008],
+            '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008],
             '0400': [ 0x0000],
             '0402': [ 0x0000],
             '0403': [ 0x0000],
             '0405': [ 0x0000],
             '0406': [ 0x0000],
+            '0500': [ 0x0000, 0x0002],
+            '0502': [ 0x0000],
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
             }
 
@@ -162,18 +168,18 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
                     targetAttribute = []
-                    Domoticz.Debug("retreive_ListOfAttributesByCluster: Attributes from Attributes List")
+                    loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: Attributes from Attributes List", nwkid=key)
                     for attr in  self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
                         targetAttribute.append( int(attr,16) )
 
     if targetAttribute is None:
-        Domoticz.Debug("retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster)
+        loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster, nwkid=key)
         if cluster in ATTRIBUTES:
             targetAttribute = ATTRIBUTES[cluster]
         else:
             Domoticz.Log("retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" %cluster)
             targetAttribute = [ 0x0000 ]
-    Domoticz.Debug("retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute))
+    loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute), nwkid=key)
 
     return targetAttribute
 
@@ -182,9 +188,9 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    Domoticz.Debug("ReadAttributeRequest_0000 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s " %key, nwkid=key)
     EPin = "01"
-    EPout = "01"
+    EPout = '01'
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
     if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
@@ -193,7 +199,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         listAttributes.append(0x0004)        # Manufacturer
         listAttributes.append(0x0005)        # Model Identifier
 
-        Domoticz.Debug("Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" )
+        loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" , nwkid=key)
         ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "02", "0000", listAttributes )
         ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
@@ -225,12 +231,12 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             listAttr2 = listAttributes[len(listAttributes)//2:]
 
         if listAttr1 == listAttr2 == None:
-            Domoticz.Debug("Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)))
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
         else:
-            Domoticz.Debug("Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)))
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr1 )
-            Domoticz.Debug("Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)))
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr2 )
 
 
@@ -249,13 +255,13 @@ def ReadAttributeRequest_Ack(self, key):
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
             EPout= tmpEp
-    Domoticz.Debug("Requesting Ack for %s/%s" %(key, EPout))
+    loggingOutput( self, 'Debug', "Requesting Ack for %s/%s" %(key, EPout), nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
 
 
 def ReadAttributeRequest_0001(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0001 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0001 - Key: %s " %key, nwkid=key)
     # Power Config
     EPin = "01"
     EPout= "01"
@@ -266,13 +272,13 @@ def ReadAttributeRequest_0001(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Request Power Config via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
 
-    Domoticz.Debug("ReadAttributeRequest_0006 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -282,14 +288,14 @@ def ReadAttributeRequest_0006(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
         listAttributes.append( iterAttr )
-    Domoticz.Debug("Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
 
 def ReadAttributeRequest_0008(self, key):
     # Cluster 0x0008 
 
-    Domoticz.Debug("ReadAttributeRequest_0008 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0008 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -298,13 +304,13 @@ def ReadAttributeRequest_0008(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0008'):
         listAttributes.append( iterAttr )
-    Domoticz.Debug("Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
 def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
 
-    Domoticz.Debug("ReadAttributeRequest_0300 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0300 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -314,48 +320,41 @@ def ReadAttributeRequest_0300(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0300'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0300", listAttributes)
 
 def ReadAttributeRequest_000C(self, key):
     # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
 
-    Domoticz.Debug("ReadAttributeRequest_000C - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_000C - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "02"
 
     """
-     Attribute Type: 39 Attribut ID: 0041
      Attribute Type: 10 Attribut ID: 0051
      Attribute Type: 39 Attribut ID: 0055
      Attribute Type: 18 Attribut ID: 006f
-     Attribute Type: 23 Attribut ID: 0100
-     Attribute Type: 39 Attribut ID: 0105
-     Attribute Type: 39 Attribut ID: 0106
     """
 
     EPin = "01"
     EPout= "01"
-    Domoticz.Debug("Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     listAttributes = []
-    listAttributes.append(0x41)
-    listAttributes.append(0x51)
-    listAttributes.append(0x55)
-    listAttributes.append(0x6f)
-    listAttributes.append(0x100)
-    listAttributes.append(0x105)
-    listAttributes.append(0x106)
+    listAttributes.append(0x0051)
+    listAttributes.append(0x0055)
+    listAttributes.append(0x006f)
+    listAttributes.append(0xff05)
 
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
-    Domoticz.Debug("Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_0102(self, key):
 
-    Domoticz.Debug("Request Windows Covering status Read Attribute request: " + key )
+    loggingOutput( self, 'Debug', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -365,7 +364,7 @@ def ReadAttributeRequest_0102(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_fc00(self, key):
@@ -381,12 +380,12 @@ def ReadAttributeRequest_fc00(self, key):
     for tmpEp in self.ListOfDevices[key]['Ep']:
             if "fc00" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
-    Domoticz.Debug("Request 0xfc00 info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request 0xfc00 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "fc00", listAttributes)
 
 def ReadAttributeRequest_0400(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0400 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0400 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -397,12 +396,12 @@ def ReadAttributeRequest_0400(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0400'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Illuminance info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Illuminance info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0400", listAttributes)
 
 def ReadAttributeRequest_0402(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0402 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0402 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -413,12 +412,12 @@ def ReadAttributeRequest_0402(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Temperature info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Temperature info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
 
 def ReadAttributeRequest_0403(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0403 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0403 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -429,12 +428,12 @@ def ReadAttributeRequest_0403(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0403", listAttributes)
 
 def ReadAttributeRequest_0405(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0405 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0405 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -445,12 +444,12 @@ def ReadAttributeRequest_0405(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Humidity info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Humidity info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0405", listAttributes)
 
 def ReadAttributeRequest_0406(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0406 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -464,13 +463,45 @@ def ReadAttributeRequest_0406(self, key):
         listAttributes.append( iterAttr )
 
 
-    Domoticz.Debug("Occupancy info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
+
+def ReadAttributeRequest_0500(self, key):
+
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0500 - Key: %s " %key, nwkid=key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0500" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0500'):
+        listAttributes.append( iterAttr )
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0500 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
+    ReadAttributeReq( self, key, "01", EPout, "0500", listAttributes)
+
+def ReadAttributeRequest_0502(self, key):
+    # Cluster 0x0006
+
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0502 - Key: %s " %key, nwkid=key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0502" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
+        listAttributes.append( iterAttr )
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0502 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
+    ReadAttributeReq( self, key, "01", EPout, "0502", listAttributes)
+
 
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
 
-    Domoticz.Debug("ReadAttributeRequest_0702 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0702 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -481,7 +512,7 @@ def ReadAttributeRequest_0702(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0702'):
         listAttributes.append( iterAttr )
 
-    Domoticz.Debug("Request Metering info via Read Attribute request: " + key + " EPout = " + EPout )
+    loggingOutput( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
 
 
@@ -493,7 +524,35 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas = addr_mode + key + EPin + EPout + clusterID 
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
+    loggingOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
     sendZigateCmd(self, "0110", str(datas) )
+
+def setPowerOn_OnOff( self, key, OnOffMode=0xff):
+
+    # Tested on Ikea Bulb without any results !
+    POWERON_MODE = ( 0x00, # Off
+            0x01, # On
+            0xff # Previous state
+            )
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "0006"
+    attribute = "4003"
+    data_type = "30" # 
+    data = "ff"
+    if OnOffMode in POWERON_MODE:
+        data = "%02x" %OnOffMode
+    else:
+        data = "%02x" %0xff
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
 
@@ -526,7 +585,7 @@ def removeZigateDevice( self, IEEE ):
 def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"
-    Domoticz.Debug("attribute_discovery_request - " +str(datas) )
+    loggingOutput( self, 'Debug', "attribute_discovery_request - " +str(datas) , nwkid=nwkid)
     sendZigateCmd(self, "0140", datas )
 
 
@@ -586,12 +645,12 @@ def processConfigureReporting( self, NWKID=None ):
                                  '001B': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
                                  '001C': {'DataType': '30', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'}}},
         # Colour Control
-        '0300': {'Attributes': { '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color Temp
-                                 #'0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01'},
-                                 #'0001': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, 
-                                 '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color X
-                                 '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}, # Color Y
-                                 '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}, # Color Mode
+        '0300': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0384', 'MaxInterval':'0E10', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "010D", "0210", "0105", "0200"}},
+                                 '0001': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "0105", "010D", "0210", "0200"}},
+                                 '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color X
+                                 '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color Y
+                                 '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ "0102", "010D", "0210", "0220"}}, # Color Temp
+                                 '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01', 'ZDeviceID':{ }}}}, # Color Mode
         # Illuminance Measurement
         '0400': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'0F'}}},
         # Temperature
@@ -608,6 +667,9 @@ def processConfigureReporting( self, NWKID=None ):
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+        # IAS Warning Devices
+        '0502': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+
         # Power
         '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
                                  '0400': {'DataType': '2a', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
@@ -616,8 +678,8 @@ def processConfigureReporting( self, NWKID=None ):
     now = int(time())
     if NWKID is None :
         if self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-            Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                  %(self.busy, len(self.ZigateComm._normalQueue), NWKID))
+            loggingOutput( self, 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                  %(self.busy, len(self.ZigateComm._normalQueue), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = self.ListOfDevices
         clusterlist = None
@@ -627,13 +689,13 @@ def processConfigureReporting( self, NWKID=None ):
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
-        Domoticz.Debug("configurereporting - processing %s" %key)
+        loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
         if key == '0000': continue
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
         if 'Status' not in self.ListOfDevices[key]:
-            Domoticz.Error("processConfigureReporting - not status for that device %s !!!" %key)
+            Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" %key)
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
         if NWKID is None:
@@ -655,7 +717,7 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 0)
             #else:
             #    identifySend( self, key, Ep, 15)
-            Domoticz.Debug("Configurereporting - processing %s/%s" %(key,Ep))
+            loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
@@ -663,7 +725,8 @@ def processConfigureReporting( self, NWKID=None ):
                 if cluster not in ATTRIBUTESbyCLUSTERS:
                     continue
 
-                Domoticz.Debug("Configurereporting - processing %s/%s - %s" %(key,Ep,cluster))
+
+                loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
                 if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
@@ -675,7 +738,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    Domoticz.Debug("configurereporting - skiping due to existing past")
+                    loggingOutput( self, 'Debug', "configurereporting - skiping due to existing past", nwkid=key)
                     continue
 
                 _idx = Ep + '-' + str(cluster)
@@ -690,15 +753,17 @@ def processConfigureReporting( self, NWKID=None ):
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
                         continue
 
+                loggingOutput( self, 'Debug', "ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
+                        %(NWKID, self.busy, len(self.ZigateComm._normalQueue)), nwkid=key)
                 if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE):
-                    Domoticz.Debug("configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                        %(self.busy, len(self.ZigateComm._normalQueue), key))
-                    Domoticz.Debug("QUEUE: %s" %str(self.ZigateComm._normalQueue))
+                    loggingOutput( self, 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                        %(self.busy, len(self.ZigateComm._normalQueue), key), nwkid=key)
+                    loggingOutput( self, 'Debug', "QUEUE: %s" %str(self.ZigateComm._normalQueue), nwkid=key)
                     return # Will do at the next round
 
-                Domoticz.Debug("configureReporting - requested for device: %s on Cluster: %s" %(key, cluster))
+                loggingOutput( self, 'Debug', "configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
 
-                if self.pluginconf.allowReBindingClusters:
+                if self.pluginconf.pluginConf['allowReBindingClusters']:
                     if 'Bind' in self.ListOfDevices[key]:
                         del self.ListOfDevices[key]['Bind'] 
                     if 'IEEE' in self.ListOfDevices[key]:
@@ -714,13 +779,24 @@ def processConfigureReporting( self, NWKID=None ):
                 for attr in ATTRIBUTESbyCLUSTERS[cluster]['Attributes']:
                     # Check if the Attribute is listed in the Attributes List (provided by the Device
                     # In case Attributes List exists, we have git the list of reported attribute.
+                    if cluster == '0300': 
+                        # We need to evaluate the Attribute on ZDevice basis
+                        if self.ListOfDevices[key]['ZDeviceID'] == {}:
+                            continue
+
+                        ZDeviceID = self.ListOfDevices[key]['ZDeviceID']
+                        if 'ZDeviceID' in  ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]:
+                            if ZDeviceID not in ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] and \
+                                    len( ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] ) != 0:
+                                loggingOutput( self, 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
+                                continue
                    
                     if 'Attributes List' in self.ListOfDevices[key]:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
                                     if attr not in self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
-                                        Domoticz.Debug("configureReporting: drop attribute %s" %attr)
+                                        loggingOutput( self, 'Debug', "configureReporting: drop attribute %s" %attr, nwkid=key)
                                         continue
 
                     attrdirection = "00"
@@ -736,7 +812,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
-                Domoticz.Debug("configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) )
+                loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
                 sendZigateCmd(self, "0120", datas )
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
@@ -752,7 +828,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             destaddr = self.ZigateIEEE
             destep = "01"
         else:
-            Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
+            loggingOutput( self, 'Debug', "bindDevice - self.ZigateIEEE not yet initialized")
             return
 
     # let's check if we alreardy bind .
@@ -766,11 +842,11 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = ''
 
-        Domoticz.Debug("bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+        loggingOutput( self, 'Debug', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
     else:
-        Domoticz.Debug("bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']))
+        loggingOutput( self, 'Debug', "bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']), nwkid=nwkid)
 
     return
 
@@ -787,10 +863,11 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             destaddr = self.ZigateIEEE
             destep = "01"
         else:
-            Domoticz.Debug("bindDevice - self.ZigateIEEE not yet initialized")
+            loggingOutput( self, 'Debug', "bindDevice - self.ZigateIEEE not yet initialized")
             return
 
-    Domoticz.Debug("unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) )
+    nwkid = self.IEEE2NWK[ieee]
+    loggingOutput( self, 'Debug', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
     sendZigateCmd(self, "0031", datas )
 
@@ -800,8 +877,9 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 def rebind_Clusters( self, NWKID):
 
     # Binding devices
-    CLUSTERS_LIST = [ 'fc00', '0500', '0406', '0402', '0400', '0001',
-            '0102', '0403', '0405', '0500', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
+    CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0402', '0400', '0001',
+            '0102', '0403', '0405', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
+            '000c',
             'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
             'ff02'  # Used by Xiaomi devices for battery informations.
             ]
@@ -809,10 +887,11 @@ def rebind_Clusters( self, NWKID):
     for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                Domoticz.Debug('Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                loggingOutput( self, 'Debug', 'Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
                 if 'Bind' in self.ListOfDevices[NWKID]:
                     del self.ListOfDevices[NWKID]['Bind']
-                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                if self.pluginconf.pluginConf['doUnbindBind']:
+                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
@@ -882,8 +961,8 @@ def factoryresetTouchLink( self):
 def identifySend( self, nwkid, ep, duration=0):
 
     datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration) 
-    Domoticz.Debug("identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration))
-    Domoticz.Debug("identifySend - data sent >%s< " %(datas) )
+    loggingOutput( self, 'Debug', "identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
+    loggingOutput( self, 'Debug', "identifySend - data sent >%s< " %(datas) , nwkid=nwkid)
     sendZigateCmd(self, "0070", datas )
 
 def maskChannel( channel ):
@@ -933,58 +1012,6 @@ def setChannel( self, channel):
     return
 
 
-def NwkMgtUpdReq( self, channel, mode='scan'  ):
-    '''
-    NwkMgtUpdReq( self, channel, mode )
-        channel: channel to scan or to use
-        mode: 'scan' => scanner
-              'change' => change the Radio Channel
-    '''
-    # <target short address: uint16_t>
-    # <channel mask: uint32_t>
-    # <scan duration: uint8_t>
-    # <scan count: uint8_t>
-    # <network update ID: uint8_t>
-    # <network manager short address: uint16_t>
-    # Channel Mask:
-    #    Mask of channels to scan
-    # Scan Duration:
-    # 0x00 - 0x05 :  Time in Second
-    # 0x60 - 0xFD : Reserved
-    # 0xFE        : Change radio channel to single channel specified through channel
-    # 0xFF        : Update the stored radio channel mask
-    # Scan count:
-    #    Scan repeats 0 – 5
-    # Network Update ID:
-    #    0 – 0xFF Transaction ID for scan
-
-    # Scan Duration
-    if mode == 'scan':
-        scanDuration = 0x05 # 2 seconds
-    elif mode == 'change':
-        scanDuration = 0xFE # Change radio channel
-    elif mode == 'update':
-        scanDuration = 0xFF # Update stored radui
-    else:
-        Domoticz.Error("NwkMgtUpdReq Unknown mode %s" %mode)
-        return
-
-    scanCount = 1
-
-    mask = maskChannel( channel )
-    Domoticz.Debug("NwkMgtUpdReq - Channel targeted: %08.x " %(mask))
-
-    datas = "0000" + "%08.x" %(mask) + "%02.x" %(scanDuration) + "%02.x" %(scanCount) + "01" + "0000"
-    if mode == 'scan':
-        Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x duration: %02.x count: %s >%s<" \
-                %( mode, mask, scanDuration, scanCount, datas) )
-    elif mode in ('change', 'update'):
-        Domoticz.Log("NwkMgtUpdReq - %s channel(s): %04.x" \
-                %( mode, mask ) )
-
-    sendZigateCmd(self, "004A", datas )
-    return
-
 def channelChangeInitiate( self, channel ):
 
     Domoticz.Status("Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
@@ -1006,26 +1033,49 @@ def setExtendedPANID(self, extPANID):
     '''
 
     datas = "%016x" %extPANID
-    Domoticz.Debug("set ExtendedPANID - %016x "\
+    loggingOutput( self, 'Debug', "set ExtendedPANID - %016x "\
             %( extPANID) )
     sendZigateCmd(self, "0020", datas )
 
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     ' in case of receiving a leave, and that is not related to an explicit remove '
 
-    return
-    Domoticz.Log("leaveMgt - sAddr: %s , ieee: %s" %( saddr, ieee))
-    # Request a Re-Join and Do not remove children
-    #if rejoin:
-    #    if self.permitTojoin != 0xff:
-    #        Domoticz.Log("Switch to Permit to Join for 30s, to allow rejoin")
-    #        discover = "%02.X" %int(30)
-    #        sendZigateCmd(self, "0049","FFFC" + discover + "00")
-    #    datas = saddr + ieee + '01' + '00'
-    #else:
-    #    datas = saddr + ieee + '00' + '00'
+    Domoticz.Log("leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
+    if self.pluginconf.pluginConf['allowAutoPairing'] and rejoin:
+        Domoticz.Status("Switching Zigate in pairing mode to allow %s (%s) coming back" %(saddr, ieee))
 
-    #sendZigateCmd(self, "0047", datas )
+        # If Zigate not in Permit to Join, let's switch it to Permit to Join for 60'
+        duration = self.permitTojoin['Duration']
+        stamp = self.permitTojoin['Starttime']
+        if self.permitTojoin['Duration'] == 0:
+            dur_req = 60
+            self.permitTojoin['Duration'] = 60
+            self.permitTojoin['Starttime'] = int(time())
+            loggingOutput( self, 'Debug', "leaveMgtReJoin - switching Zigate in Pairing for %s sec" % dur_req)
+            sendZigateCmd(self, "0049","FFFC" + '%02x' %dur_req + "00")
+            loggingOutput( self, 'Debug', "leaveMgtReJoin - Request Pairing Status")
+            sendZigateCmd( self, "0014", "" ) # Request status
+        elif self.permitTojoin['Duration'] != 255:
+            if  int(time()) >= ( self.permitTojoin['Starttime'] + 60):
+                dur_req = 60
+                self.permitTojoin['Duration'] = 60
+                self.permitTojoin['Starttime'] = int(time())
+                loggingOutput( self, 'Debug', "leaveMgtReJoin - switching Zigate in Pairing for %s sec" % dur_req)
+                sendZigateCmd(self, "0049","FFFC" + '%02x' %dur_req + "00")
+                loggingOutput( self, 'Debug', "leaveMgtReJoin - Request Pairing Status")
+                sendZigateCmd( self, "0014", "" ) # Request status
+
+        #Request a Re-Join and Do not remove children
+        _leave = '01'
+        _rejoin = '01'
+        _rmv_children = '01'
+        _dnt_rmv_children = '00'
+
+        datas = saddr + ieee + _rejoin + _dnt_rmv_children
+        Domoticz.Status("Request a rejoin of (%s/%s)" %(saddr, ieee))
+        sendZigateCmd(self, "0047", datas )
+
+
 
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
@@ -1034,17 +1084,17 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x4003
     data_type = "29" # Int16
-    Domoticz.Debug("setpoint: %s" %setpoint)
+    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=saddr)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    Domoticz.Debug("setpoint: %s" %setpoint)
+    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=saddr)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Debug("thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type))
+    loggingOutput( self, 'Debug', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=saddr)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
@@ -1055,17 +1105,17 @@ def thermostat_Setpoint( self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x0012
     data_type = "29" # Int16
-    Domoticz.Debug("setpoint: %s" %setpoint)
+    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    Domoticz.Debug("setpoint: %s" %setpoint)
+    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Debug("thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type))
+    loggingOutput( self, 'Debug', "thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 def thermostat_eurotronic_hostflag( self, key, action):
@@ -1093,8 +1143,8 @@ def thermostat_eurotronic_hostflag( self, key, action):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    Domoticz.Debug("thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
-            %(key,data,cluster_id,attribute,data_type, action))
+    loggingOutput( self, 'Debug', "thermostat_eurotronic_hostflag - for %s with value %s / cluster: %s, attribute: %s type: %s action: %s"
+            %(key,data,cluster_id,attribute,data_type, action), nwkid=key)
 
 def thermostat_Calibration( self, key, calibration):
 
@@ -1109,8 +1159,8 @@ def thermostat_Calibration( self, key, calibration):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    Domoticz.Debug("thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,data,cluster_id,attribute,data_type))
+    loggingOutput( self, 'Debug', "thermostat_Calibration - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,attribute,data_type), nwkid=key)
 
 def configHeatSetpoint( self, key ):
 
@@ -1143,12 +1193,12 @@ def thermostat_Mode( self, key, mode ):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-    Domoticz.Debug("thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,data,cluster_id,attribute,data_type))
+    loggingOutput( self, 'Debug', "thermostat_Mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,attribute,data_type), nwkid=key)
 
 def ReadAttributeRequest_0201(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0201 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0201 - Key: %s " %key, nwkid=key)
     # Power Config
     EPin = "01"
     EPout= "01"
@@ -1169,31 +1219,31 @@ def ReadAttributeRequest_0201(self, key):
     listAttributes.append(0x001B)        # Control sequence
     listAttributes.append(0x001C)        # System Mode
     listAttributes.append(0x001F)        # Set Mode
-    Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+    loggingOutput( self, 'Debug', "Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes), nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
 
     listAttributes = []
     if str(self.ListOfDevices[key]['Model']).find('SPZB') == 0:
-        Domoticz.Debug("- req Attributes for Eurotronic")
+        loggingOutput( self, 'Debug', "- req Attributes for Eurotronic", nwkid=key)
         listAttributes.append(0x4000)        # TRV Mode
         listAttributes.append(0x4001)        # Set Valve Position
         listAttributes.append(0x4002)        # Errors
         listAttributes.append(0x4003)        # Curret Temperature Set point Eurotronics
         listAttributes.append(0x4008)        # HOst Flag
     elif str(self.ListOfDevices[key]['Model']).find('Super TR') == 0:
-        Domoticz.Debug("- req Attributes for  Super TR")
+        loggingOutput( self, 'Debug', "- req Attributes for  Super TR", nwkid=key)
         listAttributes.append(0x0403)    
         listAttributes.append(0x0408)   
         listAttributes.append(0x0409)  
 
     if len(listAttributes) > 0:
-        Domoticz.Debug("Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes))
+        loggingOutput( self, 'Debug', "Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes), nwkid=key)
         ReadAttributeReq( self, key, EPin, EPout, "0201", listAttributes )
 
 
 def ReadAttributeRequest_0204(self, key):
 
-    Domoticz.Debug("ReadAttributeRequest_0204 - Key: %s " %key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0204 - Key: %s " %key, nwkid=key)
     # Power Config
     EPin = "01"
     EPout= "01"
@@ -1205,7 +1255,7 @@ def ReadAttributeRequest_0204(self, key):
     listAttributes.append(0x0001) # Read KeypadLockout
 
     if len(listAttributes) > 0:
-        Domoticz.Debug("Request 0204 %s/%s-%s 0204 %s " %(key, EPin, EPout, listAttributes))
+        loggingOutput( self, 'Debug', "Request 0204 %s/%s-%s 0204 %s " %(key, EPin, EPout, listAttributes), nwkid=key)
         ReadAttributeReq( self, key, EPin, EPout, "0204", listAttributes )
 
 def Thermostat_LockMode( self, key, lockmode):
@@ -1225,7 +1275,7 @@ def Thermostat_LockMode( self, key, lockmode):
     cluster_id = "%04x" %0x0204
     Hattribute = "%04x" %0x0001
     data_type = "30" # Int16
-    Domoticz.Debug("lockmode: %s" %lockmode)
+    loggingOutput( self, 'Debug', "lockmode: %s" %lockmode, nwkid=key)
     lockmode = LOCK_MODE[lockmode]
     Hdata = "%02x" %lockmode
     EPout = '01'
@@ -1233,7 +1283,7 @@ def Thermostat_LockMode( self, key, lockmode):
         if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Debug("Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type))
+    loggingOutput( self, 'Debug', "Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 

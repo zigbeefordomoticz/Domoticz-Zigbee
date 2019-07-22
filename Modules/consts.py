@@ -17,6 +17,10 @@ CERTIFICATION = {
         0x01:'CE',
         0x02:'FCC'}
 
+CERTIFICATION_CODE = {
+        'CE': 0x01,
+        'FCC': 0x02 }
+
 # SQN 1st UINT8 except for 0x8000 where it is the 2nd Uint8
 SQN_ANSWERS = ( 0x8401, 0x8000, 0x802B, 0x802C, 0x8030, 0x8031, 0x8034, 
         0x8040, 0x8041, 0x8042, 0x8043, 0x8044, 0x8045, 0x8047, 0x804A,
@@ -220,3 +224,5 @@ ZCL_CLUSTERS_LIST = {
         '0502': 'IAS WD (Warning Device)',
         '1000': 'Touchlink'
         }
+
+
