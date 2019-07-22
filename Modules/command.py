@@ -44,9 +44,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     # Determine the possible ClusterType for that Device
     DeviceTypeList = []
+    newFashon = True
     if 'ClusterType' in self.ListOfDevices[NWKID]:
-        DeviceTypeList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
-    else :
+        if self.ListOfDevices[NWKID]['ClusterType'] != {}:
+            DeviceTypeList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
+            newFashon = False
+    if newFashon:
         for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
             if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                 for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :

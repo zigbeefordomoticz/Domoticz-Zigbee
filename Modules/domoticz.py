@@ -755,16 +755,19 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             loggingWidget( self, "Debug", "MajDomoDevice - " + str(self.ListOfDevices[NWKID]['Ep'][Ep]), NWKID)
 
 
+            newFashon = True
             if 'ClusterType' in self.ListOfDevices[NWKID]:
-                # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
-                if str(ID) not in self.ListOfDevices[NWKID]['ClusterType']:
-                    Domoticz.Error("MajDomoDevice - inconsistency on ClusterType. Id: %s not found in %s" \
-                            %( str(ID), str(self.ListOfDevices[NWKID]['ClusterType'])))
-                    return
-                loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
-                    self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID), NWKID)
-                DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
-            else:
+                if self.ListOfDevices[NWKID]['ClusterType'] != {}:
+                    # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
+                    if str(ID) not in self.ListOfDevices[NWKID]['ClusterType']:
+                        Domoticz.Error("MajDomoDevice - inconsistency on ClusterType. Id: %s not found in %s" \
+                                %( str(ID), str(self.ListOfDevices[NWKID]['ClusterType'])))
+                        return
+                    loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
+                        self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID), NWKID)
+                    DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
+                    newFashon = False
+            if newFashon:
                 # Are we in a situation with one Devices whatever Eps are ?
                 # To do that, check there is only 1 ClusterType even if several EPs
                 nbClusterType = 0
