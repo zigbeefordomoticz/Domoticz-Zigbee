@@ -301,7 +301,7 @@ class NetworkEnergy():
                 start = 0
                 if nbentries >= maxNumReports:
                     start = (nbentries - maxNumReports)+ 1
-                self.logging( 'Log', "Rpt max: %s , New Start: %s, Len:%s " %(maxNumReports, start, nbentries))
+                self.logging( 'Debug', "Rpt max: %s , New Start: %s, Len:%s " %(maxNumReports, start, nbentries))
 
                 if nbentries != 0:
                     fout.write('\n')
