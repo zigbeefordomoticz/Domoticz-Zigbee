@@ -28,8 +28,8 @@ def checkPluginVersion( branch ):
     label, firmwareMajorVersion = firmwareMajor.split("=")
     label, firmwareMinorVersion = firmwareMinor.split("=")
 
-    Domoticz.Log("checkPluginVersion - Available Plugin Versions are, stable: %s , beta: %s" %(stableVersion, betaVersion))
-    Domoticz.Log("checkPluginVersion - Available Firmware Version is, Major: %s , Minor: %s" %(firmwareMajorVersion, firmwareMinorVersion))
+    Domoticz.Debug("checkPluginVersion - Available Plugin Versions are, stable: %s , beta: %s" %(stableVersion, betaVersion))
+    Domoticz.Debug("checkPluginVersion - Available Firmware Version is, Major: %s , Minor: %s" %(firmwareMajorVersion, firmwareMinorVersion))
 
     if branch == 'stable':
         return ( stableVersion, firmwareMajorVersion, firmwareMinorVersion )
@@ -40,20 +40,20 @@ def checkPluginVersion( branch ):
 
 def checkPluginUpdate( currentVersion, availVersion):
 
-    Domoticz.Log("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
+    Domoticz.Debug("checkPluginUpdate - %s %s" %(currentVersion, availVersion))
     currentMaj, currentMin, currentUpd = currentVersion.split('.')
     availMaj, availMin, availUpd = availVersion.split('.')
 
     if availMaj > currentMaj:
-        Domoticz.Log("checkPluginVersion - Upgrade available: %s" %availVersion)
+        Domoticz.Status("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
     elif availMaj == currentMaj:
         if availMin > currentMin:
-            Domoticz.Log("checkPluginVersion - Upgrade available: %s" %availVersion)
+            Domoticz.Status("checkPluginVersion - Upgrade available: %s" %availVersion)
             return True
         elif availMin == currentMin:
             if availUpd > currentUpd:
-                Domoticz.Log("checkPluginVersion - Upgrade available: %s" %availVersion)
+                Domoticz.Status("checkPluginVersion - Upgrade available: %s" %availVersion)
                 return True
     return False
 
@@ -61,6 +61,6 @@ def checkPluginUpdate( currentVersion, availVersion):
 def checkFirmwareUpdate( currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
 
     if int(availfirmMinor,16) > int(currentFirmwareVersion,16):
-        Domoticz.Log("checkFirmwareUpdate - Firmware update available")
+        Domoticz.Status("checkFirmwareUpdate - Firmware update available")
         return True
     return False
