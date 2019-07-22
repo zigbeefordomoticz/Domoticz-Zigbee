@@ -216,12 +216,59 @@ def CheckDeviceList(self, key, val) :
 
         self.ListOfDevices[key]['RIA']="10"
 
-        for attribute in ( 'App Version', 'Attributes List', 'Battery', 'Bind', 'ColorInfos', 'ConfigureReporting', 
-                'ClusterType', 'DeviceType', 'Ep', 'HW Version', 'Heartbeat', 'IAS',
-                'Last Cmds', 'Location', 'LogicalType', 'MacCapa', 'Manufacturer', 'Manufacturer Name', 'Model', 'NbEp',
-                'PowerSource', 'ProfileID', 'ReadAttributes', 'ReceiveOnIdle', 'Stack Version', 'RIA', 'RSSI',
-                'SQN', 'SWBUILD_1', 'SWBUILD_2', 'SWBUILD_3', 'Stamp', 'Stack Version', 'Stamp', 'Status', 'Type', 
-                'Version', 'ZCL Version', 'ZDeviceID', 'ZDeviceName', 'Health' ):
+        MANDATORY_ATTRIBUTES = ( 'App Version', 
+                'Attributes List', 
+                'Battery', 
+                'Bind', 
+                'ColorInfos', 
+                'ClusterType', 
+                'DeviceType', 
+                'Ep', 
+                'HW Version', 
+                'Heartbeat', 
+                'IAS',
+                'Location', 
+                'LogicalType', 
+                'MacCapa', 
+                'Manufacturer', 
+                'Manufacturer Name', 
+                'Model', 
+                'NbEp',
+                'PowerSource', 
+                'ProfileID', 
+                'ReceiveOnIdle', 
+                'Stack Version', 
+                'RIA', 
+                'RSSI',
+                'SQN', 
+                'SWBUILD_1', 
+                'SWBUILD_2', 
+                'SWBUILD_3', 
+                'Stack Version', 
+                'Stamp', 
+                'Status', 
+                'Type',
+                'Version', 
+                'ZCL Version', 
+                'ZDeviceID', 
+                'ZDeviceName')
+
+        BUILD_ATTRIBUTES = ('ConfigureReporting',
+                'Last Cmds',
+                'ReadAttributes', 
+                'Stamp', 
+                'Health')
+
+
+
+        if not self.pluginconf.pluginConf['resetPluginDS']:
+            Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
+            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
+        else:
+            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
+
+        Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+        for attribute in IMPORT_ATTRIBUTES:
             if attribute in DeviceListVal:
                 self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
 
