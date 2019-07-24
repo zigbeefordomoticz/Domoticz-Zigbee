@@ -577,7 +577,6 @@ class BasePlugin:
 
             if self.FirmwareVersion:
                 self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
-                self.ZigateComm.updateFirmwareVersion ( self.FirmwareVersion )
 
             if self.FirmwareVersion and self.FirmwareVersion.lower() == '2100':
                 Domoticz.Status("Firmware for Pluzzy devices")
