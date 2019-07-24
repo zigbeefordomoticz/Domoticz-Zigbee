@@ -220,7 +220,7 @@ class APSManagement(object):
             if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                 # That command has been issued in the APS time window
                 if not REDO:
-                    self.logging( 'Log', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
+                    self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
                     self._errorMgt( iterCmd, nwk, ieee, aps_code)
                 if REDO and iterpayLoad and self.ZigateComm:
                     self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
