@@ -484,7 +484,7 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     u16ClusterId,sizeof(uint16));
     """
 
-    Domoticz.Log("Decode8011 - Message: %s MsgRSSI: %s" %(MsgData, MsgRSSI))
+    loggingInput( self, 'Debug', "Decode8011 - APS ACK: %s" %MsgData)
 
     MsgStatus = MsgData[0:2]
     MsgSQN = MsgData[2:4]
@@ -496,12 +496,8 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     MsgSrcAddr = ''
     MsgSrcDeviceId = ''
 
-    Domoticz.Log("Decode8011 -    - Status: %s" %MsgStatus)
-    Domoticz.Log("                - SQN   : %s" %MsgSQN)
-    Domoticz.Log("                - SrcEp : %s" %MsgSrcEp)
-    Domoticz.Log("                - DstEp : %s" %MsgDstEp)
-    Domoticz.Log("                - ProfileId: %s" %MsgProfileID)
-    Domoticz.Log("                - Cluster  : %s" %MsgClusterId)
+    loggingInput( self, 'Log', "Decode8011 - Status: %s, SQN: %s, Src: %s, SrcEp: %s, DstEp: %s, ProfileId: %s, Cluster: %s" \
+            %(MsgStatus, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgProfileID, MsgClusterId))
 
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
