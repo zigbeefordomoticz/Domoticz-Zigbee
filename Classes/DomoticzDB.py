@@ -34,14 +34,14 @@ class DomoticzDB_Preferences:
 
     def _openDB( self):
 
-        Domoticz.Log("Opening %s" %self.database)
+        Domoticz.Debug("Opening %s" %self.database)
         self.dbConn = sqlite3.connect(self.database)
         self.dbCursor = self.dbConn.cursor()
 
     def closeDB( self ):
 
         if self.dbConn is not None:
-            Domoticz.Log("Closing %s" %self.database)
+            Domoticz.Debug("Closing %s" %self.database)
             self.dbConn.close()
 
 
@@ -156,14 +156,14 @@ class DomoticzDB_Hardware:
 
     def _openDB( self, database):
 
-        Domoticz.Log("Opening %s" %database)
+        Domoticz.Debug("Opening %s" %database)
         self.dbConn = sqlite3.connect(database)
         self.dbCursor = self.dbConn.cursor()
 
     def closeDB( self ):
 
         if self.dbConn is not None:
-            Domoticz.Log("Closing %s" %self.database)
+            Domoticz.Debug("Closing %s" %self.database)
             self.dbConn.close()
 
     def disableErasePDM( self):
@@ -200,14 +200,14 @@ class DomoticzDB_DeviceStatus:
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( self.database ) :
             return
-        Domoticz.Log("Opening %s" %self.database)
+        Domoticz.Debug("Opening %s" %self.database)
         self.dbConn = sqlite3.connect(self.database)
         self.dbCursor = self.dbConn.cursor()
 
     def closeDB( self ):
 
         if self.dbConn is not None:
-            Domoticz.Log("Closing %s" %self.database)
+            Domoticz.Debug("Closing %s" %self.database)
             self.dbConn.close()
 
 
