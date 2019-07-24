@@ -41,7 +41,7 @@ def ZigateRead(self, Devices, Data):
         '004d': Decode004D,
         '8000': Decode8000_v2, '8001': Decode8001, '8002': Decode8002, '8003': Decode8003, '8004': Decode8004,
         '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
-        '8009': Decode8009, '8010': Decode8010,
+        '8009': Decode8009, '8010': Decode8010, '8011': Decode8011,
         '8014': Decode8014, '8015': Decode8015,
         '8024': Decode8024,
         '8028': Decode8028,
@@ -471,6 +471,38 @@ def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
         self.zigatedata['Firmware Version'] =  str(MajorVersNum) + ' - ' +str(InstaVersNum)
 
     return
+
+def Decode8011( self, Devices, MsgData, MsgRSSI ):
+
+    # APP APS ACK
+    """
+    u8Status,sizeof(uint8));
+    u8SequenceNum,sizeof(uint8));
+    u8SrcEndpoint,sizeof(uint8));
+    u8DstEndpoint,sizeof(uint8));
+    u16ProfileId,sizeof(uint16));
+    u16ClusterId,sizeof(uint16));
+    """
+
+    Domoticz.Log("Decode8011 - Message: %s MsgRSSI: %s" %(MsgData, MsgRSSI))
+
+    MsgStatus = MsgData[0:2]
+    MsgSQN = MsgData[2:4]
+    MsgSrcEp = MsgData[4:6]
+    MsgDstEp = MsgData[6:8]
+    MsgProfileID = MsgData[8:12]
+    MsgClusterId = MsgData[12:16]
+
+    MsgSrcAddr = ''
+    MsgSrcDeviceId = ''
+
+    Domoticz.Log("Decode8011 -    - Status: %s" %MsgStatus)
+    Domoticz.Log("                - SQN   : %s" %MsgSQN)
+    Domoticz.Log("                - SrcEp : %s" %MsgSrcEp)
+    Domoticz.Log("                - DstEp : %s" %MsgDstEp)
+    Domoticz.Log("                - ProfileId: %s" %MsgProfileID)
+    Domoticz.Log("                - Cluster  : %s" %MsgClusterId)
+
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     MsgLen=len(MsgData)
