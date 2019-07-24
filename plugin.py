@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="beta-4.4" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="rc-4.5" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
     <h3> Short description </h3>
@@ -184,7 +184,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.4.14'
+        self.pluginParameters['PluginVersion'] = '4.5.0'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -194,7 +194,6 @@ class BasePlugin:
         self.pluginParameters['PluginUpdate'] = None
 
         Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
-
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
