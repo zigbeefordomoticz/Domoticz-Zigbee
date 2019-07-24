@@ -1253,6 +1253,25 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     if self.PluzzyFirmware:
+        loggingInput( self, 'Log', "Patching payload:", MsgSrcAddr)
+        _type = MsgAttStatus
+        _status = MsgAttType
+        _size = MsgAttSize
+        _data = MsgClusterData
+
+        _newsize = '00' + _size[0:2]
+        _newdata = MsgAttSize[2:4] + MsgClusterData
+
+        loggingInput( self, 'Log', " MsgAttStatus: %s -> %s" %(MsgAttStatus, _status), MsgSrcAddr)
+        loggingInput( self, 'Log', " MsgAttType: %s -> %s" %(MsgAttType, _type), MsgSrcAddr)
+        loggingInput( self, 'Log', " MsgAttSize: %s -> %s" %(MsgAttSize, _newsize), MsgSrcAddr)
+        loggingInput( self, 'Log', " MsgClusterData: %s -> %s" %(MsgClusterData, _newdata), MsgSrcAddr)
+
+        MsgAttStatus = _status
+        MsgAttType = _type
+        MsgAttSize = _newsize
+        MsgClusterData = _newdata
+        MsgData = MsgSQN + MsgSrcAddr + MsgSrcEp + MsgClusterId + MsgAttrID + MsgAttStatus + MsgAttType + MsgAttSize + MsgClusterData
         pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgRSSI)
 
     loggingMessages( self, '8102', MsgSrcAddr, None, MsgRSSI, MsgSQN)
