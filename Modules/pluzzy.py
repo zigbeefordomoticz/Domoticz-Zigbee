@@ -11,6 +11,8 @@
 """
 
 import Domoticz
+from Modules.tools import loggingPairing, loggingInput
+
 
 def pluzzyDecode004D( self, MsgSrcAddr, MsgIEEE, MsgMacCapa, decodedMacCapa, RSSI):
 
