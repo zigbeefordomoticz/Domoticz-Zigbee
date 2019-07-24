@@ -578,19 +578,20 @@ class BasePlugin:
             if self.FirmwareVersion:
                 self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
 
-            if self.FirmwareVersion and self.FirmwareVersion.lower() == '2100':
-                Domoticz.Status("Firmware for Pluzzy devices")
-                self.PluzzyFirmware = True
 
             # Check Firmware version
             if self.FirmwareVersion and self.FirmwareVersion.lower() < '030f':
                 Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
-            if self.FirmwareVersion and self.FirmwareVersion.lower() == '030e':
+            elif self.FirmwareVersion and self.FirmwareVersion.lower() == '030e':
                 Domoticz.Status("You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
-            if self.FirmwareVersion and self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
+            elif self.FirmwareVersion and self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
                 Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
-            if self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031a:
+            elif self.FirmwareVersion and self.FirmwareVersion.lower() == '2100':
+                Domoticz.Status("Firmware for Pluzzy devices")
+                self.PluzzyFirmware = True
+            elif self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031a:
                 Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
+
             if self.FirmwareVersion and \
                     int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and\
                     self.transport != 'None':
