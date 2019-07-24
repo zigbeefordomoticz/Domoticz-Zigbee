@@ -49,12 +49,11 @@ def pluzzyDecode8102( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAt
         # Metering
         self.ListOfDevices[MsgSrcAddr]['ProfileID'] = '0104'
         self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] = '0002'
-        self.ListOfDevices[MsgSrcAddr]['Model'] = 'PLUZZY-PLUG'
+        self.ListOfDevices[MsgSrcAddr]['Model'] = 'Pluzzy-Plug'
 
     if MsgClusterId == '0402' or MsgClusterId == '0405':
         # Pluzzy Temp+Humi
         self.ListOfDevices[MsgSrcAddr]['ProfileID'] = '0104'
         self.ListOfDevices[MsgSrcAddr]['ZDeviceID'] = '0302'
-        self.ListOfDevices[MsgSrcAddr]['Model'] = 'PLUZZY-TH'
+        self.ListOfDevices[MsgSrcAddr]['Model'] = 'Pluzzy-TH'
 
-        return
