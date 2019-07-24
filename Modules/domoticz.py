@@ -846,6 +846,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == "Temp":  # temperature
+                loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
                 adjvalue = 0
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
@@ -862,11 +863,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if DeviceType == "Temp":
                     NewNvalue = round(value + adjvalue,1)
                     NewSvalue = str(round(value + adjvalue,1))
+                    loggingWidget( self, "Debug", "MajDomoDevice Temp update: %s - %s" %(NewNvalue, NewSvalue))
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":
                     NewNvalue = 0
                     NewSvalue = '%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2])
+                    loggingWidget( self, "Debug", "MajDomoDevice Temp+Hum update: %s - %s" %(NewNvalue, NewSvalue))
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
@@ -875,6 +878,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Humi":  # humidite
+                loggingWidget( self, "Debug", "MajDomoDevice Humi: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -894,11 +898,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if DeviceType == "Humi":
                     NewNvalue = value
                     NewSvalue = "%s" %humiStatus
+                    loggingWidget( self, "Debug", "MajDomoDevice Humi update: %s - %s" %(NewNvalue, NewSvalue))
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum":  # temp+hum xiaomi
                     NewNvalue = 0
                     NewSvalue = '%s;%s;%s' % (SplitData[0], value, humiStatus)
+                    loggingWidget( self, "Debug", "MajDomoDevice Temp+Hum update: %s - %s" %(NewNvalue, NewSvalue))
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
@@ -907,6 +913,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Baro":  # barometre
+                loggingWidget( self, "Debug", "MajDomoDevice Baro: %s, DeviceType: %s" %(value,DeviceType), NWKID)
                 adjvalue = 0
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
@@ -1446,14 +1453,13 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
-    loggingWidget( self, "Debug", 
-        "UpdateDevice_v2 for : " + str(Unit) + " Battery Level = " + str(BatteryLvl) + " Signal Level = " + str(
-            SignalLvl))
+
+    loggingWidget( self, "Debug", "UpdateDevice_v2 - %s %s-%s %s %s %s %s" %( Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_, ForceUpdate_))
+
+    rssi = 12
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Unit) + " RSSI = " + str(rssi))
-    else:
-        rssi = 12
 
     if not isinstance(BatteryLvl, int) or BatteryLvl == '':
         BatteryLvl = 255
