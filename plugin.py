@@ -177,6 +177,7 @@ class BasePlugin:
         self.WebUsername = None
         self.WebPassword = None
 
+        self.PluzzyFirmware = False
         self.pluginVersion = {}
         return
 
@@ -319,7 +320,8 @@ class BasePlugin:
         self.busy = False
 
         # Update APS Object with ZigateComm
-        if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+        #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
+        if self.APS:
             self.APS.updateZigateComm( self.ZigateComm)
         return
 
@@ -575,6 +577,12 @@ class BasePlugin:
 
             if self.FirmwareVersion:
                 self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
+                self.ZigateComm.updateFirmwareVersion ( self.FirmwareVersion )
+
+            if self.FirmwareVersion and self.FirmwareVersion.lower() == '2100':
+                Domoticz.Status("Firmware for Pluzzy devices")
+                self.PluzzyFirmware = True
+
             # Check Firmware version
             if self.FirmwareVersion and self.FirmwareVersion.lower() < '030f':
                 Domoticz.Status("You are not on the latest firmware version, please consider to upgrade")
