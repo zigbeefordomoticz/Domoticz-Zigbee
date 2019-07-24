@@ -40,8 +40,8 @@ class DomoticzDB_Preferences:
 
     def closeDB( self ):
 
-        Domoticz.Debug("Closing %s" %self.database)
         if self.dbConn is not None:
+            Domoticz.Debug("Closing %s" %self.database)
             self.dbConn.close()
 
 
@@ -162,8 +162,8 @@ class DomoticzDB_Hardware:
 
     def closeDB( self ):
 
-        Domoticz.Debug("Closing %s" %self.database)
         if self.dbConn is not None:
+            Domoticz.Debug("Closing %s" %self.database)
             self.dbConn.close()
 
     def disableErasePDM( self):
@@ -207,8 +207,8 @@ class DomoticzDB_DeviceStatus:
     def closeDB( self ):
 
         if self.dbConn is not None:
+            Domoticz.Debug("Closing %s" %self.database)
             self.dbConn.close()
-        Domoticz.Debug("Closing %s" %self.database)
 
 
     def retreiveAddjValue_baro( self, ID):
