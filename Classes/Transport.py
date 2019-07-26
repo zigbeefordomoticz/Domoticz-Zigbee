@@ -7,9 +7,8 @@
 import Domoticz
 import binascii
 import struct
-import time
+from time import time
 
-from Classes.APS import APSManagement
 from Modules.tools import is_hex
 from Modules.consts import MAX_LOAD_ZIGATE
 
@@ -65,6 +64,56 @@ CMD_DATA = {0x0009: 0x8009, 0x0010: 0x8010, 0x0014: 0x8014, 0x0015: 0x8015,
             0x0110: 0x8110, 0x0120: 0x8120
             }
 
+MAX_CMD_PER_DEVICE = 5
+APS_TIME_WINDOW = 1.5
+MAX_APS_TRACKING_ERROR = 5
+
+APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
+
+CMD_NWK_2NDBytes = { 
+        '0060':'Add Group', 
+        '0061':'View group', 
+        '0062':'Get Group Memberships', 
+        '0063':'Remove Group', 
+        '0064':'Remove All Groups', 
+        '0065':'Add Group if identify', 
+        '0070':'Identify Send',
+        '0080':'Move to level', 
+        '0081':'Move to Level w/o on/off', 
+        '0082':'Move Step', 
+        '0083':'Move Stop Move', 
+        '0084':'Move Stop with On/off', 
+        '0092':'On/Off', 
+        '0093':'On/Off Timed send', 
+        '0094':'On/Off with effect',
+        '004A':'Management Network Update request',
+        '004E':'Management LQI request',
+        '00B0':'Move to Hue', 
+        '00B1':'Move Hue',
+        '00B2':'Step Hue', 
+        '00B3':'Move to saturation', 
+        '00B4':'Move saturation', 
+        '00B5':'Step saturation', 
+        '00B6':'Move to hue and saturation', 
+        '00B7':'Move to colour', 
+        '00B8':'Move colour', 
+        '00B9':'step colour', 
+        '00BA':'Enhanced Move to Hue', 
+        '00BB':'Enhanced Move Hue', 
+        '00BC':'Enhanced Step Hue', 
+        '00BD':'Enhanced Move to hue and saturation', 
+        '00BE':'Colour Loop set', 
+        '00BF':'Stop Move Step', 
+        '00C0':'Move to colour temperature', 
+        '00C1':'Move colour temperature', 
+        '00C2':'Step colour temperature', 
+        '00E0':'Identify Trigger Effect', 
+        '00F0':'Lock/Unlock Door', 
+        '00FA':'Windows covering', 
+        '0100':'Read Attribute request', 
+        '0110':'Write Attribute request', 
+        '0120':'Configure reporting request' 
+        }
 
 class ZigateTransport(object):
     """
@@ -72,9 +121,10 @@ class ZigateTransport(object):
     Managed also the Command -> Status -> Data sequence
     """
 
-    def __init__(self, transport, statistics, aps, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, LOD, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
 
+        self.LOD = LOD # Object managing the Plugin Devices
         self._checkTO_flag = None
         self._connection = None  # connection handle
         self._ReqRcv = bytearray()  # on going receive buffer
@@ -90,7 +140,7 @@ class ZigateTransport(object):
 
         self.statistics = statistics
 
-        self.APS = aps
+        self.pluginconf = pluginconf
         self.reTransmit = pluginconf.pluginConf['reTransmit']
         self.zmode = pluginconf.pluginConf['zmode']
         self.sendDelay = pluginconf.pluginConf['sendDelay']
@@ -147,7 +197,7 @@ class ZigateTransport(object):
         self.openConn()
 
     # Transport Sending Data
-    def _sendData(self, cmd, datas, delay):
+    def _sendData(self, cmd, datas, delay ):
         """
         send data to Zigate via the communication transport
         """
@@ -174,10 +224,9 @@ class ZigateTransport(object):
             lineinput = "01" + str(ZigateEncode(cmd)) + str(ZigateEncode(length)) + \
                         str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"
 
+        self.processCMD4APS( cmd, datas)
         self._connection.Send(bytes.fromhex(str(lineinput)), delay)
         self.statistics._sent += 1
-        if self.APS:
-            self.APS.processCMD( cmd, datas)
 
     # Transport / called by plugin 
     def onMessage(self, Data):
@@ -267,8 +316,13 @@ class ZigateTransport(object):
 
     def addCmdToSend(self, cmd, data, reTransmit=0):
         """add a command to the waiting list"""
-        timestamp = int(time.time())
+        timestamp = int(time())
         ##DEBUG Domoticz.Debug("addCmdToSend: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
+        
+        for iterCmd, iterData, iterTS, iterreTx in self._normalQueue:
+            if cmd == iterCmd and data == iterCmd:
+                Domoticz.Log("Do not queue again an existing command in the Pipe")
+                return
         self._normalQueue.append((cmd, data, timestamp, reTransmit))
         if len(self._normalQueue) > self.statistics._MaxLoad:
             self.statistics._MaxLoad = len(self._normalQueue)
@@ -276,12 +330,12 @@ class ZigateTransport(object):
 
     def addCmdToWait(self, cmd, data, reTransmit=0):
         'add a command to the waiting list'
-        timestamp = int(time.time())
+        timestamp = int(time())
         self._waitForStatus.append((cmd, data, timestamp, reTransmit))
 
     def addDataToWait(self, expResponse, cmd, data, reTransmit=0):
         'add a command to the waiting list'
-        timestamp = int(time.time())
+        timestamp = int(time())
         self._waitForData.append((expResponse, cmd, data, timestamp, reTransmit))
 
     def loadTransmit(self):
@@ -312,7 +366,7 @@ class ZigateTransport(object):
             return ret
         return ( None, None, None, None, None)
 
-    def sendData(self, cmd, datas):
+    def sendData(self, cmd, datas ):
         '''
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
@@ -327,11 +381,11 @@ class ZigateTransport(object):
                 return
 
         # Check if normalQueue is empty. If yes we can send the command straight
-        ##DEBUG Domoticz.Debug("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \ % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
-        ##if len(self._waitForStatus) != 0:
-        ##    Domoticz.Debug("sendData - waitQ: %04.X" % (int(self._waitForStatus[0][0], 16)))
-        ##if len(self._waitForData) != 0:
-        ##    Domoticz.Debug("sendData - waitD: %04.X" % (int(self._waitForData[0][0])))
+        #Domoticz.Log("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
+        #if len(self._waitForStatus) != 0:
+        #    Domoticz.Log("sendData - waitQ: %04.X" % (int(self._waitForStatus[0][0], 16)))
+        #if len(self._waitForData) != 0:
+        #    Domoticz.Log("sendData - waitD: %04.X" % (int(self._waitForData[0][0])))
 
         # We can enable an aggressive version , where we queue ONLY for Status, but we consider that the data will come and so we don't wait for data.
         # If no wait on Status nor on Data, gooooooo
@@ -342,10 +396,9 @@ class ZigateTransport(object):
 
         if waitIsRequired:
             self.addCmdToWait(cmd, datas)
-            if self.zmode == 'ZigBee' and int(cmd,
-                                              16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
+            if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
                 self.addDataToWait(CMD_DATA[int(cmd, 16)], cmd, datas)
-            self._sendData(cmd, datas, self.sendDelay)
+            self._sendData(cmd, datas, self.sendDelay )
         else:
             # Put in FIFO
             self.addCmdToSend(cmd, datas)
@@ -385,6 +438,15 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
+        elif MsgType == "8702": # APS Failure
+            if len(frame) > 12 :
+                # We have Payload : data + rssi
+                MsgData=frame[12:len(frame)-4]
+                MsgRSSI=frame[len(frame)-4:len(frame)-2]
+        
+            if self.receiveAPSFailure( MsgData ):
+                self.F_out(frame)  # Forward the message to plugin for further processing
+
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
             self.F_out(frame)  # for processing
         else:
@@ -392,6 +454,7 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
         self.checkTOwaitFor()  # Let's take the opportunity to check TimeOut
         return
+
 
     def receiveDataCmd(self, MsgType):
         self.statistics._data += 1
@@ -447,7 +510,7 @@ class ZigateTransport(object):
         ##DEBUG  Domoticz.Debug("checkTOwaitFor   - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" \ % (0x0000, len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
         # Check waitForStatus
         if len(self._waitForStatus) > 0:
-            now = int(time.time())
+            now = int(time())
             pCmd, pDatas, pTime, reTx = self._waitForStatus[0]
             ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.x enter at: %s delta: %s" % (int(pCmd, 16), pTime, now - pTime))
             if (now - pTime) > self.zTimeOut:
@@ -458,7 +521,7 @@ class ZigateTransport(object):
 
         # Check waitForData
         if len(self._waitForData) > 0:
-            now = int(time.time())
+            now = int(time())
             expResponse, pCmd, pData, pTime, reTx = self._waitForData[0]
             ## DEBUG Domoticz.Debug("checkTOwaitForStatus - %04.xs enter at: %s delta: %s" % (expResponse, pTime, now - pTime))
             if (now - pTime) > self.zTimeOut:
@@ -489,6 +552,115 @@ class ZigateTransport(object):
         self._checkTO_flag = False
         return
 
+
+    """
+        'List Cmds' = [ { 'cmd':'Time Stamps', ... } ]
+    """
+
+    def _addNewCmdtoDevice(self, nwk, cmd, payload):
+        """ Add Cmd to the nwk list of Command FIFO mode """
+
+        #Domoticz.Log( "addNewCmdtoDevice - %s %s" %(nwk, cmd))
+
+        if not self.LOD.find( nwk ):
+            return
+        deviceinfos = self.LOD.retreive( nwk )
+
+        if 'Last Cmds' not in deviceinfos:
+            deviceinfos['Last Cmds'] = []
+
+        # This is to fix a miss-initialization done where it was initiatlized as a dict and not a list
+        if isinstance(deviceinfos['Last Cmds'], dict ):
+            deviceinfos[nwk]['Last Cmds'] = []
+
+        if len(deviceinfos['Last Cmds']) >= MAX_CMD_PER_DEVICE:
+            # Remove the First element in the list.
+            deviceinfos['Last Cmds'].pop(0)
+        if self.pluginconf.pluginConf['APSreTx']:
+            _tuple = ( time(), cmd , payload) # Keep Payload as well in order to redo the command
+        else:
+            _tuple = ( time(), cmd , None)
+        # Add element at the end of the List
+        deviceinfos['Last Cmds'].append( _tuple )
+        #Domoticz.Log( "addNewCmdtoDevice - %s adding cmd: %s into the Last Cmds list %s" \
+        #        %(nwk, cmd, deviceinfos['Last Cmds']))
+
+    def processCMD4APS( self, cmd, payload):
+        """ extract from Payload the NetworkID of the interested commands"""
+
+        #Domoticz.Log( "processCMD4APS - cmd: %s, payload: %s" %(cmd, payload))
+        if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
+            return
+
+        nwkid = payload[2:6]
+        #Domoticz.Log( "processCMD4APS - Retreive NWKID: %s" %nwkid)
+        if self.LOD.find( nwkid ):
+            self._addNewCmdtoDevice( nwkid, cmd , payload)
+
+    def receiveAPSFailure( self, MsgData):
+
+        """
+        Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
+        Status: e9 - No acknowledgement received when expected
+        Status: f0 - Pending transaction has expired and data discarded
+        Status: cf - Attempt at route discovery has failed due to lack of table spac
+        """
+    
+        if len(MsgData) ==0:
+            return  True
+    
+        MsgDataStatus=MsgData[0:2]
+        MsgDataSrcEp=MsgData[2:4]
+        MsgDataDestEp=MsgData[4:6]
+        MsgDataDestMode=MsgData[6:8]
+    
+        # Assuming that Firmware is above 3.0f
+        NWKID = IEEE = None
+        if MsgDataDestMode == '01': # IEEE
+            IEEE=MsgData[8:24]
+            MsgDataSQN=MsgData[24:26]
+        elif MsgDataDestMode == '02': # Short Address
+            NWKID=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+        elif MsgDataDestMode == '03': # Group
+            MsgDataDestAddr=MsgData[8:12]
+            MsgDataSQN=MsgData[12:14]
+
+        NWKID = self.LOD.find( NWKID, IEEE)
+        #Domoticz.Log("receiveAPSFailure - [%s] Ieee: %s, NwkId: %s, Status: %s, AddrMode: %s" %(MsgDataSQN, IEEE, NWKID, MsgDataStatus, MsgDataDestMode))
+        if NWKID and MsgDataStatus == 'd4':
+            # Let's resend the command
+            deviceinfos = self.LOD.retreive( NWKID )
+            if 'Last Cmds' not in deviceinfos:
+                return  True
+
+            _timeAPS = (time())
+            # Retreive Last command
+            _lastCmds = deviceinfos['Last Cmds'][::-1]  #Reverse list
+            iterTime = 0
+            iterCmd = iterpayLoad = None
+            if len(_lastCmds) >= 1:
+                if len(_lastCmds[0]) == 2:
+                    return True
+                if len(_lastCmds[0]) == 3:
+                    iterTime, iterCmd, iterpayLoad = _lastCmds[0]
+            iterTime2 = 0
+            iterCmd2 = iterpayLoad2 = None
+            if len(_lastCmds) >= 2:
+                # Retreive command -1
+                if len(_lastCmds[1]) == 3:
+                    iterTime2, iterCmd2, iterpayLoad2 = _lastCmds[1]
+
+            if iterCmd2 == iterCmd and iterpayLoad2 == iterpayLoad and iterTime  <= (iterTime2 + APS_TIME_WINDOW):
+                return True
+        
+            if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
+                # That command has been issued in the APS time window
+                if self.pluginconf.pluginConf['APSreTx']:
+                    Domoticz.Log("receiveAPSFailure - [%s] APS reTx Command %s %s %s" %(MsgDataSQN, NWKID, iterCmd, iterpayLoad))
+                    self.sendData( iterCmd, iterpayLoad)
+                    return False
+        return True
 
 def ZigateEncode(Data):  # ajoute le transcodage
 

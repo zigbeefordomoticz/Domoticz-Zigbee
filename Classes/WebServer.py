@@ -123,6 +123,7 @@ class WebServer(object):
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
         self.httpServerConn.Listen()
         self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
+        self.logging( 'Status', "Web backend for Web User Interface %s" %self.httpServerConn)
 
         self.httpsPort = '9443'
         #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
@@ -172,13 +173,26 @@ class WebServer(object):
             del self.httpsServerConns[Connection.Name]
         else:
             # Most likely it is about closing the Server
-            self.logging( "Log", "onDisconnect - Closing something else than client .... %s" %Connection)
+            self.logging( "Log", "onDisconnect - Closing %s" %Connection)
+
+    def onStop( self ):
+
+        # Make sure that all remaining open connections are closed
+        self.logging( 'Debug', "onStop()")
+
+        # Search for Protocol
+        for connection in self.httpServerConns:
+            self.logging( 'Log', "Closing %s" %connection)
+            self.httpServerConns[Connection.Name].close()
+        for connection in self.httpsServerConns:
+            self.logging( 'Log', "Closing %s" %connection)
+            self.httpServerConns[Connection.Name].close()
 
 
     def onMessage( self, Connection, Data ):
 
             self.logging( 'Debug', "WebServer onMessage")
-            DumpHTTPResponseToLog(Data)
+            #DumpHTTPResponseToLog(Data)
 
             headerCode = "200 OK"
             if (not 'Verb' in Data):
