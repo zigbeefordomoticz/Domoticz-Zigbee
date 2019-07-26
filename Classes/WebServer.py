@@ -172,7 +172,20 @@ class WebServer(object):
             del self.httpsServerConns[Connection.Name]
         else:
             # Most likely it is about closing the Server
-            self.logging( "Log", "onDisconnect - Closing something else than client .... %s" %Connection)
+            self.logging( "Log", "onDisconnect - Closing %s" %Connection)
+
+    def onStop( self ):
+
+        # Make sure that all remaining open connections are closed
+        self.logging( 'Debug', "onStop()")
+
+        # Search for Protocol
+        for connection in self.httpServerConns:
+            self.logging( 'Log', "Closing %s" %connection)
+            self.httpServerConns[Connection.Name].close()
+        for connection in self.httpsServerConns:
+            self.logging( 'Log', "Closing %s" %connection)
+            self.httpServerConns[Connection.Name].close()
 
 
     def onMessage( self, Connection, Data ):

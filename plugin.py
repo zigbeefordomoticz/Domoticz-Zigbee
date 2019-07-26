@@ -334,6 +334,9 @@ class BasePlugin:
         if self.domoticzdb_Hardware:
             self.domoticzdb_Hardware.closeDB()
  
+        if self.webserver:
+            self.webserver.onStop()
+
         major, minor = Parameters["DomoticzVersion"].split('.')
         major = int(major)
         minor = int(minor)
