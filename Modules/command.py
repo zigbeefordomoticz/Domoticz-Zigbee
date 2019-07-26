@@ -17,7 +17,7 @@ import struct
 import json
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint
+from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
 
@@ -288,31 +288,3 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         #Update Device
         UpdateDevice_v2(self, Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
-
-
-def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
-    """
-    Levolo On/Off command are based on Level Control cluster
-    Level: 108  -> On
-    Level: 1 -> Off
-    Left Unit: Timing 1
-    Right Unit: Timing 2
-    """
-
-    if onoff not in ( 'On', 'Off'): 
-        return
-    if devunit not in ( 'Left', 'Right'): 
-        return
-
-    if onoff == 'On': level_value = '%02x' %108
-    else: level_value = '01'
-
-    if devunit == 'Left': timing_value = '0001'
-    else: timing_value = '0002'
-
-    Domoticz.Log("livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value))
-    sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
-
-
-
-

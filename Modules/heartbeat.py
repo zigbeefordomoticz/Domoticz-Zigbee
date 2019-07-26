@@ -20,6 +20,7 @@ import json
 from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
         bindDevice, rebind_Clusters, getListofAttribute, \
+        livolo_OnOff, \
         setPowerOn_OnOff, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
@@ -217,13 +218,22 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     if self.ListOfDevices[NWKID]['Model'] != {}:
         Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
         # Let's check if this Model is known
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                knownModel = True
-                if not self.pluginconf.pluginConf['capturePairingInfos']:
-                    status = 'createDB' # Fast track
-                else:
-                    self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
+        if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+            knownModel = True
+            if not self.pluginconf.pluginConf['capturePairingInfos']:
+                status = 'createDB' # Fast track
+            else:
+                self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
+
+        # Patch to make Livolo working
+        # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
+        if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+            loggingHeartbeat( self, 'Debug', "Livolo On/Off Right %s" %NWKID)
+            livolo_OnOff( self, NWKID , '06', 'Right', 'Off')
+            livolo_OnOff( self, NWKID , '06', 'Left', 'Off')
+            loggingHeartbeat( self, 'Debug', "Livolo On/Off Left %s" %NWKID)
+            livolo_OnOff( self, NWKID , '06', 'Right', 'On')
+            livolo_OnOff( self, NWKID , '06', 'Left', 'On')
 
     waitForDomoDeviceCreation = False
     if status == "8043": # We have at least receive 1 EndPoint

@@ -111,6 +111,7 @@ class OTAManagement(object):
         try:
             with open( self.pluginconf.pluginConf['pluginOTAFirmware'] + image, 'rb') as file:
                 ota_image = file.read()
+
         except OSError as err:
             Domoticz.Error("ota_decode_new_image - error when opening %s - %s" %(image, err))
             return False
@@ -118,6 +119,14 @@ class OTAManagement(object):
         if len(ota_image) < 69:
             Domoticz.Error("ota_decode_new_image - invalid file size read %s - %s" %(image,len(ota_image)))
             return False
+
+        # From https://github.com/doudz
+        if ota_image.startswith(b'NGIS'):
+            self.logging( 'Log', "ota_decode_new_image - Signed Firmware ...")
+            # IKEA Signed Firmware, let's remove it
+            header_end = struct.unpack('<I', ota_image[0x10:0x14])[0]
+            footer_pos = struct.unpack('<I', ota_image[0x18:0x1C])[0]
+            ota_image = ota_image[header_end:footer_pos]
 
         try:
             header_data = list(struct.unpack('<LHHHHHLH32BLBQHH', ota_image[:69]))
