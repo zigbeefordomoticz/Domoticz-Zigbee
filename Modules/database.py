@@ -134,7 +134,7 @@ def WriteDeviceList(self, count):
             for key in self.ListOfDevices :
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
-        Domoticz.Log("WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
+        Modules.tools.loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
 
         # To be written in the Reporting folder
         #json_filename = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName.replace('.txt','.json') 
