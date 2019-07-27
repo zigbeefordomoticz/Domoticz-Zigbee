@@ -445,13 +445,18 @@ class ZigateTransport(object):
                 MsgRSSI=frame[len(frame)-4:len(frame)-2]
         
             if self.receiveAPSFailure( MsgData ):
+                Domoticz.Log("Forward the message for processing")
                 self.F_out(frame)  # Forward the message to plugin for further processing
+            else:
+                Domoticz.Log("No Forward - most-likely a resend done")
 
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
             self.F_out(frame)  # for processing
+
         else:
             self.receiveDataCmd(MsgType)  #
             self.F_out(frame)  # Forward the message to plugin for further processing
+
         self.checkTOwaitFor()  # Let's take the opportunity to check TimeOut
         return
 
