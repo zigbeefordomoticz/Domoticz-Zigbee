@@ -15,8 +15,6 @@ MAX_CMD_PER_DEVICE = 5
 APS_TIME_WINDOW = 1.5
 MAX_APS_TRACKING_ERROR = 5
 
-REDO = 0
-
 APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
 
 CMD_NWK_2NDBytes = { 
@@ -89,45 +87,6 @@ class APSManagement(object):
     def updateZigateComm( self, ZigateComm):
 
         self.ZigateComm = ZigateComm
-
-    def _addNewCmdtoDevice(self, nwk, cmd, payload):
-        """ Add Cmd to the nwk list of Command FIFO mode """
-
-        self.logging( 'Debug', "addNewCmdtoDevice - %s %s" %(nwk, cmd))
-
-        if nwk not in self.ListOfDevices:
-            return
-
-        if 'Last Cmds' not in self.ListOfDevices[nwk]:
-            self.ListOfDevices[nwk]['Last Cmds'] = []
-
-        # This is to fix a miss-initialization done where it was initiatlized as a dict and not a list
-        if isinstance(self.ListOfDevices[nwk]['Last Cmds'], dict ):
-            self.ListOfDevices[nwk]['Last Cmds'] = []
-
-        if len(self.ListOfDevices[nwk]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
-            # Remove the First element in the list.
-            self.ListOfDevices[nwk]['Last Cmds'].pop(0)
-        if not REDO:
-            _tuple = ( time(), cmd , None)
-        else:
-            _tuple = ( time(), cmd , payload) # Keep Payload as well in order to redo the command
-        # Add element at the end of the List
-        self.ListOfDevices[nwk]['Last Cmds'].append( _tuple )
-        self.logging( 'Debug', "addNewCmdtoDevice - %s adding cmd: %s into the Last Cmds list %s" \
-                %(nwk, cmd, self.ListOfDevices[nwk]['Last Cmds']))
-
-    def processCMD( self, cmd, payload):
-        """ extract from Payload the NetworkID of the interested commands"""
-
-        self.logging( 'Debug', "processCMD - cmd: %s, payload: %s" %(cmd, payload))
-        if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
-            return
-
-        nwkid = payload[2:6]
-        self.logging( 'Debug', "processCMD - Retreive NWKID: %s" %nwkid)
-        if nwkid in self.ListOfDevices:
-            self._addNewCmdtoDevice( nwkid, cmd , payload)
 
     def _errorMgt( self, cmd, nwk, ieee, aps_code):
         """ Process the error """
@@ -219,10 +178,5 @@ class APSManagement(object):
             self.logging( 'Debug', "processAPSFailure - %s process %18s %s - %s[%s]" %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
             if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                 # That command has been issued in the APS time window
-                if not REDO:
-                    self.logging( 'Log', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
-                    self._errorMgt( iterCmd, nwk, ieee, aps_code)
-                if REDO and iterpayLoad and self.ZigateComm:
-                    self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
-                    self.logging( 'Debug', "--> REDO the command" )
-                    self.ZigateComm.sendData( iterCmd, iterpayLoad)
+                self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
+                self._errorMgt( iterCmd, nwk, ieee, aps_code)

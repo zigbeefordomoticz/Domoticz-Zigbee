@@ -123,6 +123,7 @@ class WebServer(object):
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
         self.httpServerConn.Listen()
         self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
+        self.logging( 'Status', "Web backend for Web User Interface %s" %self.httpServerConn)
 
         self.httpsPort = '9443'
         #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
@@ -191,7 +192,7 @@ class WebServer(object):
     def onMessage( self, Connection, Data ):
 
             self.logging( 'Debug', "WebServer onMessage")
-            DumpHTTPResponseToLog(Data)
+            #DumpHTTPResponseToLog(Data)
 
             headerCode = "200 OK"
             if (not 'Verb' in Data):

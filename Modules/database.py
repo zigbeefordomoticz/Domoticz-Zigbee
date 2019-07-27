@@ -135,12 +135,6 @@ def WriteDeviceList(self, count):
                 file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
         self.HBcount=0
         Modules.tools.loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
-
-        # To be written in the Reporting folder
-        #json_filename = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName.replace('.txt','.json') 
-        #Modules.tools.loggingDatabase( self, 'Debug', "Write " + json_filename + " = " + str(self.ListOfDevices))
-        #with open (json_filename, 'wt') as json_file:
-        #    json.dump(self.ListOfDevices, json_file, indent=4, sort_keys=True)
     else :
         self.HBcount=self.HBcount+1
 

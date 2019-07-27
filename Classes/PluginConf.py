@@ -148,7 +148,10 @@ SETTINGS = {
                     'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
-                }
+                },
+            'Experimental': {
+                    'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
+                    }
             }
 
 class PluginConf:
