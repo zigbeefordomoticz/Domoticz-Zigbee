@@ -34,7 +34,6 @@ SETTINGS = {
                 },
 
             'WebInterface': {
-                    'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
@@ -44,7 +43,6 @@ SETTINGS = {
 
             # Polling
             'DevicePolling': {
-                    'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'polling0000':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0001':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'pollingONOFF':         { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -92,7 +90,6 @@ SETTINGS = {
 
                 #Over The Air Upgrade
             'OverTheAirUpgrade': {
-                    'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
                 },
