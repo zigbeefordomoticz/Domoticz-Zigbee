@@ -201,7 +201,7 @@ class BasePlugin:
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
-            loggingPlugin( self, 'Debug', int(Parameters["Mode6"]))
+            Domoticz.Log("Debug Mode: %s" %int(Parameters["Mode6"]))
             DumpConfigToLog()
 
         self.busy = True
@@ -835,16 +835,16 @@ def onHeartbeat():
 def DumpConfigToLog():
     for x in Parameters:
         if Parameters[x] != "":
-            loggingPlugin( self, 'Debug',  "'" + x + "':'" + str(Parameters[x]) + "'")
-    loggingPlugin( self, 'Debug', "Device count: " + str(len(Devices)))
+            Domoticz.Log(  "'" + x + "':'" + str(Parameters[x]) + "'")
+    Domoticz.Log( "Device count: " + str(len(Devices)))
     for x in Devices:
-        loggingPlugin( self, 'Debug', "Device:           " + str(x) + " - " + str(Devices[x]))
-        loggingPlugin( self, 'Debug', "Device ID:       '" + str(Devices[x].ID) + "'")
-        loggingPlugin( self, 'Debug', "Device Name:     '" + Devices[x].Name + "'")
-        loggingPlugin( self, 'Debug', "Device nValue:    " + str(Devices[x].nValue))
-        loggingPlugin( self, 'Debug', "Device sValue:   '" + Devices[x].sValue + "'")
-        loggingPlugin( self, 'Debug', "Device LastLevel: " + str(Devices[x].LastLevel))
-        loggingPlugin( self, 'Debug', "Device Options: " + str(Devices[x].Options))
+        Domoticz.Log( "Device:           " + str(x) + " - " + str(Devices[x]))
+        Domoticz.Log( "Device ID:       '" + str(Devices[x].ID) + "'")
+        Domoticz.Log( "Device Name:     '" + Devices[x].Name + "'")
+        Domoticz.Log( "Device nValue:    " + str(Devices[x].nValue))
+        Domoticz.Log( "Device sValue:   '" + Devices[x].sValue + "'")
+        Domoticz.Log( "Device LastLevel: " + str(Devices[x].LastLevel))
+        Domoticz.Log( "Device Options: " + str(Devices[x].Options))
     return
 
 
