@@ -1397,7 +1397,12 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
         LUpdate = Devices[x].LastUpdate
         _tmpDeviceID_IEEE = Devices[x].DeviceID
-        LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
+        try:
+            LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
+        except:
+            Domoticz.Error("Something wrong to decode Domoticz LastUpdate %s" %LUpdate)
+            break
+
         current = time.time()
 
         # Look for the corresponding ClusterType
