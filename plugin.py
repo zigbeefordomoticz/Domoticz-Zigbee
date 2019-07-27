@@ -324,10 +324,6 @@ class BasePlugin:
         self.ZigateComm.openConn()
         self.busy = False
 
-        # Update APS Object with ZigateComm
-        #if self.pluginconf.pluginConf['enableAPSFailureLoging'] or self.pluginconf.pluginConf['enableAPSFailureReporting']:
-        if self.APS:
-            self.APS.updateZigateComm( self.ZigateComm)
         return
 
     def onStop(self):
@@ -651,9 +647,9 @@ class BasePlugin:
                     sendZigateCmd(self, "0009","")
 
         # Checking Version
+        self.pluginParameters['TimeStamp'] = int(time.time())
         if self.pluginconf.pluginConf['internetAccess'] and \
                 ( self.pluginParameters['available'] is None or self.HeartbeatCount % ( 12 * 3600 // HEARTBEAT) == 0 ):
-            self.pluginParameters['TimeStamp'] = int(time.time())
             self.pluginParameters['available'] , self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor'] = checkPluginVersion( self.pluginParameters['PluginBranch'] )
             self.pluginParameters['FirmwareUpdate'] = False
             self.pluginParameters['PluginUpdate'] = False

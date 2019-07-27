@@ -444,11 +444,9 @@ class ZigateTransport(object):
                 MsgData=frame[12:len(frame)-4]
                 MsgRSSI=frame[len(frame)-4:len(frame)-2]
         
+            self.statistics._APSFailure += 1
             if self.receiveAPSFailure( MsgData ):
-                Domoticz.Log("Forward the message for processing")
                 self.F_out(frame)  # Forward the message to plugin for further processing
-            else:
-                Domoticz.Log("No Forward - most-likely a resend done")
 
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
             self.F_out(frame)  # for processing
@@ -557,15 +555,8 @@ class ZigateTransport(object):
         self._checkTO_flag = False
         return
 
-
-    """
-        'List Cmds' = [ { 'cmd':'Time Stamps', ... } ]
-    """
-
     def _addNewCmdtoDevice(self, nwk, cmd, payload):
         """ Add Cmd to the nwk list of Command FIFO mode """
-
-        #Domoticz.Log( "addNewCmdtoDevice - %s %s" %(nwk, cmd))
 
         if not self.LOD.find( nwk ):
             return
@@ -587,11 +578,8 @@ class ZigateTransport(object):
             _tuple = ( time(), cmd , None)
         # Add element at the end of the List
         deviceinfos['Last Cmds'].append( _tuple )
-        #Domoticz.Log( "addNewCmdtoDevice - %s adding cmd: %s into the Last Cmds list %s" \
-        #        %(nwk, cmd, deviceinfos['Last Cmds']))
 
     def processCMD4APS( self, cmd, payload):
-        """ extract from Payload the NetworkID of the interested commands"""
 
         #Domoticz.Log( "processCMD4APS - cmd: %s, payload: %s" %(cmd, payload))
         if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
@@ -632,7 +620,6 @@ class ZigateTransport(object):
             MsgDataSQN=MsgData[12:14]
 
         NWKID = self.LOD.find( NWKID, IEEE)
-        #Domoticz.Log("receiveAPSFailure - [%s] Ieee: %s, NwkId: %s, Status: %s, AddrMode: %s" %(MsgDataSQN, IEEE, NWKID, MsgDataStatus, MsgDataDestMode))
         if NWKID and MsgDataStatus == 'd4':
             # Let's resend the command
             deviceinfos = self.LOD.retreive( NWKID )
@@ -664,6 +651,7 @@ class ZigateTransport(object):
                 if self.pluginconf.pluginConf['APSreTx']:
                     Domoticz.Log("receiveAPSFailure - [%s] APS reTx Command %s %s %s" %(MsgDataSQN, NWKID, iterCmd, iterpayLoad))
                     self.sendData( iterCmd, iterpayLoad)
+                    self.statistics._reTx += 1
                     return False
         return True
 

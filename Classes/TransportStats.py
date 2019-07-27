@@ -14,6 +14,7 @@ class TransportStatistics:
     def __init__(self, pluginconf):
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
+        self._APSFailure = 0 # Count APS Failure
         self._sent = 0  # count of sent messages
         self._received = 0  # count of received messages
         self._ack = 0  # count number of 0x8000
@@ -73,6 +74,9 @@ class TransportStatistics:
     def clusterKO(self):
         return self._clusterKO
 
+    def APSFailure(self):
+        return self._APSFailure
+
     def printSummary(self):
         if self.received() == 0:
             return
@@ -84,6 +88,7 @@ class TransportStatistics:
         Domoticz.Status("   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX reTransmit    : %s (%s" % (self.reTx(), round((self.reTx()/self.sent())*100,2)) + '%)')
+        Domoticz.Status("   TX APS Failure   : %s (%s" % (self.APSFailure(), round((self.APSFailure()/self.sent())*100,2)) + '%)')
         Domoticz.Status("Received:")
         Domoticz.Status("   RX frame         : %s" % (self.received()))
         Domoticz.Status("   RX crc errors    : %s (%s" % (self.crcErrors(), round((self.crcErrors()/self.received())*100,2)) + '%)')

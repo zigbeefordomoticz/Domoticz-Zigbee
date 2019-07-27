@@ -123,7 +123,6 @@ class WebServer(object):
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
         self.httpServerConn.Listen()
         self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
-        self.logging( 'Status', "Web backend for Web User Interface %s" %self.httpServerConn)
 
         self.httpsPort = '9443'
         #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
@@ -957,6 +956,7 @@ class WebServer(object):
             Statistics['Received'] =self.statistics._received
             Statistics['Cluster'] =self.statistics._clusterOK
             Statistics['ReTx'] =self.statistics._reTx
+            Statistics['APSFailure'] =self.statistics._APSFailure
             Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start

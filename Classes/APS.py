@@ -1,9 +1,8 @@
-
-"""
-
-    'List Cmds' = [ { 'cmd':'Time Stamps', ... } ]
-
-"""
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 from time import time
 
@@ -69,7 +68,6 @@ class APSManagement(object):
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.pluginconf = pluginconf
-        self.ZigateComm = None        # Point to the ZigateComm object
 
         return
 
@@ -84,10 +82,6 @@ class APSManagement(object):
             Domoticz.Status( message)
         return
     
-    def updateZigateComm( self, ZigateComm):
-
-        self.ZigateComm = ZigateComm
-
     def _errorMgt( self, cmd, nwk, ieee, aps_code):
         """ Process the error """
 
@@ -105,9 +99,8 @@ class APSManagement(object):
         if 'ZDeviceName' in self.ListOfDevices[nwk]:
             ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
 
-        Domoticz.Error("Command: %s failed on %s" %(_cmdTxt, ZDeviceName)) 
-        Domoticz.Error("- Device: %s NwkID: %s IEEE: %s" %( _deviceName, nwk, ieee))
-        Domoticz.Error("- Code: %s Status: %s" %( aps_code, DisplayStatusCode( aps_code )))
+        Domoticz.Error("APS Failure , Command: %s for %s (%s,%s,%s) not correctly transmited. ( %s, %s )" \
+                %( _cmdTxt, ZDeviceName, _deviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
         self.ListOfDevices[nwk]['Health'] = 'Not Reachable'
 
     def _updateAPSrecord( self, nwk, aps_code):
@@ -121,7 +114,6 @@ class APSManagement(object):
         _tuple = ( time(), aps_code )
         self.ListOfDevices[nwk]['APS Failure'].append( _tuple )
 
-
     def processAPSFailure( self, nwk, ieee, aps_code):
         """
         We are receiving a APS Failure code for that particular Device
@@ -129,12 +121,10 @@ class APSManagement(object):
         """
 
         self.logging( 'Debug', "processAPSFailure - %s %s %s" %(nwk, ieee, aps_code))
-
         if nwk not in self.ListOfDevices:
             return
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
             return
-
         _mainPowered = False
         if 'MacCapa' in self.ListOfDevices[nwk]:
             if self.ListOfDevices[nwk]['MacCapa'] == '8e':
@@ -142,15 +132,12 @@ class APSManagement(object):
         elif 'PowerSource' in self.ListOfDevices[nwk]:
             if self.ListOfDevices[nwk]['PowerSource'] == 'Main':
                 _mainPowered = True
-
         ZDeviceName = ''
         if 'ZDeviceName' in  self.ListOfDevices[nwk]:
             ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
-
         if self.pluginconf.pluginConf['enableAPSFailureLoging']:
             Domoticz.Log("processAPSFailure - Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
                     %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
-
         self.logging( 'Debug', "processAPSFailure - Update APS record Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
                     %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
         self._updateAPSrecord( nwk, aps_code)
@@ -162,21 +149,23 @@ class APSManagement(object):
                     %(_mainPowered, aps_code, self.pluginconf.pluginConf['enableAPSFailureReporting']))
             return
 
-        self.logging( 'Debug', "processAPSFailure - Error Reporting")
-
         _timeAPS = (time())
-        _lastCmds = self.ListOfDevices[nwk]['Last Cmds']
-
+        # Retreive Last command
+        _lastCmds = self.ListOfDevices[nwk]['Last Cmds'][::-1]  #Reverse list
         self.logging( 'Debug', "processAPSFailure - %s Last Cmds: %s" %(nwk, _lastCmds))
-        for iterItem in reversed(_lastCmds):
-            iterTime = iterItem[0]
-            iterCmd =iterItem[1]
-            iterpayLoad = None
-            if len(iterItem) == 3:
-                iterpayLoad =iterItem[2]
-            
-            self.logging( 'Debug', "processAPSFailure - %s process %18s %s - %s[%s]" %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
-            if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
-                # That command has been issued in the APS time window
-                self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
-                self._errorMgt( iterCmd, nwk, ieee, aps_code)
+        iterTime = 0
+        iterCmd = iterpayLoad = None
+        if len(_lastCmds) < 1:
+            return
+        if len(_lastCmds[0]) == 2:
+            return 
+        if len(_lastCmds[0]) == 3:
+            iterTime, iterCmd, iterpayLoad = _lastCmds[0]
+
+        self.logging( 'Debug', "processAPSFailure - %s process %18s %s - %s[%s]" \
+                %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
+        if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
+            # That command has been issued in the APS time window
+            self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" \
+                    %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
+            self._errorMgt( iterCmd, nwk, ieee, aps_code)
