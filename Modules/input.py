@@ -266,6 +266,9 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         loggingInput( self, 'Debug', "Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
+    if MsgData[0:2] == '15':
+        Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" %(PacketType, MsgData[0:2], Status))
+
     return
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
