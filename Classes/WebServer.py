@@ -988,17 +988,18 @@ class WebServer(object):
                 for _theme in SETTINGS:
                     if _theme in ( 'PluginTransport'): continue
                     theme = {}
+                    theme['_Order'] = SETTINGS[_theme]['Order']
                     theme['_Theme'] = _theme
                     theme['ListOfSettings'] = []
                     for param in self.pluginconf.pluginConf:
-                        if param not in SETTINGS[_theme]: continue
-                        if not SETTINGS[_theme][param]['hidden']:
+                        if param not in SETTINGS[_theme]['param']: continue
+                        if not SETTINGS[_theme]['param'][param]['hidden']:
                             setting = {}
                             setting['Name'] = param
-                            setting['default_value'] = SETTINGS[_theme][param]['default']
-                            setting['DataType'] = SETTINGS[_theme][param]['type']
-                            setting['restart_need'] = SETTINGS[_theme][param]['restart']
-                            setting['Advanced'] = SETTINGS[_theme][param]['Advanced']
+                            setting['default_value'] = SETTINGS[_theme]['param'][param]['default']
+                            setting['DataType'] = SETTINGS[_theme]['param'][param]['type']
+                            setting['restart_need'] = SETTINGS[_theme]['param'][param]['restart']
+                            setting['Advanced'] = SETTINGS[_theme]['param'][param]['Advanced']
                             setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )

@@ -19,32 +19,30 @@ from Modules.tools import is_hex
 
 
 SETTINGS = { 
-            'Services': {
+        'Services': { 'Order': 1, 'param': {
                     'enablegroupmanagement':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
-                },
+                    }},
 
-            'DomoticzEnvironment': {
+        'DomoticzEnvironment': { 'Order': 2, 'param':{
                     'proto': { 'type':'str', 'default':'http', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
                     'host': { 'type':'str', 'default':'127.0.0.1', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
                     'port': { 'type':'str', 'default':'8080', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False}
-                },
+                    }},
 
-            'WebInterface': {
-                    'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
+        'WebInterface': { 'Order': 3, 'param': {
                     'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
-                    'enableChunk':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False},
+                    'enableChunk':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
-                    'enableCache':     { 'type':'bool', 'default':0, 'current':None, 'restart':False, 'hidden':True, 'Advanced':False}
-                },
+                    'enableCache':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':False}
+                    }},
 
             # Polling
-            'DevicePolling': {
-                    'enableReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+            'DevicePolling': { 'Order': 4, 'param': {
                     'polling0000':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0001':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'pollingONOFF':         { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -62,9 +60,9 @@ SETTINGS = {
                     'polling0500':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0502':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0702':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
-                },
+                }},
             # Device Management
-            'DeviceManagement': {
+            'DeviceManagement': { 'Order': 5, 'param': {
                     'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
                     'resetPluginDS': { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':True, 'Advanced':True},
                     'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False, 'Advanced':False},
@@ -72,10 +70,10 @@ SETTINGS = {
                     'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'doUnbindBind':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
                     'allowReBindingClusters':  { 'type':'bool', 'default':1 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True}
-                    },
+                    }},
 
             # Zigate Configuration
-            'ZigateConfiguration': {
+            'ZigateConfiguration': { 'Order': 6, 'param': {
                     'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                     'blueLedOff':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
@@ -88,26 +86,25 @@ SETTINGS = {
                     'channel':  { 'type':'str', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                     'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
-                },
+                }},
 
                 #Over The Air Upgrade
-            'OverTheAirUpgrade': {
-                    'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+            'OverTheAirUpgrade': { 'Order': 7, 'param': {
                     'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                     'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
-                },
+                }},
 
             # Plugin Transport
-            'PluginTransport': {
+            'PluginTransport': { 'Order': 8, 'param': {
                     'CrcCheck':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'reTransmit':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'sendDelay':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False}
-                },
+                }},
 
             # Plugin Directories
-            'PluginConfiguration': {
+            'PluginConfiguration': { 'Order': 9, 'param': {
                     'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
                     'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
@@ -117,10 +114,10 @@ SETTINGS = {
                     'pluginOTAFirmware': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                     'pluginReports':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                     'pluginWWW':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
-                },
+                }},
 
             # Verbose
-            'VerboseLogging': {
+            'VerboseLogging': { 'Order': 9, 'param': {
                     'debugMatchId':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'capturePairingInfos': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -140,18 +137,18 @@ SETTINGS = {
                     'debugIAS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugAPS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'debugWebServer':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
-                },
+                    }},
             #Others
-            'Others': {
+            'Others': { 'Order': 10, 'param': {
                     'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
-                },
-            'Experimental': {
+                    }},
+            'Experimental': { 'Order': 11, 'param': {
                     'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
-                    }
+                    }}
             }
 
 class PluginConf:
@@ -164,7 +161,7 @@ class PluginConf:
         self.pluginConf["pluginHome"] = homedir
 
         for theme in SETTINGS:
-            for param in SETTINGS[theme]:
+            for param in SETTINGS[theme]['param']:
                 if param == 'pluginHome':
                     pass
                 elif param == 'homedirectory':
@@ -180,7 +177,7 @@ class PluginConf:
                 elif param == 'pluginOTAFirmware':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
                 else:
-                    self.pluginConf[param] = SETTINGS[theme][param]['default']
+                    self.pluginConf[param] = SETTINGS[theme]['param'][param]['default']
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
         if not os.path.isfile(self.pluginConf['filename']):
@@ -208,14 +205,14 @@ class PluginConf:
 
         # Check Path
         for theme in SETTINGS:
-            for param in SETTINGS[theme]:
-                if SETTINGS[theme][param]['type'] == 'path':
+            for param in SETTINGS[theme]['param']:
+                if SETTINGS[theme]['param'][param]['type'] == 'path':
                     if not os.path.exists( self.pluginConf[ param] ):
                         Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
 
         for theme in SETTINGS:
-            for param in SETTINGS[theme]:
-                if self.pluginConf[param] != SETTINGS[theme][param]['default']:
+            for param in SETTINGS[theme]['param']:
+                if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
                     Domoticz.Status("%s set to %s" %(param, self.pluginConf[param]))
 
 
@@ -248,9 +245,9 @@ class PluginConf:
             Domoticz.Error("Error while importing %s, all plugin parameters set to default" %self.filename)
         else:
             for theme in SETTINGS:
-                for param in SETTINGS[theme]:
+                for param in SETTINGS[theme]['param']:
                     if PluginConf.get( param ):
-                        if SETTINGS[theme][param]['type'] == 'hex':
+                        if SETTINGS[theme]['param'][param]['type'] == 'hex':
                             if is_hex( PluginConf.get( param ) ):
                                 self.pluginConf[param] = int(PluginConf[ param ], 16)
                             else:
@@ -258,14 +255,14 @@ class PluginConf:
                                         %( param, self.pluginConf[param]['default']))
                                 self.pluginConf[param] = self.pluginConf[param]['default']
     
-                        elif SETTINGS[theme][param]['type'] in ( 'bool', 'int'):
+                        elif SETTINGS[theme]['param'][param]['type'] in ( 'bool', 'int'):
                             if PluginConf.get( param).isdigit():
                                 self.pluginConf[param] = int(PluginConf[ param ])
                             else:
                                 Domoticz.Error("Wrong parameter type for %s, keeping default %s" \
                                     %( param, self.pluginConf[param]['default']))
                                 self.pluginConf[param] = self.pluginConf[param]['default']
-                        elif SETTINGS[theme][param]['type'] == ( 'path', 'str'):
+                        elif SETTINGS[theme]['param'][param]['type'] == ( 'path', 'str'):
                             self.pluginConf[param] = PluginConf[ param ]
 
         self.write_Settings( )
@@ -279,8 +276,8 @@ class PluginConf:
         pluginConfFile = self.pluginConf['filename']
         write_pluginConf = {}
         for theme in SETTINGS:
-            for param in SETTINGS[theme]:
-                if self.pluginConf[param] != SETTINGS[theme][param]['default']:
+            for param in SETTINGS[theme]['param']:
+                if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
                     write_pluginConf[param] = self.pluginConf[param]
 
         with open( pluginConfFile , 'wt') as handle:
