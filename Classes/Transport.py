@@ -366,7 +366,7 @@ class ZigateTransport(object):
             return ret
         return ( None, None, None, None, None)
 
-    def sendData(self, cmd, datas ):
+    def sendData(self, cmd, datas , delay=None):
         '''
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
@@ -398,7 +398,11 @@ class ZigateTransport(object):
             self.addCmdToWait(cmd, datas)
             if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
                 self.addDataToWait(CMD_DATA[int(cmd, 16)], cmd, datas)
-            self._sendData(cmd, datas, self.sendDelay )
+            if delay is None:
+                self._sendData(cmd, datas, self.sendDelay )
+            else:
+                self._sendData(cmd, datas, delay )
+
         else:
             # Put in FIFO
             self.addCmdToSend(cmd, datas)
@@ -650,7 +654,7 @@ class ZigateTransport(object):
                 # That command has been issued in the APS time window
                 if self.pluginconf.pluginConf['APSreTx']:
                     Domoticz.Log("receiveAPSFailure - [%s] APS reTx Command %s %s %s" %(MsgDataSQN, NWKID, iterCmd, iterpayLoad))
-                    self.sendData( iterCmd, iterpayLoad)
+                    self.sendData( iterCmd, iterpayLoad, 1)
                     self.statistics._reTx += 1
                     return False
         return True
