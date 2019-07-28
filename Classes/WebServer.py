@@ -1020,7 +1020,7 @@ class WebServer(object):
 
                 # Do we have to update ?
                 for _theme in SETTINGS:
-                    for param in SETTINGS[_theme]:
+                    for param in SETTINGS[_theme]['param']:
                         if param != setting: continue
                         found = True
                         upd = True
@@ -1056,11 +1056,11 @@ class WebServer(object):
                         else:
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
-                        if SETTINGS[_theme][param]['restart']:
+                        if SETTINGS[_theme]['param'][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
 
                 if not found:
-                    Domoticz.Error("Unexpectped parameter: %s" %setting)
+                    Domoticz.Error("Unexpected parameter: %s" %setting)
                     _response["Data"] = { 'unexpected parameters %s' %setting }
 
                 if upd:
