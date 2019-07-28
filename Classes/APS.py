@@ -11,7 +11,7 @@ from Modules.status import DisplayStatusCode
 from Modules.domoticz import timedOutDevice
 
 MAX_CMD_PER_DEVICE = 5
-APS_TIME_WINDOW = 1.5
+APS_TIME_WINDOW = 3
 MAX_APS_TRACKING_ERROR = 5
 
 APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
