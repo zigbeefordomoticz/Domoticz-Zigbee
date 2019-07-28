@@ -172,13 +172,26 @@ class WebServer(object):
             del self.httpsServerConns[Connection.Name]
         else:
             # Most likely it is about closing the Server
-            self.logging( "Log", "onDisconnect - Closing something else than client .... %s" %Connection)
+            self.logging( "Log", "onDisconnect - Closing %s" %Connection)
+
+    def onStop( self ):
+
+        # Make sure that all remaining open connections are closed
+        self.logging( 'Debug', "onStop()")
+
+        # Search for Protocol
+        for connection in self.httpServerConns:
+            self.logging( 'Log', "Closing %s" %connection)
+            self.httpServerConns[Connection.Name].close()
+        for connection in self.httpsServerConns:
+            self.logging( 'Log', "Closing %s" %connection)
+            self.httpServerConns[Connection.Name].close()
 
 
     def onMessage( self, Connection, Data ):
 
             self.logging( 'Debug', "WebServer onMessage")
-            DumpHTTPResponseToLog(Data)
+            #DumpHTTPResponseToLog(Data)
 
             headerCode = "200 OK"
             if (not 'Verb' in Data):
@@ -943,6 +956,7 @@ class WebServer(object):
             Statistics['Received'] =self.statistics._received
             Statistics['Cluster'] =self.statistics._clusterOK
             Statistics['ReTx'] =self.statistics._reTx
+            Statistics['APSFailure'] =self.statistics._APSFailure
             Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
@@ -974,17 +988,18 @@ class WebServer(object):
                 for _theme in SETTINGS:
                     if _theme in ( 'PluginTransport'): continue
                     theme = {}
+                    theme['_Order'] = SETTINGS[_theme]['Order']
                     theme['_Theme'] = _theme
                     theme['ListOfSettings'] = []
                     for param in self.pluginconf.pluginConf:
-                        if param not in SETTINGS[_theme]: continue
-                        if not SETTINGS[_theme][param]['hidden']:
+                        if param not in SETTINGS[_theme]['param']: continue
+                        if not SETTINGS[_theme]['param'][param]['hidden']:
                             setting = {}
                             setting['Name'] = param
-                            setting['default_value'] = SETTINGS[_theme][param]['default']
-                            setting['DataType'] = SETTINGS[_theme][param]['type']
-                            setting['restart_need'] = SETTINGS[_theme][param]['restart']
-                            setting['Advanced'] = SETTINGS[_theme][param]['Advanced']
+                            setting['default_value'] = SETTINGS[_theme]['param'][param]['default']
+                            setting['DataType'] = SETTINGS[_theme]['param'][param]['type']
+                            setting['restart_need'] = SETTINGS[_theme]['param'][param]['restart']
+                            setting['Advanced'] = SETTINGS[_theme]['param'][param]['Advanced']
                             setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
@@ -1005,7 +1020,7 @@ class WebServer(object):
 
                 # Do we have to update ?
                 for _theme in SETTINGS:
-                    for param in SETTINGS[_theme]:
+                    for param in SETTINGS[_theme]['param']:
                         if param != setting: continue
                         found = True
                         upd = True
@@ -1041,11 +1056,11 @@ class WebServer(object):
                         else:
                             self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
-                        if SETTINGS[_theme][param]['restart']:
+                        if SETTINGS[_theme]['param'][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
 
                 if not found:
-                    Domoticz.Error("Unexpectped parameter: %s" %setting)
+                    Domoticz.Error("Unexpected parameter: %s" %setting)
                     _response["Data"] = { 'unexpected parameters %s' %setting }
 
                 if upd:
