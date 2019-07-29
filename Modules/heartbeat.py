@@ -99,7 +99,9 @@ def processKnownDevices( self, Devices, NWKID ):
     # On regular basis, try to collect as much information as possible from Main Powered devices
     if  _mainPowered and \
             ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
-        if 'Attributes List' not in  self.ListOfDevices[NWKID]:
+        
+        # If Attributes not yet discovered, let's do it
+        if 'Attributes List' not in self.ListOfDevices[NWKID]:
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
@@ -109,6 +111,21 @@ def processKnownDevices( self, Devices, NWKID ):
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
+
+        # Checking if we have to change the Power On after On/Off
+        if 'ReadAttributes' in self.ListOfDevices[NWKID]:
+            if 'Ep' in self.ListOfDevices[NWKID]['ReadAttributes']:
+                for iterEp in self.ListOfDevices[NWKID]['ReadAttributes']['Ep']:
+                    # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
+                    if '0006' in self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]:
+                        if '4003' in self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']:
+                            if int(self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
+                                #if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
+                                    Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
+                                            %(NWKID, self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
+                                    setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
+
+        # If corresponding Attributes not present, let's do a Request Node Descriptio
         if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
                 'DeviceType' not in self.ListOfDevices[NWKID] or \
                 'LogicalType' not in self.ListOfDevices[NWKID] or \
@@ -120,6 +137,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
                 sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
+        
+    # Read Attributes if enabled
     if _mainPowered and \
             ( self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes'] ) and ( intHB % (30 // HEARTBEAT)) == 0 :
         now = int(time.time())   # Will be used to trigger ReadAttributes
