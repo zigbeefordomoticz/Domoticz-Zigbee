@@ -148,6 +148,7 @@ SETTINGS = {
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }},
             'Experimental': { 'Order': 11, 'param': {
+                    'bulbPowerOnOfMode':  {'type':'int', 'default':255, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }}
             }
 
