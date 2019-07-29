@@ -791,6 +791,10 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = MsgClusterData
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
+    elif MsgAttrID == '4000': # 
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Attr: %s Value: %s" %(MsgAttrID, MsgClusterData))
+
+
     elif MsgAttrID == 'f000':
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - Attribute f000: " + str(MsgClusterData) , MsgSrcAddr)
     else:
