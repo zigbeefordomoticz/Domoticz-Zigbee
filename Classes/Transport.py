@@ -13,7 +13,7 @@ from Modules.tools import is_hex
 from Modules.consts import MAX_LOAD_ZIGATE
 
 # Standalone message. They are receive and do not belongs to a command
-STANDALONE_MESSAGE = (0x8101, 0x8102, 0x8003, 0x804, 0x8005, 0x8006, 0x8701, 0x8702, 0x004D)
+STANDALONE_MESSAGE = (0x8101, 0x8102, 0x8003, 0x804, 0x8005, 0x8006, 0x8011, 0x8701, 0x8702, 0x004D)
 
 # Command message followed by a Status
 CMD_ONLY_STATUS = (0x0012, 0x0016, 0x0020, 0x0021, 0x0022, 0x0023, 0x0027, 0x0049,
@@ -444,18 +444,25 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
+        elif MsgType == "8011": # APS Ack
+            if len(frame) > 12 :
+                # We have Payload : data + rssi
+                MsgData=frame[12:len(frame)-4]
+                self.lowlevelAPSack( MsgData )
+                self.F_out(frame)  # Forward the message to plugin for further processing
+
         elif MsgType == "8702": # APS Failure
             if len(frame) > 12 :
                 # We have Payload : data + rssi
                 MsgData=frame[12:len(frame)-4]
                 MsgRSSI=frame[len(frame)-4:len(frame)-2]
         
-            if self.lowlevelAPSFailure( MsgData ):
-                #Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
-                self.statistics._APSFailure += 1
-                self.F_out(frame)  # Forward the message to plugin for further processing
-            #else:
-            #    Domoticz.Log("processFrame - detect an APS Failure , but we try to resend and drop this message")
+                if self.lowlevelAPSFailure( MsgData ):
+                    #Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
+                    self.statistics._APSFailure += 1
+                    self.F_out(frame)  # Forward the message to plugin for further processing
+                #else:
+                #    Domoticz.Log("processFrame - detect an APS Failure , but we try to resend and drop this message")
 
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
             self.F_out(frame)  # for processing
@@ -598,6 +605,16 @@ class ZigateTransport(object):
         #Domoticz.Log( "processCMD4APS - Retreive NWKID: %s" %nwkid)
         if self.LOD.find( nwkid ):
             self._addNewCmdtoDevice( nwkid, cmd , payload)
+
+    def lowlevelAPSack( self, MsgData):
+
+        MsgStatus = MsgData[0:2]
+        MsgSQN = MsgData[2:4]
+        MsgSrcEp = MsgData[4:6]
+        MsgDstEp = MsgData[6:8]
+        MsgProfileID = MsgData[8:12]
+        MsgClusterId = MsgData[12:16]
+    
 
     def lowlevelAPSFailure( self, MsgData):
 
