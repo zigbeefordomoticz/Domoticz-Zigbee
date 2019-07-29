@@ -126,12 +126,6 @@ def ReadCluster(self, Devices, MsgData):
         Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
         return
 
-    if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
-        if 'Ep' in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']:
-            if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep']:
-                if MsgClusterId in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp]:
-                    self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
-
     if MsgAttrStatus != "00" and MsgClusterId != '0500':
         loggingCluster( self, 'Debug', "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) , nwkid=MsgSrcAddr)
         self.statistics._clusterKO += 1
@@ -159,29 +153,27 @@ def ReadCluster(self, Devices, MsgData):
     loggingCluster( self, 'Debug', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr)
 
+    if 'ReadAttributes' not in  self.ListOfDevices[MsgSrcAddr]:
+         self.ListOfDevices[MsgSrcAddr]['ReadAttributes'] = {}
+    if 'Ep' not in  self.ListOfDevices[MsgSrcAddr]['ReadAttributes']:
+        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'] = {}
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep']:
+        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp] = {}
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
     DECODE_CLUSTER = {
-            "0000": Cluster0000,
-            "0001": Cluster0001,
-            "0005": Cluster0005,
-            "0006": Cluster0006,
-            "0008": Cluster0008,
-            "0012": Cluster0012,
-            "000c": Cluster000c,
-            "0101": Cluster0101,
-            "0102": Cluster0102,
-            "0201": Cluster0201,
-            "0204": Cluster0204,
+            "0000": Cluster0000, "0001": Cluster0001, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,
+            "0012": Cluster0012, "000c": Cluster000c,
+            "0101": Cluster0101, "0102": Cluster0102,
+            "0201": Cluster0201, "0204": Cluster0204,
             "0300": Cluster0300,
-            "0400": Cluster0400,
-            "0402": Cluster0402,
-            "0403": Cluster0403,
-            "0405": Cluster0405,
-            "0406": Cluster0406,
-            "0500": Cluster0500,
-            "0502": Cluster0502,
+            "0400": Cluster0400, "0402": Cluster0402, "0403": Cluster0403, "0405": Cluster0405, "0406": Cluster0406,
+            "0500": Cluster0500, "0502": Cluster0502,
             "0702": Cluster0702,
-            "0b04": Cluster0b04,
-            "fc00": Clusterfc00
+            "0b04": Cluster0b04, "fc00": Clusterfc00
             }
 
     if MsgClusterId in DECODE_CLUSTER:
