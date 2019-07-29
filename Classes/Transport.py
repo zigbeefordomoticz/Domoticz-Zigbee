@@ -165,11 +165,14 @@ class ZigateTransport(object):
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None",
                                                    Address=self._wifiAddress, Port=self._wifiPort)
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._wifiAddress, self._wifiPort ))
+        else:
+            Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
 
     # Transport / Opening / Closing Communication
     def openConn(self):
-        self._connection.Connect()
+        if self._connection:
+            self._connection.Connect()
 
     def closeConn(self):
         self._connection.Disconnect()
@@ -448,11 +451,11 @@ class ZigateTransport(object):
                 MsgRSSI=frame[len(frame)-4:len(frame)-2]
         
             if self.lowlevelAPSFailure( MsgData ):
-                Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
+                #Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
                 self.statistics._APSFailure += 1
                 self.F_out(frame)  # Forward the message to plugin for further processing
-            else:
-                Domoticz.Log("processFrame - detect an APS Failure , but we try to resend and drop this message")
+            #else:
+            #    Domoticz.Log("processFrame - detect an APS Failure , but we try to resend and drop this message")
 
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
             self.F_out(frame)  # for processing
@@ -630,7 +633,7 @@ class ZigateTransport(object):
             # Let's resend the command
             deviceinfos = self.LOD.retreive( NWKID )
             if 'Last Cmds' not in deviceinfos:
-                Domoticz.Log("lowlevelAPSFailure - no 'Last Cmds' in %s" %deviceinfos)
+                Domoticz.Error("lowlevelAPSFailure - no 'Last Cmds' in %s" %deviceinfos)
                 return  True
 
             _timeAPS = (time())
@@ -641,7 +644,7 @@ class ZigateTransport(object):
             iterCmd = iterpayLoad = None
             if len(_lastCmds) >= 1: # At least we have one command
                 if len(_lastCmds[0]) == 2:
-                    Domoticz.Log("lowlevelAPSFailure - no payload")
+                    Domoticz.Error("lowlevelAPSFailure - no payload")
                     return True
                 if len(_lastCmds[0]) == 3:
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
@@ -651,7 +654,7 @@ class ZigateTransport(object):
             if len(_lastCmds) >= 2: # At least we have 2 Commands
                 # Retreive command -1
                 if len(_lastCmds[1]) == 2:
-                    Domoticz.Log("lowlevelAPSFailure - no payload")
+                    Domoticz.Error("lowlevelAPSFailure - no payload")
                     return True
                 if len(_lastCmds[1]) == 3:
                     iterTime2, iterCmd2, iterpayLoad2 = _lastCmds[1]
@@ -659,9 +662,9 @@ class ZigateTransport(object):
             if APS_MAX_RETRY == 2:
                 if iterCmd2 == iterCmd and iterpayLoad2 == iterpayLoad and \
                         iterTime  <= (iterTime2 + APS_TIME_WINDOW):
-                    Domoticz.Log("lowlevelAPSFailure - last 2 retrys didn't succeed")
-                    Domoticz.Log("lowlevelAPSFailure - command[0] %s" %list(_lastCmds[0]))
-                    Domoticz.Log("lowlevelAPSFailure - command[1] %s" %list(_lastCmds[1]))
+                    #Domoticz.Log("lowlevelAPSFailure - last 2 retrys didn't succeed")
+                    #Domoticz.Log("lowlevelAPSFailure - command[0] %s" %list(_lastCmds[0]))
+                    #Domoticz.Log("lowlevelAPSFailure - command[1] %s" %list(_lastCmds[1]))
                     return True
     
             elif APS_MAX_RETRY == 3:
@@ -675,16 +678,16 @@ class ZigateTransport(object):
                         iterTime3, iterCmd3, iterpayLoad3 = _lastCmds[2]
                 if iterCmd3 == iterCmd2 == iterCmd and iterpayLoad3 == iterpayLoad2 == iterpayLoad and \
                         iterTime  <= (iterTime3 + APS_TIME_WINDOW):
-                    Domoticz.Log("lowlevelAPSFailure - last 2 retrys didn't succeed")
-                    Domoticz.Log("lowlevelAPSFailure - command[0] %s" %list(_lastCmds[0]))
-                    Domoticz.Log("lowlevelAPSFailure - command[1] %s" %list(_lastCmds[1]))
-                    Domoticz.Log("lowlevelAPSFailure - command[2] %s" %list(_lastCmds[2]))
+                    #Domoticz.Log("lowlevelAPSFailure - last 2 retrys didn't succeed")
+                    #Domoticz.Log("lowlevelAPSFailure - command[0] %s" %list(_lastCmds[0]))
+                    #Domoticz.Log("lowlevelAPSFailure - command[1] %s" %list(_lastCmds[1]))
+                    #Domoticz.Log("lowlevelAPSFailure - command[2] %s" %list(_lastCmds[2]))
                     return True
         
             if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
                 # That command has been issued in the APS time window
                 if self.pluginconf.pluginConf['APSreTx']:
-                    Domoticz.Log("lowlevelAPSFailure - [%s] retry Command %s %s %s" %(MsgDataSQN, NWKID, iterCmd, iterpayLoad))
+                    #Domoticz.Log("lowlevelAPSFailure - [%s] retry Command %s %s %s" %(MsgDataSQN, NWKID, iterCmd, iterpayLoad))
                     self.sendData( iterCmd, iterpayLoad, 2)
                     self.statistics._reTx += 1
                     return False
