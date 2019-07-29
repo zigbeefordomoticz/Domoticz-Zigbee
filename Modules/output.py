@@ -146,11 +146,11 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0004': [ 0x0000],
             '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
             '0006': [ 0x0000, 0x4000, 0x4001, 0x4002, 0x4003],
-            '0008': [ 0x0000],
+            '0008': [ 0x0000, 0x4000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
             '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011],
-            '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008],
+            '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
             '0400': [ 0x0000],
             '0402': [ 0x0000],
             '0403': [ 0x0000],
@@ -482,7 +482,6 @@ def ReadAttributeRequest_0500(self, key):
     ReadAttributeReq( self, key, "01", EPout, "0500", listAttributes)
 
 def ReadAttributeRequest_0502(self, key):
-    # Cluster 0x0006
 
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0502 - Key: %s " %key, nwkid=key)
 
@@ -542,15 +541,16 @@ def setPowerOn_OnOff( self, key, OnOffMode=0xff):
     data_type = "30" # 
     data = "ff"
     if OnOffMode in POWERON_MODE:
-        data = "%02x" %OnOffMode
+        data = "%02x" %POWERON_MODE[OnOffMode]
     else:
         data = "%02x" %0xff
 
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                    EPout=tmpEp
+        if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: 
+            EPout=tmpEp
+
     loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
