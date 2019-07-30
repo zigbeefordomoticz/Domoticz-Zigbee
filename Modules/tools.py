@@ -95,7 +95,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
     found = False
 
-    #check in ListOfDevices
+    #check in ListOfDevices, we can return only Found
     if newNWKID in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[newNWKID] :
             if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
@@ -104,6 +104,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 if not IEEE :
                     return True
 
+    # Not found with NWKID, let's check in the IEEE
     #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
     if IEEE:
         for existingIEEEkey in self.IEEE2NWK :
