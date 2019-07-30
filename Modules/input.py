@@ -1686,6 +1686,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x004d)
+    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
     return
 
