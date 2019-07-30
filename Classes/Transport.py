@@ -68,6 +68,7 @@ MAX_CMD_PER_DEVICE = 5
 APS_DELAY = 1
 APS_MAX_RETRY = 2
 APS_TIME_WINDOW = APS_MAX_RETRY * APS_DELAY
+APS_ACK = 0
 
 CMD_NWK_2NDBytes = { 
         '0060':'Add Group', 
@@ -136,6 +137,7 @@ class ZigateTransport(object):
         self._normalQueue = []  # list of normal priority commands
         self._waitForStatus = []  # list of command sent and waiting for status 0x8000
         self._waitForData = []  # list of command sent for which status received and waiting for data
+        self._waitForAPS = [] # Contain list of Command waiting for APS ACK or Failure. That one is populated when receiving x8000
 
         self.statistics = statistics
 
@@ -315,6 +317,8 @@ class ZigateTransport(object):
                 Domoticz.Log("normalQueue[%d:%d] = %s " % (cnt, lenQ, iter[0]))
                 cnt += 1
         Domoticz.Log("--")
+
+
 
     def addCmdToSend(self, cmd, data, reTransmit=0):
         """add a command to the waiting list"""
@@ -510,7 +514,15 @@ class ZigateTransport(object):
             ##    if int(expectedCommand[0], 16) != int(PacketType, 16):
             ##        Domoticz.Debug("receiveData - sync error : Expecting %s and Received: %s" \
             ##                % (expectedCommand[0], PacketType))
-
+            
+            # If we have a APS Ack firmware, then we will push the Cmd/Data tfor APS Ack/Failure
+            if APS_ACK:
+                cmd, data, timestamp, reTransmit = expectedCommand
+                if cmd == PacketType:
+                    Domoticz.Log("receiveStatusCmd - APS Ack push Cmd: %s Data: %s for APS Ack/Failure" %(cmd, data))
+                    self.addCmdTowaitForAPS( cmd, data )
+                else:
+                    Domoticz.Error("receiveStatusCmd - APS Ack push receive Cmd %s status doesn't match Cmd %s in FIFO!" %(PacketType, cmd))
         if len(self._normalQueue) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self.nextCmdtoSend()
@@ -606,6 +618,11 @@ class ZigateTransport(object):
         if self.LOD.find( nwkid ):
             self._addNewCmdtoDevice( nwkid, cmd , payload)
 
+    def addCmdTowaitForAPS(self, cmd, data):
+
+        timestamp = int(time())
+        self._waitForAPS.append((cmd, data, timestamp))
+        
     def lowlevelAPSack( self, MsgData):
 
         MsgStatus = MsgData[0:2]
@@ -615,7 +632,6 @@ class ZigateTransport(object):
         MsgProfileID = MsgData[8:12]
         MsgClusterId = MsgData[12:16]
     
-
     def lowlevelAPSFailure( self, MsgData):
 
         """
