@@ -71,7 +71,7 @@ def ZigateRead(self, Devices, Data):
     
     NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4', '80a6' )
 
-    loggingInput( self, 'Debug', "ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
+    #loggingInput( self, 'Debug', "ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
 
     FrameStart=Data[0:2]
     FrameStop=Data[len(Data)-2:len(Data)]
@@ -97,7 +97,6 @@ def ZigateRead(self, Devices, Data):
 
     if MsgType in DECODERS:
         _decoding = DECODERS[ MsgType]
-        loggingInput( self, 'Debug', "ZigateRead - Calling Decoder: %s for Message type: %s" %(_decoding, MsgType))
         _decoding( self, Devices, MsgData, MsgRSSI)
         return
 
@@ -1618,35 +1617,57 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     if MsgSrcAddr in self.ListOfDevices:
         if self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
             # Let's skip it has this is a duplicate message from the device
+            loggingInput( self, 'Debug', "Decode004D - Already known device %s with status: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Status']), MsgSrcAddr)
             return
 
     loggingPairing( self, 'Status', "Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
-    if not DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
+    if DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
+        # Device exist, Reconnection has been done by DeviceExist()
+        loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
+
+        # If this is a rejoin after a leave, let's update the Status
+        if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
+            loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
+
+        # Redo the binding if allow
+        if self.pluginconf.pluginConf['allowReBindingClusters']:
+            loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
+            rebind_Clusters( self, MsgSrcAddr)
+    
+            # Let's take the opportunity to trigger some request/adjustement
+            loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
+            ReadAttributeRequest_0000( self,  MsgSrcAddr)
+            sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+    else:
+        # New device comming. The IEEE is not known
+        loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
         if MsgIEEE in self.IEEE2NWK :
+            Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK")
             if self.IEEE2NWK[MsgIEEE] :
-                loggingPairing( self, 'Log', "Decode004d - self.IEEE2NWK[MsgIEEE] = " +str(self.IEEE2NWK[MsgIEEE]) )
+                loggingPairing( self, 'Log', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
+                if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
+                    Domoticz.Error("Decode004d - receiving a new Device Annouce for a device in processing, drop it")
+                    return
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
-        if not IEEEExist( self, MsgIEEE ):
-            initDeviceInList(self, MsgSrcAddr)
-            loggingPairing( self, 'Debug',"Decode004d - Looks like it is a new device sent by Zigate")
-            self.CommiSSionning = True
-            self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
-            self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
-            self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
-        else:
+        if IEEEExist( self, MsgIEEE ):
             # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
-                loggingPairing( self, 'Log', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
-        # We will request immediatly the List of EndPoints
-        self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
-        self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
-        sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
-        loggingPairing( self, 'Debug', "Decode004d - " + str(MsgSrcAddr) + " Info: " +str(self.ListOfDevices[MsgSrcAddr]) )
+                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
+                return
 
-        # Store the Pairing info if needed
+        # 1- Create the Data Structutre
+        initDeviceInList(self, MsgSrcAddr)
+        loggingPairing( self, 'Debug',"Decode004d - Looks like it is a new device sent by Zigate")
+        self.CommiSSionning = True
+        self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
+        self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
+        self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
+
+        # 2- Store the Pairing info if needed
         if self.pluginconf.pluginConf['capturePairingInfos']:
             if MsgSrcAddr not in self.DiscoveryDevices:
                 self.DiscoveryDevices[MsgSrcAddr] = {}
@@ -1656,25 +1677,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
             self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
             self.DiscoveryDevices[MsgSrcAddr]['Decode-MacCapa'] = list(decodeMacCapa( MsgMacCapa ))
-    else:
-        # Device exist
-        # We will also reset ReadAttributes
-        if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
-            self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
 
-        if self.pluginconf.pluginConf['allowReBindingClusters']:
-            loggingPairing( self, 'Log', "Decode004d - rebind clusters for %s" %MsgSrcAddr)
-            rebind_Clusters( self, MsgSrcAddr)
-            if 'ReadAttributes' in self.ListOfDevices[MsgSrcAddr]:
-                del self.ListOfDevices[MsgSrcAddr]['ReadAttributes']
-    
-            if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
-                del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
-                self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
-
-            # Let's take the opportunity to trigger some request/adjustement
-            ReadAttributeRequest_0000( self,  MsgSrcAddr)
-            sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+        # 3- We will request immediatly the List of EndPoints
+        loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
+        self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
+        self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
+        sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
+        loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x004d)
 
@@ -1875,7 +1884,6 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     else:
         Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                 %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
-
 
 
 def Decode8806(self, Devices, MsgData, MsgRSSI) :
