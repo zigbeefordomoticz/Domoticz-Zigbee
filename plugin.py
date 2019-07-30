@@ -80,6 +80,7 @@
 
 import Domoticz
 import binascii
+from datetime import datetime
 import time
 import struct
 import json
@@ -88,7 +89,7 @@ import sys
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList, loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -434,6 +435,8 @@ class BasePlugin:
 
         sendZigateCmd(self, "0010", "") # Get Firmware version
 
+        setTimeServer( self )
+
         if Parameters["Mode3"] == "True": # Erase PDM
             if self.domoticzdb_Hardware:
                 self.domoticzdb_Hardware.disableErasePDM()
@@ -710,6 +713,10 @@ class BasePlugin:
         if self.pluginconf.pluginConf['Ping']:
             pingZigate( self )
             self.Ping['Nb Ticks'] += 1
+
+        if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
+            Domoticz.Log("Ask Zigate Time")
+            sendZigateCmd(self,"0017", "")
 
         if len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
             busy_ = True
