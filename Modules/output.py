@@ -62,7 +62,7 @@ def start_Zigate(self, Mode='Controller'):
         EPOCTime = datetime(2000,1,1)
         UTCTime = int((datetime.now() - EPOCTime).total_seconds())
         Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-        sendZigateCmd(self, "0016", str(UTCTime) )
+        sendZigateCmd(self, "0016", "%08X" %UTCTime )
 
         Domoticz.Status("Start network")
         sendZigateCmd(self, "0024", "" )   # Start Network
