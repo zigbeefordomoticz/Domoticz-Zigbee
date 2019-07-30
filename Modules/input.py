@@ -1567,7 +1567,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         Domoticz.Log("Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
         return
     
-    Domoticz.Log("Decode8702 - IEEE: %s Nwkid: %s Status: %s" %(IEEE, NWKID, MsgDataStatus))
+    loggingMessages( self, 'Debug', "Decode8702 - IEEE: %s Nwkid: %s Status: %s" %(IEEE, NWKID, MsgDataStatus), NWKID)
     if self.APS:
         self.APS.processAPSFailure(NWKID, IEEE, MsgDataStatus)
 
