@@ -88,8 +88,9 @@ def sendZigateCmd(self, cmd,datas ):
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
-    # frame to be send is:
-    # DeviceID 16bits / EPin 8bits / EPout 8bits / Cluster 16bits / Direction 8bits / Manufacturer_spec 8bits / Manufacturer_id 16 bits / Nb attributes 8 bits / List of attributes ( 16bits )
+    if 'Health' in self.ListOfDevices[addr]:
+        if self.ListOfDevices[addr]['Health'] == 'Not Reachable':
+            return
 
     direction = '00'
     manufacturer_spec = '00'
@@ -112,6 +113,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
+
 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
@@ -748,6 +750,9 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
             if 'MacCapa' in self.ListOfDevices[key]:
                 if self.ListOfDevices[key]['MacCapa'] != '8e': continue
+            if 'Health' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+                    continue
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']

@@ -88,6 +88,10 @@ def processKnownDevices( self, Devices, NWKID ):
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
     _mainPowered = False
 
+    if 'Health' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+            return
+
     if 'PowerSource' in self.ListOfDevices[NWKID]:
         if (self.ListOfDevices[NWKID]['PowerSource']) == 'Main':
             _mainPowered = True
