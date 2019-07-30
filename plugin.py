@@ -88,7 +88,7 @@ import sys
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList, loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -422,6 +422,9 @@ class BasePlugin:
         self.Ping['Nb Ticks'] = 1
 
         sendZigateCmd(self, "0010", "") # Get Firmware version
+
+        Domoticz.Status("Zigate set Time Server")
+        setTimeServer( self )
 
         if Parameters["Mode3"] == "True": # Erase PDM
             if self.domoticzdb_Hardware:

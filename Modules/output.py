@@ -25,7 +25,10 @@ from Modules.tools import getClusterListforEP, loggingOutput
 def ZigatePermitToJoin( self, permit ):
 
     if permit:
-        Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
+        if permit != 255:
+            Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
+        else:
+            Domoticz.Status("Request Accepting new Hardware for ever")
         self.permitTojoin['Starttime'] = int(time())
         self.permitTojoin['Duration'] = permit
         sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
@@ -59,10 +62,7 @@ def start_Zigate(self, Mode='Controller'):
         Domoticz.Status("Set Zigate as a Coordinator")
         sendZigateCmd(self, "0023","00")
 
-        EPOCTime = datetime(2000,1,1)
-        UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-        Domoticz.Status("ZigateConf - Setting UTC Time to : %s" %( UTCTime) )
-        sendZigateCmd(self, "0016", "%08X" %UTCTime )
+        setTimeServer( self )
 
         Domoticz.Status("Start network")
         sendZigateCmd(self, "0024", "" )   # Start Network
@@ -70,6 +70,14 @@ def start_Zigate(self, Mode='Controller'):
         loggingOutput( self, 'Debug', "Request network Status", '0000')
         sendZigateCmd( self, "0014", "" ) # Request status
         sendZigateCmd( self, "0009", "" ) # Request status
+
+def setTimeServer( self ):
+
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    Domoticz.Log("setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
+    data = "%08x" %UTCTime
+    sendZigateCmd(self, "0016", data  )
 
 def sendZigateCmd(self, cmd,datas ):
 
