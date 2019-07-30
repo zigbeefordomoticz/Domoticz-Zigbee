@@ -586,7 +586,10 @@ class WebServer(object):
         if verb == 'GET':
             self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
             self.logging( 'Log', "rest_rescan_group - Removing file: %s" %self.groupListFileName)
-            os.remove( self.groupListFileName )
+            try:
+                os.remove( self.groupListFileName )
+            except:
+                Dommoticz.Error("Error when trying to remove file %s" %self.groupListFileName)
             action = {}
             action['Name'] = 'Groups file removed.'
             action['TimeStamp'] = int(time())
@@ -1690,6 +1693,7 @@ class WebServer(object):
                 # end for item / next group
                 # Finaly , we need to check if AnyGroup have been removed !
                 self.logging( 'Debug', "Group to be removed")
+                Domoticz.Log("ListOfGroups: %s" %ListOfGroups)
                 for grpid in ListOfGroups:
                     if grpid not in grp_lst:
                         self.logging( 'Debug', "--->Group %s has to be removed" %grpid)
