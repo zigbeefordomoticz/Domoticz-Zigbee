@@ -13,6 +13,7 @@
 import Domoticz
 import binascii
 import time
+from datetime import datetime
 import struct
 import queue
 from time import time
@@ -43,6 +44,7 @@ def ZigateRead(self, Devices, Data):
         '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
         '8009': Decode8009, '8010': Decode8010, '8011': Decode8011,
         '8014': Decode8014, '8015': Decode8015,
+        '8017': Decode8017,
         '8024': Decode8024,
         '8028': Decode8028,
         '802b': Decode802B, '802c': Decode802C,
@@ -432,7 +434,8 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
     self.currentChannel = int(Channel,16)
 
-    self.iaszonemgt.setZigateIEEE( extaddr )
+    if self.iaszonemgt:
+        self.iaszonemgt.setZigateIEEE( extaddr )
 
     if self.ZigateNWKID != '0000':
         Domoticz.Error("Zigate not correctly initialized")
@@ -531,6 +534,15 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     loggingInput( self, 'Debug', "Ping - received")
 
     return
+
+def Decode8017(self, Devices, MsgData, MsgRSSI) : # 
+
+    ZigateTime = MsgData[0:8]
+
+    EPOCTime = datetime(2000,1,1)
+    UTCTime = int((datetime.now() - EPOCTime).total_seconds())
+    ZigateTime =  struct.unpack('I',struct.pack('I',int(ZigateTime,16)))[0]
+    loggingInput(self, 'Log', "UTC time is: %s, Zigate Time is: %s with deviation of :%s " %(UTCTime, ZigateTime, UTCTime - ZigateTime))
 
 def Decode8015(self, Devices, MsgData, MsgRSSI) : # Get device list ( following request device list 0x0015 )
     # id: 2bytes
