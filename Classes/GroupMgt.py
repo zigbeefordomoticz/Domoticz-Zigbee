@@ -1177,6 +1177,12 @@ class GroupsManagement(object):
                     self.logging( 'Debug', " - %s not main Powered" %(iterDev))
                     continue
 
+                if 'Health' in self.ListOfDevices[iterDev]:
+                    Domoticz.Log("Group Management - Discovery mode %s - >%s<" %(iterDev, self.ListOfDevices[iterDev]['Health']))
+                    if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
+                        self.logging( 'Log', "Group Management - Discovery mode - skiping device %s which is Not Reachable" %iterDev)
+                        continue
+
                 if 'Ep' in self.ListOfDevices[iterDev]:
                     for iterEp in self.ListOfDevices[iterDev]['Ep']:
                         if iterEp == 'ClusterType': continue
