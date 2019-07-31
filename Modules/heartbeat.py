@@ -144,9 +144,15 @@ def processKnownDevices( self, Devices, NWKID ):
                 sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
         
+    # In case Health is unknown let's force a Read attribute.
+    _forceReadAttributes = False
+    if 'Health' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Health'] == '':
+            _forceReadAttributes = True
+
     # Read Attributes if enabled
     if _mainPowered and \
-            ( self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes'] ) and ( intHB % (30 // HEARTBEAT)) == 0 :
+            ( _forceReadAttributes or self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes'] ) and ( intHB % (30 // HEARTBEAT)) == 0 :
         now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
             if tmpEp == 'ClusterType': continue
@@ -549,10 +555,10 @@ def processListOfDevices( self , Devices ):
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
     if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
-        # Trigger Conifre Reporting to eligeable decices
+        # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > ( 5 * 60 // HEARTBEAT):
+    if self.HeartbeatCount > ( 15 * 60 // HEARTBEAT):
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
@@ -563,7 +569,7 @@ def processListOfDevices( self , Devices ):
                 if self.ZigateComm.loadTransmit() < 2 :
                      self.networkmap.continue_scan( )
 
-    if self.HeartbeatCount > ( 3 * 60 // HEARTBEAT):
+    if self.HeartbeatCount > ( 30 * 60 // HEARTBEAT):
         # Network Energy Level
         if self.networkenergy:
             if self.ZigateComm.loadTransmit() < 2:

@@ -121,8 +121,10 @@ class NetworkMap():
 
         self.logging( 'Debug', "LQIreq - nwkid: %s" %nwkid)
 
+
         if nwkid not in self.Neighbours:
             self._initNeighboursTableEntry( nwkid)
+
         
         router = False
         if nwkid != '0000' and nwkid not in self.ListOfDevices:
@@ -157,6 +159,14 @@ class NetworkMap():
             self.Neighbours[ nwkid ]['Status'] = 'WaitResponse'
         elif self.Neighbours[ nwkid ]['Status'] == 'ScanRequired2':
             self.Neighbours[ nwkid ]['Status'] = 'WaitResponse2'
+
+        if nwkid in self.ListOfDevices:
+            if 'Health' in self.ListOfDevices[nwkid]:
+                Domoticz.Log("LQIreq %s - >%s<" %(nwkid, self.ListOfDevices[nwkid]['Health']))
+                if self.ListOfDevices[nwkid]['Health'] == 'Not Reachable':
+                    self.logging( 'Log', "LQIreq - skiping device %s which is Not Reachable" %nwkid)
+                    self.Neighbours[ nwkid ]['Status'] = 'NotReachable'
+                    return
 
         sendZigateCmd(self, "004E",datas)    
 
@@ -201,7 +211,7 @@ class NetworkMap():
         for entry in self.Neighbours:
             if self.Neighbours[entry]['Status'] == 'Completed':
                 continue
-            elif self.Neighbours[entry]['Status'] in ( 'TimedOut'):
+            elif self.Neighbours[entry]['Status'] in ( 'TimedOut', 'NotReachable'):
                 continue
             elif self.Neighbours[entry]['Status'] in ( 'WaitResponse', 'WaitResponse2'):
                 waitResponse = True
@@ -226,7 +236,10 @@ class NetworkMap():
         Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
 
         for nwkid in self.Neighbours:
-            if self.Neighbours[nwkid]['Status'] != 'Completed':
+            if self.Neighbours[nwkid]['Status'] == 'NotReachable':
+                Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s NotReachable" \
+                    %( nwkid, '-' , '-','-','-','-','-' ))
+            elif self.Neighbours[nwkid]['Status'] == 'TimedOut':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
             else:

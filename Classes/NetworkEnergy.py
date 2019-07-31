@@ -94,6 +94,11 @@ class NetworkEnergy():
                     for nwkid in self.ListOfDevices:
                         if nwkid == '0000': continue
                         if nwkid == r: continue
+                        if 'Health' in self.ListOfDevices[nwkid]:
+                            Domoticz.Log("_initNwkEnrgy %s - >%s<" %(nwkid, self.ListOfDevices[nwkid]['Health']))
+                            if self.ListOfDevices[nwkid]['Health'] == 'Not Reachable':
+                                self.logging( 'Log', "_initNwkEnrgy - skiping device %s which is Not Reachable" %nwkid)
+                                continue
                         if not isRouter( nwkid ):
                             continue
                         self._initNwkEnrgyRecord( r, nwkid , channels)
