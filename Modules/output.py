@@ -750,8 +750,8 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
             if 'MacCapa' in self.ListOfDevices[key]:
                 if self.ListOfDevices[key]['MacCapa'] != '8e': continue
-            if 'Health' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+            if 'Health' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['Health'] == 'Not Reachable':
                     continue
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
