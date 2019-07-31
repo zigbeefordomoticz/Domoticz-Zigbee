@@ -1634,8 +1634,8 @@ class WebServer(object):
                             ieee = devselected['IEEE']
                         elif '_NwkId' in devselected:
                             nwkid = devselected['_NwkId']
-                            if nwkid not in self.ListOfDevices:
-                                Domoticz.Error("Not able to find IEEE for %s %s - nwkid: %s" %(_dev, _ep, nwkid))
+                            if nwkid != '0000' and nwkid not in self.ListOfDevices:
+                                Domoticz.Error("Not able to find nwkid: %s" %(nwkid))
                                 continue
                             if 'IEEE' not in self.ListOfDevices[nwkid]:
                                 Domoticz.Error("Not able to find IEEE for %s %s - no IEEE entry in %s" %(_dev, _ep, self.ListOfDevices[nwkid]))
