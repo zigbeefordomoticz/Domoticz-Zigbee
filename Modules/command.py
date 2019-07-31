@@ -114,6 +114,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
 
     loggingCommand( self, 'Debug', "EPout = " +str(EPout) , NWKID)
+    if 'Health' in self.ListOfDevices[NWKID]:
+        # If Health is Not Reachable, let's give it a chance to be updated
+        if self.ListOfDevices[NWKID]['Health'] == 'Not Recheable':
+            self.ListOfDevices[NWKID]['Health'] = ''
 
     if Command == "Off" :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
