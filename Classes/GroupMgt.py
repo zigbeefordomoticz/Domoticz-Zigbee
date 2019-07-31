@@ -41,6 +41,7 @@ class GroupsManagement(object):
         self.TobeRemoved = []       # List of NWKID/EP/GROUP to be removed
         self.UpdatedGroups = []     # List of Groups to be updated and so trigger the Identify at the end.
         self.Cycle = 0              # Cycle count
+        self.HB = 0
         self.stillWIP = True
         self.txt_last_update_ConfigFile = self. json_last_update_ConfigFile = 0
 
@@ -1159,6 +1160,10 @@ class GroupsManagement(object):
                 self.logging( 'Status', "Going for a full group membership discovery. (User Request)")
 
         elif self.StartupPhase == 'discovery':
+            if self.HB <= 12:
+                # Tempo 1' before starting Group
+                self.HB += 1
+                return
             # We will send a Request for Group memebership to each active device
             # In case a device doesn't belo,ng to any group, no response is provided.
             self.logging( 'Log', "Group Management - Discovery mode - Searching for Group Membership (or continue)")
@@ -1178,9 +1183,8 @@ class GroupsManagement(object):
                     continue
 
                 if 'Health' in self.ListOfDevices[iterDev]:
-                    Domoticz.Log("Group Management - Discovery mode %s - >%s<" %(iterDev, self.ListOfDevices[iterDev]['Health']))
                     if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
-                        self.logging( 'Log', "Group Management - Discovery mode - skiping device %s which is Not Reachable" %iterDev)
+                        self.logging( 'Debug', "Group Management - Discovery mode - skiping device %s which is Not Reachable" %iterDev)
                         continue
 
                 if 'Ep' in self.ListOfDevices[iterDev]:
