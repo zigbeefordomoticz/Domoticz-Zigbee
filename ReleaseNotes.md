@@ -1,6 +1,14 @@
 # Release Notes 
 
-##             - beta4.4 ( Web User Interface )
+##             - beta 4.6
+- [Technical] - better management of APS Failure, network transmission
+- [Technical] - speedup the process to get Powered Devices with a correct Health state
+- [Technical] - Consider Health 'Non rechable' as a dead device, and do not process them anymore.
+- [Technical] - Implement the possibility to setup the PowerOn after device PowerOff/Off (supported by Philips)
+- [Technical] - Handle ZHA1.2/Pluzzy Firmware 
+- [Technical] - Handle Pluzzy devices
+
+##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
 - [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.
 - [Technical] - Full re-factory of Network Toplogy scanner
@@ -16,6 +24,17 @@
 - [Technical] - Plugin version and Firmware Version check. Will required Internet access (which is currently enable by default in PluginConf)
 - [Technical] - Allow debug Match with several device address
 - [Technical] - decode more Attribute for Cluster 0x0006
+- [Hardware] - Support of INNR RC110 remote command (required 3.1a firmware) - Phase 1
+- [Technical] - Admin Interface in French ( Thanks to @martial83 )
+- [Technical] - Admin Interface in Dutch ( Thanks to @gemies )
+- [Hardware] - Certified Müller-Licht 44062 Bulb
+- [Hardware] - Certified Philips LTW013 bulb
+- [Hardware) - Make the Ikea Tradfri Switch ( On/Off ) capable to send multiple On
+- [Hardware] - Certified CC2531 (lumi.router ) router
+- [Technical] - Introduce auto-check of firmware/plugin version
+- [Technical] - Enhance piZigate support
+- [Technical] - Full compliance with firmware 3.1a
+
 
 ## 27 May 2019 - 4.3.0 https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.3.0
 - [Enhancement] #419 Better versioning of DeviceList (restricted to 12 versions by default)
