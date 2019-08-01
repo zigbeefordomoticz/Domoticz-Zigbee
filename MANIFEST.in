@@ -9,4 +9,3 @@ include plugin.py
 include ReleaseNotes.md
 include Tools
 include www
-include Zdatas
