@@ -735,6 +735,22 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                        %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
                     return
 
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
+                # Konke Multi Purpose Switch
+                if MsgClusterData == '80': # Simple Click
+                    value = '01'
+                elif MsgClusterData == '81': # Multiple Click
+                    value = '02'
+
+                elif MsgClusterData == '82': # Long Click
+                    value = '03'
+
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
+                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - reception General: On/Off: " + value , MsgSrcAddr)
+                return
+
+
             if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
                 # Livolo / Might get something else than On/Off
                 Domoticz.Log("ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \

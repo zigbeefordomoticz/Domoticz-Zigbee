@@ -202,7 +202,11 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
             value = '01'
         elif value == '20':
             value = '00'
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value )
+
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE14010402000D': #Konke Motion Sensor
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", value )
+        else:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value )
 
         if battdef or battery:
             self.ListOfDevices[MsgSrcAddr]['Battery'] = '1'
