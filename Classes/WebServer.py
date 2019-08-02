@@ -471,7 +471,7 @@ class WebServer(object):
             health = {}
             health['HealthFlag'] = self.PluginHealth['Flag']
             health['HealthTxt'] = self.PluginHealth['Txt']
-            _response["Data"] = json.dumps( health, sort_keys=False )
+            _response["Data"] = json.dumps( health, sort_keys=True )
 
         return _response
 
@@ -493,7 +493,7 @@ class WebServer(object):
             action = {}
             action['Name'] = "Nwk-Interferences"
             action['TimeStamp'] = int(time())
-            _response["Data"] = json.dumps( action, sort_keys=False )
+            _response["Data"] = json.dumps( action, sort_keys=True )
 
             if self.pluginparameters['Mode1'] != 'None':
                 self.networkenergy.start_scan()
@@ -518,7 +518,7 @@ class WebServer(object):
             action = {}
             action['Name'] = "Nwk-Energy-Full"
             action['TimeStamp'] = int(time())
-            _response["Data"] = json.dumps( action, sort_keys=False )
+            _response["Data"] = json.dumps( action, sort_keys=True )
 
             if self.pluginparameters['Mode1'] != 'None':
                 self.networkenergy.start_scan( root='0000', target='0000')
@@ -537,7 +537,7 @@ class WebServer(object):
             action = {}
             action['Name'] = 'Req-Topology'
             action['TimeStamp'] = int(time())
-            _response["Data"] = json.dumps( action, sort_keys=False )
+            _response["Data"] = json.dumps( action, sort_keys=True )
 
             self.logging( 'Log', "Request a Start of Network Topology scan")
             if self.networkmap:
@@ -625,7 +625,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.zigatedata:
-                _response["Data"] = json.dumps( self.zigatedata, sort_keys=False )
+                _response["Data"] = json.dumps( self.zigatedata, sort_keys=True )
             else:
                 fake_zigate = {}
                 fake_zigate['Firmware Version'] = "fake - 0310"
@@ -635,7 +635,7 @@ class WebServer(object):
                 fake_zigate['PANID'] = "51cf"
                 fake_zigate['Extended PANID'] = "bd1247ec9d358634"
 
-                _response["Data"] = json.dumps( fake_zigate , sort_keys=False )
+                _response["Data"] = json.dumps( fake_zigate , sort_keys=True )
         return _response
 
 
@@ -658,7 +658,7 @@ class WebServer(object):
                 dzenv['WebUserName'] = self.WebUsername
                 dzenv['WebPassword'] = self.WebPassword
 
-                _response["Data"] = json.dumps( dzenv, sort_keys=False )
+                _response["Data"] = json.dumps( dzenv, sort_keys=True )
         return _response
 
     def rest_PluginEnv( self, verb, data, parameters):
@@ -671,7 +671,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=False )
+                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
         return _response
 
     def rest_netTopologie( self, verb, data, parameters):
@@ -689,7 +689,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if not os.path.isfile( _filename ) :
-            _response['Data'] = json.dumps( {} , sort_keys=False ) 
+            _response['Data'] = json.dumps( {} , sort_keys=True ) 
             return _response
 
         # Read the file, as we have anyway to do it
@@ -917,7 +917,7 @@ class WebServer(object):
                     for r in _scan[timestamp]:
                         self.logging( "Debug", "report: %s" %r)
                         if r['_NwkId'] == '0000':
-                            _response['Data'] = json.dumps( r['MeshRouters'] )
+                            _response['Data'] = json.dumps( r['MeshRouters'], sort_keys=True )
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
         return _response
@@ -1006,7 +1006,7 @@ class WebServer(object):
                             setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
-                _response["Data"] = json.dumps( setting_lst, sort_keys=False )
+                _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -1097,7 +1097,7 @@ class WebServer(object):
                 self.logging( 'Debug', "remain %s s" %rest)
                 info['PermitToJoin'] = rest
 
-            _response["Data"] = json.dumps( info, sort_keys=False )
+            _response["Data"] = json.dumps( info, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -1144,7 +1144,7 @@ class WebServer(object):
                     #device_info['Type'] = self.Devices[x].Type
                     #device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
-                _response["Data"] = json.dumps( device_lst, sort_keys=False )
+                _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
             elif len(parameters) == 1:
                 for x in self.Devices:
@@ -1162,7 +1162,7 @@ class WebServer(object):
                         _dictDevices['TimedOut'] = self.Devices[x].TimedOut
                         #_dictDevices['Type'] = self.Devices[x].Type
                         #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
-                        _response["Data"] = json.dumps( _dictDevices, sort_keys=False )
+                        _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
                         break
             else:
                 device_lst = []
@@ -1184,7 +1184,7 @@ class WebServer(object):
                             #device_info['Type'] = self.Devices[x].Type
                             #device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
-                _response["Data"] = json.dumps( device_lst, sort_keys=False )
+                _response["Data"] = json.dumps( device_lst, sort_keys=True )
         return _response
 
     def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
@@ -1292,7 +1292,7 @@ class WebServer(object):
                 if _device not in device_lst:
                     device_lst.append( _device )
             self.logging( 'Debug', "Response: %s" %device_lst)
-            _response["Data"] = json.dumps( device_lst, sort_keys=False )
+            _response["Data"] = json.dumps( device_lst, sort_keys=True )
             return _response
 
     def rest_zDevice_name( self, verb, data, parameters):
@@ -1359,7 +1359,7 @@ class WebServer(object):
                     device_lst.append( device )
             #_response["Data"] = json.dumps( device_lst, sort_keys=True )
             self.logging( 'Debug', "zDevice_name - sending %s" %device_lst)
-            _response["Data"] = json.dumps( device_lst, sort_keys=False )
+            _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -1488,7 +1488,7 @@ class WebServer(object):
                     device['LastCmds'] = lastcmd_lst
                     zdev_lst.append( device )
 
-                _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
         return _response
 
 
@@ -1512,12 +1512,12 @@ class WebServer(object):
                 zdev_lst = []
                 for item in self.ListOfDevices:
                     zdev_lst.append(self.ListOfDevices[item])
-                _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=False ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
                 elif parameters[0] in self.IEEE2NWK:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=False ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=True ) 
 
         return _response
 
@@ -1564,7 +1564,7 @@ class WebServer(object):
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
                 self.logging( 'Debug', "zGroup: %s" %zgroup_lst)
-                _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
+                _response["Data"] = json.dumps( zgroup_lst, sort_keys=True )
 
             elif len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
@@ -1583,10 +1583,15 @@ class WebServer(object):
                         _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
                         _dev['Ep'] = "01"
                         zgroup['Devices'].append( _dev )
-                    _response["Data"] = json.dumps( zgroup, sort_keys=False )
+                    _response["Data"] = json.dumps( zgroup, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
+            if  not self.groupmgt:
+                Domoticz.Error("Looks like Group Management is not enabled")
+                _response["Data"] = {}
+                return _response
+
             ListOfGroups = self.groupmgt.ListOfGroups
             grp_lst = []
             if len(parameters) == 0:
