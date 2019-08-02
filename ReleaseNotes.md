@@ -7,6 +7,7 @@
 - [Technical] - Implement the possibility to setup the PowerOn after device PowerOff/Off (supported by Philips)
 - [Technical] - Handle ZHA1.2/Pluzzy Firmware 
 - [Technical] - Handle Pluzzy devices
+- [Technical] - Transfert of GitHub repository
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
