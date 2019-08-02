@@ -715,7 +715,7 @@ class ZigateTransport(object):
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
             if self.pluginconf.pluginConf['APSrteError']:
-                self._waitForRouteDiscoveryConfirm.append( iterCmd, iterpayLoad, frame)
+                self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, frame) )
                 return False
 
             iterTime2 = 0
