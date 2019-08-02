@@ -1354,7 +1354,7 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
     if onoff == 'toogle' and devunit == 'All':
         loggingOutput( self, 'Log', "livolo_toggle" , nwkid=nwkid)
-        sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02'
+        sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02')
     else:
         if onoff == 'On':
             level_value = '%02x' %108
