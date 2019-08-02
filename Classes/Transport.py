@@ -138,6 +138,7 @@ class ZigateTransport(object):
         self._waitForStatus = []  # list of command sent and waiting for status 0x8000
         self._waitForData = []  # list of command sent for which status received and waiting for data
         self._waitForAPS = [] # Contain list of Command waiting for APS ACK or Failure. That one is populated when receiving x8000
+        self._waitForRouteDiscoveryConfirm = []
 
         self.statistics = statistics
 
@@ -455,13 +456,32 @@ class ZigateTransport(object):
                 self.lowlevelAPSack( MsgData )
                 self.F_out(frame)  # Forward the message to plugin for further processing
 
+        elif MsgType == "8701": # Router Discovery Confirm
+            if self.pluginconf.plugiConf['APSrteError']:
+                MsgData=frame[12:len(frame)-4]
+                Status=MsgData[2:4]
+                NwkStatus=MsgData[0:2]
+
+                Domoticz.Log("processFrame - New Route Discovery Status: %s NwkStatus: %s" %(Status, NwkStatus))
+
+                if len(self._waitForRouteDiscoveryConfirm) > 0:
+                    # We have some pending Command for re-submition
+                    for cmd, payload, frame8702 in self._waitForRouteDiscoveryConfirm:
+                        if Status == NwkStatus == '00':
+                            Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
+                            self.sendData(cmd, payload)
+                        else:
+                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
+                            self.F_out( frame8702 )  # Forward the old frame in the pipe
+                    del self._waitForRouteDiscoveryConfirm 
+                    self._waitForRouteDiscoveryConfirm = []
+
+            self.F_out(frame)  # Forward the message to plugin for further processing
+
         elif MsgType == "8702": # APS Failure
             if len(frame) > 12 :
-                # We have Payload : data + rssi
-                MsgData=frame[12:len(frame)-4]
-                MsgRSSI=frame[len(frame)-4:len(frame)-2]
         
-                if self.lowlevelAPSFailure( MsgData ):
+                if self.lowlevelAPSFailure( frame ):
                     #Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
                     self.statistics._APSFailure += 1
                     self.F_out(frame)  # Forward the message to plugin for further processing
@@ -632,22 +652,34 @@ class ZigateTransport(object):
         MsgProfileID = MsgData[8:12]
         MsgClusterId = MsgData[12:16]
     
-    def lowlevelAPSFailure( self, MsgData):
+    def lowlevelAPSFailure( self, frame):
 
         """
         Status: d4 - Unicast frame does not have a route available but it is buffered for automatic resend
         Status: e9 - No acknowledgement received when expected
         Status: f0 - Pending transaction has expired and data discarded
         Status: cf - Attempt at route discovery has failed due to lack of table spac
+
+
+        Note: If a message is unicast to a destination for which a route has not already been established,
+        the message will not be sent and a route discovery will be performed instead. If this is the case,
+        the unicast function will return ZPS_NWK_ENUM_ROUTE_ERROR. The application must then wait for the
+        stack event ZPS_EVENT_NWK_ROUTE_DISCOVERY_CONFIRM (success or failure) before attempting to re-send
+        the message by calling the same unicast function again.
+
+
         """
+        # We have Payload : data + rssi
+        MsgData=frame[12:len(frame)-4]
+        MsgRSSI=frame[len(frame)-4:len(frame)-2]
     
         if len(MsgData) ==0:
             return  True
     
-        MsgDataStatus=MsgData[0:2]
-        MsgDataSrcEp=MsgData[2:4]
-        MsgDataDestEp=MsgData[4:6]
-        MsgDataDestMode=MsgData[6:8]
+        MsgDataStatus = MsgData[0:2]
+        MsgDataSrcEp = MsgData[2:4]
+        MsgDataDestEp = MsgData[4:6]
+        MsgDataDestMode = MsgData[6:8]
     
         # Assuming that Firmware is above 3.0f
         NWKID = IEEE = None
@@ -662,7 +694,7 @@ class ZigateTransport(object):
             MsgDataSQN=MsgData[12:14]
 
         NWKID = self.LOD.find( NWKID, IEEE)
-        if NWKID and MsgDataStatus == 'd4':
+        if NWKID and ( MsgDataStatus == 'd4' or MsgDataStatus == 'd1'):
             # Let's resend the command
             deviceinfos = self.LOD.retreive( NWKID )
             if 'Last Cmds' not in deviceinfos:
@@ -681,6 +713,10 @@ class ZigateTransport(object):
                     return True
                 if len(_lastCmds[0]) == 3:
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
+
+            if self.pluginconf.plugiConf['APSrteError']:
+                self._waitForRouteDiscoveryConfirm.append( iterCmd, iterpayLoad, frame)
+                return False
 
             iterTime2 = 0
             iterCmd2 = iterpayLoad2 = None
