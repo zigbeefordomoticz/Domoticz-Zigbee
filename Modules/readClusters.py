@@ -32,6 +32,15 @@ def retreive8Tag(tag,chain):
     if c == 3: return ''
     return chain[c:(c+8)]
 
+def voltage2batteryP( voltage, volt_max, volt_min):
+    if voltage > volt_max: 
+        ValueBattery = 100
+    elif voltage < volt_min: 
+        ValueBattery = 0
+    else: 
+        ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
+    return ValueBattery
+
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if len(Attribute) == 0:
@@ -358,14 +367,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
-            ValueBattery_old=round(voltage/10/3.3)
-            volt_min = 2750; volt_max = 3150
-
-            if voltage > volt_max: ValueBattery = 100
-            elif voltage < volt_min: ValueBattery = 0
-            else: ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
-
-            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s OldValue: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, ValueBattery_old, voltage), MsgSrcAddr)
+            ValueBattery = voltage2batteryP( voltage, 3150, 2750)
+            loggingCluster( self, 'Log', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
             self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
 
@@ -375,10 +378,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             oldValue = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']).split(";")
             if len(oldValue) != 4:
                 oldValue = '0;0;0;0'.split(';')
-   
-            newValue = '%s;%s;%s;%s' %(voltage, oldValue[0], oldValue[1], oldValue[2])
+            newValue = '%s;%s;%s;%s' %(voltage, oldValue[1], oldValue[2], oldValue[3])
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] = newValue
-
 
         if sTemp != '':
             Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
@@ -452,7 +453,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         newValue = '%s;%s;%s;%s' %(mainVolt, oldValue[1], oldValue[2], oldValue[3])
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0001": # MAINS FREQUENCY
                               # 0x00 indicates a DC supply, or Freq too low
@@ -479,25 +480,24 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         battVolt = value
         newValue = '%s;%s;%s;%s' %(oldValue[0], battVolt, oldValue[2], oldValue[3])
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery Voltage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster 0001 - %s Battery Voltage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0020": # Battery Voltage
         battRemainVolt = value
         newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], battRemainVolt, oldValue[3])
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0021": # Battery %
         battRemainPer = value
         newValue = '%s;%s;%s;%s' %(oldValue[0], oldValue[1], oldValue[2], battRemainPer)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
-        self.ListOfDevices[MsgSrcAddr]['Battery'] = value
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster 0001 - %s Battery Percentage: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0031": # Battery Size
         # 0x03 stand for AA
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery size: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster 0001 - %s Battery size: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0033": # Battery Quantity
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery Quantity: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
@@ -506,6 +506,29 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Cluster Version: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
+
+    # Compute Battery %
+    mainVolt, battVolt, battRemainingVolt, battRemainPer = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId].split(';')
+    mainVolt = int(mainVolt)
+    battVolt = int(battVolt)
+    battRemainingVolt = int(battRemainingVolt)
+    battRemainPer = int(battRemainPer)
+
+    if battRemainPer != 0:
+        value = battRemainPer
+
+    elif battRemainingVolt != 0: 
+        BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001")
+        max_voltage = 30 ; min_voltage = 27
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] in BATTERY_3VOLTS:
+                max_voltage = 30 ; min_voltage = 27
+
+        value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
+    self.ListOfDevices[MsgSrcAddr]['Battery'] = value
+    self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
+    loggingCluster( self, 'Log', "readCluster 0001 - %s Updating battery to %s" %(MsgSrcAddr, value) , MsgSrcAddr)
+
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
@@ -1461,3 +1484,5 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', sonoffValue)
     if prev_lvlValue != lvlValue:
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, slvlValue)
+
+

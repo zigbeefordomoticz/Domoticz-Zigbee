@@ -1702,7 +1702,8 @@ class WebServer(object):
                 for grpid in ListOfGroups:
                     if grpid not in grp_lst:
                         self.logging( 'Debug', "--->Group %s has to be removed" %grpid)
-                        del ListOfGroups[grpid]['Imported']
+                        if 'Imported' in ListOfGroups[grpid]:
+                            del ListOfGroups[grpid]['Imported']
                         ListOfGroups[grpid]['Imported'] = []
 
                 self.logging( 'Debug', "Group to be worked out")

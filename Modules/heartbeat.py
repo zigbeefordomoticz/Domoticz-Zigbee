@@ -61,7 +61,6 @@ READ_ATTRIBUTES_REQUEST = {
 # Ordered List - Important for binding
 CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0500',            # IAS Zone
-        '0502',            # IAS WD Zone
         '0406',            # Occupancy Sensing
         '0402',            # Temperature Measurement
         '0400',            # Illuminance Measurement
@@ -71,11 +70,12 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0405',            # Relative Humidity Measurement
         '0702',            # Smart Energy Metering
         '0006',            # On/Off
+        '0502',            # IAS WD Zone
         '0008',            # Level Control
         '0201',            # Thermostat
         '0204',            # Thermostat UI
         '0300',            # Colour Control
-        '0000',            # Basic
+#        '0000',            # Basic
         'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
         'ff02'             # Used by Xiaomi devices for battery informations.
         ]
@@ -326,8 +326,12 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 else:
                     waitForDomoDeviceCreation = True
                     reqColorModeAttribute = True
-                    reqColorModeAttribute = True
                     break
+
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'SML001':
+                reqColorModeAttribute = False
+
         if reqColorModeAttribute:
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
