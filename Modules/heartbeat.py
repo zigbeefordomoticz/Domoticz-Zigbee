@@ -259,6 +259,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # Patch to make Livolo working
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
         if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+            loggingHeartbeat( self, 'Debug', "Livolo Toggle %s" %NWKID)
+            livolo_OnOff( self, NWKID , '06', 'All', 'toggle')
             loggingHeartbeat( self, 'Debug', "Livolo On/Off Right %s" %NWKID)
             livolo_OnOff( self, NWKID , '06', 'Right', 'Off')
             livolo_OnOff( self, NWKID , '06', 'Left', 'Off')

@@ -1347,16 +1347,24 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     Right Unit: Timing 2
     """
 
-    if onoff not in ( 'On', 'Off'):
+    if onoff not in ( 'On', 'Off', 'toggle'):
         return
-    if devunit not in ( 'Left', 'Right'):
+    if devunit not in ( 'Left', 'Right', 'All'):
         return
 
-    if onoff == 'On': level_value = '%02x' %108
-    else: level_value = '01'
+    if onoff == 'toogle' and devunit == 'All':
+        loggingOutput( self, 'Log', "livolo_toggle" , nwkid=nwkid)
+        sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02'
+    else:
+        if onoff == 'On':
+            level_value = '%02x' %108
+        elif onoff == 'off':
+         level_value = '%02x' %1
 
-    if devunit == 'Left': timing_value = '0001'
-    else: timing_value = '0002'
+        if devunit == 'Left':
+            timing_value = '0001'
+        elif devunit == 'right':
+            timing_value = '0002'
 
-    loggingOutput( self, 'Debug', "livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value), nwkid=nwkid)
-    sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+        loggingOutput( self, 'Log', "livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value), nwkid=nwkid)
+        sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
