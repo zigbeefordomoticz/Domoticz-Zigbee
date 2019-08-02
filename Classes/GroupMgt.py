@@ -922,6 +922,10 @@ class GroupsManagement(object):
             if iterDev in self.ListOfDevices:
                 if 'Heartbeat' in self.ListOfDevices[iterDev]:
                     self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+                # Reset Health status of corresponding device if any in Not Reachable
+                if 'Health' in self.ListOfDevices[iterDev]:
+                    if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
+                        self.ListOfDevices[iterDev]['Health'] = ''
             else:
                 Domoticz.Error("processCommand - Looks like device %s does not exist anymore and you expect to be part of group %s" %(iterDev, nwkid))
 
