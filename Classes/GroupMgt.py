@@ -996,7 +996,6 @@ class GroupsManagement(object):
 
             #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
             elif Hue_List['m'] == 3:
-
                 self.set_RGB_color( ADDRESS_MODE['group'], nwkid, EPin, EPout, \
                         int(Hue_List['r']), int(Hue_List['g']), int(Hue_List['b']))
 
@@ -1029,11 +1028,11 @@ class GroupsManagement(object):
                 self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
 
-                #Update Device
-                nValue = 1
-                sValue = str(value)
-                self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
-                return
+            #Update Device
+            nValue = 1
+            sValue = str(value)
+            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
+            return
 
     def manageIkeaTradfriRemoteLeftRight( self, addr, type_dir):
 
