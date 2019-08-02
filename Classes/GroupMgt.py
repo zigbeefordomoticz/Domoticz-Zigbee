@@ -943,9 +943,8 @@ class GroupsManagement(object):
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
-            return
 
-        elif Command == 'On' :
+        if Command == 'On' :
             zigate_cmd = "0092"
             zigate_param = '01'
             nValue = '1'
@@ -957,9 +956,8 @@ class GroupsManagement(object):
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
-            return
 
-        elif Command == 'Set Level':
+        if Command == 'Set Level':
             zigate_cmd = "0081"
             OnOff = "01"
             value=int(Level*255//100)
@@ -973,9 +971,8 @@ class GroupsManagement(object):
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
-            return
 
-        elif Command == "Set Color" :
+        if Command == "Set Color" :
             Hue_List = json.loads(Color_)
             #First manage level
             OnOff = '01' # 00 = off, 01 = on
@@ -1032,7 +1029,6 @@ class GroupsManagement(object):
             nValue = 1
             sValue = str(value)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
-            return
 
     def manageIkeaTradfriRemoteLeftRight( self, addr, type_dir):
 
