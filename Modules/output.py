@@ -1347,12 +1347,12 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     Right Unit: Timing 2
     """
 
-    if onoff not in ( 'On', 'Off', 'toggle'):
+    if onoff not in ( 'On', 'Off', 'Toggle'):
         return
     if devunit not in ( 'Left', 'Right', 'All'):
         return
 
-    if onoff == 'toogle' and devunit == 'All':
+    if onoff == 'Toogle' and devunit == 'All':
         loggingOutput( self, 'Log', "livolo_toggle" , nwkid=nwkid)
         sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02')
     else:
