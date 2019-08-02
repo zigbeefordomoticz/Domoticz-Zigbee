@@ -1363,7 +1363,7 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
         if devunit == 'Left':
             timing_value = '0001'
-        elif devunit == 'right':
+        elif devunit == 'Right':
             timing_value = '0002'
 
         loggingOutput( self, 'Log', "livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value), nwkid=nwkid)
