@@ -22,7 +22,7 @@ import json
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
-from Modules.status import DisplayStatusCode
+from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
 from Modules.consts import ADDRESS_MODE, ZCL_CLUSTERS_LIST

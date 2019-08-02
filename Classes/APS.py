@@ -7,7 +7,7 @@
 from time import time
 
 import Domoticz
-from Modules.status import DisplayStatusCode
+from Modules.errorCodes import DisplayStatusCode
 from Modules.domoticz import timedOutDevice
 
 MAX_CMD_PER_DEVICE = 5

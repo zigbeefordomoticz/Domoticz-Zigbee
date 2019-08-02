@@ -149,7 +149,7 @@ SETTINGS = {
                     }},
             'Experimental': { 'Order': 11, 'param': {
                     'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                    'bulbPowerOnOfMode':  {'type':'int', 'default':255, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
+                    'bulbPowerOnOfMode':  {'type':'hex', 'default':0xff, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }}
             }
 
@@ -212,10 +212,16 @@ class PluginConf:
                     if not os.path.exists( self.pluginConf[ param] ):
                         Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
 
+        # Let's check the Type
         for theme in SETTINGS:
             for param in SETTINGS[theme]['param']:
                 if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
-                    Domoticz.Status("%s set to %s" %(param, self.pluginConf[param]))
+                    if SETTINGS[theme]['param'][param]['type'] == 'hex':
+                        if isinstance(self.pluginConf[param], str):
+                            self.pluginConf[param] = int(self.pluginConf[param],16)
+                        Domoticz.Status("%s set to 0x%x" %(param, self.pluginConf[param]))
+                    else:
+                        Domoticz.Status("%s set to %s" %(param, self.pluginConf[param]))
 
 
     def _load_oldfashon( self, homedir, hardwareid):
