@@ -457,7 +457,7 @@ class ZigateTransport(object):
                 self.F_out(frame)  # Forward the message to plugin for further processing
 
         elif MsgType == "8701": # Router Discovery Confirm
-            if self.pluginconf.plugiConf['APSrteError']:
+            if self.pluginconf.pluginConf['APSrteError']:
                 MsgData=frame[12:len(frame)-4]
                 Status=MsgData[2:4]
                 NwkStatus=MsgData[0:2]
@@ -714,7 +714,7 @@ class ZigateTransport(object):
                 if len(_lastCmds[0]) == 3:
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
-            if self.pluginconf.plugiConf['APSrteError']:
+            if self.pluginconf.pluginConf['APSrteError']:
                 self._waitForRouteDiscoveryConfirm.append( iterCmd, iterpayLoad, frame)
                 return False
 
