@@ -1,5 +1,11 @@
 # Release Notes 
 
+## 3 August 2019 - 4.51
+- [Technical] - Cleanup, remove Zdatas directory
+- [Technical] - Cleanup, remove Reports/zigate folder and old fashon web page
+- [Issue] - When changing Color of a Group , the settings was not kept.
+- [Issue] - Philips Motion sensor: Motion detection not working
+
 ## 31 July 2019 - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
 - [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.

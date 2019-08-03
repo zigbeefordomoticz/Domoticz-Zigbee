@@ -669,8 +669,8 @@ def processConfigureReporting( self, NWKID=None ):
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
-        '0406': {'Attributes': { '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
-                                 '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        '0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
         # IAS ZOne
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
@@ -885,7 +885,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 def rebind_Clusters( self, NWKID):
 
     # Binding devices
-    CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0402', '0400', '0001',
+    CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0400', '0402', '0001',
             '0102', '0403', '0405', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
             '000c',
             'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
