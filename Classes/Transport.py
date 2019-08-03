@@ -382,6 +382,8 @@ class ZigateTransport(object):
         if not is_hex( cmd):
             Domoticz.Error("sendData - receiving a non hexa Command: >%s<" %cmd)
             return
+        if datas is None:
+            datas = ''
         if datas != '':
             if not is_hex( datas):
                 Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)

@@ -498,8 +498,8 @@ def _logginfilter( self, message, nwkid):
         elif nwkid in _debugMatchId:
             Domoticz.Log( message )
         return
-    else:
-        Domoticz.Log( message )
+    #else:
+    #    Domoticz.Log( message )
 
 
 def loggingCommand( self, logType, message, nwkid=None):

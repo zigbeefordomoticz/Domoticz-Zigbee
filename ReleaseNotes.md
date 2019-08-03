@@ -8,6 +8,8 @@
 - [Technical] - Handle ZHA1.2/Pluzzy Firmware 
 - [Technical] - Handle Pluzzy devices
 - [Technical] - Transfert of GitHub repository
+- [Hardware] - Certify Tuya Door contact
+- [Hardware] - Certify Konke KIT Pro ( Multi Function switch, Door contact, Temp/Humi Sensor, Motion sensor)
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class

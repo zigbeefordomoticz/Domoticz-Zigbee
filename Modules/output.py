@@ -736,7 +736,6 @@ def processConfigureReporting( self, NWKID=None ):
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
-        loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
         if key == '0000': continue
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
@@ -754,6 +753,8 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['Health'] == 'Not Reachable':
                     continue
 
+        loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
+
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']
         #    manufacturer_spec = "01"
@@ -767,16 +768,16 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 0)
             #else:
             #    identifySend( self, key, Ep, 15)
-            loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
+            loggingOutput( self, 'Debug', "--> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
-            loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
+            loggingOutput( self, 'Debug', "--> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
                 if cluster not in ATTRIBUTESbyCLUSTERS:
                     continue
 
-                loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
                 if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
@@ -788,7 +789,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    loggingOutput( self, 'Debug', "configurereporting - skiping due to existing past", nwkid=key)
+                    loggingOutput( self, 'Debug', "------> configurereporting - skiping due to existing past", nwkid=key)
                     continue
 
                 _idx = Ep + '-' + str(cluster)
@@ -803,15 +804,15 @@ def processConfigureReporting( self, NWKID=None ):
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
                         continue
 
-                loggingOutput( self, 'Debug', "ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
+                loggingOutput( self, 'Debug', "---> ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
                         %(NWKID, self.busy, len(self.ZigateComm._normalQueue)), nwkid=key)
                 if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE):
-                    loggingOutput( self, 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                    loggingOutput( self, 'Debug', "---> configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(self.busy, len(self.ZigateComm._normalQueue), key), nwkid=key)
                     loggingOutput( self, 'Debug', "QUEUE: %s" %str(self.ZigateComm._normalQueue), nwkid=key)
                     return # Will do at the next round
 
-                loggingOutput( self, 'Debug', "configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
+                loggingOutput( self, 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
 
                 if self.pluginconf.pluginConf['allowReBindingClusters']:
                     if 'Bind' in self.ListOfDevices[key]:
