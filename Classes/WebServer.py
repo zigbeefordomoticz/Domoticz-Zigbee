@@ -588,6 +588,7 @@ class WebServer(object):
             self.logging( 'Log', "rest_rescan_group - Removing file: %s" %self.groupListFileName)
             if os.path.isfile( self.groupListFileName ):
                 os.remove( self.groupListFileName )
+                self.restart_needed['RestartNeeded'] = True
             action = {}
             action['Name'] = 'Groups file removed.'
             action['TimeStamp'] = int(time())
@@ -1510,12 +1511,12 @@ class WebServer(object):
                 zdev_lst = []
                 for item in self.ListOfDevices:
                     zdev_lst.append(self.ListOfDevices[item])
-                _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=True ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[parameters[0]], sort_keys=False ) 
                 elif parameters[0] in self.IEEE2NWK:
-                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=True ) 
+                    _response["Data"] =  json.dumps( self.ListOfDevices[self.IEEE2NWK[parameters[0]]], sort_keys=False ) 
 
         return _response
 
