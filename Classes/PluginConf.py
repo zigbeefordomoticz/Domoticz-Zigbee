@@ -101,7 +101,8 @@ SETTINGS = {
                     'sendDelay':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                     'zTimeOut':  { 'type':'int', 'default':2 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-                    'APSreTx': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False}
+                    'APSrteError':  {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+                    'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False}
                 }},
 
             # Plugin Directories
@@ -148,7 +149,6 @@ SETTINGS = {
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }},
             'Experimental': { 'Order': 11, 'param': {
-                    'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'bulbPowerOnOfMode':  {'type':'hex', 'default':0xff, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }}
             }
