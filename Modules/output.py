@@ -657,9 +657,9 @@ def processConfigureReporting( self, NWKID=None ):
             # 0x012C - 5'
             # 0x003C - 1'
         # Basic Cluster
-        '0000': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
-                                 '0032': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
-                                 '0033': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
+        #'0000': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
+        #                         '0032': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
+        #                         '0033': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
 
         # Power Cluster
         '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'01'},
@@ -708,8 +708,8 @@ def processConfigureReporting( self, NWKID=None ):
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Occupancy Sensing
-        '0406': {'Attributes': { '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'},
-                                 '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        '0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
         # IAS ZOne
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
                                  '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
@@ -769,12 +769,12 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 15)
             loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
+            loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
                 if cluster not in ATTRIBUTESbyCLUSTERS:
                     continue
-
 
                 loggingOutput( self, 'Debug', "Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:

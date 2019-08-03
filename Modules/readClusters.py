@@ -527,7 +527,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
     self.ListOfDevices[MsgSrcAddr]['Battery'] = value
     self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-    loggingCluster( self, 'Log', "readCluster 0001 - %s Updating battery to %s" %(MsgSrcAddr, value) , MsgSrcAddr)
+    loggingCluster( self, 'Log', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
 
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):

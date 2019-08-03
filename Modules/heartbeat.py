@@ -62,8 +62,8 @@ READ_ATTRIBUTES_REQUEST = {
 CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0500',            # IAS Zone
         '0406',            # Occupancy Sensing
-        '0402',            # Temperature Measurement
         '0400',            # Illuminance Measurement
+        '0402',            # Temperature Measurement
         '0001',            # Power Configuration
         '0102',            # Windows Covering / SHutter
         '0403',            # Measurement: Pression atmospherique
@@ -328,10 +328,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     reqColorModeAttribute = True
                     break
 
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == 'SML001':
-                reqColorModeAttribute = False
-
         if reqColorModeAttribute:
             self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
             Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
@@ -385,10 +381,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     elif self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
         Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
-        Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
-        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, capturePairingInfos: %s Model: %s " \
+        Domoticz.Error("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
+        Domoticz.Error("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, capturePairingInfos: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.pluginConf['capturePairingInfos'], self.ListOfDevices[NWKID]['Model']))
-        Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
+        Domoticz.Error("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
         self.adminWidgets.updateNotificationWidget( Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
         self.CommiSSionning = False
         if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -437,8 +433,12 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # Binding devices
             for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if self.ListOfDevices[NWKID]['Model'] == 'SML001':
+                        # only on Ep 02
+                        if iterEp != '02':
+                            continue
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
+                        loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
                         if self.pluginconf.pluginConf['capturePairingInfos']:
                             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
                         bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)

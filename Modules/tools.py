@@ -75,7 +75,7 @@ def getClusterListforEP( self, NWKID, Ep ) :
 
     ClusterList = []
 
-    for cluster in ['fc00', '0500', '0502', '0406', '0402', '0400', '0001']:
+    for cluster in ['fc00', '0500', '0502', '0406', '0400', '0402', '0001']:
         if cluster in self.ListOfDevices[NWKID]['Ep'][Ep]:
             ClusterList.append(cluster)
 
