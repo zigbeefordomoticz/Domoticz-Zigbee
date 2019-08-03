@@ -514,11 +514,15 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     battRemainingVolt = float(battRemainingVolt)
     battRemainPer = float(battRemainPer)
 
+    BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001","SmokeSensor", "WarningDevice" )
+    BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001")
     if battRemainPer != 0:
         value = battRemainPer
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] in BATTERY_200PERCENT:
+                value = battRemainPer / 2
 
     elif battRemainingVolt != 0: 
-        BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001")
         max_voltage = 30 ; min_voltage = 27
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in BATTERY_3VOLTS:
