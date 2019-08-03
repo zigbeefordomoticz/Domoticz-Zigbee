@@ -33,7 +33,7 @@ MAX_CYCLE = 3
 
 class GroupsManagement(object):
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, ScanGroupMembership, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
         self.StartupPhase = 'init'
         self._SaveGroupFile = None
         self.ListOfGroups = {}      # Data structutre to store all groups
@@ -49,8 +49,6 @@ class GroupsManagement(object):
         self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
         self.Devices = Devices              # Point to the List of Domoticz Devices
         self.adminWidgets = adminWidgets
-
-        self.ScanGroupMembership = ScanGroupMembership
 
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
 
@@ -1154,9 +1152,6 @@ class GroupsManagement(object):
                 self._load_GroupList()
                 self.StartupPhase = 'end of group startup'
             
-            if self.ScanGroupMembership == 'True' and self.StartupPhase != 'discovery':
-                self.StartupPhase = 'discovery'
-                self.logging( 'Status', "Going for a full group membership discovery. (User Request)")
 
         elif self.StartupPhase == 'discovery':
             if self.HB <= 12:

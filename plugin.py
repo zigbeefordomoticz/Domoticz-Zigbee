@@ -22,8 +22,6 @@
             <ul style="list-style-type:square">
                 <li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
-            <li> Software Reset: This allow you to do a soft reset of the Zigate (no lost of data). Can be use if have change the Channel number in PluginConf.txt</li>
-                <li> Rescan for Group Membership. In case you have added a new device, or remove some, you might want to have the plugin re-scanning the all devices for Group membership.</li>
             <li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
             <li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
     </ul>
@@ -42,18 +40,6 @@
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
-        <param field="Mode4" label="Software Reset" width="75px" required="true" default="False" >
-            <options>
-                <option label="True" value="True"/>
-                <option label="False" value="False" default="true" />
-            </options>
-        </param>
-        <param field="Mode5" label="Rescann for group membership" width="75px" required="true" default="False" >
-            <options>
-                <option label="True" value="True"/>
-                <option label="False" value="False" default="true" />
-            </options>
-        </param>
         <param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="254" />
 
         <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
@@ -448,11 +434,6 @@ class BasePlugin:
 
             start_Zigate( self )
 
-        if Parameters["Mode4"] == "True": # Software Non-Factory Reseet
-            Domoticz.Status("Software reset")
-            sendZigateCmd(self, "0011", "" ) # Software Reset
-            start_Zigate( self )
-
         if Parameters['Mode2'].isdigit(): # Permit to join
             self.permitToJoin = int(Parameters['Mode2'])
             if self.permitToJoin != 0:
@@ -617,14 +598,14 @@ class BasePlugin:
                 if self.groupmgt is None and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
                     Domoticz.Status("Start Group Management")
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
-                            self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
+                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt_NotStarted = False
 
             # In case we have Transport = None , let's check if we have to active Group management or not.
             if self.groupmgt is None and self.transport == 'None' and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
                     Domoticz.Status("Start Group Management")
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
-                            self.HardwareID, Parameters["Mode5"], Devices, self.ListOfDevices, self.IEEE2NWK )
+                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK )
                     self.groupmgt._load_GroupList()
                     self.groupmgt_NotStarted = False
 

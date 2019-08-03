@@ -585,10 +585,13 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
-            self.logging( 'Log', "rest_rescan_group - Removing file: %s" %self.groupListFileName)
-            if os.path.isfile( self.groupListFileName ):
-                os.remove( self.groupListFileName )
-                self.restart_needed['RestartNeeded'] = True
+            JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
+            TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
+            for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
+                if os.path.isfile( self.groupListFileName ):
+                    self.logging( 'Log', "rest_rescan_group - Removing file: %s" %filename )
+                    os.remove( self.groupListFileName )
+                    self.restart_needed['RestartNeeded'] = True
             action = {}
             action['Name'] = 'Groups file removed.'
             action['TimeStamp'] = int(time())
