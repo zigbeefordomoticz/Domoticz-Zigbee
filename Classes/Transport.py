@@ -622,7 +622,7 @@ class ZigateTransport(object):
         if len(deviceinfos['Last Cmds']) >= MAX_CMD_PER_DEVICE:
             # Remove the First element in the list.
             deviceinfos['Last Cmds'].pop(0)
-        if self.pluginconf.pluginConf['APSreTx']:
+        if self.pluginconf.pluginConf['APSreTx'] or self.pluginconf.pluginConf['APSrteError'] :
             _tuple = ( time(), cmd , payload) # Keep Payload as well in order to redo the command
         else:
             _tuple = ( time(), cmd , None)
