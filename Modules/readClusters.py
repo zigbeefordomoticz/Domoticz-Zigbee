@@ -509,10 +509,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     # Compute Battery %
     mainVolt, battVolt, battRemainingVolt, battRemainPer = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId].split(';')
-    mainVolt = int(mainVolt)
-    battVolt = int(battVolt)
-    battRemainingVolt = int(battRemainingVolt)
-    battRemainPer = int(battRemainPer)
+    mainVolt = float(mainVolt)
+    battVolt = float(battVolt)
+    battRemainingVolt = float(battRemainingVolt)
+    battRemainPer = float(battRemainPer)
 
     if battRemainPer != 0:
         value = battRemainPer
