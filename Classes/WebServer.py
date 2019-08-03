@@ -586,10 +586,8 @@ class WebServer(object):
         if verb == 'GET':
             self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
             self.logging( 'Log', "rest_rescan_group - Removing file: %s" %self.groupListFileName)
-            try:
+            if os.path.isfile( self.groupListFileName ):
                 os.remove( self.groupListFileName )
-            except:
-                Dommoticz.Error("Error when trying to remove file %s" %self.groupListFileName)
             action = {}
             action['Name'] = 'Groups file removed.'
             action['TimeStamp'] = int(time())
