@@ -21,7 +21,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, setTimeServer
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
@@ -547,6 +547,8 @@ def Decode8017(self, Devices, MsgData, MsgRSSI) : #
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
     ZigateTime =  struct.unpack('I',struct.pack('I',int(ZigateTime,16)))[0]
     loggingInput(self, 'Log', "UTC time is: %s, Zigate Time is: %s with deviation of :%s " %(UTCTime, ZigateTime, UTCTime - ZigateTime))
+    if  abs( UTCTime - ZigateTime ) > 10:
+        setTimeServer( self )
 
 def Decode8015(self, Devices, MsgData, MsgRSSI) : # Get device list ( following request device list 0x0015 )
     # id: 2bytes

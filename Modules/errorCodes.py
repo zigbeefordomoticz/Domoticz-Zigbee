@@ -19,7 +19,7 @@ ZIGATE_CODES = {
     "04" : "Busy",
     "05" : "Stack Already Started",
     "14" : "E_ZCL_ERR_ZBUFFER_FAIL",
-    "15" : " E_ZCL_ERR_ZTRANSMIT_FAIL"
+    "15" : "E_ZCL_ERR_ZTRANSMIT_FAIL"
     } 
 
 APS_CODES = {

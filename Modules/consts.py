@@ -130,6 +130,8 @@ ZHA_DEVICES = {
         0x0105: 'Colour Dimmer Switch',
         0x0106: 'Light Sensor',
         0x0107: 'Occupancy Sensor',
+        0x010C: 'White Color Temperature Light',
+        0x010D: 'Extended Color Light',
 
         # HVAC Devices
         0x0301: 'Thermostat',
