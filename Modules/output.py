@@ -1369,3 +1369,41 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
         loggingOutput( self, 'Log', "livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value), nwkid=nwkid)
         sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+
+def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep='01'):
+
+    """"
+    Command 0x0530
+    address mode
+    target short address 4
+    source endpoint 2
+    destination endpoint 2
+    clusterId 4
+    profileId 4
+    security mode 2
+    radius 2
+    data length 2
+    data Array of 2
+
+
+    eSecurityMode is the security mode for the data transfer, one of:
+            0x00 : ZPS_E_APL_AF_UNSECURE (no security enabled)
+            0x01 : ZPS_E_APL_AF_SECURE Application-level security using link key and network key)
+            0x02 : ZPS_E_APL_AF_SECURE_NWK (Network-level security using network key)
+            0x10 : ZPS_E_APL_AF_SECURE | ZPS_E_APL_AF_EXT_NONCE (Application-level security using link key and network key with the extended NONCE included in the frame)
+            0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
+    u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
+
+    """
+
+    SECURITY = 0x33
+    RADIUS = 0x00
+
+    addr_mode ='%02X' % ADDRESS_MODE['short']
+    security = '%02X' %SECURTITY
+    radius = '%02X' %RADIUS
+
+    len_payload = len(payload)
+
+    loggingOutput( self, 'Log', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
+    sendZigateCmd(self, "0530", addr_mode + targetaddr + zigate_ep + src_ep + cluster + profileId + security + radius + len_payload + payload)
