@@ -473,7 +473,7 @@ class ZigateTransport(object):
                             Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
                             self.sendData(cmd, payload)
                         else:
-                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
+                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
                             self.F_out( frame8702 )  # Forward the old frame in the pipe
                     del self._waitForRouteDiscoveryConfirm 
                     self._waitForRouteDiscoveryConfirm = []
