@@ -1,6 +1,10 @@
 # Release Notes 
 
-## 3 August 2019 - 4.51
+## 6 August 2019 - 4.5.2
+- [Technical] - Fix problem with Python3.4
+- [Technical] - Remove un-necessary log
+
+## 3 August 2019 - 4.5.1
 - [Technical] - Cleanup, remove Zdatas directory
 - [Technical] - Cleanup, remove Reports/zigate folder and old fashon web page
 - [Issue] - When changing Color of a Group , the settings was not kept.
