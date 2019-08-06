@@ -112,18 +112,18 @@ def runmode_with_osgpiocommand():
         GPIO_CMD = "/usr/bin/gpio"
         if os.path.isfile( GPIO_CMD ):
             Domoticz.Log("+ Checkint GPIO PINs")
-            os( GPIO_CMD + " read 0")
-            os( GPIO_CMD + " read 2")
+            os.system( GPIO_CMD + " read 0")
+            os.system( GPIO_CMD + " read 2")
     
-            os( GPIO_CMD + " mode 0 out")
-            os( GPIO_CMD + " mode 2 out")
-            os( GPIO_CMD + " write 2 1")
-            os( GPIO_CMD + " write 0 0")
-            os( GPIO_CMD + " write 0 1")
+            os.system( GPIO_CMD + " mode 0 out")
+            os.system( GPIO_CMD + " mode 2 out")
+            os.system( GPIO_CMD + " write 2 1")
+            os.system( GPIO_CMD + " write 0 0")
+            os.system( GPIO_CMD + " write 0 1")
     
             Domoticz.Log("+ Checkint GPIO PINs")
-            os( GPIO_CMD + " read 0")
-            os( GPIO_CMD + " read 2")
+            os.system( GPIO_CMD + " read 0")
+            os.system( GPIO_CMD + " read 2")
         else:
             Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
 
