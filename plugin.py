@@ -450,6 +450,7 @@ class BasePlugin:
         sendZigateCmd(self, "0009", "") # Request Network state
         sendZigateCmd(self, "0015", "") # Request List of Active Device
 
+
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices)
 
@@ -569,7 +570,6 @@ class BasePlugin:
 
             if self.FirmwareVersion:
                 self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
-
 
             # Check Firmware version
             if self.FirmwareVersion and self.FirmwareVersion.lower() < '030f':

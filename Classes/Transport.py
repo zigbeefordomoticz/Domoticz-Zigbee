@@ -473,8 +473,7 @@ class ZigateTransport(object):
                             Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
                             self.sendData(cmd, payload)
                         else:
-                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
-                            Domoticz.Debug("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
+                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
                             self.F_out( str(frame8702) )  # Forward the old frame in the pipe. str() is used to make a physical copy
 
                     del self._waitForRouteDiscoveryConfirm 
@@ -719,6 +718,7 @@ class ZigateTransport(object):
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
             if self.pluginconf.pluginConf['APSrteError']:
+                Domoticz.Log("lowlevelAPSFailure - WARNING - received APSFailure %s %s %, will wait for a Route Discoverys" %( NWKID, iterCmd, iterpayLoad))
                 self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, str(frame)) )
                 return False
 
