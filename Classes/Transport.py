@@ -470,21 +470,21 @@ class ZigateTransport(object):
                     # We have some pending Command for re-submition
                     for cmd, payload, frame8702 in self._waitForRouteDiscoveryConfirm:
                         if Status == NwkStatus == '00':
-                            Domoticz.Debug("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
+                            Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
                             self.sendData(cmd, payload)
                         else:
+                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
                             Domoticz.Debug("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
                             self.F_out( str(frame8702) )  # Forward the old frame in the pipe. str() is used to make a physical copy
 
                     del self._waitForRouteDiscoveryConfirm 
                     self._waitForRouteDiscoveryConfirm = []
 
-            Domoticz.Log("processFrame - passing the 0x8701 frame")
-            self.F_out(frame)  # Forward the message to plugin for further processing
+            #Domoticz.Log("processFrame - passing the 0x8701 frame")
+            #self.F_out(frame)  # Forward the message to plugin for further processing
 
         elif MsgType == "8702": # APS Failure
             if len(frame) > 12 :
-        
                 if self.lowlevelAPSFailure( frame ):
                     #Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
                     self.statistics._APSFailure += 1
