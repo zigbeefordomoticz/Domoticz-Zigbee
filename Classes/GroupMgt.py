@@ -31,6 +31,21 @@ GROUPS_CONFIG_FILENAME = "ZigateGroupsConfig"
 TIMEOUT = 12
 MAX_CYCLE = 3
 
+def _copyfile( source, dest, move=True ):
+
+    try:
+        import shutil
+        if move:
+            shutil.move( source, dest)
+        else:
+            shutil.copy( source, dest)
+    except:
+        with open(source, 'r') as src, open(dest, 'wt') as dst:
+            for line in src:
+                dst.write(line)
+        return
+
+
 class GroupsManagement(object):
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
@@ -51,7 +66,6 @@ class GroupsManagement(object):
         self.adminWidgets = adminWidgets
 
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
-
         self.pluginconf = PluginConf
 
         self.Firmware = None
@@ -63,10 +77,13 @@ class GroupsManagement(object):
             if not os.path.isfile(self.groupsConfigFilename):
                 self.groupsConfigFilename = None
 
-        self.json_groupsConfigFilename = self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json"
-        #if not os.path.isfile( self.json_groupsConfigFilename ):
-        #        Domoticz.Debug("No Json Groups Configuration File")
-        #        self.json_groupsConfigFilename = None
+        # Starting 4.6 GROUPS_CONFIG_FILENAME must be store under Data and not Conf folder
+        self.json_groupsConfigFilename = self.pluginconf.pluginConf['pluginData'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json"
+        if os.path.isfile( self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json" ):
+            # Let's move it to Data
+            Domoticz.Status("Moving %s to Data %s" %(self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json",
+                self.json_groupsConfigFilename))
+            _copyfile( self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json", self.json_groupsConfigFilename, move=True)
 
         self.groupListReport = self.pluginconf.pluginConf['pluginReports'] + "GroupList-%02d.json" %hardwareID
         self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID 
@@ -282,6 +299,9 @@ class GroupsManagement(object):
     # Zigate group related commands
     def _addGroup( self, device_ieee, device_addr, device_ep, grpid):
 
+        if device_addr == '0000' and device_ep != '01':
+            return
+
         if grpid not in self.ListOfGroups:
             Domoticz.Error("_addGroup - skip as %s is not in %s" %(grpid, str(self.ListOfGroups)))
             return
@@ -423,6 +443,8 @@ class GroupsManagement(object):
         if MsgSourceAddress not in self.ListOfDevices:
             Domoticz.Error('getGroupMembershipResponse - receiving a group memebership for a non exsiting device')
             Domoticz.Error('getGroupMembershipResponse - %s %s %s' %(MsgSourceAddress, MsgGroupCount, MsgListOfGroup))
+            return
+        if MsgSourceAddress == '0000' and MsgEP != '01':
             return
 
         if 'GroupMgt' not in self.ListOfDevices[MsgSourceAddress]:
