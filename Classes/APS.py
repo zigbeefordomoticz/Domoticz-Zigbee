@@ -4,17 +4,16 @@
 # Author: zaraki673 & pipiche38
 #
 
-from time import time
+from time import time, ctime
 
 import Domoticz
 from Modules.errorCodes import DisplayStatusCode
 from Modules.domoticz import timedOutDevice
 
-MAX_CMD_PER_DEVICE = 5
-APS_TIME_WINDOW = 3
+APS_TIME_WINDOW = 15
 MAX_APS_TRACKING_ERROR = 5
 
-APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
+APS_FAILURE_CODE = (  'd0', 'd4', 'e9', 'f0' , 'cf' )
 
 CMD_NWK_2NDBytes = { 
         '0060':'Add Group', 
@@ -140,6 +139,8 @@ class APSManagement(object):
                     %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
         self.logging( 'Debug', "processAPSFailure - Update APS record Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
                     %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
+
+        # Keep track of APS Failure
         self._updateAPSrecord( nwk, aps_code)
 
         if  not _mainPowered \
@@ -149,8 +150,17 @@ class APSManagement(object):
                     %(_mainPowered, aps_code, self.pluginconf.pluginConf['enableAPSFailureReporting']))
             return
 
+        # We do not want to take action for internal Zigate activities. So we will find if there the saem command use in a short period of time
+
         _timeAPS = (time())
         # Retreive Last command
+        rank = 0
+        Domoticz.Log("Last Commands Queue")
+        for command in self.ListOfDevices[nwk]['Last Cmds']:
+            if len(command) == 3:
+                Domoticz.Log("  [%s] Command: %s TimeStamp:  %24s (%18s)" %(rank, command[1], ctime(command[0]), command[0]))
+            rank += 1
+
         _lastCmds = self.ListOfDevices[nwk]['Last Cmds'][::-1]  #Reverse list
         self.logging( 'Debug', "processAPSFailure - %s Last Cmds: %s" %(nwk, _lastCmds))
         iterTime = 0
@@ -162,10 +172,10 @@ class APSManagement(object):
         if len(_lastCmds[0]) == 3:
             iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
-        self.logging( 'Debug', "processAPSFailure - %s process %18s %s - %s[%s]" \
+        self.logging( 'Log', "processAPSFailure - Nwkid: %s process %18s InPeriod: %s - Cmd: %s Payload: %s" \
                 %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
         if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
             # That command has been issued in the APS time window
-            self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" \
+            self.logging( 'Log', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" \
                     %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
             self._errorMgt( iterCmd, nwk, ieee, aps_code)

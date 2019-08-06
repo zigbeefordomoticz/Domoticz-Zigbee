@@ -64,7 +64,7 @@ CMD_DATA = {0x0009: 0x8009, 0x0010: 0x8010, 0x0014: 0x8014, 0x0015: 0x8015,
             0x0110: 0x8110, 0x0120: 0x8120
             }
 
-MAX_CMD_PER_DEVICE = 5
+MAX_CMD_PER_DEVICE = 7
 APS_DELAY = 1
 APS_MAX_RETRY = 2
 APS_TIME_WINDOW = APS_MAX_RETRY * APS_DELAY
@@ -464,8 +464,6 @@ class ZigateTransport(object):
                 Status=MsgData[2:4]
                 NwkStatus=MsgData[0:2]
 
-                Domoticz.Log("processFrame - New Route Discovery Status: %s NwkStatus: %s" %(Status, NwkStatus))
-
                 if len(self._waitForRouteDiscoveryConfirm) > 0:
                     # We have some pending Command for re-submition
                     for cmd, payload, frame8702 in self._waitForRouteDiscoveryConfirm:
@@ -473,8 +471,8 @@ class ZigateTransport(object):
                             Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
                             self.sendData(cmd, payload)
                         else:
-                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
-                            self.F_out( str(frame8702) )  # Forward the old frame in the pipe. str() is used to make a physical copy
+                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
+                            self.F_out( frame8702 )  # Forward the old frame in the pipe. str() is used to make a physical copy
 
                     del self._waitForRouteDiscoveryConfirm 
                     self._waitForRouteDiscoveryConfirm = []
@@ -485,11 +483,9 @@ class ZigateTransport(object):
         elif MsgType == "8702": # APS Failure
             if len(frame) > 12 :
                 if self.lowlevelAPSFailure( frame ):
-                    #Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
+                    Domoticz.Log("processFrame - detect an APS Failure forward to plugin")
                     self.statistics._APSFailure += 1
                     self.F_out(frame)  # Forward the message to plugin for further processing
-                #else:
-                #    Domoticz.Log("processFrame - detect an APS Failure , but we try to resend and drop this message")
 
         elif int(MsgType, 16) in STANDALONE_MESSAGE:  # We receive an async message, just forward it to plugin
             self.F_out(frame)  # for processing
@@ -719,7 +715,8 @@ class ZigateTransport(object):
 
             if self.pluginconf.pluginConf['APSrteError']:
                 Domoticz.Log("lowlevelAPSFailure - WARNING - received APSFailure %s %s %s, will wait for a Route Discoverys" %( NWKID, iterCmd, iterpayLoad))
-                self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, str(frame)) )
+                if ( iterCmd, iterpayLoad, str(frame) ) not in self._waitForRouteDiscoveryConfirm:
+                    self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, str(frame)) )
                 return False
 
             iterTime2 = 0
