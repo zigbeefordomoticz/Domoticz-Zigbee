@@ -11,7 +11,7 @@
 """
 import platform
 import sys
-
+import os
 import Domoticz
 
 def linux_distribution():
@@ -29,15 +29,26 @@ def switchPiZigate_mode( self, mode='run' ):
             platform.platform(), platform.uname(), platform.version(), platform.mac_ver(),))
 
     if platform.dist()[0] in ( 'fedora' ):
+        runmode_with_gpiomodule()
+    elif platform.dist()[0] in ( 'debian' ):
+        runmode_with_gpiocommand()
+
+
+def runmode_with_gpiomodule( ):
+
         try:
             import RPi.GPIO as GPIO
+
         except RuntimeError:
-            Domoticz.Error("Error importing RPi.GPIO!")
+            Domoticz.Error("Error importing python3 module RPi.GPIO!, trying to recover with GPIO commands from wiringPi")
+            runmode_with_gpiocommand()
             return
         except:
             Domoticz.Error("Fail to import RPi.GPIO")
             Domoticz.Error("+ make sure to set the PiZigate in run mode")
+            runmode_with_gpiocommand()
             return
+
         Domoticz.Log("Set PiZigate Channels 11 and 17")
         channel_lst = [ 17, 27]
         try:
@@ -59,16 +70,24 @@ def switchPiZigate_mode( self, mode='run' ):
             if ei2: Domoticz.Log(" + GPIO(FLASH) OK")
             else: Domoticz.Log(" + GPIO(FLASH) KO")
         except RuntimeError:
-            Domoticz.Error("Error importing RPi.GPIO!")
+            Domoticz.Error("Error executing GPIO API, let's try with GPIO commands!")
+            runmode_with_gpiocommand()
             return
         except:
             Domoticz.Error("Unable to set GPIO")
             Domoticz.Error("+ make sure to set the PiZigate in run mode")
 
-    elif platform.dist()[0] in ( 'debian' ):
-        from subprocess import run
-        import os
-    
+
+def runmode_with_gpiocommand():
+
+        try:
+            from subprocess import run
+        except:
+            Domoticz.Error("Error while importing run from python module subprocess, fall back to os module")
+            runmode_with_osgpiocommand()
+            return
+
+        Domoticz.Log("runmode_with_gpiocommand")
         GPIO_CMD = "/usr/bin/gpio"
         if os.path.isfile( GPIO_CMD ):
             Domoticz.Log("+ Checkint GPIO PINs")
@@ -86,3 +105,25 @@ def switchPiZigate_mode( self, mode='run' ):
             run( GPIO_CMD + " read 2", shell=True, check=True)
         else:
             Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
+
+def runmode_with_osgpiocommand():
+
+        Domoticz.Log("runmode_with_osgpiocommand")
+        GPIO_CMD = "/usr/bin/gpio"
+        if os.path.isfile( GPIO_CMD ):
+            Domoticz.Log("+ Checkint GPIO PINs")
+            os.system( GPIO_CMD + " read 0")
+            os.system( GPIO_CMD + " read 2")
+    
+            os.system( GPIO_CMD + " mode 0 out")
+            os.system( GPIO_CMD + " mode 2 out")
+            os.system( GPIO_CMD + " write 2 1")
+            os.system( GPIO_CMD + " write 0 0")
+            os.system( GPIO_CMD + " write 0 1")
+    
+            Domoticz.Log("+ Checkint GPIO PINs")
+            os.system( GPIO_CMD + " read 0")
+            os.system( GPIO_CMD + " read 2")
+        else:
+            Domoticz.Error("%s command missing. Make sure to install wiringPi package" %GPIO_CMD)
+
