@@ -11,7 +11,7 @@
 """
 import platform
 import sys
-
+import os
 import Domoticz
 
 def linux_distribution():
@@ -87,8 +87,6 @@ def runmode_with_gpiocommand():
             runmode_with_osgpiocommand()
             return
 
-        import os
-    
         Domoticz.Log("runmode_with_gpiocommand")
         GPIO_CMD = "/usr/bin/gpio"
         if os.path.isfile( GPIO_CMD ):
@@ -110,8 +108,6 @@ def runmode_with_gpiocommand():
 
 def runmode_with_osgpiocommand():
 
-        import os
-    
         Domoticz.Log("runmode_with_osgpiocommand")
         GPIO_CMD = "/usr/bin/gpio"
         if os.path.isfile( GPIO_CMD ):
