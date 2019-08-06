@@ -149,6 +149,8 @@ SETTINGS = {
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }},
             'Experimental': { 'Order': 11, 'param': {
+                    'APSrteError':  {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                    'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'bulbPowerOnOfMode':  {'type':'hex', 'default':0xff, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }}
             }
