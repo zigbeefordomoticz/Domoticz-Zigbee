@@ -1372,7 +1372,15 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep='01'):
 
-    """"
+    """" Command
+    This function submits a request to send data to a remote node, with no restrictions
+    on the type of transmission, destination address, destination application profile,
+    destination cluster and destination endpoint number - these destination parameters
+    do not need to be known to the stack or defined in the ZPS configuration. In this
+    sense, this is most general of the Data Transfer functions.
+
+    The data is sent in an Application Protocol Data Unit (APDU) instance,
+
     Command 0x0530
     address mode
     target short address 4
@@ -1393,6 +1401,16 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
             0x10 : ZPS_E_APL_AF_SECURE | ZPS_E_APL_AF_EXT_NONCE (Application-level security using link key and network key with the extended NONCE included in the frame)
             0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
     u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
+
+    """
+    """ APS request command Payload
+
+    target addr ( IEEE )
+    target ep
+    clusterID
+    dest addr mode
+    dest addr
+    dest ep
 
     """
 

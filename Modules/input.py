@@ -27,6 +27,7 @@ from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
 from Modules.consts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
 from Modules.pluzzy import pluzzyDecode8102
+from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
@@ -423,16 +424,18 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
 
-    self.IEEE2NWK[extaddr] = addr
-    self.ListOfDevices[addr] = {}
-    self.ListOfDevices[addr]['version'] = '3'
-    self.ListOfDevices[addr]['IEEE'] = extaddr
-    self.ListOfDevices[addr]['Ep'] = {}
-    self.ListOfDevices[addr]['Ep']['01'] = {}
-    self.ListOfDevices[addr]['Ep']['01']['0004'] = {}
-    self.ListOfDevices[addr]['Ep']['01']['0006'] = {}
-    self.ListOfDevices[addr]['Ep']['01']['0008'] = {}
-    self.ListOfDevices[addr]['PowerSource'] = 'Main'
+    initLODZigate( self, addr, extaddr )
+
+    #self.IEEE2NWK[extaddr] = addr
+    #self.ListOfDevices[addr] = {}
+    #self.ListOfDevices[addr]['version'] = '3'
+    #self.ListOfDevices[addr]['IEEE'] = extaddr
+    #self.ListOfDevices[addr]['Ep'] = {}
+    #self.ListOfDevices[addr]['Ep']['01'] = {}
+    #self.ListOfDevices[addr]['Ep']['01']['0004'] = {}
+    #self.ListOfDevices[addr]['Ep']['01']['0006'] = {}
+    #self.ListOfDevices[addr]['Ep']['01']['0008'] = {}
+    #self.ListOfDevices[addr]['PowerSource'] = 'Main'
 
     if self.currentChannel != int(Channel,16):
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
@@ -872,7 +875,10 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     MsgDataBField=MsgData[20:22]
     MsgDataInClusterCount=MsgData[22:24]
 
-    if MsgDataShAddr not in self.ListOfDevices:
+    if MsgDataShAddr == '0000': # Ep list for Zigate
+        receiveZigateEpDescriptor( self, MsgData)
+        return
+    elif MsgDataShAddr not in self.ListOfDevices:
         Domoticz.Log("Decode8043 - receive message for non existing device")
         return
 
@@ -1017,7 +1023,7 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
     MsgDataEPlist=MsgData[10:len(MsgData)]
 
-    loggingPairing( self, 'Debug', "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+    loggingPairing( self, 'Log', "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
     if self.pluginconf.pluginConf['capturePairingInfos']:
         if MsgDataShAddr not in self.DiscoveryDevices:
@@ -1026,6 +1032,9 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
     OutEPlist=""
     
+    if MsgDataShAddr == '0000':
+        receiveZigateEpList( self, MsgDataEpCount, MsgDataEPlist)
+        return
     if DeviceExist(self, Devices, MsgDataShAddr) == False:
         #Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
         Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
@@ -1043,7 +1052,8 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
                 self.ListOfDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
-            i = i + 2
+            i += 2
+
         self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16))     # Store the number of EPs
         if self.pluginconf.pluginConf['capturePairingInfos']:
             self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
