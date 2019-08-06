@@ -718,7 +718,7 @@ class ZigateTransport(object):
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
             if self.pluginconf.pluginConf['APSrteError']:
-                Domoticz.Log("lowlevelAPSFailure - WARNING - received APSFailure %s %s %, will wait for a Route Discoverys" %( NWKID, iterCmd, iterpayLoad))
+                Domoticz.Log("lowlevelAPSFailure - WARNING - received APSFailure %s %s %s, will wait for a Route Discoverys" %( NWKID, iterCmd, iterpayLoad))
                 self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, str(frame)) )
                 return False
 
