@@ -470,11 +470,11 @@ class ZigateTransport(object):
                     # We have some pending Command for re-submition
                     for cmd, payload, frame8702 in self._waitForRouteDiscoveryConfirm:
                         if Status == NwkStatus == '00':
-                            Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
+                            Domoticz.Debug("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
                             self.sendData(cmd, payload)
                         else:
-                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
-                            self.F_out( str(frame8702) )  # Forward the old frame in the pipe
+                            Domoticz.Debug("processFrame - New Route Discovery KO, drop %s %s and send 0x8702: %s" %(cmd, payload, frame8702))
+                            self.F_out( str(frame8702) )  # Forward the old frame in the pipe. str() is used to make a physical copy
 
                     del self._waitForRouteDiscoveryConfirm 
                     self._waitForRouteDiscoveryConfirm = []
