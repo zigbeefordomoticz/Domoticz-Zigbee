@@ -123,6 +123,7 @@ class ZigateTransport(object):
 
     def __init__(self, LOD, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
+        self.lock = False
 
         self.LOD = LOD # Object managing the Plugin Devices
         self._checkTO_flag = None
@@ -460,25 +461,31 @@ class ZigateTransport(object):
 
         elif MsgType == "8701": # Router Discovery Confirm
             if self.pluginconf.pluginConf['APSrteError']:
-                MsgData=frame[12:len(frame)-4]
-                Status=MsgData[2:4]
-                NwkStatus=MsgData[0:2]
-
-                if len(self._waitForRouteDiscoveryConfirm) > 0:
-                    # We have some pending Command for re-submition
-                    for cmd, payload, frame8702 in self._waitForRouteDiscoveryConfirm:
-                        if Status == NwkStatus == '00':
-                            Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
-                            self.sendData(cmd, payload)
-                        else:
-                            Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
-                            self.F_out( frame8702 )  # Forward the old frame in the pipe. str() is used to make a physical copy
-
-                    del self._waitForRouteDiscoveryConfirm 
-                    self._waitForRouteDiscoveryConfirm = []
-
-            #Domoticz.Log("processFrame - passing the 0x8701 frame")
-            #self.F_out(frame)  # Forward the message to plugin for further processing
+                if self.lock:
+                    Domoticz.Log("processFrame - passing the 0x8701 frame (lock)")
+                    self.F_out(frame)  # Forward the message to plugin for further processing
+                else:
+                    self.lock = True
+                    MsgData=frame[12:len(frame)-4]
+                    Status=MsgData[2:4]
+                    NwkStatus=MsgData[0:2]
+    
+                    if len(self._waitForRouteDiscoveryConfirm) > 0:
+                        # We have some pending Command for re-submition
+                        tupleCommands = list(self._waitForRouteDiscoveryConfirm)
+                        for cmd, payload, frame8702 in tupleCommands:
+                            if Status == NwkStatus == '00':
+                                Domoticz.Log("processFrame - New Route Discovery OK, resend %s %s" %(cmd, payload))
+                                self.sendData(cmd, payload)
+                            else:
+                                Domoticz.Log("processFrame - New Route Discovery KO, drop %s %s" %(cmd, payload))
+                                self.F_out( frame8702 )  # Forward the old frame in the pipe. str() is used to make a physical copy
+    
+                            self._waitForRouteDiscoveryConfirm.remove( ( cmd, payload, frame8702)  )
+    
+                        del self._waitForRouteDiscoveryConfirm 
+                        self._waitForRouteDiscoveryConfirm = []
+                self.lock = False
 
         elif MsgType == "8702": # APS Failure
             if len(frame) > 12 :
@@ -715,10 +722,14 @@ class ZigateTransport(object):
                 if len(_lastCmds[0]) == 3:
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
-            if self.pluginconf.pluginConf['APSrteError']:
+            if self.pluginconf.pluginConf['APSrteError'] and len(_lastCmds[0]) == 3:
                 Domoticz.Log("lowlevelAPSFailure - WARNING - Queue Size: %s received APSFailure %s %s %s, will wait for a Route Discoverys" %( len(self._waitForRouteDiscoveryConfirm), NWKID, iterCmd, iterpayLoad))
-                if ( iterCmd, iterpayLoad, str(frame) ) not in self._waitForRouteDiscoveryConfirm:
-                    self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, str(frame)) )
+                tupleCommand = ( iterCmd, iterpayLoad, frame)
+                if (  tupleCommand ) not in self._waitForRouteDiscoveryConfirm:
+                    Domoticz.Log("      -> Add %s %s to Queue" %( iterCmd, iterpayLoad))
+                    self._waitForRouteDiscoveryConfirm.append( tupleCommand )
+                else:
+                    Domoticz.Log("      -> Do not add to Queue %s %s , already in" %(iterCmd, iterpayLoad))
                 return False
 
             """
