@@ -148,6 +148,7 @@ class ZigateTransport(object):
         self.zmode = pluginconf.pluginConf['zmode']
         self.sendDelay = pluginconf.pluginConf['sendDelay']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
+        self.debugMode = pluginconf.pluginConf['debugTransport']
 
         if str(transport) == "USB":
             self._transp = "USB"
@@ -208,6 +209,9 @@ class ZigateTransport(object):
         send data to Zigate via the communication transport
         """
 
+        if self.debugMode:
+            Domoticz.Log("--> _sendData - %s %s %s" %(cmd, datas, delay))
+
         if datas == "":
             length = "0000"
         else:
@@ -231,6 +235,9 @@ class ZigateTransport(object):
                         str(ZigateEncode(strchecksum)) + str(ZigateEncode(datas)) + "03"
 
         self.processCMD4APS( cmd, datas)
+        if self.debugMode:
+            Domoticz.Log("--> _sendData - sending encoded Cmd: %s length: %s CRC: %s Data: %s" \
+                    %(str(ZigateEncode(cmd)), str(ZigateEncode(length)), str(ZigateEncode(strchecksum)), str(ZigateEncode(datas))))
         self._connection.Send(bytes.fromhex(str(lineinput)), delay)
         self.statistics._sent += 1
 
@@ -379,6 +386,9 @@ class ZigateTransport(object):
         in charge of sending Data. Call by sendZigateCmd
         If nothing in the waiting queue, will call _sendData and it will be sent straight to Zigate
         '''
+        if self.debugMode:
+            Domoticz.Log("sendData - %s %s %s" %(cmd, datas, delay))
+
         # Before to anything, let's check that the cmd and datas are HEXA information.
         if not is_hex( cmd):
             Domoticz.Error("sendData - receiving a non hexa Command: >%s<" %cmd)
@@ -404,6 +414,9 @@ class ZigateTransport(object):
         else:
             waitIsRequired = len(self._waitForStatus) == 0 and len(self._waitForData) == 0
 
+        if self.debugMode:
+            Domoticz.Log("sendData - zMode: %s Q(Status): %s Q(Data): %s waitIsRequired: %s" %(self.zmode, len(self._waitForStatus), len(self._waitForData), waitIsRequired))
+
         if waitIsRequired:
             self.addCmdToWait(cmd, datas)
             if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
@@ -415,6 +428,8 @@ class ZigateTransport(object):
 
         else:
             # Put in FIFO
+            if self.debugMode:
+                Domoticz.Log("sendData - put in waiting queue")
             self.addCmdToSend(cmd, datas)
 
     def processFrame(self, frame):
@@ -603,6 +618,8 @@ class ZigateTransport(object):
         if len(self._normalQueue) != 0 \
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self.nextCmdtoSend()
+            if self.debugMode:
+                Domoticz.Log("checkTOwaitForStatus - Unqueue %s %s" %(cmd, datas))
             self.sendData(cmd, datas)
 
         # self._printSendQueue()
