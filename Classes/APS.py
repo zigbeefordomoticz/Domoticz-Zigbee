@@ -155,10 +155,10 @@ class APSManagement(object):
         _timeAPS = (time())
         # Retreive Last command
         rank = 0
-        Domoticz.Log("processAPSFailure - Last Commands Queue for %s" %nwk)
+        self.logging( 'Debug', "processAPSFailure - Last Commands Queue for %s" %nwk)
         for command in self.ListOfDevices[nwk]['Last Cmds']:
             if len(command) == 3:
-                Domoticz.Log("  [%s] Command: %s TimeStamp:  %24s (%18s)" %(rank, command[1], ctime(command[0]), command[0]))
+                self.logging( 'Debug', "  [%2s] Command: %s Payload: %-10s TimeStamp:  %24s (%18s)" %(rank, command[1], command[2],  ctime(command[0]), command[0]))
             rank += 1
 
         _lastCmds = self.ListOfDevices[nwk]['Last Cmds'][::-1]  #Reverse list
@@ -172,7 +172,7 @@ class APSManagement(object):
         if len(_lastCmds[0]) == 3:
             iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
-        self.logging( 'Log', "processAPSFailure - Nwkid: %s process %18s InPeriod: %s - Cmd: %s Payload: %s" \
+        self.logging( 'Debug', "processAPSFailure - Nwkid: %s process %18s InPeriod: %s - Cmd: %s Payload: %s" \
                 %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
         if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
             # That command has been issued in the APS time window

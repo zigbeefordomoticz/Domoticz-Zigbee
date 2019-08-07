@@ -343,10 +343,12 @@ class ZigateTransport(object):
         timestamp = int(time())
         ##DEBUG Domoticz.Debug("addCmdToSend: cmd: %s data: %s reTransmit: %s" %(cmd, data, reTransmit))
         
+        # Check if the Cmd+Data is not yet in the Queue. If yes forget that message
         for iterCmd, iterData, iterTS, iterreTx in self._normalQueue:
             if cmd == iterCmd and data == iterCmd:
-                Domoticz.Log("Do not queue again an existing command in the Pipe")
+                Domoticz.Log("Do not queue again an existing command in the Pipe, we drop the command %s %s" %(cmd, data))
                 return
+        self.logging('Debug', "--> addCmdToSend - adding to Queue %s %s %s %s" %(cmd, data, timestamp, reTransmit))
         self._normalQueue.append((cmd, data, timestamp, reTransmit))
         if len(self._normalQueue) > self.statistics._MaxLoad:
             self.statistics._MaxLoad = len(self._normalQueue)
@@ -355,11 +357,13 @@ class ZigateTransport(object):
     def addCmdToWait(self, cmd, data, reTransmit=0):
         'add a command to the waiting list'
         timestamp = int(time())
+        self.logging('Debug', "--> addCmdToWait - adding to Queue %s %s %s %s" %(cmd, data, timestamp, reTransmit))
         self._waitForStatus.append((cmd, data, timestamp, reTransmit))
 
     def addDataToWait(self, expResponse, cmd, data, reTransmit=0):
         'add a command to the waiting list'
         timestamp = int(time())
+        self.logging('Debug', "--> addDataToWait - adding to Queue %s %s %s %s" %(cmd, data, timestamp, reTransmit))
         self._waitForData.append((expResponse, cmd, data, timestamp, reTransmit))
 
     def loadTransmit(self):
@@ -370,6 +374,7 @@ class ZigateTransport(object):
         if len(self._normalQueue) > 0:
             ret = self._normalQueue[0]
             del self._normalQueue[0]
+            self.logging('Debug', "--> nextCmdtoSend - Unqueue %s %s %s %s" %(ret[0], ret[1], ret[2], ret[3]))
             # self._printSendQueue()
             return ret
         return (None, None, None, None)
@@ -398,15 +403,11 @@ class ZigateTransport(object):
         self.logging('Debug', "sendData - %s %s %s" %(cmd, datas, delay))
 
         # Before to anything, let's check that the cmd and datas are HEXA information.
-        if not is_hex( cmd):
-            Domoticz.Error("sendData - receiving a non hexa Command: >%s<" %cmd)
-            return
         if datas is None:
             datas = ''
-        if datas != '':
-            if not is_hex( datas):
-                Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)
-                return
+        if datas != '' and not is_hex( datas):
+            Domoticz.Error("sendData - receiving a non hexa Data: >%s<" %datas)
+            return
 
         # Check if normalQueue is empty. If yes we can send the command straight
         #Domoticz.Log("sendData         - Cmd: %04.X waitQ: %s dataQ: %s normalQ: %s" % (int(cmd, 16), len(self._waitForStatus), len(self._waitForData), len(self._normalQueue)))
