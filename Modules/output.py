@@ -100,16 +100,12 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
     if 'ReadAttributes' not in self.ListOfDevices[addr]:
         self.ListOfDevices[addr]['ReadAttributes'] = {}
-
     if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
         self.ListOfDevices[addr]['ReadAttributes']['Ep'] = {}
-
     if EpOut not in self.ListOfDevices[addr]['ReadAttributes']['Ep']:
         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut] = {}
-
     if str(Cluster) not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)] = {}
-
     if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
@@ -145,7 +141,8 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if lenAttr == 0:
             return
 
-    loggingOutput( self, 'Debug', "ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
+    if Cluster == '0006':
+        loggingOutput( self, 'Log', "ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -283,7 +280,8 @@ def ReadAttributeRequest_0001(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
@@ -300,7 +298,8 @@ def ReadAttributeRequest_0006(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
     loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
@@ -316,7 +315,8 @@ def ReadAttributeRequest_0008(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0008'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
     loggingOutput( self, 'Debug', "Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
@@ -331,7 +331,8 @@ def ReadAttributeRequest_0300(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0300'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0300", listAttributes)
@@ -375,7 +376,8 @@ def ReadAttributeRequest_0102(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
@@ -407,7 +409,8 @@ def ReadAttributeRequest_0400(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0400'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Illuminance info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0400", listAttributes)
@@ -423,7 +426,8 @@ def ReadAttributeRequest_0402(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Temperature info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0402", listAttributes)
@@ -439,7 +443,8 @@ def ReadAttributeRequest_0403(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0403", listAttributes)
@@ -455,7 +460,8 @@ def ReadAttributeRequest_0405(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Humidity info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0405", listAttributes)
@@ -473,7 +479,8 @@ def ReadAttributeRequest_0406(self, key):
          listAttributes.append(0x0030)
          #listAttributes.append(0x0033)
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0406'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
 
     loggingOutput( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
@@ -490,7 +497,8 @@ def ReadAttributeRequest_0500(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0500'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0500 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0500", listAttributes)
 
@@ -505,7 +513,8 @@ def ReadAttributeRequest_0502(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0502 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0502", listAttributes)
 
@@ -522,7 +531,8 @@ def ReadAttributeRequest_0702(self, key):
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0702'):
-        listAttributes.append( iterAttr )
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)

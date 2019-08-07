@@ -64,7 +64,7 @@ CMD_DATA = {0x0009: 0x8009, 0x0010: 0x8010, 0x0014: 0x8014, 0x0015: 0x8015,
             0x0110: 0x8110, 0x0120: 0x8120
             }
 
-MAX_CMD_PER_DEVICE = 7
+MAX_CMD_PER_DEVICE = 15
 APS_DELAY = 1
 APS_MAX_RETRY = 2
 APS_TIME_WINDOW = APS_MAX_RETRY * APS_DELAY
@@ -693,6 +693,8 @@ class ZigateTransport(object):
             MsgDataSQN=MsgData[12:14]
 
         NWKID = self.LOD.find( NWKID, IEEE)
+
+        Domoticz.Log("lowlevelAPSFailure - NwkId: %s Ieee: %s Status: %s" %(NWKID, IEEE, MsgDataStatus))
         if NWKID and ( MsgDataStatus == 'd4' or MsgDataStatus == 'd1'):
             # Let's resend the command
             deviceinfos = self.LOD.retreive( NWKID )
@@ -714,11 +716,12 @@ class ZigateTransport(object):
                     iterTime, iterCmd, iterpayLoad = _lastCmds[0]
 
             if self.pluginconf.pluginConf['APSrteError']:
-                Domoticz.Log("lowlevelAPSFailure - WARNING - received APSFailure %s %s %s, will wait for a Route Discoverys" %( NWKID, iterCmd, iterpayLoad))
+                Domoticz.Log("lowlevelAPSFailure - WARNING - Queue Size: %s received APSFailure %s %s %s, will wait for a Route Discoverys" %( len(self._waitForRouteDiscoveryConfirm), NWKID, iterCmd, iterpayLoad))
                 if ( iterCmd, iterpayLoad, str(frame) ) not in self._waitForRouteDiscoveryConfirm:
                     self._waitForRouteDiscoveryConfirm.append( (iterCmd, iterpayLoad, str(frame)) )
                 return False
 
+            """
             iterTime2 = 0
             iterCmd2 = iterpayLoad2 = None
             if len(_lastCmds) >= 2: # At least we have 2 Commands
@@ -761,6 +764,7 @@ class ZigateTransport(object):
                     self.sendData( iterCmd, iterpayLoad, 2)
                     self.statistics._reTx += 1
                     return False
+            """
 
         return True
 

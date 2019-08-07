@@ -155,7 +155,7 @@ class APSManagement(object):
         _timeAPS = (time())
         # Retreive Last command
         rank = 0
-        Domoticz.Log("Last Commands Queue")
+        Domoticz.Log("processAPSFailure - Last Commands Queue for %s" %nwk)
         for command in self.ListOfDevices[nwk]['Last Cmds']:
             if len(command) == 3:
                 Domoticz.Log("  [%s] Command: %s TimeStamp:  %24s (%18s)" %(rank, command[1], ctime(command[0]), command[0]))
