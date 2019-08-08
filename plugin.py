@@ -699,7 +699,7 @@ class BasePlugin:
             Domoticz.Log("Ask Zigate Time")
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
+        if len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
             busy_ = True
 
         if busy_:

@@ -962,7 +962,7 @@ class WebServer(object):
             Statistics['Cluster'] =self.statistics._clusterOK
             Statistics['ReTx'] =self.statistics._reTx
             Statistics['APSFailure'] =self.statistics._APSFailure
-            Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
+            Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 

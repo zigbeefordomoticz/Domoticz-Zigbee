@@ -734,9 +734,9 @@ def processConfigureReporting( self, NWKID=None ):
 
     now = int(time())
     if NWKID is None :
-        if self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
+        if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
             loggingOutput( self, 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                  %(self.busy, len(self.ZigateComm._normalQueue), NWKID), nwkid=NWKID)
+                  %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = self.ListOfDevices
         clusterlist = None
@@ -815,11 +815,11 @@ def processConfigureReporting( self, NWKID=None ):
                         continue
 
                 loggingOutput( self, 'Debug', "---> ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
-                        %(NWKID, self.busy, len(self.ZigateComm._normalQueue)), nwkid=key)
-                if NWKID is None and (self.busy or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE):
+                        %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), nwkid=key)
+                if NWKID is None and (self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
                     loggingOutput( self, 'Debug', "---> configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                        %(self.busy, len(self.ZigateComm._normalQueue), key), nwkid=key)
-                    loggingOutput( self, 'Debug', "QUEUE: %s" %str(self.ZigateComm._normalQueue), nwkid=key)
+                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), key), nwkid=key)
+                    loggingOutput( self, 'Debug', "QUEUE: %s" %str(self.ZigateComm.zigateSendingFIFO), nwkid=key)
                     return # Will do at the next round
 
                 loggingOutput( self, 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)

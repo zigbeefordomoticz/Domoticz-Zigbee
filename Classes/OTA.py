@@ -571,9 +571,9 @@ class OTAManagement(object):
         if self.HB < ( self.pluginconf.pluginConf['waitingOTA'] // HEARTBEAT): 
             return
 
-        if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-            self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm._normalQueue))
-            self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
+        if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+            self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
+            self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
             self.logging( 'Debug', "Too busy, will come back later")
             return
 

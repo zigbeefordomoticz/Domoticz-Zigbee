@@ -1226,10 +1226,10 @@ class GroupsManagement(object):
                                 if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] == 'REQ-Membership':
                                     continue
 
-                            if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                                self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm._normalQueue))
-                                self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
-                                self.logging( 'Debug', "too busy, will try again ...%s" %len(self.ZigateComm._normalQueue))
+                            if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                                self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
+                                self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
+                                self.logging( 'Debug', "too busy, will try again ...%s" %len(self.ZigateComm.zigateSendingFIFO))
                                 _workcompleted = False
                                 break # will continue in the next cycle
 
@@ -1441,9 +1441,9 @@ class GroupsManagement(object):
                             %(iterGrp, iterDev,iterEp))
                     continue
 
-                if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                    self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm._normalQueue))
-                    self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
+                if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                    self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
+                    self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
                     _completed = False
                     self.logging( 'Debug', "Too busy, will come back later")
                     break # will continue in the next cycle
@@ -1454,9 +1454,9 @@ class GroupsManagement(object):
 
             self.logging( 'Debug', " - Add to be performed: %s" %str(self.TobeAdded))
             for iterIEEE, iterDev, iterEp, iterGrp in list(self.TobeAdded):
-                if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                    self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm._normalQueue))
-                    self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
+                if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                    self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
+                    self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
                     _completed = False
                     self.logging( 'Debug', "Too busy, will come back later")
                     break # will continue in the next cycle

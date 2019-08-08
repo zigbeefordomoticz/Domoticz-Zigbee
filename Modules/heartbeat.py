@@ -109,9 +109,9 @@ def processKnownDevices( self, Devices, NWKID ):
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                    if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
+                    if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
                         loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                                %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
+                                %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
@@ -126,7 +126,7 @@ def processKnownDevices( self, Devices, NWKID ):
                             if '0006' in self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]:
                                 if '4003' in self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']:
                                     if int(self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
-                                        if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
+                                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
                                             Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
                                                     %(NWKID, self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
                                             setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
@@ -137,9 +137,9 @@ def processKnownDevices( self, Devices, NWKID ):
                 'LogicalType' not in self.ListOfDevices[NWKID] or \
                 'PowerSource' not in self.ListOfDevices[NWKID] or \
                 'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
-            if not self.busy and  len(self.ZigateComm._normalQueue) <= MAX_LOAD_ZIGATE:
+            if not self.busy and  len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                 loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                        %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
+                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
                 Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
                 sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
@@ -162,9 +162,9 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
-                if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
+                if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
                     loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                            %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
+                            %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
                     if intHB != 0:
                         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
                     break # Will do at the next round
