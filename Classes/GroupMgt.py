@@ -1571,6 +1571,8 @@ class GroupsManagement(object):
             # We write GroupList to cash only if in case of success.
             if self._SaveGroupFile:
                 self._write_GroupList()
+                self.logging( 'Status', "Group Management - startup done")
+                self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
 
         elif self.StartupPhase == 'end of group startup':
             for iterGrp in self.ListOfGroups:
@@ -1586,8 +1588,6 @@ class GroupsManagement(object):
                 json_file.write('\n')
                 json.dump( self.ListOfGroups, json_file, indent=4, sort_keys=True)
 
-            self.logging( 'Status', "Group Management - startup done")
-            self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
             self.StartupPhase = 'ready'
             self.stillWIP = False
         return
