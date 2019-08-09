@@ -22,7 +22,7 @@ except Exception as Err:
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
-from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
 from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID
 
 from Classes.PluginConf import PluginConf,SETTINGS

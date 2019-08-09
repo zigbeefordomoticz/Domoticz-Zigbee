@@ -81,7 +81,7 @@ from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
-from Modules.consts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
 from Modules.txPower import set_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 

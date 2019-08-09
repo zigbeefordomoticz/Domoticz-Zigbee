@@ -25,7 +25,7 @@ from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadA
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
-from Modules.consts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
+from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
@@ -521,6 +521,7 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
 
     Domoticz.Log("Permit Join status: %s" %Status)
     Domoticz.Log("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
+    Domoticz.Log("---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'])
     Domoticz.Log("---> Current time                  : %s" %timestamp)
     Domoticz.Log("---> self.Ping['Permit']  (prev)   : %s" %self.Ping['Permit'])
 
@@ -539,7 +540,6 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     self.Ping['TimeStamp'] = int(time())
     self.Ping['Status'] = 'Receive'
     loggingInput( self, 'Debug', "Ping - received")
-
     return
 
 def Decode8017(self, Devices, MsgData, MsgRSSI) : # 

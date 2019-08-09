@@ -37,7 +37,7 @@ from os import listdir
 from os.path import isfile, join
 from time import time
 
-from Modules.consts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE
 
 from Classes.AdminWidgets import AdminWidgets
 

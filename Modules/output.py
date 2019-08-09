@@ -19,12 +19,13 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.consts import ZLL_DEVICES, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE
 from Modules.tools import getClusterListforEP, loggingOutput
 
 def ZigatePermitToJoin( self, permit ):
 
     if permit:
+        # Enable Permit to join
         if permit != 255:
             Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
         else:
@@ -34,6 +35,7 @@ def ZigatePermitToJoin( self, permit ):
         sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
         sendZigateCmd( self, "0014", "" ) # Request status
     else: 
+        # Disable Permit to Join
         if self.permitTojoin['Duration'] != 0:
             self.permitTojoin['Starttime'] = int(time())
             self.permitTojoin['Duration'] = 0
@@ -785,6 +787,8 @@ def processConfigureReporting( self, NWKID=None ):
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
                 if cluster not in ATTRIBUTESbyCLUSTERS:
+                    continue
+                if cluster == '0500' and self.ListOfDevices[key]['Model'] == '3AFE14010402000D': # Do not Configure Reporting the Konke Motion sensor
                     continue
 
                 loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)

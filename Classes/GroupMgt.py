@@ -22,7 +22,7 @@ import os.path
 from time import time
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE
 
 from Classes.AdminWidgets import AdminWidgets
 
