@@ -920,7 +920,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     if 'ZDeviceID' in self.ListOfDevices[MsgDataShAddr]:
         if self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] != MsgDataDeviceId:
             Domoticz.Log("Decode8043 - Overwrite ZDeviceID %s with %s from Ep: %s " \
-                    %( self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] , MsgDataProfile, MsgDataEp))
+                    %( self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] , MsgDataDeviceId, MsgDataEp))
     self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] = MsgDataDeviceId
     Domoticz.Status("[%s] NEW OBJECT: %s ZDeviceID %s" %('-', MsgDataShAddr, MsgDataDeviceId))
 

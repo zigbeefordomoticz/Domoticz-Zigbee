@@ -929,13 +929,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = ''
 
                 if value < 1000:
-                    Bar_forecast = 4
+                    Bar_forecast = 4 # RAIN
                 elif value < 1020:
-                    Bar_forecast = 3
+                    Bar_forecast = 3 # CLOUDY
                 elif value < 1030:
-                    Bar_forecast = 2
+                    Bar_forecast = 2 # PARTLY CLOUDY
                 else:
-                    Bar_forecast = 1
+                    Bar_forecast = 1 # SUNNY
 
                 if DeviceType == "Baro":
                     NewSvalue = '%s;%s' %(round(value + adjvalue,1), Bar_forecast)
