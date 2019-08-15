@@ -202,8 +202,10 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
 
         if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE14010402000D': #Konke Motion Sensor
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", alarm1 )
-        else:
+        elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_magnet', 'lumi.sensor_magnet.aq2' ): # Xiaomi Door sensor
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", alarm1 )
+        else:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, alarm1 )
 
         if battdef or battery:
             self.ListOfDevices[MsgSrcAddr]['Battery'] = '1'
