@@ -185,7 +185,6 @@ class BasePlugin:
 
         Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
 
-
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
             Domoticz.Log("Debug Mode: %s" %int(Parameters["Mode6"]))
@@ -206,9 +205,7 @@ class BasePlugin:
         self.HardwareID = (Parameters["HardwareID"])
         self.Key = (Parameters["Key"])
         self.transport = Parameters["Mode1"]
-        self.WebUsername = Parameters["Username"]
-        self.WebPassword = Parameters["Password"]
-        Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
+
 
         # Import PluginConf.txt
         major, minor = Parameters["DomoticzVersion"].split('.')
@@ -238,6 +235,8 @@ class BasePlugin:
             loggingPlugin( self, 'Debug', "   - Preferences table")
             self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
 
+            self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
+            Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
 
         # Create the adminStatusWidget if needed
@@ -618,6 +617,7 @@ class BasePlugin:
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
                 Domoticz.Status("Start Web Server connection")
+                Domoticz.Log("Username/Password: %s/%s" %(self.WebUsername, self.WebPassword))
                 self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
                         self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.groupmgt, Devices, 
                         self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth)

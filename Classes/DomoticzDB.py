@@ -34,9 +34,16 @@ class DomoticzDB_Preferences:
 
     def _openDB( self):
 
-        Domoticz.Debug("Opening %s" %self.database)
-        self.dbConn = sqlite3.connect(self.database)
-        self.dbCursor = self.dbConn.cursor()
+        Domoticz.Log("Opening %s" %self.database)
+        try:
+            self.dbConn = sqlite3.connect(self.database)
+            self.dbCursor = self.dbConn.cursor()
+
+        except sqlite3.Error as e:
+            Domoticz.Error("retreiveAcceptNewHardware - Database error: %s" %e)
+            self.closeDB()
+            self.dbCursor = None
+            return 0
 
     def closeDB( self ):
 
@@ -89,8 +96,8 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
                 self.WebUserName = self.dbCursor.fetchone()
-                self.WebUserName = WebUserName[0]
-                Domoticz.Debug("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
+                self.WebUserName = self.WebUserName[0]
+                Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" %e)
                 self.WebUserName = None
@@ -101,8 +108,8 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
                 self.WebPassword = self.dbCursor.fetchone()
-                self.WebPassword = WebPassword[0] 
-                Domoticz.Debug("retreiveWebUserNamePassword - WebPassword: %s" %self.WebPassword)
+                self.WebPassword = self.WebPassword[0] 
+                Domoticz.Log("retreiveWebUserNamePassword - WebPassword: %s" %self.WebPassword)
                 self.closeDB()
                 self.dbCursor = None
                 return (self.WebUserName, self.WebPassword)
