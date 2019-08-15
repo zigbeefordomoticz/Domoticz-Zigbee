@@ -13,6 +13,7 @@
 import sqlite3
 import Domoticz
 import os.path
+from base64 import b64decode
 from time import time
 
 CACHE_TIMEOUD = ((15 * 60) + 15)   # num seconds
@@ -96,19 +97,22 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
                 self.WebUserName = self.dbCursor.fetchone()
+                Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
                 self.WebUserName = self.WebUserName[0]
                 Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
+                self.WebUserName = b64decode(self.WebUserName).decode('UTF-8')
+                Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
+
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" %e)
                 self.WebUserName = None
             except Exception as e:
                 Domoticz.Error("retreiveWebUserNamePassword - Exception: %s" %e)
                 self.WebUserName = None
-    
+
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
                 self.WebPassword = self.dbCursor.fetchone()
-                self.WebPassword = self.WebPassword[0] 
                 Domoticz.Log("retreiveWebUserNamePassword - WebPassword: %s" %self.WebPassword)
                 self.closeDB()
                 self.dbCursor = None
