@@ -1744,6 +1744,7 @@ def setupHeadersResponse():
     _response["Headers"] = {}
     _response["Headers"]["Server"] = "Domoticz"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
+    _response["Headers"]["Access-Control-Allow-Origin"] = "*"
     #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.
