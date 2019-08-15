@@ -209,6 +209,7 @@ ZCL_CLUSTERS_LIST = {
         '0014': 'Multistate Value (Basic)',
         '0015': 'Commissioning',
         '0019': 'Over-the-Air Upgrade',
+        '0020': 'Poll Control',
         '0100': 'Shade Configuration',
         '0101': 'Door Lock',
         '0102': 'Window Covering',
