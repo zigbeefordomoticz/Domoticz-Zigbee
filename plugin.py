@@ -208,6 +208,7 @@ class BasePlugin:
         self.transport = Parameters["Mode1"]
         self.WebUsername = Parameters["Username"]
         self.WebPassword = Parameters["Password"]
+        Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
         # Import PluginConf.txt
         major, minor = Parameters["DomoticzVersion"].split('.')
