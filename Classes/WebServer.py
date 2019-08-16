@@ -190,8 +190,9 @@ class WebServer(object):
 
     def onMessage( self, Connection, Data ):
 
-            self.logging( 'Debug', "WebServer onMessage")
+            self.logging( 'Debug', "WebServer onMessage : %s" %Data)
             #DumpHTTPResponseToLog(Data)
+
 
             headerCode = "200 OK"
             if (not 'Verb' in Data):
@@ -252,9 +253,12 @@ class WebServer(object):
             currentVersionOnServer = os.path.getmtime(webFilename)
             _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
 
+            # Check Referrrer
+            if 'Referer' in Data['Headers']:
+                self.logging( 'Debug', "Set Referer: %s" %Data["Headers"]["Referer"])
+                _response["Headers"]["Referer"] = Data['Headers']['Referer']
 
             # Can we use Cache if exists
-
             if self.pluginconf.pluginConf['enableCache']:
                 if 'If-Modified-Since' in Data['Headers']:
                     lastVersionInCache = Data['Headers']['If-Modified-Since']
@@ -296,9 +300,7 @@ class WebServer(object):
                     _response["Headers"]["Content-Encoding"] = _contentEncoding 
      
                 _response["Status"] = "200 OK"
-                if 'Cookie' in Data['Headers']: 
-                    _response['Headers']['Cookie'] = Data['Headers']['Cookie']
-    
+
                 if 'Accept-Encoding' in Data['Headers']:
                     self.sendResponse( Connection, _response, AcceptEncoding = Data['Headers']['Accept-Encoding']  )
                 else:
