@@ -210,6 +210,11 @@ class WebServer(object):
             if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
             else: parsed_query = Data['URL'].split('/')
 
+            # Any Cookie ?
+            cookie = None
+            if 'Cookie' in Data['Headers']:
+                cookie = Data['Headers']['Cookie']
+
             if 'Data' not in Data: Data['Data'] = None
 
             if (headerCode != "200 OK"):
@@ -236,7 +241,7 @@ class WebServer(object):
                 self.logging( 'Debug', "Redirecting to /index.html")
 
             # We are ready to send the response
-            _response = setupHeadersResponse()
+            _response = setupHeadersResponse( cookie )
             if self.pluginconf.pluginConf['enableKeepalive']:
                 _response["Headers"]["Connection"] = "Keep-alive"
             else:
@@ -1741,15 +1746,21 @@ def DumpHTTPResponseToLog(httpDict):
                 else:
                     self.logging( 'Log', "--->'" + x + "':'" + str(httpDict[x]) + "'")
 
-def setupHeadersResponse():
+def setupHeadersResponse( cookie = None ):
 
     _response = {}
     _response["Headers"] = {}
     _response["Headers"]["Server"] = "Domoticz"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
-    _response["Headers"]["Access-Control-Allow-Origin"] = "*"
-    _response["Headers"]["Access-Control-Allow-Methods"] = "GET, POST, DELETE"
-    _response["Headers"]["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+
+    _response["Headers"]['Access-Control-Allow-Headers'] = 'Cache-Control, Pragma, Origin, Authorization,   Content-Type, X-Requested-With'
+    _response["Headers"]['Access-Control-Allow-Methods'] = 'GET, POST, DELETE'
+    _response["Headers"]['Access-Control-Allow-Origin'] = '*'
+
+    _response["Headers"]["Referrer-Policy"] = "no-referrer"
+
+    if cookie:
+        _response["Headers"]["Cookie"] = cookie
 
     #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
