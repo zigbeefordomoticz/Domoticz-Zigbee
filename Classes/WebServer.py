@@ -935,8 +935,6 @@ class WebServer(object):
 
     def rest_plugin_restart( self, verb, data, parameters):
 
-        import requests
-
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
             _response["Headers"]["Connection"] = "Keep-alive"
@@ -945,7 +943,10 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-            url = 'http://127.0.0.1:%s' %self.pluginconf.pluginConf['port']
+            if self.WebUsername and self.WebPassword:
+                url = 'http://%s:%s@127.0.0.1:%s' %(self.WebUsername, self.WebPassword, self.pluginconf.pluginConf['port'])
+            else:
+                url = 'http://127.0.0.1:%s' %self.pluginconf.pluginConf['port']
             url += '/json.htm?type=command&param=updatehardware&htype=94'
             url += '&idx=%s' %self.pluginparameters['HardwareID']
 
@@ -969,7 +970,11 @@ class WebServer(object):
             _response["Data"] = json.dumps( info, sort_keys=True )
 
             Domoticz.Log("Plugin Restart command : %s" %url)
-            os.system( "/usr/bin/curl '" + url + "' &" )
+            _cmd = "/usr/bin/curl '%s' &" %url
+            try:
+                os.system( _cmd )
+            except:
+                Domoticz.Error("Error while trying to restart plugin %s" %_cmd)
 
         return _response
         

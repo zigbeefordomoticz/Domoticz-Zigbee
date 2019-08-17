@@ -97,11 +97,8 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
                 self.WebUserName = self.dbCursor.fetchone()
-                Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
                 self.WebUserName = self.WebUserName[0]
-                Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
                 self.WebUserName = b64decode(self.WebUserName).decode('UTF-8')
-                Domoticz.Log("retreiveWebUserNamePassword - WebUserName: %s" %self.WebUserName)
 
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" %e)
@@ -113,7 +110,7 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
                 self.WebPassword = self.dbCursor.fetchone()
-                Domoticz.Log("retreiveWebUserNamePassword - WebPassword: %s" %self.WebPassword)
+                self.WebPassword = self.WebPassword[0]
                 self.closeDB()
                 self.dbCursor = None
                 return (self.WebUserName, self.WebPassword)
