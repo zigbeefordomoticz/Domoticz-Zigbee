@@ -988,7 +988,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( restart_needed, sort_keys=True )
+            _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
         return _response
 
 

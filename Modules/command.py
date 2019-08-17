@@ -89,7 +89,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             ClusterSearch = '0502'
             DeviceType = tmpDeviceType
 
-    if DeviceType == '': 
+    if DeviceType == '' and self.pluginconf.pluginConf['forcePassiveWidget']:
+        if tmpDeviceType in ( "DButton_3", "SwitchAQ3") :
+            loggingCommand( self, 'Debug', "mgtCommand - forcePassiveWidget")
+            ClusterSearch="0006"
+            DeviceType = "Switch"
+
+    if DeviceType == '':
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
