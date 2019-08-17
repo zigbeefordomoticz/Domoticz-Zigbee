@@ -406,6 +406,7 @@ class WebServer(object):
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
+                'plugin-restart':   {'Name':'plugin-restart',   'Verbs':{'GET'}, 'function':self.rest_plugin_restart},
                 'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
                 'restart-needed':{'Name':'restart-needed','Verbs':{'GET'}, 'function':self.rest_restart_needed},
                 'req-nwk-inter': {'Name':'req-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
@@ -932,6 +933,46 @@ class WebServer(object):
                     _response['Data'] = json.dumps( [] , sort_keys=True)
         return _response
 
+    def rest_plugin_restart( self, verb, data, parameters):
+
+        import requests
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            url = 'http://127.0.0.1:%s' %self.pluginconf.pluginConf['port']
+            url += '/json.htm?type=command&param=updatehardware&htype=94'
+            url += '&idx=%s' %self.pluginparameters['HardwareID']
+
+            url += '&name=%s' %self.pluginparameters['Name']
+            url += '&address=%s' %self.pluginparameters['Address']
+            url += '&port=%s' %self.pluginparameters['Port']
+            url += '&serialport=%s' %self.pluginparameters['SerialPort']
+            url += '&Mode1=%s' %self.pluginparameters['Mode1']
+            url += '&Mode2=%s' %self.pluginparameters['Mode2']
+            url += '&Mode3=%s' %self.pluginparameters['Mode3']
+            url += '&Mode4=%s' %self.pluginparameters['Mode4']
+            url += '&Mode5=%s' %self.pluginparameters['Mode5']
+            url += '&Mode6=%s' %self.pluginparameters['Mode6']
+            url += '&extra=%s' %self.pluginparameters['Key']
+            url += '&enabled=true'
+            url += '&datatimeout=0'
+
+            info = {}
+            info['Text'] = 'Plugin restarted'
+            info['TimeStamp'] = int(time())
+            _response["Data"] = json.dumps( info, sort_keys=True )
+
+            Domoticz.Log("Plugin Restart command : %s" %url)
+            os.system( "/usr/bin/curl '" + url + "' &" )
+
+        return _response
+        
     def rest_restart_needed( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
@@ -942,9 +983,10 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
+                _response["Data"] = json.dumps( restart_needed, sort_keys=True )
         return _response
-        
+
+
 
     def rest_plugin_stat( self, verb, data, parameters):
 
