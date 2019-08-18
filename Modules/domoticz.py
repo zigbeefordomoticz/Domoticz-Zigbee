@@ -946,12 +946,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Door" and DeviceType == "Door":  # Door / Window
-                if value == "01":
+                value = int(value)
+                if value == 1:
                     state = "Open"
-                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
-                elif value == "00":
+                    UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
+                elif value == 0:
                     state = "Closed"
-                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
 
             if ClusterType == "Switch":
                 if DeviceType == "Plug":
