@@ -82,7 +82,7 @@ from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
-from Modules.txPower import set_TxPower
+from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 
 from Classes.APS import APSManagement
@@ -590,8 +590,11 @@ class BasePlugin:
                 if self.pluginconf.pluginConf['blueLedOff']:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
-                if self.pluginconf.pluginConf['TXpower_set'] and self.transport != 'None':
-                    set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
+
+                get_TxPower(self)
+
+                set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
+
                 if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION and self.transport != 'None':
                     Domoticz.Status("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
                     sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])

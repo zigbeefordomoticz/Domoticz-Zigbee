@@ -1907,13 +1907,13 @@ def Decode8806(self, Devices, MsgData, MsgRSSI) :
 
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
-    loggingInput( self, 'Debug', "Get TxPower : %s" %TxPower)
+    loggingInput( self, 'Log', "Confirming Set TxPower: 0x%s" %TxPower)
 
-def Decode8807(self, Devices, MsgData, MsgRSSI) :
+def Decode8807(self, Devices, MsgData, MsgRSSI):
 
-    Domoticz.debug("Decode8807 - MsgData: %s" %MsgData)
+    Domoticz.Debug("Decode8807 - MsgData: %s" %MsgData)
 
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
-    loggingInput( self, 'Debug', "Get TxPower : %s" %TxPower)
+    loggingInput( self, 'Log', "Get TxPower : 0x%s" %TxPower)
 
