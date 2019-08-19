@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 19 August 2019 - 4.5.3
+- [Technical] - Force TxPower to 0dBM attenuation
+
 ## 6 August 2019 - 4.5.2
 - [Technical] - Fix problem with Python3.4
 - [Technical] - Remove un-necessary log

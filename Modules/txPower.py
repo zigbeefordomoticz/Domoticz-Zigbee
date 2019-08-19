@@ -36,28 +36,22 @@ set/Get tx value  |  Mapped value (dBM)
 
 """
 
-POWER_LEVEL = { 0:0, # Max (Default)
-                1:52, # 
-                2:40, #
-                3:32# Min
+POWER_LEVEL = { 0:0x00, # Max (Default)
+                1:0x32, # 
+                2:0x40, #
+                3:0x39# Min
               }
-
-MAPPED_dBm = { 0:0,
-               1: -9,
-               2: -20,
-               3: -32
-               }
 
 def set_TxPower( self, powerlevel):
 
     if powerlevel not in POWER_LEVEL:
         powerlevel = 0
 
-    setValue = POWER_LEVEL[powerlevel]
+    #setValue = POWER_LEVEL[powerlevel]
+    setValue = 0x00
 
-    if self.pluginconf.pluginConf['TXpower_set']:
-        attr_tx_power = '%02x' %self.pluginconf.pluginConf['TXpower_set']
-        sendZigateCmd(self, "0806", attr_tx_power)
+    attr_tx_power = '%02x' %setValue
+    sendZigateCmd(self, "0806", attr_tx_power)
 
 
 def get_TxPower( self ):
@@ -71,7 +65,6 @@ def get_TxPower( self ):
     """
 
 
-    Domoticz.Log("get_TxPower")
     sendZigateCmd(self, "0807", "")
 
     return

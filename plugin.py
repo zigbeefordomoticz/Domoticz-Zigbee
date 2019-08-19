@@ -184,7 +184,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'stable'
-        self.pluginParameters['PluginVersion'] = '4.5.2'
+        self.pluginParameters['PluginVersion'] = '4.5.3'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -196,9 +196,6 @@ class BasePlugin:
         Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
 
         Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
-        if Parameters["Mode6"] != "0":
-            loggingPlugin( self, 'Debug', int(Parameters["Mode6"]))
-            DumpConfigToLog()
 
         self.busy = True
         Domoticz.Status("Python Version - %s" %sys.version)
@@ -245,7 +242,6 @@ class BasePlugin:
             self.domoticzdb_Hardware = DomoticzDB_Hardware( _dbfilename, self.HardwareID  )
             loggingPlugin( self, 'Debug', "   - Preferences table")
             self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
-
 
 
         # Create the adminStatusWidget if needed
@@ -592,8 +588,7 @@ class BasePlugin:
                 if self.pluginconf.pluginConf['blueLedOff']:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
-                if self.pluginconf.pluginConf['TXpower_set'] and self.transport != 'None':
-                    set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
+                set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
                 if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION and self.transport != 'None':
                     Domoticz.Status("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
                     sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
