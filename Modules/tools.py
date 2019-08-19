@@ -195,23 +195,27 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
                         del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
 
         # Finaly let's see if there is any Devices left in this .
-        emptyCT = 1
+        emptyCT = True
         if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
             Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
             if self.ListOfDevices[key]['ClusterType'] != {}:
-                emptyCT = 0
+                emptyCT = False
         for tmpEp in self.ListOfDevices[key]['Ep'] : 
             if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
                 Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
                 if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
-                    emptyCT = 0
+                    emptyCT = False
         
-        if emptyCT == 1 :     
+        if emptyCT :     
             del self.ListOfDevices[key]
             del self.IEEE2NWK[IEEE]
 
             self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
+
+            return True
+        else:
+            return False
 
 
 

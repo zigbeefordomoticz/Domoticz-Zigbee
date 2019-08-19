@@ -636,6 +636,7 @@ def removeZigateDevice( self, IEEE ):
     if self.ZigateIEEE != None:
         Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
         #sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
+        sendZigateCmd(self, "0026", str(IEEE) + str(IEEE) )
     else:
         Domoticz.Error("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
 

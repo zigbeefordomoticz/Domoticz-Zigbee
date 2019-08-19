@@ -355,13 +355,13 @@ class BasePlugin:
         if Devices[Unit].DeviceID in self.IEEE2NWK:
             # Command belongs to a end node
             Domoticz.Status("onDeviceRemoved - removing End Device")
-            removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
+            fullyremoved = removeDeviceInList( self, Devices, Devices[Unit].DeviceID , Unit)
 
             # We should call this only if All Widgets have been remved !
-            #if self.pluginconf.pluginConf['allowRemoveZigateDevice'] == 1:
-            #    IEEE = Devices[Unit].DeviceID
-            #    removeZigateDevice( self, IEEE )
-            #    Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+            if fullyremoved and self.pluginconf.pluginConf['allowRemoveZigateDevice']:
+                IEEE = Devices[Unit].DeviceID
+                removeZigateDevice( self, IEEE )
+                Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
