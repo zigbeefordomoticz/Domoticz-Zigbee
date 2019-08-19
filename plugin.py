@@ -168,6 +168,9 @@ class BasePlugin:
 
         self.PluzzyFirmware = False
         self.pluginVersion = {}
+
+        self.level = 0
+
         return
 
     def onStart(self):
@@ -543,7 +546,6 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
-
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
             sendZigateCmd(self, "0009","")
@@ -591,9 +593,7 @@ class BasePlugin:
                     Domoticz.Status("Switch Blue Led off")
                     sendZigateCmd(self, "0018","00")
 
-                get_TxPower(self)
-
-                set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'] )
+                set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 
                 if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION and self.transport != 'None':
                     Domoticz.Status("Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])

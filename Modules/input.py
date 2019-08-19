@@ -1903,17 +1903,32 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
 
 def Decode8806(self, Devices, MsgData, MsgRSSI) :
 
+    ATTENUATION_dBm = {'JN516x': { 0:0, 52:-9, 40:-20, 32:-32 },
+            'JN516x M05': { 0:9.5, 52:-3, 40:-15, 31:-26}}
+
     loggingInput( self, 'Debug', "Decode8806 - MsgData: %s" %MsgData)
 
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
-    loggingInput( self, 'Log', "Confirming Set TxPower: 0x%s" %TxPower)
+
+    if int(TxPower,16) in ATTENUATION_dBm['JN516x']:
+        self.zigatedata['Tx-Attenuation'] =  ATTENUATION_dBm['JN516x'][int(TxPower,16)]
+        loggingInput( self, 'Status', "TxPower Attenuation : %s dBm" % ATTENUATION_dBm['JN516x'][int(TxPower,16)])
+    else:
+        loggingInput( self, 'Status', "Confirming Set TxPower: %s" %int(TxPower,16))
 
 def Decode8807(self, Devices, MsgData, MsgRSSI):
+
+    ATTENUATION_dBm = {'JN516x': { 0:0, 52:-9, 40:-20, 32:-32 },
+            'JN516x M05': { 0:9.5, 52:-3, 40:-15, 31:-26}}
 
     Domoticz.Debug("Decode8807 - MsgData: %s" %MsgData)
 
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
-    loggingInput( self, 'Log', "Get TxPower : 0x%s" %TxPower)
+    if int(TxPower,16) in ATTENUATION_dBm['JN516x']:
+        self.zigatedata['Tx-Attenuation'] =  ATTENUATION_dBm['JN516x'][int(TxPower,16)]
+        loggingInput( self, 'Status', "Get TxPower Attenuation : %s dBm" % ATTENUATION_dBm['JN516x'][int(TxPower,16)])
+    else:
+        loggingInput( self, 'Status', "Get TxPower : %s" %int(TxPower,16))
 
