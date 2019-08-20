@@ -892,9 +892,9 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode / Orientation
         value = int(MsgClusterData,16)
 
-        x = int(MsgClusterData,16) & 0x000000ff
-        y = (int(MsgClusterData,16) & 0x0000ff00) >> 2
-        z = (int(MsgClusterData,16) & 0x00ff0000) >> 4
+        x =  value & 0x000000ff
+        y = (value & 0x0000ff00) >> 2
+        z = (value & 0x00ff0000) >> 4
 
         x2 = x*x; y2 = y*y; z2 = z*z
         angleX= angleY = angleZ = 0
@@ -906,9 +906,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if x2 + y2 != 0:
             angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
 
-        loggingCluster( self, 'Log', " ReadCluster %s/%s - Vibration angleX: %s angleY: %s angleZ: %s" %(MsgClusterId, MsgAttrID, angleX, angleY, angleZ), MsgSrcAddr)
-
-        state = "00"
+        loggingCluster( self, 'Log', " ReadCluster %s/%s - Vibration %s ==> angleX: %s angleY: %s angleZ: %s" %(MsgClusterId, MsgAttrID, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, 'Orientation', 'angleX: %s, angleY: %s, angleZ: %s' %(angleX, angleY, angleZ) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Orientation'] = 'angleX: %s, angleY: %s, angleZ: %s' %(angleX, angleY, angleZ)
 
