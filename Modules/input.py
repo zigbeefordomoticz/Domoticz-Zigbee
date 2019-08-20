@@ -21,7 +21,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, setTimeServer
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, setTimeServer, livolo_bind
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
@@ -1641,6 +1641,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     if DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
         # Device exist, Reconnection has been done by DeviceExist()
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
+
+        # In case of livolo do the bind
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+            livolo_bind( self, MsgSrcAddr, '06')
 
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':

@@ -20,7 +20,7 @@ import json
 from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
         bindDevice, rebind_Clusters, getListofAttribute, \
-        livolo_OnOff, \
+        livolo_bind, \
         setPowerOn_OnOff, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
@@ -272,14 +272,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # Patch to make Livolo working
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
         if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
-            loggingHeartbeat( self, 'Debug', "Livolo Toggle %s" %NWKID)
-            livolo_OnOff( self, NWKID , '06', 'All', 'toggle')
-            loggingHeartbeat( self, 'Debug', "Livolo On/Off Right %s" %NWKID)
-            livolo_OnOff( self, NWKID , '06', 'Right', 'Off')
-            livolo_OnOff( self, NWKID , '06', 'Left', 'Off')
-            loggingHeartbeat( self, 'Debug', "Livolo On/Off Left %s" %NWKID)
-            livolo_OnOff( self, NWKID , '06', 'Right', 'On')
-            livolo_OnOff( self, NWKID , '06', 'Left', 'On')
+            livolo_bind( self, NWKID, '06')
 
     waitForDomoDeviceCreation = False
     if status == "8043": # We have at least receive 1 EndPoint

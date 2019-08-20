@@ -1353,6 +1353,12 @@ def Thermostat_LockMode( self, key, lockmode):
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
+def livolo_bind( self, nwkid, EPout):
+
+    livolo_OnOff(self, nwkid, EPout, 'All', 'Toggle')
+    livolo_OnOff(self, nwkid, EPout, 'Left', 'On')
+    livolo_OnOff(self, nwkid, EPout, 'Left', 'On')
+    livolo_OnOff(self, nwkid, EPout, 'Left', 'On')
 
 def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     """
@@ -1407,7 +1413,6 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     radius 2
     data length 2
     data Array of 2
-
 
     eSecurityMode is the security mode for the data transfer, one of:
             0x00 : ZPS_E_APL_AF_UNSECURE (no security enabled)

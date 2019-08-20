@@ -500,6 +500,33 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "Strength":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=243, Subtype=31)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == "Orientation":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=243, Subtype=10)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
             if t == "Water":  # detecteur d'eau
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -945,6 +972,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], round(value + adjvalue,1), Bar_forecast)
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
+            if ClusterType == "Orientation" and DeviceType == "Orientation":
+                UpdateDevice_v2(self, Devices, x, 0, str(value), BatteryLevel, SignalLevel)
+
+            if ClusterType == "Strenght" and DeviceType == "Strength":
+                UpdateDevice_v2(self, Devices, x, 0, str(value), BatteryLevel, SignalLevel)
+
             if ClusterType == "Door" and DeviceType == "Door":  # Door / Window
                 value = int(value)
                 if value == 1:
@@ -953,6 +986,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif value == 0:
                     state = "Closed"
                     UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
+
 
             if ClusterType == "Switch":
                 if DeviceType == "Plug":
@@ -1656,6 +1690,11 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
 
     # Propriatory Cluster. Plugin Cluster
     elif cluster == "rmt1": TypeFromCluster = "Ikea_Round_5b"
+
+    # Xiaomi Strenght for Vibration
+    elif cluster == "Strenght": TypeFromCluster = "Strenght"
+    # Xiaomi Orientation for Vibration
+    elif cluster == "Orientation": TypeFromCluster = "Orientation"
 
     return TypeFromCluster
 
