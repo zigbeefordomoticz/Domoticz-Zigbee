@@ -517,7 +517,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                                Unit=unit, Type=243, Subtype=10)
+                                Unit=unit, Type=243, Subtype=19)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :

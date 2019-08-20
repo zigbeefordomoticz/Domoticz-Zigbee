@@ -885,7 +885,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0505":   # Vibration Strenght
         value = int(MsgClusterData, 16)
         strenght = ( value >> 16 ) & 0xffff
-        loggingCluster( self, 'Log', "ReadCluster %s/%s -  Vibration Strenght: %s %s %s" %(MsgClusterId, MsgAttrID, MsgClusterData, value, strenght) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster %s/%s -  Vibration Strenght: %s %s %s" %(MsgClusterId, MsgAttrID, MsgClusterData, value, strenght) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, 'Strenght', str(strenght) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Strenght'] = str(strenght)
 
@@ -906,7 +906,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if x2 + y2 != 0:
             angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
 
-        loggingCluster( self, 'Log', " ReadCluster %s/%s - Vibration %s ==> angleX: %s angleY: %s angleZ: %s" %(MsgClusterId, MsgAttrID, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
+        loggingCluster( self, 'Log', " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" %(MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, 'Orientation', 'angleX: %s, angleY: %s, angleZ: %s' %(angleX, angleY, angleZ) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Orientation'] = 'angleX: %s, angleY: %s, angleZ: %s' %(angleX, angleY, angleZ)
 
