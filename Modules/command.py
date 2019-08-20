@@ -126,6 +126,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             self.ListOfDevices[NWKID]['Health'] = ''
 
     if Command == "Off" :
+        loggingCommand( self, 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
@@ -149,6 +150,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
 
     if Command == "On" :
+        loggingCommand( self, 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if EPout == '06': # Mostlikely a Livolo Device
@@ -162,6 +164,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
+
         if Devices[Unit].SwitchType == 16 :
             UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
         else:
@@ -170,6 +173,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if Command == "Set Level" :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
+        loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
         
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType == 'ThermoSetpoint':
@@ -233,7 +237,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
 
     if Command == "Set Color" :
-        loggingCommand( self, 'Debug', "onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) , NWKID)
+        loggingCommand( self, 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         Hue_List = json.loads(Color)
         
