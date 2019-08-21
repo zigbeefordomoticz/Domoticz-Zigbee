@@ -889,6 +889,8 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
     elif MsgAttrID == "0505":   # Vibration Strenght
+        # The vibration sensor has a function in the mihome app called "vibration curve" 
+        # with which I get a graph where I can see the value of "Strenght" as a function of time
         value = int(MsgClusterData, 16)
         strenght = ( value >> 16 ) & 0xffff
         loggingCluster( self, 'Debug', "ReadCluster %s/%s -  Vibration Strenght: %s %s %s" %(MsgClusterId, MsgAttrID, MsgClusterData, value, strenght) , MsgSrcAddr)
