@@ -1020,7 +1020,7 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
     MsgDataEPlist=MsgData[10:len(MsgData)]
 
-    loggingPairing( self, 'Log', "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
+    loggingPairing( self, 'Debug', "Decode8045 - Reception Active endpoint response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", List " + MsgDataEpCount + ", Ep list " + MsgDataEPlist)
 
     if self.pluginconf.pluginConf['capturePairingInfos']:
         if MsgDataShAddr not in self.DiscoveryDevices:
@@ -1029,9 +1029,11 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
     OutEPlist=""
     
+    # Special Case, where we build the Zigate list of clusters
     if MsgDataShAddr == '0000':
         receiveZigateEpList( self, MsgDataEpCount, MsgDataEPlist)
         return
+
     if DeviceExist(self, Devices, MsgDataShAddr) == False:
         #Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
         Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
