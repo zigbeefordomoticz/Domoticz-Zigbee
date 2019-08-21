@@ -26,7 +26,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f
 
 from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice
@@ -56,6 +56,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
+    '000f' : ( ReadAttributeRequest_000f, 'polling000f' )
     }
 
 # Ordered List - Important for binding
@@ -77,7 +78,8 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0300',            # Colour Control
 #        '0000',            # Basic
         'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-        'ff02'             # Used by Xiaomi devices for battery informations.
+        '000f',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+        'ff02',             # Used by Xiaomi devices for battery informations.
         ]
 
 def processKnownDevices( self, Devices, NWKID ):

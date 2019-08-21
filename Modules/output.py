@@ -161,7 +161,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0008': [ 0x0000, 0x4000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
-            '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011],
+            '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011, 0x0017, 0xfffd],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
             '0400': [ 0x0000],
             '0402': [ 0x0000],
@@ -170,7 +170,8 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0406': [ 0x0000],
             '0500': [ 0x0000, 0x0002],
             '0502': [ 0x0000],
-            '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400]
+            '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400],
+            '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd]   # Legrand Cluster
             }
 
     targetAttribute = None
@@ -538,6 +539,24 @@ def ReadAttributeRequest_0702(self, key):
 
     loggingOutput( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0702", listAttributes)
+
+def ReadAttributeRequest_000f(self, key):
+    # Cluster 0x0702 Metering
+
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_000f - Key: %s " %key, nwkid=key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "000f" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '000f'):
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
+
+    loggingOutput( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    ReadAttributeReq( self, key, EPin, EPout, "000f", listAttributes)
 
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
