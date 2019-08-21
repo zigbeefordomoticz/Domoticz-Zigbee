@@ -662,8 +662,8 @@ class WebServer(object):
         if verb == 'GET':
                 
                 dzenv = {}
-                dzenv['proto'] = self.pluginconf.pluginConf['proto']
-                dzenv['host'] = self.pluginconf.pluginConf['host']
+                #dzenv['proto'] = self.pluginconf.pluginConf['proto']
+                #dzenv['host'] = self.pluginconf.pluginConf['host']
                 dzenv['port'] = self.pluginconf.pluginConf['port']
 
                 dzenv['WebUserName'] = self.WebUsername
