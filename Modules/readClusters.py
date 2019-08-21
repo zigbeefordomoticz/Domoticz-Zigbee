@@ -376,7 +376,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery = voltage2batteryP( voltage, 3150, 2750)
-            loggingCluster( self, 'Log', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage), MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
             self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
 
