@@ -293,19 +293,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "SwitchIKEA":
-                self.ListOfDevices[NWKID]['Status'] = "inDB"
-                unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                                Unit=unit, Type=244, Subtype=73, Switchtype=0)
-                myDev.Create()
-                ID = myDev.ID
-                if myDev.ID == -1 :
-                    self.ListOfDevices[NWKID]['Status'] = "failDB"
-                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
-                else:
-                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
-
 
             if t == "SwitchAQ2":  # interrupteur multi lvl lumi.sensor_switch.aq2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -711,11 +698,14 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == 'Ikea_Round_OnOff': # Ikea On/off Remote
+            if t == "SwitchIKEA":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "||||", "LevelNames": "Off|On|Push Up|Push Down|Release", \
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                          Unit=unit, Type=244, Subtype=73, Switchtype=0)
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -1068,12 +1058,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "SwitchIKEA":  # On/Off switch
-                    state = ''
-                    if value == "01":
-                        state = "On"
-                    elif value == "00":
-                        state = "Off"
-                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+                    nvalue = int(value)
+                    svalue = '%02s' %( nvalue * 10 )
+                    UpdateDevice_v2(self, Devices, x, nvalue, svalue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)

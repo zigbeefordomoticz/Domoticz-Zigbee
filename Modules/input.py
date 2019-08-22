@@ -643,7 +643,7 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Log', "Decode8030 - Msgdata: %s" %(MsgData))
+    loggingInput( self, 'Debug', "Decode8030 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -655,13 +655,9 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
             MsgSrcAddr=MsgData[8:12]
             nwkid = MsgSrcAddr
-            if MsgLen >= 12:
-                MsgSrcClusterId = MsgData[12:16]
             loggingInput( self, 'Debug', "Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
         elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
             MsgSrcAddr=MsgData[8:24]
-            if MsgLen >= 28:
-                MsgSrcClusterId = MsgData[24:28]
             loggingInput( self, 'Debug', "Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
             if MsgSrcAddr in self.IEEE2NWK:
                 nwkid = self.IEEE2NWK[MsgSrcAddr]
@@ -670,7 +666,6 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
             return
 
-        Domoticz.Log(" --> bind response Nwkid: %s ClusterId: %s" %(MsgSrcAddr, MsgSrcClusterId))
         if nwkid in self.ListOfDevices:
             if 'Bind' in self.ListOfDevices[nwkid]:
                 for cluster in self.ListOfDevices[nwkid]['Bind']:
@@ -1743,12 +1738,27 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                 selector = TYPE_ACTIONS[MsgCmd]
                 loggingInput( self, 'Debug', "Decode8085 - Selector: %s" %selector, MsgSrcAddr)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['rmt1'] = selector
             else:
                 Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                         %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
         else:
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    elif  self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI on/off switch':
+        """
+        Ikea Switch On/Off
+        """
+        if  MsgClusterId == '0008' and MsgCmd == '05': #Push Up
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '02' )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = '02'
+        elif MsgClusterId == '0008' and MsgCmd == '01': # Push Down
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '03' )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = '03'
+        elif MsgClusterId == '0008' and MsgCmd == '07': # Release Up & Down
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '04' )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = '04'
+
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
         if MsgClusterId != '0008':
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
@@ -1781,6 +1791,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         Domoticz.Log("Decode8085 - INNR RC 110 selector: %s" %selector)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = selector
 
     else:
        Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
@@ -1816,6 +1827,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         """
         if MsgClusterId == '0006' and MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['rmt1'] = 'toogle'
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
 
@@ -1825,8 +1837,16 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         """
         if MsgClusterId == '0006' and MsgCmd == '42':   # Motion Sensor On
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0406", '01')
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0406'] = '01'
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+    elif  self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI on/off switch':
+        """
+        Ikea Switch On/Off
+        """
+        MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = MsgCmd
+
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
         
         ONOFF_TYPE = { '40': 'onoff_with_effect',
@@ -1840,9 +1860,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
        
         if ONOFF_TYPE[MsgCmd] in ( 'on', 'off' ):
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = MsgCmd
 
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = MsgCmd
         loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
 
@@ -1891,6 +1913,7 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
         elif MsgCmd in TYPE_ACTIONS and MsgDirection in TYPE_DIRECTIONS:
             selector = TYPE_DIRECTIONS[MsgDirection] + '_' + TYPE_ACTIONS[MsgCmd]
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['rmt1'] = selector
             loggingInput( self, 'Debug', "Decode80A7 - selector: %s" %selector, MsgSrcAddr)
 
             if self.groupmgt:
