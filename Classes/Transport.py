@@ -401,8 +401,13 @@ class ZigateTransport(object):
                     self.F_out(frame)  # Forward the message to plugin for further processing
                 else:
                     self.lock = True
-                    Status=MsgData[2:4]
-                    NwkStatus=MsgData[0:2]
+                    NwkStatus = MsgData[0:2]
+                    Status = MsgData[2:4]
+                    MsgSrc = ''
+                    # https://github.com/fairecasoimeme/ZiGate/pull/231/commits/9a206779050fbce3bd464cad9bd65affb91d1720
+                    if len(MsgData) == 8:
+                        MsgSrc = MsgData[4:8]
+                        self.loggingReceive('Log',"             - New Route Discovery for %s" %(MsgSrc))
     
                     if len(self._waitForRouteDiscoveryConfirm) > 0:
                         # We have some pending Command for re-submition

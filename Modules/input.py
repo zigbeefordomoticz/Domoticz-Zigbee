@@ -423,17 +423,6 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
 
     initLODZigate( self, addr, extaddr )
 
-    #self.IEEE2NWK[extaddr] = addr
-    #self.ListOfDevices[addr] = {}
-    #self.ListOfDevices[addr]['version'] = '3'
-    #self.ListOfDevices[addr]['IEEE'] = extaddr
-    #self.ListOfDevices[addr]['Ep'] = {}
-    #self.ListOfDevices[addr]['Ep']['01'] = {}
-    #self.ListOfDevices[addr]['Ep']['01']['0004'] = {}
-    #self.ListOfDevices[addr]['Ep']['01']['0006'] = {}
-    #self.ListOfDevices[addr]['Ep']['01']['0008'] = {}
-    #self.ListOfDevices[addr]['PowerSource'] = 'Main'
-
     if self.currentChannel != int(Channel,16):
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
     self.currentChannel = int(Channel,16)
@@ -582,20 +571,21 @@ def Decode8015(self, Devices, MsgData, MsgRSSI) : # Get device list ( following 
     return
 
 def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
+
     MsgLen=len(MsgData)
     MsgDataStatus=MsgData[0:2]
 
-    if MsgDataStatus != '00':
-        if MsgDataStatus == "00": 
-            Domoticz.Status("Joined existing network")
-        elif MsgDataStatus == "01": 
-            Domoticz.Status("Formed new network")
-        elif MsgDataStatus == "04":
-            Domoticz.Status("Busy Node")
-        else: 
-            Status = DisplayStatusCode( MsgDataStatus )
-            Domoticz.Log("Network joined / formed Status: %s: %s" %(MsgDataStatus, Status) )
-        return
+    if MsgDataStatus == '00':
+         Domoticz.Status("Start Network - Success")
+    elif MsgDataStatus == '02':
+        Domoticz.Status("Start Network: Error invalid parameter.")
+    elif MsgDataStatus == '04':
+        Domoticz.Status("Start Network: Node is on network. ZiGate is already in network so network is already format")
+    elif MsgDataStatus == '06':
+        Domoticz.Status("Start Network: Commissioning in progress. If network forming is already in progress")
+    else: 
+        Status = DisplayStatusCode( MsgDataStatus )
+        Domoticz.Log("Start Network: Network joined / formed Status: %s" %(MsgDataStatus))
     
     if MsgLen != 24:
         loggingInput( self, 'Debug', "Decode8024 - uncomplete frame, MsgData: %s, Len: %s out of 24, data received: >%s<" %(MsgData, MsgLen, Data) )
@@ -653,7 +643,7 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8030 - Msgdata: %s" %(MsgData))
+    loggingInput( self, 'Log', "Decode8030 - Msgdata: %s" %(MsgData))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -665,9 +655,13 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
             MsgSrcAddr=MsgData[8:12]
             nwkid = MsgSrcAddr
+            if MsgLen >= 12:
+                MsgSrcClusterId = MsgData[12:16]
             loggingInput( self, 'Debug', "Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
         elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
             MsgSrcAddr=MsgData[8:24]
+            if MsgLen >= 28:
+                MsgSrcClusterId = MsgData[24:28]
             loggingInput( self, 'Debug', "Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
             if MsgSrcAddr in self.IEEE2NWK:
                 nwkid = self.IEEE2NWK[MsgSrcAddr]
@@ -676,6 +670,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
             return
 
+        Domoticz.Log(" --> bind response Nwkid: %s ClusterId: %s" %(MsgSrcAddr, MsgSrcClusterId))
         if nwkid in self.ListOfDevices:
             if 'Bind' in self.ListOfDevices[nwkid]:
                 for cluster in self.ListOfDevices[nwkid]['Bind']:
@@ -1508,19 +1503,21 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
     MsgLen=len(MsgData)
     loggingInput( self, 'Debug', "Decode8701 - MsgLen = " + str(MsgLen))
 
-    if MsgLen==0 :
-        return
-    else:
+    if MsgLen >= 4:
         # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
-        Status=MsgData[2:4]
-        NwkStatus=MsgData[0:2]
+        NwkStatus = MsgData[0:2]
+        Status = MsgData[2:4]
+        MsgSrcAddr = ''
+    if MsgLen >= 8:
+        MsgSrcAddr = MsgData[4:8]
     
-    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
-            %( Status, NwkStatus))
 
     if NwkStatus != "00" :
-        loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed, status: %s - %s Nwk Status: %s - %s " \
-                %( Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
+        loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed for %s, status: %s - %s Nwk Status: %s - %s " \
+                %( MsgSrcAddr, Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
+
+    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s, status: %s Nwk Status: %s " \
+            %( MsgSrcAddr, Status, NwkStatus))
 
     return
 
