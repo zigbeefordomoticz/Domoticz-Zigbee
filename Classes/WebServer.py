@@ -749,9 +749,16 @@ class WebServer(object):
                             elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
                                 _father = item
                                 _child  = x
-                            else:
-                                _father = item
-                                _child  = x
+                            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
+                                # Not a Parent, not a Child, not a Sibbling
+                                #_father = item
+                                #_child  = x
+                                continue
+                            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'None':
+                                # Not a Parent, not a Child, not a Sibbling
+                                #_father = item
+                                #_child  = x
+                                continue
                         
                             _relation = {}
                             _relation['Father'] = _father
