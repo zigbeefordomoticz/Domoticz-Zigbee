@@ -35,14 +35,15 @@ ADDRESS_MODE = { 'bound':0x00,
         }
 
 PROFILE_ID = {
-        0xc05e : 'ZLL', # ZigBee Light Link
-        0xc2df : '???', # Seen on Centrallite micro door
         0x104  : 'ZHA', # ZigBee Home Automation
         0x105  : 'ZBA', # ZigBee Building Automation
         0x107  : 'ZTS', # ZigBee Telecom Services
         0x108  : 'ZHC', # ZigBee Health Care
         0x109  : 'ZSE', # ZigBee Smart Energy
         0x10A  : 'ZRS'  # ZigBee Retail Services
+        # Propriatory profile
+        0xc05e : 'ZLL', # ZigBee Light Link
+        0xc2df : '???', # Seen on Centrallite micro door
         }
 
 # Used maninly for Attributes Read/Write
@@ -134,8 +135,20 @@ ZHA_DEVICES = {
         0x010C: 'White Color Temperature Light',
         0x010D: 'Extended Color Light',
 
+
+        # Closures
+        0x0200: 'Shade',
+        0x0201: 'Shade Controller',
+        0x0202: 'Window Covering Device',
+        0x0203: 'Window Covering Controller',
+
         # HVAC Devices
+        0x0300: 'Heating/Cooling Unit',
         0x0301: 'Thermostat',
+        0x0302: 'Temperature Sensor',
+        0x0304: 'Pump',
+        0x0305: 'Pressure Sensor',
+        0x0306: 'Flow Sensor',
 
         # Intruder Alam System (IAS) Devices
         0x0400: 'IAS Control and Indicating Equipment',
