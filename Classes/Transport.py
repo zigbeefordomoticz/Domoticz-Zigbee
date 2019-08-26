@@ -425,6 +425,8 @@ class ZigateTransport(object):
                         del self._waitForRouteDiscoveryConfirm 
                         self._waitForRouteDiscoveryConfirm = []
                 self.lock = False
+            else:
+                self.F_out(frame)  # Forward the message to plugin for further processing
 
         elif MsgType == "8702": # APS Failure
             if self._process8702( frame ):
