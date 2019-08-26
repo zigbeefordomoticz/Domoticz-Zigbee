@@ -577,12 +577,16 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
 
     if MsgDataStatus == '00':
          Domoticz.Status("Start Network - Success")
+         Status = 'Success'
     elif MsgDataStatus == '02':
         Domoticz.Status("Start Network: Error invalid parameter.")
+        Status = 'Start Network: Error invalid parameter.'
     elif MsgDataStatus == '04':
         Domoticz.Status("Start Network: Node is on network. ZiGate is already in network so network is already format")
+        Status = 'Start Network: Node is on network. ZiGate is already in network so network is already format'
     elif MsgDataStatus == '06':
         Domoticz.Status("Start Network: Commissioning in progress. If network forming is already in progress")
+        Status = 'Start Network: Commissioning in progress. If network forming is already in progress'
     else: 
         Status = DisplayStatusCode( MsgDataStatus )
         Domoticz.Log("Start Network: Network joined / formed Status: %s" %(MsgDataStatus))
@@ -1495,24 +1499,28 @@ def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
 
 #Router Discover
 def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Confirm Status
-    MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8701 - MsgLen = " + str(MsgLen))
+
+    MsgLen = len(MsgData)
+    loggingInput( self, 'Log', "Decode8701 - MsgData: %s MsgLen: %s" %(MsgData, MsgLen))
 
     if MsgLen >= 4:
         # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
         NwkStatus = MsgData[0:2]
         Status = MsgData[2:4]
         MsgSrcAddr = ''
+        MsgSrcIEEE = ''
     if MsgLen >= 8:
         MsgSrcAddr = MsgData[4:8]
-    
+        if MsgSrcAddr in self.ListOfDevices:
+            MsgSrcIEEE = self.ListOfDevices[ MsgSrcAddr ][ 'IEEE' ]
 
+    
     if NwkStatus != "00" :
         loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed for %s, status: %s - %s Nwk Status: %s - %s " \
                 %( MsgSrcAddr, Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
 
-    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s, status: %s Nwk Status: %s " \
-            %( MsgSrcAddr, Status, NwkStatus))
+    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s %s, status: %s Nwk Status: %s " \
+            %( MsgSrcAddr, MsgSrcIEEE, Status, NwkStatus))
 
     return
 
