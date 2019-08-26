@@ -66,7 +66,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     ClusterSearch = ''
     DeviceType = ''
+    forceUpdateDev = False
     for tmpDeviceType in DeviceTypeList :
+        if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton'):
+            forceUpdateDev = True
+
         if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
@@ -94,6 +98,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             loggingCommand( self, 'Debug', "mgtCommand - forcePassiveWidget")
             ClusterSearch="0006"
             DeviceType = "Switch"
+
+
 
     if DeviceType == '':
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
@@ -145,9 +151,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             self.iaszonemgt.alarm_off( NWKID, EPout)
 
         if Devices[Unit].SwitchType == 16 :
-            UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
         else :
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
     if Command == "On" :
         loggingCommand( self, 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
@@ -166,9 +172,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
 
         if Devices[Unit].SwitchType == 16 :
-            UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
         else:
-            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
     if Command == "Set Level" :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
