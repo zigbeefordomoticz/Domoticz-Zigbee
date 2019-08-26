@@ -162,10 +162,6 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
 
-    if MsgAttType == '25' or MsgAttType == '2a':
-        loggingCluster( self, 'Log', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
-            %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr)
-
     loggingCluster( self, 'Debug', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr)
 
@@ -862,8 +858,8 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif value == "0003": return '30' #Drop
         return '00'
 
-    loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s" \
-            %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+    loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" \
+            %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)), MsgSrcAddr)
 
     if MsgAttrID == "0000":          # Lockstate
         loggingCluster( self, 'Debug', "ReadCluster 0101 - Dev: Lock state " +str(MsgClusterData) , MsgSrcAddr)
@@ -881,7 +877,7 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = state
 
     elif MsgAttrID == "0503":   # Bed activties: Tilt angle
-        loggingCluster( self, 'Log', "ReadCluster %s/%s -  Vibration Angle: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster %s/%s -  Vibration Angle: %s" %(MsgClusterId, MsgAttrID, MsgClusterData) , MsgSrcAddr)
 
         if MsgClusterData == "0054": # Following Tilt
             state = "10"
@@ -898,26 +894,26 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Strenght'] = str(strenght)
 
     elif MsgAttrID == "0508":   # Aqara Vibration / Liberation Mode / Orientation
-        value = int(MsgClusterData,16)
 
-        x =  value & 0x000000ff
-        y = (value & 0x0000ff00) >> 2
-        z = (value & 0x00ff0000) >> 4
+        if len(MsgClusterData) != 12:
+            # https://github.com/fairecasoimeme/ZiGate/issues/229
+            Domoticz.Log("Needs Firmware 3.1b to decode this data")
+
+        value = int(MsgClusterData,16)
+        x =  value & 0xffff
+        y = (value >> 16) & 0xffff
+        z = (value >> 32) & 0xfff
 
         x2 = x*x; y2 = y*y; z2 = z*z
         angleX= angleY = angleZ = 0
-        Domoticz.Log(" X2: %s Y2: %s Z2: %s" %(x2, y2, z2))
-        if z2 + y2 !=0:
-            angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
-        if x2 + z2 != 0:
-            angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
-        if x2 + y2 != 0:
-            angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
+        if z2 + y2 != 0: angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
+        if x2 + z2 != 0: angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
+        if x2 + y2 != 0: angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
 
-        loggingCluster( self, 'Log', " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" %(MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" \
+                %(MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, 'Orientation', 'angleX: %s, angleY: %s, angleZ: %s' %(angleX, angleY, angleZ) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Orientation'] = 'angleX: %s, angleY: %s, angleZ: %s' %(angleX, angleY, angleZ)
-
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
         
