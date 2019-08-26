@@ -36,6 +36,7 @@ ADDRESS_MODE = { 'bound':0x00,
 
 PROFILE_ID = {
         0xc05e : 'ZLL', # ZigBee Light Link
+        0xc2df : '???', # Seen on Centrallite micro door
         0x104  : 'ZHA', # ZigBee Home Automation
         0x105  : 'ZBA', # ZigBee Building Automation
         0x107  : 'ZTS', # ZigBee Telecom Services
