@@ -75,7 +75,7 @@ import sys
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList, loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
@@ -360,7 +360,8 @@ class BasePlugin:
             # We should call this only if All Widgets have been remved !
             if fullyremoved and self.pluginconf.pluginConf['allowRemoveZigateDevice']:
                 IEEE = Devices[Unit].DeviceID
-                removeZigateDevice( self, IEEE )
+                #removeZigateDevice( self, IEEE )
+                leaveRequest( self, IEEE= IEEE )
                 Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
