@@ -520,7 +520,11 @@ def processListOfDevices( self , Devices ):
             continue
             
         status = self.ListOfDevices[NWKID]['Status']
-        RIA = int(self.ListOfDevices[NWKID]['RIA'])
+        if self.ListOfDevices[NWKID]['RIA'] != '' and self.ListOfDevices[NWKID]['RIA'] != {}:
+            RIA = int(self.ListOfDevices[NWKID]['RIA'])
+        else:
+            RIA = 0
+            self.ListOfDevices[NWKID]['RIA'] = '0'
         self.ListOfDevices[NWKID]['Heartbeat']=str(int(self.ListOfDevices[NWKID]['Heartbeat'])+1)
 
         if status == "failDB":
