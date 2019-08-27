@@ -1175,7 +1175,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         Domoticz.Status("Request a rejoin of (%s/%s)" %(saddr, ieee))
         sendZigateCmd(self, "0047", datas )
 
-def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=False, Rejoin=True ):
+def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=False, Rejoin=False ):
 
     """
     E_SL_MSG_LEAVE_REQUEST / 0x004C / ZPS_eAplZdoLeaveNetwork
