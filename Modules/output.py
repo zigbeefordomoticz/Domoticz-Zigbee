@@ -1185,13 +1185,15 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=False, Rejoin=Fa
     """
 
     _ieee = None
-    if IEEE:
-        if IEEE in self.IEEE2NWK:
-            _ieee = IEEE
-    if ShortAddr and IEEE is None:
-        if ShortAddr in self.ListOfDevices:
-            if 'IEEE' in self.ListOfDevices[ShortAddr]:
-                _ieee = self.ListOfDevices[ShortAddr]['IEEE']
+
+    if IEEE is None:
+        if ShortAddr and IEEE is None:
+            if ShortAddr in self.ListOfDevices:
+                if 'IEEE' in self.ListOfDevices[ShortAddr]:
+                    _ieee = self.ListOfDevices[ShortAddr]['IEEE']
+    else:
+        _ieee = IEEE
+
     if _ieee is None:
         Domoticz.Error("leaveRequest - Unable to determine IEEE address for %s %s" %(ShortAddr, IEEE))
         return
