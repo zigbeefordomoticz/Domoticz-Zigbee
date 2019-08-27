@@ -125,9 +125,9 @@ class WebServer(object):
         self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
 
         self.httpsPort = '9443'
-        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
-        #self.httpsServerConn.Listen()
-        #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
+        self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
+        self.httpsServerConn.Listen()
+        self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
 
 
     def onConnect(self, Connection, Status, Description):
