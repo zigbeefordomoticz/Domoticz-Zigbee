@@ -541,10 +541,25 @@ def CreateDomoDevice(self, Devices, NWKID):
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "WindowCovering":
+                # Subtype = 
+                #   13 Blind percentage
+                #   16 Blind Percentage Inverted
+                #   14 Venetian Blinds US
+                #   15 Venetian Blind EU
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['DeviceID'] == '0200':
+                    # Shade
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                        Unit=unit, Type=244, Subtype=73, Switchtype=15)
+                elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['DeviceID'] == '0202':
+                    # Window covering
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                         Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                else:
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
+
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -552,6 +567,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
 
             if t == "LvlControl" and self.ListOfDevices[NWKID]['Model'] != '':  
                 # Well Identified Model
@@ -569,36 +585,29 @@ def CreateDomoDevice(self, Devices, NWKID):
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "LvlControl" and (self.ListOfDevices[NWKID]['Model'] == '' or self.ListOfDevices[NWKID]['Model'] == {}):
-                # Could be a Shutter 
-                if 'Manufacturer' in  self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Manufacturer'] == "1110":
-                        # Volet Roulant / Shutter / Blinds, let's created blindspercentageinverted devic
-                        # 'ProfileID': '0104', 'ZDeviceID': '0200', 'Manufacturer': '1110'
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
 
-                        self.ListOfDevices[NWKID]['Status'] = "inDB"
-                        unit = FreeUnit(self, Devices)
-                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                                Unit=unit, Type=244, Subtype=73, Switchtype=16)
-                        myDev.Create()
-                        ID = myDev.ID
-                        if myDev.ID == -1 :
-                            self.ListOfDevices[NWKID]['Status'] = "failDB"
-                            Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
-                        else:
-                            self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
-                    else:
-                        # variateur de luminosite + On/off
-                        self.ListOfDevices[NWKID]['Status'] = "inDB"
-                        unit = FreeUnit(self, Devices)
-                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                                    Unit=unit, Type=244, Subtype=73, Switchtype=7)
-                        myDev.Create()
-                        ID = myDev.ID
-                        if myDev.ID == -1 :
-                            self.ListOfDevices[NWKID]['Status'] = "failDB"
-                            Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
-                        else:
-                            self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['DeviceID'] == '0200':
+                    # Shade
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                        Unit=unit, Type=244, Subtype=73, Switchtype=15)
+                elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['DeviceID'] == '0202':
+                    # Window covering
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                else:
+                    # variateur de luminosite + On/off
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                        Unit=unit, Type=244, Subtype=73, Switchtype=7)
+
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 
                       'ColorControlFull', 'ColorControl'):  # variateur de couleur/luminosite/on-off
