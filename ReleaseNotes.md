@@ -13,6 +13,8 @@
 - [Technical] - New way to restart plugin.
 - [Hardware] - BITRON Home devices ( Door sensor )
 - [Hardware] - Centralite Door Sensor
+- [Hardware] - Zemismart Blind and Shade. New way of handling widget creation (used ProfileID/DeviceID)
+- [Technical] - Using command 0x47 to remove device
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
