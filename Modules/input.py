@@ -428,7 +428,8 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
     self.currentChannel = int(Channel,16)
 
-    self.iaszonemgt.setZigateIEEE( extaddr )
+    if self.iaszonemgt:
+        self.iaszonemgt.setZigateIEEE( extaddr )
 
     if self.ZigateNWKID != '0000':
         Domoticz.Error("Zigate not correctly initialized")

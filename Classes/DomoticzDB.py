@@ -154,10 +154,10 @@ class DomoticzDB_Hardware:
         if not os.path.isfile( database ) :
             return
 
-    def _openDB( self, database):
+    def _openDB( self):
 
-        Domoticz.Debug("Opening %s" %database)
-        self.dbConn = sqlite3.connect(database)
+        Domoticz.Debug("Opening %s" %self.database)
+        self.dbConn = sqlite3.connect(self.database)
         self.dbCursor = self.dbConn.cursor()
 
     def closeDB( self ):

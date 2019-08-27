@@ -1,5 +1,9 @@
 # Release Notes 
 
+## 27 August 2019 - 4.5.4
+- [Issue] - Error in _openDB for disableErasePDM method
+- [Issue] - Error in Decode8009, calling iaszonemgt when not initialized
+
 ## 19 August 2019 - 4.5.3
 - [Technical] - Force TxPower to 0dBM attenuation
 
