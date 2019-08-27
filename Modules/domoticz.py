@@ -969,14 +969,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if ClusterType == "Strenght" and DeviceType == "Strength":
                 UpdateDevice_v2(self, Devices, x, 0, str(value), BatteryLevel, SignalLevel)
 
-            if ClusterType == "Door" and DeviceType == "Door":  # Door / Window
-                value = int(value)
-                if value == 1:
-                    state = "Open"
-                    UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
-                elif value == 0:
-                    state = "Closed"
-                    UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
+            if ClusterType == "Door":
+                if DeviceType == "Door":  # Door / Window
+                    value = int(value)
+                    if value == 1:
+                        state = "Open"
+                        UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
+                    elif value == 0:
+                        state = "Closed"
+                        UpdateDevice_v2(self, Devices, x, value, str(state), BatteryLevel, SignalLevel)
+
+                elif DeviceType == "Smoke":  # detecteur de fume
+                    state = ''
+                    if value == "01":
+                        state = "On"
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    elif value == "00":
+                        state = "Off"
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
 
             if ClusterType == "Switch":
@@ -1027,6 +1037,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "00":
                         state = "Off"
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+
                 elif DeviceType == "Smoke":  # detecteur de fume
                     state = ''
                     if value == "01":
@@ -1035,6 +1046,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "00":
                         state = "Off"
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+
                 elif DeviceType == "LivoloSWL":
                     Domoticz.Log("Livolo Left - Value: %s" %value)
                     value = int(value)
