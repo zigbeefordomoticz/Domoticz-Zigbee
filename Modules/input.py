@@ -43,7 +43,7 @@ def ZigateRead(self, Devices, Data):
         '004d': Decode004D,
         '8000': Decode8000_v2, '8001': Decode8001, '8002': Decode8002, '8003': Decode8003, '8004': Decode8004,
         '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
-        '8009': Decode8009, '8010': Decode8010, '8011': Decode8011,
+        '8009': Decode8009, '8010': Decode8010, '8011': Decode8011, '8012': Decode8012,
         '8014': Decode8014, '8015': Decode8015,
         '8017': Decode8017,
         '8024': Decode8024,
@@ -201,11 +201,11 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         value = MsgZoneStatus[2:4]
 
         if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE14010402000D': #Konke Motion Sensor
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", alarm1 )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", '%02s' %alarm1 )
         elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_magnet', 'lumi.sensor_magnet.aq2' ): # Xiaomi Door sensor
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", alarm1 )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", '%02s' %alarm1 )
         else:
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, alarm1 )
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, MsgClusterId, '%02s' %alarm1 )
 
         if battdef or battery:
             self.ListOfDevices[MsgSrcAddr]['Battery'] = '1'
@@ -484,7 +484,7 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     """
 
     loggingInput( self, 'Debug', "Decode8011 - APS ACK: %s" %MsgData)
-
+    """
     MsgStatus = MsgData[0:2]
     MsgSQN = MsgData[2:4]
     MsgSrcEp = MsgData[4:6]
@@ -497,6 +497,20 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
 
     loggingInput( self, 'Log', "Decode8011 - Status: %s, SQN: %s, Src: %s, SrcEp: %s, DstEp: %s, ProfileId: %s, Cluster: %s" \
             %(MsgStatus, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgProfileID, MsgClusterId))
+    """
+    MsgSrcAddr = MsgData[0:4]
+    MsgSrcEp = MsgData[4:6]
+    MsgClusterId = MsgData[6:10]
+    loggingInput( self, 'Log', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
+
+def Decode8012( self, Devices, MsgData, MsgRSSI ):
+
+    MsgSrcAddr = MsgData[0:4]
+    MsgSrcEp = MsgData[4:6]
+    MsgClusterId = MsgData[6:10]
+    loggingInput( self, 'Log', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
 
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
