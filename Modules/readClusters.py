@@ -97,7 +97,9 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
                 decode = ''
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
-                loggingCluster( self, 'Debug', "decodeAttribute - seems errors, returning with errors ignore")
+                decode = decode.strip('\x00')
+                decode = decode.strip()
+                loggingCluster( self, 'Debug', "decodeAttribute - seems errors, returning with errors ignore From: %s to >%s<" %( Attribute, decode))
 
         # Cleaning
         decode = decode.strip('\x00')
@@ -231,7 +233,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004": # Manufacturer
-        _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData))
+        _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData,  handleErrors=True))
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Manufacturer: " + _manufcode, MsgSrcAddr)
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode
