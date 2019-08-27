@@ -923,6 +923,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     if cluster not in self.ListOfDevices[nwkid]['Bind']:
         self.ListOfDevices[nwkid]['Bind'][cluster] = {}
+
         self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
         self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = ''
@@ -969,12 +970,12 @@ def rebind_Clusters( self, NWKID):
             'ff02'  # Used by Xiaomi devices for battery informations.
             ]
 
+    if 'Bind' in self.ListOfDevices[NWKID]:
+        del self.ListOfDevices[NWKID]['Bind']
     for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 loggingOutput( self, 'Debug', 'Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
-                if 'Bind' in self.ListOfDevices[NWKID]:
-                    del self.ListOfDevices[NWKID]['Bind']
                 if self.pluginconf.pluginConf['doUnbindBind']:
                     unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
@@ -1123,7 +1124,21 @@ def setExtendedPANID(self, extPANID):
     sendZigateCmd(self, "0020", datas )
 
 def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
-    ' in case of receiving a leave, and that is not related to an explicit remove '
+    """
+    E_SL_MSG_MANAGEMENT_LEAVE_REQUEST / 0x47 
+
+
+    This function requests a remote node to leave the network. The request also
+    indicates whether the children of the leaving node should also be requested to leave
+    and whether the leaving node(s) should subsequently attempt to rejoin the network.
+
+    This function is provided in the ZDP API for the reason
+    of interoperability with nodes running non-NXP ZigBee PRO
+    stacks that support the generated request. On receiving a
+    request from this function, the NXP ZigBee PRO stack will
+    return the status ZPS_ZDP_NOT_SUPPORTED.
+
+    """
 
     Domoticz.Log("leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
     if self.pluginconf.pluginConf['allowAutoPairing'] and rejoin:
@@ -1160,6 +1175,90 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         Domoticz.Status("Request a rejoin of (%s/%s)" %(saddr, ieee))
         sendZigateCmd(self, "0047", datas )
 
+def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=False, Rejoin=True ):
+
+    """
+    E_SL_MSG_LEAVE_REQUEST / 0x004C / ZPS_eAplZdoLeaveNetwork
+    If you wish to move a whole network branch from under
+    the requesting node to a different parent node, set
+    bRemoveChildren to FALSE and bRejoin to TRUE.
+    """
+
+    _ieee = None
+    if IEEE:
+        if IEEE in self.IEEE2NWK:
+            _ieee = IEEE
+    if ShortAddr and IEEE is None:
+        if ShortAddr in self.ListOfDevices:
+            if 'IEEE' in self.ListOfDevices[ShortAddr]:
+                _ieee = self.ListOfDevices[ShortAddr]['IEEE']
+    if _ieee is None:
+        Domoticz.Error("leaveRequest - Unable to determine IEEE address for %s %s" %(ShortAddr, IEEE))
+        return
+
+    _rmv_children = '%02X' %RemoveChild
+    _rejoin = '%02X' %Rejoin
+
+    datas = _ieee + _rmv_children + _rejoin
+    Domoticz.Status("leaveRequest - %s %s" %( '0047', datas))
+    sendZigateCmd(self, "0047", datas )
+
+def removeZigateDevice( self, IEEE ):
+    """
+    E_SL_MSG_NETWORK_REMOVE_DEVICE / 0x0026 / ZPS_teStatus ZPS_eAplZdoRemoveDeviceReq
+
+    This function can be used (normally by the Co-ordinator/Trust Centre) to request
+    another node (such as a Router) to remove one of its children from the network (for
+    example, if the child node does not satisfy security requirements).
+
+    The Router receiving this request will ignore the request unless it has originated from
+    the Trust Centre or is a request to remove itself. If the request was sent without APS
+    layer encryption, the device will ignore the request. If APS layer security is not in use,
+    the alternative function ZPS_eAplZdoLeaveNetwork() should be used.
+
+
+    u64ParentAddr 64-bit IEEE/MAC address of parent to be instructed
+    u64ChildAddr 64-bit IEEE/MAC address of child node to be removed
+    """
+
+    nwkid = None
+    if IEEE in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[ IEEE ]
+
+    if nwkid is None:
+        Domoticz.Error("removeZigateDevice - Unable to find device for %s" %IEEE)
+        return
+
+    # Do we have to remove a Router or End Device ?
+    router = False
+    if 'LogicalType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
+            router = True
+    if 'DeviceType' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
+            router = True
+    if 'MacCapa' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
+            router = True
+    if 'PowerSource' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
+            router = True
+
+        Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
+
+    if router:
+        ParentAddr = IEEE
+        ChildAddr = IEEE
+    else:
+        if self.ZigateIEEE is None:
+            Domoticz.Error("Zigae IEEE unknown: %s" %self.ZigateIEEE)
+            return
+        ParentAddr = self.ZigateIEEE
+        ChildAddr = IEEE
+
+    sendZigateCmd(self, "0026", ParentAddr + ChildAddr )
+
+    return
 
 
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
