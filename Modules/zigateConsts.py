@@ -40,7 +40,7 @@ PROFILE_ID = {
         0x107  : 'ZTS', # ZigBee Telecom Services
         0x108  : 'ZHC', # ZigBee Health Care
         0x109  : 'ZSE', # ZigBee Smart Energy
-        0x10A  : 'ZRS'  # ZigBee Retail Services
+        0x10A  : 'ZRS', # ZigBee Retail Services
         # Propriatory profile
         0xc05e : 'ZLL', # ZigBee Light Link
         0xc2df : '???', # Seen on Centrallite micro door
