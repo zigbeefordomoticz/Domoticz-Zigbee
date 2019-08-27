@@ -131,6 +131,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             self.ListOfDevices[NWKID]['Health'] = ''
 
+    if Command == 'Stop':
+        loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        if DeviceType == "WindowCovering":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
+
     if Command == "Off" :
         loggingCommand( self, 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
