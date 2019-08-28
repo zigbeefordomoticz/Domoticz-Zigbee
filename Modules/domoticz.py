@@ -548,14 +548,17 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Shade
                 #   14 Venetian Blinds US
                 #   15 Venetian Blind EU
+                loggingWidget( self, "Debug", "Create Widget WindowCovering" , NWKID)
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
+                    loggingWidget( self, "Debug", "---> Blind based on ZDeviceID" , NWKID)
                     # Window covering
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                         Unit=unit, Type=244, Subtype=73, Switchtype=13)
                 elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                     # Shade
+                    loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                         Unit=unit, Type=244, Subtype=73, Switchtype=15)
                 else:
@@ -571,10 +574,12 @@ def CreateDomoDevice(self, Devices, NWKID):
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "LvlControl":
+                loggingWidget( self, "Debug", "Create Widget LvlControl" , NWKID)
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
 
                 if self.ListOfDevices[NWKID]['Model'] != '' and self.ListOfDevices[NWKID]['Model'] != {} :  
+                    loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
                     # Well Identified Model
                     # variateur de luminosite + On/off
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
@@ -582,14 +587,17 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     if self.ListOfDevices[NWKID]['Manufacturer'] == '1110': # Profalux
                         # Windows Covering / Profalux -> Inverted 
+                        loggingWidget( self, "Debug", "---> Blind Inverted based on ZDeviceID" , NWKID)
                         myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, Type=244, Subtype=73, Switchtype=16)
                     elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
                         # Window covering
+                        loggingWidget( self, "Debug", "---> Blind based on ZDeviceID" , NWKID)
                         myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, Type=244, Subtype=73, Switchtype=13)
                     elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                         # Shade
+                        loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
                         myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, Type=244, Subtype=73, Switchtype=15)
                     else:
@@ -1159,7 +1167,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                             ForceUpdate_=True)
 
                 elif DeviceType == "LvlControl" or DeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
-                    if Devices[x].SwitchType == 16:
+                    if Devices[x].SwitchType in (13,14,15,16):
                         if value == "00":
                             UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
@@ -1205,7 +1213,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         if sValue == 0 and analogValue > 0:
                             sValue = 1
                         # Looks like in the case of the Profalux shutter, we never get 0 or 100
-                        if Devices[x].SwitchType == 16:
+                        if Devices[x].SwitchType in (13,14,15,16):
                             if sValue == 1 and analogValue == 1:
                                 sValue = 0
                             if sValue == 99 and analogValue == 254:
@@ -1214,7 +1222,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
                     if sValue == 0:
                         nValue = 0
-                        if Devices[x].SwitchType == 16:  # Shutter
+                        if Devices[x].SwitchType in (13,14,15,16):
                             UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -1225,7 +1233,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                     elif sValue == 100:
                         nValue = 1
-                        if Devices[x].SwitchType == 16:  # Shutter
+                        if Devices[x].SwitchType in (13,14,15,16):
                             UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -1237,7 +1245,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                             # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
                             pass
-                        elif Devices[x].SwitchType == 16:
+                        elif Devices[x].SwitchType in (13,14,15,16):
                             nValue = 2
                             UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
                         else:

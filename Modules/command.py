@@ -156,7 +156,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
             self.iaszonemgt.alarm_off( NWKID, EPout)
 
-        if Devices[Unit].SwitchType == 16 :
+        if Devices[Unit].SwitchType in (13,14,15,16):
             UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
         else :
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -177,7 +177,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
 
-        if Devices[Unit].SwitchType == 16 :
+        if Devices[Unit].SwitchType in (13,14,15,16):
             UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
         else:
             UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -211,7 +211,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             value = '%02x' %Level
-            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         elif DeviceType == "AlarmWD":
@@ -242,7 +242,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             value=Hex_Format(2, value)
             sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
 
-        if Devices[Unit].SwitchType == 16 :
+        if Devices[Unit].SwitchType in (13,14,15,16):
             UpdateDevice_v2(self, Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
         else:
             # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
