@@ -551,16 +551,16 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
+                    # Window covering
+                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                        Unit=unit, Type=244, Subtype=73, Switchtype=13)
+                elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                     # Shade
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                         Unit=unit, Type=244, Subtype=73, Switchtype=15)
-                elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
-                    # Window covering
-                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
                 else:
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                        Unit=unit, Type=244, Subtype=73, Switchtype=7)
 
                 myDev.Create()
                 ID = myDev.ID
@@ -580,14 +580,18 @@ def CreateDomoDevice(self, Devices, NWKID):
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                     Unit=unit, Type=244, Subtype=73, Switchtype=7)
                 else:
-                    if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
+                    if self.ListOfDevices[NWKID]['Manufacturer'] == '1110': # Profalux
+                        # Windows Covering / Profalux -> Inverted 
+                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                            Unit=unit, Type=244, Subtype=73, Switchtype=16)
+                    elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
+                        # Window covering
+                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                            Unit=unit, Type=244, Subtype=73, Switchtype=13)
+                    elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                         # Shade
                         myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, Type=244, Subtype=73, Switchtype=15)
-                    elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
-                        # Window covering
-                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                            Unit=unit, Type=244, Subtype=73, Switchtype=16)
                     else:
                         # variateur de luminosite + On/off
                         myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
