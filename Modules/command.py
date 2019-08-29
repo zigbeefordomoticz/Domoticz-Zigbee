@@ -99,8 +99,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             ClusterSearch="0006"
             DeviceType = "Switch"
 
-
-
     if DeviceType == '':
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
@@ -135,6 +133,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
 
     if Command == "Off" :
@@ -210,8 +209,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
             value = '%02x' %Level
-            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
+            Domoticz.Log("WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         elif DeviceType == "AlarmWD":
