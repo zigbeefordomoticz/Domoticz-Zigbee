@@ -555,7 +555,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     loggingWidget( self, "Debug", "---> Blind based on ZDeviceID" , NWKID)
                     # Window covering
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                        Unit=unit, Type=244, Subtype=73, Switchtype=13)
+                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
                 elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                     # Shade
                     loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
@@ -585,16 +585,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                     Unit=unit, Type=244, Subtype=73, Switchtype=7)
                 else:
-                    if self.ListOfDevices[NWKID]['Manufacturer'] == '1110': # Profalux
+                    if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
                         # Windows Covering / Profalux -> Inverted 
                         loggingWidget( self, "Debug", "---> Blind Inverted based on ZDeviceID" , NWKID)
                         myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                             Unit=unit, Type=244, Subtype=73, Switchtype=16)
-                    elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
-                        # Window covering
-                        loggingWidget( self, "Debug", "---> Blind based on ZDeviceID" , NWKID)
-                        myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                            Unit=unit, Type=244, Subtype=73, Switchtype=13)
                     elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                         # Shade
                         loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
