@@ -86,7 +86,6 @@ def processKnownDevices( self, Devices, NWKID ):
 
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
 
-
     # Checking current state of the this Nwk
     if 'Health' not in self.ListOfDevices[NWKID]:
         self.ListOfDevices[NWKID]['Health'] = ''
@@ -103,10 +102,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
             self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
 
-
     if self.CommiSSionning: # We have a commission in progress, skip it.
         return
-
 
     # If device flag as Not Reachable, don't do anything
     if 'Health' in self.ListOfDevices[NWKID]:
@@ -193,6 +190,28 @@ def processKnownDevices( self, Devices, NWKID ):
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
+        # Retreive Cluster 0x0000
+        _forceReadAttr0000 = True
+        if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
+            self.ListOfDevices[NWKID]['ReadAttributes'] = {}
+            self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
+        if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
+            now = int(time.time())   # Will be used to trigger ReadAttributes
+            timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST['0000'][1] ]
+            for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
+                if tmpEp == 'ClusterType': continue
+                _idx = tmpEp + '-' + '0000'
+                if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
+                    loggingHeartbeat( self, 'Debug', "processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                            %(NWKID, '0000', self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
+                    if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
+                        if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
+                            _forceReadAttr0000 = False
+                        
+        if _forceReadAttr0000:
+            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                loggingHeartbeat( self, 'Log', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
+                ReadAttributeRequest_0000( self, NWKID)
 
         # Checking if we have to change the Power On after On/Off
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
@@ -220,8 +239,6 @@ def processKnownDevices( self, Devices, NWKID ):
                         %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
                 Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
                 sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
-
-        
 
 
 def writeDiscoveryInfos( self ):

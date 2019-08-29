@@ -145,7 +145,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
             return
 
     loggingOutput( self, 'Debug', "ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
-    self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][str(EpOut) + '-' + str(Cluster)] = int(time())
+    self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
 
@@ -161,7 +161,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0008': [ 0x0000, 0x4000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
-            '0102': [ 0x0000, 0x0001, 0x0003, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0011, 0x0017, 0xfffd],
+            '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
             '0400': [ 0x0000],
             '0402': [ 0x0000],
@@ -201,7 +201,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    loggingOutput( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s " %key, nwkid=key)
+    loggingOutput( self, 'Log', "ReadAttributeRequest_0000 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout = '01'
 
@@ -236,6 +236,12 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
                     listAttributes.append(0x0032)
                     listAttributes.append(0x0033)
+                if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
+                    listAttributes.append(0xfffd)
+                    listAttributes.append(0xfffe)
+                    listAttributes.append(0xffe1)
+                    listAttributes.append(0xffe2)
+                    listAttributes.append(0xffe3)
 
         listAttr1 = listAttr2 = None
         if len(listAttributes) > 9:
@@ -244,12 +250,12 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             listAttr2 = listAttributes[len(listAttributes)//2:]
 
         if listAttr1 == listAttr2 == None:
-            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+            loggingOutput( self, 'Log', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
         else:
-            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)), nwkid=key)
+            loggingOutput( self, 'Log', "Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr1 )
-            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)), nwkid=key)
+            loggingOutput( self, 'Log', "Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr2 )
 
 
