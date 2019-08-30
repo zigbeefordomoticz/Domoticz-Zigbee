@@ -623,7 +623,7 @@ class BasePlugin:
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
                 Domoticz.Status("Start Web Server connection")
-                Domoticz.Log("Username/Password: %s/%s" %(self.WebUsername, self.WebPassword))
+                #Domoticz.Log("Username/Password: %s/%s" %(self.WebUsername, self.WebPassword))
                 self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
                         self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.groupmgt, Devices, 
                         self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth)
