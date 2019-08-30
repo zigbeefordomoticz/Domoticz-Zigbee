@@ -867,11 +867,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
 
-    loggingPairing( self, 'Debug', "Decode8043 - Reception Simple descriptor response : SQN : " + MsgDataSQN + \
-            ", Status : " + DisplayStatusCode( MsgDataStatus ) + ", short Addr : " + MsgDataShAddr + ", Lenght : " + MsgDataLenght, MsgDataShAddr)
-
     updSQN( self, MsgDataShAddr, MsgDataSQN)
-
 
     if int(MsgDataLenght,16) == 0 : return
 
