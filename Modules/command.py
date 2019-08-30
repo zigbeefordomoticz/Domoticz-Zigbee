@@ -24,14 +24,13 @@ from Classes.IAS import IAS_Zone_Management
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
-    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
 
-    # As we can have a new Short address, we need to retreive it from self.ListOfDevices
     if Devices[Unit].DeviceID in self.IEEE2NWK:
         NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
     else :
         Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
         return
+    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ), NWKID)
     loggingCommand( self, 'Debug', "mgtCommand - NWKID = " +str(NWKID) , NWKID)
 
     if self.ListOfDevices[NWKID]['RSSI'] != '' :
@@ -131,6 +130,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == 'Stop':
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
