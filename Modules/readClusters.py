@@ -327,6 +327,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0010: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '0011': # 
+        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Attribut 0011: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
     elif MsgAttrID == '0015': # SW_BUILD_ID
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0015: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['SWBUILD_2'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
@@ -340,6 +344,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "4000": # SW Build
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 4000: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "8000": 
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 8000: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID in ( 'ff0d', 'ff22', 'ff23'): # Xiaomi Code
