@@ -460,11 +460,13 @@ class BasePlugin:
 
         Domoticz.Status("Trigger a Topology Scan")
         self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)
-        self.networkmap.start_scan( ) 
+        if len(self.ListOfDevices) > 1:
+            self.networkmap.start_scan( ) 
 
         Domoticz.Status("Trigger a Energy Level Scan")
         self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID)
-        self.networkenergy.start_scan()
+        if len(self.ListOfDevices) > 1:
+            self.networkenergy.start_scan()
 
         self.busy = False
         return True

@@ -884,7 +884,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
         receiveZigateEpDescriptor( self, MsgData)
         return
     elif MsgDataShAddr not in self.ListOfDevices:
-        Domoticz.Log("Decode8043 - receive message for non existing device")
+        Domoticz.Error("Decode8043 - receive message for non existing device")
         return
 
     if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -1680,7 +1680,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # New device comming. The IEEE is not known
         loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
         if MsgIEEE in self.IEEE2NWK :
-            Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK")
+            Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
             if self.IEEE2NWK[MsgIEEE] :
                 loggingPairing( self, 'Log', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
                 if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':

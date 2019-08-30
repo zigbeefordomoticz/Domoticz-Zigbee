@@ -121,6 +121,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
                 # Make sure this device is valid 
                 if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):
+                    found = False
                     continue
 
                 # We got a new Network ID for an existing IEEE. So just re-connect.
