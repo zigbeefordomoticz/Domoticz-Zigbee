@@ -222,7 +222,6 @@ def CheckDeviceList(self, key, val) :
 
         MANDATORY_ATTRIBUTES = ( 'App Version', 
                 'Attributes List', 
-                'Battery', 
                 'Bind', 
                 'ColorInfos', 
                 'ClusterType', 
@@ -243,13 +242,10 @@ def CheckDeviceList(self, key, val) :
                 'ReceiveOnIdle', 
                 'Stack Version', 
                 'RIA', 
-                'RSSI',
-                'SQN', 
                 'SWBUILD_1', 
                 'SWBUILD_2', 
                 'SWBUILD_3', 
                 'Stack Version', 
-                'Stamp', 
                 'Status', 
                 'Type',
                 'Version', 
@@ -257,9 +253,13 @@ def CheckDeviceList(self, key, val) :
                 'ZDeviceID', 
                 'ZDeviceName')
 
-        BUILD_ATTRIBUTES = ('ConfigureReporting',
+        BUILD_ATTRIBUTES = (
+                'Battery', 
+                'ConfigureReporting',
                 'Last Cmds',
                 'ReadAttributes', 
+                'RSSI',
+                'SQN', 
                 'Stamp', 
                 'Health')
 
