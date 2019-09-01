@@ -464,6 +464,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
+    if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
+        if self.ListOfDevices[ MsgSrcAddr ]['Model'] == 'lumi.light.aqcn02':
+            Domoticz.Log("readCluster - %s - %s/%s Lumi Aqara  attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
+
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
         mainVolt = value
