@@ -756,8 +756,9 @@ def processConfigureReporting( self, NWKID=None ):
         '0502': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
 
         # Power
-        '0702': {'Attributes': { '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
-                                 '0400': {'DataType': '2a', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
+        '0702': {'Attributes': { 
+                                '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
+                                '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     now = int(time())
@@ -882,7 +883,16 @@ def processConfigureReporting( self, NWKID=None ):
                                 loggingOutput( self, 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
                                 continue
                    
-                    if 'Attributes List' in self.ListOfDevices[key]:
+                    forceAttribute = False
+                    if 'Model' in self.ListOfDevices[key]:
+                        if self.ListOfDevices[key]['Model'] == 'SPE600':
+                            if cluster == '0702' :
+                                if attr == '0000':
+                                    continue #We use only 0x0400
+                                elif attr == '0400':
+                                    forceAttribute = True
+
+                    if 'Attributes List' in self.ListOfDevices[key] and not forceAttribute:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
                                 if cluster in self.ListOfDevices[key]['Attributes List']['Ep'][Ep]:
