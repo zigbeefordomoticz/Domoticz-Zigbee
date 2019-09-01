@@ -475,6 +475,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
         loggingCluster( self, 'Log', "readCluster 0001 - %s General Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
+        if self.ListOfDevice[ MsgSrcAddr]['MacCapa'] == '8e':
+            # This should reflect the main voltage.
+            return
 
     elif MsgAttrID == "0001": # MAINS FREQUENCY
                               # 0x00 indicates a DC supply, or Freq too low
