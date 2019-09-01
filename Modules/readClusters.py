@@ -609,15 +609,21 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
     loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
-    if MsgAttrID == "0000": 
+    if MsgAttrID == "0000": # CurrentSummationDelivered
         loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(value, old_multiplier, old_divisor, old_status, old_unit, old_devtype, old_instantvalue)
 
-    if MsgAttrID in ( '0001', '000a', '000b'): 
-        loggingCluster( self, 'Debug', "Cluster0702 - (not processed) Attribute: %s -> %s " %(MsgAttrID, value), MsgSrcAddr)
+    elif MsgAttrID == "0001": #CURRENT_SUMMATION_RECEIVED
+        loggingCluster( self, 'Debug', "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " %(value), MsgSrcAddr)
+
+    elif MsgAttrID == "000a": #ATTR_DEFAULT_UPDATE_PERIOD
+        loggingCluster( self, 'Debug', "Cluster0702 - ATTR_DEFAULT_UPDATE_PERIOD %s " %(value), MsgSrcAddr)
+
+    elif MsgAttrID == "000b": #FAST_POLL_UPDATE_PERIOD
+        loggingCluster( self, 'Debug', "Cluster0702 - FAST_POLL_UPDATE_PERIOD %s " %(value), MsgSrcAddr)
 
     elif MsgAttrID == "0200": 
-        METERING_STATUS = { 0: 'Check Meter',
+        METERING_STATUS = { 0: 'Ok',
                 1: 'Low Battery',
                 2: 'Tamper Detect',
                 3: 'Power Failure',
@@ -671,6 +677,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = round(value/10, 3)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, old_divisor, old_status, old_unit, old_devtype, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
+
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
 
