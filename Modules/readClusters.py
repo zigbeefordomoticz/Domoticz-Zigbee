@@ -594,9 +594,17 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "Cluster0702 - empty message ", MsgSrcAddr)
         return
 
-    if len( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]) != 7:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '0;0;0;0;0;0;0'
-    old_cursummation, old_multiplier, old_divisor, old_status, old_unit, old_devtype, old_instantvalue = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId].split(';')
+    oldvalues = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId].split(';')
+    if len( oldvalues ) != 7:
+        oldvalues = '0;0;0;0;0;0;0'.split(';')
+
+    old_cursummation = oldvalues[0]
+    old_multiplier = oldvalues[1]
+    old_divisor = oldvalues[2]
+    old_status = oldvalues[3]
+    old_unit = oldvalues[4]
+    old_devtype = oldvalues[5]
+    old_instantvalue  = oldvalues[6]
 
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
     loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
@@ -606,6 +614,17 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(value, old_multiplier, old_divisor, old_status, old_unit, old_devtype, old_instantvalue)
 
     elif MsgAttrID == "0200": 
+        METERING_STATUS = { 0: 'Check Meter',
+                1: 'Low Battery',
+                2: 'Tamper Detect',
+                3: 'Power Failure',
+                4: 'Power Quality',
+                5: 'Lead Detect'
+                }
+
+        if value in METERING_STATUS:
+            value = METERING_STATUS[value]
+
         loggingCluster( self, 'Debug', "Cluster0702 - Status: %s" %(value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, old_divisor, value, old_unit, old_devtype, old_instantvalue)
 
