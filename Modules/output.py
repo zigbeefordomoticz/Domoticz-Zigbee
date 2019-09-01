@@ -170,7 +170,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0406': [ 0x0000],
             '0500': [ 0x0000, 0x0002],
             '0502': [ 0x0000],
-            '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0400],
+            '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
             '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd]   # Legrand Cluster
             }
 
@@ -184,6 +184,10 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
                     loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: Attributes from Attributes List", nwkid=key)
                     for attr in  self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
                         targetAttribute.append( int(attr,16) )
+                    if 'Model' in self.ListOfDevices[key]:
+                        if self.ListOfDevices[key]['Model'] == 'SPE600' and cluster == '0702':
+                            if 0x0400 not in targetAttribute:
+                                targetAttribute.append( 0x0400)
 
     if targetAttribute is None:
         loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster, nwkid=key)
@@ -192,6 +196,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
         else:
             Domoticz.Log("retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" %cluster)
             targetAttribute = [ 0x0000 ]
+
     loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute), nwkid=key)
 
     return targetAttribute

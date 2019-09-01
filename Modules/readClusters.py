@@ -587,43 +587,67 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+
     # Smart Energy Metering
     if int(MsgAttSize,16) == 0:
         loggingCluster( self, 'Debug', "Cluster0702 - empty message ", MsgSrcAddr)
         return
 
+    if len( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]) != 7:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = '0;0;0;0;0;0;0'
+    old_cursummation, old_multiplier, old_divisor, old_status, old_unit, old_devtype, old_instantvalue = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId].split(';')
 
     value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
     loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     if MsgAttrID == "0000": 
-        loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
-        #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
-        #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
-    elif MsgAttrID == "0001":
-        loggingCluster( self, 'Debug', "ReadCluster0702 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value), MsgSrcAddr)
-
-    elif MsgAttrID == "000a":
-        loggingCluster( self, 'Debug', "ReadCluster0702 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value), MsgSrcAddr)
-
-    elif MsgAttrID == "000b":
-        loggingCluster( self, 'Debug', "ReadCluster0702 - %s/%s Attribute %s: %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID,value), MsgSrcAddr)
-
-    elif MsgAttrID == "0301":   # Multiplier
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]=str(value)
-        loggingCluster( self, 'Debug', "Cluster0702 - Multiplier: %s" %(value), MsgSrcAddr)
-
-    elif MsgAttrID == "0302":   # Divisor
-        loggingCluster( self, 'Debug', "Cluster0702 - Divisor: %s" %(value), MsgSrcAddr)
+        loggingCluster( self, '0000', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(value, old_multiplier, old_divisor, old_status, old_unit, old_devtype, old_instantvalue)
 
     elif MsgAttrID == "0200": 
         loggingCluster( self, 'Debug', "Cluster0702 - Status: %s" %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, old_divisor, value, old_unit, old_devtype, old_instantvalue)
 
+    elif MsgAttrID == "0300":   # Unit of Measure
+        MEASURE_UNITS = { 0: 'kW',
+                1: 'm³',
+                2: 'ft³',
+                3: 'ccf'
+                }
+
+        if value in MEASURE_UNITS:
+            value = MEASURE_UNITS[value]
+        loggingCluster( self, 'Debug', "Cluster0702 - Unit of Measure: %s" %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, old_divisor, old_status, value, old_devtype, old_instantvalue)
+
+    elif MsgAttrID == "0301":   # Multiplier
+        loggingCluster( self, 'Debug', "Cluster0702 - Multiplier: %s" %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, value, old_divisor, old_status, old_unit, old_devtype, old_instantvalue)
+
+    elif MsgAttrID == "0302":   # Divisor
+        loggingCluster( self, 'Debug', "Cluster0702 - Divisor: %s" %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, value, old_status, old_unit, old_devtype, old_instantvalue)
+
+    elif MsgAttrID == "0306":   # Device Type
+        MEASURE_DEVICE_TYPE = { 0: "Electric Metering",
+                1: "Gas Metering",
+                2: "Water Metering",
+                3: "Thermal Metering",
+                4: "Pressure Metering",
+                5: "Heat Metering",
+                6: "Cooling Metering" }
+
+        if value in MEASURE_DEVICE_TYPE:
+            value = MEASURE_DEVICE_TYPE[value]
+
+        loggingCluster( self, 'Debug', "Cluster0702 - Divisor: %s" %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, old_divisor, old_status, old_unit, value, old_instantvalue)
 
     elif MsgAttrID == "0400": 
         loggingCluster( self, 'Debug', "Cluster0702 - 0x0400 Instant demand %s" %(value), MsgSrcAddr)
         value = round(value/10, 3)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = str(value)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(old_cursummation, old_multiplier, old_divisor, old_status, old_unit, old_devtype, value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
