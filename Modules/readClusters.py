@@ -474,7 +474,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         newValue = '%s;%s;%s;%s' %(mainVolt, oldValue[1], oldValue[2], oldValue[3])
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster 0001 - %s General Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0001": # MAINS FREQUENCY
                               # 0x00 indicates a DC supply, or Freq too low
@@ -610,8 +610,11 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     if MsgAttrID == "0000": 
-        loggingCluster( self, '0000', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]= "%s;%s;%s;%s;%s;%s;%s" %(value, old_multiplier, old_divisor, old_status, old_unit, old_devtype, old_instantvalue)
+
+    if MsgAttrID in ( '0001', '000a', '000b'): 
+        loggingCluster( self, 'Debug', "Cluster0702 - (not processed) Attribute: %s -> %s " %(MsgAttrID, value), MsgSrcAddr)
 
     elif MsgAttrID == "0200": 
         METERING_STATUS = { 0: 'Check Meter',
