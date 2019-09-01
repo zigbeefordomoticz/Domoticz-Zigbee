@@ -454,6 +454,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
+    if self.ListOfDevices[MsgSrcAddr][ 'Model' ] == 'lumi.light.aqcn02':
+        Domoticz.Log("readCluster - %s - %s/%s (%s) unknown attribut : %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr][ 'Model' ], MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
+
     if MsgAttrID == "0000": # Voltage
         value = round(int(value)/10, 1)
         mainVolt = value
@@ -501,7 +504,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         self.ListOfDevices[MsgSrcAddr]['Battery'] = value
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+        if 'Model' in self.ListOfDevices:
+            loggingCluster( self, 'Log', "readCluster 0001 - %s %s Battery: %s " %(MsgSrcAddr, self.ListOfDevices['Model'], value) , MsgSrcAddr)
+        else:
+            loggingCluster( self, 'Log', "readCluster 0001 - %s Battery: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0031": # Battery Size
         # 0x03 stand for AA
