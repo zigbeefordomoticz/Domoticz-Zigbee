@@ -201,7 +201,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    loggingOutput( self, 'Log', "ReadAttributeRequest_0000 - Key: %s " %key, nwkid=key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout = '01'
 
