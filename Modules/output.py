@@ -186,8 +186,9 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
                         targetAttribute.append( int(attr,16) )
                     if 'Model' in self.ListOfDevices[key]:
                         if self.ListOfDevices[key]['Model'] == 'SPE600' and cluster == '0702':
-                            if 0x0400 not in targetAttribute:
-                                targetAttribute.append( 0x0400)
+                            for addattr in ATTRIBUTES[cluster]:
+                                if addattr not in targetAttribute:
+                                    targetAttribute.append( 0x0400)
 
     if targetAttribute is None:
         loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster, nwkid=key)
