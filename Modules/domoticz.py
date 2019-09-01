@@ -995,6 +995,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         state = "Off"
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
+                elif DeviceType == "Water":  # detecteur d eau
+                    state = ''
+                    if value == "01":
+                        state = "On"
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    elif value == "00":
+                        state = "Off"
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+
+
 
             if ClusterType == "Switch":
                 if DeviceType == "Plug":
