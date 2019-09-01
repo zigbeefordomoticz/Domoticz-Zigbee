@@ -266,13 +266,6 @@ def CheckDeviceList(self, key, val) :
             if attribute in DeviceListVal:
                 self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
 
-            # Reseting parameters at load
-
-            # https://github.com/pipiche38/Domoticz-Zigate/issues/470
-            if attribute == 'Battery' and 'Model' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key][ 'Model' ] == 'lumi.light.aqcn02' and self.ListOfDevices[key][ attribute ] == '0' :
-                    self.ListOfDevices[key][ attribute ] = {}
-
         self.ListOfDevices[key]['Health'] = ''
 
         if 'IEEE' in DeviceListVal:
