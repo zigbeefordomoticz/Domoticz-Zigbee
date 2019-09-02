@@ -185,11 +185,9 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
                     for attr in  self.ListOfDevices[key]['Attributes List']['Ep'][Ep][cluster]:
                         targetAttribute.append( int(attr,16) )
                     if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] == 'SPE600' and cluster == '0702':
-                            for addattr in ATTRIBUTES[cluster]:
-                                if addattr not in targetAttribute:
-                                    targetAttribute.append( addattr )
-                        if self.ListOfDevices[key]['Model'] == 'TS0302' and cluster == '0102':
+                        # Force Read Attributes 
+                        if (self.ListOfDevices[key]['Model'] == 'SPE600' and cluster == '0702') or \
+                           (self.ListOfDevices[key]['Model'] == 'TS0302' and cluster == '0102'):     # Zemismart Blind switch
                             for addattr in ATTRIBUTES[cluster]:
                                 if addattr not in targetAttribute:
                                     targetAttribute.append( addattr )
