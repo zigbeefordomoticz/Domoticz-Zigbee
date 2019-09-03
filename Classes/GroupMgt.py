@@ -773,15 +773,17 @@ class GroupsManagement(object):
                 if 'Ep' in  self.ListOfDevices[dev_nwkid]:
                     if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
                         if '0006' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
-                            if str(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']).isdigit():
-                                if int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']) != 0:
-                                    nValue = 1
+                            if '0000' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']:
+                                if str(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']['0000']).isdigit():
+                                    if int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0006']['0000']) != 0:
+                                        nValue = 1
                         if '0008' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]:
-                            if self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'] != '' and self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'] != {}:
-                                if level is None:
-                                    level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)
-                                else:
-                                    level = round(( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008'],16)) / 2)
+                            if '0000' in self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']:
+                                if self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']['0000'] != '' and self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']['0000'] != {}:
+                                    if level is None:
+                                        level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']['0000'],16)
+                                    else:
+                                        level = round(( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']['0000'],16)) / 2)
         # At that stage
         # nValue == 0 if Off
         # nValue == 1 if Open/On
@@ -925,7 +927,7 @@ class GroupsManagement(object):
                 Domoticz.Error("_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
                 continue
 
-            self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] = value
+            self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0000'] = value
             self.logging( 'Debug', "_updateDeviceListAttribute - Updating Device: %s/%s of Group: %s Cluster: %s to value: %s" %(iterDev, iterEp, grpid, cluster, value))
 
         return

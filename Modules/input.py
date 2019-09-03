@@ -149,6 +149,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         Domoticz.Log("Decode8401 - receive a message for an unknown device %s : %s" %( MsgSrcAddr, MsgData))
         return
 
+
     loggingInput( self, 'Debug', "Decode8401 - MsgSQN: %s MsgSrcAddr: %s MsgEp:%s MsgClusterId: %s MsgZoneStatus: %s MsgExtStatus: %s MsgZoneID: %s MsgDelay: %s" \
             %( MsgSQN, MsgSrcAddr, MsgEp, MsgClusterId, MsgZoneStatus, MsgExtStatus, MsgZoneID, MsgDelay), MsgSrcAddr)
 
@@ -193,6 +194,17 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         acmain   = ( int(MsgZoneStatus,16) >> 7 ) & 1
         test     = ( int(MsgZoneStatus,16) >> 8 ) & 1
         battdef  = ( int(MsgZoneStatus,16) >> 9 ) & 1
+
+        if '0500' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500'] = {}
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500'] , dict):
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp][MsgClusterId]['0500'] = {}
+        if '0002' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002'] = {}
+
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEp]['0500']['0002'] = \
+                'alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s' \
+                %(alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef)
 
         loggingInput( self, 'Debug', "IAS Zone for device:%s  - alarm1: %s, alaram2: %s, tamper: %s, battery: %s, Support Reporting: %s, restore Reporting: %s, trouble: %s, acmain: %s, test: %s, battdef: %s" \
                 %( MsgSrcAddr, alarm1, alarm2, tamper, battery, suprrprt, restrprt, trouble, acmain, test, battdef), MsgSrcAddr)
@@ -1746,6 +1758,14 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+    if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
+
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
@@ -1757,31 +1777,34 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                 selector = TYPE_ACTIONS[MsgCmd]
                 loggingInput( self, 'Debug', "Decode8085 - Selector: %s" %selector, MsgSrcAddr)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['rmt1'] = selector
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
             else:
                 Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                         %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
         else:
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
+
     elif  self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI on/off switch':
         """
         Ikea Switch On/Off
         """
         if  MsgClusterId == '0008' and MsgCmd == '05': #Push Up
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '02' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = '02'
         elif MsgClusterId == '0008' and MsgCmd == '01': # Push Down
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '03' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = '03'
         elif MsgClusterId == '0008' and MsgCmd == '07': # Release Up & Down
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '04' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = '04'
+
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = MsgCmd
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
         if MsgClusterId != '0008':
             Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             return
 
         step_mod = MsgData[14:16]
@@ -1810,11 +1833,12 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         Domoticz.Log("Decode8085 - INNR RC 110 selector: %s" %selector)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = selector
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
     else:
        Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
                %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+       self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
 
 def Decode8095(self, Devices, MsgData, MsgRSSI) :
@@ -1833,6 +1857,14 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+    if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
+
     timeStamped( self, MsgSrcAddr , 0x8095)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
@@ -1846,9 +1878,10 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         """
         if MsgClusterId == '0006' and MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['rmt1'] = 'toogle'
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI motion sensor':
         """
@@ -1856,15 +1889,16 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
         """
         if MsgClusterId == '0006' and MsgCmd == '42':   # Motion Sensor On
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0406", '01')
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0406'] = '01'
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
         else:
             Domoticz.Log("Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
     elif  self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI on/off switch':
         """
         Ikea Switch On/Off
         """
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = MsgCmd
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
         
@@ -1879,11 +1913,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
        
         if ONOFF_TYPE[MsgCmd] in ( 'on', 'off' ):
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = MsgCmd
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['0006'] = MsgCmd
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
         loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
 
@@ -1918,6 +1952,14 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
                 %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_), MsgSrcAddr)
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+    if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
+
     timeStamped( self, MsgSrcAddr , 0x80A7)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
@@ -1928,11 +1970,12 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
             # Might be in the case of Release Left or Right
             Domoticz.Log("Decode80A7 - Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                     %(MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, Direction: %s, %s' %(MsgCmd, MsgDirection, unkown_)
 
         elif MsgCmd in TYPE_ACTIONS and MsgDirection in TYPE_DIRECTIONS:
             selector = TYPE_DIRECTIONS[MsgDirection] + '_' + TYPE_ACTIONS[MsgCmd]
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", selector )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]['rmt1'] = selector
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
             loggingInput( self, 'Debug', "Decode80A7 - selector: %s" %selector, MsgSrcAddr)
 
             if self.groupmgt:
@@ -1941,9 +1984,11 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
         else:
             Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, Direction: %s, %s' %(MsgCmd, MsgDirection, unkown_)
     else:
         Domoticz.Log("Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                 %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_))
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, Direction: %s, %s' %(MsgCmd, MsgDirection, unkown_)
 
 
 def Decode8806(self, Devices, MsgData, MsgRSSI) :
