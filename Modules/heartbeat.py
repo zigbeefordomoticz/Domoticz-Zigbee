@@ -210,7 +210,7 @@ def processKnownDevices( self, Devices, NWKID ):
                         
         if _forceReadAttr0000:
             if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                loggingHeartbeat( self, 'Log', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
+                loggingHeartbeat( self, 'Debug', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
                 ReadAttributeRequest_0000( self, NWKID)
 
         # Checking if we have to change the Power On after On/Off

@@ -260,12 +260,12 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             listAttr2 = listAttributes[len(listAttributes)//2:]
 
         if listAttr1 == listAttr2 == None:
-            loggingOutput( self, 'Log', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
         else:
-            loggingOutput( self, 'Log', "Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)), nwkid=key)
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request part1 %s/%s %s" %(key, EPout, str(listAttr1)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr1 )
-            loggingOutput( self, 'Log', "Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)), nwkid=key)
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request part2 %s/%s %s" %(key, EPout, str(listAttr2)), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttr2 )
 
 
