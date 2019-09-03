@@ -1611,8 +1611,15 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID =='0000':  # Local Temperature (Zint16)
         ValueTemp=round(int(value)/100,1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = ValueTemp
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
+
+        if '0402' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = {}
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] , dict):
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = {}
+        if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = {}
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = ValueTemp
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Local Temp: %s" %ValueTemp, MsgSrcAddr)
 
     elif MsgAttrID == '0001': # Outdoor Temperature
