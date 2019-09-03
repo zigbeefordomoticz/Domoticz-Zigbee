@@ -176,7 +176,7 @@ def ReadCluster(self, Devices, MsgData):
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId] = {}
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
 
     DECODE_CLUSTER = {
             "0000": Cluster0000, "0001": Cluster0001, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,

@@ -216,17 +216,16 @@ def processKnownDevices( self, Devices, NWKID ):
         # Checking if we have to change the Power On after On/Off
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer'] == 'c05e':
-                if 'ReadAttributes' in self.ListOfDevices[NWKID]:
-                    if 'Ep' in self.ListOfDevices[NWKID]['ReadAttributes']:
-                        for iterEp in self.ListOfDevices[NWKID]['ReadAttributes']['Ep']:
-                            # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
-                            if '0006' in self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]:
-                                if '4003' in self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']:
-                                    if int(self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
-                                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-                                            Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
-                                                    %(NWKID, self.ListOfDevices[NWKID]['ReadAttributes']['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
-                                            setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
+                if 'Ep' in self.ListOfDevices[NWKID]:
+                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                        # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
+                        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                            if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
+                                if int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
+                                    if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                                        Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
+                                                %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
+                                        setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
 
         # If corresponding Attributes not present, let's do a Request Node Descriptio
         if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
