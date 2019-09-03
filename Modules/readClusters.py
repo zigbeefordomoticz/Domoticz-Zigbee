@@ -349,14 +349,14 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 
     elif MsgAttrID == '0010': # LOCATION_DESCRIPTION
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0010: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Location: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID == '0011': # 
-        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Attribut 0011: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+    elif MsgAttrID == '0011': # Physical Environment
+        loggingCluster( self, 'debug', "ReadCluster - 0x0000 - Physical Environment: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
-        self.ListOfDevices[MsgSrcAddr]['Location'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['PhysicalEnv'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '0015': # SW_BUILD_ID
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0015: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
@@ -707,7 +707,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    loggingCluster( self, 'Log', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+    loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     if MsgAttrID == "0000": # CurrentSummationDelivered
         loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
@@ -1549,6 +1549,9 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
         return value
 
+    loggingCluster( self, 'Log', "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
     if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
@@ -1562,23 +1565,35 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 1 -> Short Release
         # 2 -> Double press
         # 255 -> Long Release
-        value = decodeAttribute( self, MsgAttType, MsgClusterData )
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug',"ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
-        value = int(value)
         if value == 0: value = 3
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
+        if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] , dict):
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
+        if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = value
+
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
-        value = decodeAttribute( self, MsgAttType, MsgClusterData )
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
-        value = int(value)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+        if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] , dict):
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
+        if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = value
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.ctrl_ln2.aq1'):
-        value = decodeAttribute( self, MsgAttType, MsgClusterData )
-        value = int(value)
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara lumi.ctrl_ln2.aq1: EP: %s Attr: %s Value: %s " %(MsgSrcEp,MsgAttrID, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
