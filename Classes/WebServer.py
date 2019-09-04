@@ -314,7 +314,14 @@ class WebServer(object):
 
     def sendResponse( self, Connection, Response, AcceptEncoding=None ):
 
-        if ('Data' not in Response) or (Response['Data'] == None):
+        if 'Data' not in Response:
+            DumpHTTPResponseToLog( Response )
+            Connection.Send( Response )
+            if not self.pluginconf.pluginConf['enableKeepalive']:
+                Connection.Disconnect()
+            return
+
+        if Response['Data'] is None:
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response )
             if not self.pluginconf.pluginConf['enableKeepalive']:
@@ -428,7 +435,9 @@ class WebServer(object):
                 }
 
         self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
+
         HTTPresponse = {}
+
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = setupHeadersResponse()
@@ -445,7 +454,7 @@ class WebServer(object):
                 elif version == '2':
                     HTTPresponse = REST_COMMANDS[command]['functionv2']( verb, data, parameters)
 
-        if HTTPresponse == {}:
+        if HTTPresponse == {} or HTTPresponse is None:
             # We reach here due to failure !
             HTTPresponse = setupHeadersResponse()
             if self.pluginconf.pluginConf['enableKeepalive']:
@@ -458,7 +467,7 @@ class WebServer(object):
                 HTTPresponse["Headers"]["Expires"] = "0"
                 HTTPresponse["Headers"]["Accept"] = "*/*"
             HTTPresponse["Status"] = "400 BAD REQUEST"
-            HTTPresponse["Data"] = 'Unknown REST command'
+            HTTPresponse["Data"] = 'Unknown REST command: %s' %command
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
         self.sendResponse( Connection, HTTPresponse )
@@ -1802,11 +1811,6 @@ class WebServer(object):
                 Domoticz.Log("rest_dev_command - Command: %s on object: %s with extra %s %s" 
                         %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
         return _response
-
-    def rest_Device( self, verb, data, parameters):
-
-        _dictDevices = {}
-        _response = setupHeadersResponse()
 
     def rest_dev_capabilities( self, verb, data, parameters):
 

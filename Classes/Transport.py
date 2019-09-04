@@ -72,7 +72,7 @@ class ZigateTransport(object):
         self.loggingSend('Debug',"STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
         self.loggingSend('Debug',"CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
         self.loggingSend('Debug',"ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
-        self.loggingSend('Log',"CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
+        self.loggingSend('Debug',"CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
 
         if str(transport) == "USB":
             self._transp = "USB"
