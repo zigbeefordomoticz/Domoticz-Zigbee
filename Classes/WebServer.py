@@ -400,6 +400,8 @@ class WebServer(object):
 
         REST_COMMANDS = { 
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
+                'dev-cap':       {'Name':'dev-cap',       'Verbs':{'GET'}, 'function':self.rest_dev_capabilities},
+                'dev-cmd':       {'Name':'dev-cmd',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
                 'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
                 'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
@@ -1782,6 +1784,79 @@ class WebServer(object):
 
         return _response
 
+    def rest_dev_command( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+                Domoticz.Log("rest_dev_command - Command: %s on object: %s with extra %s %s" 
+                        %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
+        return _response
+
+    def rest_Device( self, verb, data, parameters):
+
+        _dictDevices = {}
+        _response = setupHeadersResponse()
+
+    def rest_dev_capabilities( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            if self.Devices is None or len(self.Devices) == 0:
+                return _response
+            if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
+                return _response
+            if len(parameters) == 0:
+                Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" %(parameters))
+                return _response
+            elif len(parameters) == 1:
+                if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
+                    Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
+                    return _response
+                # Check Capabilities
+                DEVICE_CAPABILITIES = { '0006': ( 'On', 'Off', 'Toggle' ),
+                                        '0008': ( 'LevelControl', ),
+                                        '0201': ( 'SetPoint', ),
+                                        '0300': ( 'RGBWW', ),
+                                        '0102': ( 'On', 'Off', 'Stop', 'LevelControl') }
+
+                dev_capabilities = {}
+                dev_capabilities['NwkId'] = {}
+                dev_capabilities['Capabilities'] = []
+                if  parameters[0] in self.ListOfDevices:
+                    _nwkid = parameters[0]
+                elif parameters[0] in self.IEEE2NWK:
+                    _nwkid = self.IEEE2NWK[parameters[0]]
+                dev_capabilities['NwkId'] = _nwkid
+                for ep in self.ListOfDevices[ _nwkid ]['Ep']:
+                    for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
+                        if cluster in DEVICE_CAPABILITIES:
+                            Domoticz.Log("Cluster: %s" %cluster)
+                            for cap in DEVICE_CAPABILITIES[ cluster ]:
+                                if cap not in dev_capabilities['Capabilities']:
+                                    Domoticz.Log("---> %s" %cap)
+                                    dev_capabilities['Capabilities'].append( cap )
+
+                _response["Data"] = json.dumps( dev_capabilities, sort_keys=True )
+                return _response
 
 def DumpHTTPResponseToLog(httpDict):
 
