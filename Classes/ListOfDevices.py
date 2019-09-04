@@ -9,6 +9,7 @@
     Description: Manage all recorded Devices
 
 """
+MAX_CMD_PER_DEVICE = 5
 
 class ListOfDevices():
 
@@ -30,10 +31,21 @@ class ListOfDevices():
         else:
             return False
 
+    def add_Last_Cmds( self, nwkid, data):
+        
+        if nwkid in self.ListOfDevices:
+            if 'Last Cmds' not in self.ListOfDevices[nwkid]:
+                self.ListOfDevices[nwkid]['Last Cmds'] = []
+            if isinstance(self.ListOfDevices[nwkid]['Last Cmds'], dict ):
+                self.ListOfDevices[nwkid][nwk]['Last Cmds'] = []
+
+            if len(self.ListOfDevices[nwkid]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
+                # Remove the First element in the list.
+                self.ListOfDevices[nwkid]['Last Cmds'].pop(0)
+
+            self.ListOfDevices[nwkid]['Last Cmds'].append( data )
+
     def retreive( self, nwkid):
         if nwkid in self.ListOfDevices:
             return self.ListOfDevices[nwkid]
 
-
-
-    

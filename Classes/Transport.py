@@ -22,7 +22,7 @@ CMD_NWK_2NDBytes = {}
 CMD_DATA = {}
 for x in ZIGATE_COMMANDS:
     if ZIGATE_COMMANDS[ x ]['NwkId 2nd Bytes']:
-        CMD_NWK_2NDBytes[ x ] = ZIGATE_COMMANDS[ x ]['Command']
+        CMD_NWK_2NDBytes[ x ] = x
     if len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 1:
             CMD_ONLY_STATUS.append( x )
     else:
@@ -30,7 +30,6 @@ for x in ZIGATE_COMMANDS:
 
 
 
-MAX_CMD_PER_DEVICE = 15
 APS_DELAY = 1
 APS_MAX_RETRY = 2
 APS_TIME_WINDOW = APS_MAX_RETRY * APS_DELAY
@@ -73,7 +72,7 @@ class ZigateTransport(object):
         self.loggingSend('Debug',"STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
         self.loggingSend('Debug',"CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
         self.loggingSend('Debug',"ZIGATE_COMMANDS: %s" %ZIGATE_COMMANDS)
-        self.loggingSend('Debug',"CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
+        self.loggingSend('Log',"CMD_NWK_2NDBytes: %s" %CMD_NWK_2NDBytes)
 
         if str(transport) == "USB":
             self._transp = "USB"
@@ -429,7 +428,7 @@ class ZigateTransport(object):
                 self.F_out(frame)  # Forward the message to plugin for further processing
 
         elif MsgType == "8702": # APS Failure
-            if self._process8702( frame ):
+            #if self._process8702( frame ):
                 self.loggingReceive('Debug',"             - detect an APS Failure forward to plugin")
                 self.statistics._APSFailure += 1
                 self.F_out(frame)  # Forward the message to plugin for further processing
@@ -567,31 +566,20 @@ class ZigateTransport(object):
             return
         deviceinfos = self.LOD.retreive( nwk )
 
-        if 'Last Cmds' not in deviceinfos:
-            deviceinfos['Last Cmds'] = []
-
-        # This is to fix a miss-initialization done where it was initiatlized as a dict and not a list
-        if isinstance(deviceinfos['Last Cmds'], dict ):
-            deviceinfos[nwk]['Last Cmds'] = []
-
-        if len(deviceinfos['Last Cmds']) >= MAX_CMD_PER_DEVICE:
-            # Remove the First element in the list.
-            deviceinfos['Last Cmds'].pop(0)
         if self.pluginconf.pluginConf['APSreTx'] or self.pluginconf.pluginConf['APSrteError'] :
             _tuple = ( time(), cmd , payload) # Keep Payload as well in order to redo the command
         else:
             _tuple = ( time(), cmd , None)
+
         # Add element at the end of the List
-        deviceinfos['Last Cmds'].append( _tuple )
+        self.LOD.add_Last_Cmds( nwk, _tuple )
 
     def processCMD4APS( self, cmd, payload):
 
-        #Domoticz.Log( "processCMD4APS - cmd: %s, payload: %s" %(cmd, payload))
-        if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
+        if len(payload) < 7 or int(cmd,16) not in CMD_NWK_2NDBytes:
             return
 
         nwkid = payload[2:6]
-        #Domoticz.Log( "processCMD4APS - Retreive NWKID: %s" %nwkid)
         if self.LOD.find( nwkid ):
             self._addNewCmdtoDevice( nwkid, cmd , payload)
 
