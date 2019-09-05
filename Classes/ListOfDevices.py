@@ -37,7 +37,7 @@ class ListOfDevices():
             if 'Last Cmds' not in self.ListOfDevices[nwkid]:
                 self.ListOfDevices[nwkid]['Last Cmds'] = []
             if isinstance(self.ListOfDevices[nwkid]['Last Cmds'], dict ):
-                self.ListOfDevices[nwkid][nwk]['Last Cmds'] = []
+                self.ListOfDevices[nwkid]['Last Cmds'] = []
 
             if len(self.ListOfDevices[nwkid]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
                 # Remove the First element in the list.
