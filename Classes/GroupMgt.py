@@ -927,6 +927,13 @@ class GroupsManagement(object):
                 Domoticz.Error("_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
                 continue
 
+            if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
+                self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] = {}
+            if not isinstance( self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] , dict):
+                self.ListOfDevices[iterDev]['Ep'][iterEp][cluster] = {}
+            if '0000' not in self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]:
+                self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0000'] = {}
+
             self.ListOfDevices[iterDev]['Ep'][iterEp][cluster]['0000'] = value
             self.logging( 'Debug', "_updateDeviceListAttribute - Updating Device: %s/%s of Group: %s Cluster: %s to value: %s" %(iterDev, iterEp, grpid, cluster, value))
 
