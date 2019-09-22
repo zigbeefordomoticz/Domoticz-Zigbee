@@ -80,6 +80,12 @@ class ZigateTransport(object):
             if serialPort.find('/dev/') != -1:
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                                                    Address=self._serialPort, Baud=115200)
+        elif str(transport) == "DIN":
+            self._transp = "DIN"
+            self._serialPort = serialPort
+            if serialPort.find('/dev/') != -1:
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                                                   Address=self._serialPort, Baud=115200)
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
         elif str(transport) == "PI":
             self._transp = "PI"
@@ -131,6 +137,10 @@ class ZigateTransport(object):
             self.closeConn()
         Domoticz.Log("Lost connection, reConn Transport.reConn: %s" %self._connection)
         if self._transp == "USB":
+            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+                         Address=self._serialPort, Baud=115200)
+        elif self._transp == "DIN":
             Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
             self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                          Address=self._serialPort, Baud=115200)

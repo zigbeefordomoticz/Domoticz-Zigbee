@@ -24,6 +24,7 @@ from time import time, ctime, strftime, gmtime, mktime, strptime
 
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
 from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID
+from Modules.actuators import actuators
 
 from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
@@ -1810,6 +1811,10 @@ class WebServer(object):
                 data = json.loads(data)
                 Domoticz.Log("rest_dev_command - Command: %s on object: %s with extra %s %s" 
                         %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
+                _response["Data"] = "Executing %s on %s" %(data['Command'], data['NwkId'])
+
+                epout = '01'
+                actuators( self,  data['Command'], data['NwkId'], epout)
         return _response
 
     def rest_dev_capabilities( self, verb, data, parameters):

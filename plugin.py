@@ -18,9 +18,9 @@
                 <li> IP : For Wifi Zigate, the IP address. </li>
                 <li> Port: For Wifi Zigate,  port number. </li>
                 </ul>
-                <li> Model USB or PI:</li>
+                <li> Model USB ,  PI or DIN:</li>
             <ul style="list-style-type:square">
-                <li> Serial Port: this is the serial port where your USB Zigate is connected. (The plugin will provide you the list of possible ports)</li>
+                <li> Serial Port: this is the serial port where your USB or DIN Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
             <li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
             <li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
@@ -32,6 +32,7 @@
         <param field="Mode1" label="Zigate Model" width="75px">
             <options>
                 <option label="USB" value="USB" default="true" />
+                <option label="DIN" value="DIN" />
                 <option label="PI" value="PI" />
                 <option label="Wifi" value="Wifi"/>
                 <option label="None" value="None"/>
@@ -294,6 +295,9 @@ class BasePlugin:
         # Connect to Zigate only when all initialisation are properly done.
         Domoticz.Status("Transport mode: %s" %self.transport)
         if  self.transport == "USB":
+            self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
+                    serialPort=Parameters["SerialPort"] )
+        elif  self.transport == "DIN":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
                     serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
