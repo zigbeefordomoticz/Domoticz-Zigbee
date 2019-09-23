@@ -1847,9 +1847,18 @@ class WebServer(object):
                                         '0300': ( 'RGBWW', ),
                                         '0102': ( 'On', 'Off', 'Stop', 'LevelControl') }
 
+                DEVICE_TYPES = { 
+                        '0006': ('Switch', ),
+                        '0008': ( 'LvlControl', ),
+                        '0201': ( 'hermoSetpoin', ),
+                        '0300': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB'),
+                        '0102': ( 'WindowCovering', )
+                        }
+
                 dev_capabilities = {}
                 dev_capabilities['NwkId'] = {}
                 dev_capabilities['Capabilities'] = []
+                dev_capabilities['Types'] = []
                 if  parameters[0] in self.ListOfDevices:
                     _nwkid = parameters[0]
                 elif parameters[0] in self.IEEE2NWK:
@@ -1857,8 +1866,13 @@ class WebServer(object):
                 dev_capabilities['NwkId'] = _nwkid
                 for ep in self.ListOfDevices[ _nwkid ]['Ep']:
                     for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
+                        Domoticz.Log("Cluster: %s" %cluster)
+                        if cluster in DEVICE_TYPES:
+                            for cap in DEVICE_TYPES[ cluster ]:
+                                if cap not in dev_capabilities['Types']:
+                                    Domoticz.Log("---> %s" %cap)
+                                    dev_capabilities['Types'].append( cap )
                         if cluster in DEVICE_CAPABILITIES:
-                            Domoticz.Log("Cluster: %s" %cluster)
                             for cap in DEVICE_CAPABILITIES[ cluster ]:
                                 if cap not in dev_capabilities['Capabilities']:
                                     Domoticz.Log("---> %s" %cap)
