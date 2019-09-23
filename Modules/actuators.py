@@ -27,38 +27,38 @@ def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, col
         Domoticz.Error("actuators - Unknown Ep: %s for device: %s" %(epout,nwkid))
         return
 
-    if cmd == 'On':
+    if action == 'On':
         actuator_on( self, nwkid, epout, DeviceType )
-    elif cmd == 'Off':
+    elif action == 'Off':
         actuator_off( self, nwkid, epout, DeviceType)
-    elif cmd == 'Stop':
+    elif action == 'Stop':
         actuator_off( self, nwkid, epout, DeviceType)
-    elif cmd == 'Toggle':
-        actuator_off( self, nwkid, epout, DeviceType)
-    elif cmd == 'SetLevel' and value is not None:
+    elif action == 'Toggle':
+        actuator_toggle( self, nwkid, epout, DeviceType)
+    elif action == 'SetLevel' and value is not None:
         actuator_setlevel( self, nwkid, epout, value, DeviceType)
-    elif cmd == 'SetColor' and value is not None and color is not None:
+    elif action == 'SetColor' and value is not None and color is not None:
         actuator_setcolor( self, nwkid, epout, value, color)
     else:
-        Domoticz.Error("actuators - Command: %s error: %s/%s %s %s" %(cmd, nwkid, epout, value, color))
+        Domoticz.Error("actuators - Command: %s error: %s/%s %s %s" %(action, nwkid, epout, value, color))
 
 
-def actuator_toggle( self, nwkid, ep, DeviceType):
+def actuator_toggle( self, nwkid, EPout, DeviceType):
 
     # To be implemented
-    sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "02")
+    sendZigateCmd(self, "0092","02" + nwkid + "01" + EPout + "02")
     return
 
-def actuator_stop( self, nwkid, ep, DeviceType):
+def actuator_stop( self, nwkid, EPout, DeviceType):
 
     if DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
         Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
-        sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
+        sendZigateCmd(self, "00FA","02" + nwkid + "01" + EPout + "02")
     else:
-        sendZigateCmd(self, "0083","02" + NWKID + "01" + EPout )
+        sendZigateCmd(self, "0083","02" + nwkid + "01" + EPout )
 
-def actuator_off(  self, nwkid, ep, DeviceType):
+def actuator_off(  self, nwkid, EPout, DeviceType):
 
     if DeviceType == 'LivoloSWL':
         sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + '01' + '0001')
@@ -68,16 +68,16 @@ def actuator_off(  self, nwkid, ep, DeviceType):
 
     elif DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
+        sendZigateCmd(self, "00FA","02" + nwkid + "01" + EPout + "01")
 
     elif DeviceType == "AlarmWD":
         Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
-        self.iaszonemgt.alarm_off( NWKID, EPout)
+        self.iaszonemgt.alarm_off( nwkid, EPout)
 
     else:
-        sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
+        sendZigateCmd(self, "0092","02" + nwkid + "01" + EPout + "00")
 
-def actuator_on(  self, nwkid, ep, DeviceType):
+def actuator_on(  self, nwkid, EPout, DeviceType):
 
     if DeviceType == 'LivoloSWL':
         # Level = 108 / 0x6C for On
@@ -87,19 +87,19 @@ def actuator_on(  self, nwkid, ep, DeviceType):
 
     elif DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-        sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
+        sendZigateCmd(self, "00FA","02" + nwkid + "01" + EPout + "00")
 
     else:
-        sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
+        sendZigateCmd(self, "0092","02" + nwkid + "01" + EPout + "01")
 
-def actuator_setlevel( self, nwkid, ep, value, DeviceType):
+def actuator_setlevel( self, nwkid, EPout, value, DeviceType):
 
     if DeviceType == 'ThermoMode':
-        actuator_setthermostat(self, nwkid, ep, value)
+        actuator_setthermostat(self, nwkid, EPout, value)
     elif DeviceType == 'ThermoSetpoint':
-        actuator_setpoint(self, nwkid, ep, value)
+        actuator_setpoint(self, nwkid, EPout, value)
     elif DeviceType == "AlarmWD":
-        actuator_setalarm( self, nwkid, ep, value)
+        actuator_setalarm( self, nwkid, EPout, value)
     elif  DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
         if Level == 0:
@@ -107,8 +107,8 @@ def actuator_setlevel( self, nwkid, ep, value, DeviceType):
         elif Level >= 100:
             Level = 99
         value = '%02x' %Level
-        Domoticz.Log("WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
-        sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+        Domoticz.Log("WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" %(nwkid, EPout, value, Level))
+        sendZigateCmd(self, "00FA","02" + nwkid + "01" + EPout + "05" + value)
     else:
         OnOff = '01' # 00 = off, 01 = on
         if Level == 100: 
@@ -121,7 +121,7 @@ def actuator_setlevel( self, nwkid, ep, value, DeviceType):
                 value = 1
 
         value=Hex_Format(2, value)
-        sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
+        sendZigateCmd(self, "0081","02" + nwkid + EPin + EPout + OnOff + value + "0010")
 
 def actuator_setthermostat( self, nwkid, ep, value ):
 
@@ -136,31 +136,31 @@ def actuator_setthermostat( self, nwkid, ep, value ):
     #'Fan only' : 0x07 
     if value == 0:
         value = 'off'
-        thermostat_Mode( self, NWKID, value)
+        thermostat_Mode( self, nwkid, value)
 
 
 def actuator_setpoint(  self, nwkid, ep, value ):
     value = int(float(Level)*100)
-    Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
-    thermostat_Setpoint( self, NWKID, value )
+    Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(nwkid, value))
+    thermostat_Setpoint( self, nwkid, value )
 
-def actuator_setalarm( self, nwkid, ep, value ):
+def actuator_setalarm( self, nwkid, EPout, value ):
 
     Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
     if Level == 0: # Stop
-        self.iaszonemgt.alarm_off( NWKID, EPout)
+        self.iaszonemgt.alarm_off( nwkid, EPout)
     elif Level == 10: # Alarm
-        self.iaszonemgt.alarm_on(  NWKID, EPout)
+        self.iaszonemgt.alarm_on(  nwkid, EPout)
     elif Level == 20: # Siren
-        self.iaszonemgt.siren_only( NWKID, EPout)
+        self.iaszonemgt.siren_only( nwkid, EPout)
     elif Level == 30: # Strobe
-        self.iaszonemgt.strobe_only( NWKID, EPout)
+        self.iaszonemgt.strobe_only( nwkid, EPout)
     elif Level == 40: # Armed - Squawk
-        self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'armed')
+        self.iaszonemgt.write_IAS_WD_Squawk( nwkid, EPout, 'armed')
     elif Level == 50: # Disarmed
-        self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'disarmed')
+        self.iaszonemgt.write_IAS_WD_Squawk( nwkid, EPout, 'disarmed')
 
-def actuator_setcolor( self, nwkid, ep, value, Color ):
+def actuator_setcolor( self, nwkid, EPout, value, Color ):
     Hue_List = json.loads(Color)
     
     #Color 
@@ -173,12 +173,12 @@ def actuator_setcolor( self, nwkid, ep, value, Color ):
     #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
     #
 
-    self.ListOfDevices[NWKID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
+    self.ListOfDevices[nwkid]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
 
     #First manage level
     OnOff = '01' # 00 = off, 01 = on
     value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
-    sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
+    sendZigateCmd(self, "0081","02" + nwkid + EPin + EPout + OnOff + value + "0000")
 
     #Now color
     #ColorModeNone = 0   // Illegal
@@ -186,7 +186,7 @@ def actuator_setcolor( self, nwkid, ep, value, Color ):
     if Hue_List['m'] == 1:
         ww = int(Hue_List['ww']) # Can be used as level for monochrome white
         #TODO : Jamais vu un device avec ca encore
-        loggingCommand( self, 'Debug', "Not implemented device color 1", NWKID)
+        loggingCommand( self, 'Debug', "Not implemented device color 1", nwkid)
     #ColorModeTemp = 2   // White with color temperature. Valid fields: t
     if Hue_List['m'] == 2:
         #Value is in mireds (not kelvin)
@@ -194,7 +194,7 @@ def actuator_setcolor( self, nwkid, ep, value, Color ):
         # t is 0 > 255
         TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
         TempMired = 1000000 // TempKelvin
-        sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+        sendZigateCmd(self, "00C0","02" + nwkid + EPin + EPout + Hex_Format(4,TempMired) + "0000")
     #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
     elif Hue_List['m'] == 3:
         x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -202,14 +202,14 @@ def actuator_setcolor( self, nwkid, ep, value, Color ):
         x = int(x*65536)
         y = int(y*65536)
         strxy = Hex_Format(4,x) + Hex_Format(4,y)
-        sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
+        sendZigateCmd(self, "00B7","02" + nwkid + EPin + EPout + strxy + "0000")
     #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
     elif Hue_List['m'] == 4:
         ww = int(Hue_List['ww'])
         cw = int(Hue_List['cw'])
         x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
         #TODO, Pas trouve de device avec ca encore ...
-        loggingCommand( self, 'Debug', "Not implemented device color 2", NWKID)
+        loggingCommand( self, 'Debug', "Not implemented device color 2", nwkid)
     #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
     elif Hue_List['m'] == 9998:
         h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -219,5 +219,5 @@ def actuator_setcolor( self, nwkid, ep, value, Color ):
         saturation = int(saturation*254//100)
         value = int(l * 254//100)
         OnOff = '01'
-        sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
-        sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
+        sendZigateCmd(self, "00B6","02" + nwkid + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+        sendZigateCmd(self, "0081","02" + nwkid + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")

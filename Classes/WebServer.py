@@ -409,7 +409,7 @@ class WebServer(object):
         REST_COMMANDS = { 
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'dev-cap':       {'Name':'dev-cap',       'Verbs':{'GET'}, 'function':self.rest_dev_capabilities},
-                'dev-cmd':       {'Name':'dev-cmd',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
+                'dev-command':       {'Name':'dev-command',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
                 'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
                 'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
@@ -1814,7 +1814,7 @@ class WebServer(object):
                 _response["Data"] = "Executing %s on %s" %(data['Command'], data['NwkId'])
 
                 epout = '01'
-                actuators( self,  data['Command'], data['NwkId'], epout)
+                actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
         return _response
 
     def rest_dev_capabilities( self, verb, data, parameters):
