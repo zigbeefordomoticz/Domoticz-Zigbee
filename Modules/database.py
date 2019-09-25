@@ -160,6 +160,19 @@ def importDeviceConf( self ) :
 
     Domoticz.Status("DeviceConf loaded")
 
+def checkDevices2LOD( self, Devices):
+
+    for nwkid in self.ListOfDevices:
+        self.ListOfDevices[nwkid]['ConsistencyCheck'] = ''
+        if self.ListOfDevices[nwkid]['Status'] == 'inDB':
+            for dev in Devices:
+                if Devices[dev].DeviceID == self.ListOfDevices[nwkid]['IEEE']:
+                    self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'ok'
+                    break
+            else:
+                self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'not in DZ'
+
+
 def checkListOfDevice2Devices( self, Devices ) :
 
     # As of V3 we will be loading only the IEEE information as that is the only one existing in Domoticz area.

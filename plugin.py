@@ -79,7 +79,7 @@ from Modules.tools import removeDeviceInList, loggingPlugin
 from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
-from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkListOfDevice2Devices, WriteDeviceList
+from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
@@ -278,6 +278,7 @@ class BasePlugin:
 
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices( self, Devices )
+        checkDevices2LOD( self, Devices )
 
         loggingPlugin( self, 'Debug', "ListOfDevices after checkListOfDevice2Devices: " +str(self.ListOfDevices) )
         loggingPlugin( self, 'Debug', "IEEE2NWK after checkListOfDevice2Devices     : " +str(self.IEEE2NWK) )

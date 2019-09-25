@@ -96,6 +96,7 @@ class WebServer(object):
             self.groupmgt = None
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
+        Domoticz.Log("Devices: %s" %Devices)
         self.Devices = Devices
 
         self.restart_needed = {}
@@ -425,7 +426,7 @@ class WebServer(object):
                 'sw-reset-zigate':  {'Name':'sw-reset-zigate',  'Verbs':{'GET'}, 'function':self.rest_reset_zigate},
                 'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
-                'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
+                'zdevice':       {'Name':'zdevice',       'Verbs':{'GET','DELETE'}, 'function':self.rest_zDevice},
                 'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
@@ -1389,33 +1390,33 @@ class WebServer(object):
                 device = {}
                 device['_NwkId'] = x
 
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health', 'RSSI', 'Battery'):
+                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'RSSI', 'Battery'):
                     if item in self.ListOfDevices[x]:
-                        if item != 'MacCapa':
-                            if self.ListOfDevices[x][item] != {}:
-                                device[item.strip()] = self.ListOfDevices[x][item]
-                            else:
-                                device[item.strip()] = ''
+                        if item == 'MacCapa':
+                            device['MacCapa'] = []
+                            mac_capability = int(self.ListOfDevices[x][item],16)
+                            AltPAN      =   ( mac_capability & 0x00000001 )
+                            DeviceType  =   ( mac_capability >> 1 ) & 1
+                            PowerSource =   ( mac_capability >> 2 ) & 1
+                            ReceiveonIdle = ( mac_capability >> 3 ) & 1
+                            if DeviceType == 1 :
+                                device['MacCapa'].append("FFD")
+                            else :
+                                device['MacCapa'].append("RFD")
+                            if ReceiveonIdle == 1 :
+                                device['MacCapa'].append("RxonIdle")
+                            if PowerSource == 1 :
+                                device['MacCapa'].append("MainPower")
+                            else :
+                                device['MacCapa'].append("Battery")
+                            self.logging( 'Debug', "decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
                         else:
-                                device['MacCapa'] = []
-                                mac_capability = int(self.ListOfDevices[x][item],16)
-                                AltPAN      =   ( mac_capability & 0x00000001 )
-                                DeviceType  =   ( mac_capability >> 1 ) & 1
-                                PowerSource =   ( mac_capability >> 2 ) & 1
-                                ReceiveonIdle = ( mac_capability >> 3 ) & 1
-                                if DeviceType == 1 :
-                                    device['MacCapa'].append("FFD")
-                                else :
-                                    device['MacCapa'].append("RFD")
-                                if ReceiveonIdle == 1 :
-                                    device['MacCapa'].append("RxonIdle")
-                                if PowerSource == 1 :
-                                    device['MacCapa'].append("MainPower")
-                                else :
-                                    device['MacCapa'].append("Battery")
-                                self.logging( 'Debug', "decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
+                            if self.ListOfDevices[x][item] != {}:
+                                device[item] = self.ListOfDevices[x][item]
+                            else:
+                                device[item] = ''
                     else:
-                        device[item.strip()] = ""
+                        device[item] = ''
 
                 device['WidgetList'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
@@ -1466,7 +1467,34 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == 'GET':
+        if verb == 'DELETE':
+            if len(parameters) == 1:
+                deviceId = parameters[0]
+                if len( deviceId ) == 4: # Short Network Addr
+                    if deviceId not in self.ListOfDevices:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    nwkid = deviceId
+                    ieee = self.ListOfDevice[deviceId]['IEEE']
+                else:
+                    if deviceId not in self.IEEE2NWK:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    ieee = deviceId
+                    nwkid = self.IEEE2NWK[ ieee ]
+                
+                del self.ListOfDevice[ nwkid ]
+                del self.IEEE2NWK[ ieee ]
+                action = {}
+                action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
+                _response['Data'] = json.dumps( action , sort_keys=True)
+            return _response
+
+        elif verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
@@ -1478,7 +1506,7 @@ class WebServer(object):
                     device = {}
                     device['_NwkId'] = item
                     # Main Attributes
-                    for attribut in ( 'ZDeviceName', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
+                    for attribut in ( 'ZDeviceName', 'ConsistencyCheck', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
 
                         if attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
