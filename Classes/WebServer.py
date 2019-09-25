@@ -96,7 +96,6 @@ class WebServer(object):
             self.groupmgt = None
         self.ListOfDevices = ListOfDevices
         self.IEEE2NWK = IEEE2NWK
-        Domoticz.Log("Devices: %s" %Devices)
         self.Devices = Devices
 
         self.restart_needed = {}
