@@ -1,6 +1,7 @@
 # Release Notes 
 
 ##             - beta 4.6
+- [Hardware] - Update of IKEA Tradfri firmware
 - [Technical] - better management of APS Failure, network transmission
 - [Technical] - speedup the process to get Powered Devices with a correct Health state
 - [Technical] - Consider Health 'Non rechable' as a dead device, and do not process them anymore.
@@ -12,6 +13,8 @@
 - [Hardware] - Certify Konke KIT Pro ( Multi Function switch, Door contact, Temp/Humi Sensor, Motion sensor)
 - [Technical] - New way to restart plugin.
 - [Hardware] - BITRON Home devices ( Door sensor )
+- [Hardware] - BITRON Home devices ( Motion sensor )
+- [Hardware] - BITRON Home devices ( Plug )
 - [Hardware] - Centralite Door Sensor
 - [Hardware] - Zemismart Blind and Shade. New way of handling widget creation (used ProfileID/DeviceID)
 - [Technical] - Using command 0x47 to remove device
