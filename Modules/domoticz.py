@@ -1511,14 +1511,14 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
 
-    loggingWidget( self, "Debug", "UpdateDevice_v2 - %s %s-%s %s %s %s %s" %( Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_, ForceUpdate_))
+    loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s_%s:%s_%s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     rssi = 12
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
 
-    if not isinstance(BatteryLvl, int) or BatteryLvl == '':
+    if BatteryLvl == '' or (not isinstance(BatteryLvl, int)):
         BatteryLvl = 255
     else:
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " BatteryLevel = " + str(BatteryLvl), self.IEEE2NWK[Devices[Unit].DeviceID])
@@ -1526,7 +1526,8 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
     if (Unit in Devices):
         if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
-            ( Color_ !='' and Devices[Unit].Color != Color_) or ForceUpdate_ or \
+            ( Color_ !='' and Devices[Unit].Color != Color_) or \
+            ForceUpdate_ or \
             Devices[Unit].BatteryLevel != int(BatteryLvl) or \
             Devices[Unit].TimedOut:
 
