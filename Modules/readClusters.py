@@ -422,18 +422,18 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sPower = retreive8Tag( '9839', MsgClusterData )
 
         if sConso != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consomation %08x" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sConso,16)))
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consomation %08x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sConso,16), int(sConso,16)))
             Domoticz.Log("Please do contact Plugin Zigate support")
         if sPower != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %08x" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sPower,16)))
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %08x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sPower,16), int(sPower,16)))
             Domoticz.Log("Please do contact Plugin Zigate support")
         if sLighLevel != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %04x" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLighLevel,16)))
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %04x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLighLevel,16), struct.unpack('H',struct.pack('H',int(sLighLevel,16)))[0]))
             Domoticz.Log("Please do contact Plugin Zigate support")
         if sRSSI != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s RSSI %04X" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sRSSI,16)))
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s RSSI %04X %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sRSSI,16), int(sRSSI,16)))
         if sLQI != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s LQI %X" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLQI,16)))
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s LQI %X %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLQI,16),  int(sLQI,16)))
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
@@ -711,6 +711,29 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 '01': 'Current x and current y',
                 '02': 'Color temperature' }
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Color Mode: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+
+    # Seems to be Hue related
+    elif MsgAttrID == '0010':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '001a':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '001b':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0030': 
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0031': 
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0032':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0033':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0034':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0036':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+    elif MsgAttrID == '0037':
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
 
