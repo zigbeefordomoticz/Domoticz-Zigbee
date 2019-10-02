@@ -387,6 +387,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID in ( 'ff01', 'ff02'):
         
         if self.ListOfDevices[MsgSrcAddr]['Status'] != "inDB":  # xiaomi battery lvl
+            Domoticz.Error("ReadCluster - %s - %s/%s Attribut %s received while device not inDB" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID))
             return
 
         ReadAttributeRequest_Ack(self, MsgSrcAddr)         # Ping Xiaomi devices
@@ -398,18 +399,41 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
 
         sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-        stag04 = retreive4Tag( '0424', MsgClusterData )
-        stag05 = retreive4Tag( '0521', MsgClusterData )
-        stag06 = retreive4Tag( '0620', MsgClusterData )
         sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
+        stag04 = retreive4Tag( '0424', MsgClusterData )
+        sRSSI = retreive4Tag( '0521', MsgClusterData )[0:2] # RSSI
+        sLQI = retreive8Tag( '0620', MsgClusterData ) # LQI
+        stag07_lumi_ctrl_ln2 = retreive8Tag( '07xx', MsgClusterData)
+        stag08_lumi_ctrl_ln2 = retreive4Tag( '0821', MsgClusterData)
+        stag09_lumi_ctrl_ln2 = retreive4Tag( '0921', MsgClusterData)
+        stag0a_lumi_vibration_aq1 = retreive4Tag( '0a21', MsgClusterData)
+        sLighLevel = retreive4Tag( '0b21', MsgClusterData)
+
         sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
-        sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb
+        sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
         sTemp =   retreive4Tag( "6429", MsgClusterData )
+        sOnOff3 =  retreive4Tag( "6510", MsgClusterData ) # On/off lumi.ctrl_ln2 EP 02
         sHumid =  retreive4Tag( "6521", MsgClusterData )
         sHumid2 = retreive4Tag( "6529", MsgClusterData )
         sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
         stag10 =  retreive4Tag( "6621", MsgClusterData )
         sPress =  retreive8Tag( "662b", MsgClusterData )
+        sConso = retreive8Tag( '9539', MsgClusterData )
+        sPower = retreive8Tag( '9839', MsgClusterData )
+
+        if sConso != '':
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consomation %08x" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sConso,16)))
+            Domoticz.Log("Please do contact Plugin Zigate support")
+        if sPower != '':
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %08x" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sPower,16)))
+            Domoticz.Log("Please do contact Plugin Zigate support")
+        if sLighLevel != '':
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %04x" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLighLevel,16)))
+            Domoticz.Log("Please do contact Plugin Zigate support")
+        if sRSSI != '':
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s RSSI %04X" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sRSSI,16)))
+        if sLQI != '':
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s LQI %X" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLQI,16)))
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
@@ -484,7 +508,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = sOnOff
 
-        if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb
+        if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb / Lumi Curtain - Position
             loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
             if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
