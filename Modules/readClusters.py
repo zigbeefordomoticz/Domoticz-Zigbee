@@ -422,10 +422,12 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sPower = retreive8Tag( '9839', MsgClusterData )
 
         if sConso != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consomation %08x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sConso,16), int(sConso,16)))
+            sConso = round(float(decodeAttribute( self, '39', sConso )),3)
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consuption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso))
             Domoticz.Log("Please do contact Plugin Zigate support")
         if sPower != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %08x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sPower,16), int(sPower,16)))
+            sPower = round(float(decodeAttribute( self, '39', sPower )),3)
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower))
             Domoticz.Log("Please do contact Plugin Zigate support")
         if sLighLevel != '':
             Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %04x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLighLevel,16), struct.unpack('H',struct.pack('H',int(sLighLevel,16)))[0]))
