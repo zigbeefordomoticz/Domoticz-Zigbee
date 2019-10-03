@@ -742,7 +742,7 @@ def pingZigate( self ):
     """
 
     # Frequency is set to below 4' as regards to the TCP timeout with Wifi-Zigate
-    PING_CHECK_FREQ =  240
+    PING_CHECK_FREQ =  ((5 * 60 ) / 2 ) - 7
 
     loggingPlugin( self, 'Debug', "pingZigate - [%s] Nb Ticks: %s Status: %s TimeStamp: %s" \
             %(self.HeartbeatCount, self.Ping['Nb Ticks'], self.Ping['Status'], self.Ping['TimeStamp']))
@@ -782,7 +782,7 @@ def pingZigate( self ):
 
     if self.Ping['Status'] == 'Receive':
         if self.connectionState == 0:
-        #    self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
+            #self.adminWidgets.updateStatusWidget( self, Devices, 'Ping: Reconnected after failure')
             Domoticz.Status("pingZigate - SUCCESS - Reconnected after failure")
         loggingPlugin( self, 'Debug', "pingZigate - Status: %s Send a Ping, Ticks: %s" %(self.Ping['Status'], self.Ping['Nb Ticks']))
         sendZigateCmd( self, "0014", "" ) # Request status
