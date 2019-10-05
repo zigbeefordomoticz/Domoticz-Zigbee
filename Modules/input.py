@@ -513,7 +513,7 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     MsgSrcAddr = MsgData[0:4]
     MsgSrcEp = MsgData[4:6]
     MsgClusterId = MsgData[6:10]
-    loggingInput( self, 'Log', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s" \
+    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
@@ -1142,6 +1142,10 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
             Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
             leaveMgtReJoin( self, sAddr, MsgExtAddress )
+        else:
+            Domoticz.Error("Receiving a leave from %s/%s while device is %s status" %( sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
+            del self.ListOfDevices[sAddr]
+            del self.IEEE2NWK[MsgExtAddress]
 
     return
 
