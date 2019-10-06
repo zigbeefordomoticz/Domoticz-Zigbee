@@ -68,10 +68,12 @@
 
 "":"Legrand",
     "plug.Celiane.Legrand":{"Ep":{"01":{"0004":"","0006":"","0005":"","fc01":""}},"Type":"Switch","ProfileID":"0104","ZDeviceID":"010a"},
-    "Shutter switch with neutral":{"Ep":{"01":{"0000":"", "0003":"", "0004":"", "0005":"", "0102":"", "Type":"WindowCovering"}},"Type":""},
+    "Connected outlet":{"Ep":{"01":{"0000":"","0003":"","0004":"","0005":"","0006":"","fc01":"","0b04":"","0019":"","Type":"Switch/Power/Meter"}},"Type":"","ProfileID":"0104","ZDeviceID":"010a"},
+    "Dimmer switch w/o neutral":{"Ep":{"01":{"0000":"","0003":"","0004":"","0008":"","0006":"","0005":"","000f":"","fc01":"","0019":"","Type":"Switch"}},"Type":""},
+    "Shutter switch with neutral":{"Ep":{"01":{"0000":"","0003":"","0004":"","0005":"","0102":"","000f":"","fc01":"","0019":"","Type":"WindowCovering"}},"Type":""},
 
 "":"Livolo section",
-    "TI0001":{"Ep":{"06":{"0000":"", "0003":"","0006":"","0008":"","Type":"LivoloSWL/LivoloSWR"}},"Type":""},
+    "TI0001":{"Ep":{"06":{"0000":"","0003":"","0006":"","0008":"","Type":"LivoloSWL/LivoloSWR"}},"Type":""},
 
 "":"OSRAM",
     "Plug 01":{"Ep":{"03":{"0006":"","0004":"","0000":"","0003":"","0005":"","0019":"","1000":"","Type":"Plug"}},"Type":"","ProfileID":"c05e","ZDeviceID":"0010"},
