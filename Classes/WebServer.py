@@ -426,7 +426,7 @@ class WebServer(object):
                 'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
                 'zdevice':       {'Name':'zdevice',       'Verbs':{'GET','DELETE'}, 'function':self.rest_zDevice},
-                'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
+                'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT','DELETE'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
                 'zgroup-list-available-device':   
@@ -1453,6 +1453,32 @@ class WebServer(object):
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
 
+        elif verb == 'DELETE':
+            if len(parameters) == 1:
+                deviceId = parameters[0]
+                if len( deviceId ) == 4: # Short Network Addr
+                    if deviceId not in self.ListOfDevices:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    nwkid = deviceId
+                    ieee = self.ListOfDevices[deviceId]['IEEE']
+                else:
+                    if deviceId not in self.IEEE2NWK:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    ieee = deviceId
+                    nwkid = self.IEEE2NWK[ ieee ]
+                
+                del self.ListOfDevices[ nwkid ]
+                del self.IEEE2NWK[ ieee ]
+                action = {}
+                action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
+                _response['Data'] = json.dumps( action , sort_keys=True)
+
         return _response
 
     def rest_zDevice( self, verb, data, parameters):
@@ -1836,12 +1862,21 @@ class WebServer(object):
             if len(parameters) == 0:
                 data = data.decode('utf8')
                 data = json.loads(data)
-                Domoticz.Log("rest_dev_command - Command: %s on object: %s with extra %s %s" 
-                        %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
+                Domoticz.Log("---> Data: %s" %str(data))
+                self.logging( 'Log', "rest_dev_command - Command: %s on object: %s with extra %s %s" %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
                 _response["Data"] = "Executing %s on %s" %(data['Command'], data['NwkId'])
+                
+                if 'Command' not in data:
+                    return _response
+                if data['Command'] == '':
+                    return _response
 
                 epout = '01'
-                actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
+                if 'Type' not in data:
+                    actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
+                else:
+                    actuators( self,  data['Command'], data['NwkId'], epout , data['Type'])
+
         return _response
 
     def rest_dev_capabilities( self, verb, data, parameters):
@@ -1877,7 +1912,7 @@ class WebServer(object):
                 DEVICE_TYPES = { 
                         '0006': ('Switch', ),
                         '0008': ( 'LvlControl', ),
-                        '0201': ( 'hermoSetpoin', ),
+                        '0201': ( 'ThermoSetpoin', ),
                         '0300': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB'),
                         '0102': ( 'WindowCovering', )
                         }
@@ -1893,16 +1928,16 @@ class WebServer(object):
                 dev_capabilities['NwkId'] = _nwkid
                 for ep in self.ListOfDevices[ _nwkid ]['Ep']:
                     for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
-                        Domoticz.Log("Cluster: %s" %cluster)
+                        self.logging( 'Debug', "Cluster: %s" %cluster)
                         if cluster in DEVICE_TYPES:
                             for cap in DEVICE_TYPES[ cluster ]:
                                 if cap not in dev_capabilities['Types']:
-                                    Domoticz.Log("---> %s" %cap)
+                                    self.logging( 'Debug',"---> %s" %cap)
                                     dev_capabilities['Types'].append( cap )
                         if cluster in DEVICE_CAPABILITIES:
                             for cap in DEVICE_CAPABILITIES[ cluster ]:
                                 if cap not in dev_capabilities['Capabilities']:
-                                    Domoticz.Log("---> %s" %cap)
+                                    self.logging( 'Debug',"---> %s" %cap)
                                     dev_capabilities['Capabilities'].append( cap )
 
                 _response["Data"] = json.dumps( dev_capabilities, sort_keys=True )
