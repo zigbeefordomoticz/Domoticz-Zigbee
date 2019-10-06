@@ -1144,6 +1144,7 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             leaveMgtReJoin( self, sAddr, MsgExtAddress )
         else:
             Domoticz.Error("Receiving a leave from %s/%s while device is %s status" %( sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
+            Domoticz.Log("--> Removing: %s" %str(self.ListOfDevices[sAddr]))
             del self.ListOfDevices[sAddr]
             del self.IEEE2NWK[MsgExtAddress]
 
