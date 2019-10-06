@@ -577,18 +577,19 @@ class OTAManagement(object):
             self.logging( 'Debug', "Too busy, will come back later")
             return
 
-        if len(self.OTA['Images']) == 0 and \
-                self.upgradeInProgress is None and \
-                self.upgradableDev is None and \
-                self.upgradeOTAImage is None:
-            if ( self.HB % ( OTA_CYLCLE // HEARTBEAT) ) == 0: # Every 6 hours
-                self.ota_scan_folder()
-            return
+        if 'Images' in self.OTA:
+            if len(self.OTA['Images']) == 0 and \
+                    self.upgradeInProgress is None and \
+                    self.upgradableDev is None and \
+                    self.upgradeOTAImage is None:
+                if ( self.HB % ( OTA_CYLCLE // HEARTBEAT) ) == 0: # Every 6 hours
+                    self.ota_scan_folder()
+                return
 
-        if self.OTA['Images'] is None :
-            _lenOTA = '?'
-        else:
-            _lenOTA =len(self.OTA['Images'])
+            if self.OTA['Images'] is None :
+                _lenOTA = '?'
+            else:
+                _lenOTA =len(self.OTA['Images'])
 
         if self.upgradableDev is None:
             _lenUpgrade = '?'
