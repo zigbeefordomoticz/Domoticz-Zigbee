@@ -1869,12 +1869,31 @@ class WebServer(object):
                     return _response
                 if data['Command'] == '':
                     return _response
-
+                if data['Value'] == '' or data['Value'] is None:
+                    Level = 0
+                else:
+                    Level = int(data['Value'])
+                ColorMode = ColorValue = ''
+                color = ''
+                if data['Color'] == '' or data['Color'] is None:
+                    Hue_List = {}
+                    Color = json.dumps( Hue_List )
+                else:
+                    # Decoding RGB
+                    # rgb(30,96,239)
+                    ColorMode = data['Color'].split('(')[0]
+                    ColorValue = data['Color'].split('(')[1].split(')')[0]
+                    if ColorMode == 'rgb':
+                        Hue_List = {}
+                        Hue_List['m'] = 3
+                        Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',') 
+                    self.logging( 'Log', "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s"  %(Hue_List['m'], Hue_List['r'], Hue_List['g'], Hue_List['b']))
+                    Color = json.dumps( Hue_List )
                 epout = '01'
                 if 'Type' not in data:
                     actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
                 else:
-                    actuators( self,  data['Command'], data['NwkId'], epout , data['Type'], value=int(data['Value']), color=data['Color'])
+                    actuators( self,  data['Command'], data['NwkId'], epout , data['Type'], value=Level, color=Color)
 
         return _response
 
@@ -1905,7 +1924,7 @@ class WebServer(object):
                 DEVICE_CAPABILITIES = { '0006': ( 'On', 'Off', 'Toggle' ),
                                         '0008': ( 'SetLevel', ),
                                         '0201': ( 'SetPoint', ),
-                                        '0300': ( 'RGBWW', ),
+                                        '0300': ( 'SetColor', ),
                                         '0102': ( 'On', 'Off', 'Stop', 'SetLevel') }
 
                 DEVICE_TYPES = { 
