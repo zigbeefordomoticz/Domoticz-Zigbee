@@ -347,7 +347,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - Product Code: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
-
     elif MsgAttrID == '0010': # LOCATION_DESCRIPTION
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Location: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
@@ -403,10 +402,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         stag04 = retreive4Tag( '0424', MsgClusterData )
         sRSSI = retreive4Tag( '0521', MsgClusterData )[0:2] # RSSI
         sLQI = retreive8Tag( '0620', MsgClusterData ) # LQI
-        stag07_lumi_ctrl_ln2 = retreive8Tag( '07xx', MsgClusterData)
-        stag08_lumi_ctrl_ln2 = retreive4Tag( '0821', MsgClusterData)
-        stag09_lumi_ctrl_ln2 = retreive4Tag( '0921', MsgClusterData)
-        stag0a_lumi_vibration_aq1 = retreive4Tag( '0a21', MsgClusterData)
         sLighLevel = retreive4Tag( '0b21', MsgClusterData)
 
         sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
@@ -416,22 +411,28 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         sHumid =  retreive4Tag( "6521", MsgClusterData )
         sHumid2 = retreive4Tag( "6529", MsgClusterData )
         sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
-        stag10 =  retreive4Tag( "6621", MsgClusterData )
         sPress =  retreive8Tag( "662b", MsgClusterData )
         sConso = retreive8Tag( '9539', MsgClusterData )
         sPower = retreive8Tag( '9839', MsgClusterData )
 
-        if sConso != '':
-            sConso = round(float(decodeAttribute( self, '39', sConso )),3)
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consuption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso))
-            Domoticz.Log("Please do contact Plugin Zigate support")
-        if sPower != '':
-            sPower = round(float(decodeAttribute( self, '39', sPower )),3)
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower))
-            Domoticz.Log("Please do contact Plugin Zigate support")
+
+        #if sConso != '':
+        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso ))
+        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sConso ))))
+        #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sConso ))))
+        #    if 'Consumtpion' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        #        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
+        #    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeAttribute( self, '39', sConso ))
+        #if sPower != '':
+        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower ))
+        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sPower ))))
+        #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sPower ))))
         if sLighLevel != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %04x %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLighLevel,16), struct.unpack('H',struct.pack('H',int(sLighLevel,16)))[0]))
-            Domoticz.Log("Please do contact Plugin Zigate support")
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sLighLevel ))
+            cal = []
+            cal = sLighLevel[2] + sLighLevel[3] + sLighLevel[0] + sLighLevel[1]
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(cal, 16 )))
+            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '21', sLighLevel ))))
         if sRSSI != '':
             Domoticz.Log("ReadCluster - %s/%s Saddr: %s RSSI %04X %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sRSSI,16), int(sRSSI,16)))
         if sLQI != '':
@@ -531,11 +532,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']:
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = {}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = sLevel
-
-        if stag10 != '':
-            # f400 --
-            # 4602 --
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s Tag10: %s" %(MsgSrcAddr, stag10), MsgSrcAddr)
 
     elif MsgAttrID == "fffd": #
         Domoticz.Log("ReadCluster - 0000 %s/%s attribute fffd: %s" %(MsgSrcAddr, MsgSrcEp, str(decodeAttribute( self, MsgAttType, MsgClusterData))))
@@ -933,7 +929,7 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Magic Cube Xiaomi rotation and Power Meter
 
-    loggingCluster( self, 'Debug', "ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgClusterData), MsgSrcAddr)
+    loggingCluster( self, 'Debug', "ReadCluster - ClusterID=000C - MsgSrcEp: %s MsgAttrID: %s MsgAttType: %s MsgClusterData: %s " %(MsgSrcEp, MsgAttrID, MsgAttType, MsgClusterData), MsgSrcAddr)
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
     if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
