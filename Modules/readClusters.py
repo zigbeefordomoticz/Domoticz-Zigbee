@@ -188,7 +188,8 @@ def ReadCluster(self, Devices, MsgData):
             "0500": Cluster0500, "0502": Cluster0502,
             "0702": Cluster0702,
             "0b04": Cluster0b04, "fc00": Clusterfc00,
-            "000f": Cluster000f
+            "000f": Cluster000f,
+            "0b04": Cluster0b04
             }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -1134,6 +1135,22 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = MsgClusterData
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
+    elif MsgAttrID == '0001': # Remaining Time
+        # The RemainingTime attribute represents the time remaining until the current
+        # command is complete - it is specified in 1/10ths of a second.
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - Remaining Time: " + str(MsgClusterData) , MsgSrcAddr)
+
+    elif MsgAttrID == '0010': # OnOffTransitionTime
+        # The OnOffTransitionTime attribute represents the time taken to move to or from the target level 
+        # when On of Off commands are received by an On/Off cluster on the same endpoint. It is specified in 1/10ths of a second.
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - OnOff TransitionTime: " + str(MsgClusterData) , MsgSrcAddr)
+
+    elif MsgAttrID == '0011': # OnLevel 
+        # The OnLevel attribute determines the value that the CurrentLevel attribute is 
+        # set to when the OnOff attribute of an On/Off cluster on the same endpoint is set to On. 
+        # If the OnLevel attribute is not implemented, or is set to 0xff, it has no effect. 
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - On Level: " + str(MsgClusterData) , MsgSrcAddr)
+
     elif MsgAttrID == '4000': # 
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Attr: %s Value: %s" %(MsgAttrID, MsgClusterData))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
@@ -1952,3 +1969,23 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+    loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    if MsgAttrID == "050b":
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
