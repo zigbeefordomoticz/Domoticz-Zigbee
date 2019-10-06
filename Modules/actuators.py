@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+import json
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint
