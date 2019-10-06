@@ -1703,6 +1703,7 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "0702": TypeFromCluster = "Power/Meter"
     elif cluster == "0500": TypeFromCluster = "Door"
     elif cluster == "0502": TypeFromCluster = "AlarmWD"
+    elif cluster == "0b04": TypeFromCluster = "Power/Meter"
 
     elif cluster == "fc00" : TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
 
