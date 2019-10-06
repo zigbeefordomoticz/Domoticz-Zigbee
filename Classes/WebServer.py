@@ -1875,7 +1875,7 @@ class WebServer(object):
                 if 'Type' not in data:
                     actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
                 else:
-                    actuators( self,  data['Command'], data['NwkId'], epout , data['Type'])
+                    actuators( self,  data['Command'], data['NwkId'], epout , data['Type'], value=int(data['Value']), color=data['Color'])
 
         return _response
 
@@ -1904,10 +1904,10 @@ class WebServer(object):
                     return _response
                 # Check Capabilities
                 DEVICE_CAPABILITIES = { '0006': ( 'On', 'Off', 'Toggle' ),
-                                        '0008': ( 'LevelControl', ),
+                                        '0008': ( 'SetLevel', ),
                                         '0201': ( 'SetPoint', ),
                                         '0300': ( 'RGBWW', ),
-                                        '0102': ( 'On', 'Off', 'Stop', 'LevelControl') }
+                                        '0102': ( 'On', 'Off', 'Stop', 'SetLevel') }
 
                 DEVICE_TYPES = { 
                         '0006': ('Switch', ),
