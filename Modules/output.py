@@ -173,7 +173,9 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0500': [ 0x0000, 0x0002],
             '0502': [ 0x0000],
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
-            '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd]   # Legrand Cluster
+            '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd], 
+            '0b04': [ 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
+            'fc01': [ 0x0000, 0x0001]
             }
 
     targetAttribute = None
@@ -211,47 +213,74 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
 
-    loggingOutput( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s " %key, nwkid=key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
     EPin = "01"
     EPout = '01'
 
     # Checking if Ep list is empty, in that case we are in discovery mode and we don't really know what are the EPs we can talk to.
-    if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {} :
-
+    if not fullScope or self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
+        loggingOutput( self, 'Debug', "--> Not full scope", nwkid=key)
         listAttributes = []
-        listAttributes.append(0x0004)        # Manufacturer
-        listAttributes.append(0x0005)        # Model Identifier
 
-        loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 03, 07" , nwkid=key)
-        ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
-        ReadAttributeReq( self, key, EPin, "02", "0000", listAttributes )
-        ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
-        ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
-        ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
+        loggingOutput( self, 'Debug', "----> Adding: %s" %'0000', nwkid=key)
+        listAttributes.append(0x0000)   
 
+        # Do we Have Manufacturer
+        loggingOutput( self, 'Debug', "--> Build list of Attributes", nwkid=key)
+        skipModel = False
+        if self.ListOfDevices[key]['Manufacturer'] == '':
+            loggingOutput( self, 'Debug', "----> Adding: %s" %'0004', nwkid=key)
+            listAttributes.append(0x0004)
+        else:
+            if self.ListOfDevices[key]['Manufacturer'] == 'Legrand' or self.ListOfDevices[key]['Manufacturer Name']:
+                loggingOutput( self, 'Debug', "----> Adding: %s" %'f000', nwkid=key)
+                listAttributes.append(0xf000)
+                skipModel = True
+
+        # Do We have Model Name
+        if not skipModel and self.ListOfDevices[key]['Model'] == {}:
+            loggingOutput( self, 'Debug', "----> Adding: %s" %'0005', nwkid=key)
+            listAttributes.append(0x0005)        # Model Identifier
+
+        loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
+        listAttributes.append(0x000A)        # Product Code
+
+        if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
+            ReadAttributeReq( self, key, EPin, "01", "0000", listAttributes )
+            ReadAttributeReq( self, key, EPin, "02", "0000", listAttributes )
+            ReadAttributeReq( self, key, EPin, "03", "0000", listAttributes )
+            ReadAttributeReq( self, key, EPin, "06", "0000", listAttributes ) # Livolo
+            ReadAttributeReq( self, key, EPin, "09", "0000", listAttributes )
+        else:
+            for tmpEp in self.ListOfDevices[key]['Ep']:
+                if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout= tmpEp 
+            loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+            ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
     else:
+        loggingOutput( self, 'Debug', "--> Full scope", nwkid=key)
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
+            listAttributes.append( iterAttr )
+
+        if 'Model' in self.ListOfDevices[key]:
+            if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+                listAttributes.append(0xff01)
+                listAttributes.append(0xff02)
+            if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
+                listAttributes.append(0x0032)
+                listAttributes.append(0x0033)
+            if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
+                listAttributes.append(0xfffd)
+                listAttributes.append(0xfffe)
+                listAttributes.append(0xffe1)
+                listAttributes.append(0xffe2)
+                listAttributes.append(0xffe3)
+
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout= tmpEp 
-
-        if fullScope:
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
-                listAttributes.append( iterAttr )
-
-            if 'Model' in self.ListOfDevices[key]:
-                if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
-                    listAttributes.append(0xff01)
-                    listAttributes.append(0xff02)
-                if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
-                    listAttributes.append(0x0032)
-                    listAttributes.append(0x0033)
-                if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
-                    listAttributes.append(0xfffd)
-                    listAttributes.append(0xfffe)
-                    listAttributes.append(0xffe1)
-                    listAttributes.append(0xffe2)
-                    listAttributes.append(0xffe3)
 
         listAttr1 = listAttr2 = None
         if len(listAttributes) > 9:
@@ -574,6 +603,22 @@ def ReadAttributeRequest_000f(self, key):
     loggingOutput( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "000f", listAttributes)
 
+def ReadAttributeRequest_fc01(self, key):
+
+    loggingOutput( self, 'Log', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '000f'):
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
+
+    loggingOutput( self, 'Log', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    ReadAttributeReq( self, key, EPin, EPout, "fc01", listAttributes)
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
 
@@ -764,7 +809,11 @@ def processConfigureReporting( self, NWKID=None ):
         # Power
         '0702': {'Attributes': { 
                                 '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change':'00'},
-                                '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
+                                '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+
+        # Electrical Measurement
+        '0b04': {'Attributes': {
+                                '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     now = int(time())
@@ -1492,6 +1541,29 @@ def Thermostat_LockMode( self, key, lockmode):
             EPout= tmpEp
 
     loggingOutput( self, 'Debug', "Thermostat_LockMode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+def legrand_ledOnOff( self, key, OnOff):
+
+    if OnOff == 'On':
+        Hdata = '01'
+    elif OnOff == 'Off':
+        Hdata = '00'
+    else:
+        Hdata = '00'
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0xfc01
+    Hattribute = "%04x" %0x0001
+    data_type = "10" # Bool
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Log', "legrandOnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
