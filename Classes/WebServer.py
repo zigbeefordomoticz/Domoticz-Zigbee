@@ -1864,8 +1864,7 @@ class WebServer(object):
                 data = json.loads(data)
                 Domoticz.Log("---> Data: %s" %str(data))
                 self.logging( 'Log', "rest_dev_command - Command: %s on object: %s with extra %s %s" %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
-                _response["Data"] = "Executing %s on %s" %(data['Command'], data['NwkId'])
-                
+                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['NwkId']) ) 
                 if 'Command' not in data:
                     return _response
                 if data['Command'] == '':
