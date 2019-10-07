@@ -293,6 +293,20 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == 'LegrandSelector':
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Off|On|Move Up|Move Down|Stop",
+                            "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
             if t == "SwitchAQ2":  # interrupteur multi lvl lumi.sensor_switch.aq2
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
@@ -1123,6 +1137,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     svalue = '%02s' %( nvalue * 10 )
                     UpdateDevice_v2(self, Devices, x, nvalue, svalue, BatteryLevel, SignalLevel, ForceUpdate_=True)
 
+                elif DeviceType == 'LegrandSelector':
+                    loggingWidget( self, "Debug", "LegrandSelector : Value -> %s" %value, NWKID)
+                    if value == '00': nvalue = 0 ; state = '00' #Off
+                    elif value == '01': nvalue = 1 ; state = "10" # On
+                    elif value == 'moveup': nvalue = 2 ; state = "20" # Move Up
+                    elif value == 'movedown': nvalue = 3 ; state = "30" # Move Down
+                    elif value == 'stop': nvalue = 4 ; state = "40" # Stop
+                    UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
                 elif DeviceType == "SwitchAQ2":  # multi lvl switch
                     value = int(value)
                     loggingWidget( self, "Debug", "SwitchAQ2 : Value -> %s" %value, NWKID)
@@ -1309,6 +1332,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             if sValue == 0 and analogValue > 0:
                                 sValue = 1
                         UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
+
+                elif DeviceType == 'LegrandSelector':
+                    loggingWidget( self, "Debug", "LegrandSelector : Value -> %s" %value, NWKID)
+                    if value == '00': nvalue = 0 ; state = '00' #Off
+                    elif value == '01': nvalue = 1 ; state = "10" # On
+                    elif value == 'moveup': nvalue = 2 ; state = "20" # Move Up
+                    elif value == 'movedown': nvalue = 3 ; state = "30" # Move Down
+                    elif value == 'stop': nvalue = 4 ; state = "40" # Stop
+                    UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "INNR_RC110_SCENE":
                     Domoticz.Log("MajDomoDevice - Updating INNR_RC110_SCENE (LvlControl) Value: %s" %value)

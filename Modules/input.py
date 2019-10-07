@@ -1836,14 +1836,37 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         elif TYPE_ACTIONS[step_mod] in 'stop':
             selector = TYPE_ACTIONS[step_mod]
 
-        Domoticz.Log("Decode8085 - INNR RC 110 selector: %s" %selector)
+        loggingInput( self, 'Debug', "Decode8085 - INNR RC 110 selector: %s" %selector, MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Double gangs remote switch':
 
-        loggingInput( self, 'Log', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+        loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+
+        TYPE_ACTIONS = { None: '', '01': 'move', '02': 'click', '03': 'stop', '04': 'move_to', }
+        DIRECTION = { None: '', '00': 'up', '01': 'down'}
+
+        step_mod = MsgData[14:16]
+        up_down = step_size = transition = None
+        if len(MsgData) >= 18:
+            up_down = MsgData[16:18]
+        if len(MsgData) >= 20:
+            step_size = MsgData[18:20]
+        if len(MsgData) >= 22:
+            transition = MsgData[20:22]
+
+        if TYPE_ACTIONS[step_mod] in ( 'click', 'move'):
+            selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down] 
+        elif TYPE_ACTIONS[step_mod] in 'move_to':
+            selector = SCENES[up_down]
+        elif TYPE_ACTIONS[step_mod] in 'stop':
+            selector = TYPE_ACTIONS[step_mod]
+
+        loggingInput( self, 'Debug', "Decode8085 - Legrand selector: %s" %selector, MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
     else:
        Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
@@ -1933,14 +1956,14 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Double gangs remote switch':
         if MsgCmd == '01': # On
-            loggingInput( self, 'Log', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
+            loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
         elif MsgCmd == '00': # Off
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
-            loggingInput( self, 'Log', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
+            loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
