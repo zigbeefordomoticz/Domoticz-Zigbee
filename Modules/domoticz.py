@@ -402,6 +402,22 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "Toggle": # Switch selector provding On, Off and Toggle
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                Options = {"LevelActions": "||", "LevelNames": "Off|On|Toggle",
+                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
             if t == "Switch":  # inter sans fils 1 touche 86sw1 xiaomi
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -691,9 +707,24 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == 'INNR_RC110': # INNR Remote Control
+            if t == 'INNR_RC110_SCENE': # INNR Remote Control
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 Options = {"LevelActions": "||||||||||||", "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6", \
+                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                                Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+            if t == 'INNR_RC110_LIGHT': # INNR Remote Control
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                Options = {"LevelActions": "|||", "LevelNames": "Off|On|click_up|click_down", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
@@ -1188,7 +1219,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                 # We do update only if this is a On/off
                                 UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
-                elif DeviceType == "INNR_RC110":
+                elif DeviceType == "INNR_RC110_SCENE":
+                    Domoticz.Log("MajDomoDevice - Updating INNR_RC110_SCENE (Switch) Value: %s" %value)
+                    if value == '01': nValue = 1 ; sValue= "10"
+                    elif value == '00': nValue = 0; sValue = "00"
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif DeviceType == 'INNR_RC110_LIGHT':
+                    Domoticz.Log("MajDomoDevice - Updating INNR_RC110_LIGHT (Switch) Value: %s" %value)
                     if value == '01': nValue = 1 ; sValue= "10"
                     elif value == '00': nValue = 0; sValue = "00"
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
@@ -1272,7 +1310,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                                 sValue = 1
                         UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel, Color_)
 
-                elif DeviceType == "INNR_RC110":
+                elif DeviceType == "INNR_RC110_SCENE":
+                    Domoticz.Log("MajDomoDevice - Updating INNR_RC110_SCENE (LvlControl) Value: %s" %value)
                     if value == "Off": nValue = 0
                     elif value == "On": nValue = 1
                     elif value == "clickup": nValue = 2
@@ -1286,6 +1325,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "scene4": nValue = 10
                     elif value == "scene5": nValue = 11
                     elif value == "scene6": nValue = 12
+                    sValue = "%s" %(10 * nValue)
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif DeviceType == 'INNR_RC110_LIGHT':
+                    Domoticz.Log("MajDomoDevice - Updating INNR_RC110_LIGHT (LvlControl) Value: %s" %value)
+                    if value == "00": nValue = 0
+                    elif value == "01": nValue = 1
+                    elif value == "clickup": nValue = 2
+                    elif value == "clickdown": nValue = 3
                     sValue = "%s" %(10 * nValue)
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 

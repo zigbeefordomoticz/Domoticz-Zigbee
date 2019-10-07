@@ -1917,13 +1917,16 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             effect_variant = MsgData[18:20]
        
         if ONOFF_TYPE[MsgCmd] in ( 'on', 'off' ):
+            loggingInput( self, 'Log', "Decode8095 - RC 110 ON/Off Command from: %s/%s Cmd: %s Delayed: %s Effect: %s" %(MsgSrcAddr, MsgEP, MsgCmd, delayed_all_off, effect_variant), MsgSrcAddr)
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
-
+        else:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
+            loggingInput( self, 'Log', "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s " %(MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
-        loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+        loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
 
 def Decode80A7(self, Devices, MsgData, MsgRSSI) :
