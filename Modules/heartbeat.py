@@ -315,7 +315,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
             if status == '8043' and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 skipModel = True
-                self.ListOfDevices[NWKID]['RIA'] = 4
+                self.ListOfDevices[NWKID]['RIA'] = '4'
                 legrand_ledOnOff( self, NWKID, 'On')
 
         if not skipModel or 'Model' in self.ListOfDevices[NWKID]:

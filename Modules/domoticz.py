@@ -724,7 +724,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == 'INNR_RC110_LIGHT': # INNR Remote Control
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||", "LevelNames": "Off|On|click_up|click_down", \
+                Options = {"LevelActions": "||||||", "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, 'LIGHTS', DeviceID_IEEE, Ep), 
@@ -1334,6 +1334,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == "01": nValue = 1
                     elif value == "clickup": nValue = 2
                     elif value == "clickdown": nValue = 3
+                    elif value == "moveup": nValue = 4
+                    elif value == "movedown": nValue = 5
+                    elif value == "stop":   nValue = 6
                     sValue = "%s" %(10 * nValue)
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
