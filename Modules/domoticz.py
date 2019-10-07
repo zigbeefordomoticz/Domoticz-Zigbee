@@ -712,7 +712,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "||||||||||||", "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, 'SCENES', DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
@@ -727,7 +727,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = {"LevelActions": "|||", "LevelNames": "Off|On|click_up|click_down", \
                            "LevelOffHidden": "false", "SelectorStyle": "1"}
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, 'LIGHTS', DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID

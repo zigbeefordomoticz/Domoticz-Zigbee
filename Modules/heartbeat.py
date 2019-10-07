@@ -302,13 +302,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         reqColorModeAttribute = False
         self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
 
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if iterCluster == '0006':
-                    # Toggle
-                    actuators( self, 'On', NWKID, iterEp, 'Switch')
-                    actuators( self, 'Off', NWKID, iterEp, 'Switch')
-                    actuators( self, 'Toggle', NWKID, iterEp, 'Switch')
+        #for iterEp in self.ListOfDevices[NWKID]['Ep']:
+        #    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+        #        if iterCluster == '0006':
+        #            # Toggle
+        #            actuators( self, 'On', NWKID, iterEp, 'Switch')
+        #            actuators( self, 'Off', NWKID, iterEp, 'Switch')
+        #            actuators( self, 'Toggle', NWKID, iterEp, 'Switch')
                     
         # Did we receive the Model Name
         skipModel = False
