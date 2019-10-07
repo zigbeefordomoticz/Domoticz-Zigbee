@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
 #
@@ -17,16 +15,18 @@ import datetime
 import struct
 import json
 
+from Modules.actuators import actuators
 from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
         bindDevice, rebind_Clusters, getListofAttribute, \
         livolo_bind, \
+        legrand_ledOnOff, \
         setPowerOn_OnOff, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01
 
 from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice
@@ -61,6 +61,7 @@ READ_ATTRIBUTES_REQUEST = {
 
 # Ordered List - Important for binding
 CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
+        'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
         '0500',            # IAS Zone
         '0406',            # Occupancy Sensing
         '0400',            # Illuminance Measurement
@@ -77,8 +78,8 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0204',            # Thermostat UI
         '0300',            # Colour Control
 #        '0000',            # Basic
-        'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-        '000f',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
+        '000f',            # 
+        '0b04',             # Electrical Meansurement
         'ff02',             # Used by Xiaomi devices for battery informations.
         ]
 
@@ -190,6 +191,10 @@ def processKnownDevices( self, Devices, NWKID ):
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
 
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                legrand_ledOnOff( self, NWKID, 'On')
+
         # Retreive Cluster 0x0000
         _forceReadAttr0000 = True
         if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
@@ -297,11 +302,26 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         reqColorModeAttribute = False
         self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
 
+        for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                if iterCluster == '0006':
+                    # Toggle
+                    actuators( self, 'On', NWKID, iterEp, 'Switch')
+                    actuators( self, 'Off', NWKID, iterEp, 'Switch')
+                    actuators( self, 'Toggle', NWKID, iterEp, 'Switch')
+                    
         # Did we receive the Model Name
-        if 'Model' in self.ListOfDevices[NWKID]:
+        skipModel = False
+        if 'Manufacturer' in self.ListOfDevices[NWKID]:
+            if status == '8043' and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                skipModel = True
+                self.ListOfDevices[NWKID]['RIA'] = 4
+                legrand_ledOnOff( self, NWKID, 'On')
+
+        if not skipModel or 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
                 loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+                ReadAttributeRequest_0000(self, NWKID, fullScope=False )    # Reuest Model Name
                                                            # And wait 1 cycle
             else: 
                 Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
@@ -373,7 +393,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
-                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+                ReadAttributeRequest_0000(self, NWKID , fullScope=False)    # Reuest Model Name
         if self.pluginconf.pluginConf['capturePairingInfos']:
             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0045' )
         sendZigateCmd(self,"0045", str(NWKID))
@@ -389,7 +409,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
-                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
+                ReadAttributeRequest_0000(self, NWKID, fullScope=False )    # Reuest Model Name
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
             if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -405,6 +425,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     elif self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
         Domoticz.Error("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
         self.ListOfDevices[NWKID]['Status']="UNKNOW"
+        self.ListOfDevices[NWKID]['ConsistencyCheck']="Bad Pairing"
         Domoticz.Error("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
         Domoticz.Error("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, capturePairingInfos: %s Model: %s " \
                 %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.pluginConf['capturePairingInfos'], self.ListOfDevices[NWKID]['Model']))
@@ -502,7 +523,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         continue
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR_' + iterEp + '_' + iterCluster )
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+                    #getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
