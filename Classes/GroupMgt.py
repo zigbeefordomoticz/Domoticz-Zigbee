@@ -949,8 +949,15 @@ class GroupsManagement(object):
         for iterDev, iterEp in self.ListOfGroups[nwkid]['Devices']:
             self.logging( 'Debug', 'processCommand - reset heartbeat for device : %s' %iterDev)
             if iterDev in self.ListOfDevices:
+                # Force Read Attribute consideration in the next hearbeat
                 if 'Heartbeat' in self.ListOfDevices[iterDev]:
                     self.ListOfDevices[iterDev]['Heartbeat'] = '0'
+
+                # Reset ReadAttrinbutes, in order to force a Polling
+                if 'ReadAttributes' in  self.ListOfDevices[iterDev]:
+                    if 'TimeStamps' in self.ListOfDevices[iterDev]['ReadAttributes']:
+                        del self.ListOfDevices[iterDev]['ReadAttributes']['TimeStamps']
+
                 # Reset Health status of corresponding device if any in Not Reachable
                 if 'Health' in self.ListOfDevices[iterDev]:
                     if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
