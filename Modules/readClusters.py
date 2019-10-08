@@ -1752,12 +1752,13 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
+
         ValueTemp = round(int(value)/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating Setpoint: %s" %ValueTemp, MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
             # In case it is not a Eurotronic, let's Update heatPoint
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
+            loggingCluster( self, 'Log', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp)
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
@@ -1800,6 +1801,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
         else:
             loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 1C: %s" %value, MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+
+    elif MsgAttrID == '001d':
+
+        loggingCluster( self, 'Debug', "ReadCluster 0201 - Alarm Mask: %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0403':
