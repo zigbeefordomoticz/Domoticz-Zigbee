@@ -1270,6 +1270,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                     # Normalize sValue vs. analog value coomming from a ReadATtribute
                     analogValue = int(value, 16)
+                    loggingWidget( self, "Debug", "--> LvlControl analogValue: -> %s" %analogValue, NWKID)
                     if analogValue >= 255:
                         sValue = 100
                     else:
@@ -1285,27 +1286,33 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             if sValue == 99 and analogValue == 254:
                                 sValue = 100
 
+                    loggingWidget( self, "Debug", "----> LvlControl sValue: -> %s" %sValue, NWKID)
+
                     # In case we reach 0% or 100% we shouldn't switch Off or On, except in the case of Shutter/Blind
                     if sValue == 0:
                         nValue = 0
                         if Devices[x].SwitchType in (13,14,15,16):
+                            loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(0,0, Devices[x].SwitchType), NWKID)
                             UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
                                 #UpdateDevice_v2(Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                                loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s" %(0,0), NWKID)
                                 UpdateDevice_v2(self, Devices, x, 0, '0', BatteryLevel, SignalLevel)
 
                     elif sValue == 100:
                         nValue = 1
                         if Devices[x].SwitchType in (13,14,15,16):
+                            loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(1,100, Devices[x].SwitchType), NWKID)
                             UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
                         else:
                             if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
                                 pass
                             else:
                                 #UpdateDevice_v2(Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+                                loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s" %(1,100), NWKID)
                                 UpdateDevice_v2(self, Devices, x, 1, '100', BatteryLevel, SignalLevel)
                     else: # sValue != 0 and sValue != 100
                         if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -1313,9 +1320,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             pass
                         elif Devices[x].SwitchType in (13,14,15,16):
                             nValue = 2
+                            loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(nValue,sValue, Devices[x].SwitchType), NWKID)
                             UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
                         else:
                             nValue = 1
+                            loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(nValue,sValue, Devices[x].SwitchType), NWKID)
                             UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
 
                 elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):

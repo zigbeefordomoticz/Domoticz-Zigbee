@@ -80,7 +80,7 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0204',            # Thermostat UI
         '0300',            # Colour Control
 #        '0000',            # Basic
-        '000f',            # 
+        '000f',            # Binary Input (Basic)
         '0b04',             # Electrical Meansurement
         'ff02',             # Used by Xiaomi devices for battery informations.
         ]
@@ -180,7 +180,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 loggingHeartbeat( self, 'Debug', "%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
 
-    if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
+    if ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
         if self.pluginconf.pluginConf['EnableDimmer']:
             legrand_device_dimOnOff( self, NWKID, 'On')
         else:

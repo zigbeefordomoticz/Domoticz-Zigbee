@@ -605,7 +605,7 @@ def ReadAttributeRequest_000f(self, key):
 
 def ReadAttributeRequest_fc01(self, key):
 
-    loggingOutput( self, 'Log', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
 
     EPin = "01"
     EPout= "01"
@@ -617,12 +617,12 @@ def ReadAttributeRequest_fc01(self, key):
     #    if iterAttr not in listAttributes:
     #        listAttributes.append( iterAttr )
     listAttributes.append( 0x0000 )
-    loggingOutput( self, 'Log', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+    loggingOutput( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "fc01", listAttributes)
 
     listAttributes = []
     listAttributes.append( 0x0001 )
-    loggingOutput( self, 'Log', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+    loggingOutput( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "fc01", listAttributes)
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
@@ -818,7 +818,11 @@ def processConfigureReporting( self, NWKID=None ):
 
         # Electrical Measurement
         '0b04': {'Attributes': {
-                                '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
+                                '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        # Electrical Measurement
+        'fc01': {'Attributes': {
+                                '0000': {'DataType': '09', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                '000&': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
         }
 
     now = int(time())
@@ -1577,7 +1581,7 @@ def legrand_device_dimOnOff( self, key, OnOff):
         if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Debug', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -1609,7 +1613,7 @@ def legrand_device_ledOnOff( self, key, OnOff):
         if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Debug', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
