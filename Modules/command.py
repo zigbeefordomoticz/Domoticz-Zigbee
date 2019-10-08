@@ -194,6 +194,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             value = int(float(Level)*100)
             Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
             thermostat_Setpoint( self, NWKID, value )
+            UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         elif DeviceType == 'ThermoMode':

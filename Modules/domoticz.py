@@ -913,12 +913,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 loggingWidget( self, "Debug", "MajDomoDevice Voltage : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
-            if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint':
+            if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint' and Attribute_ in ( '4003', '0012'):
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
-            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode':
+            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode' and Attribute_ == '001c':
                 Domoticz.Log("MajDomoDevice Thermostat Mode %s" %value)
                 if isinstance( value, str):
                     nValue = int(value,16)
