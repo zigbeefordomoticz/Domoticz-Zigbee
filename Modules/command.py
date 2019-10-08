@@ -18,7 +18,7 @@ import json
 
 from Modules.actuators import actuators
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff
+from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE
@@ -188,6 +188,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
         
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
         if DeviceType == 'ThermoSetpoint':
             loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             value = int(float(Level)*100)
@@ -198,9 +199,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif DeviceType == 'ThermoMode':
             loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             Domoticz.Log("ThermoMode - requested Level: %s" %Level)
-            if Level in THERMOSTAT_MODE:
-                Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_MODE[Level]))
-                thermostat_Mode( self, NWKID, THERMOSTAT_MODE[Level] )
+            if Level in THERMOSTAT_LEVEL_2_MODE:
+                Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]))
+                thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847

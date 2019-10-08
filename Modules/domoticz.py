@@ -190,7 +190,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "ThermoMode":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                Options = {"LevelActions": "|||", "LevelNames": "Auto|Cool|Heat|Force Heat",
+                Options = {"LevelActions": "|||", "LevelNames": "Off|Auto|Cool|Heat|Force Heat",
                            "LevelOffHidden": "false", "SelectorStyle": "0"}
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                            Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
