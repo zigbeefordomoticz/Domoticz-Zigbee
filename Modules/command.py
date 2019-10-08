@@ -189,16 +189,18 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType == 'ThermoSetpoint':
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             value = int(float(Level)*100)
             Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
             thermostat_Setpoint( self, NWKID, value )
             return
 
         elif DeviceType == 'ThermoMode':
-            Domoticz.Log("ThermoMode - requested value: %s" %value)
-            if value in THERMOSTAT_MODE:
-                Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( value, THERMOSTAT_MODE[value]))
-                thermostat_Mode( self, NWKID, THERMOSTAT_MODE[value] )
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            Domoticz.Log("ThermoMode - requested Level: %s" %Level)
+            if Level in THERMOSTAT_MODE:
+                Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_MODE[Level]))
+                thermostat_Mode( self, NWKID, THERMOSTAT_MODE[Level] )
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
