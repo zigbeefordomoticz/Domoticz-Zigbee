@@ -1574,7 +1574,7 @@ def legrand_device_dimOnOff( self, key, OnOff):
     data_type = "09" #  16-bit Data
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+        if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
     loggingOutput( self, 'Log', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
@@ -1606,7 +1606,7 @@ def legrand_device_ledOnOff( self, key, OnOff):
     data_type = "10" # Bool
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+        if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
     loggingOutput( self, 'Log', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
