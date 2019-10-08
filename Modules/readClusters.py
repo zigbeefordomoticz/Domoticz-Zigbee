@@ -189,7 +189,8 @@ def ReadCluster(self, Devices, MsgData):
             "0702": Cluster0702,
             "0b04": Cluster0b04, "fc00": Clusterfc00,
             "000f": Cluster000f,
-            "0b04": Cluster0b04
+            "0b04": Cluster0b04,
+            "fc01": Clusterfc01
             }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -1967,8 +1968,16 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
-    loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    if MsgAttrID == '0051':
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Out of Service: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+    elif MsgAttrID == '0055':
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+    elif MsgAttrID == '006f':
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Status Flag: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+    else:
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
 
 def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
@@ -1989,3 +1998,17 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+
+def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+    loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)

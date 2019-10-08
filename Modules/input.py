@@ -1764,12 +1764,14 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
-    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
-    if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
+    if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
+        if MsgEP in self.ListOfDevices[MsgSrcAddr]['Ep']:
+            if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+            if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
+            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
 
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)

@@ -23,7 +23,7 @@ from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
-from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledOnOff, legrand_dimOnOff
 from Modules.actuators import actuators
 
 from Classes.PluginConf import PluginConf,SETTINGS
@@ -1114,6 +1114,21 @@ class WebServer(object):
                             else:
                                 Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" %(setting_lst[setting]['current']))
                                 continue
+
+                        elif param == 'EnableLedInDark':
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_ledOnOff( self, 'On')
+                                else:
+                                    legrand_ledOnOff( self, 'Off')
+
+                        elif param == 'EnableDimmer':
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_dimOnOff( self, 'On')
+                                else:
+                                    legrand_dimOnOff( self, 'Off')
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':

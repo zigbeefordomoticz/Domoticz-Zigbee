@@ -20,7 +20,8 @@ from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
         bindDevice, rebind_Clusters, getListofAttribute, \
         livolo_bind, \
-        legrand_ledOnOff, \
+        legrand_device_ledOnOff, \
+        legrand_device_dimOnOff, \
         setPowerOn_OnOff, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
@@ -56,7 +57,8 @@ READ_ATTRIBUTES_REQUEST = {
     '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
-    '000f' : ( ReadAttributeRequest_000f, 'polling000f' )
+    '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
+    'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' )
     }
 
 # Ordered List - Important for binding
@@ -178,6 +180,20 @@ def processKnownDevices( self, Devices, NWKID ):
                 loggingHeartbeat( self, 'Debug', "%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
 
+    if ( self.HeartbeatCount % ( 60 // HEARTBEAT)) == 0 :
+        if self.pluginconf.pluginConf['EnableDimmer']:
+            legrand_device_dimOnOff( self, NWKID, 'On')
+        else:
+            legrand_device_dimOnOff( self, NWKID, 'Off')
+
+        if self.pluginconf.pluginConf['EnableLedInDark']:
+            legrand_device_ledOnOff( self, NWKID, 'On')
+        else:
+            legrand_device_ledOnOff( self, NWKID, 'Off')
+
+        ReadAttributeRequest_fc01( self, NWKID )
+
+
     # On regular basis, try to collect as much information as possible from Main Powered devices
     if ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
         # If Attributes not yet discovered, let's do it
@@ -190,10 +206,6 @@ def processKnownDevices( self, Devices, NWKID ):
                                 %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
                         break # Will do at the next round
                     getListofAttribute( self, NWKID, iterEp, iterCluster)
-
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                legrand_ledOnOff( self, NWKID, 'On')
 
         # Retreive Cluster 0x0000
         _forceReadAttr0000 = True
@@ -312,11 +324,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     
         # Did we receive the Model Name
         skipModel = False
-        if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            if status == '8043' and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                skipModel = True
-                self.ListOfDevices[NWKID]['RIA'] = '4'
-                legrand_ledOnOff( self, NWKID, 'On')
 
         if not skipModel or 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
@@ -523,7 +530,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         continue
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR_' + iterEp + '_' + iterCluster )
-                    #getListofAttribute( self, NWKID, iterEp, iterCluster)
+                    getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':

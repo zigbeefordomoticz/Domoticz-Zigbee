@@ -613,11 +613,16 @@ def ReadAttributeRequest_fc01(self, key):
             if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
     listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '000f'):
-        if iterAttr not in listAttributes:
-            listAttributes.append( iterAttr )
+    #for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  'fc01'):
+    #    if iterAttr not in listAttributes:
+    #        listAttributes.append( iterAttr )
+    listAttributes.append( 0x0000 )
+    loggingOutput( self, 'Log', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+    ReadAttributeReq( self, key, EPin, EPout, "fc01", listAttributes)
 
-    loggingOutput( self, 'Log', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    listAttributes = []
+    listAttributes.append( 0x0001 )
+    loggingOutput( self, 'Log', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "fc01", listAttributes)
 
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
@@ -1544,11 +1549,52 @@ def Thermostat_LockMode( self, key, lockmode):
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
-def legrand_ledOnOff( self, key, OnOff):
+def legrand_dimOnOff( self, OnOff):
+
+    for NWKID in self.ListOfDevices:
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch w/o neutral' ):
+                     legrand_device_dimOnOff( self, NWKID, OnOff)
+
+def legrand_device_dimOnOff( self, key, OnOff):
 
     if OnOff == 'On':
-        Hdata = '01'
+        Hdata = '0101' # Enable Dimmer
     elif OnOff == 'Off':
+        Hdata = '0100' # Disable Dimmer
+    else:
+        Hdata = '00'
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0xfc01
+    Hattribute = "%04x" %0x0000
+    data_type = "09" #  16-bit Data
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Log', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+def legrand_ledOnOff( self, OnOff):
+
+    for NWKID in self.ListOfDevices:
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
+                     legrand_device_ledOnOff( self, NWKID, OnOff)
+
+def legrand_device_ledOnOff( self, key, OnOff):
+
+    if OnOff == 'On': # Enable Led in Dark
+        Hdata = '01'
+    elif OnOff == 'Off': # Disable led in dark
         Hdata = '00'
     else:
         Hdata = '00'
@@ -1563,7 +1609,7 @@ def legrand_ledOnOff( self, key, OnOff):
         if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "legrandOnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Log', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
