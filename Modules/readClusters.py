@@ -1809,6 +1809,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == '0405':
         Domoticz.Log("ReadCluster 0201 - Attribute 405 ( thermostat mode ?=regulator mode For Elko) : %s" %value)
 
+    elif MsgAttrID == '0406':
+        Domoticz.Log("ReadCluster 0201 - Attribute 406 : %s" %value)
+
     elif MsgAttrID == '0408':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 408 ( Elko power consumption in last 10 minutes): %s" %value, MsgSrcAddr)

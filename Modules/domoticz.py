@@ -920,7 +920,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode':
                 Domoticz.Log("MajDomoDevice Thermostat Mode %s" %value)
-                nValue = int(value,16)
+                if isinstance( value, str):
+                    nValue = int(value,16)
+                else:
+                    nValue = value
                 if nValue in THERMOSTAT_MODE_2_LEVEL:
                     sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
                     UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
