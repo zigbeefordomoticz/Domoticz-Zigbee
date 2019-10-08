@@ -389,3 +389,34 @@ ZIGATE_RESPONSES = {
         0x8702: 'APS Data Confirm Fail',
         0x004D: 'Device Annouce' 
         }
+
+
+# Used in output/thermostat_Mode
+SYSTEM_MODE = { 'Off' : 0x00 ,
+        'Auto' : 0x01 ,
+        'Reserved' : 0x02,
+        'Cool' : 0x03,
+        'Heat' :  0x04,
+        'Emergency Heating' : 0x05,
+        'Pre-cooling' : 0x06,
+        'Fan only' : 0x07 }
+
+
+# Used in onCommand
+THERMOSTAT_LEVEL_2_MODE = {
+    0 : 'Off',
+    10: 'Auto',
+    20: 'Cool',
+    30: 'Heat',
+    40: 'Emergency Heating',
+    }
+
+THERMOSTAT_MODE_2_LEVEL = {
+        0x00: '00', # Off
+        0x01: '10', # Auto
+        0x03: '20', # Cool
+        0x04: '30', # Heat
+        0x05: '40'  # Force Heat
+        }
+
+

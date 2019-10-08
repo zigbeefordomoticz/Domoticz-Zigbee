@@ -15,6 +15,7 @@ import struct
 import json
 
 from Modules.tools import loggingWidget
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
 def CreateDomoDevice(self, Devices, NWKID):
     """
@@ -189,8 +190,10 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "ThermoMode":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                                Unit=unit, Type=243, Subtype=20)
+                Options = {"LevelActions": "|||", "LevelNames": "Auto|Cool|Heat|Force Heat",
+                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                           Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -914,6 +917,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue = float(value)
                 sValue = "%s;%s" % (nValue, nValue)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+
+            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode':
+                Domoticz.Log("MajDomoDevice Thermostat Mode %s" %value)
+                nValue = int(value,16)
+                if nValue in THERMOSTAT_MODE_2_LEVEL:
+                    sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
+                    UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                    Domoticz.Log("MajDomoDevice Thermostat Mode: %s %s" %(nvalue, sValue))
 
             if ClusterType == "Temp":  # temperature
                 loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)

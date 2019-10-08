@@ -16,11 +16,12 @@ import time
 import struct
 import json
 
+from Modules.actuators import actuators
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
-
+from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
@@ -67,10 +68,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     DeviceType = ''
     forceUpdateDev = False
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton'):
+        if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton', 'Toggle'):
             forceUpdateDev = True
 
-        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR'):
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
         if tmpDeviceType == "WindowCovering":
@@ -82,7 +83,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
-        if tmpDeviceType == 'ThermoSetpoint':
+        if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode'):
             ClusterSearch = '0201'
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'Motion':
@@ -195,17 +196,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         elif DeviceType == 'ThermoMode':
             Domoticz.Log("ThermoMode - requested value: %s" %value)
-            #'Off' : 0x00 ,
-            #'Auto' : 0x01 ,
-            #'Reserved' : 0x02,
-            #'Cool' : 0x03,
-            #'Heat' :  0x04,
-            #'Emergency Heating' : 0x05,
-            #'Pre-cooling' : 0x06,
-            #'Fan only' : 0x07 
-            if value == 0:
-                value = 'off'
-                thermostat_Mode( self, NWKID, value)
+            if value in THERMOSTAT_MODE:
+                Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( value, THERMOSTAT_MODE[value]))
+                thermostat_Mode( self, NWKID, THERMOSTAT_MODE[value] )
 
         elif  DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -231,6 +224,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'armed')
             elif Level == 50: # Disarmed
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'disarmed')
+        elif DeviceType == 'Toggle':
+            Domoticz.Log("Toggle switch - value: %s" %Level)
+            if Level == 10: # Off
+                actuators( self, NWKID, EPout, 'Off', 'Switch')
+            elif Level == 20: # On
+                actuators( self, NWKID, EPout, 'On', 'Switch')
+            elif Level == 30: # Toggle
+                actuators( self, NWKID, EPout, 'Toggle', 'Switch')
         else:
             OnOff = '01' # 00 = off, 01 = on
             if Level == 100: 

@@ -1499,6 +1499,8 @@ def ReadAttributeRequest_0201(self, key):
     elif str(self.ListOfDevices[key]['Model']).find('Super TR') == 0:
         loggingOutput( self, 'Debug', "- req Attributes for  Super TR", nwkid=key)
         listAttributes.append(0x0403)    
+        listAttributes.append(0x0405)
+        listAttributes.append(0x0406)
         listAttributes.append(0x0408)   
         listAttributes.append(0x0409)  
 
