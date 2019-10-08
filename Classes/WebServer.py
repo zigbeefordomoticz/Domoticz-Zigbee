@@ -1959,6 +1959,13 @@ class WebServer(object):
                 elif parameters[0] in self.IEEE2NWK:
                     _nwkid = self.IEEE2NWK[parameters[0]]
                 dev_capabilities['NwkId'] = _nwkid
+                if 'Manufacturer Name' in self.ListOfDevices[ _nwkid ]:
+                    if self.ListOfDevices[ _nwkid ]['Manufacturer Name'] == 'Legrand':
+                        dev_capabilities['Types'].append( 'EnableLedInDark' )
+                        dev_capabilities['Types'].append( 'EnableDimmer' )
+                        dev_capabilities['Capabilities'].append( 'On' )
+                        dev_capabilities['Capabilities'].append( 'Off' )
+
                 for ep in self.ListOfDevices[ _nwkid ]['Ep']:
                     for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
                         self.logging( 'Debug', "Cluster: %s" %cluster)

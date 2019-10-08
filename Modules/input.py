@@ -562,7 +562,7 @@ def Decode8017(self, Devices, MsgData, MsgRSSI) : #
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
     ZigateTime =  struct.unpack('I',struct.pack('I',int(ZigateTime,16)))[0]
     loggingInput(self, 'Log', "UTC time is: %s, Zigate Time is: %s with deviation of :%s " %(UTCTime, ZigateTime, UTCTime - ZigateTime))
-    if  abs( UTCTime - ZigateTime ) > 10:
+    if  abs( UTCTime - ZigateTime ) > 5:
         setTimeServer( self )
 
 def Decode8015(self, Devices, MsgData, MsgRSSI) : # Get device list ( following request device list 0x0015 )
