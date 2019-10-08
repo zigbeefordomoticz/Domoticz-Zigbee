@@ -49,7 +49,7 @@ SETTINGS = {
                     'pollingLvlControl':    { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'polling000C':          { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0102':          { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                    'polling0201':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'polling0201':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'polling0204':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0300':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0400':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
@@ -60,8 +60,8 @@ SETTINGS = {
                     'polling0500':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0502':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                     'polling0702':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                    'polling000f':          { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                    'pollingfc01':          { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
+                    'polling000f':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                    'pollingfc01':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
                 }},
             # Device Management
             'DeviceManagement': { 'Order': 5, 'param': {
