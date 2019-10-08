@@ -925,10 +925,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 else:
                     nValue = value
                 if nValue in THERMOSTAT_MODE_2_LEVEL:
-                    nValue = 0
                     sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
                     UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
-                    Domoticz.Log("MajDomoDevice Thermostat Mode: %s %s" %(nvalue, sValue))
+                    Domoticz.Log("MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue))
 
             if ClusterType == "Temp":  # temperature
                 loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
