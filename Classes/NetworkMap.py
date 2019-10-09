@@ -236,12 +236,22 @@ class NetworkMap():
         Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
 
         for nwkid in self.Neighbours:
+            if nwkid in self.ListOfDevices:
+                if 'Neighbours' in self.ListOfDevices[nwkid]:
+                    del self.ListOfDevices[nwkid]['Neighbours']
+                self.ListOfDevices[nwkid]['Neighbours'] = []
+            else:
+                Domoticz.Error("finish_scan - %s not found in list Of Devices." %nwkid)
+
             if self.Neighbours[nwkid]['Status'] == 'NotReachable':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s NotReachable" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
+                if 'Neighbours' in self.ListOfDevices[nwkid]:
+                    self.ListOfDevices[nwkid]['Neighbours'].append( 'Not Reachable' )
             elif self.Neighbours[nwkid]['Status'] == 'TimedOut':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
+                self.ListOfDevices[nwkid]['Neighbours'].append( 'Timed Out' )
             else:
                 for child in self.Neighbours[nwkid]['Neighbours']:
                     Domoticz.Status("%6s %6s %9s %11s %6d %4d %7s" \
@@ -250,6 +260,15 @@ class NetworkMap():
                                 int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
                                 int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
                                 self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
+                    element = {}
+                    element[child] = {}
+                    element[child]['_relationshp'] = self.Neighbours[nwkid]['Neighbours'][child]['_relationshp']
+                    element[child]['_devicetype'] =  self.Neighbours[nwkid]['Neighbours'][child]['_devicetype']
+                    element[child]['_depth'] =   int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16)
+                    element[child]['_lnkqty'] =  int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16)
+                    element[child]['_rxonwhenidl'] = self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl'] 
+                    self.ListOfDevices[nwkid]['Neighbours'].append( element )
+
         Domoticz.Status("--")
 
         self.prettyPrintNeighbours()
