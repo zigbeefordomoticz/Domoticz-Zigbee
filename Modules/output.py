@@ -1008,6 +1008,15 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     if not destaddr and destep provided, we will assume that we bind this device with the Zigate coordinator
     '''
 
+    #if ieee in self.IEEE2NWK:
+    #    nwkid = self.IEEE2NWK[ieee]
+    #    if nwkid in self.ListOfDevices:
+    #        if 'Model' in self.ListOfDevices[nwkid]:
+    #            if self.ListOfDevices[nwkid]['Model'] != {}:
+    #                if self.ListOfDevices[nwkid]['Model'] == 'RC 110':
+    #                    Domoticz.Log("DON'T BIND RC 110")
+    #                    return
+
     mode = "03"     # IEEE
     if not destaddr:
         #destaddr = self.ieee # Let's grab the IEEE of Zigate
