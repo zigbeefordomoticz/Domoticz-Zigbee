@@ -189,7 +189,6 @@ def ReadCluster(self, Devices, MsgData):
             "0702": Cluster0702,
             "0b04": Cluster0b04, "fc00": Clusterfc00,
             "000f": Cluster000f,
-            "0b04": Cluster0b04,
             "fc01": Clusterfc01
             }
 
@@ -430,15 +429,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sPower ))))
         #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sPower ))))
         if sLighLevel != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sLighLevel ))
-            cal = []
-            cal = sLighLevel[2] + sLighLevel[3] + sLighLevel[0] + sLighLevel[1]
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(cal, 16 )))
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s Light Level %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '21', sLighLevel ))))
+            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
         if sRSSI != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s RSSI %04X %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sRSSI,16), int(sRSSI,16)))
+            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sRSSI,16)), MsgSrcAddr)
         if sLQI != '':
-            Domoticz.Log("ReadCluster - %s/%s Saddr: %s LQI %X %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(sLQI,16),  int(sLQI,16)))
+            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
@@ -535,13 +530,15 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = {}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = sLevel
 
-    elif MsgAttrID == "fffd": #
-        Domoticz.Log("ReadCluster - 0000 %s/%s attribute fffd: %s" %(MsgSrcAddr, MsgSrcEp, str(decodeAttribute( self, MsgAttType, MsgClusterData))))
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
-
     elif MsgAttrID == 'ffe2': # Zemismart
         Domoticz.Log("ReadCluster - 0000 %s/%s attribute Zemismart - ffe2: 0x%s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+
+    elif MsgAttrID == "fffd": #
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/fffd Addr: %s Cluster Revision:%s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Cluster Revision'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
@@ -914,19 +911,6 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster0300 - Color Mode: %s" %value, MsgSrcAddr)
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
-
-def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
-    # Electrical Measurement Cluster
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
-    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
-    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
-
-    Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
-
 
 def Cluster000c( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Magic Cube Xiaomi rotation and Power Meter
@@ -2029,6 +2013,10 @@ def Cluster0b04( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Power %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value))
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, str(value))
+
+    else:
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
