@@ -181,17 +181,19 @@ def processKnownDevices( self, Devices, NWKID ):
                 func(self, NWKID )
 
     if ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
-        if self.pluginconf.pluginConf['EnableDimmer']:
-            legrand_device_dimOnOff( self, NWKID, 'On')
-        else:
-            legrand_device_dimOnOff( self, NWKID, 'Off')
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                if self.pluginconf.pluginConf['EnableDimmer']:
+                    legrand_device_dimOnOff( self, NWKID, 'On')
+                else:
+                    legrand_device_dimOnOff( self, NWKID, 'Off')
+        
+                if self.pluginconf.pluginConf['EnableLedInDark']:
+                    legrand_device_ledOnOff( self, NWKID, 'On')
+                else:
+                    legrand_device_ledOnOff( self, NWKID, 'Off')
 
-        if self.pluginconf.pluginConf['EnableLedInDark']:
-            legrand_device_ledOnOff( self, NWKID, 'On')
-        else:
-            legrand_device_ledOnOff( self, NWKID, 'Off')
-
-        ReadAttributeRequest_fc01( self, NWKID )
+                ReadAttributeRequest_fc01( self, NWKID )
 
 
     # On regular basis, try to collect as much information as possible from Main Powered devices
