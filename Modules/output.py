@@ -195,7 +195,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0502': [ 0x0000],
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
             '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd], 
-            '0b04': [ 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
+            '0b04': [ 0x0505, 0x0508, 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
             'fc01': [ 0x0000, 0x0001]
             }
 
@@ -839,8 +839,10 @@ def processConfigureReporting( self, NWKID=None ):
 
         # Electrical Measurement
         '0b04': {'Attributes': {
+                                '0505': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                '0508': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                 '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
-        # Electrical Measurement
+
         'fc01': {'Attributes': {
                                 '0000': {'DataType': '09', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                 '0001': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
