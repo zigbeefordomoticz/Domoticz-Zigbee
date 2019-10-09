@@ -91,6 +91,27 @@ def sendZigateCmd(self, cmd,datas ):
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
+    def split_list(alist, wanted_parts=1):
+        length = len(alist)
+        return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] for i in range(wanted_parts) ]
+
+    if not isinstance(ListOfAttributes, list):
+        normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
+    else:
+        loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
+        chunk = 6
+        if 'Manufacturer Name' in self.ListOfDevices[addr]:
+            if self.ListOfDevices[addr]['Manufacturer Name'] == 'Legrand':
+                # shorter list to 4 attributes max
+                chunk = 4
+
+        nbpart = len(ListOfAttributes) // chunk
+        for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
+            loggingOutput( self, 'Debug', "----> Shorter: %s" %( shortlist), nwkid=addr)
+            normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
+
+def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
+
     if 'Health' in self.ListOfDevices[addr]:
         if self.ListOfDevices[addr]['Health'] == 'Not Reachable':
             return
@@ -122,10 +143,10 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
             if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-                loggingOutput( self, 'Debug', "ReadAttributeReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                          %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
                 return
-            loggingOutput( self, 'Debug', "ReadAttributeReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]), nwkid=addr)
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]), nwkid=addr)
             self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] = {}
     else:
         lenAttr = 0
@@ -138,7 +159,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
                 if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' and \
                         self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != {} :
                     continue
-                loggingOutput( self, 'Debug', "ReadAttributeReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
+                loggingOutput( self, 'Debug', "normalizedReadAttrReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] = {}
             Attr += Attr_
             lenAttr += 1
@@ -146,7 +167,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         if lenAttr == 0:
             return
 
-    loggingOutput( self, 'Debug', "ReadAttributeReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
+    loggingOutput( self, 'Debug', "normalizedReadAttrReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -1577,7 +1598,8 @@ def legrand_device_dimOnOff( self, key, OnOff):
     manuf_spec = "00"
     cluster_id = "%04x" %0xfc01
     Hattribute = "%04x" %0x0000
-    data_type = "09" #  16-bit Data
+    #data_type = "09" #  16-bit Data
+    data_type = "29" #  16-bit Data
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
