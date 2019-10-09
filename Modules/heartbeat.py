@@ -488,20 +488,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # Binding devices
             for iterBindCluster in CLUSTERS_LIST:      # Binding order is important
-                if self.ListOfDevices[NWKID]['Model'] == '3AFE14010402000D' and iterBindCluster == '0500':
-                    continue    # Skip binding IAS for Konke Motion Sensor
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if self.ListOfDevices[NWKID]['Model'] == 'SML001':
-                        # only on Ep 02
-                        if iterEp != '02':
-                            continue
-                    elif self.ListOfDevices[NWKID]['Model'] == 'RC 110':
-                        if iterEp != '01':
-                            Domoticz.Log("Do not Bind RC 110 to Zigate Ep %s" %iterEp)
-                            continue
-                        if iterBindCluster not in ( '0006', '0008' ):
-                            Domoticz.Log("Do not Bind RC 110 to Zigate cluster %s" %iterBindCluster)
-                            continue
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
                         if self.pluginconf.pluginConf['capturePairingInfos']:

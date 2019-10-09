@@ -98,7 +98,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < 5:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
     else:
-        loggingOutput( self, 'Log', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
+        loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
         chunk = 6
         if 'Manufacturer Name' in self.ListOfDevices[addr]:
             if self.ListOfDevices[addr]['Manufacturer Name'] == 'Legrand':
@@ -107,7 +107,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         nbpart = len(ListOfAttributes) // chunk
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
-            loggingOutput( self, 'Log', "----> Shorter: %s" %( shortlist), nwkid=addr)
+            loggingOutput( self, 'Debug', "----> Shorter: %s" %( shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -166,7 +166,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         if lenAttr == 0:
             return
 
-    loggingOutput( self, 'Log', "normalizedReadAttrReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
+    loggingOutput( self, 'Debug', "normalizedReadAttrReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -1008,14 +1008,21 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     if not destaddr and destep provided, we will assume that we bind this device with the Zigate coordinator
     '''
 
-    #if ieee in self.IEEE2NWK:
-    #    nwkid = self.IEEE2NWK[ieee]
-    #    if nwkid in self.ListOfDevices:
-    #        if 'Model' in self.ListOfDevices[nwkid]:
-    #            if self.ListOfDevices[nwkid]['Model'] != {}:
-    #                if self.ListOfDevices[nwkid]['Model'] == 'RC 110':
-    #                    Domoticz.Log("DON'T BIND RC 110")
-    #                    return
+    if ieee in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[ieee]
+        if nwkid in self.ListOfDevices:
+            if 'Model' in self.ListOfDevices[nwkid]:
+                if self.ListOfDevices[nwkid]['Model'] != {}:
+                    if self.ListOfDevices[nwkid]['Model'] == '3AFE14010402000D' and cluster == '0500':
+                        loggingOutput( self, 'Log',"Do not Bind Konke 3AFE14010402000D to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                        return    # Skip binding IAS for Konke Motion Sensor
+                    elif self.ListOfDevices[nwkid]['Model'] == 'SML001' and ep != '02':
+                        # only on Ep 02
+                        loggingOutput( self, 'Log',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                        return
+                    elif self.ListOfDevices[nwkid]['Model'] == 'RC 110' and ( ep != '01' or cluster not in ( '0006', '0008' )):
+                        loggingOutput( self, 'Log',"Do not Bind RC 110 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                        return
 
     mode = "03"     # IEEE
     if not destaddr:
