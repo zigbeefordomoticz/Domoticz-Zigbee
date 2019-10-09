@@ -1853,8 +1853,9 @@ class WebServer(object):
                 self.logging( 'Debug', "Group to be worked out")
                 for grpid in ListOfGroups:
                     self.logging( 'Debug', "Group: %s" %grpid)
-                    for dev in ListOfGroups[grpid]['Imported']:
-                        self.logging( 'Debug', "---> %s to be imported" %str(dev))
+                    if 'Imported' in ListOfGroups[grpid]:
+                        for dev in ListOfGroups[grpid]['Imported']:
+                            self.logging( 'Debug', "---> %s to be imported" %str(dev))
 
                 self.groupmgt.write_jsonZigateGroupConfig()
             # end if len()

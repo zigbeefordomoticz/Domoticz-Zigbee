@@ -1732,6 +1732,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
+        #ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False )
 
     timeStamped( self, MsgSrcAddr , 0x004d)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
@@ -1939,7 +1940,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
         
-        ONOFF_TYPE = { '40': 'onoff_with_effect',
+        ONOFF_TYPE = { 
+                '40': 'onoff_with_effect',
                 '00': 'off',
                 '01': 'on' }
         delayed_all_off = effect_variant = None

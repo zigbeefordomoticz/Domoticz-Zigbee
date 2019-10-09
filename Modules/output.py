@@ -95,10 +95,10 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         length = len(alist)
         return [ alist[i*length // wanted_parts: (i+1)*length // wanted_parts] for i in range(wanted_parts) ]
 
-    if not isinstance(ListOfAttributes, list):
+    if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < 5:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
     else:
-        loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
+        loggingOutput( self, 'Log', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
         chunk = 6
         if 'Manufacturer Name' in self.ListOfDevices[addr]:
             if self.ListOfDevices[addr]['Manufacturer Name'] == 'Legrand':
@@ -107,7 +107,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         nbpart = len(ListOfAttributes) // chunk
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
-            loggingOutput( self, 'Debug', "----> Shorter: %s" %( shortlist), nwkid=addr)
+            loggingOutput( self, 'Log', "----> Shorter: %s" %( shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -133,7 +133,6 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
     if 'TimeStamps' not in self.ListOfDevices[addr]['ReadAttributes']:
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'] = {}
         self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = 0
-
 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
@@ -167,7 +166,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         if lenAttr == 0:
             return
 
-    loggingOutput( self, 'Debug', "normalizedReadAttrReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
+    loggingOutput( self, 'Log', "normalizedReadAttrReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -1584,8 +1583,9 @@ def legrand_dimOnOff( self, OnOff):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if 'Model' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch w/o neutral' ):
-                     legrand_device_dimOnOff( self, NWKID, OnOff)
+                    if self.ListOfDevices[NWKID]['Model'] != {}:
+                        if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch w/o neutral', ):
+                            legrand_device_dimOnOff( self, NWKID, OnOff)
 
 def legrand_device_dimOnOff( self, key, OnOff):
 
@@ -1600,8 +1600,7 @@ def legrand_device_dimOnOff( self, key, OnOff):
     manuf_spec = "00"
     cluster_id = "%04x" %0xfc01
     Hattribute = "%04x" %0x0000
-    #data_type = "09" #  16-bit Data
-    data_type = "29" #  16-bit Data
+    data_type = "09" #  16-bit Data
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
