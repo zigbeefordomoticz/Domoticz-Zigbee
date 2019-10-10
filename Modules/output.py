@@ -1034,10 +1034,12 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                     elif self.ListOfDevices[nwkid]['Model'] == 'RC 110':
                         loggingOutput( self, 'Log',"unBind RC 110 from Zigate %s Cluster %s" %(ep, cluster), nwkid)
                         unbindDevice( self, ieee, ep, cluster)
-                        if ep != '01' or cluster not in ( '0006', '0008' ):
-                            # If Ep is not 01 do not bind anything else than 0x0006 and 0x0008
-                            loggingOutput( self, 'Log',"Do not Bind RC 110 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
-                            return
+                    #    #if ep != '01' or cluster not in ( '0006', '0008' ):
+                    #    #    # If Ep is not 01 do not bind anything else than 0x0006 and 0x0008
+                    #    #    loggingOutput( self, 'Log',"Do not Bind RC 110 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                    #    #    return
+                    #    loggingOutput( self, 'Log',"Do Bind RC 110 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+
 
     mode = "03"     # IEEE
     if not destaddr:
