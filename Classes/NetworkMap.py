@@ -246,11 +246,14 @@ class NetworkMap():
             if self.Neighbours[nwkid]['Status'] == 'NotReachable':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s NotReachable" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
-                if 'Neighbours' in self.ListOfDevices[nwkid]:
-                    self.ListOfDevices[nwkid]['Neighbours'].append( 'Not Reachable' )
+                if 'Neighbours' not in self.ListOfDevices[nwkid]:
+                    self.ListOfDevices[nwkid]['Neighbours'] = []
+                self.ListOfDevices[nwkid]['Neighbours'].append( 'Not Reachable' )
             elif self.Neighbours[nwkid]['Status'] == 'TimedOut':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
+                if 'Neighbours' not in self.ListOfDevices[nwkid]:
+                    self.ListOfDevices[nwkid]['Neighbours'] = []
                 self.ListOfDevices[nwkid]['Neighbours'].append( 'Timed Out' )
             else:
                 for child in self.Neighbours[nwkid]['Neighbours']:
