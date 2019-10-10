@@ -19,7 +19,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST
 from Modules.tools import getClusterListforEP, loggingOutput
 
 def ZigatePermitToJoin( self, permit ):
@@ -878,7 +878,7 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['Health'] == 'Not Reachable':
                     continue
 
-        loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
+        loggingOutput( self, 'Log', "configurereporting - processing %s" %key, nwkid=key)
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']
@@ -941,7 +941,9 @@ def processConfigureReporting( self, NWKID=None ):
 
                 loggingOutput( self, 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
 
-                if self.pluginconf.pluginConf['allowReBindingClusters']:
+                # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
+                # Which happens on the case of New pairing, or a re-join
+                if self.pluginconf.pluginConf['allowReBindingClusters'] and NWKID is None:
                     if 'Bind' in self.ListOfDevices[key]:
                         del self.ListOfDevices[key]['Bind'] 
                     if 'IEEE' in self.ListOfDevices[key]:
@@ -999,7 +1001,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
-                loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
+                loggingOutput( self, 'Log', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
                 sendZigateCmd(self, "0120", datas )
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
@@ -1047,18 +1049,20 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     if 'Bind' not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]['Bind'] = {}
 
-    if cluster not in self.ListOfDevices[nwkid]['Bind']:
-        self.ListOfDevices[nwkid]['Bind'][cluster] = {}
+    if ep not in self.ListOfDevices[nwkid]['Bind']:
+        self.ListOfDevices[nwkid]['Bind'][ep] = {}
 
-        self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
-        self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'requested'
-        self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = ''
+    if cluster not in self.ListOfDevices[nwkid]['Bind'][ep]:
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster] = {}
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Stamp'] = int(time())
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Phase'] = 'requested'
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Status'] = ''
 
-        loggingOutput( self, 'Debug', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
+        loggingOutput( self, 'Log', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
     else:
-        loggingOutput( self, 'Debug', "bindDevice - %s/%s - %s already done at %s" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']), nwkid=nwkid)
+        loggingOutput( self, 'Log', "bindDevice - %s/%s - %s already done at %s!!!!" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']), nwkid=nwkid)
 
     return
 
@@ -1079,7 +1083,18 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             return
 
     nwkid = self.IEEE2NWK[ieee]
-    loggingOutput( self, 'Debug', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
+
+    # If doing unbind, the Configure Reporting is lost
+    if 'ConfigureReporting' in self.ListOfDevices[nwkid]:
+        del  self.ListOfDevices[nwkid]['ConfigureReporting']
+
+    # Remove the Bind 
+    if 'Bind' in self.ListOfDevices[nwkid]:
+            if ep in self.ListOfDevices[nwkid]['Bind']:
+                if cluster in self.ListOfDevices[nwkid]['Bind'][ep]:
+                    del self.ListOfDevices[nwkid]['Bind'][ep][cluster]
+
+    loggingOutput( self, 'Log', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
     sendZigateCmd(self, "0031", datas )
 
@@ -1088,17 +1103,10 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
 def rebind_Clusters( self, NWKID):
 
-    # Binding devices
-    CLUSTERS_LIST = [ 'fc00', '0500', '0502', '0406', '0402', '0400', '0001',
-            '0102', '0403', '0405', '0702', '0006', '0008', '0201', '0204', '0300', '000A', '0020', '0000',
-            '000c',
-            'fc01', # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-            'ff02'  # Used by Xiaomi devices for battery informations.
-            ]
-
     if 'Bind' in self.ListOfDevices[NWKID]:
         del self.ListOfDevices[NWKID]['Bind']
-    for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
+
+    for iterBindCluster in CLUSTERS_LIST:      
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 loggingOutput( self, 'Debug', 'Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)

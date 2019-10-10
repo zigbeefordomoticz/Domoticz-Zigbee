@@ -21,7 +21,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, setTimeServer, livolo_bind
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, setTimeServer, livolo_bind, processConfigureReporting
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
@@ -698,11 +698,12 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
 
         if nwkid in self.ListOfDevices:
             if 'Bind' in self.ListOfDevices[nwkid]:
-                for cluster in self.ListOfDevices[nwkid]['Bind']:
-                    if self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] == 'requested':
-                        self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp'] = int(time())
-                        self.ListOfDevices[nwkid]['Bind'][cluster]['Phase'] = 'received'
-                        self.ListOfDevices[nwkid]['Bind'][cluster]['Status'] = MsgDataStatus
+                if MsgSrcEp in self.ListOfDevices[nwkid]['Bind']:
+                    for cluster in self.ListOfDevices[nwkid]['Bind']:
+                        if self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Phase'] == 'requested':
+                            self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Stamp'] = int(time())
+                            self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Phase'] = 'received'
+                            self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Status'] = MsgDataStatus
                         break
 
     if MsgDataStatus != '00':
@@ -1686,6 +1687,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
     
+            # As we are redo bind, we need to redo the Configure Reporting
+            processConfigureReporting( self, NWKID=MsgSrcAddr )
+
             # Let's take the opportunity to trigger some request/adjustement
             loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
             ReadAttributeRequest_0000( self,  MsgSrcAddr)

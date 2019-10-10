@@ -31,7 +31,7 @@ from Modules.output import  sendZigateCmd,  \
 
 from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
@@ -60,30 +60,6 @@ READ_ATTRIBUTES_REQUEST = {
     '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
     'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' )
     }
-
-# Ordered List - Important for binding
-CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
-        'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-        '0500',            # IAS Zone
-        '0406',            # Occupancy Sensing
-        '0400',            # Illuminance Measurement
-        '0402',            # Temperature Measurement
-        '0001',            # Power Configuration
-        '0102',            # Windows Covering / SHutter
-        '0403',            # Measurement: Pression atmospherique
-        '0405',            # Relative Humidity Measurement
-        '0702',            # Smart Energy Metering
-        '0006',            # On/Off
-        '0502',            # IAS WD Zone
-        '0008',            # Level Control
-        '0201',            # Thermostat
-        '0204',            # Thermostat UI
-        '0300',            # Colour Control
-#        '0000',            # Basic
-        '000f',            # Binary Input (Basic)
-        '0b04',             # Electrical Meansurement
-        'ff02',             # Used by Xiaomi devices for battery informations.
-        ]
 
 def processKnownDevices( self, Devices, NWKID ):
 
