@@ -1106,12 +1106,17 @@ def rebind_Clusters( self, NWKID):
     if 'Bind' in self.ListOfDevices[NWKID]:
         del self.ListOfDevices[NWKID]['Bind']
 
+    if self.pluginconf.pluginConf['doUnbindBind']:
+        for iterBindCluster in CLUSTERS_LIST:      
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    loggingOutput( self, 'Debug', 'Request an Unbind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
+                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+
     for iterBindCluster in CLUSTERS_LIST:      
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                loggingOutput( self, 'Debug', 'Request an Unbind + Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
-                if self.pluginconf.pluginConf['doUnbindBind']:
-                    unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                loggingOutput( self, 'Debug', 'Request a Bind  for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
@@ -1618,6 +1623,10 @@ def legrand_dimOnOff( self, OnOff):
                     if self.ListOfDevices[NWKID]['Model'] != {}:
                         if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch w/o neutral', ):
                             legrand_device_dimOnOff( self, NWKID, OnOff)
+                            legrand_device_dimOnOff( self, NWKID, OnOff)
+                        else:
+                            Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
+
 
 def legrand_device_dimOnOff( self, key, OnOff):
 
@@ -1638,7 +1647,7 @@ def legrand_device_dimOnOff( self, key, OnOff):
         if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Debug', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Log', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -1648,8 +1657,13 @@ def legrand_ledOnOff( self, OnOff):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if 'Model' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
-                     legrand_device_ledOnOff( self, NWKID, OnOff)
+                    if self.ListOfDevices[NWKID]['Model'] != {}:
+                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
+                            legrand_device_ledOnOff( self, NWKID, OnOff)
+                            legrand_device_ledOnOff( self, NWKID, OnOff)
+                        else:
+                            Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
+
 
 def legrand_device_ledOnOff( self, key, OnOff):
 
@@ -1670,7 +1684,7 @@ def legrand_device_ledOnOff( self, key, OnOff):
         if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Debug', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Log', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
