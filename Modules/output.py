@@ -1002,6 +1002,17 @@ def processConfigureReporting( self, NWKID=None ):
                 loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
                 sendZigateCmd(self, "0120", datas )
 
+def bindGroup( self, ieee, ep, cluster, groupid ):
+
+    mode = "01"     # IEEE
+    nwkid = 'ffff'
+    if ieee in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[ieee]
+
+    loggingOutput( self, 'Debug', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,group) , nwkid=nwkid)
+    datas =  ieee + ep + cluster + mode + groupid  
+    sendZigateCmd(self, "0030", datas )
+
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
     Binding a device/cluster with ....
@@ -1020,9 +1031,13 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                         # only on Ep 02
                         loggingOutput( self, 'Log',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return
-                    elif self.ListOfDevices[nwkid]['Model'] == 'RC 110' and ( ep != '01' or cluster not in ( '0006', '0008' )):
-                        loggingOutput( self, 'Log',"Do not Bind RC 110 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
-                        return
+                    elif self.ListOfDevices[nwkid]['Model'] == 'RC 110':
+                        loggingOutput( self, 'Log',"unBind RC 110 from Zigate %s Cluster %s" %(ep, cluster), nwkid)
+                        unbindDevice( self, ieee, ep, cluster)
+                        if ep != '01' or cluster not in ( '0006', '0008' ):
+                            # If Ep is not 01 do not bind anything else than 0x0006 and 0x0008
+                            loggingOutput( self, 'Log',"Do not Bind RC 110 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                            return
 
     mode = "03"     # IEEE
     if not destaddr:
