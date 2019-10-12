@@ -1076,8 +1076,6 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         loggingOutput( self, 'Log', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
-    else:
-        loggingOutput( self, 'Log', "bindDevice - %s/%s - %s already done at %s!!!!" %(ieee, ep, cluster, self.ListOfDevices[nwkid]['Bind'][cluster]['Stamp']), nwkid=nwkid)
 
     return
 
@@ -1118,17 +1116,22 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
 def rebind_Clusters( self, NWKID):
 
+    cluster_to_bind = CLUSTERS_LIST
+
+    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+            cluster_to_bind.append( '0003' )
+
     if 'Bind' in self.ListOfDevices[NWKID]:
         del self.ListOfDevices[NWKID]['Bind']
-
     if self.pluginconf.pluginConf['doUnbindBind']:
-        for iterBindCluster in CLUSTERS_LIST:      
+        for iterBindCluster in cluster_to_bind:      
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                     loggingOutput( self, 'Debug', 'Request an Unbind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
                     unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
-    for iterBindCluster in CLUSTERS_LIST:      
+    for iterBindCluster in cluster_to_bind:      
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                 loggingOutput( self, 'Debug', 'Request a Bind  for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)

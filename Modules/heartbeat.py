@@ -469,7 +469,12 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
             # Binding devices
-            for iterBindCluster in CLUSTERS_LIST:      # Binding order is important
+            cluster_to_bind = CLUSTERS_LIST
+            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                    cluster_to_bind.append( '0003' )
+
+            for iterBindCluster in cluster_to_bind:      # Binding order is important
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
