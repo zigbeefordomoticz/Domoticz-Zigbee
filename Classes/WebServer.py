@@ -23,7 +23,7 @@ from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
-from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledOnOff, legrand_dimOnOff
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
 from Modules.actuators import actuators
 
 from Classes.PluginConf import PluginConf,SETTINGS
@@ -1119,9 +1119,9 @@ class WebServer(object):
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
                                 if setting_lst[setting]['current']:
-                                    legrand_ledOnOff( self, 'On')
+                                    legrand_ledInDark( self, 'On')
                                 else:
-                                    legrand_ledOnOff( self, 'Off')
+                                    legrand_ledInDark( self, 'Off')
 
                         elif param == 'EnableDimmer':
                                 self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
@@ -1129,6 +1129,14 @@ class WebServer(object):
                                     legrand_dimOnOff( self, 'On')
                                 else:
                                     legrand_dimOnOff( self, 'Off')
+
+                        elif param == 'EnableLedIfOn':
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_ledIfOnOnOff( self, 'On')
+                                else:
+                                    legrand_ledIfOnOnOff( self, 'Off')
+
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':
@@ -1748,7 +1756,7 @@ class WebServer(object):
                     if '_GroupId' not in item:
                         self.logging( 'Debug', "--->Adding Group: ")
                         # Define a GroupId 
-                        for x in range( 0x0001, 0x9999):
+                        for x in range( 0x0001, 0x0999):
                             grpid = '%04d' %x
                             if grpid not in ListOfGroups:
                                 break

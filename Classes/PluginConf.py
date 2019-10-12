@@ -146,20 +146,21 @@ SETTINGS = {
                     'debugWebServer':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
                     }},
             # Legrand Specific
-            'Legrand': { 'Order': 10, 'param': {
+            'Legrand': { 'Order': 11, 'param': {
+                    'EnableLedIfOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'EnableLedInDark': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                    'EnableDimmer': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
+                    'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }},
 
             #Others
-            'Others': { 'Order': 10, 'param': {
+            'Others': { 'Order': 12, 'param': {
                     'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }},
-            'Experimental': { 'Order': 11, 'param': {
+            'Experimental': { 'Order': 13, 'param': {
                     'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                     'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},

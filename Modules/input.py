@@ -957,6 +957,8 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
             else: # Not 'ConfigSource'
                 self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
+                if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
+                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 
@@ -989,6 +991,8 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     loggingInput( self, 'Debug', "[%s] NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr), MsgDataShAddr)
             else: # Not 'ConfigSource'
                 self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
+                if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
+                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
 

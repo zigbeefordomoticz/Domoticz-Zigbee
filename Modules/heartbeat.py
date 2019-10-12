@@ -20,8 +20,7 @@ from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
         bindDevice, rebind_Clusters, getListofAttribute, \
         livolo_bind, \
-        legrand_device_ledOnOff, \
-        legrand_device_dimOnOff, \
+        legrand_fc01, \
         setPowerOn_OnOff, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
@@ -160,14 +159,19 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if self.pluginconf.pluginConf['EnableDimmer']:
-                    legrand_device_dimOnOff( self, NWKID, 'On')
+                    legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
                 else:
-                    legrand_device_dimOnOff( self, NWKID, 'Off')
+                    legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
         
-                if self.pluginconf.pluginConf['EnableLedInDark']:
-                    legrand_device_ledOnOff( self, NWKID, 'On')
+                if self.pluginconf.pluginConf['EnableLedIfOn']:
+                    legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
                 else:
-                    legrand_device_ledOnOff( self, NWKID, 'Off')
+                    legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
+
+                if self.pluginconf.pluginConf['EnableLedInDark']:
+                    legrand_fc01( self, NWKID, 'DetectInDark', 'On')
+                else:
+                    legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
 
                 ReadAttributeRequest_fc01( self, NWKID )
 
@@ -175,15 +179,17 @@ def processKnownDevices( self, Devices, NWKID ):
     # On regular basis, try to collect as much information as possible from Main Powered devices
     if ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
         # If Attributes not yet discovered, let's do it
-        if 'Attributes List' not in self.ListOfDevices[NWKID]:
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                    if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-                        loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                                %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
-                        break # Will do at the next round
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+        if 'ConfigSource' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+                if 'Attributes List' not in self.ListOfDevices[NWKID]:
+                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                        for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                            if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                            if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                                loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+                                break # Will do at the next round
+                            getListofAttribute( self, NWKID, iterEp, iterCluster)
 
         # Retreive Cluster 0x0000
         _forceReadAttr0000 = True
@@ -502,7 +508,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         continue
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR_' + iterEp + '_' + iterCluster )
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+                    if 'ConfigSource' in self.ListOfDevices[NWKID]:
+                        Domoticz.Log("---> ConfigSource: %s" %self.ListOfDevices[NWKID]['ConfigSource'])
+                        if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+                            getListofAttribute( self, NWKID, iterEp, iterCluster)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':

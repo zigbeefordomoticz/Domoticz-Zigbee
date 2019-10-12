@@ -422,12 +422,12 @@ THERMOSTAT_MODE_2_LEVEL = {
 
 # Ordered List - Important for binding
 CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
-        'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
         '0500',            # IAS Zone
         '0406',            # Occupancy Sensing
         '0400',            # Illuminance Measurement
         '0402',            # Temperature Measurement
         '0001',            # Power Configuration
+        '000f',            # Binary Input (Basic)
         '0102',            # Windows Covering / SHutter
         '0403',            # Measurement: Pression atmospherique
         '0405',            # Relative Humidity Measurement
@@ -439,7 +439,6 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0204',            # Thermostat UI
         '0300',            # Colour Control
 #        '0000',            # Basic
-        '000f',            # Binary Input (Basic)
         '0b04',             # Electrical Meansurement
         'ff02',             # Used by Xiaomi devices for battery informations.
         ]

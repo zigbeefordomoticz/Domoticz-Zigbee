@@ -174,7 +174,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
     ATTRIBUTES = { 
-            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000],
+            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000],
             '0001': [ 0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0035 ],
             '0003': [ 0x0000],
             '0004': [ 0x0000],
@@ -242,25 +242,24 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         loggingOutput( self, 'Debug', "--> Not full scope", nwkid=key)
         listAttributes = []
 
-        loggingOutput( self, 'Debug', "----> Adding: %s" %'0000', nwkid=key)
-        listAttributes.append(0x0000)   
-
-        # Do we Have Manufacturer
         loggingOutput( self, 'Debug', "--> Build list of Attributes", nwkid=key)
         skipModel = False
+
+        # Do We have Model Name
+        if not skipModel and self.ListOfDevices[key]['Model'] == {}:
+            loggingOutput( self, 'Debug', "----> Adding: %s" %'0005', nwkid=key)
+            listAttributes.append(0x0005)        # Model Identifier
+
+        # Do we Have Manufacturer
         if self.ListOfDevices[key]['Manufacturer'] == '':
             loggingOutput( self, 'Debug', "----> Adding: %s" %'0004', nwkid=key)
             listAttributes.append(0x0004)
         else:
             if self.ListOfDevices[key]['Manufacturer'] == 'Legrand' or self.ListOfDevices[key]['Manufacturer Name']:
                 loggingOutput( self, 'Debug', "----> Adding: %s" %'f000', nwkid=key)
+                listAttributes.append(0x4000)
                 listAttributes.append(0xf000)
                 skipModel = True
-
-        # Do We have Model Name
-        if not skipModel and self.ListOfDevices[key]['Model'] == {}:
-            loggingOutput( self, 'Debug', "----> Adding: %s" %'0005', nwkid=key)
-            listAttributes.append(0x0005)        # Model Identifier
 
         loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
         listAttributes.append(0x000A)        # Product Code
@@ -878,6 +877,10 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['Health'] == 'Not Reachable':
                     continue
 
+        if 'Model' in self.ListOfDevices[key]:
+            if self.ListOfDevices[key]['Model'] in ( 'Double gangs remote switch' ):
+                continue
+
         loggingOutput( self, 'Log', "configurereporting - processing %s" %key, nwkid=key)
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
@@ -1006,14 +1009,26 @@ def processConfigureReporting( self, NWKID=None ):
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
 
-    mode = "01"     # IEEE
+    mode = "01"     # Group mode
     nwkid = 'ffff'
     if ieee in self.IEEE2NWK:
         nwkid = self.IEEE2NWK[ieee]
 
-    loggingOutput( self, 'Debug', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,group) , nwkid=nwkid)
+    loggingOutput( self, 'Log', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid  
     sendZigateCmd(self, "0030", datas )
+
+
+def unbindGroup( self, ieee , ep, cluster, groupid):
+
+    mode = "01"     # Group mode
+    nwkid = 'ffff'
+    if ieee in self.IEEE2NWK:
+        nwkid = self.IEEE2NWK[ieee]
+
+    loggingOutput( self, 'Log', "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
+    datas =  ieee + ep + cluster + mode + groupid  
+    sendZigateCmd(self, "0031", datas )
 
 def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -1614,7 +1629,70 @@ def Thermostat_LockMode( self, key, lockmode):
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
+
+def legrand_fc01( self, nwkid, command, OnOff):
+
+            # EnableLedInDark -> enable to detect the device in dark 
+            # EnableDimmer -> enable/disable dimmer
+            # EnableLedIfOn -> enable Led with device On
+
+    LEGRAND_CLUSTER_FC01 = {
+            'Dimmer switch w/o neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
+            'Connected outlet': { 'EnableLedIfOn': '0002' },
+            'Shutter switch with neutral': { 'EnableLedIfOn': '0001' },
+            'Micromodule switch': { 'None': 'None' }}
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    if command not in ( 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn'):
+        return
+
+    if 'Model' not in self.ListOfDevices[nwkid]:
+        return
+
+    if self.ListOfDevices[nwkid]['Model'] not in LEGRAND_CLUSTER_FC01:
+        return
+
+    if command == 'EnableLedInDark' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
+        data_type = "10" # Bool
+        if OnOff == 'On': Hdata = '01' # Enable Led in Dark
+        elif OnOff == 'Off': Hdata = '00' # Disable led in dark
+        else: Hdata = '00'
+        
+    elif command == 'EnableDimmer' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
+        data_type = "09" #  16-bit Data
+        if OnOff == 'On': Hdata = '0101' # Enable Dimmer
+        elif OnOff == 'Off': Hdata = '0100' # Disable Dimmer
+        else: Hdata = '00'
+
+    elif command == 'EnableLedIfOn' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
+        data_type = "10" # Bool
+        if OnOff == 'On': Hdata = '01' # Enable Led when On
+        elif OnOff == 'Off': Hdata = '00' # Disable led when On 
+        else: Hdata = '00'
+    else:
+        return
+
+    Hattribute = LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ][command]
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0xfc01
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Log', "legrand %s OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
+    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
 def legrand_dimOnOff( self, OnOff):
+    '''
+    Call from Web
+    '''
 
     for NWKID in self.ListOfDevices:
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
@@ -1622,36 +1700,15 @@ def legrand_dimOnOff( self, OnOff):
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] != {}:
                         if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch w/o neutral', ):
-                            legrand_device_dimOnOff( self, NWKID, OnOff)
-                            legrand_device_dimOnOff( self, NWKID, OnOff)
+                            legrand_fc01( self, NWKID, 'EnableDimmer', OnOff)
                         else:
                             Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
 
-def legrand_device_dimOnOff( self, key, OnOff):
-
-    if OnOff == 'On':
-        Hdata = '0101' # Enable Dimmer
-    elif OnOff == 'Off':
-        Hdata = '0100' # Disable Dimmer
-    else:
-        Hdata = '00'
-
-    manuf_id = "0000"
-    manuf_spec = "00"
-    cluster_id = "%04x" %0xfc01
-    Hattribute = "%04x" %0x0000
-    data_type = "09" #  16-bit Data
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
-
-    loggingOutput( self, 'Log', "legrand Dimmer OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
-
-def legrand_ledOnOff( self, OnOff):
+def legrand_ledIfOnOnOff( self, OnOff):
+    '''
+    Call from Web 
+    '''
 
     for NWKID in self.ListOfDevices:
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
@@ -1659,34 +1716,25 @@ def legrand_ledOnOff( self, OnOff):
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] != {}:
                         if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
-                            legrand_device_ledOnOff( self, NWKID, OnOff)
-                            legrand_device_ledOnOff( self, NWKID, OnOff)
+                            legrand_fc01( self, NWKID, 'EnableLedIfOn', OnOff)
                         else:
                             Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
+def legrand_ledInDark( self, OnOff):
+    '''
+    Call from Web 
+    '''
 
-def legrand_device_ledOnOff( self, key, OnOff):
+    for NWKID in self.ListOfDevices:
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] != {}:
+                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
+                            legrand_fc01( self, NWKID, 'EnableLedInDark', OnOff)
+                        else:
+                            Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
-    if OnOff == 'On': # Enable Led in Dark
-        Hdata = '01'
-    elif OnOff == 'Off': # Disable led in dark
-        Hdata = '00'
-    else:
-        Hdata = '00'
-
-    manuf_id = "0000"
-    manuf_spec = "00"
-    cluster_id = "%04x" %0xfc01
-    Hattribute = "%04x" %0x0001
-    data_type = "10" # Bool
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
-
-    loggingOutput( self, 'Log', "legrand Led OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 def livolo_bind( self, nwkid, EPout):
 
