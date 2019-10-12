@@ -40,6 +40,10 @@ def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, col
         actuator_setlevel( self, nwkid, epout, value, DeviceType)
     elif action == 'SetColor' and value is not None and color is not None:
         actuator_setcolor( self, nwkid, epout, value, color)
+    elif action == 'Identify':
+        actuator_identify( self, nwkid, epout)
+    elif action == 'IdentifyEffect':
+        actuator_identify( self, nwkid, epout, value)
     else:
         Domoticz.Error("actuators - Command: %s error: %s/%s %s %s" %(action, nwkid, epout, value, color))
 
@@ -222,3 +226,32 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
         OnOff = '01'
         sendZigateCmd(self, "00B6","02" + nwkid + '01' + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
         sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + OnOff + Hex_Format(2,value) + "0010")
+
+
+def actuator_identify( self, nwkid, ep, value=None):
+
+    duration = 15
+
+    if value is None:
+
+        datas = "02" + "%s"%(nwkid) + "01" + ep + "%04x"%(duration)
+        loggingCommand( self, 'Log', "identifySend - send an Identify Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
+        loggingCommand( self, 'Log', "identifySend - data sent >%s< " %(datas) , nwkid=nwkid)
+        sendZigateCmd(self, "0070", datas )
+
+    else:
+
+        Domoticz.Log("value: %s" %value)
+        Domoticz.Log("Type: %s" %type(value))
+    
+        if value is None or value == 0:
+            value = 0x01 # Breath
+            if 'Manufactuer Name' in self.ListOfDevices:
+                if self.ListOfDevices['Manufacturer Name'] == 'Legrand':
+                    value = 0x03 # Flashing
+
+        datas = "02" + "%s"%(nwkid) + "01" + ep + "%02x"%value  + "%02x" %0
+        loggingCommand( self, 'Log', "identifyEffect - send an Identify Effecty Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
+        loggingCommand( self, 'Log', "identifyEffect - data sent >%s< " %(datas) , nwkid=nwkid)
+        sendZigateCmd(self, "00E0", datas )
+

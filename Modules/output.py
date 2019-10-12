@@ -878,8 +878,9 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
 
         if 'Model' in self.ListOfDevices[key]:
-            if self.ListOfDevices[key]['Model'] in ( 'Double gangs remote switch' ):
-                continue
+            if self.ListOfDevices[key]['Model'] != {}:
+                if self.ListOfDevices[key]['Model'] in ( 'Double gangs remote switch' ):
+                    continue
 
         loggingOutput( self, 'Log', "configurereporting - processing %s" %key, nwkid=key)
 

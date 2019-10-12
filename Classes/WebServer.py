@@ -1945,16 +1945,18 @@ class WebServer(object):
                     Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
                     return _response
                 # Check Capabilities
-                DEVICE_CAPABILITIES = { '0006': ( 'On', 'Off', 'Toggle' ),
+                DEVICE_CAPABILITIES = { 
+                                        '0003': ( 'Identify', 'IdentifyEffect'),
+                                        '0006': ( 'On', 'Off', 'Toggle' ),
                                         '0008': ( 'SetLevel', ),
                                         '0201': ( 'SetPoint', ),
                                         '0300': ( 'SetColor', ),
                                         '0102': ( 'On', 'Off', 'Stop', 'SetLevel') }
 
                 DEVICE_TYPES = { 
-                        '0006': ('Switch', ),
+                        '0006': ( 'Switch', ),
                         '0008': ( 'LvlControl', ),
-                        '0201': ( 'ThermoSetpoin', ),
+                        '0201': ( 'ThermoSetpoint', ),
                         '0300': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB'),
                         '0102': ( 'WindowCovering', )
                         }
@@ -1968,25 +1970,24 @@ class WebServer(object):
                 elif parameters[0] in self.IEEE2NWK:
                     _nwkid = self.IEEE2NWK[parameters[0]]
                 dev_capabilities['NwkId'] = _nwkid
-                if 'Manufacturer Name' in self.ListOfDevices[ _nwkid ]:
-                    if self.ListOfDevices[ _nwkid ]['Manufacturer Name'] == 'Legrand':
-                        dev_capabilities['Types'].append( 'EnableLedInDark' )
-                        dev_capabilities['Types'].append( 'EnableDimmer' )
-                        dev_capabilities['Capabilities'].append( 'On' )
-                        dev_capabilities['Capabilities'].append( 'Off' )
+
+                #if 'Manufacturer Name' in self.ListOfDevices[ _nwkid ]:
+                #    if self.ListOfDevices[ _nwkid ]['Manufacturer Name'] == 'Legrand':
+                #        dev_capabilities['Capabilities'].append( 'EnableLedInDark' )
+                #        dev_capabilities['Capabilities'].append( 'EnableDimmer' )
 
                 for ep in self.ListOfDevices[ _nwkid ]['Ep']:
                     for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
-                        self.logging( 'Debug', "Cluster: %s" %cluster)
+                        self.logging( 'Log', "Cluster: %s" %cluster)
                         if cluster in DEVICE_TYPES:
                             for cap in DEVICE_TYPES[ cluster ]:
                                 if cap not in dev_capabilities['Types']:
-                                    self.logging( 'Debug',"---> %s" %cap)
+                                    self.logging( 'Log',"---> %s" %cap)
                                     dev_capabilities['Types'].append( cap )
                         if cluster in DEVICE_CAPABILITIES:
                             for cap in DEVICE_CAPABILITIES[ cluster ]:
                                 if cap not in dev_capabilities['Capabilities']:
-                                    self.logging( 'Debug',"---> %s" %cap)
+                                    self.logging( 'Log',"---> %s" %cap)
                                     dev_capabilities['Capabilities'].append( cap )
 
                 _response["Data"] = json.dumps( dev_capabilities, sort_keys=True )
