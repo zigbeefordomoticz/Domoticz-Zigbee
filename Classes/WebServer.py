@@ -1978,7 +1978,7 @@ class WebServer(object):
                             { 'actuator': 'Toggle', 'Value':'', 'Type': ( 'Switch', ) },
                         ],
                         '0008': [
-                            { 'actuator': 'SetLevel', 'Value':'hex', 'Type': ( 'LvlControl',) },
+                            { 'actuator': 'SetLevel', 'Value':'int', 'Type': ( 'LvlControl',) },
                         ],
                         '0102': [
                             { 'actuator': 'On', 'Value':'', 'Type': ( 'WindowCovering',) },
