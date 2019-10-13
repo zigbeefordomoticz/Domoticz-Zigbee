@@ -40,6 +40,7 @@ from Classes.NetworkMap import NetworkMap
 def ZigateRead(self, Devices, Data):
 
     DECODERS = {
+        '0100': Decode0100,
         '004d': Decode004D,
         '8000': Decode8000_v2, '8001': Decode8001, '8002': Decode8002, '8003': Decode8003, '8004': Decode8004,
         '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
@@ -1282,6 +1283,29 @@ def Decode80A6(self, Devices, MsgData, MsgRSSI) : # Scene Membership response
     
     Domoticz.Log("ZigateRead - MsgType 80A6 - Scene Membership response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
     return
+
+def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
+    # Seems to come with Livolo and Firmware 3.1b
+
+    MsgMode = MsgData[0:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgDstEp = MsgData[8:10]
+    MsgUnknown = MsgData[10:30]
+    MsgStatus = MsgData[30:32]
+
+    # What is expected on the Widget is:
+    # Left On: 01
+    # Left Off: 00
+    # Right On: 03
+    # Right Off: 02
+    Domoticz.Log("Decode0100 - %s/%s Data: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgStatus))
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
+    if MsgStatus == '02': # Off Single
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
+    elif MsgStatus == '03': # On Single
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response

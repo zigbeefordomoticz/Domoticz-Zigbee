@@ -1126,25 +1126,26 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 elif DeviceType == "LivoloSWL":
                     Domoticz.Log("Livolo Left - Value: %s" %value)
                     value = int(value)
-                    state = 'Off'
-                    if value == '01': # On Left
+                    state = None
+                    if value == 1: # On Left
                         state = 'On'
-                    elif value == '00': # Off left
+                    elif value == 0: # Off left
                         state = 'Off'
-                    Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
-                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    Domoticz.Log("Livolo update - Device: %s Value : %s State: %s" %(DeviceType, value, state))
+                    if state is not None:
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == 'LivolSWR':
                     Domoticz.Log("Livolo Right - Value: %s" %value)
                     value = int(value)
-                    state = 'Off'
-                    if value == '03': # On Right
+                    state = None
+                    if value == 3: # On Right
                         state = 'On'
-                    elif value == '02': # Off Right
+                    elif value == 2: # Off Right
                         state = 'Off'
-                    Domoticz.Log("Livolo update - Device: %s Value : %s" %(DeviceType, value))
-                    #UpdateDevice_v2(Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
-                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    Domoticz.Log("Livolo update - Device: %s Value : %s State: %s" %(DeviceType, value, state))
+                    if state is not None:
+                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "SwitchIKEA":  # On/Off switch
                     nvalue = int(value)

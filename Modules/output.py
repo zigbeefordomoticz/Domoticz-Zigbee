@@ -261,8 +261,9 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 listAttributes.append(0xf000)
                 skipModel = True
 
-        loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
-        listAttributes.append(0x000A)        # Product Code
+        if self.ListOfDevices[key]['Model'] != {} and self.ListOfDevices[key]['Model'] != 'TI0001':
+            loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
+            listAttributes.append(0x000A)        # Product Code
 
         if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
             loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
@@ -357,6 +358,12 @@ def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
 
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 - Key: %s " %key, nwkid=key)
+
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] != {}:
+            if self.ListOfDevices[key]['Model'] == 'TI0001':
+                loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 - Skip Key: %s for Livolo Switch" %key, nwkid=key)
+                return
 
     EPin = "01"
     EPout= "01"
@@ -879,6 +886,8 @@ def processConfigureReporting( self, NWKID=None ):
 
         if 'Model' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['Model'] != {}:
+                if self.ListOfDevices[key]['Model'] == 'TI0001': # Livolo switch
+                    continue
                 if self.ListOfDevices[key]['Model'] in ( 'Double gangs remote switch' ):
                     continue
 
@@ -1299,7 +1308,11 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
     """
 
     Domoticz.Log("leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
-    if self.pluginconf.pluginConf['allowAutoPairing'] and rejoin:
+    if not self.pluginconf.pluginConf['allowAutoPairing']:
+        Domoticz.Log("leaveMgtReJoin - no action taken as 'allowAutoPairing' is %s" %self.pluginconf.pluginConf['allowAutoPairing'])
+        return
+
+    if rejoin:
         Domoticz.Status("Switching Zigate in pairing mode to allow %s (%s) coming back" %(saddr, ieee))
 
         # If Zigate not in Permit to Join, let's switch it to Permit to Join for 60'
@@ -1750,33 +1763,35 @@ def livolo_bind( self, nwkid, EPout):
 def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     """
     Levolo On/Off command are based on Level Control cluster
-    Level: 108  -> On
-    Level: 1 -> Off
+    Level: 108/0x6C  -> On
+    Level: 1/0x01 -> Off
     Left Unit: Timing 1
     Right Unit: Timing 2
     """
+
+    loggingOutput( self, 'Log', "livolo_OnOff - devunit: %s, onoff: %s" %(devunit, onoff), nwkid=nwkid)
 
     if onoff not in ( 'On', 'Off', 'Toggle'):
         return
     if devunit not in ( 'Left', 'Right', 'All'):
         return
 
-    if onoff == 'Toogle' and devunit == 'All':
+    if onoff == 'Toggle' and devunit == 'All':
         loggingOutput( self, 'Log', "livolo_toggle" , nwkid=nwkid)
         sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02')
     else:
-        if onoff == 'On':
-            level_value = '%02x' %108
-        elif onoff == 'Off':
-            level_value = '%02x' %1
+        level_value = timing_value = None
+        if onoff == 'On': level_value = '%02x' %108
+        elif onoff == 'Off': level_value = '%02x' %1
 
-        if devunit == 'Left':
-            timing_value = '0001'
-        elif devunit == 'Right':
-            timing_value = '0002'
+        if devunit == 'Left': timing_value = '0001'
+        elif devunit == 'Right': timing_value = '0002'
 
-        loggingOutput( self, 'Log', "livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value), nwkid=nwkid)
-        sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+        if level_value is not None and timing_value is not None:
+            loggingOutput( self, 'Log', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)
+            sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+        else:
+            Domoticz.Error( "livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" %(onoff, devunit))
 
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep='01'):
 

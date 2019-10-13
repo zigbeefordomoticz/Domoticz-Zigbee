@@ -143,8 +143,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
                 livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+                UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
             elif DeviceType == 'LivoloSWR':
                 livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
+                UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -168,8 +172,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
                 livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+                UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
             elif DeviceType == 'LivoloSWR':
                 livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
+                UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
