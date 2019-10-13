@@ -167,6 +167,7 @@ def actuator_setalarm( self, nwkid, EPout, value ):
 
 def actuator_setcolor( self, nwkid, EPout, value, Color ):
     Hue_List = json.loads(Color)
+
     
     #Color 
     #    ColorMode m;
@@ -181,9 +182,15 @@ def actuator_setcolor( self, nwkid, EPout, value, Color ):
     self.ListOfDevices[nwkid]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
 
     #First manage level
+    Domoticz.Log("----> Value: >%s<" %value)
+
     OnOff = '01' # 00 = off, 01 = on
     value=Hex_Format(2,round(1+value*254/100)) #To prevent off state
     sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + OnOff + value + "0000")
+
+    if len(Hue_List) == 0:
+        Domoticz.Log("actuator_setcolor - Unable to decode Color: %s --> %s" %(Color, Hue_List))
+        return
 
     #Now color
     #ColorModeNone = 0   // Illegal
