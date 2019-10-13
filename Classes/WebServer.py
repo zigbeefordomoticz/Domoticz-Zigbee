@@ -1945,22 +1945,33 @@ class WebServer(object):
                     Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
                     return _response
                 # Check Capabilities
-                DEVICE_CAPABILITIES = { 
-                                        '0003': ( 'Identify', 'IdentifyEffect'),
-                                        '0006': ( 'On', 'Off', 'Toggle' ),
-                                        '0008': ( 'SetLevel', ),
-                                        '0201': ( 'SetPoint', ),
-                                        '0300': ( 'SetColor', ),
-                                        '0102': ( 'On', 'Off', 'Stop', 'SetLevel') }
+                CLUSTER_INFOS = {
+                        '0003': [ 
+                            { 'actuator': 'Identify', 'Value': '', 'Type': ( ) },
+                            { 'actuator': 'IdentifyEffect', 'Value': 'hex', 'Type': ( ) },
+                        ],
+                        '0006': [
+                            { 'actuator': 'On', 'Value':'', 'Type': ( 'Switch',) },
+                            { 'actuator': 'Off', 'Value':'', 'Type': ( 'Switch', ) },
+                            { 'actuator': 'Toggle', 'Value':'', 'Type': ( 'Switch', ) },
+                        ],
+                        '0008': [
+                            { 'actuator': 'SetLevel', 'Value':'hex', 'Type': ( 'LvlControl',) },
+                        ],
+                        '0102': [
+                            { 'actuator': 'On', 'Value':'', 'Type': ( 'WindowCovering',) },
+                            { 'actuator': 'Off', 'Value':'', 'Type': ( 'WindowCovering',) },
+                            { 'actuator': 'Stop', 'Value':'', 'Type': ( 'WindowCovering',) },
+                            { 'actuator': 'SetLevel', 'Value':'hex', 'Type': ( 'WindowCovering',) },
+                        ],
+                        '0201': [
+                            { 'actuator': 'SetPoint', 'Value':'hex', 'Type': ( 'ThermoSetpoint',) },
+                        ],
+                        '0300': [
+                            { 'actuator': 'SetColor', 'Value':'rgbww', 'Type': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB') },
+                        ]
 
-                DEVICE_TYPES = { 
-                        '0006': ( 'Switch', ),
-                        '0008': ( 'LvlControl', ),
-                        '0201': ( 'ThermoSetpoint', ),
-                        '0300': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB'),
-                        '0102': ( 'WindowCovering', )
-                        }
-
+                    }
                 dev_capabilities = {}
                 dev_capabilities['NwkId'] = {}
                 dev_capabilities['Capabilities'] = []
@@ -1971,26 +1982,42 @@ class WebServer(object):
                     _nwkid = self.IEEE2NWK[parameters[0]]
                 dev_capabilities['NwkId'] = _nwkid
 
-                #if 'Manufacturer Name' in self.ListOfDevices[ _nwkid ]:
-                #    if self.ListOfDevices[ _nwkid ]['Manufacturer Name'] == 'Legrand':
-                #        dev_capabilities['Capabilities'].append( 'EnableLedInDark' )
-                #        dev_capabilities['Capabilities'].append( 'EnableDimmer' )
+                """
+                {"Capabilities": [ { "actuator":"Identify", "Value":"", "Type":"False"},
+                   { "actuator":"IdentifyEffect", "Value":"hexa", "Type":"False"},
+                   { "actuator": "SetLevel", "Value":"hexa", "Type":"True" },
+                   { "actuator": "On", "Value":"", "Type":"True"},
+                   { "actuator": "Off", "Value":"", "Type":"True"},
+                   { "actuator": "Toggle", "Value":"", "Type":"True"},
+                   { "actuator": "SetColor", "Value":"rgbww" , "Type":"True"], "NwkId": "81ca", "Types": [ "ColorControlRGBWW","LvlControl", "Switch"]}
+                """
 
                 for ep in self.ListOfDevices[ _nwkid ]['Ep']:
                     for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
                         self.logging( 'Log', "Cluster: %s" %cluster)
-                        if cluster in DEVICE_TYPES:
-                            for cap in DEVICE_TYPES[ cluster ]:
-                                if cap not in dev_capabilities['Types']:
-                                    self.logging( 'Log',"---> %s" %cap)
-                                    dev_capabilities['Types'].append( cap )
-                        if cluster in DEVICE_CAPABILITIES:
-                            for cap in DEVICE_CAPABILITIES[ cluster ]:
-                                if cap not in dev_capabilities['Capabilities']:
-                                    self.logging( 'Log',"---> %s" %cap)
-                                    dev_capabilities['Capabilities'].append( cap )
+                        if cluster in CLUSTER_INFOS:
+                            for action in CLUSTER_INFOS[cluster]:
+                                self.logging( 'Log',"---> %s" %action)
+                                _capabilitie = {}
+                                _capabilitie['actuator'] = action['actuator']
+                                if action['Value'] == '':
+                                    _capabilitie['Value'] = False
+                                else: 
+                                    _capabilitie['Value'] = action['Value']
+                                if len( action['Type']):
+                                    _capabilitie['Type'] = True
+                                else:
+                                    _capabilitie['Type'] = False
+                                dev_capabilities['Capabilities'].append( _capabilitie )
 
-                _response["Data"] = json.dumps( dev_capabilities, sort_keys=True )
+
+                                for cap in action['Type']:
+                                    if cap not in dev_capabilities['Types']:
+                                        self.logging( 'Log',"---> %s" %cap)
+                                        dev_capabilities['Types'].append( cap )
+
+
+                _response["Data"] = json.dumps( dev_capabilities )
                 return _response
 
 def DumpHTTPResponseToLog(httpDict):
