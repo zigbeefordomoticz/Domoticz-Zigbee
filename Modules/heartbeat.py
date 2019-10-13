@@ -296,8 +296,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
         if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
             if 'MacCapa' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['MacCapa'] == '80':
                     self.ListOfDevices[NWKID]['MacCapa'] = '8e'
+                    self.ListOfDevices[NWKID]['PowerSource'] = 'Main'
+                    self.ListOfDevices[NWKID]['LogicalType'] = 'Router'
             livolo_bind( self, NWKID, '06')
 
     waitForDomoDeviceCreation = False
