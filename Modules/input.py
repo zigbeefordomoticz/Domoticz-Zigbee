@@ -1302,6 +1302,10 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     Domoticz.Log("Decode0100 - %s/%s Data: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgStatus))
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
+    if MsgStatus == '00':
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
+    elif MsgStatus == '01':
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
     if MsgStatus == '02': # Off Single
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
     elif MsgStatus == '03': # On Single

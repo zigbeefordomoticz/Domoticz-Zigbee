@@ -1913,11 +1913,33 @@ class WebServer(object):
                         Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',') 
                     self.logging( 'Log', "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s"  %(Hue_List['m'], Hue_List['r'], Hue_List['g'], Hue_List['b']))
                     Color = json.dumps( Hue_List )
+
+
+
                 epout = '01'
                 if 'Type' not in data:
                     actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
                 else:
-                    actuators( self,  data['Command'], data['NwkId'], epout , data['Type'], value=Level, color=Color)
+                    SWITCH_2_CLUSTER = { 'Switch':'0006',
+                        'LivoloSWL':'0006',
+                        'LivoloSWR':'0006',
+                        'LvlControl':'0008',
+                        'WindowCovering':'0102',
+                        'ThermoSetpoint':'0201',
+                        'ColorControlRGBWW':'0300',
+                        'ColorControlWW':'0300',
+                        'ColorControlRGB':'0300'}
+
+                    key = data['NwkId']
+                    if data['Type'] is None:
+                        clusterCode = '0003'
+                    else:
+                        clusterCode = SWITCH_2_CLUSTER[ data['Type'] ]
+
+                    for tmpEp in self.ListOfDevices[data['NwkId']]['Ep']:
+                        if clusterCode  in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                            epout=tmpEp
+                    actuators( self,  data['Command'], key, epout , data['Type'], value=Level, color=Color)
 
         return _response
 
@@ -2010,11 +2032,19 @@ class WebServer(object):
                                     _capabilitie['Type'] = False
                                 dev_capabilities['Capabilities'].append( _capabilitie )
 
-
                                 for cap in action['Type']:
                                     if cap not in dev_capabilities['Types']:
                                         self.logging( 'Log',"---> %s" %cap)
                                         dev_capabilities['Types'].append( cap )
+
+                                # Adding non generic Capabilities
+                                if 'Model' in self.ListOfDevices[ _nwkid ]:
+                                    if self.ListOfDevices[ _nwkid ]['Model'] != {}:
+                                        if self.ListOfDevices[ _nwkid ]['Model'] =='TI0001':
+                                            if 'LivoloSWL' not in dev_capabilities['Types']:
+                                                dev_capabilities['Types'].append( 'LivoloSWL' )
+                                            if 'LivoloSWR' not in dev_capabilities['Types']:
+                                                dev_capabilities['Types'].append( 'LivoloSWR' )
 
 
                 _response["Data"] = json.dumps( dev_capabilities )

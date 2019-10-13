@@ -113,6 +113,10 @@ def processKnownDevices( self, Devices, NWKID ):
         if ( intHB % (30 // HEARTBEAT)) == 0:
             _doReadAttribute = True
 
+    if 'Model' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+            _doReadAttribute = True
+
     # Read Attributes if enabled
     if _doReadAttribute:
         now = int(time.time())   # Will be used to trigger ReadAttributes
@@ -291,6 +295,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         # Patch to make Livolo working
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
         if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+            if 'MacCapa' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['MacCapa'] == '80':
+                    self.ListOfDevices[NWKID]['MacCapa'] = '8e'
             livolo_bind( self, NWKID, '06')
 
     waitForDomoDeviceCreation = False
