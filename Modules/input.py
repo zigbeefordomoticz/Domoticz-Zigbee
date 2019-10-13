@@ -823,11 +823,16 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
         return
 
     mac_capability = int(mac_capability,16)
+
+    if mac_capability == 0x0000:
+        return
+
     AltPAN      =   ( mac_capability & 0x00000001 )
     DeviceType  =   ( mac_capability >> 1 ) & 1
     PowerSource =   ( mac_capability >> 2 ) & 1
     ReceiveonIdle = ( mac_capability >> 3 ) & 1
 
+    
     if DeviceType == 1 : 
         DeviceType = "FFD"
     else : 
@@ -858,12 +863,17 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
 
     if self.ListOfDevices[addr]['Status'] != "inDB" :
         if self.pluginconf.pluginConf['capturePairingInfos'] and addr in self.DiscoveryDevices :
-            self.DiscoveryDevices[addr]['Manufacturer'] = manufacturer
+            self.DiscoveryDevices[addr]['Manufacturer'] = manufacturer # Manufacturer Code
             self.DiscoveryDevices[addr]['8042'] = MsgData
             self.DiscoveryDevices[addr]['DeviceType'] = str(DeviceType)
             self.DiscoveryDevices[addr]['LogicalType'] = str(LogicalType)
             self.DiscoveryDevices[addr]['PowerSource'] = str(PowerSource)
             self.DiscoveryDevices[addr]['ReceiveOnIdle'] = str(ReceiveonIdle)
+
+    if 'Model' in self.ListOfDevices[addr]:
+        if self.ListOfDevices[addr]['Model'] != {}:
+            if self.ListOfDevices[addr]['Model'] == 'TI0001':
+                return
 
     self.ListOfDevices[addr]['Manufacturer']=manufacturer
     self.ListOfDevices[addr]['DeviceType']=str(DeviceType)
@@ -1301,7 +1311,16 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     # Right On: 03
     Domoticz.Log("Decode0100 - %s/%s Data: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgStatus))
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
+        return
+    if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        return
+
     if MsgStatus == '00': # Left / Single - Off
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
     elif MsgStatus == '01': # Left / Single - On
@@ -1310,6 +1329,8 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
     elif MsgStatus == '03': # Right - On
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response

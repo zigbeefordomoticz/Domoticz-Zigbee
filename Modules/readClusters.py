@@ -253,8 +253,17 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004": # Manufacturer
-        _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData,  handleErrors=True))
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Manufacturer: " + _manufcode, MsgSrcAddr)
+        Domoticz.Log("Manufacturer")
+        # Check if we have a Null caracter
+        idx = 0
+        for byt in MsgClusterData:
+            if MsgClusterData[idx:idx+2] == '00':
+                break
+            idx += 2
+
+        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Manufacturer: " + str(MsgClusterData), MsgSrcAddr)
+        _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData[0:idx],  handleErrors=True))
+        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData, handleErrors=True) )
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode
@@ -266,7 +275,13 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID=="0005":  # Model info
         if MsgClusterData != '':
-            modelName = decodeAttribute( self, MsgAttType, MsgClusterData, handleErrors=True)  # In case there is an error while decoding then return ''
+            # Check if we have a Null caracter
+            idx = 0
+            for byt in MsgClusterData:
+                if MsgClusterData[idx:idx+2] == '00':
+                    break
+                idx += 2
+            modelName = decodeAttribute( self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = modelName
             loggingCluster( self, 'Debug', "ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
             if modelName != '':
@@ -597,6 +612,17 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         Domoticz.Log("readCluster 0001 %s Alarm Mask: UnderVoltage: %s OverVoltage: %s MainPowerLost: %s" \
                 %(MsgSrcAddr, _undervoltage, _overvoltage, _mainpowerlost))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+
+    elif MsgAttrID == '0007': # Power Source
+        if MsgClusterData == '01':
+            self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
+            if 'Model' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['Model'] != {}:
+                    if self.ListOfDevices[key]['Model'] == 'TI0001':
+                        # Patch some status as Device Annouced doesn't provide much info
+                        self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'Router'
+                        self.ListOfDevices[MsgSrcAddr]['DevideType'] = 'FFD'
+                        self.ListOfDevices[MsgSrcAddr]['MacCapa'] = '8e'
 
     elif MsgAttrID == "0010": # Voltage
         #battVolt = value

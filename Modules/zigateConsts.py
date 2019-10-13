@@ -13,6 +13,8 @@
 HEARTBEAT = 5
 MAX_LOAD_ZIGATE = 5
 
+MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
+
 CERTIFICATION = {
         0x01:'CE',
         0x02:'FCC'}

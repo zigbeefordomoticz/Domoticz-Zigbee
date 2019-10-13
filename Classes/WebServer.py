@@ -25,7 +25,7 @@ from time import time, ctime, strftime, gmtime, mktime, strptime
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
 from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
 from Modules.actuators import actuators
-
+from Modules.Tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
@@ -1896,7 +1896,10 @@ class WebServer(object):
                 if data['Value'] == '' or data['Value'] is None:
                     Level = 0
                 else:
-                    Level = int(data['Value'])
+                    if is_hex(data['Value']):
+                        Level = int(data['Value'],16)
+                    else:
+                        Level = int(data['Value'])
                 ColorMode = ColorValue = ''
                 color = ''
                 if data['Color'] == '' or data['Color'] is None:

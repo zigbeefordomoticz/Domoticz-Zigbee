@@ -19,7 +19,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST
+from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ
 from Modules.tools import getClusterListforEP, loggingOutput
 
 def ZigatePermitToJoin( self, permit ):
@@ -98,16 +98,25 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < 5:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
     else:
-        loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
-        chunk = 6
-        if 'Manufacturer Name' in self.ListOfDevices[addr]:
+        loggingOutput( self, 'Log', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
+        chunk = MAX_READATTRIBUTES_REQ
+        if chunk > 4 and 'Manufacturer Name' in self.ListOfDevices[addr]:
             if self.ListOfDevices[addr]['Manufacturer Name'] == 'Legrand':
-                # shorter list to 4 attributes max
+                # shorter list to 4 attributes max, Legrand seems not responding to that
+                chunk = 4
+            if self.ListOfDevices[addr]['Manufacturer Name'] == 'LIVOLO':
+                # shorter list to 4 attributes max, Legrand seems not responding to that
                 chunk = 4
 
-        nbpart = len(ListOfAttributes) // chunk
+        if  chunk > 4 and 'Model' in self.ListOfDevices[addr]:
+            if self.ListOfDevices[addr]['Model'] != {}:
+                if self.ListOfDevices[addr]['Model'] == 'TI0001':
+                    # shorter list to 4 attributes max, Livolo seems not responding to that
+                    chunk = 4
+
+        nbpart = - (  - len(ListOfAttributes) // chunk) 
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
-            loggingOutput( self, 'Debug', "----> Shorter: %s" %( shortlist), nwkid=addr)
+            loggingOutput( self, 'Log', "----> Shorter: %s" %( shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -297,6 +306,15 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 listAttributes.append(0xffe1)
                 listAttributes.append(0xffe2)
                 listAttributes.append(0xffe3)
+
+        if 'Model' in self.ListOfDevices[key]:
+            if self.ListOfDevices[key]['Model'] != {}:
+                if self.ListOfDevices[key]['Model'] == 'TI0001':
+                    copylistAttributes= list( listAttributes)
+                    listAttributes = []
+                    for iterAttr in copylistAttributes:
+                        if iterAttr not in ( 0x000a, 0x000f, 0x0015, 0x4000, 0xf000, 0x0001, 0x0002  ):
+                            listAttributes.append( iterAttr)
 
         for tmpEp in self.ListOfDevices[key]['Ep']:
             if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
@@ -891,7 +909,7 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['Model'] in ( 'Double gangs remote switch' ):
                     continue
 
-        loggingOutput( self, 'Log', "configurereporting - processing %s" %key, nwkid=key)
+        loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']
@@ -1014,7 +1032,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
-                loggingOutput( self, 'Log', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
+                loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
                 sendZigateCmd(self, "0120", datas )
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
@@ -1083,7 +1101,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Status'] = ''
 
-        loggingOutput( self, 'Log', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
+        loggingOutput( self, 'Debug', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
 
@@ -1117,7 +1135,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                 if cluster in self.ListOfDevices[nwkid]['Bind'][ep]:
                     del self.ListOfDevices[nwkid]['Bind'][ep][cluster]
 
-    loggingOutput( self, 'Log', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
+    loggingOutput( self, 'Debug', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
     sendZigateCmd(self, "0031", datas )
 
@@ -1752,6 +1770,23 @@ def legrand_ledInDark( self, OnOff):
                         else:
                             Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
+    """
+    Livolo commands.
+
+    - looks like when Livolo switch is comming it is sending a Read Attribute to the Zigate on cluster 0x0001 Attributes: 0x895e, 0x1802, 0x4b00, 0x0012, 0x0021. In a malformed packet
+
+    - In order to bind the Livolo do:
+    (1) Send a Toggle
+    (2) Move to level 108 with transition 0.1 seconds
+    (3) Move to level 108 with transition 0.1 seconds
+    (4) Move to level 108 with transition 0.1 seconds
+
+    - When receiving 0x0001/0x0007 we must update the MacCapa attributes, accordingly to Mains (Single Phase)
+
+
+
+    """
+
 
 def livolo_bind( self, nwkid, EPout):
 
@@ -1771,10 +1806,8 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
     loggingOutput( self, 'Log', "livolo_OnOff - devunit: %s, onoff: %s" %(devunit, onoff), nwkid=nwkid)
 
-    if onoff not in ( 'On', 'Off', 'Toggle'):
-        return
-    if devunit not in ( 'Left', 'Right', 'All'):
-        return
+    if onoff not in ( 'On', 'Off', 'Toggle'): return
+    if devunit not in ( 'Left', 'Right', 'All'): return
 
     if onoff == 'Toggle' and devunit == 'All':
         loggingOutput( self, 'Log', "livolo_toggle" , nwkid=nwkid)
