@@ -2004,22 +2004,10 @@ class WebServer(object):
                     _nwkid = self.IEEE2NWK[parameters[0]]
                 dev_capabilities['NwkId'] = _nwkid
 
-                """
-                {"Capabilities": [ { "actuator":"Identify", "Value":"", "Type":"False"},
-                   { "actuator":"IdentifyEffect", "Value":"hexa", "Type":"False"},
-                   { "actuator": "SetLevel", "Value":"hexa", "Type":"True" },
-                   { "actuator": "On", "Value":"", "Type":"True"},
-                   { "actuator": "Off", "Value":"", "Type":"True"},
-                   { "actuator": "Toggle", "Value":"", "Type":"True"},
-                   { "actuator": "SetColor", "Value":"rgbww" , "Type":"True"], "NwkId": "81ca", "Types": [ "ColorControlRGBWW","LvlControl", "Switch"]}
-                """
-
                 for ep in self.ListOfDevices[ _nwkid ]['Ep']:
                     for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
-                        self.logging( 'Log', "Cluster: %s" %cluster)
                         if cluster in CLUSTER_INFOS:
                             for action in CLUSTER_INFOS[cluster]:
-                                self.logging( 'Log',"---> %s" %action)
                                 _capabilitie = {}
                                 _capabilitie['actuator'] = action['actuator']
                                 if action['Value'] == '':
@@ -2034,7 +2022,6 @@ class WebServer(object):
 
                                 for cap in action['Type']:
                                     if cap not in dev_capabilities['Types']:
-                                        self.logging( 'Log',"---> %s" %cap)
                                         dev_capabilities['Types'].append( cap )
 
                                 # Adding non generic Capabilities
@@ -2045,7 +2032,6 @@ class WebServer(object):
                                                 dev_capabilities['Types'].append( 'LivoloSWL' )
                                             if 'LivoloSWR' not in dev_capabilities['Types']:
                                                 dev_capabilities['Types'].append( 'LivoloSWR' )
-
 
                 _response["Data"] = json.dumps( dev_capabilities )
                 return _response
