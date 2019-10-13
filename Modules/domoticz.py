@@ -1127,10 +1127,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Domoticz.Log("Livolo Left - Value: %s" %value)
                     value = int(value)
                     state = None
-                    if value == 1: # On Left
-                        state = 'On'
-                    elif value == 0: # Off left
+                    if value == 0: # Off Left/Single
                         state = 'Off'
+                    elif value == 1: # On Left/Single
+                        state = 'On'
                     Domoticz.Log("Livolo update - Device: %s Value : %s State: %s" %(DeviceType, value, state))
                     if state is not None:
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
@@ -1139,10 +1139,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Domoticz.Log("Livolo Right - Value: %s" %value)
                     value = int(value)
                     state = None
-                    if value == 3: # On Right
-                        state = 'On'
-                    elif value == 2: # Off Right
+                    if value == 2: # Off Right
                         state = 'Off'
+                    elif value == 3: # On Right
+                        state = 'On'
                     Domoticz.Log("Livolo update - Device: %s Value : %s State: %s" %(DeviceType, value, state))
                     if state is not None:
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)

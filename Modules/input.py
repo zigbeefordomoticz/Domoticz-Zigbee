@@ -1295,20 +1295,20 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     MsgStatus = MsgData[30:32]
 
     # What is expected on the Widget is:
-    # Left On: 01
     # Left Off: 00
-    # Right On: 03
+    # Left On: 01
     # Right Off: 02
+    # Right On: 03
     Domoticz.Log("Decode0100 - %s/%s Data: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgStatus))
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
-    if MsgStatus == '00':
+    if MsgStatus == '00': # Left / Single - Off
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
-    elif MsgStatus == '01':
+    elif MsgStatus == '01': # Left / Single - On
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
-    if MsgStatus == '02': # Off Single
+    if MsgStatus == '02': # Right - Off
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
-    elif MsgStatus == '03': # On Single
+    elif MsgStatus == '03': # Right - On
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
 
 #Reponses Attributs
