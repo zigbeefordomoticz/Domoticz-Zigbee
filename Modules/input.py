@@ -1718,13 +1718,21 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingInput( self, 'Debug', "Decode004D - Already known device %s with status: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Status']), MsgSrcAddr)
             return
 
-    loggingPairing( self, 'Status', "Device Annoucement ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
+    now = time()
+    loggingPairing( self, 'Status', "Device Announced ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
         # Device exist, Reconnection has been done by DeviceExist()
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
+
+        if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
+            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 5:
+                # Looks like we have a duplicate Device Announced in less than 5s
+                Domoticz.Log("Decode004D - potential duplicate device annouced from %s %s. drop" %(MsgSrcAddr, MsgIEEE))
+                return
+        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
         # In case of livolo do the bind
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
@@ -1750,12 +1758,14 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     else:
         # New device comming. The IEEE is not known
         loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+
         if MsgIEEE in self.IEEE2NWK :
             Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
             if self.IEEE2NWK[MsgIEEE] :
                 loggingPairing( self, 'Log', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
                 if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
-                    Domoticz.Error("Decode004d - receiving a new Device Annouce for a device in processing, drop it")
+                    Domoticz.Error("Decode004d - receiving a new Device Announced for a device in processing, drop it")
                     return
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
         if IEEEExist( self, MsgIEEE ):
