@@ -1758,7 +1758,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     else:
         # New device comming. The IEEE is not known
         loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
         if MsgIEEE in self.IEEE2NWK :
             Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
@@ -1781,6 +1780,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
         self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
+        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
         # 2- Store the Pairing info if needed
         if self.pluginconf.pluginConf['capturePairingInfos']:

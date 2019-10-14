@@ -253,7 +253,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.DiscoveryDevices[MsgSrcAddr]['HW_Version']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "0004": # Manufacturer
-        Domoticz.Log("Manufacturer")
         # Check if we have a Null caracter
         idx = 0
         for byt in MsgClusterData:
@@ -261,9 +260,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 break
             idx += 2
 
-        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Manufacturer: " + str(MsgClusterData), MsgSrcAddr)
         _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData[0:idx],  handleErrors=True))
-        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData, handleErrors=True) )
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode

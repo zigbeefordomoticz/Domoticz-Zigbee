@@ -289,6 +289,8 @@ def updSQN_battery(self, key, newSQN):
         self.ListOfDevices[key]['SQN'] = {}
     return
 
+        
+
 def updSQN( self, key, newSQN) :
 
     if key not in self.ListOfDevices or \

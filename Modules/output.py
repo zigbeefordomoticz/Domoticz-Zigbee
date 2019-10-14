@@ -98,7 +98,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < 5:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
     else:
-        loggingOutput( self, 'Log', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
+        loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
         chunk = MAX_READATTRIBUTES_REQ
         if chunk > 4 and 'Manufacturer Name' in self.ListOfDevices[addr]:
             if self.ListOfDevices[addr]['Manufacturer Name'] == 'Legrand':
@@ -116,7 +116,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         nbpart = - (  - len(ListOfAttributes) // chunk) 
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
-            loggingOutput( self, 'Log', "----> Shorter: %s" %( shortlist), nwkid=addr)
+            loggingOutput( self, 'Debug', "----> Shorter: %s" %( shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
