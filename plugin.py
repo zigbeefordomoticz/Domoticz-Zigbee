@@ -178,7 +178,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.009'
+        self.pluginParameters['PluginVersion'] = '4.6.010'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -591,7 +591,7 @@ class BasePlugin:
             elif self.FirmwareVersion and self.FirmwareVersion.lower() == '2100':
                 Domoticz.Status("Firmware for Pluzzy devices")
                 self.PluzzyFirmware = True
-            elif self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031a:
+            elif self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031b:
                 Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
             if self.FirmwareVersion and \
