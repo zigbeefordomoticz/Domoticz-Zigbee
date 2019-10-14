@@ -522,7 +522,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if self.pluginconf.pluginConf['capturePairingInfos']:
                         self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR_' + iterEp + '_' + iterCluster )
                     if 'ConfigSource' in self.ListOfDevices[NWKID]:
-                        Domoticz.Log("---> ConfigSource: %s" %self.ListOfDevices[NWKID]['ConfigSource'])
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
 
