@@ -179,7 +179,7 @@ def ReadCluster(self, Devices, MsgData):
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
 
     DECODE_CLUSTER = {
-            "0000": Cluster0000, "0001": Cluster0001, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,
+            "0000": Cluster0000, "0001": Cluster0001, "0003": Cluster0003, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,
             "0012": Cluster0012, "000c": Cluster000c,
             "0101": Cluster0101, "0102": Cluster0102,
             "0201": Cluster0201, "0204": Cluster0204,
@@ -696,6 +696,16 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Battery'] = value
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
         loggingCluster( self, 'Log', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
+
+def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+
+    loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    if MsgAttrId == '0000': # IdentifyTime Attribute
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Remaining time to identify itself %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)))
+
 
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
