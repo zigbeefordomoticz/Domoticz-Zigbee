@@ -573,6 +573,21 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
+            if t == "Venetian":
+                loggingWidget( self, "Log", "Create Widget Venetian Blind EU" , NWKID)
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                    Unit=unit, Type=244, Subtype=73, Switchtype=15)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
             if t == "WindowCovering":
                 # Subtype = 
                 # Blind / Window covering
@@ -1269,7 +1284,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == '00': nValue = 0; sValue = "00"
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
+            elif ClusterType == 'WindowCovering' and DeviceType in ( "WindowCovering", "Venetian"):
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
                 
                 if value == 0: nValue = 0
