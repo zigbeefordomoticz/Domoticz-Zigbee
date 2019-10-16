@@ -1331,6 +1331,12 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0008":
         loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Curent position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
+                    # Zemismart Blind shutter switch send 50 went the swicth is on wait mode
+                    # do not update
+                    return
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
 
     elif MsgAttrID == "0009":

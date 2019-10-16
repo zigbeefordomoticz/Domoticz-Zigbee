@@ -1309,6 +1309,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                     # Normalize sValue vs. analog value coomming from a ReadATtribute
                     analogValue = int(value, 16)
+
+                    if DeviceType == 'Venetian': #Inverted
+                        analogValue = 100 - analogValue
+
                     loggingWidget( self, "Debug", "--> LvlControl analogValue: -> %s" %analogValue, NWKID)
                     if analogValue >= 255:
                         sValue = 100
