@@ -74,7 +74,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
-        if tmpDeviceType == "WindowCovering":
+        if tmpDeviceType in ( 'Venetian', "WindowCovering"):
             ClusterSearch = '0102'
             DeviceType = tmpDeviceType
         if tmpDeviceType =="LvlControl" :
