@@ -1734,6 +1734,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                 return
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
+        # Reset the device Hearbeat
+        self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
+
         # In case of livolo do the bind
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
             livolo_bind( self, MsgSrcAddr, '06')
@@ -1749,6 +1752,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             rebind_Clusters( self, MsgSrcAddr)
     
             # As we are redo bind, we need to redo the Configure Reporting
+            if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
+                del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
             processConfigureReporting( self, NWKID=MsgSrcAddr )
 
             # Let's take the opportunity to trigger some request/adjustement
