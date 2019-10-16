@@ -132,7 +132,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if Command == 'Stop':
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
-        if DeviceType == "WindowCovering":
+        if DeviceType in ( "WindowCovering", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
@@ -150,7 +150,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 return
 
-        if DeviceType == "WindowCovering":
+        if DeviceType in ( "WindowCovering", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
         else:
@@ -179,7 +179,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 return
 
-        if DeviceType == "WindowCovering":
+        if DeviceType in ( "WindowCovering", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
         else:
@@ -212,7 +212,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]))
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
-        elif  DeviceType == "WindowCovering":
+        elif DeviceType in ( "WindowCovering", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             if Level == 0:
                 Level = 1
