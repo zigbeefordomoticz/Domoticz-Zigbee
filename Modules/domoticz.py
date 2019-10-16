@@ -1284,9 +1284,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == '00': nValue = 0; sValue = "00"
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif ClusterType == 'WindowCovering' and DeviceType in ( "WindowCovering", "Venetian"):
+            elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
                 Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
                 
+                if value == 0: nValue = 0
+                elif value == 100: nValue = 1
+                else: nValue = 2
+                UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
+
+            elif ClusterType == 'WindowCovering' and DeviceType == "Venetian":
+                Domoticz.Log("MajDomoDevice - Updating Venetian Blind Value: %s" %value)
+                
+                value = 100 - value 
                 if value == 0: nValue = 0
                 elif value == 100: nValue = 1
                 else: nValue = 2

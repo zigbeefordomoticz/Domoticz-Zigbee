@@ -150,9 +150,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 return
 
-        if DeviceType in ( "WindowCovering", "Venetian"):
+        if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Blind inverted (On, for Off)
+        elif DeviceType == "Venetian":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian/Blind (Off, for Off)
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
 
@@ -179,9 +181,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 return
 
-        if DeviceType in ( "WindowCovering", "Venetian"):
+        if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Blind inverted (Off, for On)
+        elif DeviceType == "Venetian":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian/Blind (On, for Open)
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
 
@@ -212,7 +216,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]))
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
-        elif DeviceType in ( "WindowCovering", "Venetian"):
+        elif DeviceType == "WindowCovering": # Blind Inverted
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             if Level == 0:
                 Level = 1
@@ -220,6 +224,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 Level = 99
             value = '%02x' %Level
             Domoticz.Log("WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+
+        elif DeviceType == "Venetian":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            Level = 100 - Level
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
+            value = '%02x' %Level
+            Domoticz.Log("Venetian blind - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         elif DeviceType == "AlarmWD":
