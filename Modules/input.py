@@ -1281,19 +1281,37 @@ def Decode80A4(self, Devices, MsgData, MsgRSSI) : # Store Scene response
     return
     
 def Decode80A6(self, Devices, MsgData, MsgRSSI) : # Scene Membership response
-    MsgLen=len(MsgData)
+
+    MsgSrcAddr = MsgData[len(MsgData)-4: len(MsgData)]
 
     MsgSequenceNumber=MsgData[0:2]
     MsgEP=MsgData[2:4]
     MsgClusterID=MsgData[4:8]
     MsgDataStatus=MsgData[8:10]
-    MsgCapacity=MsgData[10:12]
+    MsgCapacity=int(MsgData[10:12],16)
     MsgGroupID=MsgData[12:16]
-    MsgSceneCount=MsgData[16:18]
-    MsgSceneList=MsgData[18:len(MsgData)]
-    
-    Domoticz.Log("ZigateRead - MsgType 80A6 - Scene Membership response, Sequence number : " + MsgSequenceNumber + " EndPoint : " + MsgEP + " ClusterID : " + MsgClusterID + " Status : " + DisplayStatusCode( MsgDataStatus ) + " Group ID : " + MsgGroupID + " Scene ID : " + MsgSceneID)
-    return
+    MsgSceneCount=int(MsgData[16:18],16)
+
+    Domoticz.Log("Decode80A6 - Scene Membership response - MsgSrcAddr: %s MsgEP: %s MsgGroupID: %s MsgClusterID: %s MsgDataStatus: %s MsgCapacity: %s MsgSceneCount: %s"
+        %(MsgSrcAddr, MsgEP, MsgGroupID,MsgClusterID, MsgDataStatus, MsgCapacity, MsgSceneCount))
+    if MsgDataStatus != '00':
+        Domoticz.Log("Decode80A6 - Scene Membership response - MsgSrcAddr: %s MsgEP: %s MsgClusterID: %s MsgDataStatus: %s" %(MsgSrcAddr, MsgEP, MsgClusterID, MsgDataStatus))
+        return
+
+    if MsgSceneCount > MsgCapacity:
+        Domoticz.Log("Decode80A6 - Scene Membership response MsgSceneCount %s > MsgCapacity %s" %(MsgSceneCount, MsgCapacity))
+        return
+
+    MsgSceneList=MsgData[18: 18+MsgSceneCount*2]
+    if len(MsgData) > 18+MsgSceneCount*2:
+        MsgSrcAddr = MsgData[18+MsgSceneCount*2 : (18+MsgSceneCount*2) + 4]
+    idx = 0
+    MsgScene = []
+    while idx < MsgSceneCount:
+        scene = MsgSceneList[ idx: idx*2]
+        if scene not in MsgScene:
+            MsgScene.append( scene )
+    Domoticz.Log("           - Scene List: %s" %(str(MsgScene)))
 
 def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     # Seems to come with Livolo and Firmware 3.1b
