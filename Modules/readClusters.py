@@ -703,7 +703,7 @@ def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    if MsgAttrId == '0000': # IdentifyTime Attribute
+    if MsgAttrID == '0000': # IdentifyTime Attribute
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Remaining time to identify itself %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)))
 
 
@@ -2032,10 +2032,18 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Out of Service'] = True
     elif MsgAttrID == '0055':
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Present Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-        if MsgClusterData == '00':
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = False
-        elif MsgClusterData == '01':
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
+        if MsgClusterData == '00': self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = False
+        elif MsgClusterData == '01': self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch'):
+                    loggingCluster( self, 'Log', "Legrand remote Switch", MsgSrcAddr)
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutters central remote switch' ):
+                    loggingCluster( self, 'Log', "Legrand remote shutter switch", MsgSrcAddr)
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', int(MsgClusterData,16))
+
     elif MsgAttrID == '006f':
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Status Flag: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         if MsgClusterData == '00':
