@@ -573,8 +573,8 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-            if t == "Venetian":
-                loggingWidget( self, "Log", "Create Widget Venetian Blind EU" , NWKID)
+            if t in ( "VenetianInverted", "Venetian"):
+                loggingWidget( self, "Log", "Create Widget %s Blind EU" %t, NWKID)
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
@@ -1294,12 +1294,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             elif ClusterType == 'WindowCovering' and DeviceType == "Venetian":
                 Domoticz.Log("MajDomoDevice - Updating Venetian Blind Value: %s" %value)
-                
-                value = 100 - value 
-                if value == 0: nValue = 0
-                elif value == 100: nValue = 1
-                else: nValue = 2
-                UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
+                if value in ( 0, 1):
+                    UpdateDevice_v2(self, Devices, x, value, str(value), BatteryLevel, SignalLevel)
+
+            elif ClusterType == 'WindowCovering' and DeviceType == "VenetianInverted":
+                Domoticz.Log("MajDomoDevice - Updating Venetian Blind Inverted Value: %s" %value)
+                value = 1 - value
+                if value in ( 0, 1):
+                    UpdateDevice_v2(self, Devices, x, value, str(value), BatteryLevel, SignalLevel)
 
             elif ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
@@ -1310,7 +1312,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     # Normalize sValue vs. analog value coomming from a ReadATtribute
                     analogValue = int(value, 16)
 
-                    if DeviceType == 'Venetian': #Inverted
+                    if DeviceType == 'VenetianInverted': #Inverted
                         analogValue = 100 - analogValue
 
                     loggingWidget( self, "Debug", "--> LvlControl analogValue: -> %s" %analogValue, NWKID)

@@ -74,7 +74,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'Venetian', "WindowCovering"):
+        if tmpDeviceType in ( 'Venetian', 'VenetianInverted', "WindowCovering"):
             ClusterSearch = '0102'
             DeviceType = tmpDeviceType
         if tmpDeviceType =="LvlControl" :
@@ -132,7 +132,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if Command == 'Stop':
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
-        if DeviceType in ( "WindowCovering", "Venetian"):
+        if DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
@@ -153,8 +153,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Blind inverted (On, for Off)
+        elif DeviceType == "VenetianInverted":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian Inverted/Blind (Off, for Off)
         elif DeviceType == "Venetian":
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian/Blind (Off, for Off)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian /Blind (Off, for Off)
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
 
@@ -184,6 +186,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Blind inverted (Off, for On)
+        elif DeviceType == "VenetianInverted":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian inverted/Blind (Off, for Open)
         elif DeviceType == "Venetian":
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian/Blind (On, for Open)
         else:
@@ -228,13 +232,23 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         elif DeviceType == "Venetian":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            Level = 100 - Level
             if Level == 0:
                 Level = 1
             elif Level >= 100:
                 Level = 99
             value = '%02x' %Level
             Domoticz.Log("Venetian blind - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+
+        elif DeviceType == "VenetianInverted":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            Level = 100 - Level
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
+            value = '%02x' %Level
+            Domoticz.Log("VenetianInverted blind - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
 
         elif DeviceType == "AlarmWD":
