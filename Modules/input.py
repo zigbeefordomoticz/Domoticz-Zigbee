@@ -59,6 +59,7 @@ def ZigateRead(self, Devices, Data):
         '8060': Decode8060, '8061': Decode8061, '8062': Decode8062, '8063': Decode8063,
         '8085': Decode8085,
         '8095': Decode8095,
+        '80a6': Decode80A6,
         '80a7': Decode80A7,
         '8100': Decode8100, '8101': Decode8101, '8102': Decode8102,
         '8110': Decode8110,
@@ -71,7 +72,7 @@ def ZigateRead(self, Devices, Data):
         '8806': Decode8806, '8807': Decode8807
     }
     
-    NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4', '80a6' )
+    NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4' )
 
     #loggingInput( self, 'Debug', "ZigateRead - decoded data : " + Data + " lenght : " + str(len(Data)) )
 
@@ -1747,7 +1748,12 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
 
         # Redo the binding if allow
-        if self.pluginconf.pluginConf['allowReBindingClusters']:
+        doBind = True
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] in ( "Double gangs remote switch", "Shutters central remote switch"):
+                    doBind = False
+        if self.pluginconf.pluginConf['allowReBindingClusters'] and doBind:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
     
