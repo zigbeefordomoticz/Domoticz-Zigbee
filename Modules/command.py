@@ -152,11 +152,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Blind inverted (On, for Off)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Blind inverted (On, for Close)
         elif DeviceType == "VenetianInverted":
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian Inverted/Blind (Off, for Off)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian Inverted/Blind (On, for Close)
         elif DeviceType == "Venetian":
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian /Blind (Off, for Off)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian /Blind (Off, for Close)
         else:
             sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
 
@@ -185,7 +185,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Blind inverted (Off, for On)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Blind inverted (Off, for Open)
         elif DeviceType == "VenetianInverted":
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian inverted/Blind (Off, for Open)
         elif DeviceType == "Venetian":
