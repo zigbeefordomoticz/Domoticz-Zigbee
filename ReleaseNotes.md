@@ -7,7 +7,7 @@
 - [Technical] - Consider Health 'Non rechable' as a dead device, and do not process them anymore.
 - [Technical] - Implement the possibility to setup the PowerOn after device PowerOff/Off (supported by Philips)
 - [Technical] - Handle ZHA1.2/Pluzzy Firmware 
-- [Technical] - Handle Pluzzy devices
+- [Technical] - Handle Pluzzy devices - Temp/Humi is working for now.
 - [Technical] - Transfert of GitHub repository
 - [Hardware] - Certify Tuya Door contact
 - [Hardware] - Certify Konke KIT Pro ( Multi Function switch, Door contact, Temp/Humi Sensor, Motion sensor)
@@ -18,6 +18,12 @@
 - [Hardware] - Centralite Door Sensor
 - [Hardware] - Zemismart Blind and Shade. New way of handling widget creation (used ProfileID/DeviceID)
 - [Technical] - Using command 0x47 to remove device
+- [Hardware] - Livolo Switch
+- [Hardware] - Manage Legrand devices. Use Legrand cluster to enable features.
+- [Web Admin] - Possibility to delete unconsitent devices ( in Device Management)
+- [Web Admin] - On demand command (adHoc) offer the possibility to send Zigate command to paired devices
+- [Hardware] - INNR RC 110 remote command - Phase 2 ( widget creations for Scenes and Lights mode.
+- [Technical] - Allo input of port number of Web Admin, will allow multiple zigate on 1 Domoticz instance
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
