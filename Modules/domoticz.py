@@ -1668,7 +1668,8 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             Devices[Unit].BatteryLevel != int(BatteryLvl) or \
             Devices[Unit].TimedOut:
 
-            Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
+            if self.pluginconf.pluginConf['logDeviceUpdate']:
+                Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
             loggingWidget( self, "Debug", "Update Values %s:%s:%s %s:%s %s (%15s)" %( nValue, sValue, Color_, BatteryLvl, rssi, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
