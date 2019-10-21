@@ -428,24 +428,29 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
     Channel=MsgData[40:42]
     loggingInput( self, 'Debug', "Decode8009: Network state - Address :" + addr + " extaddr :" + extaddr + " PanID : " + PanID + " Channel : " + str(int(Channel,16)) )
 
-    
     if self.ZigateIEEE != extaddr:
+        # In order to update the first time
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate IEEE: %s' %extaddr)
 
     self.ZigateIEEE = extaddr
     self.ZigateNWKID = addr
 
-    initLODZigate( self, addr, extaddr )
+    if self.ZigateNWKID != '0000':
+        Domoticz.Error("Zigate not correctly initialized")
+        return
+
+    if extaddr not in self.IEEE2NWK:
+        if self.IEEE2NWK != addr:
+            initLODZigate( self, addr, extaddr )
 
     if self.currentChannel != int(Channel,16):
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
+
     self.currentChannel = int(Channel,16)
 
     if self.iaszonemgt:
         self.iaszonemgt.setZigateIEEE( extaddr )
 
-    if self.ZigateNWKID != '0000':
-        Domoticz.Error("Zigate not correctly initialized")
 
     Domoticz.Status("Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
 
@@ -523,7 +528,7 @@ def Decode8012( self, Devices, MsgData, MsgRSSI ):
     MsgSrcAddr = MsgData[0:4]
     MsgSrcEp = MsgData[4:6]
     MsgClusterId = MsgData[6:10]
-    loggingInput( self, 'Log', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s" \
+    loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s, Cluster: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
 
 
@@ -563,8 +568,8 @@ def Decode8017(self, Devices, MsgData, MsgRSSI) : #
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
     ZigateTime =  struct.unpack('I',struct.pack('I',int(ZigateTime,16)))[0]
-    loggingInput(self, 'Log', "UTC time is: %s, Zigate Time is: %s with deviation of :%s " %(UTCTime, ZigateTime, UTCTime - ZigateTime))
-    if  abs( UTCTime - ZigateTime ) > 5:
+    loggingInput(self, 'Debug', "UTC time is: %s, Zigate Time is: %s with deviation of :%s " %(UTCTime, ZigateTime, UTCTime - ZigateTime))
+    if  abs( UTCTime - ZigateTime ) > 5:# If Deviation is more than 5 sec then reset Time
         setTimeServer( self )
 
 def Decode8015(self, Devices, MsgData, MsgRSSI) : # Get device list ( following request device list 0x0015 )
@@ -1602,7 +1607,7 @@ def Decode8503(self, Devices, MsgData, MsgRSSI) : # OTA image block request
 def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Confirm Status
 
     MsgLen = len(MsgData)
-    loggingInput( self, 'Log', "Decode8701 - MsgData: %s MsgLen: %s" %(MsgData, MsgLen))
+    loggingInput( self, 'Debug', "Decode8701 - MsgData: %s MsgLen: %s" %(MsgData, MsgLen))
 
     if MsgLen >= 4:
         # This is the reverse of what is documented. Suspecting that we got a BigEndian uint16 instead of 2 uint8
@@ -1617,10 +1622,10 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
 
     
     if NwkStatus != "00" :
-        loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed for %s, status: %s - %s Nwk Status: %s - %s " \
+        loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s, status: %s - %s Nwk Status: %s - %s " \
                 %( MsgSrcAddr, Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
 
-    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s %s, status: %s Nwk Status: %s " \
+    loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed for %s %s, status: %s Nwk Status: %s " \
             %( MsgSrcAddr, MsgSrcIEEE, Status, NwkStatus))
 
     return
@@ -1791,7 +1796,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if MsgIEEE in self.IEEE2NWK :
             Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
             if self.IEEE2NWK[MsgIEEE] :
-                loggingPairing( self, 'Log', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
+                loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
                 if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
                     Domoticz.Error("Decode004d - receiving a new Device Announced for a device in processing, drop it")
                     return
