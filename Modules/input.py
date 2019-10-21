@@ -1753,8 +1753,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
             if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 5:
                 # Looks like we have a duplicate Device Announced in less than 5s
-                Domoticz.Log("Decode004D - potential duplicate device annouced from %s %s. drop" %(MsgSrcAddr, MsgIEEE))
+                Domoticz.Log("Decode004D - potential duplicate device annouced from %s %s. Status: %s drop" %(MsgSrcAddr, MsgIEEE, self.ListOfDevices[MsgSrcAddr]['Status']))
                 return
+
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
         # Reset the device Hearbeat
@@ -1799,7 +1800,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             if self.IEEE2NWK[MsgIEEE] :
                 loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
                 if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
-                    Domoticz.Error("Decode004d - receiving a new Device Announced for a device in processing, drop it")
+                    loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announced for a device in processing, drop it",MsgSrcAddr)
                     return
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
         if IEEEExist( self, MsgIEEE ):

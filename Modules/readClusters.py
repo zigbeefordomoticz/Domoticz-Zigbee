@@ -394,6 +394,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == "f000": 
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut f000: " +str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
     elif MsgAttrID in ( 'ff0d', 'ff22', 'ff23'): # Xiaomi Code
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - %s/%s Attribut %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttrSize, MsgClusterData) , MsgSrcAddr)
 
@@ -2054,7 +2058,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '006f':
         STATUS_FLAGS = {
-                '00': 'In Alarm',
+                #'00': 'In Alarm',
                 '01': 'Fault',
                 '02': 'Overridden',
                 '03': 'Out Of service'
@@ -2062,9 +2066,9 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Status Flag: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         if MsgClusterData in STATUS_FLAGS:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = STATUS_FLAGS[MsgClusterData]
-            Domoticz.Status("Device %s Status flag: %s %s" %(MsgSrcEp, MsgClusterData, STATUS_FLAGS[MsgClusterData]))
+            Domoticz.Status("Device %s/%s Status flag: %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, STATUS_FLAGS[MsgClusterData]))
         else:
-            Domoticz.Status("Device %s Status flag: %s" %(MsgSrcEp, MsgClusterData))
+            Domoticz.Status("Device %s/%s Status flag: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData))
 
     else:
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
