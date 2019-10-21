@@ -22,6 +22,7 @@ from Modules.output import  sendZigateCmd,  \
         livolo_bind, \
         legrand_fc01, \
         setPowerOn_OnOff, \
+        scene_membership_request, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
@@ -101,6 +102,9 @@ def processKnownDevices( self, Devices, NWKID ):
     ## Starting this point, it is ony relevant for Main Powered Devices.
     if not _mainPowered:
         return
+
+   
+
 
     # In case Health is unknown let's force a Read attribute.
     _doReadAttribute = False
