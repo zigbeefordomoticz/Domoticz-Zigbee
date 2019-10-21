@@ -64,12 +64,12 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort):
 
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
-        self.httpPort = None
+        self.httpPort = httpPort
 
         self.httpsServerConn = None
         self.httpsClientConn = None
@@ -120,15 +120,15 @@ class WebServer(object):
 
     def  startWebServer( self ):
 
-        self.httpPort = '9440'
+        #self.httpPort = '9440'
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
         self.httpServerConn.Listen()
         self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
 
-        self.httpsPort = '9443'
-        self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
-        self.httpsServerConn.Listen()
-        self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
+        #self.httpsPort = '9443'
+        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
+        #self.httpsServerConn.Listen()
+        #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
 
 
     def onConnect(self, Connection, Status, Description):
