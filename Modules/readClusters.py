@@ -20,7 +20,7 @@ import string
 
 from math import atan, sqrt, pi
 
-from Modules.domoticz import MajDomoDevice, lastSeenUpdate
+from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, loggingCluster
 from Modules.output import ReadAttributeRequest_Ack
 
@@ -583,7 +583,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = newValue
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
-        loggingCluster( self, 'Log', "readCluster 0001 - %s General Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster 0001 - %s General Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
         if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] == '8e':
             # This should reflect the main voltage.
             return
@@ -695,12 +695,12 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if value != self.ListOfDevices[MsgSrcAddr]['Battery']:
         self.ListOfDevices[MsgSrcAddr]['Battery'] = value
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-        loggingCluster( self, 'Log', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
 
 def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
 
-    loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+    loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgAttrID == '0000': # IdentifyTime Attribute
@@ -1795,11 +1795,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value)/100,1)
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
             # In case it is not a Eurotronic, let's Update heatPoint
-            loggingCluster( self, 'Log', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
@@ -2025,35 +2025,46 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     if MsgAttrID == '0051':
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Out of Service: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Out of Service: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         if MsgClusterData == '00':
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Out of Service'] = False
         elif MsgClusterData == '01':
+            timedOutDevice( self, Devices, NwkId=MsgSrcEp)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Out of Service'] = True
+
     elif MsgAttrID == '0055':
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Present Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-        if MsgClusterData == '00': self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = False
-        elif MsgClusterData == '01': self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Present Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        if MsgClusterData == '00': 
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = False
+        elif MsgClusterData == '01': 
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
+
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch'):
-                    loggingCluster( self, 'Log', "Legrand remote Switch", MsgSrcAddr)
+                    loggingCluster( self, 'Log', "Legrand remote Switch Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutters central remote switch' ):
-                    loggingCluster( self, 'Log', "Legrand remote shutter switch", MsgSrcAddr)
+                    loggingCluster( self, 'Log', "Legrand remote shutter switch Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', int(MsgClusterData,16))
 
+            else:
+                loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
+
     elif MsgAttrID == '006f':
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Status Flag: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-        if MsgClusterData == '00':
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = 'In Alarm'
-        elif MsgClusterData == '01':
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = 'Fault'
-        elif MsgClusterData == '02':
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = 'Overridden'
-        elif MsgClusterData == '04':
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = 'Out Of service'
+        STATUS_FLAGS = {
+                '00': 'In Alarm',
+                '01': 'Fault',
+                '02': 'Overridden',
+                '03': 'Out Of service'
+                }
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Status Flag: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        if MsgClusterData in STATUS_FLAGS:
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = STATUS_FLAGS[MsgClusterData]
+            Domoticz.Status("Device %s Status flag: %s %s" %(MsgSrcEp, MsgClusterData, STATUS_FLAGS[MsgClusterData]))
+        else:
+            Domoticz.Status("Device %s Status flag: %s" %(MsgSrcEp, MsgClusterData))
 
     else:
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
