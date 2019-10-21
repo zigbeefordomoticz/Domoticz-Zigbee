@@ -2041,7 +2041,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch'):
+                if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch') and not self.pluginconf.pluginConf['bindRemoteLegrand']:
                     loggingCluster( self, 'Log', "Legrand remote Switch Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 

@@ -1772,10 +1772,12 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
         # Redo the binding if allow
         doBind = True
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] in ( "Double gangs remote switch", "Shutters central remote switch"):
-                    doBind = False
+        if not self.pluginconf.pluginConf['bindRemoteLegrand']:
+            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( "Double gangs remote switch", "Shutters central remote switch"):
+                        doBind = False
+
         if self.pluginconf.pluginConf['allowReBindingClusters'] and doBind:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)

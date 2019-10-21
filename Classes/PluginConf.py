@@ -147,6 +147,7 @@ SETTINGS = {
                     }},
             # Legrand Specific
             'Legrand': { 'Order': 11, 'param': {
+                    'bindRemoteLegrand': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'EnableLedIfOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'EnableLedInDark': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
