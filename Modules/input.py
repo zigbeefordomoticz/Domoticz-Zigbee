@@ -1620,8 +1620,7 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
         if MsgSrcAddr in self.ListOfDevices:
             MsgSrcIEEE = self.ListOfDevices[ MsgSrcAddr ][ 'IEEE' ]
 
-    
-    if NwkStatus != "00" :
+    if Status != "00" :
         loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed for %s, status: %s - %s Nwk Status: %s - %s " \
                 %( MsgSrcAddr, Status, DisplayStatusCode( Status ), NwkStatus, DisplayStatusCode(NwkStatus)))
 
