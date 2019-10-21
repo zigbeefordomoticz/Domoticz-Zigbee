@@ -29,7 +29,7 @@
     Please use first the Domoticz forums in order to qualify your issue. Select the ZigBee or Zigate topic.
     </description>
     <params>
-        <param field="Mode1" label="Zigate Model" width="75px">
+        <param field="Mode1" label="Zigate Model" width="75px" required="true" default="None">
             <options>
                 <option label="USB" value="USB" default="true" />
                 <option label="DIN" value="DIN" />
@@ -41,15 +41,18 @@
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
-        <param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="254" />
+        <param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="0" />
 
-        <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px">
+        <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px" required="true" default="False" >
             <options>
                 <option label="True" value="True"/>
                 <option label="False" value="False" default="true" />
             </options>
         </param>
-        <param field="Mode6" label="Verbors and Debuging" width="150px">
+
+        <param field="Mode4" label="Listening port for Web Admin GUI " width="75px" required="true" default="9440" />
+
+        <param field="Mode6" label="Verbors and Debuging" width="150px" required="true" default="None">
             <options>
                         <option label="None" value="0"  default="true"/>
                         <option label="Plugin Verbose" value="2"/>
@@ -631,7 +634,7 @@ class BasePlugin:
                 #Domoticz.Log("Username/Password: %s/%s" %(self.WebUsername, self.WebPassword))
                 self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
                         self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.groupmgt, Devices, 
-                        self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth)
+                        self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'])
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
