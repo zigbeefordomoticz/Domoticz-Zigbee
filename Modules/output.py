@@ -30,18 +30,27 @@ def ZigatePermitToJoin( self, permit ):
             Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
         else:
             Domoticz.Status("Request Accepting new Hardware for ever ")
+
         self.permitTojoin['Starttime'] = int(time())
         self.permitTojoin['Duration'] = permit
         sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
-        sendZigateCmd( self, "0014", "" ) # Request status
     else: 
         # Disable Permit to Join
         if self.permitTojoin['Duration'] != 0:
             self.permitTojoin['Starttime'] = int(time())
             self.permitTojoin['Duration'] = 0
             sendZigateCmd(self, "0049","FFFC" + '00' + "00")
-            sendZigateCmd( self, "0014", "" ) # Request status
         Domoticz.Status("Request Disabling Accepting new Hardware")
+
+    Domoticz.Log("Permit Join set :" )
+    Domoticz.Log("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
+    Domoticz.Log("---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'])
+
+    # Request Time in order to leave time to get the Zigate in pairing mode
+    sendZigateCmd(self, "0017", "")
+
+    # Request a Status to update the various permitTojoin structure
+    sendZigateCmd( self, "0014", "" ) # Request status
 
 def start_Zigate(self, Mode='Controller'):
     """
@@ -78,7 +87,7 @@ def setTimeServer( self ):
 
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    Domoticz.Log("setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
+    Domoticz.Status("setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
     data = "%08x" %UTCTime
     sendZigateCmd(self, "0016", data  )
     #Request Time
@@ -1070,11 +1079,11 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
             if 'Model' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['Model'] != {}:
                     if self.ListOfDevices[nwkid]['Model'] == '3AFE14010402000D' and cluster == '0500':
-                        loggingOutput( self, 'Log',"Do not Bind Konke 3AFE14010402000D to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                        loggingOutput( self, 'Debug',"Do not Bind Konke 3AFE14010402000D to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return    # Skip binding IAS for Konke Motion Sensor
                     elif self.ListOfDevices[nwkid]['Model'] == 'SML001' and ep != '02':
                         # only on Ep 02
-                        loggingOutput( self, 'Log',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                        loggingOutput( self, 'Debug',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return
 
     mode = "03"     # IEEE
@@ -1719,7 +1728,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
         if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "legrand %s OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Debug', "legrand %s OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
     write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -1768,24 +1777,22 @@ def legrand_ledInDark( self, OnOff):
                         if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
                             legrand_fc01( self, NWKID, 'EnableLedInDark', OnOff)
                         else:
-                            Domoticz.Log("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
+                            Domoticz.Log("legrand_ledInDark not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
-    """
-    Livolo commands.
+"""
+Livolo commands.
 
-    - looks like when Livolo switch is comming it is sending a Read Attribute to the Zigate on cluster 0x0001 Attributes: 0x895e, 0x1802, 0x4b00, 0x0012, 0x0021. In a malformed packet
+- looks like when Livolo switch is comming it is sending a Read Attribute to the Zigate on cluster 0x0001 Attributes: 0x895e, 0x1802, 0x4b00, 0x0012, 0x0021. In a malformed packet
 
-    - In order to bind the Livolo do:
-    (1) Send a Toggle
-    (2) Move to level 108 with transition 0.1 seconds
-    (3) Move to level 108 with transition 0.1 seconds
-    (4) Move to level 108 with transition 0.1 seconds
+- In order to bind the Livolo do:
+(1) Send a Toggle
+(2) Move to level 108 with transition 0.1 seconds
+(3) Move to level 108 with transition 0.1 seconds
+(4) Move to level 108 with transition 0.1 seconds
 
-    - When receiving 0x0001/0x0007 we must update the MacCapa attributes, accordingly to Mains (Single Phase)
+- When receiving 0x0001/0x0007 we must update the MacCapa attributes, accordingly to Mains (Single Phase)
 
-
-
-    """
+"""
 
 
 def livolo_bind( self, nwkid, EPout):
@@ -1880,3 +1887,11 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     loggingOutput( self, 'Log', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
     sendZigateCmd(self, "0530", addr_mode + targetaddr + zigate_ep + src_ep + cluster + profileId + security + radius + len_payload + payload)
+
+
+## Scene
+
+def scene_membership_request( self, nwkid, ep, groupid='0000'):
+
+    datas = '02' + nwkid + '01' + ep +  groupid
+    sendZigateCmd(self, "00A6", datas )
