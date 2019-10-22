@@ -1189,6 +1189,8 @@ class WebServer(object):
             info = {}
             if self.permitTojoin['Duration'] == 255:
                 info['PermitToJoin'] = 255
+            elif self.permitTojoin['Duration'] == 0:
+                info['PermitToJoin'] = 0
             elif int(time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
                 info['PermitToJoin'] = 0
             else:
