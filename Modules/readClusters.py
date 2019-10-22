@@ -1161,13 +1161,12 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
             return
             # What is expected on the Widget is:
-            # Left On: 01
             # Left Off: 00
-            # Right On: 03
+            # Left On: 01
             # Right Off: 02
+            # Right On: 03
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
-            if MsgClusterData == '01':
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',  MsgClusterData)
             return
 
     if MsgAttrID == '0000': # Current Level
