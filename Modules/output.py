@@ -767,19 +767,6 @@ def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
     write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 
-def removeZigateDevice( self, IEEE ):
-    # remove a device in Zigate
-    # Key is the short address of the device
-    # extended address is ieee address
-    if self.ZigateIEEE != None:
-        Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
-        #sendZigateCmd(self, "0026", str(self.ZigateIEEE) + str(IEEE) )
-        sendZigateCmd(self, "0026", str(IEEE) + str(IEEE) )
-    else:
-        Domoticz.Error("removeZigateDevice - cannot remove due to unknown Zigate IEEE: ")
-
-    return
-
 def getListofAttribute(self, nwkid, EpOut, cluster):
 
     datas = "{:02n}".format(2) + nwkid + "01" + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"

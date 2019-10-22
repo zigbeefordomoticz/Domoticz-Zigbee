@@ -368,8 +368,10 @@ class BasePlugin:
             # We should call this only if All Widgets have been remved !
             if fullyremoved and self.pluginconf.pluginConf['allowRemoveZigateDevice']:
                 IEEE = Devices[Unit].DeviceID
-                #removeZigateDevice( self, IEEE )
+                # sending a Leave Request to device, so the device will send a leave
                 leaveRequest( self, IEEE= IEEE )
+                # for a remove in case device didn't send the leave
+                sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
                 Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
 
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
