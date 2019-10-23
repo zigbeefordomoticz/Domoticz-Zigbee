@@ -473,7 +473,7 @@ def ReadAttributeRequest_0102(self, key):
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+            if "0102" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                     EPout=tmpEp
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
@@ -481,7 +481,7 @@ def ReadAttributeRequest_0102(self, key):
             listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-    ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
+    ReadAttributeReq( self, key, "01", EPout, "0102", listAttributes)
 
 def ReadAttributeRequest_fc00(self, key):
 
@@ -868,7 +868,7 @@ def processConfigureReporting( self, NWKID=None ):
 
         # Binary Input ( Basic )
         '000f': {'Attributes': {
-            '0055': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+                                '0055': {'DataType': '10', 'MinInterval':'0000', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         }
 
     now = int(time())
