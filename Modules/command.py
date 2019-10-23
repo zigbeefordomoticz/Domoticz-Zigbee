@@ -206,9 +206,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if DeviceType == 'ThermoSetpoint':
-            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             value = int(float(Level)*100)
-            Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
             thermostat_Setpoint( self, NWKID, value )
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
