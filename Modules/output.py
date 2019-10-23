@@ -864,7 +864,11 @@ def processConfigureReporting( self, NWKID=None ):
 
         'fc01': {'Attributes': {
                                 '0000': {'DataType': '09', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
-                                '0001': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}}
+                                '0001': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+
+        # Binary Input ( Basic )
+        '000f': {'Attributes': {
+            '0055': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         }
 
     now = int(time())
