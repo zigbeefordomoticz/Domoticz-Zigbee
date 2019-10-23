@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 23 October 2019 - 4.5.5
+- [Issue] - Fix issue when reading attributes of cluster 0x0102
+
 ## 27 August 2019 - 4.5.4
 - [Issue] - Error in _openDB for disableErasePDM method
 - [Issue] - Error in Decode8009, calling iaszonemgt when not initialized
