@@ -752,6 +752,7 @@ class OTAManagement(object):
                 Domoticz.Log("OTA heartbeat - No device to be upgraded...")
                 self.upgradeDone = None
                 del self.OTA['Images']
+                self.OTA['Images'] = {}
 
             self.upgradeOTAImage = None
             self.upgradableDev = None
