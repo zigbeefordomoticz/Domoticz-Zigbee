@@ -1686,6 +1686,9 @@ def legrand_fc01( self, nwkid, command, OnOff):
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
 
+    if self.ListOfDevices[nwkid]['Model'] == {}:
+        return
+
     if self.ListOfDevices[nwkid]['Model'] not in LEGRAND_CLUSTER_FC01:
         return
 
