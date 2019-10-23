@@ -1078,8 +1078,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         state = "Off"
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
 
-
-
             if ClusterType == "Switch":
                 if DeviceType == "Plug":
                     if value == "01":
@@ -1284,26 +1282,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == '00': nValue = 0; sValue = "00"
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-            elif ClusterType == 'WindowCovering' and DeviceType == "WindowCovering":
-                Domoticz.Log("MajDomoDevice - Updating WindowCovering Value: %s" %value)
-                
-                if value == 0: nValue = 0
-                elif value == 100: nValue = 1
-                else: nValue = 2
-                UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
+            if ClusterType == 'WindowCovering':
+                value = int(value,16)
+                if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
+                    Domoticz.Log("MajDomoDevice - Updating %s Value: %s" %(DeviceType,value))
 
-            elif ClusterType == 'WindowCovering' and DeviceType == "Venetian":
-                Domoticz.Log("MajDomoDevice - Updating Venetian Blind Value: %s" %value)
-                if value in ( 0, 1):
-                    UpdateDevice_v2(self, Devices, x, value, str(value), BatteryLevel, SignalLevel)
+                    if DeviceType == "VenetianInverted":
+                        value = 100 - value
 
-            elif ClusterType == 'WindowCovering' and DeviceType == "VenetianInverted":
-                Domoticz.Log("MajDomoDevice - Updating Venetian Blind Inverted Value: %s" %value)
-                value = 1 - value
-                if value in ( 0, 1):
-                    UpdateDevice_v2(self, Devices, x, value, str(value), BatteryLevel, SignalLevel)
+                    if value == 0: nValue = 0
+                    elif value == 100: nValue = 1
+                    else: nValue = 2
+                    UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
 
-            elif ClusterType == "LvlControl":
+            if ClusterType == "LvlControl":
                 if DeviceType == "LvlControl":
                     # We need to handle the case, where we get an update from a Read Attribute or a Reporting message
                     # We might get a Level, but the device is still Off and we shouldn't make it On .
@@ -1311,9 +1303,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                     # Normalize sValue vs. analog value coomming from a ReadATtribute
                     analogValue = int(value, 16)
-
-                    if DeviceType == 'VenetianInverted': #Inverted
-                        analogValue = 100 - analogValue
 
                     loggingWidget( self, "Debug", "--> LvlControl analogValue: -> %s" %analogValue, NWKID)
                     if analogValue >= 255:
