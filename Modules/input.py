@@ -1792,6 +1792,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             ReadAttributeRequest_0000( self,  MsgSrcAddr)
             sendZigateCmd(self,"0042", str(MsgSrcAddr) )
     else:
+        if MsgIEEE[0:7] == '00124b00': # Livolo Mac@
+            livolo_bind( self, MsgSrcAddr, '06')
+
         # New device comming. The IEEE is not known
         loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
 
