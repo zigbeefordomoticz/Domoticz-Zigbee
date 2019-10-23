@@ -84,12 +84,16 @@ class APSManagement(object):
     def _errorMgt( self, cmd, nwk, ieee, aps_code):
         """ Process the error """
 
+        if cmd in ( '0100', '0110', '0120', '0030'):
+            return
+
         timedOutDevice( self, self.Devices, NwkId = nwk)
         _deviceName = 'not found'
         for x in self.Devices:
             if self.Devices[x].DeviceID == ieee:
                 _deviceName = self.Devices[x].Name
                 break
+
         _cmdTxt = '0x' + cmd
         if cmd in CMD_NWK_2NDBytes:
             _cmdTxt += ':' + CMD_NWK_2NDBytes[cmd]
