@@ -868,7 +868,7 @@ def processConfigureReporting( self, NWKID=None ):
 
         # Binary Input ( Basic )
         '000f': {'Attributes': {
-                                '0055': {'DataType': '10', 'MinInterval':'0000', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+                                '0055': {'DataType': '10', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         }
 
     now = int(time())
