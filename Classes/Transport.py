@@ -77,32 +77,18 @@ class ZigateTransport(object):
         if str(transport) == "USB":
             self._transp = "USB"
             self._serialPort = serialPort
-            if serialPort.find('/dev/') != -1:
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                                                   Address=self._serialPort, Baud=115200)
         elif str(transport) == "DIN":
             self._transp = "DIN"
             self._serialPort = serialPort
-            if serialPort.find('/dev/') != -1:
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                                                   Address=self._serialPort, Baud=115200)
-            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
         elif str(transport) == "PI":
             self._transp = "PI"
             self._serialPort = serialPort
-            if serialPort.find('/dev/') != -1:
-                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                                                   Address=self._serialPort, Baud=115200)
         elif str(transport) == "Wifi":
             self._transp = "Wifi"
             self._wifiAddress = wifiAddress
             self._wifiPort = wifiPort
-            self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None",
-                                                   Address=self._wifiAddress, Port=self._wifiPort)
-            Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._wifiAddress, self._wifiPort ))
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
-
 
     def loggingSend( self, logType, message):
 
@@ -123,36 +109,54 @@ class ZigateTransport(object):
             Domoticz.Status( message )
 
     # Transport / Opening / Closing Communication
-    def openConn(self):
-        if self._connection:
-            self._connection.Connect()
+    def setConnection( self ):
 
-    def closeConn(self):
-        self._connection.Disconnect()
-        self._connection = None
+        if self._connection is not None:
+            del self._connection
+            self._connection = None
 
-    def reConn(self):
-        Domoticz.Log("Transport.reConn: %s" %self._connection)
-        if self._connection.Connected() :
-            self.closeConn()
-        Domoticz.Log("Lost connection, reConn Transport.reConn: %s" %self._connection)
         if self._transp == "USB":
-            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if self._serialPort.find('/dev/') != -1:
+                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                          Address=self._serialPort, Baud=115200)
         elif self._transp == "DIN":
-            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if self._serialPort.find('/dev/') != -1:
+                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                          Address=self._serialPort, Baud=115200)
         elif self._transp == "PI":
-            Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
-            self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
+            if self._serialPort.find('/dev/') != -1:
+                Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
+                self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
                          Address=self._serialPort, Baud=115200)
-
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
                          Address=self._wifiAddress, Port=self._wifiPort)
+        else:
+            Domoticz.Error("Unknown Transport Mode: %s" %transport)
+
+
+    def openConn(self):
+        self.setConnection()
+        if self._connection:
+            self._connection.Connect()
+        else:
+            Domoticz.Error("openConn _connection note set!")
+        Domoticz.Log("Connection open: %s" %self._connection)
+
+    def closeConn(self):
+        Domoticz.Log("Connection close: %s" %self._connection)
+        self._connection.Disconnect()
+        del self._connection
+        self._connection = None
+
+    def reConn(self):
+        Domoticz.Log("Reconnection: %s" %self._connection)
+        if self._connection.Connected() :
+            Domoticz.Log("--> still connected!")
+            self.closeConn()
         self.openConn()
 
     # Transport Sending Data

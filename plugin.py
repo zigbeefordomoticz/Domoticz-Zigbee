@@ -525,7 +525,6 @@ class BasePlugin:
 
     def onDisconnect(self, Connection):
 
-        loggingPlugin( self, 'Debug', "onDisconnect: %s" %Connection)
         def decodeConnection( connection ):
 
             decoded = {}
@@ -536,6 +535,7 @@ class BasePlugin:
                 decoded[label] = value
             return decoded
 
+        loggingPlugin( self, 'Debug', "onDisconnect: %s" %Connection)
         decodedConnection = decodeConnection ( str(Connection) )
 
         if 'Protocol' in decodedConnection:
