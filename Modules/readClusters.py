@@ -2045,20 +2045,18 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutra', 'Micromodule switch'):
-                    loggingCluster( self, 'Log', "Legrand wired Switch/Plug Value: %s" %MsgClusterData, MsgSrcAddr)
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+                    loggingCluster( self, 'Log', "Legrand wired Switch/Plug Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                    #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch', 'Remote switch') and not self.pluginconf.pluginConf['bindRemoteLegrand']:
                     loggingCluster( self, 'Log', "Legrand remote Switch Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutters central remote switch' ):
-                    loggingCluster( self, 'Log', "Legrand remote shutter switch Value: %s" %MsgClusterData, MsgSrcAddr)
-                    if MsgClusterData == '01': 
-                        value = '%02x' %100
-                    else:
-                        value = '%02x' %0
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
+                    loggingCluster( self, 'Log', "Legrand remote shutter switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                    if MsgClusterData == '01': value = '%02x' %100
+                    else: value = '%02x' %0
+                    #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
