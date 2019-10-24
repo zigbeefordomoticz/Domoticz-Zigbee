@@ -1762,8 +1762,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
 
         # In case of livolo do the bind
-        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
-            livolo_bind( self, MsgSrcAddr, '06')
+        #if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+        #    livolo_bind( self, MsgSrcAddr, '06')
 
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
