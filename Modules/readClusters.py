@@ -1330,6 +1330,15 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Number of Actuations – Tilt: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0007":
+        # 00000001 - 0-Not Operational, 1-Operational
+        # 00000010 - 0-Not Online, 1-Online
+        # 00000100 - 0-Commands are normal, 1-Open/Up Commands reserverd
+        # 00001000 - 0-Lift control is Open Loop, 1-Lift control is Closed Loop
+        # 00010000 - 0-Titl control is Open Loop, 1-Tilt control is Closed Loop
+        # 00100000 - 0-Timer Controlled, 1-Encoder Controlled
+        # 01000000 - 0-Timer Controlled, 1-Encoder Controlled
+        # 10000000 - Reserved
+
         loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0008":
@@ -1340,6 +1349,8 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Zemismart Blind shutter switch send 50 went the swicth is on wait mode
                     # do not update
                     return
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
+                    value = 100 - value
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
     elif MsgAttrID == "0009":
