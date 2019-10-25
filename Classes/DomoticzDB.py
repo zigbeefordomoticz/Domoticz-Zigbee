@@ -86,6 +86,7 @@ class DomoticzDB_Preferences:
 
             self.closeDB()
             self.dbCursor = None
+            return 0
 
     def retreiveWebUserNamePassword( self ):
 
@@ -129,6 +130,7 @@ class DomoticzDB_Preferences:
 
             self.closeDB()
             self.dbCursor = None
+            return (None, None)
 
     def unsetAcceptNewHardware( self):
 
@@ -266,8 +268,10 @@ class DomoticzDB_DeviceStatus:
                 self.dbCursor = None
                 return 0
 
+            Domoticz.Error("retreiveAddjValue_baro - Unexpected exception for ID: %s HardwareID: Ms" %(ID, self.HardwareID))
             self.closeDB()
             self.dbCursor = None
+            return 0
 
     def retreiveTimeOut_Motion( self, ID):
         """
@@ -315,8 +319,10 @@ class DomoticzDB_DeviceStatus:
                 self.dbCursor = None
                 return 0
 
+            Domoticz.Error("retreiveTimeOut_Motion - Unexpected exception for ID: %s HardwareID: Ms" %(ID, self.HardwareID))
             self.closeDB()
             self.dbCursor = None
+            return 0
 
     def retreiveAddjValue_temp( self, ID):
         """
@@ -360,5 +366,7 @@ class DomoticzDB_DeviceStatus:
                 self.dbCursor = None
                 return 0
 
+            Domoticz.Error("retreiveAddjValue_temp - Unexpected exception for ID: %s HardwareID: Ms" %(ID, self.HardwareID))
             self.closeDB()
             self.dbCursor = None
+            return 0
