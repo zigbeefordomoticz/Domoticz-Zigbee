@@ -87,7 +87,7 @@ class APSManagement(object):
         if 'ErrorManagement' not in self.ListOfDevices[nwk] and cmd in ( '0100', '0110', '0120', '0030'):
             self.ListOfDevices[nwk]['ErrorManagement'] = 0
 
-        if not self.ListOfDevices[nwk]['ErrorManagement']: # equal 0
+        if self.ListOfDevices[nwk]['ErrorManagement'] == 0: 
             Domoticz.Log("_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
             self.ListOfDevices[nwk]['ErrorManagement']  = 1
             return
