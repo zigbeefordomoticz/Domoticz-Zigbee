@@ -1155,48 +1155,40 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     loggingCluster( self, 'Debug', "ReadCluster - ClusterID: %s Addr: %s MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
             %(MsgClusterId, MsgSrcAddr, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' and MsgSrcEp == '06': # Livolo switch
-            Domoticz.Log("ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
-                    %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
-            return
-            # What is expected on the Widget is:
-            # Left Off: 00
-            # Left On: 01
-            # Right Off: 02
-            # Right On: 03
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',  MsgClusterData)
-            return
 
     if MsgAttrID == '0000': # Current Level
-        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - Level Control: " + str(MsgClusterData) , MsgSrcAddr)
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001' and MsgSrcEp == '06': # Livolo switch
+                Domoticz.Debug("ReadCluster - ClusterId=0008 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
+                    %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+                # Do nothing as the Livolo state is given by 0x0100
+                return
+        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0008 - %s/%s Level Control: %s" %(MsgSrcAddr,MsgSrcEp,MsgClusterData) , MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
-        #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = MsgClusterData
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
 
     elif MsgAttrID == '0001': # Remaining Time
         # The RemainingTime attribute represents the time remaining until the current
         # command is complete - it is specified in 1/10ths of a second.
-        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - Remaining Time: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0008 - %s/%s Remaining Time: %s" %(MsgSrcAddr,MsgSrcEp,MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '0010': # OnOffTransitionTime
         # The OnOffTransitionTime attribute represents the time taken to move to or from the target level 
         # when On of Off commands are received by an On/Off cluster on the same endpoint. It is specified in 1/10ths of a second.
-        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - OnOff TransitionTime: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0008 - %s/%s OnOff Transition Time: %s" %(MsgSrcAddr,MsgSrcEp,MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '0011': # OnLevel 
         # The OnLevel attribute determines the value that the CurrentLevel attribute is 
         # set to when the OnOff attribute of an On/Off cluster on the same endpoint is set to On. 
         # If the OnLevel attribute is not implemented, or is set to 0xff, it has no effect. 
-        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - On Level: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0008 - %s/%s On Level : %s" %(MsgSrcAddr,MsgSrcEp,MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '4000': # 
-        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Attr: %s Value: %s" %(MsgAttrID, MsgClusterData))
+        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0008 - %s/%s Attr: %s Value: %s" %(MsgSrcAddr,MsgSrcEp,MsgAttrID,MsgClusterData) , MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == 'f000':
-        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0008 - Attribute f000: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0008 - %s/%s Attr: %s Value: %s" %(MsgSrcAddr,MsgSrcEp,MsgAttrID,MsgClusterData) , MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
@@ -1339,7 +1331,10 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 01000000 - 0-Timer Controlled, 1-Encoder Controlled
         # 10000000 - Reserved
 
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        if MsgClusterData != '03':
+            loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        else:
+            loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0008":
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Curent position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
@@ -1367,7 +1362,10 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Log', "Velocity", MsgSrcAddr)
 
     elif MsgAttrID == "0017":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Windows Covering mode: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Windows Covering mode: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+
+    elif MsgAttrID == "fffd":
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - AttributeID: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
@@ -2059,6 +2057,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     loggingCluster( self, 'Log', "Legrand remote Switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
+                # We rely more on Cluster 0x0006 and 0x0008 feedbacks rather than the Present Value
                 #elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutra', 'Micromodule switch'):
                 #    loggingCluster( self, 'Log', "Legrand wired Switch/Plug Present Value: %s" %MsgClusterData, MsgSrcAddr)
                 #    #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
@@ -2074,7 +2073,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '006f':
         STATUS_FLAGS = {
-                #'00': 'In Alarm',
+                '00': 'In Alarm',
                 '01': 'Fault',
                 '02': 'Overridden',
                 '03': 'Out Of service'
@@ -2082,9 +2081,17 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Status Flag: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         if MsgClusterData in STATUS_FLAGS:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Status'] = STATUS_FLAGS[MsgClusterData]
-            Domoticz.Status("Device %s/%s Status flag: %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, STATUS_FLAGS[MsgClusterData]))
+            if MsgClusterData != '00':
+                Domoticz.Status("Device %s/%s Status flag: %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, STATUS_FLAGS[MsgClusterData]))
+            else:
+                loggingCluster( self, 'Debug', "Device %s/%s Status flag: %s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, STATUS_FLAGS[MsgClusterData]))
+
         else:
             Domoticz.Status("Device %s/%s Status flag: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData))
+
+    elif MsgAttrID == 'fffd':
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     else:
         loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
