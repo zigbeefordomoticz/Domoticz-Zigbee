@@ -84,6 +84,14 @@ class APSManagement(object):
     def _errorMgt( self, cmd, nwk, ieee, aps_code):
         """ Process the error """
 
+        if 'ErrorManagement' not in self.ListOfDevices[nwk] and cmd in ( '0100', '0110', '0120', '0030'):
+            self.ListOfDevices[nwk]['ErrorManagement'] = 0
+
+        if not self.ListOfDevices[nwk]['ErrorManagement']: # equal 0
+            Domoticz.Log("_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
+            self.ListOfDevices[nwk]['ErrorManagement']  = 1
+            return
+
         timedOutDevice( self, self.Devices, NwkId = nwk)
         _deviceName = 'not found'
         for x in self.Devices:

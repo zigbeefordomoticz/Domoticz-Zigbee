@@ -1083,7 +1083,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if value == "01":
                         UpdateDevice_v2(self, Devices, x, 1, "On", BatteryLevel, SignalLevel)
                     elif value == "00":
-                        state = "Off"
                         UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
                 elif DeviceType == "Door":  # porte / fenetre
                     if value == "01":
@@ -1607,6 +1606,8 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
             if self.domoticzdb_DeviceStatus:
                 from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
+                # Let's check if we have a Device TimeOut specified by end user
                 if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
                     continue
 
@@ -1712,12 +1713,16 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
             loggingWidget( self, "Debug", "Not the good Domoticz level for Touch")
             return
+        # Extract NwkId from Device Unit
+        IEEE = Devices[Unit].DeviceID
         if Devices[Unit].TimedOut:
             timedOutDevice( self, Devices, Unit=Unit, TO=0)
         else:
             Devices[Unit].Touch()
+        if NwkId is None and 'IEEE' in self.IEEE2NWK:
+            NwkId = self.IEEE2NWK[ IEEE ]
 
-    elif NwkId:
+    if NwkId:
         if NwkId not in self.ListOfDevices:
             return
         if 'IEEE' not in self.ListOfDevices[NwkId]:
@@ -1729,6 +1734,9 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
         if 'LastSeen' not in self.ListOfDevices[NwkId]['Stamp']:
             self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = 0
+        if 'ErrorManagement' in self.ListOfDevices[NwkId]:
+            self.ListOfDevices[NwkId]['ErrorManagement'] = 0
+
         self.ListOfDevices[NwkId]['Health'] = 'Live'
 
         if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
