@@ -103,9 +103,6 @@ def processKnownDevices( self, Devices, NWKID ):
     if not _mainPowered:
         return
 
-   
-
-
     # In case Health is unknown let's force a Read attribute.
     _doReadAttribute = False
     if 'Health' in self.ListOfDevices[NWKID]:
@@ -167,86 +164,90 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if self.pluginconf.pluginConf['EnableDimmer']:
-                    legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
                 else:
-                    legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
         
                 if self.pluginconf.pluginConf['EnableLedIfOn']:
-                    legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
                 else:
-                    legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
 
                 if self.pluginconf.pluginConf['EnableLedInDark']:
-                    legrand_fc01( self, NWKID, 'DetectInDark', 'On')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'DetectInDark', 'On')
                 else:
-                    legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
 
-                ReadAttributeRequest_fc01( self, NWKID )
+                if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
+                    ReadAttributeRequest_fc01( self, NWKID )
 
+    # If Attributes not yet discovered, let's do it
+    if 'ConfigSource' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+            if 'Attributes List' not in self.ListOfDevices[NWKID]:
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+                            break # Will do at the next round
+                        getListofAttribute( self, NWKID, iterEp, iterCluster)
 
-    # On regular basis, try to collect as much information as possible from Main Powered devices
-    if ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
-        # If Attributes not yet discovered, let's do it
-        if 'ConfigSource' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
-                if 'Attributes List' not in self.ListOfDevices[NWKID]:
-                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                        for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                            if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                            if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-                                loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
-                                break # Will do at the next round
-                            getListofAttribute( self, NWKID, iterEp, iterCluster)
-
-        # Retreive Cluster 0x0000
-        _forceReadAttr0000 = True
-        if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
-            self.ListOfDevices[NWKID]['ReadAttributes'] = {}
-            self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
-        if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
-            now = int(time.time())   # Will be used to trigger ReadAttributes
-            timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST['0000'][1] ]
-            for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
-                if tmpEp == 'ClusterType': continue
-                _idx = tmpEp + '-' + '0000'
-                if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                    loggingHeartbeat( self, 'Debug', "processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                            %(NWKID, '0000', self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
-                    if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
-                        if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                            _forceReadAttr0000 = False
+    # Retreive Cluster 0x0000
+    _forceReadAttr0000 = True
+    if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
+        self.ListOfDevices[NWKID]['ReadAttributes'] = {}
+        self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
+    if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
+        now = int(time.time())   # Will be used to trigger ReadAttributes
+        timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST['0000'][1] ]
+        for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
+            if tmpEp == 'ClusterType': continue
+            _idx = tmpEp + '-' + '0000'
+            if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
+                loggingHeartbeat( self, 'Debug', "processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                        %(NWKID, '0000', self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
+                if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
+                    if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
+                        _forceReadAttr0000 = False
                         
-        if _forceReadAttr0000:
-            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                loggingHeartbeat( self, 'Debug', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
-                ReadAttributeRequest_0000( self, NWKID)
+    if _forceReadAttr0000:
+        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            loggingHeartbeat( self, 'Debug', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
+            ReadAttributeRequest_0000( self, NWKID)
 
-        # Checking if we have to change the Power On after On/Off
-        if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer'] == 'c05e':
-                if 'Ep' in self.ListOfDevices[NWKID]:
-                    for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                        # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
-                        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                            if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
-                                if int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
-                                    if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-                                        Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
-                                                %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
-                                        setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
+    # Checking if we have to change the Power On after On/Off
+    if 'Manufacturer' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer'] == 'c05e':
+            if 'Ep' in self.ListOfDevices[NWKID]:
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
+                    if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
+                            if int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
+                                if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                                    Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
+                                            %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
+                                    setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
 
-        # If corresponding Attributes not present, let's do a Request Node Descriptio
-        if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
-                'DeviceType' not in self.ListOfDevices[NWKID] or \
-                'LogicalType' not in self.ListOfDevices[NWKID] or \
-                'PowerSource' not in self.ListOfDevices[NWKID] or \
-                'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
-            if not self.busy and  len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
-                Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
-                sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
+    # If corresponding Attributes not present, let's do a Request Node Descriptio
+    if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
+            'DeviceType' not in self.ListOfDevices[NWKID] or \
+            'LogicalType' not in self.ListOfDevices[NWKID] or \
+            'PowerSource' not in self.ListOfDevices[NWKID] or \
+            'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
+        if not self.busy and  len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+            Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
+            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
 
 
 def writeDiscoveryInfos( self ):
