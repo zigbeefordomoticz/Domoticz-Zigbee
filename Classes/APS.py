@@ -88,7 +88,7 @@ class APSManagement(object):
             self.ListOfDevices[nwk]['ErrorManagement'] = 0
 
         if self.ListOfDevices[nwk]['ErrorManagement'] == 0: 
-            Domoticz.Log("_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
+            self.logging( 'Debug', "_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
             self.ListOfDevices[nwk]['ErrorManagement']  = 1
             return
 
@@ -143,9 +143,9 @@ class APSManagement(object):
         ZDeviceName = ''
         if 'ZDeviceName' in  self.ListOfDevices[nwk]:
             ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
-        if self.pluginconf.pluginConf['enableAPSFailureLoging']:
-            Domoticz.Log("processAPSFailure - Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
-                    %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
+        #if self.pluginconf.pluginConf['enableAPSFailureLoging']:
+        #    Domoticz.Log("processAPSFailure - Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
+        #            %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
         self.logging( 'Debug', "processAPSFailure - Update APS record Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
                     %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
 
@@ -185,6 +185,6 @@ class APSManagement(object):
                 %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
         if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
             # That command has been issued in the APS time window
-            self.logging( 'Log', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" \
+            self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" \
                     %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
             self._errorMgt( iterCmd, nwk, ieee, aps_code)
