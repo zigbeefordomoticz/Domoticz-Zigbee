@@ -1284,8 +1284,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if ClusterType == 'WindowCovering':
                 value = int(value,16)
                 if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
-                    Domoticz.Log("MajDomoDevice - Updating %s Value: %s" %(DeviceType,value))
-
+                    loggingWidget( self, "Debug", "MajDomoDevice - Updating %s Value: %s" %(DeviceType,value), NWKID)
                     if DeviceType == "VenetianInverted":
                         value = 100 - value
 
