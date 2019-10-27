@@ -1870,6 +1870,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+    if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
+        return
 
     if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
         if MsgEP in self.ListOfDevices[MsgSrcAddr]['Ep']:
@@ -2000,6 +2002,9 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
+    if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
+        return
+
     if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
         if MsgEP in self.ListOfDevices[MsgSrcAddr]['Ep']:
             if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
@@ -2072,7 +2077,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
 
         elif MsgCmd == '00': # Off
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
             loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
     else:
@@ -2111,6 +2116,8 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     loggingInput( self, 'Debug', "Decode80A7 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Direction: %s, Unknown_ %s" \
                 %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, MsgDirection, unkown_), MsgSrcAddr)
     if MsgSrcAddr not in self.ListOfDevices:
+        return
+    if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
         return
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
