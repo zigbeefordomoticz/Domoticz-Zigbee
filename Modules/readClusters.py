@@ -2046,27 +2046,31 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0055':
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Present Value: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
         if MsgClusterData == '00': 
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = False
         elif MsgClusterData == '01': 
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+
+            loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Model: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch', 'Remote switch') and not self.pluginconf.pluginConf['bindRemoteLegrand']:
-                    loggingCluster( self, 'Log', "Legrand remote Switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                    loggingCluster( self, 'Debug', "Legrand remote Switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutters central remote switch'):
+                    loggingCluster( self, 'Debug', "Legrand remote shutter switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                    if MsgClusterData == '01': value = '%02x' %100
+                    else: value = '%02x' %0
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
                 # We rely more on Cluster 0x0006 and 0x0008 feedbacks rather than the Present Value
                 #elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutra', 'Micromodule switch'):
                 #    loggingCluster( self, 'Log', "Legrand wired Switch/Plug Present Value: %s" %MsgClusterData, MsgSrcAddr)
                 #    #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
-                #elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutters central remote switch' ):
-                #    loggingCluster( self, 'Log', "Legrand remote shutter switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                #    if MsgClusterData == '01': value = '%02x' %100
-                #    else: value = '%02x' %0
-                #    #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
