@@ -98,13 +98,20 @@ def processKnownDevices( self, Devices, NWKID ):
         if self.ListOfDevices[NWKID]['MacCapa'] == '8e': # Not a Main Powered 
             _mainPowered = True
 
-
     ## Starting this point, it is ony relevant for Main Powered Devices.
-    if not _mainPowered:
+    # 
+    # Let's be smart and if intHB equal 0, this has been reset recently and we might take the opportunity to 
+    # request 0x0001 (Voltage/Power information) for battery based devices
+
+    if not _mainPowered and intHB > 2:
         return
 
     # In case Health is unknown let's force a Read attribute.
     _doReadAttribute = False
+
+    if intHB < 2 and not _mainPowered:
+        _doReadAttribute = True  # But will will do only 0x0001 Cluster
+
     if 'Health' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['Health'] == '':
             _doReadAttribute = True
@@ -129,6 +136,8 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue
                 if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
                     continue    # Just does it at plugin start
+                if intHB < 2 and not _mainPowered and Cluster != '0001':
+                    continue
                 if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
                     loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                             %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
@@ -494,7 +503,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
                             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                                 if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SHUTTER:
-                                    if iterBindCluster not in ( '0001', '0003', '000f'):
+                                    if iterBindCluster not in ( '0001', '0003', '000f', '0102'):
                                         Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
                                         continue
                                 if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SWITCHS:
@@ -502,19 +511,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                                         Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
                                         continue
 
-                                if self.pluginconf.pluginConf['capturePairingInfos']:
-                                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+                        if self.pluginconf.pluginConf['capturePairingInfos']:
+                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
 
-                                loggingPairing( self, 'Log', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-                                if self.pluginconf.pluginConf['doUnbindBind']:
-                                    bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-                                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTES:
-                    # For Legrand remotes just skip the rest.
-                    Domoticz.Log("Exit for now and do not do anything else")
-                    return
+                        loggingPairing( self, 'Log', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+                        if self.pluginconf.pluginConf['doUnbindBind']:
+                            unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -523,8 +526,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
-            for iterReadAttrCluster in CLUSTERS_LIST:
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                for iterReadAttrCluster in CLUSTERS_LIST:
                     if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
                             if self.pluginconf.pluginConf['capturePairingInfos']:
