@@ -716,7 +716,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
-    loggingInput( self, 'Log', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+    loggingInput( self, 'Debug', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
@@ -1753,9 +1753,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
-            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 5:
+            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 3:
                 # Looks like we have a duplicate Device Announced in less than 5s
-                Domoticz.Log("Decode004D - potential duplicate device annouced from %s %s. Status: %s drop" %(MsgSrcAddr, MsgIEEE, self.ListOfDevices[MsgSrcAddr]['Status']))
                 return
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
