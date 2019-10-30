@@ -8,7 +8,6 @@
 
     Description: All communications towards Zigate
 
-
 """
 
 import Domoticz
@@ -19,7 +18,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ
+from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ, LEGRAND_REMOTES
 from Modules.tools import getClusterListforEP, loggingOutput
 
 def ZigatePermitToJoin( self, permit ):
@@ -906,7 +905,8 @@ def processConfigureReporting( self, NWKID=None ):
             if self.ListOfDevices[key]['Model'] != {}:
                 if self.ListOfDevices[key]['Model'] == 'TI0001': # Livolo switch
                     continue
-                if self.ListOfDevices[key]['Model'] in ( 'Double gangs remote switch' ):
+                if self.ListOfDevices[key]['Model'] in LEGRAND_REMOTES:
+                    # Skip configure Reporting for all Legrand Remotes
                     continue
 
         loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
