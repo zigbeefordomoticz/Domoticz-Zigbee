@@ -18,7 +18,7 @@ import json
 from Modules.actuators import actuators
 from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
-        bindDevice, rebind_Clusters, getListofAttribute, \
+        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
         livolo_bind, \
         legrand_fc01, \
         setPowerOn_OnOff, \
@@ -31,7 +31,7 @@ from Modules.output import  sendZigateCmd,  \
 
 from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
@@ -485,15 +485,36 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             cluster_to_bind = CLUSTERS_LIST
             if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                    cluster_to_bind.append( '0003' )
+                    if '0003' not in cluster_to_bind:
+                        cluster_to_bind.append( '0003' )
 
-            for iterBindCluster in cluster_to_bind:      # Binding order is important
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                for iterBindCluster in cluster_to_bind:      # Binding order is important
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                                if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SHUTTER:
+                                    if iterBindCluster not in ( '0001', '0003', '000f'):
+                                        Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
+                                        continue
+                                if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SWITCHS:
+                                    if iterBindCluster not in ( '0001', '0003', '000f'):
+                                        Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
+                                        continue
+
+                                if self.pluginconf.pluginConf['capturePairingInfos']:
+                                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
+
+                                loggingPairing( self, 'Log', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
+                                if self.pluginconf.pluginConf['doUnbindBind']:
+                                    bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+                                bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTES:
+                    # For Legrand remotes just skip the rest.
+                    Domoticz.Log("Exit for now and do not do anything else")
+                    return
 
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -582,7 +603,10 @@ def processListOfDevices( self , Devices ):
             # For now we will display a message in the log every 1'
             # We might have to remove this entry if the device get not reconnected.
             if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 36 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
-                Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
+                if 'ZDeviceName' in self.ListOfDevices[NWKID]:
+                    Domoticz.Log("processListOfDevices - Device: " +str(self.ListOfDevices[NWKID]['ZDeviceName']) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
+                else:
+                    Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
                 # Let's check if the device still exist in Domoticz
                 for Unit in Devices:
                     if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID:
