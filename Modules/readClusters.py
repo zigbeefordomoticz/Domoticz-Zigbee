@@ -20,6 +20,7 @@ import string
 
 from math import atan, sqrt, pi
 
+from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, loggingCluster
 from Modules.output import ReadAttributeRequest_Ack
@@ -681,7 +682,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     #battRemainPer = float(battRemainPer)
 
     BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "RH3001" )
-    BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001")
+    BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     if battRemainPer != 0:
         value = battRemainPer
@@ -2056,21 +2057,13 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Model: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Double gangs remote switch', 'Remote switch') and not self.pluginconf.pluginConf['bindRemoteLegrand']:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
                     loggingCluster( self, 'Debug', "Legrand remote Switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutters central remote switch'):
-                    loggingCluster( self, 'Debug', "Legrand remote shutter switch Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                    if MsgClusterData == '01': value = '%02x' %100
-                    else: value = '%02x' %0
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
-
-                # We rely more on Cluster 0x0006 and 0x0008 feedbacks rather than the Present Value
-                #elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Connected outlet', 'Dimmer switch w/o neutra', 'Micromodule switch'):
-                #    loggingCluster( self, 'Log', "Legrand wired Switch/Plug Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                #    #MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
-
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SHUTTER:
+                    loggingCluster( self, 'Debug', "Legrand remote Shutter Present Value: %s" %MsgClusterData, MsgSrcAddr)
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', MsgClusterData)
 
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
