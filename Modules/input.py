@@ -1759,7 +1759,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                 return
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
-        # Reset the device Hearbeat
+        # Reset the device Hearbeat, This should allow to trigger Read Request
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
 
         # In case of livolo redo the bind if enabled in the Settings
@@ -1775,11 +1775,11 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
 
         # Redo the binding if allow
-
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
                     # If Remote Legrand skip
+                    loggingInput( self, 'Debug', "Decode004D - Legrand remote, no rebind, just exit" , MsgSrcAddr)
                     timeStamped( self, MsgSrcAddr , 0x004d)
                     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
                     return
