@@ -25,7 +25,7 @@ from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadA
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
-from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST
+from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
@@ -716,7 +716,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     if MsgDataStatus != '00':
         Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
 
-    loggingInput( self, 'Debug', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+    loggingInput( self, 'Log', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
@@ -742,9 +742,9 @@ def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
             Domoticz.Error("Decode8031 - Unknown addr mode %s in %s" %(MsgSrcAddr, MsgData))
 
     if MsgDataStatus != '00':
-        loggingInput( self, 'Debug', "Decode8031 - Unbind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
+        loggingInput( self, 'Debug', "Decode8031 - Unbind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)), MsgSrcAddr )
     
-    loggingInput( self, 'Debug', "ZigateRead - MsgType 8031 - Unbind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+    loggingInput( self, 'Log', "ZigateRead - MsgType 8031 - Unbind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ), MsgSrcAddr)
     return
 
 def Decode8034(self, Devices, MsgData, MsgRSSI) : # Complex Descriptor response
@@ -1747,7 +1747,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
     if DeviceExist(self, Devices, MsgSrcAddr, MsgIEEE):
+        # ############
         # Device exist, Reconnection has been done by DeviceExist()
+        #
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
@@ -1755,15 +1757,17 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                 # Looks like we have a duplicate Device Announced in less than 5s
                 Domoticz.Log("Decode004D - potential duplicate device annouced from %s %s. Status: %s drop" %(MsgSrcAddr, MsgIEEE, self.ListOfDevices[MsgSrcAddr]['Status']))
                 return
-
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
         # Reset the device Hearbeat
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
 
-        # In case of livolo do the bind
-        #if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
-        #    livolo_bind( self, MsgSrcAddr, '06')
+        # In case of livolo redo the bind if enabled in the Settings
+        PREFIX_MACADDR_LIVOLO = '00124b00'
+        if self.pluginconf.pluginConf['rebindLivolo']:
+            if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
+                Domoticz.Log("reBind Livolo")
+                livolo_bind( self, MsgSrcAddr, '06')
 
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
@@ -1771,14 +1775,16 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
 
         # Redo the binding if allow
-        doBind = True
-        if not self.pluginconf.pluginConf['bindRemoteLegrand']:
-            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( "Double gangs remote switch", "Shutters central remote switch"):
-                        doBind = False
 
-        if self.pluginconf.pluginConf['allowReBindingClusters'] and doBind:
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
+                    # If Remote Legrand skip
+                    timeStamped( self, MsgSrcAddr , 0x004d)
+                    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+                    return
+
+        if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
     
@@ -1951,7 +1957,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Double gangs remote switch':
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
 
         loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
@@ -2069,7 +2075,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s " %(MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Double gangs remote switch':
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
         if MsgCmd == '01': # On
             loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
