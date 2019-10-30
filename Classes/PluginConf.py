@@ -148,7 +148,6 @@ SETTINGS = {
                     }},
             # Legrand Specific
             'Legrand': { 'Order': 11, 'param': {
-                    'bindRemoteLegrand': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'EnableLedIfOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'EnableLedInDark': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
@@ -163,6 +162,7 @@ SETTINGS = {
                     'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
                     }},
             'Experimental': { 'Order': 13, 'param': {
+                    'rebindLivolo':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                     'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                     'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
