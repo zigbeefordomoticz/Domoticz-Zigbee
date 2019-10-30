@@ -2062,8 +2062,11 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SHUTTER:
-                    loggingCluster( self, 'Debug', "Legrand remote Shutter Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', MsgClusterData)
+                    if MsgClusterData == '01':
+                        value = '%02x' %100
+                    else:
+                        value = MsgClusterData
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
