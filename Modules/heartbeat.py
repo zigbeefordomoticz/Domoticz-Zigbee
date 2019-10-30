@@ -498,7 +498,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                                         Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
                                         continue
                                 if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SWITCHS:
-                                    if iterBindCluster not in ( '0001', '0003', '000f'):
+                                    if iterBindCluster not in ( '0001', '0003', '000f', '0006', '0008'):
                                         Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
                                         continue
 
