@@ -956,6 +956,13 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     self.ListOfDevices[MsgDataShAddr]['ZDeviceID'] = MsgDataDeviceId
     Domoticz.Status("[%s] NEW OBJECT: %s ZDeviceID %s" %('-', MsgDataShAddr, MsgDataDeviceId))
 
+    # Decode Bit Field
+    # Device version: 4 bits (bits 0-4)
+    # eserved: 4 bits (bits4-7)
+    DeviceVersion = int(MsgDataBField ,16) & 0x00001111
+    self.ListOfDevices[MsgDataShAddr]['ZDeviceVersion'] = '%04x' %DeviceVersion
+    Domoticz.Status("[%s] NEW OBJECT: %s Application Version %s" %('-', MsgDataShAddr,  self.ListOfDevices[MsgDataShAddr]['ZDeviceVersion']))
+
     if self.pluginconf.pluginConf['capturePairingInfos']:
         self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
 
