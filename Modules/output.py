@@ -876,7 +876,7 @@ def processConfigureReporting( self, NWKID=None ):
             loggingOutput( self, 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), nwkid=NWKID)
             return # Will do at the next round
-        target = self.ListOfDevices
+        target = list(self.ListOfDevices.keys())
         clusterlist = None
     else:
         target = []
@@ -884,7 +884,9 @@ def processConfigureReporting( self, NWKID=None ):
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
+        loggingOutput( self, 'Debug', "--> configurereporting - processing %s" %key, nwkid=key)
         if key == '0000': continue
+
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
             continue
@@ -893,15 +895,20 @@ def processConfigureReporting( self, NWKID=None ):
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
         if NWKID is None:
+            skip = True
             if 'PowerSource' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['PowerSource'] != 'Main': continue
+                if self.ListOfDevices[key]['PowerSource'] == 'Main' :
+                    skip = False
             if 'MacCapa' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['MacCapa'] != '8e': continue
+                if self.ListOfDevices[key]['MacCapa'] == '8e':
+                    skip = False
+            if skip:
+                continue    #  Not Main Powered!
+
             if 'Health' in self.ListOfDevices[key]:
                 if self.ListOfDevices[key]['Health'] == 'Not Reachable':
                     continue
 
-        if 'Model' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['Model'] != {}:
                 if self.ListOfDevices[key]['Model'] == 'TI0001': # Livolo switch
                     continue
@@ -909,7 +916,7 @@ def processConfigureReporting( self, NWKID=None ):
                     # Skip configure Reporting for all Legrand Remotes
                     continue
 
-        loggingOutput( self, 'Debug', "configurereporting - processing %s" %key, nwkid=key)
+        loggingOutput( self, 'Debug', "----> configurereporting - processing %s" %key, nwkid=key)
 
         #if 'Manufacturer' in self.ListOfDevices[key]:
         #    manufacturer = self.ListOfDevices[key]['Manufacturer']
@@ -924,9 +931,9 @@ def processConfigureReporting( self, NWKID=None ):
             #    identifySend( self, key, Ep, 0)
             #else:
             #    identifySend( self, key, Ep, 15)
-            loggingOutput( self, 'Debug', "--> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
+            loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
-            loggingOutput( self, 'Debug', "--> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
+            loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
@@ -935,7 +942,7 @@ def processConfigureReporting( self, NWKID=None ):
                 if cluster == '0500' and self.ListOfDevices[key]['Model'] == '3AFE14010402000D': # Do not Configure Reporting the Konke Motion sensor
                     continue
 
-                loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                loggingOutput( self, 'Debug', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
                 if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
@@ -947,7 +954,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    loggingOutput( self, 'Debug', "------> configurereporting - skiping due to existing past", nwkid=key)
+                    loggingOutput( self, 'Debug', "--------> configurereporting - skiping due to existing error in the past", nwkid=key)
                     continue
 
                 _idx = Ep + '-' + str(cluster)
@@ -960,10 +967,12 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
+                        loggingOutput( self, 'Debug', "------> configurereporting - skiping due to done past", nwkid=key)
                         continue
 
                 loggingOutput( self, 'Debug', "---> ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
                         %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), nwkid=key)
+
                 if NWKID is None and (self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
                     loggingOutput( self, 'Debug', "---> configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(self.busy, len(self.ZigateComm.zigateSendingFIFO), key), nwkid=key)
@@ -1032,8 +1041,15 @@ def processConfigureReporting( self, NWKID=None ):
 
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
-                loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
+                if 'ZDeviceName' in self.ListOfDevices[key]:
+                    loggingOutput( self, 'Debug', "%s configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(self.ListOfDevices[key]['ZDeviceName'], key, cluster, attrDisp, datas) , nwkid=key)
+                else:
+                    loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
+
                 sendZigateCmd(self, "0120", datas )
+            # End for Cluster
+        # End for Ep
+    # End for key
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
 
