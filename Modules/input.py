@@ -21,7 +21,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, setTimeServer, livolo_bind, processConfigureReporting
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
@@ -828,6 +828,10 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
         Domoticz.Log("Decode8042 receives a message from a non existing device %s" %addr)
         return
 
+    self.ListOfDevices[addr]['Max Buffer Size'] = max_buffer
+    self.ListOfDevices[addr]['Max Rx'] = max_rx
+    self.ListOfDevices[addr]['Max Tx'] = max_tx
+
     mac_capability = int(mac_capability,16)
 
     if mac_capability == 0x0000:
@@ -886,6 +890,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     self.ListOfDevices[addr]['LogicalType']=str(LogicalType)
     self.ListOfDevices[addr]['PowerSource']=str(PowerSource)
     self.ListOfDevices[addr]['ReceiveOnIdle']=str(ReceiveonIdle)
+
 
     return
 
@@ -1802,6 +1807,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             # Let's take the opportunity to trigger some request/adjustement
             loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
             ReadAttributeRequest_0000( self,  MsgSrcAddr)
+            ReadAttributeRequest_0001( self,  MsgSrcAddr)
             sendZigateCmd(self,"0042", str(MsgSrcAddr) )
     else:
         if MsgIEEE[0:7] == '00124b00': # Livolo Mac@
@@ -1848,6 +1854,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
+        #sendZigateCmd(self,"0042", str(MsgSrcAddr))     # Request a Node Descriptor
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
         #ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False )
