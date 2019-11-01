@@ -502,13 +502,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 loggingPairing( self, 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
                         %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
-            # Binding devices
-            cluster_to_bind = CLUSTERS_LIST
-            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-                if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                    if '0003' not in cluster_to_bind:
-                        cluster_to_bind.append( '0003' )
-
             legrand = False
             if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
@@ -516,6 +509,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer'] == '1021':
                     legrand = True
+
+            # Binding devices
+            cluster_to_bind = CLUSTERS_LIST
+
+            if legrand:
+                if '0003' not in cluster_to_bind:
+                    cluster_to_bind.append( '0003' )
 
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterBindCluster in cluster_to_bind:      # Binding order is important
@@ -584,15 +584,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['ListOfDevice'] = dict( self.ListOfDevices[NWKID] )
 
             # 4- Create groups if required
-            if self.pluginconf.pluginConf['LegrandGroups'] and self.groupmgt:
-                if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                        if self.ListOfDevices[NWKID]['Model'] == 'Connected outlet':
-                            self.groupmgt.manageLegrandGroups( NWKID, '01', 'Plug')
-                        elif self.ListOfDevices[NWKID]['Model'] == 'Dimmer switch w/o neutral':
-                            self.groupmgt.manageLegrandGroups( NWKID, '01', 'Switch')
-                        elif self.ListOfDevices[NWKID]['Model'] == 'Micromodule switch':
-                            self.groupmgt.manageLegrandGroups( NWKID, '01', 'Switch')
+            if legrand and self.pluginconf.pluginConf['LegrandGroups'] and self.groupmgt:
+                if self.ListOfDevices[NWKID]['Model'] == 'Connected outlet':
+                    self.groupmgt.manageLegrandGroups( NWKID, '01', 'Plug')
+                elif self.ListOfDevices[NWKID]['Model'] == 'Dimmer switch w/o neutral':
+                    self.groupmgt.manageLegrandGroups( NWKID, '01', 'Switch')
+                elif self.ListOfDevices[NWKID]['Model'] == 'Micromodule switch':
+                    self.groupmgt.manageLegrandGroups( NWKID, '01', 'Switch')
 
             writeDiscoveryInfos( self )
 
