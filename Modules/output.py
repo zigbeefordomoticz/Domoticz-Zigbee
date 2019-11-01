@@ -1848,13 +1848,13 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
     Right Unit: Timing 2
     """
 
-    loggingOutput( self, 'Log', "livolo_OnOff - devunit: %s, onoff: %s" %(devunit, onoff), nwkid=nwkid)
+    loggingOutput( self, 'Debug', "livolo_OnOff - devunit: %s, onoff: %s" %(devunit, onoff), nwkid=nwkid)
 
     if onoff not in ( 'On', 'Off', 'Toggle'): return
     if devunit not in ( 'Left', 'Right', 'All'): return
 
     if onoff == 'Toggle' and devunit == 'All':
-        loggingOutput( self, 'Log', "livolo_toggle" , nwkid=nwkid)
+        loggingOutput( self, 'Debug', "livolo_toggle" , nwkid=nwkid)
         sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02')
     else:
         level_value = timing_value = None
@@ -1865,7 +1865,7 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
         elif devunit == 'Right': timing_value = '0002'
 
         if level_value is not None and timing_value is not None:
-            loggingOutput( self, 'Log', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)
+            loggingOutput( self, 'Debug', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)
             sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
         else:
             Domoticz.Error( "livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" %(onoff, devunit))
