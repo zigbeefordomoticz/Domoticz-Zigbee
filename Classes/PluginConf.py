@@ -150,7 +150,8 @@ SETTINGS = {
             'Legrand': { 'Order': 11, 'param': {
                     'EnableLedIfOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                     'EnableLedInDark': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                    'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
+                    'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                    'LegrandGroups': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
                     }},
 
             #Others
