@@ -609,9 +609,9 @@ class WebServer(object):
             JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
             TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
             for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
-                if os.path.isfile( self.groupListFileName ):
+                if os.path.isfile( filename ):
                     self.logging( 'Log', "rest_rescan_group - Removing file: %s" %filename )
-                    os.remove( self.groupListFileName )
+                    os.remove( filename )
                     self.restart_needed['RestartNeeded'] = True
             action = {}
             action['Name'] = 'Groups file removed.'
