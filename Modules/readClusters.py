@@ -260,7 +260,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             idx += 2
 
         _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData[0:idx],  handleErrors=True))
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData, handleErrors=True) )
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode
@@ -677,10 +677,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif battRemainingVolt != 0: 
         max_voltage = 30 ; min_voltage = 27
-        #if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-        #    if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-        #        if self.ListOfDevices[MsgSrcAddr]['Model'] in BATTERY_3VOLTS:
-        #            max_voltage = 30 ; min_voltage = 27
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
+                max_voltage = 30 ; min_voltage = 25
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)
@@ -1701,7 +1700,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     value = decodeAttribute( self, MsgAttType, MsgClusterData)
 
     if MsgAttrID =='0000':  # Local Temperature (Zint16)
-        ValueTemp=round(int(value)/100,1)
+        ValueTemp=round(int(value)/100,2)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
@@ -1761,7 +1760,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
-        ValueTemp = round(int(value)/100,1)
+        ValueTemp = round(int(value)/100,2)
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
@@ -1849,7 +1848,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '4003': # Current Temperature Set point for EUROTRONICS
-        setPoint = ValueTemp = round(int(value)/100,1)
+        setPoint = ValueTemp = round(int(value)/100,2)
         if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
             setPoint = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0012']
         loggingCluster( self, 'Debug', "ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, setPoint), MsgSrcAddr)
@@ -2008,7 +2007,6 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['Active State'] = True
 
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-
             loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Model: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
@@ -2021,7 +2019,6 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     else:
                         value = MsgClusterData
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
-
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
 
