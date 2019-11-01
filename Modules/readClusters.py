@@ -260,7 +260,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             idx += 2
 
         _manufcode = str(decodeAttribute( self, MsgAttType, MsgClusterData[0:idx],  handleErrors=True))
-        loggingCluster( self, 'Log', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Manufacturer: " + str(_manufcode), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData, handleErrors=True) )
         if is_hex(_manufcode):
             self.ListOfDevices[MsgSrcAddr]['Manufacturer'] = _manufcode
@@ -2019,6 +2019,25 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     else:
                         value = MsgClusterData
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
+
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
+                    if MsgClusterData == '01':
+                        value = '%02x' %100
+                    else:
+                        value = MsgClusterData
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
+
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch w/o neutral' ):
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
+
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Micromodule switch'):
+                    # Useless information. It is given the state of the micromodule button. 01 when click, 00 when release
+                    pass
+
+
+                else:
+                    loggingCluster( self, 'Log', "Legrand unknown Model %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
+
             else:
                 loggingCluster( self, 'Error', "Legrand unknown device %s Value: %s" %(self.ListOfDevices[MsgSrcAddr]['Model'], MsgClusterData), MsgSrcAddr)
 

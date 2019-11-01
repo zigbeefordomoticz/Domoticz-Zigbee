@@ -864,13 +864,13 @@ def processConfigureReporting( self, NWKID=None ):
                                 '0508': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
                                 '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
 
-        'fc01': {'Attributes': {
-                                '0000': {'DataType': '09', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
-                                '0001': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        #'fc01': {'Attributes': {
+        #                        '0000': {'DataType': '09', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+        #                        '0001': {'DataType': '10', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
 
         # Binary Input ( Basic )
-        '000f': {'Attributes': {
-                                '0055': {'DataType': '10', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
+        #'000f': {'Attributes': {
+        #                        '0055': {'DataType': '10', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'}}},
         }
 
     now = int(time())
@@ -1023,10 +1023,6 @@ def processConfigureReporting( self, NWKID=None ):
                                 elif attr == '0400':
                                     forceAttribute = True
 
-                        if self.ListOfDevices[key]['Model'] == 'Connected outlet' and cluster in ( '0006', '0b04' ) and attr in ( '0000', '050b'):
-                            Domoticz.Log("ConfigureReporting - Patching TimeOut %s/%s - %s %s" %(key, Ep, cluster, attr))
-                            ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut'] = '0258'
-
                     if 'Attributes List' in self.ListOfDevices[key] and not forceAttribute:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
                             if Ep in self.ListOfDevices[key]['Attributes List']['Ep']:
@@ -1046,12 +1042,10 @@ def processConfigureReporting( self, NWKID=None ):
                     attrLen += 1
                     attrDisp.append(attr)
 
+                loggingOutput( self, 'Log', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
-                if 'ZDeviceName' in self.ListOfDevices[key]:
-                    loggingOutput( self, 'Debug', "%s configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(self.ListOfDevices[key]['ZDeviceName'], key, cluster, attrDisp, datas) , nwkid=key)
-                else:
-                    loggingOutput( self, 'Debug', "configureReporting for [%s] - cluster: %s on Attribute: %s >%s< " %(key, cluster, attrDisp, datas) , nwkid=key)
+
 
                 sendZigateCmd(self, "0120", datas )
             # End for Cluster
