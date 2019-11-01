@@ -109,6 +109,9 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
         loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
         chunk = MAX_READATTRIBUTES_REQ
         if chunk > 4 and 'Manufacturer Name' in self.ListOfDevices[addr]:
+            if self.ListOfDevices[addr]['Manufacturer'] == '1021':
+                # shorter list to 4 attributes max, Legrand seems not responding to that
+                chunk = 4
             if self.ListOfDevices[addr]['Manufacturer Name'] == 'Legrand':
                 # shorter list to 4 attributes max, Legrand seems not responding to that
                 chunk = 4
@@ -1019,6 +1022,10 @@ def processConfigureReporting( self, NWKID=None ):
                                     continue #We use only 0x0400
                                 elif attr == '0400':
                                     forceAttribute = True
+
+                        if self.ListOfDevices[key]['Model'] == 'Connected outlet' and cluster in ( '0006', '0b04' ) and attr in ( '0000', '050b'):
+                            Domoticz.Log("ConfigureReporting - Patching TimeOut %s/%s - %s %s" %(key, Ep, cluster, attr))
+                            ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['TimeOut'] = '0258'
 
                     if 'Attributes List' in self.ListOfDevices[key] and not forceAttribute:
                         if 'Ep' in self.ListOfDevices[key]['Attributes List']:
