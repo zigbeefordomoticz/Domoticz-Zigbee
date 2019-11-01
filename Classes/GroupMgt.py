@@ -1095,6 +1095,11 @@ class GroupsManagement(object):
                     Domoticz.Log("Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
                     self._addGroup( device_ieee, device_addr, device_ep, grp_id)
 
+            for filename in ( self.json_groupsConfigFilename, self.groupListFileName ):
+                if os.path.isfile( filename ):
+                    self.logging( 'Log', "rest_rescan_group - Removing file: %s" %filename )
+                    os.remove( filename )
+
     def manageIkeaTradfriRemoteLeftRight( self, addr, type_dir):
 
         for iterGrp in self.ListOfGroups:
