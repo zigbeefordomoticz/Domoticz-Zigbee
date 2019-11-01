@@ -355,7 +355,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     status = 'createDB' # Fast track
 
         if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
+            if self.ListOfDevices[NWKID]['Manufacturer'] == {} or self.ListOfDevices[NWKID]['Manufacturer'] == '':
                 Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
@@ -509,19 +509,24 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if '0003' not in cluster_to_bind:
                         cluster_to_bind.append( '0003' )
 
+            legrand = False
+            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                    legrand = True
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer'] == '1021':
+                    legrand = True
+
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterBindCluster in cluster_to_bind:      # Binding order is important
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-                            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                                if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SHUTTER:
-                                    if iterBindCluster not in ( '0001', '0003', '000f', '0102'):
-                                        Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
-                                        continue
-                                if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SWITCHS:
-                                    if iterBindCluster not in ( '0001', '0003', '000f', '0006', '0008'):
-                                        Domoticz.Log("--skip binding cluster %s out of %s" %(iterBindCluster, str(cluster_to_bind)))
-                                        continue
+                        if legrand:
+                            if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SHUTTER:
+                                if iterBindCluster not in ( '0001', '0003', '000f' ):
+                                    continue
+                            if self.ListOfDevices[NWKID]['Model'] in LEGRAND_REMOTE_SWITCHS:
+                                if iterBindCluster not in ( '0001', '0003', '000f', '0006', '0008'):
+                                    continue
 
                         if self.pluginconf.pluginConf['capturePairingInfos']:
                             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
