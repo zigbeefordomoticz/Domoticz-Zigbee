@@ -449,5 +449,5 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
 
 LEGRAND_REMOTES = ( 'Remote switch', 'Double gangs remote switch', 'Shutters central remote switch')
 LEGRAND_REMOTE_SWITCHS = ( 'Remote switch', 'Double gangs remote switch')
-LEGRAND_REMOTE_SHUTTER = ( 'Shutters central remote switch')
+LEGRAND_REMOTE_SHUTTER = ( 'Shutters central remote switch', )
 
