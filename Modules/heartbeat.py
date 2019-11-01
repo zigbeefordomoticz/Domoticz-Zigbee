@@ -61,6 +61,18 @@ READ_ATTRIBUTES_REQUEST = {
     'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' )
     }
 
+# Read Attribute trigger: Every 10"
+# Configure Reporting trigger: Every 15
+# Network Topology start: 15' after plugin start
+# Network Energy start: 30' after plugin start
+# Legrand re-enforcement: Every 5'
+
+READATTRIBUTE_FEQ = 10 // HEARTBEAT
+CONFIGURERPRT_FEQ = 15 // HEARTBEAT
+NETWORK_TOPO_START = 900 // HEARTBEAT
+NETWORK_ENRG_START = 1800 // HEARTBEAT
+LEGRAND_FEATURES = 300 // HEARTBEAT
+
 def processKnownDevices( self, Devices, NWKID ):
 
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
@@ -118,7 +130,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
     # In order to limit the load, we do it only every 30s
     if self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes']:
-        if ( intHB % (30 // HEARTBEAT)) == 0:
+        if ( intHB % READATTRIBUTE_FEQ ) == 0:
             _doReadAttribute = True
 
     if 'Model' in self.ListOfDevices[NWKID]:
@@ -169,7 +181,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 loggingHeartbeat( self, 'Debug', "%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
 
-    if ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
+    if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if self.pluginconf.pluginConf['EnableDimmer']:
@@ -246,7 +258,7 @@ def processKnownDevices( self, Devices, NWKID ):
                                             %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
                                     setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
 
-    # If corresponding Attributes not present, let's do a Request Node Descriptio
+    # If corresponding Attributes not present, let's do a Request Node Description
     if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
             'DeviceType' not in self.ListOfDevices[NWKID] or \
             'LogicalType' not in self.ListOfDevices[NWKID] or \
@@ -566,6 +578,17 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['ListOfDevice'] = dict( self.ListOfDevices[NWKID] )
 
+            # 4- Create groups if required
+            if self.pluginconf.pluginConf['LegrandGroups'] and self.groupmgt:
+                if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                        if self.ListOfDevices[NWKID]['Model'] == 'Connected outlet':
+                            self.groupmgt.manageLegrandGroups( NWKID, '01', 'Plug')
+                        elif self.ListOfDevices[NWKID]['Model'] == 'Dimmer switch w/o neutral':
+                            self.groupmgt.manageLegrandGroups( NWKID, '01', 'Switch')
+                        elif self.ListOfDevices[NWKID]['Model'] == 'Micromodule switch':
+                            self.groupmgt.manageLegrandGroups( NWKID, '01', 'Switch')
+
             writeDiscoveryInfos( self )
 
         #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
@@ -574,6 +597,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
 def processListOfDevices( self , Devices ):
     # Let's check if we do not have a command in TimeOut
+
+
+
     self.ZigateComm.checkTOwaitFor()
 
     entriesToBeRemoved = []
@@ -647,11 +673,12 @@ def processListOfDevices( self , Devices ):
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-    if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
+
+    if ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
         # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > ( 15 * 60 // HEARTBEAT):
+    if self.HeartbeatCount > NETWORK_TOPO_START:
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
@@ -662,11 +689,12 @@ def processListOfDevices( self , Devices ):
                 if self.ZigateComm.loadTransmit() < 2 :
                      self.networkmap.continue_scan( )
 
-    if self.HeartbeatCount > ( 30 * 60 // HEARTBEAT):
+    if self.HeartbeatCount > NETWORK_ENRG_START:
         # Network Energy Level
         if self.networkenergy:
             if self.ZigateComm.loadTransmit() < 2:
                 self.networkenergy.do_scan()
+
 
     return True
 
