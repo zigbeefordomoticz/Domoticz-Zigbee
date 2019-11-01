@@ -84,6 +84,9 @@ class APSManagement(object):
     def _errorMgt( self, cmd, nwk, ieee, aps_code):
         """ Process the error """
 
+        if nwk not in self.ListOfDevices:
+            return
+
         if 'ErrorManagement' not in self.ListOfDevices[nwk] and cmd in ( '0100', '0110', '0120', '0030'):
             self.ListOfDevices[nwk]['ErrorManagement'] = 0
 
