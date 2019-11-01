@@ -1066,6 +1066,35 @@ class GroupsManagement(object):
             sValue = str(value)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
 
+    def manageLegrandGroups( self, device_addr, device_ep, unittype):
+        """
+        Will add group Membership to recently paired device
+
+        fff7: Home (Master Remote)
+        fff6: Away (Master Remote)
+        fff5:
+        fff4: 
+        """
+
+        LEGRAND_GROUPS = {
+                    'Plug': ( 'fff7', 'fff5'),
+                    'Switch': ( 'fff6', 'fff4')
+                    }
+
+        device_ieee = self.ListOfDevices[device_addr]['IEEE']
+        if unittype in LEGRAND_GROUPS:
+            for grp_id in LEGRAND_GROUPS[unittype]:
+
+                if grp_id not in self.ListOfGroups:
+                    self.ListOfGroups[grp_id] = {}
+                    self.ListOfGroups[grp_id]['Name'] = 'Legrand Plug-in'
+                    self.ListOfGroups[grp_id]['Devices'] = []
+
+                if ( device_addr, device_ep) not in self.ListOfGroups[grp_id]['Devices']:
+                    self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep) )
+                    Domoticz.Log("Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
+                    self._addGroup( device_ieee, device_addr, device_ep, grp_id)
+
     def manageIkeaTradfriRemoteLeftRight( self, addr, type_dir):
 
         for iterGrp in self.ListOfGroups:
