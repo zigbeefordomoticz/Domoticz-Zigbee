@@ -61,17 +61,19 @@ READ_ATTRIBUTES_REQUEST = {
     'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' )
     }
 
+READ_ATTR_COMMANDS = ( '0006', '0008' )
+
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
 # Network Topology start: 15' after plugin start
 # Network Energy start: 30' after plugin start
 # Legrand re-enforcement: Every 5'
 
-READATTRIBUTE_FEQ = 10 // HEARTBEAT
-CONFIGURERPRT_FEQ = 15 // HEARTBEAT
-NETWORK_TOPO_START = 900 // HEARTBEAT
+READATTRIBUTE_FEQ =    10 // HEARTBEAT
+CONFIGURERPRT_FEQ =    15 // HEARTBEAT
+LEGRAND_FEATURES =    300 // HEARTBEAT
+NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
-LEGRAND_FEATURES = 300 // HEARTBEAT
 
 def processKnownDevices( self, Devices, NWKID ):
 
@@ -115,14 +117,17 @@ def processKnownDevices( self, Devices, NWKID ):
     # Let's be smart and if intHB equal 0, this has been reset recently and we might take the opportunity to 
     # request 0x0001 (Voltage/Power information) for battery based devices
 
-    if not _mainPowered and intHB > 2:
+    if not _mainPowered:
         return
 
     # In case Health is unknown let's force a Read attribute.
     _doReadAttribute = False
+    _forceCommandCluster = False
 
-    if intHB < 2 and not _mainPowered:
+    
+    if intHB < 4:   # Most-likely Heartbeat has been reset to 0 as for a Group command
         _doReadAttribute = True  # But will will do only 0x0001 Cluster
+        _forceCommandCluster = True
 
     if 'Health' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['Health'] == '':
@@ -133,10 +138,12 @@ def processKnownDevices( self, Devices, NWKID ):
         if ( intHB % READATTRIBUTE_FEQ ) == 0:
             _doReadAttribute = True
 
-    if 'Model' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
-            _doReadAttribute = True
+    #if 'Model' in self.ListOfDevices[NWKID]:
+    #    if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+    #        _doReadAttribute = True
 
+    loggingHeartbeat( self, 'Debug', "processKnownDevices - %s intHB: %s doReadAttr: %s frcRead: %s" 
+                    %(NWKID, intHB, _doReadAttribute, _forceCommandCluster), NWKID)
     # Read Attributes if enabled
     if _doReadAttribute:
         now = int(time.time())   # Will be used to trigger ReadAttributes
@@ -150,7 +157,10 @@ def processKnownDevices( self, Devices, NWKID ):
                     continue    # Just does it at plugin start
                 if intHB < 2 and not _mainPowered and Cluster != '0001':
                     continue
-                if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                if _forceCommandCluster and Cluster not in READ_ATTR_COMMANDS:
+                    # When _forceCommandCluster then we are forcing ReadAttribute but only for OnOff and LvlControl clusters
+                    continue
+                if  (self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
                     loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
                             %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
                     if intHB != 0:
