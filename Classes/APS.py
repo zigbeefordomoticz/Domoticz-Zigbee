@@ -87,11 +87,11 @@ class APSManagement(object):
         if nwk not in self.ListOfDevices:
             return
 
-        if 'ErrorManagement' not in self.ListOfDevices[nwk] and cmd in ( '0100', '0110', '0120', '0030'):
+        if 'ErrorManagement' not in self.ListOfDevices[nwk]: 
             self.ListOfDevices[nwk]['ErrorManagement'] = 0
 
-        if self.ListOfDevices[nwk]['ErrorManagement'] == 0: 
-            self.logging( 'Debug', "_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
+        if self.ListOfDevices[nwk]['ErrorManagement'] == 0 and cmd in ( '0100', '0110', '0120', '0030'):
+            self.logging( 'Log', "_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
             self.ListOfDevices[nwk]['ErrorManagement']  = 1
             return
 
