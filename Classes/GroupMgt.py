@@ -688,12 +688,23 @@ class GroupsManagement(object):
                 'ColorControl':5,         # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
                 'ColorControlFull':5 }    # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
 
+        WIDGET_STYLE = {
+                'Plug': ( 244, 73, 0 ),
+                'Switch': ( 244, 73, 0 ),
+                'LvlControl' : ( 244, 73, 7 ),
+                'ColorControlWW': ( 241, 8, 7 ),
+                'ColorControlRGB': ( 241, 2, 7 ),
+                'ColorControlRGBWW': ( 241, 4, 7),
+                'ColorControlFull': ( 241, 7,7 ),
+                }
         code = 0
         _ikea_colormode = None
         color_widget = None
-        widget = ( 241, 7,7 )
+        widget = WIDGET_STYLE['ColorControlFull']    # If not match, will create a RGBWWZ widget
+
         for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
-            self.logging( 'Debug', "bestGroupWidget - processing %s" %devNwkid)
+            if devNwkid == '0000': continue
+            self.logging( 'Log', "bestGroupWidget - Group: %s processing %s" %(group_nwkid,devNwkid))
             if devNwkid not in self.ListOfDevices:
                 continue
             if 'ClusterType' not in self.ListOfDevices[devNwkid]['Ep'][devEp]:
@@ -704,16 +715,16 @@ class GroupsManagement(object):
                     if code <= WIDGETS[devwidget]:
                         code = WIDGETS[devwidget]
                         if code == 1: 
-                            widget = ( 244, 73, 0 )
+                            widget = WIDGET_STYLE['Switch']
                         elif code == 2: 
-                            widget = ( 244, 73, 7 )
+                            widget = WIDGET_STYLE['LvlControl']
                         elif code == 3 :
                             if color_widget is None:
                                 if devwidget == 'ColorControlWW': 
-                                    widget = ( 241, 8, 7 )
+                                    widget = WIDGET_STYLE[ devwidget ]
                                     _ikea_colormode = devwidget
                                 elif devwidget == 'ColorControlRGB': 
-                                    widget = ( 241, 2, 7 )
+                                    widget = WIDGET_STYLE[ devwidget ]
                                     _ikea_colormode = devwidget
                             elif color_widget == devwidget:
                                 continue
@@ -721,29 +732,31 @@ class GroupsManagement(object):
                                     ( color_widget == 'ColorControlWW' and devwidget == 'ColorControlRGB' ) :
                                 code = 4
                                 color_widget = 'ColorControlRGBWW'
-                                widget = ( 241, 4, 7)
+                                widget = WIDGET_STYLE[ color_widget ]
                                 _ikea_colormode = color_widget
                             elif devwidget == 'ColorControl':
                                 code = 5
                                 color_widget = 'ColorControlFull'
-                                widget = ( 241, 7, 7)
+                                widget = WIDGET_STYLE[ color_widget ]
                                 _ikea_colormode = color_widget
                         elif code == 4: 
                             color_widget = 'ColorControlRGBWW'
-                            widget = ( 241, 4, 7)
+                            widget = WIDGET_STYLE[ color_widget ]
                             _ikea_colormode = color_widget
                         elif code == 5:
                             color_widget = 'ColorControlFull'
-                            widget = ( 241, 7, 7)
+                            widget = WIDGET_STYLE[ color_widget ]
                             _ikea_colormode = color_widget
                     pre_code = code
+            self.logging( 'Log', "--------------- - processing %s code: %s widget: %s, color_widget: %s _ikea_colormode: %s " 
+                    %(devNwkid, code, widget, color_widget, _ikea_colormode))
 
 
         # This will be used when receiving left/right click , to know if it is RGB or WW
         if 'Tradfri Remote' in self.ListOfGroups[group_nwkid]:
             self.ListOfGroups[group_nwkid]['Tradfri Remote']['Color Mode'] = _ikea_colormode
 
-        self.logging( 'Debug', "_bestGroupWidget - Code: %s, Color_Widget: %s, widget: %s" %( code, color_widget, widget))
+        self.logging( 'Log', "_bestGroupWidget - %s Code: %s, Color_Widget: %s, widget: %s" %( group_nwkid, code, color_widget, widget))
         return widget
 
     def updateDomoGroupDevice( self, group_nwkid):
