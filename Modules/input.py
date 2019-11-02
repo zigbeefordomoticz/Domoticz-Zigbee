@@ -1345,8 +1345,7 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     # Left On: 01
     # Right Off: 02
     # Right On: 03
-    Domoticz.Log("Decode0100 - %s/%s Data: %s" \
-            %(MsgSrcAddr, MsgSrcEp, MsgStatus))
+    Domoticz.Log("Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus))
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -1768,7 +1767,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 3:
                 # Looks like we have a duplicate Device Announced in less than 5s
                 return
+
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+        timeStamped( self, MsgSrcAddr , 0x004d)
+        lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
         # Reset the device Hearbeat, This should allow to trigger Read Request
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
@@ -1788,11 +1790,14 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # Redo the binding if allow
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+                    # If Livolo
+                    loggingInput( self, 'Debug', "Decode004D - Livolo, no rebind, just exit" , MsgSrcAddr)
+                    return
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
-                    # If Remote Legrand skip
+                    # If Remote Legrand skip, but do req Battery infos
                     loggingInput( self, 'Debug', "Decode004D - Legrand remote, no rebind, just exit" , MsgSrcAddr)
-                    timeStamped( self, MsgSrcAddr , 0x004d)
-                    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+                    ReadAttributeRequest_0001( self,  MsgSrcAddr)
                     return
 
         if self.pluginconf.pluginConf['allowReBindingClusters']:
@@ -1819,7 +1824,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if MsgIEEE in self.IEEE2NWK :
             Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
             if self.IEEE2NWK[MsgIEEE] :
-                loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
+                loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" 
+                        %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
                 if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
                     loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announced for a device in processing, drop it",MsgSrcAddr)
                     return
@@ -1827,7 +1833,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if IEEEExist( self, MsgIEEE ):
             # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
-                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
+                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " 
+                        %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
                 return
 
         # 1- Create the Data Structutre
@@ -1854,13 +1861,11 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
-        #sendZigateCmd(self,"0042", str(MsgSrcAddr))     # Request a Node Descriptor
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
-        #ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False )
 
-    timeStamped( self, MsgSrcAddr , 0x004d)
-    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+        timeStamped( self, MsgSrcAddr , 0x004d)
+        lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
     return
 
