@@ -1,5 +1,9 @@
 # Release Notes 
 
+## 4 November 2019 - .5.6
+- [Hardware] - Definition for GU10 WS Tradfri Bulb
+- [Technical] - Remove log for Rouet Discovery
+
 ## 23 October 2019 - 4.5.5
 - [Issue] - Fix issue when reading attributes of cluster 0x0102
 

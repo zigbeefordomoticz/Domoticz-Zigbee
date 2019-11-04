@@ -1435,7 +1435,7 @@ def Decode8701(self, Devices, MsgData, MsgRSSI) : # Reception Router Disovery Co
         Status=MsgData[2:4]
         NwkStatus=MsgData[0:2]
     
-    loggingInput( self, 'Log', "Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
+    loggingInput( self, 'Debug', "Decode8701 - Route discovery has been performed, status: %s Nwk Status: %s " \
             %( Status, NwkStatus))
 
     if NwkStatus != "00" :
