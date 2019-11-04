@@ -1306,10 +1306,16 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # Zemismart Blind shutter switch send 50 went the swicth is on wait mode
                     # do not update
                     return
+
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302':
-                    value = 100 - value
+                    if value > 100:
+                        value = 0
+                    else:
+                        value = 100 - value
+
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
                     value = 100 - value
+
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
     elif MsgAttrID == "0009":
