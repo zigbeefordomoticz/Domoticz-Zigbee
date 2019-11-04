@@ -1280,9 +1280,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if ClusterType == 'WindowCovering':
                 value = int(value,16)
                 if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
-                    loggingWidget( self, "Debug", "MajDomoDevice - Updating %s Value: %s" %(DeviceType,value), NWKID)
+                    loggingWidget( self, "Log", "MajDomoDevice - %s/%s Updating %s Value: %s" %(NWKID, Ep, DeviceType,value), NWKID)
                     if DeviceType == "VenetianInverted":
                         value = 100 - value
+                        loggingWidget( self, "Log", "--------------- - Patching %s/%s Value: %s" %(NWKID, Ep,value), NWKID)
 
                     if value == 0: nValue = 0
                     elif value == 100: nValue = 1
