@@ -136,7 +136,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
-            UpdateDevice_v2(self, Devices, Unit, 1, "50",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            UpdateDevice_v2(self, Devices, Unit, 2, "50",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
     if Command == "Off" :
         loggingCommand( self, 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
