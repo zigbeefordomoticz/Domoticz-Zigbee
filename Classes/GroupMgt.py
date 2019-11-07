@@ -168,7 +168,11 @@ class GroupsManagement(object):
 
         if not load and len(self.targetDevices) == 0:
             for group_id in ZigateGroupConfig:
+                if 'Imported' not in ZigateGroupConfig[group_id]:
+                    continue
+                Domoticz.Log(" --> Grp: %s --> %s" %(group_id, str(ZigateGroupConfig[group_id]['Imported'])))
                 for iterTuple in list(ZigateGroupConfig[group_id]['Imported']):
+                    Domoticz.Log("----> %s" %str(iterTuple))
                     _ieee = iterTuple[0] 
                     if _ieee in self.IEEE2NWK:
                         _nwkid = self.IEEE2NWK[ _ieee ]
