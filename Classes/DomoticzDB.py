@@ -16,7 +16,7 @@ import os.path
 from base64 import b64decode
 from time import time
 
-CACHE_TIMEOUD = ((15 * 60) + 15)   # num seconds
+CACHE_TIMEOUT = ((15 * 60) + 15)   # num seconds
 
 class DomoticzDB_Preferences:
 
@@ -233,7 +233,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Baro'][ID]['Stamp'] = 0
 
         Domoticz.Debug("Baro - Value: %s, Stamp: %s, Today: %s" %(self.AdjValue['Baro'][ID]['Value'], self.AdjValue['Baro'][ID]['Stamp'], int(time() )))
-        if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + CACHE_TIMEOUD):
+        if self.AdjValue['Baro'][ID]['Value'] is not None and (int(time()) < self.AdjValue['Baro'][ID]['Stamp'] + CACHE_TIMEOUT):
             Domoticz.Debug("Return from Baro cache")
             return self.AdjValue['Baro'][ID]['Value']
 
@@ -284,7 +284,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['TimeOutMotion'][ID]['Value'] = None
             self.AdjValue['TimeOutMotion'][ID]['Stamp'] = 0
 
-        if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + CACHE_TIMEOUD):
+        if self.AdjValue['TimeOutMotion'][ID]['Value'] is not None  and ( int(time()) < self.AdjValue['TimeOutMotion'][ID]['Stamp'] + CACHE_TIMEOUT):
             Domoticz.Debug("Return from Timeout cache")
             return self.AdjValue['TimeOutMotion'][ID]['Value']
 
@@ -334,7 +334,7 @@ class DomoticzDB_DeviceStatus:
             self.AdjValue['Temp'][ID]['Value'] = None
             self.AdjValue['Temp'][ID]['Stamp'] = 0
 
-        if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + CACHE_TIMEOUD):
+        if self.AdjValue['Temp'][ID]['Value'] is not None and ( int(time()) < self.AdjValue['Temp'][ID]['Stamp'] + CACHE_TIMEOUT):
             Domoticz.Debug("Return from Temp cache")
             return self.AdjValue['Temp'][ID]['Value']
 
