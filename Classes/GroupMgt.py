@@ -65,6 +65,8 @@ class GroupsManagement(object):
         self.Devices = Devices              # Point to the List of Domoticz Devices
         self.adminWidgets = adminWidgets
 
+        self.fullScan = True
+        self.targetDevices = []
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
         self.pluginconf = PluginConf
 
@@ -153,7 +155,7 @@ class GroupsManagement(object):
                 self.ListOfGroups[grpid]['Imported'] = []
         self.logging( 'Debug', "Loading ListOfGroups: %s" %self.ListOfGroups)
 
-    def load_jsonZigateGroupConfig( self ):
+    def load_jsonZigateGroupConfig( self, load=True ):
 
         if self.json_groupsConfigFilename is None:
             return
@@ -163,6 +165,17 @@ class GroupsManagement(object):
                 
         with open( self.json_groupsConfigFilename, 'rt') as handle:
             ZigateGroupConfig = json.load( handle)
+
+        if not load and len(self.targetDevices) == 0:
+            for group_id in ZigateGroupConfig:
+                for iterTuple in list(ZigateGroupConfig[group_id]['Imported']):
+                    _ieee = iterTuple[0] 
+                    if _ieee in self.IEEE2NWK:
+                        _nwkid = self.IEEE2NWK[ _ieee ]
+                        if _nwkid not in self.targetDevices:
+                            self.targetDevices.append( _nwkid )
+            self.logging( 'Debug', "load_ZigateGroupConfiguration - load: %s, targetDevices: %s" %(load, self.targetDevices))
+            return
 
         for group_id in ZigateGroupConfig:
             self.logging( 'Debug', " )> Group ID: %s" %group_id)
@@ -1223,12 +1236,16 @@ class GroupsManagement(object):
                         self.logging( 'Log', "------------>Config file exists %s" %self.groupsConfigFilename)
                         self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
                         self.logging( 'Log', "------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
+                        self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
+                        self.fullScan = False
  
                 if self.json_groupsConfigFilename:
                     if os.path.isfile( self.json_groupsConfigFilename):
                         self.logging( 'Log', "------------>Json Config file exists")
                         self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
                         self.logging( 'Log', "------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
+                        self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
+                        self.fullScan = False
                 
                 if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
                     # GroupList is newer , just reload the file and exit
@@ -1240,7 +1257,6 @@ class GroupsManagement(object):
                 self.logging( 'Log', "------>switch to end of Group Startup")
                 self._load_GroupList()
                 self.StartupPhase = 'end of group startup'
-            
 
         elif self.StartupPhase == 'discovery':
             if self.HB <= 12:
@@ -1252,7 +1268,12 @@ class GroupsManagement(object):
             self.logging( 'Log', "Group Management - Discovery mode - Searching for Group Membership (or continue)")
             self.stillWIP = True
             _workcompleted = True
-            listofdevices = list(self.ListOfDevices)
+            if self.fullScan:
+                listofdevices = list(self.ListOfDevices.keys())
+            else:
+                listofdevices = self.targetDevices
+
+            self.logging( 'Log', "Group Management - Discovery mode - Devices to be queried: %s" %str(listofdevices))
             for iterDev in listofdevices:
                 _mainPowered = False
                 if 'MacCapa' in self.ListOfDevices[iterDev]:
