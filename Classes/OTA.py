@@ -630,14 +630,18 @@ class OTAManagement(object):
                         self.logging( 'Debug', "OTA heartbeat - skip %s not main powered" %iterDev)
                         continue
 
-                if 'Manufacturer' not in self.ListOfDevices[iterDev]:
-                    self.logging( 'Debug', "OTA heartbeat - skip %s No Manufacturer code !!!" %iterDev)
-                    continue
-                                
-                if self.ListOfDevices[iterDev]['Manufacturer'] not in ( 'IKEA of Sweden', '117c'):
+                ikeaDevice = False
+                if 'Manufacturer Name' in self.ListOfDevices[ iterDev ]:
+                    if self.ListOfDevices[iterDev]['Manufacturer Name'] in ( 'IKEA of Sweden'):
+                        ikeaDevice = True
+                if 'Manufacturer' in self.ListOfDevices[ iterDev ]:
+                    if self.ListOfDevices[iterDev]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
+                        ikeaDevice = True
+
+                if not ikeaDevice:
                     self.logging( 'Debug', "OTA heartbeat - skip %s Not an IKEA products" %iterDev)
                     continue
-            
+
                 if 0x117c in self.availableManufCode:
                     self.upgradableDev.append( iterDev )
                 else:
