@@ -1032,19 +1032,21 @@ class GroupsManagement(object):
             self.ZigateComm.sendData( zigate_cmd, datas)
 
         if Command == 'Set Level':
+            # Level: % value of move
+            # Converted to value , raw value from 0 to 255
+            # sValue is just a string of Level
             zigate_cmd = "0081"
             OnOff = "01"
             value=int(Level*255//100)
             zigate_param = OnOff + "%02x" %value + "0010"
             nValue = '1'
             sValue = str(Level)
-            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-            self._updateDeviceListAttribute( nwkid, '0008', sValue)
-            self.updateDomoGroupDevice( nwkid)
-            #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
+            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0008', str(value))
+            self.updateDomoGroupDevice( nwkid)
 
         if Command == "Set Color" :
             Hue_List = json.loads(Color_)
