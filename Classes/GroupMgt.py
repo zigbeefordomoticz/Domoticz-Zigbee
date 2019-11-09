@@ -818,6 +818,9 @@ class GroupsManagement(object):
                                         level = int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']['0000'],16)
                                     else:
                                         level = round(( level +  int(self.ListOfDevices[dev_nwkid]['Ep'][dev_ep]['0008']['0000'],16)) / 2)
+                        self.logging( 'Debug', "updateDomoGroupDevice - Processing: Group: %s %s/%s nValue: %s, level: %s" %(group_nwkid, dev_nwkid, dev_ep, nValue, level))
+
+        self.logging( 'Debug', "updateDomoGroupDevice - Processing: Group: %s ==> nValue: %s, level: %s" %(group_nwkid, nValue, level))
         # At that stage
         # nValue == 0 if Off
         # nValue == 1 if Open/On
@@ -855,6 +858,7 @@ class GroupsManagement(object):
             else:
                 sValue = 'On'
 
+        self.logging( 'Debug', "updateDomoGroupDevice - Processing: Group: %s ==> nValue: %s, sValue: %s" %(group_nwkid, nValue, sValue))
         if nValue != self.Devices[unit].nValue or sValue != self.Devices[unit].sValue:
             self.logging( 'Log', "UpdateGroup  - (%15s) %s:%s" %( self.Devices[unit].Name, nValue, sValue ))
             self.Devices[unit].Update( nValue, sValue)
