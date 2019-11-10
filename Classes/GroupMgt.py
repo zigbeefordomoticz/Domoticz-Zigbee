@@ -1045,7 +1045,7 @@ class GroupsManagement(object):
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-            self._updateDeviceListAttribute( nwkid, '0008', str(value))
+            self._updateDeviceListAttribute( nwkid, '0008', '%02x' %value)
             self.updateDomoGroupDevice( nwkid)
 
         if Command == "Set Color" :
@@ -1105,7 +1105,7 @@ class GroupsManagement(object):
             nValue = 1
             sValue = str(value)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
-            self._updateDeviceListAttribute( nwkid, '0008', str(value))
+            self._updateDeviceListAttribute( nwkid, '0008', '%02x' %value)
 
     def manageLegrandGroups( self, device_addr, device_ep, unittype):
         """
