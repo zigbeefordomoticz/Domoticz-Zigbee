@@ -1105,6 +1105,7 @@ class GroupsManagement(object):
             nValue = 1
             sValue = str(value)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
+            self._updateDeviceListAttribute( nwkid, '0008', str(value))
 
     def manageLegrandGroups( self, device_addr, device_ep, unittype):
         """
