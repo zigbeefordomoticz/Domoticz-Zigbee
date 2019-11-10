@@ -186,6 +186,17 @@ class DomoticzDB_Hardware:
             self.dbConn.close()
             self.dbCursor = None
 
+    def updateMode4( self, newValue):
+
+        if  self.dbCursor is None:
+            self._openDB( )
+
+            self.dbCursor.execute("UPDATE Hardware Set Mode4 = %s Where ID = '%s' " %( newValue, self.HardwareID))
+            self.dbConn.commit()
+            self.dbConn.close()
+            self.dbCursor = None
+
+
 class DomoticzDB_DeviceStatus:
 
     def __init__(self, database, hardwareID ):

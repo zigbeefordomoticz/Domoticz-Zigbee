@@ -632,15 +632,15 @@ class BasePlugin:
                 if self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901):
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
-                if Parameters['Mode4'].isdigit():
-                    Domoticz.Status("Start Web Server connection")
-                    #Domoticz.Log("Username/Password: %s/%s" %(self.WebUsername, self.WebPassword))
-                    self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
-                        self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.groupmgt, Devices, 
-                        self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'])
-                else:
-                    Domoticz.Error("Looks like you didn't set correctly the Web Admin GUI: %s" %Parameters['Mode4'])
+                if not Parameters['Mode4'].isdigit():
+                    self.domoticzdb_Hardware.updateMode4( '9440' )
+                    Parameters['Mode4'] = '9440'
 
+                Domoticz.Status("Start Web Server connection")
+                #Domoticz.Log("Username/Password: %s/%s" %(self.WebUsername, self.WebPassword))
+                self.webserver = WebServer( self.networkenergy, self.networkmap, self.zigatedata, self.pluginParameters, self.pluginconf, self.statistics, 
+                    self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], self.HardwareID, self.groupmgt, Devices, 
+                    self.ListOfDevices, self.IEEE2NWK , self.permitTojoin , self.WebUsername, self.WebPassword, self.PluginHealth, Parameters['Mode4'])
 
             Domoticz.Status("Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
