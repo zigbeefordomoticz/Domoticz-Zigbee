@@ -1037,26 +1037,29 @@ class GroupsManagement(object):
             # sValue is just a string of Level
             zigate_cmd = "0081"
             OnOff = "01"
-            value=int(Level*255//100)
-            zigate_param = OnOff + "%02x" %value + "0010"
+            #value=int(Level*255//100)
+            value = '%02X' %int(Level*255//100)
+            zigate_param = OnOff + value + "0010"
             nValue = '1'
             sValue = str(Level)
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-            self._updateDeviceListAttribute( nwkid, '0008', '%02x' %value)
+            self._updateDeviceListAttribute( nwkid, '0008', value)
             self.updateDomoGroupDevice( nwkid)
 
         if Command == "Set Color" :
             Hue_List = json.loads(Color_)
             #First manage level
             OnOff = '01' # 00 = off, 01 = on
-            value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+            value = '%02X' %round(1+Level*254/100)
+            #value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             zigate_cmd = "0081"
             zigate_param = OnOff + value + "0000"
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
+            self._updateDeviceListAttribute( nwkid, '0008', value)
             self.ZigateComm.sendData( zigate_cmd, datas)
 
             if Hue_List['m'] == 1:
@@ -1087,25 +1090,27 @@ class GroupsManagement(object):
                 hue = h *360           #0 > 360
                 hue = int(hue*254//360)
                 saturation = int(saturation*254//100)
-                value = int(l * 254//100)
+                Level = l
+                value = '%02X' %round(1+Level*254/100)
+                #value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+
                 OnOff = '01'
                 zigate_cmd = "00B6"
                 zigate_param = Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000"
                 datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
                 self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
-
                 zigate_cmd = "0081"
-                zigate_param = OnOff + Hex_Format(2,value) + "0010"
+                zigate_param = OnOff + value + "0010"
                 datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
                 self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
+                self._updateDeviceListAttribute( nwkid, '0008', value)
 
             #Update Device
             nValue = 1
-            sValue = str(value)
+            sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
-            self._updateDeviceListAttribute( nwkid, '0008', '%02x' %value)
 
     def manageLegrandGroups( self, device_addr, device_ep, unittype):
         """
