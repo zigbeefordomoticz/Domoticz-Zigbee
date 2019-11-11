@@ -24,6 +24,11 @@
 - [Web Admin] - On demand command (adHoc) offer the possibility to send Zigate command to paired devices
 - [Hardware] - INNR RC 110 remote command - Phase 2 ( widget creations for Scenes and Lights mode.
 - [Technical] - Allo input of port number of Web Admin, will allow multiple zigate on 1 Domoticz instance
+- [Hardware] - Tuya Temp/Humidity sensor
+- [Technical] - Force polling after a Group update
+- [Technical] - Improve group scan when Adding/Updating/Removing a group device
+- [Technical] - Report Battery voltage if any to Voltage widget
+- [Hardware] - TRADFRI bulb E27 WW clear 250lm
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
