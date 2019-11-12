@@ -170,9 +170,9 @@ class GroupsManagement(object):
             for group_id in ZigateGroupConfig:
                 if 'Imported' not in ZigateGroupConfig[group_id]:
                     continue
-                Domoticz.Log(" --> Grp: %s --> %s" %(group_id, str(ZigateGroupConfig[group_id]['Imported'])))
+                #Domoticz.Log(" --> Grp: %s --> %s" %(group_id, str(ZigateGroupConfig[group_id]['Imported'])))
                 for iterTuple in list(ZigateGroupConfig[group_id]['Imported']):
-                    Domoticz.Log("----> %s" %str(iterTuple))
+                    #Domoticz.Log("----> %s" %str(iterTuple))
                     _ieee = iterTuple[0] 
                     if _ieee in self.IEEE2NWK:
                         _nwkid = self.IEEE2NWK[ _ieee ]
@@ -769,7 +769,7 @@ class GroupsManagement(object):
                             widget = WIDGET_STYLE[ color_widget ]
                             _ikea_colormode = color_widget
                     pre_code = code
-            self.logging( 'Log', "--------------- - processing %s code: %s widget: %s, color_widget: %s _ikea_colormode: %s " 
+            self.logging( 'Debug', "--------------- - processing %s code: %s widget: %s, color_widget: %s _ikea_colormode: %s " 
                     %(devNwkid, code, widget, color_widget, _ikea_colormode))
 
 
@@ -777,7 +777,7 @@ class GroupsManagement(object):
         if 'Tradfri Remote' in self.ListOfGroups[group_nwkid]:
             self.ListOfGroups[group_nwkid]['Tradfri Remote']['Color Mode'] = _ikea_colormode
 
-        self.logging( 'Log', "_bestGroupWidget - %s Code: %s, Color_Widget: %s, widget: %s" %( group_nwkid, code, color_widget, widget))
+        self.logging( 'Debug', "_bestGroupWidget - %s Code: %s, Color_Widget: %s, widget: %s" %( group_nwkid, code, color_widget, widget))
         return widget
 
     def updateDomoGroupDevice( self, group_nwkid):
@@ -1240,26 +1240,26 @@ class GroupsManagement(object):
             self.StartupPhase = 'discovery'
             last_update_GroupList = 0
             if os.path.isfile( self.groupListFileName ) :
-                self.logging( 'Log', "--->GroupList.pck exists")
+                self.logging( 'Debug', "--->GroupList.pck exists")
                 last_update_GroupList = modification_date( self.groupListFileName )
-                self.logging( 'Log', "--->Last Update of GroupList: %s" %last_update_GroupList)
+                self.logging( 'Debug', "--->Last Update of GroupList: %s" %last_update_GroupList)
             else:
-                self.logging( 'Log', "--->GroupList.pck doesn't exist")
+                self.logging( 'Debug', "--->GroupList.pck doesn't exist")
 
             if self.groupsConfigFilename or self.json_groupsConfigFilename :
                 if self.groupsConfigFilename:
                     if os.path.isfile( self.groupsConfigFilename ):
-                        self.logging( 'Log', "------------>Config file exists %s" %self.groupsConfigFilename)
+                        self.logging( 'Debug', "------------>Config file exists %s" %self.groupsConfigFilename)
                         self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                        self.logging( 'Log', "------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
+                        self.logging( 'Debug', "------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
                         self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
                         self.fullScan = False
  
                 if self.json_groupsConfigFilename:
                     if os.path.isfile( self.json_groupsConfigFilename):
-                        self.logging( 'Log', "------------>Json Config file exists")
+                        self.logging( 'Debug', "------------>Json Config file exists")
                         self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
-                        self.logging( 'Log', "------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
+                        self.logging( 'Debug', "------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
                         self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
                         self.fullScan = False
                 
@@ -1269,8 +1269,8 @@ class GroupsManagement(object):
                     self.StartupPhase = 'end of group startup'
                     self._load_GroupList()
             else:   # No config file, so let's move on
-                self.logging( 'Log', "------>No Config file, let's use the GroupList")
-                self.logging( 'Log', "------>switch to end of Group Startup")
+                self.logging( 'Debug', "------>No Config file, let's use the GroupList")
+                self.logging( 'Debug', "------>switch to end of Group Startup")
                 self._load_GroupList()
                 self.StartupPhase = 'end of group startup'
 
@@ -1384,7 +1384,7 @@ class GroupsManagement(object):
             else:
                 if _completed:
                     for iterGrp in self.ListOfGroups:
-                        self.logging( 'Log', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
+                        self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                         self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
                         for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
                             if iterDev not in self.ListOfDevices:
@@ -1396,8 +1396,8 @@ class GroupsManagement(object):
                                         %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
                                 continue
 
-                            self.logging( 'Log', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
-                    self.logging( 'Log', "Group Management - Discovery Completed" )
+                            self.logging( 'Status', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
+                    self.logging( 'Status', "Group Management - Discovery Completed" )
                     self.StartupPhase = 'load config'
 
         elif  self.StartupPhase == 'load config':
@@ -1680,11 +1680,11 @@ class GroupsManagement(object):
 
         elif self.StartupPhase == 'end of group startup':
             for iterGrp in self.ListOfGroups:
-                self.logging( 'Log', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
-                self.logging( 'Log', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
+                self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
+                self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
                 for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
                     if iterDev in self.ListOfDevices:
-                        self.logging( 'Log', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
+                        self.logging( 'Status', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
 
             # Store Group in report under json format (Debuging purpose)
             json_filename = self.groupListReport
