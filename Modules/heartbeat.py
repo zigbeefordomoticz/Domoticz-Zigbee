@@ -195,19 +195,25 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if self.pluginconf.pluginConf['EnableDimmer']:
-                        legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
                 else:
-                        legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
         
                 if self.pluginconf.pluginConf['EnableLedIfOn']:
-                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
                 else:
-                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
 
                 if self.pluginconf.pluginConf['EnableLedInDark']:
-                        legrand_fc01( self, NWKID, 'DetectInDark', 'On')
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, 'DetectInDark', 'On')
                 else:
-                        legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
+                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
 
                 #if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
                 #    ReadAttributeRequest_fc01( self, NWKID )
