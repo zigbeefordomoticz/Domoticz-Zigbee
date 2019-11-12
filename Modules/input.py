@@ -284,9 +284,6 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         loggingInput( self, 'Debug', "Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
-    if MsgData[0:2] == '15':
-        Domoticz.Log("Decode8000 - PacketType: %s Status: [%s] - %s" %(PacketType, MsgData[0:2], Status))
-
     return
 
 def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
@@ -1980,7 +1977,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
-        TYPE_ACTIONS = { None: '', '01': 'move', '02': 'click', '03': 'stop', '04': 'move_to', }
+        TYPE_ACTIONS = { None: '', '01': 'move', '02': 'click', '03': 'stop', }
         DIRECTION = { None: '', '00': 'up', '01': 'down'}
 
         step_mod = MsgData[14:16]
@@ -1994,14 +1991,15 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         if TYPE_ACTIONS[step_mod] in ( 'click', 'move'):
             selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down] 
-        elif TYPE_ACTIONS[step_mod] in 'move_to':
-            selector = SCENES[up_down]
         elif TYPE_ACTIONS[step_mod] in 'stop':
             selector = TYPE_ACTIONS[step_mod]
+        else:
+            Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" %(MsgSrcAddr, step_mod, up_down))
 
         loggingInput( self, 'Debug', "Decode8085 - Legrand selector: %s" %selector, MsgSrcAddr)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
+        if selector:
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
     else:
        Domoticz.Log("Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
