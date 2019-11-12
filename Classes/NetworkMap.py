@@ -162,7 +162,6 @@ class NetworkMap():
 
         if nwkid in self.ListOfDevices:
             if 'Health' in self.ListOfDevices[nwkid]:
-                Domoticz.Log("LQIreq %s - >%s<" %(nwkid, self.ListOfDevices[nwkid]['Health']))
                 if self.ListOfDevices[nwkid]['Health'] == 'Not Reachable':
                     self.logging( 'Log', "LQIreq - skiping device %s which is Not Reachable" %nwkid)
                     self.Neighbours[ nwkid ]['Status'] = 'NotReachable'
