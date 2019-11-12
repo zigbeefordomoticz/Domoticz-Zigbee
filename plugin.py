@@ -181,7 +181,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.017'
+        self.pluginParameters['PluginVersion'] = '4.6.018'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -243,7 +243,7 @@ class BasePlugin:
             self.domoticzdb_Preferences = DomoticzDB_Preferences( _dbfilename )
 
             self.WebUsername, self.WebPassword = self.domoticzdb_Preferences.retreiveWebUserNamePassword()
-            Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
+            #Domoticz.Status("Domoticz Website credentials %s/%s" %(self.WebUsername, self.WebPassword))
 
 
         # Create the adminStatusWidget if needed

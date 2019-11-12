@@ -29,6 +29,7 @@
 - [Technical] - Improve group scan when Adding/Updating/Removing a group device
 - [Technical] - Report Battery voltage if any to Voltage widget
 - [Hardware] - TRADFRI bulb E27 WW clear 250lm
+- [Technical] - Reduce priority of Topology and Energy scanner
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
