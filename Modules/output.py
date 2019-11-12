@@ -1688,7 +1688,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
             # EnableDimmer -> enable/disable dimmer
             # EnableLedIfOn -> enable Led with device On
 
-    LEGRAND_REFRESH_TIME = 1 * 3600
+    LEGRAND_REFRESH_TIME = ( 3 * 3600) + 15
     LEGRAND_CLUSTER_FC01 = {
             'Dimmer switch w/o neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
             'Connected outlet': { 'EnableLedIfOn': '0002' },
@@ -1759,7 +1759,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
         if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "legrand %s OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Debug', "legrand %s OnOff - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
     write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
