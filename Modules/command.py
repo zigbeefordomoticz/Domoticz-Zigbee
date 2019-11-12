@@ -134,7 +134,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         if DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            Domoticz.Log("Sending STOP to Zigate .. Queue: %s" %(self.ZigateComm.zigateSendingFIFO))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
             UpdateDevice_v2(self, Devices, Unit, 2, "50",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
