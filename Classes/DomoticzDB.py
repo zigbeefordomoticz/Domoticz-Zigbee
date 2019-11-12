@@ -98,7 +98,7 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
                 self.WebUserName = self.dbCursor.fetchone()
-                if len(self.WebUserName) > 0:
+                if self.WebUserName:
                     self.WebUserName = self.WebUserName[0]
                     self.WebUserName = b64decode(self.WebUserName).decode('UTF-8')
                 else:
@@ -114,7 +114,7 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
                 self.WebPassword = self.dbCursor.fetchone()
-                if len(self.WebPassword) > 0:
+                if self.WebPassword:
                     self.WebPassword = self.WebPassword[0]
                 else:
                     self.WebPassword = None
