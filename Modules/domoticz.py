@@ -1378,6 +1378,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == 'moveup': nvalue = 2 ; state = "20" # Move Up
                     elif value == 'movedown': nvalue = 3 ; state = "30" # Move Down
                     elif value == 'stop': nvalue = 4 ; state = "40" # Stop
+                    else:
+                        Domoticz.Error("MajDomoDevice - %s LegrandSelector Unknown value %s" %(NWKID, value))
+                        return
                     UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "INNR_RC110_SCENE":
