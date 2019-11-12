@@ -98,8 +98,11 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebUserName' ")
                 self.WebUserName = self.dbCursor.fetchone()
-                self.WebUserName = self.WebUserName[0]
-                self.WebUserName = b64decode(self.WebUserName).decode('UTF-8')
+                if len(self.WebUserName) > 0:
+                    self.WebUserName = self.WebUserName[0]
+                    self.WebUserName = b64decode(self.WebUserName).decode('UTF-8')
+                else:
+                    self.WebUserName = None
 
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveWebUserNamePassword - Database error: %s" %e)
@@ -111,7 +114,11 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT sValue FROM Preferences WHERE Key = 'WebPassword' ")
                 self.WebPassword = self.dbCursor.fetchone()
-                self.WebPassword = self.WebPassword[0]
+                if len(self.WebPassword) > 0:
+                    self.WebPassword = self.WebPassword[0]
+                else:
+                    self.WebPassword = None
+
                 self.closeDB()
                 self.dbCursor = None
                 return (self.WebUserName, self.WebPassword)
@@ -130,6 +137,8 @@ class DomoticzDB_Preferences:
 
             self.closeDB()
             self.dbCursor = None
+            self.WebUserName = None
+            self.WebPassword = None
             return (None, None)
 
     def unsetAcceptNewHardware( self):
