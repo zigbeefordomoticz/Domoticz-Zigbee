@@ -699,13 +699,13 @@ def processListOfDevices( self , Devices ):
                 Domoticz.Log("Start NetworkMap process")
                 self.start_scan( )
             elif phase == 2:
-                if self.ZigateComm.loadTransmit() < 2 :
+                if self.ZigateComm.loadTransmit() < 1 : # Equal 0
                      self.networkmap.continue_scan( )
 
     if self.HeartbeatCount > NETWORK_ENRG_START:
         # Network Energy Level
         if self.networkenergy:
-            if self.ZigateComm.loadTransmit() < 2:
+            if self.ZigateComm.loadTransmit() < 1: # Equal 0
                 self.networkenergy.do_scan()
 
 
