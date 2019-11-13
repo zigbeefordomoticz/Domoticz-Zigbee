@@ -195,34 +195,32 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if self.pluginconf.pluginConf['EnableDimmer']:
-                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
                 else:
-                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
         
                 if self.pluginconf.pluginConf['EnableLedIfOn']:
-                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
                 else:
-                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
 
                 if self.pluginconf.pluginConf['EnableLedInDark']:
-                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             legrand_fc01( self, NWKID, 'DetectInDark', 'On')
                 else:
-                        if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                             legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
-
-                #if not self.busy and len(self.ZigateComm.zigateSendingFIFO) < MAX_LOAD_ZIGATE:
-                #    ReadAttributeRequest_fc01( self, NWKID )
 
     # If Attributes not yet discovered, let's do it
     if 'ConfigSource' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
             if 'Attributes List' not in self.ListOfDevices[NWKID]:
                 for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if iterEp == 'ClusterType': continue
                     for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
                         if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
@@ -248,7 +246,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                     if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
                         _forceReadAttr0000 = False
-                        
+
     if _forceReadAttr0000:
         if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
             loggingHeartbeat( self, 'Debug', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
@@ -263,7 +261,7 @@ def processKnownDevices( self, Devices, NWKID ):
                     if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
                             if int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'],16) != int(self.pluginconf.pluginConf['bulbPowerOnOfMode'],16):
-                                if self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                                if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                                     Domoticz.Log("Change PowerOn OnOff for device: %s from %s -> %s" \
                                             %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['bulbPowerOnOfMode']))
                                     setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['bulbPowerOnOfMode'] )
