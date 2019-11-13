@@ -606,7 +606,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
-            JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
+            JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
             TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
             for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
                 if os.path.isfile( filename ):
@@ -1136,7 +1136,6 @@ class WebServer(object):
                                     legrand_ledIfOnOnOff( self, 'On')
                                 else:
                                     legrand_ledIfOnOnOff( self, 'Off')
-
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':
