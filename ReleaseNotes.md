@@ -1,6 +1,9 @@
 # Release Notes 
 
-## 4 November 2019 - .5.6
+# 13 November 2019 - 4.5.7
+- [Technical] - remove a limitation preventing opening a Serial port on Windows platform
+
+## 4 November 2019 - 4.5.6
 - [Hardware] - Definition for GU10 WS Tradfri Bulb
 - [Technical] - Remove log for Rouet Discovery
 

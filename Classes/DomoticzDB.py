@@ -309,6 +309,7 @@ class DomoticzDB_DeviceStatus:
 
             self.closeDB()
             self.dbCursor = None
+            return 0
 
     def retreiveAddjValue_temp( self, ID):
         """
@@ -354,3 +355,4 @@ class DomoticzDB_DeviceStatus:
 
             self.closeDB()
             self.dbCursor = None
+            return 0
