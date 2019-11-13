@@ -30,6 +30,8 @@
 - [Technical] - Report Battery voltage if any to Voltage widget
 - [Hardware] - TRADFRI bulb E27 WW clear 250lm
 - [Technical] - Reduce priority of Topology and Energy scanner
+- [Technical] - Speedup the Xiaomi pairing/provisioing process
+- [Technical] - Able to set PowerOn after a powerOff ( 0 for Off, 1 for On, 255, for previous state), Works for devices able to handle it. (Legrand, Philips)
 
 ##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
