@@ -721,7 +721,8 @@ def setPowerOn_OnOff( self, key, OnOffMode=0xff):
                 data = "%02x" %0xff
             loggingOutput( self, 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
             write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-            retreive_ListOfAttributesByCluster( self, key, EPout, '0006')
+            ReadAttributeRequest_0006(self, key)
+
         #if '0008' in self.ListOfDevices[key]['Ep'][tmpEp]:
         #    EPout=tmpEp
         #    cluster_id = "0008"
