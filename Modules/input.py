@@ -1761,7 +1761,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
-            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 3:
+            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 5:
                 # Looks like we have a duplicate Device Announced in less than 5s
                 return
 
@@ -1773,8 +1773,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
 
         # In case of livolo redo the bind if enabled in the Settings
-        PREFIX_MACADDR_LIVOLO = '00124b00'
         if self.pluginconf.pluginConf['rebindLivolo']:
+            PREFIX_MACADDR_LIVOLO = '00124b00'
+
             if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
                 Domoticz.Log("reBind Livolo")
                 livolo_bind( self, MsgSrcAddr, '06')
@@ -1788,13 +1789,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
-                    # If Livolo
+                    # If Livolo, no rebind, nothing more
                     loggingInput( self, 'Debug', "Decode004D - Livolo, no rebind, just exit" , MsgSrcAddr)
                     return
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
                     # If Remote Legrand skip, but do req Battery infos
                     loggingInput( self, 'Debug', "Decode004D - Legrand remote, no rebind, just exit" , MsgSrcAddr)
-                    ReadAttributeRequest_0001( self,  MsgSrcAddr)
+                    ReadAttributeRequest_0001( self,  MsgSrcAddr)   # Refresh battery
                     return
 
         if self.pluginconf.pluginConf['allowReBindingClusters']:
@@ -1806,29 +1807,32 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                 del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
             processConfigureReporting( self, NWKID=MsgSrcAddr )
 
-            # Let's take the opportunity to trigger some request/adjustement
+            # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
             loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
             ReadAttributeRequest_0000( self,  MsgSrcAddr)
             ReadAttributeRequest_0001( self,  MsgSrcAddr)
             sendZigateCmd(self,"0042", str(MsgSrcAddr) )
     else:
-        if MsgIEEE[0:7] == '00124b00': # Livolo Mac@
+        # New Device coming for provisioning
+
+        PREFIX_MACADDR_LIVOLO = '00124b00'
+        if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
             livolo_bind( self, MsgSrcAddr, '06')
 
         # New device comming. The IEEE is not known
         loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
 
         if MsgIEEE in self.IEEE2NWK :
-            Domoticz.Log("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
-            if self.IEEE2NWK[MsgIEEE] :
-                loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" 
-                        %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
-                if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
-                    loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announced for a device in processing, drop it",MsgSrcAddr)
-                    return
+            Domoticz.Error("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
+            loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" 
+                    %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
+            if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
+                loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announced for a device in processing, drop it",MsgSrcAddr)
+            return
+
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
         if IEEEExist( self, MsgIEEE ):
-            # we are getting a Dupplicate. Most-likely the Device is existing and we have to reconnect.
+            # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
                 loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " 
                         %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
@@ -1855,6 +1859,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.DiscoveryDevices[MsgSrcAddr]['Decode-MacCapa'] = list(decodeMacCapa( MsgMacCapa ))
 
         # 3- We will request immediatly the List of EndPoints
+        PREFIX_IEEE_XIAOMI = '00158d000'
+        if MsgIEEE[0:len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
+            ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
+
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
