@@ -238,6 +238,7 @@ def CheckDeviceList(self, key, val) :
                 'Bind', 
                 'ColorInfos', 
                 'ClusterType', 
+                'ConfigSource',
                 'DeviceType', 
                 'Ep', 
                 'HW Version', 
