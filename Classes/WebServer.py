@@ -22,7 +22,7 @@ except Exception as Err:
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES
 from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
 from Modules.actuators import actuators
 from Modules.tools import is_hex
@@ -407,9 +407,11 @@ class WebServer(object):
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
+                'new-hrdwr':     {'Name':'new-hrdwr',     'Verbs':{'GET'}, 'function':self.rest_new_hrdwr},
+                'rcv-nw-hrdwr':  {'Name':'rcv-nw-hrdwr',  'Verbs':{'GET'}, 'function':self.rest_rcv_nw_hrdwr},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'dev-cap':       {'Name':'dev-cap',       'Verbs':{'GET'}, 'function':self.rest_dev_capabilities},
-                'dev-command':       {'Name':'dev-command',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
+                'dev-command':   {'Name':'dev-command',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
                 'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
                 'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
@@ -2043,6 +2045,122 @@ class WebServer(object):
                 _response["Data"] = json.dumps( dev_capabilities )
                 return _response
 
+
+    def rest_new_hrdwr( self, verb, data, parameters):
+
+        """
+        This is call to Enable/Disable a Provisioning process. As a toggle you will enable the provisioning or disable it
+        it will return either Enable or Disable
+        """
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            data = {}
+            data['ProvisioningEnable'] = True
+
+
+            return _response
+
+    def rest_rcv_nw_hrdwr( self, verb, data, parameters):
+
+        """
+        Will return a status on the provisioning process. Either Enable or Disable and in case there is a new device provisionned
+        during the period, it will return the information captured.
+        """
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            data = {}
+            data['ProvisioningEnable'] = True
+            data['NewDevice'] = {}
+
+            nwkid = list(self.ListOfDevices.keys())[0]
+
+            data['NewDevice']['NwkId'] = nwkid
+            if 'Status' not in self.ListOfDevices[ nwkid ]:
+                Domoticz.Error("Something went wrong as the device seems not be created")
+                _response["Data"] = json.dumps( data )
+                return _response
+
+            if self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
+                data['NewDevice']['ProvisionStatus'] = 'In database'
+                data['NewDevice']['ProvisionStatusDesc'] = 'Should be correct'
+            else:
+                data['NewDevice']['ProvisionStatus'] = self.ListOfDevices[ nwkid ]['Status']
+                data['NewDevice']['ProvisionStatusDesc'] = 'Something failed, please check logs'
+
+            data['NewDevice']['IEEE'] = 'Unknown'
+            if 'IEEE' in self.ListOfDevices[ nwkid ]:
+                data['NewDevice']['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
+
+            data['NewDevice']['ProfileId'] = 'Unknow'
+            if 'ProfileID' in self.ListOfDevices[ nwkid ]:
+                data['NewDevice']['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
+                if int(data['NewDevice']['ProfileId'],16) in PROFILE_ID:
+                    data['NewDevice']['ProfileIdDesc'] = PROFILE_ID[ int(data['NewDevice']['ProfileId'],16) ]
+                else:
+                    data['NewDevice']['ProfileIdDesc'] = 'Unknow'
+
+            data['NewDevice']['ZDeviceID'] = 'Unknow'
+            if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
+                data['NewDevice']['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
+                if int(data['NewDevice']['ProfileId'],16) == 0x0104: # ZHA
+                    if int(data['NewDevice']['ZDeviceID'],16) in ZHA_DEVICES:
+                        data['NewDevice']['ZDeviceIDDesc'] = ZHA_DEVICES[ int(data['NewDevice']['ZDeviceID'],16) ]
+                    else:
+                        data['NewDevice']['ZDeviceIDDesc'] = 'Unknow'
+
+                elif int(data['NewDevice']['ProfileId'],16) == 0xc05e: # ZLL
+                    if int(data['NewDevice']['ZDeviceID'],16) in ZLL_DEVICES:
+                        data['NewDevice']['ZDeviceIDDesc'] = ZLL_DEVICES[ int(data['NewDevice']['ZDeviceID'],16) ]
+                    else:
+                        data['NewDevice']['ZDeviceIDDesc'] = 'Unknow'
+
+            if 'Model' in self.ListOfDevices[ nwkid ]:
+                data['NewDevice']['Model'] = self.ListOfDevices[ nwkid ]['Model']
+
+            data['NewDevice']['PluginCertified'] = 'Unknow'
+            if 'ConfigSource' in self.ListOfDevices[nwkid]:
+                if self.ListOfDevices[nwkid]['ConfigSource'] == 'DeviceConf':
+                    data['NewDevice']['PluginCertified'] = 'yes'
+                else:
+                    data['NewDevice']['PluginCertified'] = 'no'
+
+            data['NewDevice']['Ep'] = []
+            if 'Ep' in self.ListOfDevices[ nwkid ]:
+                for iterEp in  self.ListOfDevices[ nwkid ][ 'Ep' ]:
+                    ep = {}
+                    ep['Ep'] = iterEp
+                    ep['Clusters'] = []
+                    for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
+                        cluster = {}
+                        cluster['ClusterId'] = clusterId
+                        if clusterId in ZCL_CLUSTERS_LIST:
+                            cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
+                        else:
+                            cluster['ClusterDesc'] = 'Unknown'
+                        ep['Clusters'].append( cluster )
+                    data['NewDevice']['Ep'].append( ep )
+
+            _response["Data"] = json.dumps( data )
+            return _response
+
 def DumpHTTPResponseToLog(httpDict):
 
     if not DEBUG_HTTP:
@@ -2083,3 +2201,5 @@ def setupHeadersResponse( cookie = None ):
     #_response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
 
     return _response
+
+
