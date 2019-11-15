@@ -571,7 +571,7 @@ def ReadAttributeRequest_0405(self, key):
 
 def ReadAttributeRequest_0406(self, key):
 
-    loggingOutput( self, 'Log', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -586,7 +586,7 @@ def ReadAttributeRequest_0406(self, key):
             listAttributes.append( iterAttr )
 
 
-    loggingOutput( self, 'Log', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    loggingOutput( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
 
 def ReadAttributeRequest_0500(self, key):
@@ -688,7 +688,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas = addr_mode + key + EPin + EPout + clusterID 
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
-    loggingOutput( self, 'Log', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
+    loggingOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
     sendZigateCmd(self, "0110", str(datas) )
 
 def setPIRoccupancyTiming( self, key ):
@@ -707,7 +707,7 @@ def setPIRoccupancyTiming( self, key ):
                 data_type = "21" # uint16
                 data = '%04x' %dataint
 
-                loggingOutput( self, 'Log', "setPIRoccupancyTiming for %s/%s - Attribute %s: %s" %(key, EPout, attribute, data), key)
+                loggingOutput( self, 'Debug', "setPIRoccupancyTiming for %s/%s - Attribute %s: %s" %(key, EPout, attribute, data), key)
                 write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
             ReadAttributeRequest_0406(self, key)
@@ -741,7 +741,7 @@ def setPowerOn_OnOff( self, key, OnOffMode=0xff):
                 data = "%02x" %OnOffMode
             else:
                 data = "%02x" %0xff
-            loggingOutput( self, 'Log', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
+            loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
             write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
             ReadAttributeRequest_0006(self, key)
 
@@ -1067,7 +1067,7 @@ def processConfigureReporting( self, NWKID=None ):
                     attrLen += 1
                     attrDisp.append(attr)
 
-                loggingOutput( self, 'Log', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
+                loggingOutput( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
 
@@ -1084,7 +1084,7 @@ def bindGroup( self, ieee, ep, cluster, groupid ):
     if ieee in self.IEEE2NWK:
         nwkid = self.IEEE2NWK[ieee]
 
-    loggingOutput( self, 'Log', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
+    loggingOutput( self, 'Debug', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid  
     sendZigateCmd(self, "0030", datas )
 
@@ -1096,7 +1096,7 @@ def unbindGroup( self, ieee , ep, cluster, groupid):
     if ieee in self.IEEE2NWK:
         nwkid = self.IEEE2NWK[ieee]
 
-    loggingOutput( self, 'Log', "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
+    loggingOutput( self, 'Debug', "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid  
     sendZigateCmd(self, "0031", datas )
 
@@ -1204,7 +1204,7 @@ def rebind_Clusters( self, NWKID):
     for iterBindCluster in cluster_to_bind:      
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                loggingOutput( self, 'Log', 'Request a Bind  for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
+                loggingOutput( self, 'Debug', 'Request a Bind  for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 

@@ -281,7 +281,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Log', "Decode8000 - PacketType: %s Status: [%s] - %s" \
+        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
     return
