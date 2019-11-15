@@ -281,7 +281,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         self.groupmgt.statusGroupRequest( MsgData )
 
     if str(MsgData[0:2]) != "00" :
-        loggingInput( self, 'Debug', "Decode8000 - PacketType: %s Status: [%s] - %s" \
+        loggingInput( self, 'Log', "Decode8000 - PacketType: %s Status: [%s] - %s" \
                 %(PacketType, MsgData[0:2], Status))
 
     return
@@ -490,35 +490,24 @@ def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
 def Decode8011( self, Devices, MsgData, MsgRSSI ):
 
     # APP APS ACK
-    """
-    u8Status,sizeof(uint8));
-    u8SequenceNum,sizeof(uint8));
-    u8SrcEndpoint,sizeof(uint8));
-    u8DstEndpoint,sizeof(uint8));
-    u16ProfileId,sizeof(uint16));
-    u16ClusterId,sizeof(uint16));
-    """
-
     loggingInput( self, 'Debug', "Decode8011 - APS ACK: %s" %MsgData)
-    """
     MsgStatus = MsgData[0:2]
-    MsgSQN = MsgData[2:4]
-    MsgSrcEp = MsgData[4:6]
-    MsgDstEp = MsgData[6:8]
-    MsgProfileID = MsgData[8:12]
-    MsgClusterId = MsgData[12:16]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgClusterId = MsgData[8:12]
 
-    MsgSrcAddr = ''
-    MsgSrcDeviceId = ''
+    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus))
 
-    loggingInput( self, 'Log', "Decode8011 - Status: %s, SQN: %s, Src: %s, SrcEp: %s, DstEp: %s, ProfileId: %s, Cluster: %s" \
-            %(MsgStatus, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgDstEp, MsgProfileID, MsgClusterId))
-    """
-    MsgSrcAddr = MsgData[0:4]
-    MsgSrcEp = MsgData[4:6]
-    MsgClusterId = MsgData[6:10]
-    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s" \
-            %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
+    if MsgSrcAddr in self.ListOfDevices and MsgStatus == '00':
+        lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+        timeStamped( self, MsgSrcAddr , 0x8011)
+        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Live':
+                loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
+
+        #updSQN( self, MsgSrcAddr, str(MsgSQN) )
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
 
@@ -1814,7 +1803,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             sendZigateCmd(self,"0042", str(MsgSrcAddr) )
     else:
         # New Device coming for provisioning
-
         PREFIX_MACADDR_LIVOLO = '00124b00'
         if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
             livolo_bind( self, MsgSrcAddr, '06')
