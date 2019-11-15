@@ -64,7 +64,7 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort):
 
         self.httpServerConn = None
         self.httpClientConn = None
@@ -95,6 +95,8 @@ class WebServer(object):
         else:
             self.groupmgt = None
         self.ListOfDevices = ListOfDevices
+        self.DevicesInPairingMode = DevicesInPairingMode
+        self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
 
@@ -2064,10 +2066,34 @@ class WebServer(object):
 
         if verb == 'GET':
             data = {}
-            data['ProvisioningEnable'] = True
+            if len(parameters) != 1:
+                Domoticz.Error("rest_new_hrdwr - unexpected parameter %s " %parameters)
+                _response["Data"] = { "unexpected parameter %s " %parameters}
+                return _response
 
+            if parameters[0] not in ( 'enable', 'cancel', 'disable' ):
+                Domoticz.Error("rest_new_hrdwr - unexpected parameter %s " %parameters[0])
+                _response["Data"] = { "unexpected parameter %s " %parameters[0] }
+                return _response
+            if parameters[0] == 'enable':
+                Domoticz.Log("Enable Assisted pairing")
+                self.DevicesInPairingMode = []
+                if not self.zigatedata:
+                    # Seems we are in None mode - Testing for ben
+                    self.fakeDevicesInPairingMode = 0
+                _response["Data"] = { "start pairing mode at %s " %int(time()) }
+                return _response
 
-            return _response
+            elif parameters[0] in ( 'cancel', 'disable'):
+                Domoticz.Log("Disable Assisted pairing")
+                if self.DevicesInPairingMode:
+                    del self.DevicesInPairingMode
+                    self.DevicesInPairingMode = None
+                if not self.zigatedata:
+                    # Seems we are in None mode - Testing for ben
+                    self.fakeDevicesInPairingMode = 0
+                _response["Data"] = { "stop pairing mode at %s " %int(time()) }
+                return _response
 
     def rest_rcv_nw_hrdwr( self, verb, data, parameters):
 
@@ -2087,77 +2113,132 @@ class WebServer(object):
 
         if verb == 'GET':
             data = {}
-            data['ProvisioningEnable'] = True
-            data['NewDevice'] = {}
+            data['NewDevices'] = []
 
-            nwkid = list(self.ListOfDevices.keys())[0]
+            if not self.zigatedata:
+                # Seems we are in None mode - Testing for ben
+                if self.fakeDevicesInPairingMode in ( 0, 1, 2):
+                    # Do nothing just wait the next pool
+                    self.fakeDevicesInPairingMode += 1
+                    _response["Data"] = json.dumps( data )
+                    return _response
 
-            data['NewDevice']['NwkId'] = nwkid
-            if 'Status' not in self.ListOfDevices[ nwkid ]:
-                Domoticz.Error("Something went wrong as the device seems not be created")
-                _response["Data"] = json.dumps( data )
-                return _response
+                elif self.fakeDevicesInPairingMode in ( 3, 4 ):
+                    self.fakeDevicesInPairingMode += 1
+                    newdev = {}
+                    newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
+                    data['NewDevices'].append( newdev )
+                    _response["Data"] = json.dumps( data )
+                    return _response
 
-            if self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
-                data['NewDevice']['ProvisionStatus'] = 'In database'
-                data['NewDevice']['ProvisionStatusDesc'] = 'Should be correct'
+                elif self.fakeDevicesInPairingMode in ( 5, 6 ):
+                    self.fakeDevicesInPairingMode += 1
+                    newdev = {}
+                    newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
+                    data['NewDevices'].append( newdev )
+                    newdev = {}
+                    newdev['NwkId'] = list(self.ListOfDevices.keys())[1]
+                    data['NewDevices'].append( newdev )
+                    _response["Data"] = json.dumps( data )
+                    return _response
+
+                elif self.fakeDevicesInPairingMode in ( 7, 8 ):
+                    self.fakeDevicesInPairingMode += 1
+                    self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[0] )
+                    self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[1] )
+                    self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[2] )
+
+            if len(self.DevicesInPairingMode) == 0:
+                    _response["Data"] = json.dumps( data )
+                    return _response
             else:
-                data['NewDevice']['ProvisionStatus'] = self.ListOfDevices[ nwkid ]['Status']
-                data['NewDevice']['ProvisionStatusDesc'] = 'Something failed, please check logs'
+                listOfPairedDevices = list(self.DevicesInPairingMode)
+                _fake = 0
+                for nwkid in listOfPairedDevices:
+                    if not self.zigatedata:
+                        _fake += 1
+                    newdev = {}
+                    newdev['NwkId'] = nwkid
 
-            data['NewDevice']['IEEE'] = 'Unknown'
-            if 'IEEE' in self.ListOfDevices[ nwkid ]:
-                data['NewDevice']['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
+                    if 'Status' not in self.ListOfDevices[ nwkid ]:
+                        Domoticz.Error("Something went wrong as the device seems not be created")
+                        data['NewDevices'].append( newdev )
+                        continue
 
-            data['NewDevice']['ProfileId'] = 'Unknow'
-            if 'ProfileID' in self.ListOfDevices[ nwkid ]:
-                data['NewDevice']['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
-                if int(data['NewDevice']['ProfileId'],16) in PROFILE_ID:
-                    data['NewDevice']['ProfileIdDesc'] = PROFILE_ID[ int(data['NewDevice']['ProfileId'],16) ]
-                else:
-                    data['NewDevice']['ProfileIdDesc'] = 'Unknow'
+                    if self.ListOfDevices[ nwkid ]['Status'] in ( '004d', '0045', '0043', '8045', '8043') or ( _fake == 1):
+                        # Pairing in progress, just return the Nwkid
+                        data['NewDevices'].append( newdev )
+                        continue
 
-            data['NewDevice']['ZDeviceID'] = 'Unknow'
-            if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
-                data['NewDevice']['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
-                if int(data['NewDevice']['ProfileId'],16) == 0x0104: # ZHA
-                    if int(data['NewDevice']['ZDeviceID'],16) in ZHA_DEVICES:
-                        data['NewDevice']['ZDeviceIDDesc'] = ZHA_DEVICES[ int(data['NewDevice']['ZDeviceID'],16) ]
+                    elif self.ListOfDevices[ nwkid ]['Status'] == 'UNKNOW' or ( _fake == 2):
+                        self.DevicesInPairingMode.remove( nwkid )
+                        newdev['ProvisionStatus'] = 'Failed'
+                        newdev['ProvisionStatusDesc'] = 'Pairing process fail, please check logs'
+
+                    elif self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
+                        self.DevicesInPairingMode.remove( nwkid )
+                        newdev['ProvisionStatus'] = 'In database'
+                        newdev['ProvisionStatusDesc'] = 'Should be correct'
                     else:
-                        data['NewDevice']['ZDeviceIDDesc'] = 'Unknow'
+                        self.DevicesInPairingMode.remove( nwkid )
+                        Domoticz.Error('Unexpected')
+                        continue
 
-                elif int(data['NewDevice']['ProfileId'],16) == 0xc05e: # ZLL
-                    if int(data['NewDevice']['ZDeviceID'],16) in ZLL_DEVICES:
-                        data['NewDevice']['ZDeviceIDDesc'] = ZLL_DEVICES[ int(data['NewDevice']['ZDeviceID'],16) ]
-                    else:
-                        data['NewDevice']['ZDeviceIDDesc'] = 'Unknow'
-
-            if 'Model' in self.ListOfDevices[ nwkid ]:
-                data['NewDevice']['Model'] = self.ListOfDevices[ nwkid ]['Model']
-
-            data['NewDevice']['PluginCertified'] = 'Unknow'
-            if 'ConfigSource' in self.ListOfDevices[nwkid]:
-                if self.ListOfDevices[nwkid]['ConfigSource'] == 'DeviceConf':
-                    data['NewDevice']['PluginCertified'] = 'yes'
-                else:
-                    data['NewDevice']['PluginCertified'] = 'no'
-
-            data['NewDevice']['Ep'] = []
-            if 'Ep' in self.ListOfDevices[ nwkid ]:
-                for iterEp in  self.ListOfDevices[ nwkid ][ 'Ep' ]:
-                    ep = {}
-                    ep['Ep'] = iterEp
-                    ep['Clusters'] = []
-                    for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
-                        cluster = {}
-                        cluster['ClusterId'] = clusterId
-                        if clusterId in ZCL_CLUSTERS_LIST:
-                            cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
+                    newdev['IEEE'] = 'Unknown'
+                    if 'IEEE' in self.ListOfDevices[ nwkid ]:
+                        newdev['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
+    
+                    newdev['ProfileId'] = 'Unknow'
+                    if 'ProfileID' in self.ListOfDevices[ nwkid ]:
+                        newdev['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
+                        if int(newdev['ProfileId'],16) in PROFILE_ID:
+                            newdev['ProfileIdDesc'] = PROFILE_ID[ int(newdev['ProfileId'],16) ]
                         else:
-                            cluster['ClusterDesc'] = 'Unknown'
-                        ep['Clusters'].append( cluster )
-                    data['NewDevice']['Ep'].append( ep )
-
+                            newdev['ProfileIdDesc'] = 'Unknow'
+    
+                    newdev['ZDeviceID'] = 'Unknow'
+                    if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
+                        newdev['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
+                        if int(newdev['ProfileId'],16) == 0x0104: # ZHA
+                            if int(newdev['ZDeviceID'],16) in ZHA_DEVICES:
+                                newdev['ZDeviceIDDesc'] = ZHA_DEVICES[ int(newdev['ZDeviceID'],16) ]
+                            else:
+                                newdev['ZDeviceIDDesc'] = 'Unknow'
+     
+                        elif int(newdev['ProfileId'],16) == 0xc05e: # ZLL
+                            if int(newdev['ZDeviceID'],16) in ZLL_DEVICES:
+                                newdev['ZDeviceIDDesc'] = ZLL_DEVICES[ int(newdev['ZDeviceID'],16) ]
+                            else:
+                                newdev['ZDeviceIDDesc'] = 'Unknow'
+         
+                    if 'Model' in self.ListOfDevices[ nwkid ]:
+                        newdev['Model'] = self.ListOfDevices[ nwkid ]['Model']
+        
+                    newdev['PluginCertified'] = 'Unknow'
+                    if 'ConfigSource' in self.ListOfDevices[nwkid]:
+                        if self.ListOfDevices[nwkid]['ConfigSource'] == 'DeviceConf':
+                            newdev['PluginCertified'] = 'yes'
+                        else:
+                            newdev['PluginCertified'] = 'no'
+       
+                    newdev['Ep'] = []
+                    if 'Ep' in self.ListOfDevices[ nwkid ]:
+                        for iterEp in  self.ListOfDevices[ nwkid ][ 'Ep' ]:
+                            ep = {}
+                            ep['Ep'] = iterEp
+                            ep['Clusters'] = []
+                            for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
+                                cluster = {}
+                                cluster['ClusterId'] = clusterId
+                            if clusterId in ZCL_CLUSTERS_LIST:
+                                cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
+                            else:
+                                cluster['ClusterDesc'] = 'Unknown'
+                            ep['Clusters'].append( cluster )
+                        newdev['Ep'].append( ep )
+                    data['NewDevices'].append( newdev )
+                # for nwkid in listOfPairedDevices:
+                    
             _response["Data"] = json.dumps( data )
             return _response
 
