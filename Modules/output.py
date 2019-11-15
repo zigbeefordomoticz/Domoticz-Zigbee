@@ -209,7 +209,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0402': [ 0x0000],
             '0403': [ 0x0000],
             '0405': [ 0x0000],
-            '0406': [ 0x0000],
+            '0406': [ 0x0000, 0x0001, 0x0010, 0x0011],
             '0500': [ 0x0000, 0x0002],
             '0502': [ 0x0000],
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
@@ -571,7 +571,7 @@ def ReadAttributeRequest_0405(self, key):
 
 def ReadAttributeRequest_0406(self, key):
 
-    loggingOutput( self, 'Debug', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
+    loggingOutput( self, 'Log', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
     EPin = "01"
     EPout= "01"
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -586,7 +586,7 @@ def ReadAttributeRequest_0406(self, key):
             listAttributes.append( iterAttr )
 
 
-    loggingOutput( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    loggingOutput( self, 'Log', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
 
 def ReadAttributeRequest_0500(self, key):
@@ -688,8 +688,30 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     datas = addr_mode + key + EPin + EPout + clusterID 
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
-    loggingOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
+    loggingOutput( self, 'Log', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
     sendZigateCmd(self, "0110", str(datas) )
+
+def setPIRoccupancyTiming( self, key ):
+
+    manuf_spec = "00"
+    manuf_id = "0000"
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0406" in self.ListOfDevices[key]['Ep'][tmpEp]: 
+            EPout=tmpEp
+            cluster_id = "0406"
+
+            for attribute, dataint in ( ( '0010', 5), ('0011', 10) ):
+                data_type = "21" # uint16
+                data = '%04x' %dataint
+
+                loggingOutput( self, 'Log', "setPIRoccupancyTiming for %s/%s - Attribute %s: %s" %(key, EPout, attribute, data), key)
+                write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+
+            ReadAttributeRequest_0406(self, key)
+
 
 def setPowerOn_OnOff( self, key, OnOffMode=0xff):
 
@@ -844,8 +866,10 @@ def processConfigureReporting( self, NWKID=None ):
                                  '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
         # Humidity
         '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'}}},
+
         # Occupancy Sensing
         '0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0FFF','Change':'01'},
+                                 # Sensitivy for HUE Motion
                                  '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0FFF','Change':'01'}}},
         # IAS ZOne
         '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0FFF','Change':'01'},
@@ -1043,7 +1067,7 @@ def processConfigureReporting( self, NWKID=None ):
                     attrLen += 1
                     attrDisp.append(attr)
 
-                loggingOutput( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
+                loggingOutput( self, 'Log', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
 
@@ -1180,7 +1204,7 @@ def rebind_Clusters( self, NWKID):
     for iterBindCluster in cluster_to_bind:      
         for iterEp in self.ListOfDevices[NWKID]['Ep']:
             if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                loggingOutput( self, 'Debug', 'Request a Bind  for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
+                loggingOutput( self, 'Log', 'Request a Bind  for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster), nwkid=NWKID)
                 bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
 
