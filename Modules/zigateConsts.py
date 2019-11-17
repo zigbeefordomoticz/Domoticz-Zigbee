@@ -11,7 +11,7 @@
 """
 
 HEARTBEAT = 5
-MAX_LOAD_ZIGATE = 5
+MAX_LOAD_ZIGATE = 3
 
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
 
