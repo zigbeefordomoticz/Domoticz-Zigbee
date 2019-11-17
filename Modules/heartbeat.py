@@ -652,7 +652,8 @@ def processListOfDevices( self , Devices ):
             # We might have to remove this entry if the device get not reconnected.
             if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 36 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
                 if 'ZDeviceName' in self.ListOfDevices[NWKID]:
-                    Domoticz.Log("processListOfDevices - Device: " +str(self.ListOfDevices[NWKID]['ZDeviceName']) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
+                    Domoticz.Log("processListOfDevices - Device: %s (%s) is in Status = 'Left' for %s HB" 
+                            %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, self.ListOfDevices[NWKID]['Heartbeat']))
                 else:
                     Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
                 # Let's check if the device still exist in Domoticz
