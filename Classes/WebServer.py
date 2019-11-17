@@ -2077,7 +2077,9 @@ class WebServer(object):
                 return _response
             if parameters[0] == 'enable':
                 Domoticz.Log("Enable Assisted pairing")
-                self.DevicesInPairingMode = []
+                if len(self.DevicesInPairingMode):
+                    del self.DevicesInPairingMode
+                    self.DevicesInPairingMode = []
                 if not self.zigatedata:
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
@@ -2086,9 +2088,9 @@ class WebServer(object):
 
             elif parameters[0] in ( 'cancel', 'disable'):
                 Domoticz.Log("Disable Assisted pairing")
-                if self.DevicesInPairingMode:
+                if len(self.DevicesInPairingMode):
                     del self.DevicesInPairingMode
-                    self.DevicesInPairingMode = None
+                    self.DevicesInPairingMode = []
                 if not self.zigatedata:
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
@@ -2148,9 +2150,11 @@ class WebServer(object):
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[1] )
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[2] )
 
+            Domoticz.Log("Assisted Pairing: Polling")
             if len(self.DevicesInPairingMode) == 0:
-                    _response["Data"] = json.dumps( data )
-                    return _response
+                Domoticz.Log("--> Empty queue")
+                _response["Data"] = json.dumps( data )
+                return _response
             else:
                 listOfPairedDevices = list(self.DevicesInPairingMode)
                 _fake = 0
@@ -2160,6 +2164,7 @@ class WebServer(object):
                     newdev = {}
                     newdev['NwkId'] = nwkid
 
+                    Domoticz.Log("--> New device: %s" %nwkid)
                     if 'Status' not in self.ListOfDevices[ nwkid ]:
                         Domoticz.Error("Something went wrong as the device seems not be created")
                         data['NewDevices'].append( newdev )
@@ -2188,28 +2193,27 @@ class WebServer(object):
                     if 'IEEE' in self.ListOfDevices[ nwkid ]:
                         newdev['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
     
-                    newdev['ProfileId'] = 'Unknow'
+                    newdev['ProfileId'] = ''
+                    newdev['ProfileIdDesc'] = 'Unknow'
                     if 'ProfileID' in self.ListOfDevices[ nwkid ]:
-                        newdev['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
-                        if int(newdev['ProfileId'],16) in PROFILE_ID:
-                            newdev['ProfileIdDesc'] = PROFILE_ID[ int(newdev['ProfileId'],16) ]
-                        else:
-                            newdev['ProfileIdDesc'] = 'Unknow'
-    
-                    newdev['ZDeviceID'] = 'Unknow'
+                        if self.ListOfDevices[ nwkid ]['ProfileID'] != {}:
+                            newdev['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
+                            if int(newdev['ProfileId'],16) in PROFILE_ID:
+                                newdev['ProfileIdDesc'] = PROFILE_ID[ int(newdev['ProfileId'],16) ]
+
+                    newdev['ZDeviceID'] = ''
+                    newdev['ZDeviceIDDesc'] = 'Unknow'
                     if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
-                        newdev['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
-                        if int(newdev['ProfileId'],16) == 0x0104: # ZHA
-                            if int(newdev['ZDeviceID'],16) in ZHA_DEVICES:
-                                newdev['ZDeviceIDDesc'] = ZHA_DEVICES[ int(newdev['ZDeviceID'],16) ]
-                            else:
-                                newdev['ZDeviceIDDesc'] = 'Unknow'
-     
-                        elif int(newdev['ProfileId'],16) == 0xc05e: # ZLL
-                            if int(newdev['ZDeviceID'],16) in ZLL_DEVICES:
-                                newdev['ZDeviceIDDesc'] = ZLL_DEVICES[ int(newdev['ZDeviceID'],16) ]
-                            else:
-                                newdev['ZDeviceIDDesc'] = 'Unknow'
+                        if self.ListOfDevices[ nwkid ]['ZDeviceID'] != {}:
+                            newdev['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
+                            if int(newdev['ProfileId'],16) == 0x0104: # ZHA
+                                if int(newdev['ZDeviceID'],16) in ZHA_DEVICES:
+                                    newdev['ZDeviceIDDesc'] = ZHA_DEVICES[ int(newdev['ZDeviceID'],16) ]
+                                else:
+                                    newdev['ZDeviceIDDesc'] = 'Unknow'
+                            elif int(newdev['ProfileId'],16) == 0xc05e: # ZLL
+                                if int(newdev['ZDeviceID'],16) in ZLL_DEVICES:
+                                    newdev['ZDeviceIDDesc'] = ZLL_DEVICES[ int(newdev['ZDeviceID'],16) ]
          
                     if 'Model' in self.ListOfDevices[ nwkid ]:
                         newdev['Model'] = self.ListOfDevices[ nwkid ]['Model']
