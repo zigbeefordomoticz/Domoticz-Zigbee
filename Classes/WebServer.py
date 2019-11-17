@@ -2119,13 +2119,13 @@ class WebServer(object):
 
             if not self.zigatedata:
                 # Seems we are in None mode - Testing for ben
-                if self.fakeDevicesInPairingMode in ( 0, 1, 2):
+                if self.fakeDevicesInPairingMode in ( 0, 1):
                     # Do nothing just wait the next pool
                     self.fakeDevicesInPairingMode += 1
                     _response["Data"] = json.dumps( data )
                     return _response
 
-                elif self.fakeDevicesInPairingMode in ( 3, 4 ):
+                elif self.fakeDevicesInPairingMode in ( 2, 3 ):
                     self.fakeDevicesInPairingMode += 1
                     newdev = {}
                     newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
@@ -2133,7 +2133,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps( data )
                     return _response
 
-                elif self.fakeDevicesInPairingMode in ( 5, 6 ):
+                elif self.fakeDevicesInPairingMode in ( 4, 5 ):
                     self.fakeDevicesInPairingMode += 1
                     newdev = {}
                     newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
@@ -2144,7 +2144,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps( data )
                     return _response
 
-                elif self.fakeDevicesInPairingMode in ( 7, 8 ):
+                elif self.fakeDevicesInPairingMode in ( 6, 7 ):
                     self.fakeDevicesInPairingMode += 1
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[0] )
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[1] )
@@ -2178,14 +2178,16 @@ class WebServer(object):
                     elif self.ListOfDevices[ nwkid ]['Status'] == 'UNKNOW' or ( _fake == 2):
                         self.DevicesInPairingMode.remove( nwkid )
                         newdev['ProvisionStatus'] = 'Failed'
-                        newdev['ProvisionStatusDesc'] = 'Pairing process fail, please check logs'
+                        newdev['ProvisionStatusDesc'] = 'Failed'
 
                     elif self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
                         self.DevicesInPairingMode.remove( nwkid )
-                        newdev['ProvisionStatus'] = 'In database'
-                        newdev['ProvisionStatusDesc'] = 'Should be correct'
+                        newdev['ProvisionStatus'] = 'inDB'
+                        newdev['ProvisionStatusDesc'] = 'inDB'
                     else:
                         self.DevicesInPairingMode.remove( nwkid )
+                        newdev['ProvisionStatus'] = 'Unexpected'
+                        newdev['ProvisionStatusDesc'] = 'Unexpected'
                         Domoticz.Error('Unexpected')
                         continue
 

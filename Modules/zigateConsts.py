@@ -235,6 +235,7 @@ ZCL_CLUSTERS_LIST = {
         '0400': 'Illuminance Measurement',
         '0401': 'Illuminance Level Sensing',
         '0402': 'Temperature Measurement',
+        '0402': 'Pressure measurement',
         '0405': 'Relative Humidity Measurement',
         '0406': 'Occupancy Sensing',
         '0500': 'IAS Zone',
