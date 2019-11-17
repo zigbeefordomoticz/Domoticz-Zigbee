@@ -178,6 +178,9 @@ class GroupsManagement(object):
                         _nwkid = self.IEEE2NWK[ _ieee ]
                         if _nwkid not in self.targetDevices:
                             self.targetDevices.append( _nwkid )
+            # Finaly add Zigate 0x0000 in the target
+            if '0000' not in self.targetDevices:
+                self.targetDevices.append( '0000' )
             self.logging( 'Debug', "load_ZigateGroupConfiguration - load: %s, targetDevices: %s" %(load, self.targetDevices))
             return
 
@@ -1330,7 +1333,7 @@ class GroupsManagement(object):
                                 if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] == 'REQ-Membership':
                                     continue
 
-                            if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                            if  len(self.ZigateComm.zigateSendingFIFO) >= MAX_LOAD_ZIGATE:
                                 self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
                                 self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
                                 self.logging( 'Debug', "too busy, will try again ...%s" %len(self.ZigateComm.zigateSendingFIFO))
@@ -1545,7 +1548,7 @@ class GroupsManagement(object):
                             %(iterGrp, iterDev,iterEp))
                     continue
 
-                if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                if  len(self.ZigateComm.zigateSendingFIFO) >= MAX_LOAD_ZIGATE:
                     self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
                     self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
                     _completed = False
@@ -1558,7 +1561,7 @@ class GroupsManagement(object):
 
             self.logging( 'Debug', " - Add to be performed: %s" %str(self.TobeAdded))
             for iterIEEE, iterDev, iterEp, iterGrp in list(self.TobeAdded):
-                if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+                if  len(self.ZigateComm.zigateSendingFIFO) >= MAX_LOAD_ZIGATE:
                     self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
                     self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
                     _completed = False
