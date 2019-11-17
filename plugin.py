@@ -374,6 +374,8 @@ class BasePlugin:
                 # for a remove in case device didn't send the leave
                 sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
                 Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+            else:
+                Domoticz.Status("onDeviceRemoved - device entry %s from Zigate not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices." %Devices[Unit].DeviceID)
 
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
