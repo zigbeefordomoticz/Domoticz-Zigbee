@@ -2232,15 +2232,19 @@ class WebServer(object):
                             ep['Ep'] = iterEp
                             ep['Clusters'] = []
                             for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
+                                if clusterId in ( 'ClusterType', 'Type', 'ColorControl' ): continue
                                 cluster = {}
                                 cluster['ClusterId'] = clusterId
-                            if clusterId in ZCL_CLUSTERS_LIST:
-                                cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
-                            else:
-                                cluster['ClusterDesc'] = 'Unknown'
-                            ep['Clusters'].append( cluster )
+                                if clusterId in ZCL_CLUSTERS_LIST:
+                                    cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
+                                else:
+                                    cluster['ClusterDesc'] = 'Unknown'
+                                ep['Clusters'].append( cluster )
+                            Domoticz.Log("------> New Cluster: %s" %str(cluster))
                         newdev['Ep'].append( ep )
+                        Domoticz.Log("----> New Ep: %s" %str(ep))
                     data['NewDevices'].append( newdev )
+                    Domoticz.Log(" --> New Device: %s" %str(newdev))
                 # for nwkid in listOfPairedDevices:
                     
             _response["Data"] = json.dumps( data )
