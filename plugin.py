@@ -111,7 +111,7 @@ class BasePlugin:
     def __init__(self):
 
         self.ListOfDevices = {}  # {DevicesAddresse : { status : status_de_detection, data : {ep list ou autres en fonctions du status}}, DevicesAddresse : ...}
-        self.DevicesInPairingMode = None
+        self.DevicesInPairingMode = []
         self.DiscoveryDevices = {} # Used to collect pairing information
         self.IEEE2NWK = {}
         self.zigatedata = {}

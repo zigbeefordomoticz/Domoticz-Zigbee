@@ -1835,8 +1835,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
-        if self.DevicesInPairingMode:
-            self.DevicesInPairingMode.append( MsgSrcAddr )
+        Domoticz.Log("--> Adding device %s in self.DevicesInPairingMode" %MsgSrcAddr)
+        self.DevicesInPairingMode.append( MsgSrcAddr )
 
         # 2- Store the Pairing info if needed
         if self.pluginconf.pluginConf['capturePairingInfos']:
