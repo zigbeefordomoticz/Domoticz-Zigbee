@@ -2084,9 +2084,8 @@ class WebServer(object):
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
 
-                if self.permitTojoin['Duration'] != 255:
-                    if self.pluginparameters['Mode1'] != 'None':
-                        ZigatePermitToJoin(self, ( 4 * 60 ))
+                if self.permitTojoin['Duration'] != 255 and self.pluginparameters['Mode1'] != 'None':
+                    ZigatePermitToJoin(self, ( 4 * 60 ))
 
                 _response["Data"] = { "start pairing mode at %s " %int(time()) }
                 return _response
@@ -2099,9 +2098,8 @@ class WebServer(object):
                 if not self.zigatedata:
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
-                if self.permitTojoin['Duration'] != 255:
-                    if self.pluginparameters['Mode1'] != 'None':
-                        ZigatePermitToJoin(self, 0)
+                if self.permitTojoin['Duration'] != 255 and self.pluginparameters['Mode1'] != 'None':
+                    ZigatePermitToJoin(self, 0)
 
                 _response["Data"] = { "stop pairing mode at %s " %int(time()) }
                 return _response
@@ -2159,7 +2157,7 @@ class WebServer(object):
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[1] )
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[2] )
 
-            Domoticz.Log("Assisted Pairing: Polling")
+            Domoticz.Log("Assisted Pairing: Polling: %s" %str(self.DevicesInPairingMode))
             if len(self.DevicesInPairingMode) == 0:
                 Domoticz.Log("--> Empty queue")
                 _response["Data"] = json.dumps( data )
@@ -2185,15 +2183,18 @@ class WebServer(object):
                         continue
 
                     elif self.ListOfDevices[ nwkid ]['Status'] == 'UNKNOW' or ( _fake == 2):
+                        Domoticz.Log("--> UNKNOW , removed %s from List" %nwkid)
                         self.DevicesInPairingMode.remove( nwkid )
                         newdev['ProvisionStatus'] = 'Failed'
                         newdev['ProvisionStatusDesc'] = 'Failed'
 
                     elif self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
+                        Domoticz.Log("--> inDB , removed %s from List" %nwkid)
                         self.DevicesInPairingMode.remove( nwkid )
                         newdev['ProvisionStatus'] = 'inDB'
                         newdev['ProvisionStatusDesc'] = 'inDB'
                     else:
+                        Domoticz.Log("--> Unexpected , removed %s from List" %nwkid)
                         self.DevicesInPairingMode.remove( nwkid )
                         newdev['ProvisionStatus'] = 'Unexpected'
                         newdev['ProvisionStatusDesc'] = 'Unexpected'
@@ -2251,9 +2252,9 @@ class WebServer(object):
                                 else:
                                     cluster['ClusterDesc'] = 'Unknown'
                                 ep['Clusters'].append( cluster )
-                            Domoticz.Log("------> New Cluster: %s" %str(cluster))
-                        newdev['Ep'].append( ep )
-                        Domoticz.Log("----> New Ep: %s" %str(ep))
+                                Domoticz.Log("------> New Cluster: %s" %str(cluster))
+                            newdev['Ep'].append( ep )
+                            Domoticz.Log("----> New Ep: %s" %str(ep))
                     data['NewDevices'].append( newdev )
                     Domoticz.Log(" --> New Device: %s" %str(newdev))
                 # for nwkid in listOfPairedDevices:

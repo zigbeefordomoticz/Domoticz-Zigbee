@@ -496,7 +496,7 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
 
-    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
+    loggingInput( self, 'Log', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus))
 
     if MsgSrcAddr in self.ListOfDevices and MsgStatus == '00':
@@ -1766,7 +1766,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             PREFIX_MACADDR_LIVOLO = '00124b00'
 
             if MsgIEEE[0:len(PREFIX_MACADDR_LIVOLO)] == PREFIX_MACADDR_LIVOLO:
-                Domoticz.Log("reBind Livolo")
+                loggingInput( self,"reBind Livolo", MsgSrcAddr)
                 livolo_bind( self, MsgSrcAddr, '06')
 
         # If this is a rejoin after a leave, let's update the Status
@@ -1835,8 +1835,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
-        Domoticz.Log("--> Adding device %s in self.DevicesInPairingMode" %MsgSrcAddr)
+        loggingPairing( self, 'Debug', "--> Adding device %s in self.DevicesInPairingMode" %MsgSrcAddr)
         self.DevicesInPairingMode.append( MsgSrcAddr )
+        loggingPairing( self, 'Debug',"--> %s" %str(self.DevicesInPairingMode))
 
         # 2- Store the Pairing info if needed
         if self.pluginconf.pluginConf['capturePairingInfos']:
