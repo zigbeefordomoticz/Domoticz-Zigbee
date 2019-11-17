@@ -2083,6 +2083,11 @@ class WebServer(object):
                 if not self.zigatedata:
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
+
+                if self.permitTojoin['Duration'] != 255:
+                    if self.pluginparameters['Mode1'] != 'None':
+                        ZigatePermitToJoin(self, ( 4 * 60 ))
+
                 _response["Data"] = { "start pairing mode at %s " %int(time()) }
                 return _response
 
@@ -2094,6 +2099,10 @@ class WebServer(object):
                 if not self.zigatedata:
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
+                if self.permitTojoin['Duration'] != 255:
+                    if self.pluginparameters['Mode1'] != 'None':
+                        ZigatePermitToJoin(self, 0)
+
                 _response["Data"] = { "stop pairing mode at %s " %int(time()) }
                 return _response
 
