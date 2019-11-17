@@ -323,7 +323,7 @@ class NetworkMap():
             self.logging( 'Debug', "LQIresp - Firmware 3.1a - MsgSrc: %s" %MsgSrc)
 
         if Status != '00':
-            Domoticz.Error("LQI:LQIresp - Status: %s for %s" %(Status, MsgData))
+            Domoticz.Error("LQI:LQIresp - Status: %s for %s (raw data: %s)" %(Status, MsgData[len(MsgData) - 4: len(MsgData)],MsgData))
             return
         if len(self.LQIreqInProgress) == 0:
             Domoticz.Error("LQI:LQIresp - Receive unexpected message %s"  %(MsgData))
