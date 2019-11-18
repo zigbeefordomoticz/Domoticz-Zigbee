@@ -77,7 +77,11 @@ NETWORK_ENRG_START = 1800 // HEARTBEAT
 
 def processKnownDevices( self, Devices, NWKID ):
 
+    # Normalize Hearbeat value if needed
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
+    if intHB > 0xffff:
+        intHB -= 0xfff0
+        self.ListOfDevices[NWKID]['Heartbeat'] = intHB
 
     # Checking current state of the this Nwk
     if 'Health' not in self.ListOfDevices[NWKID]:
@@ -116,6 +120,7 @@ def processKnownDevices( self, Devices, NWKID ):
     # 
     # Let's be smart and if intHB equal 0, this has been reset recently and we might take the opportunity to 
     # request 0x0001 (Voltage/Power information) for battery based devices
+
 
     if not _mainPowered:
         return
