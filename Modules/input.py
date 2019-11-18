@@ -1160,8 +1160,8 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
         if self.ListOfDevices[sAddr]['Status'] == 'inDB':
             self.ListOfDevices[sAddr]['Status'] = 'Left'
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
-            Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
-            leaveMgtReJoin( self, sAddr, MsgExtAddress )
+            #Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
+            #leaveMgtReJoin( self, sAddr, MsgExtAddress )
         else:
             Domoticz.Error("Receiving a leave from %s/%s while device is %s status" %( sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
             Domoticz.Log("--> Removing: %s" %str(self.ListOfDevices[sAddr]))
