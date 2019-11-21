@@ -23,7 +23,7 @@ from math import atan, sqrt, pi
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, loggingCluster
-from Modules.output import ReadAttributeRequest_Ack
+from Modules.output import ReadAttributeRequest_Ack, xiaomi_leave
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
@@ -459,6 +459,23 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sRSSI,16)), MsgSrcAddr)
         if sLQI != '':
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
+
+        if self.pluginconf.pluginConf['XiaomiLeave'] and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':
+            zdvName = ''
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                zdvName = self.ListOfDevices[MsgSrcAddr]['ZDeviceName']
+                Domoticz.Log("Device: %s -- %s -- %s -- %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['IEEE'], self.ListOfDevices[MsgSrcAddr]['Model']))
+            _req_leave = True
+            if sRSSI != '':
+                Domoticz.Log("---> Xiaomi %s (%s) RSSI: %s" %(zdvName, MsgSrcAddr, int(sRSSI,16)))
+                _req_leave = True
+            if sLQI != '':
+                Domoticz.Log("---> Xiaomi %s (%s) LQI : %s" %(zdvName, MsgSrcAddr, int(sLQI,16)))
+                _req_leave = True
+            
+            if _req_leave:
+                Domoticz.Log("---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr))
+                xiaomi_leave( self, MsgSrcAddr)
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
