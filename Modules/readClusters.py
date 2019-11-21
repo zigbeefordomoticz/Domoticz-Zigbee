@@ -1110,8 +1110,25 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "f000" and MsgAttType == "23" and MsgAttSize == "0004":
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-        loggingCluster( self, 'Debug', "ReadCluster - Feedback from device " + str(MsgSrcAddr) + "/" + MsgSrcEp + " MsgClusterData: " + MsgClusterData + \
-                " decoded: " + str(value) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - Feedback from device %s/%s Attribute 0xf000 value: %s-%s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, value))
+        _Xiaomi_code = MsgClusterData[0:2]
+        _Xiaomi_Value = MsgClusterData[6:8]
+        if _Xiaomi_code == '07':
+            # The last 2 Digits , count the number of command received by the device
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Command counter: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, int(_Xiaomi_Value,16)))
+            else:
+                loggingCluster( self, 'Log', "ReadCluster - %s/%s Command counter: %s" %(MsgSrcAddr, MsgSrcEp, int(_Xiaomi_Value,16)))
+        elif _Xiaomi_code == '03':
+            # Physical action
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Physical Action : %s (please report to @pipiche)" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+            else:
+                loggingCluster( self, 'Log', "ReadCluster - %s/%s Physical Action : %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+        else:
+            Domoticz.Error("ReadCluster - ClusterId=0006 - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData))
+
+
     elif MsgAttrID == 'fffd':
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - unknown Attr: %s Value: %s" %(MsgAttrID, MsgClusterData))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
@@ -1119,6 +1136,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         Domoticz.Log("readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData)) 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
 
 def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # LevelControl cluster
