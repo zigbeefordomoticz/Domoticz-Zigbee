@@ -79,7 +79,7 @@ import sys
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList, loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest
+from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
@@ -605,9 +605,10 @@ class BasePlugin:
             if self.FirmwareVersion and \
                     int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and\
                     self.transport != 'None':
-                if self.pluginconf.pluginConf['blueLedOff']:
-                    Domoticz.Status("Switch Blue Led off")
-                    sendZigateCmd(self, "0018","00")
+                if self.pluginconf.pluginConf['blueLedOnOff']:
+                    zigateBlueLed( self, False)
+                else:
+                    zigateBlueLed( self, True)
 
                 set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 

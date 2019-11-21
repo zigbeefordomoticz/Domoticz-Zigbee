@@ -23,7 +23,7 @@ from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES
-from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, zigateBlueLed
 from Modules.actuators import actuators
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
@@ -1118,6 +1118,14 @@ class WebServer(object):
                             else:
                                 Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" %(setting_lst[setting]['current']))
                                 continue
+
+                        elif param == 'blueLedOnOff':
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if self.pluginconf.pluginConf[param]:
+                                    zigateBlueLed( self, True)
+                                else:
+                                    zigateBlueLed( self, False)
 
                         elif param == 'EnableLedInDark':
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
