@@ -25,17 +25,28 @@ def ZigatePermitToJoin( self, permit ):
 
     if permit:
         # Enable Permit to join
-        if permit != 255:
-            Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
+        if self.permitTojoin['Duration'] == 255:
+            # Nothing to do , it is already in permanent pairing mode.
+            pass
         else:
-            Domoticz.Status("Request Accepting new Hardware for ever ")
+            if permit != 255:
+                Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
+            else:
+                Domoticz.Status("Request Accepting new Hardware for ever ")
 
-        self.permitTojoin['Starttime'] = int(time())
-        self.permitTojoin['Duration'] = permit
-        sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
+            self.permitTojoin['Starttime'] = int(time())
+            if permit == 1:
+                self.permitTojoin['Duration'] = 0
+            else:
+                self.permitTojoin['Duration'] = permit
+
+            sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
     else: 
         # Disable Permit to Join
-        if self.permitTojoin['Duration'] != 0:
+        if self.permitTojoin['Duration'] == 0:
+            # Nothing to do , Pairing is already off
+            pass
+        else:
             self.permitTojoin['Starttime'] = int(time())
             self.permitTojoin['Duration'] = 0
             sendZigateCmd(self, "0049","FFFC" + '00' + "00")
@@ -91,6 +102,17 @@ def setTimeServer( self ):
     sendZigateCmd(self, "0016", data  )
     #Request Time
     sendZigateCmd(self, "0017", "")
+
+
+def zigateBlueLed( self, OnOff):
+
+    if OnOff:
+        Domoticz.Log("Switch Blue Led On")
+        sendZigateCmd(self, "0018","01")
+    else:
+        Domoticz.Log("Switch Blue Led off")
+        sendZigateCmd(self, "0018","00")
+
 
 def sendZigateCmd(self, cmd,datas ):
 
@@ -913,7 +935,6 @@ def processConfigureReporting( self, NWKID=None ):
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
         if key == '0000': continue
-        loggingOutput( self, 'Debug', "--> configurereporting - processing %s" %key, nwkid=key)
 
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
@@ -922,6 +943,8 @@ def processConfigureReporting( self, NWKID=None ):
             Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" %key)
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
+
+        
         if NWKID is None:
             skip = True
             if 'PowerSource' in self.ListOfDevices[key]:
@@ -1433,7 +1456,9 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=False, Rejoin=Fa
     _rejoin = '%02X' %Rejoin
 
     datas = _ieee + _rmv_children + _rejoin
-    Domoticz.Status("leaveRequest - %s %s" %( '0047', datas))
+    #Domoticz.Status("Sending a leaveRequest - %s %s" %( '0047', datas))
+    Domoticz.Log("---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s" %( ShortAddr, IEEE, RemoveChild, Rejoin))
+    Domoticz.Log("---------> Sending a leaveRequest - payload %s" %( datas))
     sendZigateCmd(self, "0047", datas )
 
 def removeZigateDevice( self, IEEE ):
@@ -1951,3 +1976,13 @@ def scene_membership_request( self, nwkid, ep, groupid='0000'):
 
     datas = '02' + nwkid + '01' + ep +  groupid
     sendZigateCmd(self, "00A6", datas )
+
+def xiaomi_leave( self, NWKID):
+
+    if self.permitTojoin['Duration'] != 255:
+        Domoticz.Log("------> switch zigate in pairing mode")
+        ZigatePermitToJoin(self, ( 1 * 60 ))
+
+    # sending a Leave Request to device, so the device will send a leave
+    Domoticz.Log("------> Sending a leave to Xiaomi battery devive: %s" %(NWKID))
+    leaveRequest( self, IEEE= self.ListOfDevices[NWKID]['IEEE'], Rejoin=True )
