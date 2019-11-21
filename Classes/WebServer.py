@@ -1031,6 +1031,8 @@ class WebServer(object):
             Statistics['ReTx'] = 3
             Statistics['CurrentLoad'] = 1
             Statistics['MaxLoad'] = 7
+            Statistics['APS-Ack'] = 100
+            Statistics['APS-Nck'] =  0
             Statistics['StartTime'] = int(time())
         else:
             Statistics['CRC'] =self.statistics._crcErrors
@@ -1040,6 +1042,8 @@ class WebServer(object):
             Statistics['Cluster'] =self.statistics._clusterOK
             Statistics['ReTx'] =self.statistics._reTx
             Statistics['APSFailure'] =self.statistics._APSFailure
+            Statistics['APS-Ack'] =self.statistics._APSAck
+            Statistics['APS-Nck'] =self.statistics._APSNck
             Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start

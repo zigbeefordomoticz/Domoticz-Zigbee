@@ -461,6 +461,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
 
         if self.pluginconf.pluginConf['XiaomiLeave'] and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':
+            # Experimental only.
+            # We known that after a reset the Xiaomi device stay in pairing mode for about 5' ( Heartbeat: 5 * 60 ) // HEARTBEAT)
+            # The idea is during this elapsed to force a serie of leave/pairing, in order to push the device to setup the proprer route
+            # And we will do that only if we receive a ff01/ff02 with RSSI/LQI values
             zdvName = ''
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                 zdvName = self.ListOfDevices[MsgSrcAddr]['ZDeviceName']
@@ -475,7 +479,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             
             if _req_leave:
                 Domoticz.Log("---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr))
-                xiaomi_leave( self, MsgSrcAddr)
+                if int(self.ListOfDevices[MsgSrcAddr]['Heartbeat']) < 60:
+                    xiaomi_leave( self, MsgSrcAddr)
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
