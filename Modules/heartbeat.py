@@ -187,10 +187,9 @@ def processKnownDevices( self, Devices, NWKID ):
                             if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                                 if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
                                     continue
-                            loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                                    %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
-                                
-    
+                            #loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                            #        %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
+
                     loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s and time to request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                     func(self, NWKID )
 
@@ -244,16 +243,20 @@ def processKnownDevices( self, Devices, NWKID ):
             if tmpEp == 'ClusterType': continue
             _idx = tmpEp + '-' + '0000'
             if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                        %(NWKID, tmpEp, '0000', self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
                 if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                     if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
                         _forceReadAttr0000 = False
+                #loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                #        %(NWKID, tmpEp, '0000', self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
 
     if _forceReadAttr0000:
         if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
             loggingHeartbeat( self, 'Debug', 'processKnownDevices - ReadAttributeRequest_0000', NWKID)
             ReadAttributeRequest_0000( self, NWKID)
+        else:
+            loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+
 
     # Checking if we have to change the Power On after On/Off
     _skipPowerOn_OnOff = False
