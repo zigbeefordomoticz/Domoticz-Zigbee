@@ -424,7 +424,15 @@ def ReadAttributeRequest_0006(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
         if iterAttr not in listAttributes:
-            listAttributes.append( iterAttr )
+            # Do not look for 0x4000-4003 attribute in case of Xiaomi
+            if iterAttr in ( '4000', '4001', '4002, ''4003', '4004'):
+                if 'Manufacturer' in self.ListOfDevices[key]:
+                    if self.ListOfDevices[key]['Manufacturer'] == '115f':
+                        continue
+                if 'Manufacturer Name' in self.ListOfDevices[key]:
+                    if self.ListOfDevices[key]['Manufacturer Name'] == 'LUMI':
+                        continue
+                listAttributes.append( iterAttr )
     loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
