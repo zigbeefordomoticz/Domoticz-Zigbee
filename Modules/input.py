@@ -524,7 +524,7 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     Status=MsgData[0:2]
     timestamp = int(time())
 
-    Domoticz.Log("Permit Join status: %s" %Status)
+    Domoticz.Log("Permit Join status: %s" %( Status == '01' ) )
     Domoticz.Log("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
     Domoticz.Log("---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'])
     Domoticz.Log("---> Current time                  : %s" %timestamp)
