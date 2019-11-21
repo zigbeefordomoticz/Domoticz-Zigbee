@@ -650,7 +650,12 @@ def processListOfDevices( self , Devices ):
         if status == "inDB" and not self.busy: 
             processKnownDevices( self , Devices, NWKID )
 
-        if status == "Left":
+        elif status == "Leave":
+            # We should then just reconnect the element
+            # Nothing to do
+            pass
+
+        elif status == "Left":
             # Device has sent a 0x8048 message annoucing its departure (Leave)
             # Most likely we should receive a 0x004d, where the device come back with a new short address
             # For now we will display a message in the log every 1'

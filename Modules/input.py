@@ -1162,11 +1162,17 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
             #Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
             #leaveMgtReJoin( self, sAddr, MsgExtAddress )
-        else:
+        elif self.ListOfDevices[sAddr]['Status'] == 'Left':
             Domoticz.Error("Receiving a leave from %s/%s while device is %s status" %( sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
-            Domoticz.Log("--> Removing: %s" %str(self.ListOfDevices[sAddr]))
-            del self.ListOfDevices[sAddr]
-            del self.IEEE2NWK[MsgExtAddress]
+
+            # This is bugy, as I should then remove the device in Domoticz
+            #Domoticz.Log("--> Removing: %s" %str(self.ListOfDevices[sAddr]))
+            #del self.ListOfDevices[sAddr]
+            #del self.IEEE2NWK[MsgExtAddress]
+
+            # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
+            self.ListOfDevices[sAddr]['Status'] = 'Leave'
+            self.ListOfDevices[sAddr]['Heartbeat'] = 0
 
     return
 
@@ -1699,6 +1705,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
+    MsgRejoinFlag = ''
+
+    if len(MsgData) > 22: # Firmware 3.1b 
+        MsgRejoinFlag = MsgData[22:24]
 
     def decodeMacCapa( maccap ):
 
@@ -1739,7 +1749,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             return
 
     now = time()
-    loggingPairing( self, 'Status', "Device Announced ShortAddr: %s, IEEE: %s " %( MsgSrcAddr, MsgIEEE))
+    loggingPairing( self, 'Status', "Device Announced ShortAddr: %s, IEEE: %s REJOIN: %s" %( MsgSrcAddr, MsgIEEE, MsgRejoinFlag))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry

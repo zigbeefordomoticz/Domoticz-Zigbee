@@ -121,7 +121,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     found = False
 
                 # Make sure this device is valid 
-                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):
+                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
                     found = False
                     continue
 
@@ -155,8 +155,8 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
 
-                if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
-                    Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
+                if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
+                    Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Heartbeat'] = 0
                     WriteDeviceList(self, 0)

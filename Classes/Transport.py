@@ -402,10 +402,24 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
-        elif MsgType == "8011": # APS Ack
-            # We have Payload : data + rssi
-            self._process8011( MsgData )
-            self.F_out(frame)  # Forward the message to plugin for further processing
+        elif MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
+
+            MsgStatus = MsgData[0:2]
+            MsgSrcAddr = MsgData[2:6]
+            MsgSrcEp = MsgData[6:8]
+            MsgClusterId = MsgData[8:12]
+
+            #Domoticz.Log("processFrame - 0x8011 - APS Ack/Nck - Status: %s for %s/%s on cluster: %s" %(MsgStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId))
+
+            if MsgStatus == '00':
+                self.statistics._APSAck += 1
+            elif MsgStatus == 'a7':
+                self.statistics._APSNck += 1
+
+            # Next step is to look after the last command for SrcAddr/SrcEp and if it matches the ClusterId
+
+
+            # For now, I'm not forwaring this message anymore to the above level. 
 
         elif MsgType == "8701": # Router Discovery Confirm
             if self.pluginconf.pluginConf['APSrteError']:
@@ -440,6 +454,7 @@ class ZigateTransport(object):
                 self.lock = False
             else:
                 self.F_out(frame)  # Forward the message to plugin for further processing
+
 
         elif MsgType == "8702": # APS Failure
             #if self._process8702( frame ):
