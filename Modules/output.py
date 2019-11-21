@@ -1822,6 +1822,38 @@ def legrand_fc01( self, nwkid, command, OnOff):
     write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
+def legrand_fc40( self, Mode ):
+    # With the permission of @Thorgal789 who did the all reverse enginnering of this cluster
+
+    CABLE_OUTLET_MODE = { 
+            'Confort': 0x00,
+            'Confort -1' : 0x01,
+            'Confort -2' : 0x02,
+            'Eco': 0x03,
+            'Hors-gel' : 0x04,
+            'Off': 0x05
+            }
+
+    if Mode not in CABLE_OUTLET_MODE:
+        return
+    Hattribute = '0000'
+    data_type = '30' # 8bit Enum
+    Hdata = CABLE_OUTLET_MODE[ Mode ]
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0xfc40
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc40" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Debug', "legrand %s Set Fil pilote mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
+    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
+
 def legrand_dimOnOff( self, OnOff):
     '''
     Call from Web
