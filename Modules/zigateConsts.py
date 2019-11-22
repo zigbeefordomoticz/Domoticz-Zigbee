@@ -73,6 +73,7 @@ ZHA_DATA_TYPE = {
     '''
 
         'nodata': 0x00,  # Bytestream 
+        'data16': 0x09,  # 16bit Data
         'bool'  : 0x10,
         '8bmap' : 0x16,
         'uint8' : 0x20,  # B
