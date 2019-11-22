@@ -20,7 +20,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
+from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages, mainPoweredDevice
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -510,8 +510,8 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
                 loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr)
                 self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     else:
-        loggingInput( self, 'Log', "Receive an APS Nck from %s, let's put the device in default/not reachable" %MsgSrcAddr)
-        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+        if mainPoweredDevice( self, MsgSrcAddr)  and 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            loggingInput( self, 'Log', "Receive an APS Nck from %s, let's put the device in default/not reachable" %MsgSrcAddr)
             if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
                 self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
 
