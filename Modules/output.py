@@ -221,7 +221,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0003': [ 0x0000],
             '0004': [ 0x0000],
             '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
-            '0006': [ 0x0000, 0x4000, 0x4001, 0x4002, 0x4003],
+            '0006': [ 0x0000],
             '0008': [ 0x0000, 0x4000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
@@ -424,15 +424,22 @@ def ReadAttributeRequest_0006(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
         if iterAttr not in listAttributes:
-            # Do not look for 0x4000-4003 attribute in case of Xiaomi
-            if iterAttr in ( '4000', '4001', '4002, ''4003', '4004'):
-                if 'Manufacturer' in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]['Manufacturer'] == '115f':
-                        continue
-                if 'Manufacturer Name' in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]['Manufacturer Name'] == 'LUMI':
-                        continue
-                listAttributes.append( iterAttr )
+            # Need to see how to manage 0x4000 to 0x4003
+            #Seems creating confusion on many devices
+            #if iterAttr in ( '4000', '4001', '4002, ''4003', '4004'):
+            #    if 'Manufacturer' in self.ListOfDevices[key]:
+            #        if self.ListOfDevices[key]['Manufacturer'] == '115f':
+            #            continue
+            #        if self.ListOfDevices[key]['Manufacturer'] == '1021':
+            #            continue
+
+            #    if 'Manufacturer Name' in self.ListOfDevices[key]:
+            #        if self.ListOfDevices[key]['Manufacturer Name'] == 'LUMI':
+            #            continue
+            #        if self.ListOfDevices[key]['Manufacturer Name'] == 'Legrand':
+            #            continue
+
+            listAttributes.append( iterAttr )
     loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
