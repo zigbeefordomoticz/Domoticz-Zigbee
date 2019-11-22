@@ -525,32 +525,47 @@ def Decode8012( self, Devices, MsgData, MsgRSSI ):
 
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
-    MsgLen=len(MsgData)
 
+    MsgLen=len(MsgData)
     Status=MsgData[0:2]
     timestamp = int(time())
 
-    Domoticz.Log("Permit Join status: %s" %( Status == '01' ) )
-    Domoticz.Log("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
-    Domoticz.Log("---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'])
-    Domoticz.Log("---> Current time                  : %s" %timestamp)
-    Domoticz.Log("---> self.Ping['Permit']  (prev)   : %s" %self.Ping['Permit'])
+    loggingInput( self, 'Debug',"Permit Join status: %s" %( Status == '01' ) , 'ffff')
+
+    prev = self.Ping['Permit']
 
     if Status == "00": 
         if ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
             Domoticz.Status("Accepting new Hardware: Disable")
+
+        self.permitTojoin['Duration'] = 0
         self.Ping['Permit'] = 'Off'
+
     elif Status == "01" : 
         if (self.Ping['Permit'] is None) or ( self.permitTojoin['Starttime'] >= timestamp - 240):
             Domoticz.Status("Accepting new Hardware: On")
         self.Ping['Permit'] = 'On'
+
+        if self.permitTojoin['Duration'] == 0:
+            # In case 'Duration' is unknown or set to 0 and then, we have a Permit to Join, we are most-likely in the case of
+            # a restart of the plugin.
+            # We will make the assumption that Duration will be 255. In case that is not the case, during the next Ping, 
+            # we will receive a permit Off
+            self.permitTojoin['Duration'] = 254
+            self.permitTojoin['Starttime'] = timestamp
     else: 
         Domoticz.Error("Decode8014 - Unexpected value "+str(MsgData))
 
-    Domoticz.Log("---> self.Ping['Permit']  (new )   : %s" %self.Ping['Permit'])
+    loggingInput( self, 'Debug',"---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'], 'ffff')
+    loggingInput( self, 'Debug',"---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'], 'ffff')
+    loggingInput( self, 'Debug',"---> Current time                  : %s" %timestamp, 'ffff')
+    loggingInput( self, 'Debug',"---> self.Ping['Permit']  (prev)   : %s" %prev, 'ffff')
+    loggingInput( self, 'Debug',"---> self.Ping['Permit']  (new )   : %s" %self.Ping['Permit'], 'ffff')
+
     self.Ping['TimeStamp'] = int(time())
     self.Ping['Status'] = 'Receive'
-    loggingInput( self, 'Debug', "Ping - received")
+
+    loggingInput( self, 'Debug', "Ping - received", 'ffff')
     return
 
 def Decode8017(self, Devices, MsgData, MsgRSSI) : # 
