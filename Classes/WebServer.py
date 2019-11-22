@@ -1389,7 +1389,8 @@ class WebServer(object):
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 ( 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' not in self.ListOfDevices[x]) and \
                                 '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
-                                '0008' not in  self.ListOfDevices[x]['Ep'][ep]:
+                                '0008' not in  self.ListOfDevices[x]['Ep'][ep] and \
+                                '0102' not in  self.ListOfDevices[x]['Ep'][ep]:
                                 continue
                             if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' in self.ListOfDevices[x]:
                                 if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
