@@ -154,6 +154,11 @@ def processKnownDevices( self, Devices, NWKID ):
                     self.ListOfDevices[NWKID]['ReadAttributes'] = {}
                     self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
 
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+                        # Don't do it for Livolo
+                        continue
+
                 if _forceCommandCluster and not _doReadAttribute:
                     # Force Majeur
                     if ( intHB == 1 and _mainPowered and Cluster in READ_ATTR_COMMANDS ) or \
@@ -190,8 +195,8 @@ def processKnownDevices( self, Devices, NWKID ):
                         if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                             if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
                                 continue
-                        #loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                        #        %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
+                        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                                %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
 
                 loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
