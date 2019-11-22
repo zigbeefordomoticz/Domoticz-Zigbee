@@ -478,8 +478,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 _req_leave = True
             
             if _req_leave:
-                Domoticz.Log("---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr))
                 if int(self.ListOfDevices[MsgSrcAddr]['Heartbeat']) < 60:
+                    Domoticz.Log("---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr))
                     xiaomi_leave( self, MsgSrcAddr)
 
         if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
