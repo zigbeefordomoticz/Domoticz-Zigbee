@@ -182,7 +182,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.022'
+        self.pluginParameters['PluginVersion'] = '4.6.023'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -562,6 +562,7 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
+
         # Ig ZigateIEEE not known, try to get it during the first 10 HB
         if (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
             sendZigateCmd(self, "0009","")
@@ -670,8 +671,13 @@ class BasePlugin:
                 Domoticz.Status("There is a newer Zigate Firmware version available")
                 self.pluginParameters['FirmwareUpdate'] = True
 
+        # Maintain trend statistics
+        self.statistics.addPointforTrendStats( self.HeartbeatCount )
+
+
         if self.transport == 'None':
             return
+
         # Memorize the size of Devices. This is will allow to trigger a backup of live data to file, if the size change.
         prevLenDevices = len(Devices)
 
