@@ -496,18 +496,24 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     MsgSrcEp = MsgData[6:8]
     MsgClusterId = MsgData[8:12]
 
-    loggingInput( self, 'Log', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
+    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus))
 
-    if MsgSrcAddr in self.ListOfDevices and MsgStatus == '00':
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+
+    if MsgStatus == '00':
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
         timeStamped( self, MsgSrcAddr , 0x8011)
         if 'Health' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Live':
                 loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr)
                 self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
-
-        #updSQN( self, MsgSrcAddr, str(MsgSQN) )
+    else:
+        loggingInput( self, 'Log', "Receive an APS Nck from %s, let's put the device in default/not reachable" %MsgSrcAddr)
+        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
+                self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
 
