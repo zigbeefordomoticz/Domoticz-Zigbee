@@ -14,7 +14,7 @@
 HEARTBEAT = 5   
 
 # Number of Max Command to be submitted to Zigate
-MAX_LOAD_ZIGATE = 3  # It is 5 on the master branch
+MAX_LOAD_ZIGATE = 5  
 
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
 
