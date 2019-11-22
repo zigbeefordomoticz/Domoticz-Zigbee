@@ -182,7 +182,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.026'
+        self.pluginParameters['PluginVersion'] = '4.6.027'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -730,7 +730,7 @@ class BasePlugin:
             Domoticz.Log("Ask Zigate Time")
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+        if len(self.ZigateComm.zigateSendingFIFO) > 5:
             busy_ = True
 
         if busy_:
