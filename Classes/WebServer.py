@@ -1034,6 +1034,27 @@ class WebServer(object):
             Statistics['APSAck'] = 100
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 72
+            Statistics['Trend'] = [ 
+                { "Rxps": 0.23, "Txps": 1.06, "_TS": 1 },
+                { "Rxps": 1.23, "Txps": 1.06, "_TS": 2 },
+                { "Rxps": 1.25, "Txps": 1.06, "_TS": 3 },
+                { "Rxps": 1.29, "Txps": 0.06, "_TS": 4 },
+                { "Rxps": 0.25, "Txps": 0.06, "_TS": 5 },
+                { "Rxps": 0.23, "Txps": 0.06, "_TS": 6 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 7 },
+                { "Rxps": 0.22, "Txps": 0.08, "_TS": 8 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 9 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 10 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 11 },
+                { "Rxps": 0.30, "Txps": 0.16, "_TS": 12 },
+                { "Rxps": 0.55, "Txps": 0.16, "_TS": 13 },
+                { "Rxps": 0.22, "Txps": 0.16, "_TS": 14 },
+                { "Rxps": 0.22, "Txps": 0.16, "_TS": 15 },
+                { "Rxps": 0.25, "Txps": 0.16, "_TS": 16 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 17 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 18 },
+                { "Rxps": 0.22, "Txps": 0.06, "_TS": 19 }
+                ]
         else:
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -1047,6 +1068,7 @@ class WebServer(object):
             Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
+            Statistics['Trend'] = self.statistics.TrendStats
 
         Statistics['Uptime'] = int(time() - Statistics['StartTime'])
         Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
@@ -1055,7 +1077,6 @@ class WebServer(object):
         Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
-        Statistics['Trend'] = self.statistics.TrendStats
 
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
