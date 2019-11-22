@@ -19,7 +19,7 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ, LEGRAND_REMOTES
-from Modules.tools import getClusterListforEP, loggingOutput
+from Modules.tools import getClusterListforEP, loggingOutput, mainPoweredDevice
 
 def ZigatePermitToJoin( self, permit ):
 
@@ -954,14 +954,7 @@ def processConfigureReporting( self, NWKID=None ):
 
         
         if NWKID is None:
-            skip = True
-            if 'PowerSource' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['PowerSource'] == 'Main' :
-                    skip = False
-            if 'MacCapa' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['MacCapa'] == '8e':
-                    skip = False
-            if skip:
+            if not mainPoweredDevice(self, key):
                 continue    #  Not Main Powered!
 
             if 'Health' in self.ListOfDevices[key]:

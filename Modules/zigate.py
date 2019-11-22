@@ -4,7 +4,7 @@ from Modules.output import sendZigateCmd
 
 def initLODZigate( self, nwkid, ieee ):
 
-    Domoticz.Log("Initialize Zigate Data Structure %s %s" %(nwkid, ieee))
+    Domoticz.Status("Initialize Zigate Data Structure %s %s" %(nwkid, ieee))
     self.IEEE2NWK[ieee] = nwkid
     self.ListOfDevices[nwkid] = {}
     self.ListOfDevices[nwkid]['version'] = '3'

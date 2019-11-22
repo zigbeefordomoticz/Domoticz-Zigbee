@@ -144,16 +144,16 @@ class ZigateTransport(object):
             self._connection.Connect()
         else:
             Domoticz.Error("openConn _connection note set!")
-        Domoticz.Log("Connection open: %s" %self._connection)
+        Domoticz.Status("Connection open: %s" %self._connection)
 
     def closeConn(self):
-        Domoticz.Log("Connection close: %s" %self._connection)
+        Domoticz.Status("Connection close: %s" %self._connection)
         self._connection.Disconnect()
         del self._connection
         self._connection = None
 
     def reConn(self):
-        Domoticz.Log("Reconnection: %s" %self._connection)
+        Domoticz.Status("Reconnection: %s" %self._connection)
         if self._connection.Connected() :
             Domoticz.Log("--> still connected!")
             self.closeConn()

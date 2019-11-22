@@ -182,7 +182,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.024'
+        self.pluginParameters['PluginVersion'] = '4.6.025'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -193,9 +193,9 @@ class BasePlugin:
 
         Domoticz.Status("Zigate plugin %s-%s started" %(self.pluginParameters['PluginBranch'], self.pluginParameters['PluginVersion']))
 
-        Domoticz.Log("Debug: %s" %int(Parameters["Mode6"]))
+        Domoticz.Status("Debug: %s" %int(Parameters["Mode6"]))
         if Parameters["Mode6"] != "0":
-            Domoticz.Log("Debug Mode: %s" %int(Parameters["Mode6"]))
+            Domoticz.Log("Debug Mode: %s, We do recommend to leave Verbors to None" %int(Parameters["Mode6"]))
             DumpConfigToLog()
 
         self.busy = True

@@ -35,7 +35,7 @@ class DomoticzDB_Preferences:
 
     def _openDB( self):
 
-        Domoticz.Log("Opening %s" %self.database)
+        #Domoticz.Log("Opening %s" %self.database)
         try:
             self.dbConn = sqlite3.connect(self.database)
             self.dbCursor = self.dbConn.cursor()
