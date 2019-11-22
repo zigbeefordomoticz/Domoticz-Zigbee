@@ -1358,7 +1358,7 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     # Left On: 01
     # Right Off: 02
     # Right On: 03
-    Domoticz.Log("Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus))
+    loggingInput( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus), MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
