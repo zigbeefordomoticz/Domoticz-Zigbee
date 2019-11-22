@@ -38,7 +38,7 @@ class TransportStatistics:
 
     def addPointforTrendStats( self, TimeStamp ):
 
-        MAX_TREND_STAT_TABLE = 300
+        MAX_TREND_STAT_TABLE = 120
 
         uptime = int( time() - self._start)
         Rxps = round( self._received / uptime, 2)
