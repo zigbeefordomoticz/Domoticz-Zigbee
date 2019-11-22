@@ -176,7 +176,7 @@ def processKnownDevices( self, Devices, NWKID ):
                             %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), NWKID)
                     if intHB != 0:
                         self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
-                    break # Will do at the next round
+                    continue # Do not break, so we can keep all clusters on the same states
    
                 func = READ_ATTRIBUTES_REQUEST[Cluster][0]
   
