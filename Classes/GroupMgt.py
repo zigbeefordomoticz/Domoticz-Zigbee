@@ -1316,7 +1316,8 @@ class GroupsManagement(object):
                         if  ( iterDev == '0000' or \
                                 ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                               '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
-                             ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
+                             ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] or \
+                               '0102' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                             # As we are looking for Group Membership, we don't know to which Group it could belongs.
                             # XXXX is a special group in the code to be used in that case.
                             if 'GroupMgt' not in  self.ListOfDevices[iterDev]:
@@ -1512,7 +1513,8 @@ class GroupsManagement(object):
                             if  ( iterDev == '0000' or \
                                     ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                                     '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
-                                    ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
+                                    ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] or \
+                                      '0102' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
                                 self.logging( 'Debug', " %s/%s to be added to %s"
                                         %( iterDev, iterEp, iterGrp))
                                 self.TobeAdded.append( ( iterIEEE, iterDev, iterEp, iterGrp ) )

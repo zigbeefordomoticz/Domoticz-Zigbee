@@ -1402,7 +1402,7 @@ class WebServer(object):
                                     if clusterType[widgetID] not in ( 'LvlControl', 'Switch', 'Plug', 
                                         "SwitchAQ2", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR',
                                         'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-                                        'WindowCovering'):
+                                        'VenetianInverted', 'Venetian', 'WindowCovering' ):
                                         continue
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
