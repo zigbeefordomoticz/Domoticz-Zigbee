@@ -1033,7 +1033,6 @@ class WebServer(object):
             Statistics['MaxLoad'] = 7
             Statistics['APS-Ack'] = 100
             Statistics['APS-Nck'] =  0
-            
             Statistics['StartTime'] = int(time())
         else:
             Statistics['CRC'] =self.statistics._crcErrors
@@ -1049,13 +1048,14 @@ class WebServer(object):
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
-            Statistics['Uptime'] = int(time() - Statistics['StartTime'])
-            Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
-            Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
-            Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
-            Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
-            Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
-            Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
+        Statistics['Uptime'] = int(time() - Statistics['StartTime'])
+        Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
+        Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
+        Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
+        Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
+        Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
+        Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
+        Statistics['Trend'] = self.statistics.TrendStats
 
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
