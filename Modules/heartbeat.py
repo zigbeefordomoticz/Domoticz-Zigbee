@@ -205,25 +205,32 @@ def processKnownDevices( self, Devices, NWKID ):
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if self.pluginconf.pluginConf['EnableDimmer']:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
                 else:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
         
-                if self.pluginconf.pluginConf['EnableLedIfOn']:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
+                if self.pluginconf.pluginConf['LegrandFilPilote']:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'FilPilote', 'On')
                 else:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'FilPilote', 'Off')
+
+                if self.pluginconf.pluginConf['EnableLedIfOn']:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
+                else:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
 
                 if self.pluginconf.pluginConf['EnableLedInDark']:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, 'DetectInDark', 'On')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'DetectInDark', 'On')
                 else:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'DetectInDark', 'Off')
 
     # If Attributes not yet discovered, let's do it
     if 'ConfigSource' in self.ListOfDevices[NWKID]:
