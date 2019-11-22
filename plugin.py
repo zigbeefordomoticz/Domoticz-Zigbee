@@ -182,7 +182,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.023'
+        self.pluginParameters['PluginVersion'] = '4.6.024'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -607,9 +607,9 @@ class BasePlugin:
                     int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and\
                     self.transport != 'None':
                 if self.pluginconf.pluginConf['blueLedOnOff']:
-                    zigateBlueLed( self, False)
-                else:
                     zigateBlueLed( self, True)
+                else:
+                    zigateBlueLed( self, False)
 
                 set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 
