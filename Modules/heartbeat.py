@@ -61,7 +61,9 @@ READ_ATTRIBUTES_REQUEST = {
     #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
     }
 
-READ_ATTR_COMMANDS = ( '0006', '0008', '0102' )
+#READ_ATTR_COMMANDS = ( '0006', '0008', '0102' )
+# For now, we just look for On/Off state
+READ_ATTR_COMMANDS = ( '0006', )
 
 # Read Attribute trigger: Every 10"
 # Configure Reporting trigger: Every 15
