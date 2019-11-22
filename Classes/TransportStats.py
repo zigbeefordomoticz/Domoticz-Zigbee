@@ -29,11 +29,25 @@ class TransportStatistics:
         self._reTx = 0
         self._MaxLoad = 0
         self._start = int(time())
+        self.TrendStats = []
         self.pluginconf = pluginconf
 
     # Statistics methods 
     def starttime(self):
         return self._start
+
+    def addPointforTrendStats( self, TimeStamp ):
+
+        MAX_TREND_STAT_TABLE = 300
+
+        uptime = int( time() - self._start)
+        Rxps = round( self._received / uptime, 2)
+        Txps = round( self._sent / uptime, 2)
+        if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
+            del self.TrendStats[0]
+        self.TrendStats.append( { '_TS':TimeStamp, 'Rxps': Rxps,'Txps': Txps} )
+
+
 
     def reTx(self):
         """ return the number of crc Errors """
