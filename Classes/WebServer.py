@@ -1033,7 +1033,7 @@ class WebServer(object):
             Statistics['MaxLoad'] = 7
             Statistics['APSAck'] = 100
             Statistics['APSNck'] =  0
-            Statistics['StartTime'] = int(time())
+            Statistics['StartTime'] = int(time()) - 72
         else:
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
