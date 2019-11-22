@@ -52,9 +52,9 @@ def ZigatePermitToJoin( self, permit ):
             sendZigateCmd(self, "0049","FFFC" + '00' + "00")
         Domoticz.Status("Request Disabling Accepting new Hardware")
 
-    Domoticz.Log("Permit Join set :" )
-    Domoticz.Log("---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'])
-    Domoticz.Log("---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'])
+    loggingOutput( self, 'Debug', "Permit Join set :" , 'ffff' )
+    loggingOutput( self, 'Debug', "---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'], 'ffff' )
+    loggingOutput( self, 'Debug', "---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'], 'ffff' )
 
     # Request Time in order to leave time to get the Zigate in pairing mode
     sendZigateCmd(self, "0017", "")
@@ -1751,12 +1751,13 @@ def legrand_fc01( self, nwkid, command, OnOff):
             'Dimmer switch w/o neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
             'Connected outlet': { 'EnableLedIfOn': '0002' },
             'Shutter switch with neutral': { 'EnableLedIfOn': '0001' },
-            'Micromodule switch': { 'None': 'None' }}
+            'Micromodule switch': { 'None': 'None' },
+            'Cable outlet': { 'FilPilote': '0000' } }
 
     if nwkid not in self.ListOfDevices:
         return
 
-    if command not in ( 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn'):
+    if command not in ( 'FilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn'):
         return
 
     if 'Model' not in self.ListOfDevices[nwkid]:
@@ -1770,6 +1771,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
 
     if 'Legrand' not in self.ListOfDevices[nwkid]:
         self.ListOfDevices[nwkid]['Legrand'] = {}
+        self.ListOfDevices[nwkid]['Legrand']['FilPilote'] = 0
         self.ListOfDevices[nwkid]['Legrand']['EnableLedInDark'] = 0
         self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] = 0
         self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] = 0
@@ -1793,7 +1795,17 @@ def legrand_fc01( self, nwkid, command, OnOff):
         data_type = "09" #  16-bit Data
         if OnOff == 'On': Hdata = '0101' # Enable Dimmer
         elif OnOff == 'Off': Hdata = '0100' # Disable Dimmer
-        else: Hdata = '00'
+        else: Hdata = '0000'
+
+    elif command == 'FilPilote' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
+        if time() < self.ListOfDevices[nwkid]['Legrand']['FilPilote'] + LEGRAND_REFRESH_TIME:
+            return
+
+        self.ListOfDevices[nwkid]['Legrand']['FilPilote'] = int(time())
+        data_type = "09" #  16-bit Data
+        if OnOff == 'On': Hdata = '0001' # Enable 
+        elif OnOff == 'Off': Hdata = '0002' # Disable
+        else: Hdata = '0000'
 
     elif command == 'EnableLedIfOn' and command in LEGRAND_CLUSTER_FC01[ self.ListOfDevices[nwkid]['Model'] ]:
         if time() < self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] + LEGRAND_REFRESH_TIME:
