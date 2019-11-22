@@ -418,8 +418,7 @@ class ZigateTransport(object):
 
             # Next step is to look after the last command for SrcAddr/SrcEp and if it matches the ClusterId
 
-
-            # For now, I'm not forwaring this message anymore to the above level. 
+            self.F_out(frame)  # Forward the message to plugin for further processing
 
         elif MsgType == "8701": # Router Discovery Confirm
             if self.pluginconf.pluginConf['APSrteError']:
