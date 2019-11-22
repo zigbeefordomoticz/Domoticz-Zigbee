@@ -952,7 +952,6 @@ def processConfigureReporting( self, NWKID=None ):
             continue
         if self.ListOfDevices[key]['Status'] != 'inDB': continue
 
-        
         if NWKID is None:
             if not mainPoweredDevice(self, key):
                 continue    #  Not Main Powered!
@@ -970,19 +969,12 @@ def processConfigureReporting( self, NWKID=None ):
 
         loggingOutput( self, 'Debug', "----> configurereporting - processing %s" %key, nwkid=key)
 
-        #if 'Manufacturer' in self.ListOfDevices[key]:
-        #    manufacturer = self.ListOfDevices[key]['Manufacturer']
-        #    manufacturer_spec = "01"
         manufacturer = "0000"
         manufacturer_spec = "00"
         direction = "00"
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            #if NWKID is None:
-            #    identifySend( self, key, Ep, 0)
-            #else:
-            #    identifySend( self, key, Ep, 15)
             loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
             loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
@@ -1036,9 +1028,13 @@ def processConfigureReporting( self, NWKID=None ):
                 # If NWKID is not None, it means that we are asking a ConfigureReporting for a specific device
                 # Which happens on the case of New pairing, or a re-join
                 if self.pluginconf.pluginConf['allowReBindingClusters'] and NWKID is None:
+                    # Correctif 22 Novembre. Delete only for the specific cluster and not the all Set
                     if 'Bind' in self.ListOfDevices[key]:
-                        del self.ListOfDevices[key]['Bind'] 
+                        if Ep in self.ListOfDevices[key]['Bind']:
+                            if cluster in self.ListOfDevices[key]['Bind'][ Ep ]:
+                                del self.ListOfDevices[key]['Bind'][ Ep ][ cluster ]
                     if 'IEEE' in self.ListOfDevices[key]:
+                        loggingOutput( self, 'Log', "---> configureReporting - requested Bind for %s on Cluster: %s" %(key, cluster), nwkid=key)
                         bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     else:
                         Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
@@ -1091,10 +1087,9 @@ def processConfigureReporting( self, NWKID=None ):
                     attrLen += 1
                     attrDisp.append(attr)
 
-                loggingOutput( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
+                loggingOutput( self, 'Log', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
-
 
                 sendZigateCmd(self, "0120", datas )
             # End for Cluster
@@ -1167,7 +1162,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Status'] = ''
 
-        loggingOutput( self, 'Debug', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
+        loggingOutput( self, 'Log', "bindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep) 
         sendZigateCmd(self, "0030", datas )
 

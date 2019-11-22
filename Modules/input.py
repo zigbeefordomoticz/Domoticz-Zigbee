@@ -687,7 +687,7 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgLen=len(MsgData)
-    loggingInput( self, 'Debug', "Decode8030 - Msgdata: %s" %(MsgData))
+    loggingInput( self, 'Debug', "Decode8030 - Msgdata: %s, MsgLen: %s" %(MsgData, MsgLen))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
@@ -710,20 +710,20 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
             return
 
+        if MsgDataStatus != '00':
+            Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
+
+        loggingInput( self, 'Debug', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+
         if nwkid in self.ListOfDevices:
             if 'Bind' in self.ListOfDevices[nwkid]:
-                if MsgSrcEp in self.ListOfDevices[nwkid]['Bind']:
-                    for cluster in self.ListOfDevices[nwkid]['Bind']:
-                        if self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Phase'] == 'requested':
-                            self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Stamp'] = int(time())
-                            self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Phase'] = 'received'
-                            self.ListOfDevices[nwkid]['Bind'][MsgSrcEp][cluster]['Status'] = MsgDataStatus
-                        break
-
-    if MsgDataStatus != '00':
-        Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
-
-    loggingInput( self, 'Debug', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+                for Ep in self.ListOfDevices[nwkid]['Bind']:
+                    for cluster in self.ListOfDevices[nwkid]['Bind'][ Ep ]:
+                        if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
+                            self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
+                            self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
+                            self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
+                            return
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
