@@ -1846,8 +1846,8 @@ def legrand_fc40( self, Mode ):
     Hattribute = '0000'
     data_type = '30' # 8bit Enum
     Hdata = CABLE_OUTLET_MODE[ Mode ]
-    manuf_id = "0000"
-    manuf_spec = "00"
+    manuf_id = "1021" #Legrand Code
+    manuf_spec = "01" # Manuf specific flag
     cluster_id = "%04x" %0xfc40
 
     EPout = '01'
