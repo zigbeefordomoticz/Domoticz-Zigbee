@@ -731,7 +731,8 @@ class BasePlugin:
             Domoticz.Log("Ask Zigate Time")
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm.zigateSendingFIFO) > 5:
+        if len(self.ZigateComm.zigateSendingFIFO) >= 4:
+            # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
 
         if busy_:
