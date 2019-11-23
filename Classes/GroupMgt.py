@@ -706,7 +706,11 @@ class GroupsManagement(object):
                 'ColorControlRGB':3,      # ( 241, 2, 7) - RGB
                 'ColorControlRGBWW':4,    # ( 241, 4, 7) - RGB + cold white + warm white, either RGB or white can be lit
                 'ColorControl':5,         # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
-                'ColorControlFull':5 }    # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
+                'ColorControlFull':5,     # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
+                'Venetian': 10,           # ( 244, 73, 15) # Shade, Venetian
+                'VenetianInverted': 11,   # ( 244, 73, 15)
+                'WindowCovering': 10,     # ( 244, 73, 16)  # Venetian Blind EU 
+                }
 
         WIDGET_STYLE = {
                 'Plug': ( 244, 73, 0 ),
@@ -721,9 +725,11 @@ class GroupsManagement(object):
                 'ColorControlRGBWW': ( 241, 4, 7),
                 'ColorControlFull': ( 241, 7,7 ),
                 }
+
         code = 0
         _ikea_colormode = None
         color_widget = None
+        widget_style = None
         widget = WIDGET_STYLE['ColorControlFull']    # If not match, will create a RGBWWZ widget
 
         for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
@@ -738,10 +744,16 @@ class GroupsManagement(object):
                     devwidget = self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType'][iterClusterType]
                     if code <= WIDGETS[devwidget]:
                         code = WIDGETS[devwidget]
+                        # Blind/ Venetian
+                        if code == 10:
+                            widget = WIDGET_STYLE['Venetian']
+                            widget_style =  'Venetian'
                         if code == 1: 
                             widget = WIDGET_STYLE['Switch']
+                            widget_style =  'Switch'
                         elif code == 2: 
                             widget = WIDGET_STYLE['LvlControl']
+                            widget_style =  'LvlControl'
                         elif code == 3 :
                             if color_widget is None:
                                 if devwidget == 'ColorControlWW': 
@@ -776,11 +788,33 @@ class GroupsManagement(object):
                     %(devNwkid, code, widget, color_widget, _ikea_colormode))
 
 
+        if color_widget:
+            self.ListOfGroups[group_nwkid]['WidgetStyle'] = color_widget
+        elif widget_style:
+            self.ListOfGroups[group_nwkid]['WidgetStyle'] = widget_style
+        else:
+            self.ListOfGroups[group_nwkid]['WidgetStyle'] = ''
+
+        if self.ListOfGroups[group_nwkid]['WidgetStyle'] in  ( 'Switch', 'Plug' ):
+            self.ListOfGroups[group_nwkid]['Cluster'] = '0006'
+
+        elif self.ListOfGroups[group_nwkid]['WidgetStyle'] in ( 'LvlControl' ):
+            self.ListOfGroups[group_nwkid]['Cluster'] = '0008'
+
+        elif self.ListOfGroups[group_nwkid]['WidgetStyle'] in ( 'ColorControlWW', 'ColorControlRGB', 'ColorControlRGB', 'ColorControlRGBWW', 'ColorControl', 'ColorControlFull'):
+            self.ListOfGroups[group_nwkid]['Cluster'] = '0300'
+
+        elif self.ListOfGroups[group_nwkid]['WidgetStyle'] in ( 'Venetian', 'WindowCovering', 'VenetianInverted'):
+            self.ListOfGroups[group_nwkid]['Cluster'] = '0102'
+        else:
+            self.ListOfGroups[group_nwkid]['Cluster'] = ''
+
+
         # This will be used when receiving left/right click , to know if it is RGB or WW
         if 'Tradfri Remote' in self.ListOfGroups[group_nwkid]:
             self.ListOfGroups[group_nwkid]['Tradfri Remote']['Color Mode'] = _ikea_colormode
 
-        self.logging( 'Debug', "_bestGroupWidget - %s Code: %s, Color_Widget: %s, widget: %s" %( group_nwkid, code, color_widget, widget))
+        self.logging( 'Log', "_bestGroupWidget - %s Code: %s, Color_Widget: %s, widget: %s, WidgetStyle: %s" %( group_nwkid, code, color_widget, widget, self.ListOfGroups[group_nwkid]['WidgetStyle']))
         return widget
 
     def updateDomoGroupDevice( self, group_nwkid):
@@ -1008,6 +1042,36 @@ class GroupsManagement(object):
 
         EPin = EPout = '01'
 
+        if 'Cluster' in self.ListOfGroups[ nwkid ]:
+            # new fashon
+           if self.ListOfGroups[ nwkid ]['Cluster'] == '0102': # Venetian store
+                zigate_cmd = "00FA"
+                if Command == 'Off' :
+                    zigate_param = '00'
+                    nValue = 1
+                    sValue = 'Off'
+                    self._updateDeviceListAttribute( nwkid, '0102', zigate_param)
+
+                if Command == 'On' :
+                    zigate_param = '01'
+                    nValue = 0
+                    sValue = 'Off'
+                    self._updateDeviceListAttribute( nwkid, '0102', zigate_param)
+
+                if Command == 'Stop':
+                    zigate_param = '02'
+                    nValue = 2
+                    sValue = '50'
+                    self._updateDeviceListAttribute( nwkid, '0102', zigate_param)
+
+                self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+                self._updateDeviceListAttribute( nwkid, '0102', zigate_param)
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                self.logging( 'Debug', "Group Command: %s" %datas)
+                self.ZigateComm.sendData( zigate_cmd, datas)
+                return
+
+        # Old Fashon
         if Command == 'Off' :
             zigate_cmd = "0092"
             zigate_param = '00'
@@ -1028,11 +1092,13 @@ class GroupsManagement(object):
             sValue = 'On'
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             self._updateDeviceListAttribute( nwkid, '0006', '01')
+
             self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
+
 
         if Command == 'Set Level':
             # Level: % value of move
@@ -1045,11 +1111,11 @@ class GroupsManagement(object):
             zigate_param = OnOff + value + "0010"
             nValue = '1'
             sValue = str(Level)
+            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
+            self._updateDeviceListAttribute( nwkid, '0008', value)
             datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
-            self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
-            self._updateDeviceListAttribute( nwkid, '0008', value)
             self.updateDomoGroupDevice( nwkid)
 
         if Command == "Set Color" :
