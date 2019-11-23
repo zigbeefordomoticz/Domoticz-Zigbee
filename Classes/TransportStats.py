@@ -27,6 +27,7 @@ class TransportStatistics:
         self._clusterOK = 0
         self._clusterKO = 0
         self._reTx = 0
+        self._Load = 0
         self._MaxLoad = 0
         self._start = int(time())
         self.TrendStats = []
@@ -45,9 +46,7 @@ class TransportStatistics:
         Txps = round( self._sent / uptime, 2)
         if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
             del self.TrendStats[0]
-        self.TrendStats.append( { '_TS':TimeStamp, 'Rxps': Rxps,'Txps': Txps} )
-
-
+        self.TrendStats.append( { "_TS":TimeStamp, "Rxps": Rxps,"Txps": Txps, "Load": self._Load} )
 
     def reTx(self):
         """ return the number of crc Errors """

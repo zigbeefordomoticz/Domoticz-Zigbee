@@ -293,6 +293,8 @@ class ZigateTransport(object):
         self.zigateSendingFIFO.append((cmd, data, timestamp, reTransmit))
         if len(self.zigateSendingFIFO) > self.statistics._MaxLoad:
             self.statistics._MaxLoad = len(self.zigateSendingFIFO)
+        self.statistics._Load = len(self.zigateSendingFIFO)
+
         #self._printSendQueue()
 
     def _addCmdToWaitQueue(self, cmd, data, reTransmit=0):

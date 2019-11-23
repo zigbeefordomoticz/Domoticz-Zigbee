@@ -671,8 +671,6 @@ class BasePlugin:
                 Domoticz.Status("There is a newer Zigate Firmware version available")
                 self.pluginParameters['FirmwareUpdate'] = True
 
-        # Maintain trend statistics
-        self.statistics.addPointforTrendStats( self.HeartbeatCount )
 
 
         if self.transport == 'None':
@@ -702,6 +700,9 @@ class BasePlugin:
             self.PluginHealth['Flag'] = 2
             self.PluginHealth['Txt'] = 'Enrollment in Progress'
             self.adminWidgets.updateStatusWidget( Devices, 'Enrollment')
+            # Maintain trend statistics
+            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+            self.statistics.addPointforTrendStats( self.HeartbeatCount )
             return
 
         # Group Management
@@ -747,6 +748,9 @@ class BasePlugin:
             self.adminWidgets.updateStatusWidget( Devices, 'Ready')
 
         self.busy = busy_
+        # Maintain trend statistics
+        self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+        self.statistics.addPointforTrendStats( self.HeartbeatCount )
         return True
 
 
