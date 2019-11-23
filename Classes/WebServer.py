@@ -1050,7 +1050,27 @@ class WebServer(object):
             Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
-            Statistics['Trend'] = self.statistics.TrendStats
+
+            Statistics['Trend'] = []
+            _nbitems = len(self.statistics.TrendStats)
+            
+            minTS = 0
+            if  len(self.statistics.TrendStats) == 120:
+                # Identify the smallest TS (we cannot assumed the list is sorted)
+                minTS = 120
+                for item in self.statistics.TrendStats:
+                    if item['_TS'] < minTS:
+                        minTS = item['_TS']
+                minTS -= 1 # To correct as the dataset start at 1 (and not 0)
+
+            # Renum
+            for item in self.statistics.TrendStats:
+                _TS = item['_TS'] 
+                if _nbitems >= 120:
+                    # Rolling window in progress
+                    _TS -= minTS
+
+                Statistics['Trend'].append( {"_TS":_TS, "Rxps": item['Rxps'],"Txps": item['Txps'], "Load": item['Load']} )
 
         Statistics['Uptime'] = int(time() - Statistics['StartTime'])
         Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
