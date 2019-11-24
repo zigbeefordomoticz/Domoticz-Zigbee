@@ -1726,7 +1726,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
-    MsgRejoinFlag = ''
+    MsgRejoinFlag = 'XX'
 
     if len(MsgData) > 22: # Firmware 3.1b 
         MsgRejoinFlag = MsgData[22:24]
@@ -1763,6 +1763,14 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             MacCapa.append('NwkAddr need to be allocated')
         return MacCapa
 
+    REJOIN_NETWORK = {
+            '00': '0x00 - join a network through association',
+            '01': '0x01 - joining directly or rejoining the network using the orphaning procedure',
+            '02': '0x02 - joining the network using the NWK rejoining procedure.',
+            '03': '0x03 - change the operational network channel to that identified in the ScanChannels parameter.',
+            'XX' : '',
+            }
+
     if MsgSrcAddr in self.ListOfDevices:
         if self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
             # Let's skip it has this is a duplicate message from the device
@@ -1770,7 +1778,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             return
 
     now = time()
-    loggingPairing( self, 'Status', "Device Announced ShortAddr: %s, IEEE: %s REJOIN: %s" %( MsgSrcAddr, MsgIEEE, MsgRejoinFlag))
+    if MsgRejoinFlag not in REJOIN_NETWORK:
+        Domoticz.Error("Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %MsgRejoinFlag)
+        MsgRejoinFlag = '00'
+    loggingPairing( self, 'Status', "Device Announced ShortAddr: %s, IEEE: %s REJOIN: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ]))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
