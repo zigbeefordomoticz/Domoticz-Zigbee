@@ -750,8 +750,11 @@ class BasePlugin:
 
         self.busy = busy_
         # Maintain trend statistics
-        self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
+        self.statistics._Load = 0
+        if len(self.ZigateComm.zigateSendingFIFO) > 2:
+            self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
+
         return True
 
 
