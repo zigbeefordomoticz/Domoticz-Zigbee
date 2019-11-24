@@ -85,7 +85,7 @@ from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
 from Modules.domoticz import ResetDevice
 from Modules.command import mgtCommand
-from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 
@@ -731,7 +731,7 @@ class BasePlugin:
             Domoticz.Log("Ask Zigate Time")
             sendZigateCmd(self,"0017", "")
 
-        if len(self.ZigateComm.zigateSendingFIFO) >= 4:
+        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
             # This mean that 4 commands are on the Queue to be executed by Zigate.
             busy_ = True
 
@@ -751,7 +751,7 @@ class BasePlugin:
         self.busy = busy_
         # Maintain trend statistics
         self.statistics._Load = 0
-        if len(self.ZigateComm.zigateSendingFIFO) > 2:
+        if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:
             self.statistics._Load = len(self.ZigateComm.zigateSendingFIFO)
         self.statistics.addPointforTrendStats( self.HeartbeatCount )
 

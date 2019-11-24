@@ -14,8 +14,13 @@
 HEARTBEAT = 5   
 
 # Number of Max Command to be submitted to Zigate
-MAX_LOAD_ZIGATE = 5  
+MAX_LOAD_ZIGATE = 5
 
+# Threshold before switching to Busy state. If we have or more than MAX_FOR_ZIGATE_BUZY in the FIFO queue
+MAX_FOR_ZIGATE_BUZY = 4
+
+
+# If there is a need to read more than 4 Attributes at a time, then breakdown the request into several.
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
 
 CERTIFICATION = {
