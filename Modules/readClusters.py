@@ -1122,6 +1122,22 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Command counter: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, int(_Xiaomi_Value,16)))
             else:
                 loggingCluster( self, 'Log', "ReadCluster - %s/%s Command counter: %s" %(MsgSrcAddr, MsgSrcEp, int(_Xiaomi_Value,16)))
+        elif _Xiaomi_code == '01':
+            # Un plug / Power outage
+            # When unplugin : 01/6545/00
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Power Outage: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+            else:
+                loggingCluster( self, 'Log', "ReadCluster - %s/%s Power Outage: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+
+        elif _Xiaomi_code == '02':
+            # Plug On
+            # When puting the Plug on -> 02/0000/00
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Power On: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+            else:
+                loggingCluster( self, 'Log', "ReadCluster - %s/%s Power On: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+
         elif _Xiaomi_code == '03':
             # Physical action
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
