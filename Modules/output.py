@@ -424,22 +424,14 @@ def ReadAttributeRequest_0006(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
         if iterAttr not in listAttributes:
-            # Need to see how to manage 0x4000 to 0x4003
-            #Seems creating confusion on many devices
-            #if iterAttr in ( '4000', '4001', '4002, ''4003', '4004'):
-            #    if 'Manufacturer' in self.ListOfDevices[key]:
-            #        if self.ListOfDevices[key]['Manufacturer'] == '115f':
-            #            continue
-            #        if self.ListOfDevices[key]['Manufacturer'] == '1021':
-            #            continue
-
-            #    if 'Manufacturer Name' in self.ListOfDevices[key]:
-            #        if self.ListOfDevices[key]['Manufacturer Name'] == 'LUMI':
-            #            continue
-            #        if self.ListOfDevices[key]['Manufacturer Name'] == 'Legrand':
-            #            continue
-
             listAttributes.append( iterAttr )
+
+    # Might be better to have a specific request for such matter, but let see later
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] in ( 'RWL021', 'SML001', 'SML002', 'LCT001', 'LTW013', 'GL-C-009' ):
+            Domoticz.Log("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
+            listAttributes.append ( 0x4003 )
+
     loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
 
@@ -567,6 +559,9 @@ def ReadAttributeRequest_0402(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
         if iterAttr not in listAttributes:
+            if 'Model' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
+                    continue
             listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Temperature info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
@@ -584,6 +579,9 @@ def ReadAttributeRequest_0403(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
         if iterAttr not in listAttributes:
+            if 'Model' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
+                    continue
             listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
@@ -601,6 +599,9 @@ def ReadAttributeRequest_0405(self, key):
     listAttributes = []
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
         if iterAttr not in listAttributes:
+            if 'Model' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
+                    continue
             listAttributes.append( iterAttr )
 
     loggingOutput( self, 'Debug', "Humidity info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
@@ -620,8 +621,10 @@ def ReadAttributeRequest_0406(self, key):
          #listAttributes.append(0x0033)
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0406'):
         if iterAttr not in listAttributes:
+            if 'Model' in self.ListOfDevices[key]:
+                if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
+                    continue
             listAttributes.append( iterAttr )
-
 
     loggingOutput( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0406", listAttributes)
@@ -990,9 +993,14 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
                 if cluster not in ATTRIBUTESbyCLUSTERS:
                     continue
-                if cluster == '0500' and self.ListOfDevices[key]['Model'] == '3AFE14010402000D': # Do not Configure Reporting the Konke Motion sensor
-                    continue
-
+                if 'Model' in self.ListOfDevices[key]:
+                    if self.ListOfDevices[key]['Model'] in (  '3AFE14010402000D' ):
+                        if cluster == '0500': # Do not Configure Reporting the Konke Motion sensor
+                            continue
+                    if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
+                        if cluster in ( '0402', '0403', '0405', '0406'):
+                            continue
+                
                 loggingOutput( self, 'Debug', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}

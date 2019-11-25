@@ -265,7 +265,7 @@ def processKnownDevices( self, Devices, NWKID ):
                         continue
                     if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
                         continue
-                    loggingHeartbeat( self, 'Debug', "-- - Change PowerOn OnOff for device: %s from %s -> %s" \
+                    loggingHeartbeat( self, 'Log', "-- - Change PowerOn OnOff for device: %s from %s -> %s" \
                             %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['PowerOn_OnOff']))
                     setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['PowerOn_OnOff'] )
 
