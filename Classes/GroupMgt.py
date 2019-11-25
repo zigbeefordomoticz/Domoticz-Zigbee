@@ -709,7 +709,8 @@ class GroupsManagement(object):
                 'ColorControlFull':5,     # ( 241, 7, 7) - Like RGBWW, but allows combining RGB and white
                 'Venetian': 10,           # ( 244, 73, 15) # Shade, Venetian
                 'VenetianInverted': 11,   # ( 244, 73, 15)
-                'WindowCovering': 10,     # ( 244, 73, 16)  # Venetian Blind EU 
+                'WindowCovering': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
+                'BlindPercentInverted': 12,     # ( 244, 73, 16)  # Venetian Blind EU 
                 }
 
         WIDGET_STYLE = {
@@ -748,12 +749,27 @@ class GroupsManagement(object):
                         if code == 10:
                             widget = WIDGET_STYLE['Venetian']
                             widget_style =  'Venetian'
+                        if code == 12:
+                            widget = WIDGET_STYLE['WindowCovering']
+                            widget_style =  'WindowCovering'
                         if code == 1: 
                             widget = WIDGET_STYLE['Switch']
                             widget_style =  'Switch'
                         elif code == 2: 
-                            widget = WIDGET_STYLE['LvlControl']
-                            widget_style =  'LvlControl'
+                            # Let's check if this is not a Blind Percentage Inverted
+                            for _dev in self.Devices:
+                                if self.Devices[_dev].ID == int(iterClusterType):
+                                    if self.Devices[ _dev ].SwitchType == 16: # BlindPercentInverted
+                                        widget = WIDGET_STYLE['BlindPercentInverted']
+                                        widget_style =  'BlindPercentInverted'
+                                    else:
+                                        widget = WIDGET_STYLE['LvlControl']
+                                        widget_style =  'LvlControl'
+                                    break
+                            else:
+                                Domoticz.Error ('Device not found')
+                                widget = WIDGET_STYLE['LvlControl']
+                                widget_style =  'LvlControl'
                         elif code == 3 :
                             if color_widget is None:
                                 if devwidget == 'ColorControlWW': 
