@@ -938,13 +938,14 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == DeviceType == "Voltage":  # Volts
-                nValue = float(value)
+                nValue = round(float(value),2)
                 sValue = "%s;%s" % (nValue, nValue)
                 loggingWidget( self, "Debug", "MajDomoDevice Voltage : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
             if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint' and Attribute_ in ( '4003', '0012'):
-                nValue = float(value)
+                nValue = round(float(value),2)
+
                 sValue = "%s;%s" % (nValue, nValue)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
