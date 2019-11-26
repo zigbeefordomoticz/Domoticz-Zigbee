@@ -122,7 +122,7 @@ class OTAManagement(object):
 
         # From https://github.com/doudz
         if ota_image.startswith(b'NGIS'):
-            self.logging( 'Log', "ota_decode_new_image - Signed Firmware ...")
+            self.logging( 'Debug', "ota_decode_new_image - Signed Firmware ...")
             # IKEA Signed Firmware, let's remove it
             header_end = struct.unpack('<I', ota_image[0x10:0x14])[0]
             footer_pos = struct.unpack('<I', ota_image[0x18:0x1C])[0]
