@@ -686,23 +686,22 @@ def Decode802C(self, Devices, MsgData, MsgRSSI) : # User Descriptor Response
     return
 
 def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
+
     MsgLen=len(MsgData)
     loggingInput( self, 'Debug', "Decode8030 - Msgdata: %s, MsgLen: %s" %(MsgData, MsgLen))
 
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
 
-    if MsgLen > 4:
-        # Firmware 3.1a
-        MsgSrcEp = MsgData[4:6]
-        MsgSrcAddrMode = MsgData[6:8]
+    if MsgLen > 4: # Final Firmware 3.1b
+        MsgSrcAddrMode = MsgData[4:6]
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
-            MsgSrcAddr=MsgData[8:12]
+            MsgSrcAddr=MsgData[6:10]
             nwkid = MsgSrcAddr
-            loggingInput( self, 'Debug', "Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp), MsgSrcAddr)
+            loggingInput( self, 'Log', "Decode8030 - Bind reponse for %s" %(MsgSrcAddr) , MsgSrcAddr)
         elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
-            MsgSrcAddr=MsgData[8:24]
-            loggingInput( self, 'Debug', "Decode8030 - Bind reponse for %s/%s" %(MsgSrcAddr, MsgSrcEp))
+            MsgSrcAddr=MsgData[6:14]
+            loggingInput( self, 'Log', "Decode8030 - Bind reponse for %s" %(MsgSrcAddr))
             if MsgSrcAddr in self.IEEE2NWK:
                 nwkid = self.IEEE2NWK[MsgSrcAddr]
                 Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
@@ -710,10 +709,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
             return
 
-        if MsgDataStatus != '00':
-            Domoticz.Log("Decode8030 - Bind response SQN: %s status [%s] - %s" %(MsgSequenceNumber ,MsgDataStatus, DisplayStatusCode(MsgDataStatus)) )
-
-        loggingInput( self, 'Debug', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+        loggingInput( self, 'Log', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
 
         if nwkid in self.ListOfDevices:
             if 'Bind' in self.ListOfDevices[nwkid]:
@@ -723,6 +719,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                             self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
                             self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
                             self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
+                            Domoticz.Log("--> Seting %s" %cluster)
                             return
     return
 
