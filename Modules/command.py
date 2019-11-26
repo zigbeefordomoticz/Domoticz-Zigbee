@@ -208,9 +208,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if DeviceType == 'ThermoSetpoint':
+
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             value = int(float(Level)*100)
             thermostat_Setpoint( self, NWKID, value )
+            Level = round(float(Level),2)
+            # Normalize SetPoint value with 2 digits
+            Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
+            Level = Round( float(Level), 2 )
+
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
