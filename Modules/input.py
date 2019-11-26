@@ -693,7 +693,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
     MsgSequenceNumber=MsgData[0:2]
     MsgDataStatus=MsgData[2:4]
 
-    if MsgLen > 4: # Final Firmware 3.1b
+    if MsgLen == 14: # Final Firmware 3.1b
         MsgSrcAddrMode = MsgData[4:6]
         if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
             MsgSrcAddr=MsgData[6:10]
@@ -707,20 +707,37 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                 Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
         else:
             Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
+
+    elif MsgLen == 16:
+        MsgSrcAddrMode = MsgData[6:8]
+        if int(MsgSrcAddrMode,16) == ADDRESS_MODE['short']:
+            MsgSrcAddr=MsgData[8:12]
+            nwkid = MsgSrcAddr
+            loggingInput( self, 'Log', "Decode8030 - Bind reponse for %s" %(MsgSrcAddr) , MsgSrcAddr)
+        elif int(MsgSrcAddrMode,16) == ADDRESS_MODE['ieee']:
+            MsgSrcAddr=MsgData[8:16]
+            loggingInput( self, 'Log', "Decode8030 - Bind reponse for %s" %(MsgSrcAddr))
+            if MsgSrcAddr in self.IEEE2NWK:
+                nwkid = self.IEEE2NWK[MsgSrcAddr]
+                Domoticz.Error("Decode8030 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
+        else:
+            Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
             return
+    else:
+        return
 
-        loggingInput( self, 'Log', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
+    loggingInput( self, 'Log', "Decode8030 - Bind response, Sequence number : " + MsgSequenceNumber + " Status : " + DisplayStatusCode( MsgDataStatus ))
 
-        if nwkid in self.ListOfDevices:
-            if 'Bind' in self.ListOfDevices[nwkid]:
-                for Ep in self.ListOfDevices[nwkid]['Bind']:
-                    for cluster in self.ListOfDevices[nwkid]['Bind'][ Ep ]:
-                        if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
-                            self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
-                            self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
-                            self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
-                            Domoticz.Log("--> Seting %s" %cluster)
-                            return
+    if nwkid in self.ListOfDevices:
+        if 'Bind' in self.ListOfDevices[nwkid]:
+            for Ep in self.ListOfDevices[nwkid]['Bind']:
+                for cluster in self.ListOfDevices[nwkid]['Bind'][ Ep ]:
+                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
+                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
+                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
+                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
+                        Domoticz.Log("--> Seting %s" %cluster)
+                        return
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
