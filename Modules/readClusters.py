@@ -543,6 +543,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403']['0000'] = sPress
 
         if sOnOff != '':
+            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] != 'lumi.sensor_wleak.aq1':
+                    # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
+                    return
+
             loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
             if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -1141,9 +1146,9 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         elif _Xiaomi_code == '03':
             # Physical action
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Physical Action : %s (please report to @pipiche)" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Physical Action : %s %s " %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:6], MsgClusterData[6:8]))
             else:
-                loggingCluster( self, 'Log', "ReadCluster - %s/%s Physical Action : %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+                loggingCluster( self, 'Log', "ReadCluster - %s/%s Physical Action : %s %s " %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:6], MsgClusterData[6:8]))
         else:
             Domoticz.Error("ReadCluster - ClusterId=0006 - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData))
 
