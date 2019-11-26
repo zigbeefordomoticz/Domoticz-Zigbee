@@ -1556,26 +1556,26 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0x4003
     data_type = "29" # Int16
-    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=saddr)
+    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=saddr)
+    loggingOutput( self, 'Debug', "setpoint: %s" %setpoint, nwkid=key)
     Hdata = "%04x" %setpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=saddr)
+    loggingOutput( self, 'Debug', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
 def thermostat_Setpoint( self, key, setpoint):
 
-    #if 'Model' in self.ListOfDevices[key]:
-    #    if self.ListOfDevices['Model'] != {}:
-    #        if self.ListOfDevices['Model'] == 'SPZB0001':
-    #            thermostat_Setpoint_SPZB( self, key, setpoint)
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] != {}:
+            if self.ListOfDevices[key]['Model'] == 'SPZB0001':
+                thermostat_Setpoint_SPZB( self, key, setpoint)
 
     manuf_id = "0000"
     manuf_spec = "00"
@@ -1594,6 +1594,9 @@ def thermostat_Setpoint( self, key, setpoint):
     loggingOutput( self, 'Debug', "thermostat_Setpoint - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+    ReadAttributeRequest_0201(self, key)
+
 
 def thermostat_eurotronic_hostflag( self, key, action):
 
