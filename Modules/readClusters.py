@@ -1791,6 +1791,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0402',ValueTemp)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
+        # Specific as it is the Local Temp. So we save it under cluster 0x0402
         if '0402' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = {}
         if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] , dict):
@@ -1829,7 +1830,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
-        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0009':   #  HVAC System Type Config
@@ -1848,10 +1849,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value)/100,2)
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
         if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
             # In case it is not a Eurotronic, let's Update heatPoint
+            # As Eurotronics will rely on 0x4003 attributes
             loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
 
@@ -1871,13 +1873,13 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0025':   # Scheduler state
         # Bit #0 => disable/enable Scheduler
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Scheduler state:  %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0201 - Scheduler state:  %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0029':   # Heating operation state
         # bit #0 heat On/Off state
         # bit #1 cool on/off state
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Heating operation state:  %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating operation state:  %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '001b': # Control Sequence Operation
@@ -1902,7 +1904,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 0x07: 'Fan only'  }
 
         if int(value) in SYSTEM_MODE:
-            loggingCluster( self, 'Log', "ReadCluster 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]), MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID )
         else:
             loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 1C: %s" %value, MsgSrcAddr)
