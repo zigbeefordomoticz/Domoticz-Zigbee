@@ -994,12 +994,13 @@ def processConfigureReporting( self, NWKID=None ):
                 if cluster not in ATTRIBUTESbyCLUSTERS:
                     continue
                 if 'Model' in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]['Model'] in (  '3AFE14010402000D' ):
-                        if cluster == '0500': # Do not Configure Reporting the Konke Motion sensor
-                            continue
-                    if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
-                        if cluster in ( '0402', '0403', '0405', '0406'):
-                            continue
+                    if  self.ListOfDevices[key]['Model'] != {}:
+                        if self.ListOfDevices[key]['Model'] in (  '3AFE14010402000D' ):
+                            if cluster == '0500': # Do not Configure Reporting the Konke Motion sensor
+                                continue
+                        if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
+                            if cluster in ( '0402', '0403', '0405', '0406'):
+                                continue
                 
                 loggingOutput( self, 'Debug', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
@@ -1552,6 +1553,12 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
 
 def thermostat_Setpoint( self, key, setpoint):
+
+    #if 'Model' in self.ListOfDevices[key]:
+    #    if self.ListOfDevices['Model'] != {}:
+    #        if self.ListOfDevices['Model'] == 'SPZB0001':
+    #            thermostat_Setpoint_SPZB( self, key, setpoint)
+    #            return
 
     manuf_id = "0000"
     manuf_spec = "00"
