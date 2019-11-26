@@ -405,6 +405,30 @@ def ReadAttributeRequest_0001(self, key):
     loggingOutput( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "0001", listAttributes )
 
+def ReadAttributeRequest_0006_400x(self, key):
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
+
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] != {}:
+            if self.ListOfDevices[key]['Model'] == 'TI0001':
+                loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 - Skip Key: %s for Livolo Switch" %key, nwkid=key)
+                return
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] in ( 'RWL021', 'SML001', 'SML002', 'LCT001', 'LTW013' ):
+            Domoticz.Log("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
+            listAttributes.append ( 0x4003 )
+
+    loggingOutput( self, 'Debug', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
+
+
 def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
 
@@ -425,12 +449,6 @@ def ReadAttributeRequest_0006(self, key):
     for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
         if iterAttr not in listAttributes:
             listAttributes.append( iterAttr )
-
-    # Might be better to have a specific request for such matter, but let see later
-    if 'Model' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['Model'] in ( 'RWL021', 'SML001', 'SML002', 'LCT001', 'LTW013', 'GL-C-009' ):
-            Domoticz.Log("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
-            listAttributes.append ( 0x4003 )
 
     loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0006", listAttributes)
@@ -783,7 +801,7 @@ def setPowerOn_OnOff( self, key, OnOffMode=0xff):
                 data = "%02x" %0xff
             loggingOutput( self, 'Debug', "set_PowerOn_OnOff for %s/%s - OnOff: %s" %(key, EPout, OnOffMode), key)
             write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
-            ReadAttributeRequest_0006(self, key)
+            ReadAttributeRequest_0006_400x( self, key)
 
         #if '0008' in self.ListOfDevices[key]['Ep'][tmpEp]:
         #    EPout=tmpEp
@@ -1547,7 +1565,7 @@ def thermostat_Setpoint_SPZB(  self, key, setpoint):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Debug', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Log', "thermostat_Setpoint_SPZB - for %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=saddr)
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
@@ -1558,7 +1576,6 @@ def thermostat_Setpoint( self, key, setpoint):
     #    if self.ListOfDevices['Model'] != {}:
     #        if self.ListOfDevices['Model'] == 'SPZB0001':
     #            thermostat_Setpoint_SPZB( self, key, setpoint)
-    #            return
 
     manuf_id = "0000"
     manuf_spec = "00"
