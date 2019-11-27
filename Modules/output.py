@@ -1717,6 +1717,8 @@ def ReadAttributeRequest_0201(self, key):
         listAttributes.append(0x0406)
         listAttributes.append(0x0408)   
         listAttributes.append(0x0409)  
+    elif str(self.ListOfDevices[key]['Model']).find('EH-ZB-RTS') == 0:
+        listAttributes.append(0xe010)  
 
     if len(listAttributes) > 0:
         loggingOutput( self, 'Debug', "Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes), nwkid=key)
