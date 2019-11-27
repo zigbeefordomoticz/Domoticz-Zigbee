@@ -1120,37 +1120,27 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Debug', "ReadCluster - Feedback from device %s/%s Attribute 0xf000 value: %s-%s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, value))
         _Xiaomi_code = MsgClusterData[0:2]
+        _Xiaomi_sAddr = MsgClusterData[2:6]
         _Xiaomi_Value = MsgClusterData[6:8]
-        if _Xiaomi_code == '07':
-            # The last 2 Digits , count the number of command received by the device
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Command counter: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, int(_Xiaomi_Value,16)))
-            else:
-                loggingCluster( self, 'Log', "ReadCluster - %s/%s Command counter: %s" %(MsgSrcAddr, MsgSrcEp, int(_Xiaomi_Value,16)))
-        elif _Xiaomi_code == '01':
-            # Un plug / Power outage
-            # When unplugin : 01/6545/00
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Power Outage: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
-            else:
-                loggingCluster( self, 'Log', "ReadCluster - %s/%s Power Outage: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
 
-        elif _Xiaomi_code == '02':
-            # Plug On
-            # When puting the Plug on -> 02/0000/00
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Power On: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
-            else:
-                loggingCluster( self, 'Log', "ReadCluster - %s/%s Power On: %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:8]))
+        XIAOMI_CODE = { '01': 'Power outage',
+                '02': 'Power On',
+                '03': 'Physical Action',
+                '04': '04 (please report to @pipiche)',
+                '05': '05 (please report to @pipiche)',
+                '06': '06 (please report to @pipiche)',
+                '07': 'Command count',
+                '0c': '0c (please report to @pipiche)',
+                }
 
-        elif _Xiaomi_code == '03':
-            # Physical action
+        if _Xiaomi_code in XIAOMI_CODE:
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s Physical Action : %s %s " %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, MsgClusterData[2:6], MsgClusterData[6:8]))
+                loggingCluster( self, 'Log', "ReadCluster - %s %s/%s %s: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[ _Xiaomi_code ], int(_Xiaomi_Value,16)), MsgSrcAddr)
             else:
-                loggingCluster( self, 'Log', "ReadCluster - %s/%s Physical Action : %s %s " %(MsgSrcAddr, MsgSrcEp, MsgClusterData[2:6], MsgClusterData[6:8]))
+                loggingCluster( self, 'Log', "ReadCluster - %s/%s %s: %s" %(MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[ _Xiaomi_code ], int(_Xiaomi_Value,16)), MsgSrcAddr)
+
         else:
-            Domoticz.Error("ReadCluster - ClusterId=0006 - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData))
+            Domoticz.Error("ReadCluster - ClusterId=0006 - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData), MsgSrcAddr)
 
 
     elif MsgAttrID == 'fffd':

@@ -23,6 +23,7 @@ from Modules.output import  sendZigateCmd,  \
         legrand_fc01, \
         setPowerOn_OnOff, \
         scene_membership_request, \
+        schneider_thermostat, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
@@ -520,11 +521,21 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer'] == '1021':
                     legrand = True
+            schneider = False
+            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Schneider Electric':
+                    schneider = True
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
+                    schneider = True
 
             # Binding devices
             cluster_to_bind = CLUSTERS_LIST
 
             if legrand:
+                if '0003' not in cluster_to_bind:
+                    cluster_to_bind.append( '0003' )
+            if schneider:
                 if '0003' not in cluster_to_bind:
                     cluster_to_bind.append( '0003' )
 
@@ -562,6 +573,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
+
+            # In case of Schneider Thermostat, let's do the Write Attribute now.
+            if 'Model' in self.ListOfDevices[ NWKID ]:
+                if self.ListOfDevices[ NWKID ]['Model'] == 'EH-ZB-RTS':
+                    schneider_thermostat( self, NWKID )
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 

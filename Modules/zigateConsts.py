@@ -439,6 +439,8 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0400',            # Illuminance Measurement
         '0402',            # Temperature Measurement
         '0001',            # Power Configuration
+        '0019',
+        '0009',
         '000f',            # Binary Input (Basic)
         '0102',            # Windows Covering / SHutter
         '0403',            # Measurement: Pression atmospherique

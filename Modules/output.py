@@ -216,7 +216,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
     ATTRIBUTES = { 
-            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000],
+            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xE000, 0xF000],
             '0001': [ 0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0035 ],
             '0003': [ 0x0000],
             '0004': [ 0x0000],
@@ -1770,6 +1770,32 @@ def Thermostat_LockMode( self, key, lockmode):
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
+def schneider_thermostat( self, nwkid ):
+
+    manuf_id = "105e"
+    manuf_spec = "01"
+    cluster_id = "%04x" %0x0000
+    Hattribute = "%04x" %0xe050
+    data_type = "10" # Boo
+    data = "%02x" %True
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+
+    Hattribute = "%04x" %0x5011
+    data_type = "42" # String
+    data = "en" 
+    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
 def legrand_fc01( self, nwkid, command, OnOff):
 
             # EnableLedInDark -> enable to detect the device in dark 
@@ -2068,3 +2094,5 @@ def xiaomi_leave( self, NWKID):
     # sending a Leave Request to device, so the device will send a leave
     Domoticz.Log("------> Sending a leave to Xiaomi battery devive: %s" %(NWKID))
     leaveRequest( self, IEEE= self.ListOfDevices[NWKID]['IEEE'], Rejoin=True )
+
+
