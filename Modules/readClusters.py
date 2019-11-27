@@ -544,7 +544,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if sOnOff != '':
             if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] != 'lumi.sensor_wleak.aq1':
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
                     # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
                     return
 
