@@ -20,6 +20,7 @@ from time import time
 
 from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ, LEGRAND_REMOTES
 from Modules.tools import getClusterListforEP, loggingOutput, mainPoweredDevice
+from Modules.zigateConsts import ADDRESS_MODE
 
 def ZigatePermitToJoin( self, permit ):
 
@@ -1577,6 +1578,10 @@ def thermostat_Setpoint( self, key, setpoint):
             if self.ListOfDevices[key]['Model'] == 'SPZB0001':
                 thermostat_Setpoint_SPZB( self, key, setpoint)
 
+            if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
+                schneider_setpoint( self, key, setpoint)
+                return
+
     manuf_id = "0000"
     manuf_spec = "00"
     cluster_id = "%04x" %0x0201
@@ -1772,7 +1777,7 @@ def Thermostat_LockMode( self, key, lockmode):
     write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
-def schneider_thermostat( self, nwkid ):
+def schneider_thermostat( self, key ):
 
     manuf_id = "105e"
     manuf_spec = "01"
@@ -1783,20 +1788,84 @@ def schneider_thermostat( self, nwkid ):
 
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]:
+        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
     loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
 
     Hattribute = "%04x" %0x5011
     data_type = "42" # String
-    data = "en" 
+
+    data = '%02x%02x' %( 0x65, 0x6e) # 'en'
+
     loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,Hdata,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+def schneider_setpoint( self, key, setpoint):
+
+
+    # Use Command 0xE0 on Cluster 0x0201
+    # Payload:
+    # Temp Setpoint is 20.00 ==> 2000
+    #  SQN / CMD / 00 / 01 / 34 / 08 ff
+    #        xEO / 00 / Lenghth / setpoint ( Low/ High / ff
+
+    setpointHL = '%04X' %setpoint
+
+    payload = '00' + 'E0' + '00' + '03' + setpointHL[2:4] + setpointHL[0:2]  + 'FF'
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    Domoticz.Log("schneider_setpoint - %s %s ==> Payload: %s" %(key, setpoint, payload))
+    raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
+
+
+def schneider_EHZBRTS_thermoMode( self, key, mode):
+
+
+    # Attribute 0x0201 / 0xE010 ==> 0x01 ==> Mode Manuel   / Data Type 0x30
+    #                               0x02 ==> Mode Programme
+    #                               0x03 ==> Mode Economie
+    #                               0x06 ==> Mode Vacances
+    
+    EHZBRTS_THERMO_MODE = { '00': 0x00,
+            '10': 0x01,
+            '20': 0x02,
+            '30': 0x03,
+            '40': 0x06,
+            }
+
+
+    Domoticz.Log("schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode))
+
+
+    if mode not in EHZBRTS_THERMO_MODE:
+        Domoticz.Error("Unknow Thermostat Mode %s for %s" %(mode, key))
+        return
+
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0201
+    Hattribute = "%04x" %0xe010
+    data_type = "30" # Uint8
+    data = "%02x" %EHZBRTS_THERMO_MODE[ mode ]
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Log', "Schneider EH-ZB-RTS Thermo Mode  %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
 
 def legrand_fc01( self, nwkid, command, OnOff):
 
@@ -2071,13 +2140,14 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     RADIUS = 0x00
 
     addr_mode ='%02X' % ADDRESS_MODE['short']
-    security = '%02X' %SECURTITY
+    security = '%02X' %SECURITY
     radius = '%02X' %RADIUS
 
-    len_payload = len(payload)
+    len_payload = '%02x' %len(payload)
 
     loggingOutput( self, 'Log', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
-    sendZigateCmd(self, "0530", addr_mode + targetaddr + zigate_ep + src_ep + cluster + profileId + security + radius + len_payload + payload)
+
+    sendZigateCmd(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
 
 ## Scene

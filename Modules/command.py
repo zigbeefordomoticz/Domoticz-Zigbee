@@ -18,7 +18,7 @@ import json
 
 from Modules.actuators import actuators
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode, legrand_fc40
+from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode, legrand_fc40, schneider_EHZBRTS_thermoMode
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE
@@ -83,7 +83,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode'):
+        if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS'):
             ClusterSearch = '0201'
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'Motion':
@@ -226,6 +226,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             if Level in THERMOSTAT_LEVEL_2_MODE:
                 Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]))
                 thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+
+        elif DeviceType == 'ThermoModeEHZBRTS':
+            Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %Level)
+            schneider_EHZBRTS_thermoMode( self, NWKID, Level)
 
         elif DeviceType == 'LegrandFilPilote':
             

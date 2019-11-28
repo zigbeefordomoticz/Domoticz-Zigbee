@@ -174,6 +174,22 @@ def CreateDomoDevice(self, Devices, NWKID):
         for t in Type:
             loggingWidget( self, "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
+            if t == "ThermoModeEHZBRTS":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                Options = {"LevelActions": "||||", "LevelNames": "Off|Manual|Programme|Eco|Vacations",
+                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
+                           Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+
+
             if t == "ThermoSetpoint":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -959,6 +975,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
                     UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
                     Domoticz.Log("MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue))
+
+            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoModeEHZBRTS':
+                Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value)
+                schneider_EHZBRTS_thermoMode( self, NWKID, value)
 
             if ClusterType == "Temp":  # temperature
                 loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
