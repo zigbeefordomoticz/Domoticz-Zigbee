@@ -30,7 +30,7 @@ from Modules.output import sendZigateCmd, maskChannel
 from Classes.AdminWidgets import AdminWidgets
 
 CHANNELS = [ '11','15','19','20','25','26']
-DURATION = 0x01
+DURATION = 0x03
 
 class NetworkEnergy():
 
