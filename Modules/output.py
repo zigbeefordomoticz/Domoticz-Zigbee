@@ -471,6 +471,7 @@ def ReadAttributeRequest_0008(self, key):
     loggingOutput( self, 'Debug', "Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "0008", 0)
 
+
 def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
 
@@ -1069,7 +1070,7 @@ def processConfigureReporting( self, NWKID=None ):
                             if cluster in self.ListOfDevices[key]['Bind'][ Ep ]:
                                 del self.ListOfDevices[key]['Bind'][ Ep ][ cluster ]
                     if 'IEEE' in self.ListOfDevices[key]:
-                        loggingOutput( self, 'Log', "---> configureReporting - requested Bind for %s on Cluster: %s" %(key, cluster), nwkid=key)
+                        loggingOutput( self, 'Debug', "---> configureReporting - requested Bind for %s on Cluster: %s" %(key, cluster), nwkid=key)
                         bindDevice( self, self.ListOfDevices[key]['IEEE'], Ep, cluster )
                     else:
                         Domoticz.Error("configureReporting - inconsitency on %s no IEEE found : %s " %(key, str(self.ListOfDevices[key])))
@@ -1122,7 +1123,7 @@ def processConfigureReporting( self, NWKID=None ):
                     attrLen += 1
                     attrDisp.append(attr)
 
-                loggingOutput( self, 'Log', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
+                loggingOutput( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                 datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
                 datas +=  "%02x" %(attrLen) + attrList
 
