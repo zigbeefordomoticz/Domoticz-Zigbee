@@ -233,6 +233,7 @@ def CheckDeviceList(self, key, val) :
 
         self.ListOfDevices[key]['RIA']="10"
 
+        # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
         MANDATORY_ATTRIBUTES = ( 'App Version', 
                 'Attributes List', 
                 'Bind', 
@@ -267,16 +268,17 @@ def CheckDeviceList(self, key, val) :
                 'ZDeviceID', 
                 'ZDeviceName')
 
+        # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
         BUILD_ATTRIBUTES = (
                 'Battery', 
                 'ConfigureReporting',
                 'Last Cmds',
+                'Neighbours',
                 'ReadAttributes', 
                 'RSSI',
                 'SQN', 
                 'Stamp', 
                 'Health')
-
 
 
         if not self.pluginconf.pluginConf['resetPluginDS']:
