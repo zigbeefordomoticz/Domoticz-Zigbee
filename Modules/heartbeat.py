@@ -257,18 +257,18 @@ def processKnownDevices( self, Devices, NWKID ):
         if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'IKEA of Sweden':
             _skipPowerOn_OnOff = True
 
-    if not _skipPowerOn_OnOff and 'Ep' in self.ListOfDevices[NWKID]:
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
-            if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
-                    if self.pluginconf.pluginConf['PowerOn_OnOff'] == int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003']):
-                        continue
-                    if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-                        continue
-                    loggingHeartbeat( self, 'Log', "-- - Change PowerOn OnOff for device: %s from %s -> %s" \
-                            %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['PowerOn_OnOff']))
-                    setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['PowerOn_OnOff'] )
+    #if not _skipPowerOn_OnOff and 'Ep' in self.ListOfDevices[NWKID]:
+    #    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+    #        # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
+    #        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+    #            if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
+    #                if self.pluginconf.pluginConf['PowerOn_OnOff'] == int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003']):
+    #                    continue
+    #                if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+    #                    continue
+    #                loggingHeartbeat( self, 'Log', "-- - Change PowerOn OnOff for device: %s from %s -> %s" \
+    #                        %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['PowerOn_OnOff']))
+    #                setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['PowerOn_OnOff'] )
 
     # If corresponding Attributes not present, let's do a Request Node Description
     if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
