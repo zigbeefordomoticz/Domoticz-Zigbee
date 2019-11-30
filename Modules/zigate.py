@@ -7,7 +7,7 @@ def initLODZigate( self, nwkid, ieee ):
     Domoticz.Status("Initialize Zigate Data Structure %s %s" %(nwkid, ieee))
     self.IEEE2NWK[ieee] = nwkid
     self.ListOfDevices[nwkid] = {}
-    self.ListOfDevices[nwkid]['version'] = '3'
+    self.ListOfDevices[nwkid]['Version'] = '3'
     self.ListOfDevices[nwkid]['ZDeviceName'] = 'Zigate'
     self.ListOfDevices[nwkid]['IEEE'] = ieee
     self.ListOfDevices[nwkid]['Ep'] = {}
