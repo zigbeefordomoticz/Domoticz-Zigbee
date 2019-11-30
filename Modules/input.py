@@ -1594,8 +1594,8 @@ def Decode8140(self, Devices, MsgData, MsgRSSI) :  # Attribute Discovery respons
         MsgSrcEp = MsgData[12:14]
         MsgClusterID = MsgData[14:18]
 
-        Domoticz.Log("Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s"
-            %( MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete))
+        loggingInput( self, 'Debug', "Decode8140 - Attribute Discovery Response - %s/%s - Cluster: %s - Attribute: %s - Attribute Type: %s Complete: %s"
+            %( MsgSrcAddr, MsgSrcEp, MsgClusterID, MsgAttID, MsgAttType, MsgComplete), MsgSrcAddr)
         
         if MsgSrcAddr not in self.ListOfDevices:
             return
