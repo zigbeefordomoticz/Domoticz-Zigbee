@@ -80,7 +80,8 @@ def LoadDeviceList( self ):
             key = key.replace(" ","")
             key = key.replace("'","")
 
-            if key in  ( 'ffff', '0000'): continue
+            #if key in  ( 'ffff', '0000'): continue
+            if key in  ( 'ffff'): continue
 
             try:
                 dlVal=eval(val)
@@ -91,12 +92,16 @@ def LoadDeviceList( self ):
             Modules.tools.loggingDatabase( self, 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
 
             if not dlVal.get('Version') :
+                if key == '0000': # Bug fixed in later version
+                    continue
                 Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
                 res = "Failed"
+                continue
 
             if dlVal['Version'] != '3' :
                 Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
                 res = "Failed"
+                continue
             else:
                 nb = nb +1
                 CheckDeviceList( self, key, val )
@@ -229,11 +234,26 @@ def CheckDeviceList(self, key, val) :
             return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-        Modules.tools.initDeviceInList(self, key)
+
+        if key == '0000':
+            self.ListOfDevices[ key ] = {}
+            self.ListOfDevices[ key ]['Status'] = ''
+        else:
+            Modules.tools.initDeviceInList(self, key)
 
         self.ListOfDevices[key]['RIA']="10"
 
         # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
+        ZIGATE_ATTRIBUTES = {
+                'Version',
+                'ZDeviceName',
+                'Ep',
+                'IEEE',
+                'LogicalType',
+                'PowerSource',
+                'Neighbours',
+                }
+
         MANDATORY_ATTRIBUTES = ( 'App Version', 
                 'Attributes List', 
                 'Bind', 
@@ -280,13 +300,18 @@ def CheckDeviceList(self, key, val) :
                 'Stamp', 
                 'Health')
 
-
-        if not self.pluginconf.pluginConf['resetPluginDS']:
-            Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
-            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
-        else:
+        if self.pluginconf.pluginConf['resetPluginDS']:
             Modules.tools.loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
             IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
+
+        elif key == '0000':
+            # Reduce the number of Attributes loaded for Zigate
+            Modules.tools.loggingDatabase( self, 'Log', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
+            IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
+            Modules.tools.loggingDatabase( self, 'Log', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+        else:
+            Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
+            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
 
         Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         for attribute in IMPORT_ATTRIBUTES:
