@@ -480,7 +480,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     loggingCluster( self, 'Log', "---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr), MsgSrcAddr)
                     xiaomi_leave( self, MsgSrcAddr)
 
-        if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main' and  sBatteryLvl != '':
+        if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and \
+                self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main' and  sBatteryLvl != '':
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery = voltage2batteryP( voltage, 3150, 2750)
@@ -616,9 +617,6 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
         loggingCluster( self, 'Debug', "readCluster 0001 - %s General Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
-        if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84', '8e') or self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main':
-            # This should reflect the main voltage.
-            return
 
     elif MsgAttrID == "0001": # MAINS FREQUENCY
                               # 0x00 indicates a DC supply, or Freq too low
@@ -688,6 +686,11 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84', '8e') or \
+            self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main':
+            # This should reflect the main voltage.
+        return
 
     # Compute Battery %
     mainVolt = battVolt = battRemainingVolt = battRemainPer = 0.0
