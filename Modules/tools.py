@@ -307,7 +307,7 @@ def updSQN( self, key, newSQN) :
             updSQN_battery( self, key, newSQN)
 
     elif 'MacCapa' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['MacCapa'] == '8e' :     # So far we have a good understanding on 
+        if self.ListOfDevices[key]['MacCapa'] in ( '84', '8e'):     # So far we have a good understanding on 
             # Device on Main Power. SQN is increasing independetly of the object
             #updSQN_mainpower( self, key, newSQN)
             pass
@@ -631,7 +631,7 @@ def mainPoweredDevice( self, nwkid):
     mainPower = False
     if 'MacCapa' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['MacCapa'] != {}:
-            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa'])
+            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
 
     if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['PowerSource'] != {}:

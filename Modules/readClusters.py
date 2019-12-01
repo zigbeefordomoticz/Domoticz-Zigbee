@@ -458,7 +458,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sLQI != '':
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
 
-        if self.pluginconf.pluginConf['XiaomiLeave'] and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':
+        if self.pluginconf.pluginConf['XiaomiLeave'] and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['MacCapa'] != 'Main'):
             # Experimental only.
             # We known that after a reset the Xiaomi device stay in pairing mode for about 5' ( Heartbeat: 5 * 60 ) // HEARTBEAT)
             # The idea is during this elapsed to force a serie of leave/pairing, in order to push the device to setup the proprer route
@@ -480,7 +480,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     loggingCluster( self, 'Log', "---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr), MsgSrcAddr)
                     xiaomi_leave( self, MsgSrcAddr)
 
-        if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e':    # Battery Level makes sense for non main powered devices
+        if sBatteryLvl != '' and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != 'Main'):    # Battery Level makes sense for non main powered devices
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery = voltage2batteryP( voltage, 3150, 2750)

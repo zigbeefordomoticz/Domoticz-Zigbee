@@ -1528,7 +1528,7 @@ def removeZigateDevice( self, IEEE ):
         if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
             router = True
     if 'MacCapa' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
+        if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e', '84' ):
             router = True
     if 'PowerSource' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
