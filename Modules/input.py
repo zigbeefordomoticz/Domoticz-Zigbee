@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8 -*-
-#
-# Author: zaraki673 & pipiche38
 #
 """
     Module: z_input.py
@@ -1792,7 +1788,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
     now = time()
     if MsgRejoinFlag not in REJOIN_NETWORK:
-        Domoticz.Error("Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %MsgRejoinFlag)
+        Domoticz.Error("Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %(MsgSrcAddr, MsgIEEE, MsgRejoinFlag))
         MsgRejoinFlag = '00'
     loggingPairing( self, 'Status', "Device Announced ShortAddr: %s, IEEE: %s REJOIN: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ]))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
@@ -1889,6 +1885,15 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+
+        if 'Main Powered' in self.ListOfDevices[MsgSrcAddr]['Capability']:
+            self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
+        if 'Full-Function Device' in self.ListOfDevices[MsgSrcAddr]['Capability']:
+             self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'Router'
+             self.ListOfDevices[MsgSrcAddr]['DeviceType'] = 'FFD'
+        if 'Reduced-Function Device' in self.ListOfDevices[MsgSrcAddr]['Capability']:
+             self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'End Device'
+             self.ListOfDevices[MsgSrcAddr]['DeviceType'] = 'RFD'
 
         loggingPairing( self, 'Debug', "--> Adding device %s in self.DevicesInPairingMode" %MsgSrcAddr)
         self.DevicesInPairingMode.append( MsgSrcAddr )
