@@ -25,7 +25,6 @@ SETTINGS = {
                 'enableWebServer': { 'type':'bool', 'default':1, 'current':None, 'restart':True , 'hidden':False, 'Advanced':False},
                 'internetAccess': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'allowOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                'forcePollingAfterAction':     { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 }},
 
         'DomoticzEnvironment': { 'Order': 2, 'param':{
@@ -36,10 +35,10 @@ SETTINGS = {
 
         'WebInterface': { 'Order': 3, 'param': {
                     'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
-                    'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':True, 'Advanced':True},
-                    'enableChunk':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':True, 'Advanced':True},
+                    'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
+                    'enableChunk':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableKeepalive': { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
-                    'enableCache':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':False}
+                    'enableCache':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True}
                     }},
 
         # Polling
@@ -66,11 +65,12 @@ SETTINGS = {
             }},
         # Device Management
         'DeviceManagement': { 'Order': 5, 'param': {
-                'forcePassiveWidget':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':False},
+                'forcePollingAfterAction':     { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'forcePassiveWidget':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
                 'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
                 'resetPluginDS': { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':True, 'Advanced':True},
-                'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False, 'Advanced':False},
-                'resetReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':False},
+                'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False, 'Advanced':True},
+                'resetReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':True},
                 'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'doUnbindBind':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
                 'allowReBindingClusters':  { 'type':'bool', 'default':1 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True}
