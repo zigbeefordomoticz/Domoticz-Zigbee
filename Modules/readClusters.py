@@ -458,7 +458,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sLQI != '':
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
 
-        if self.pluginconf.pluginConf['XiaomiLeave'] and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['MacCapa'] != 'Main'):
+        if self.pluginconf.pluginConf['XiaomiLeave'] and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main'):
             # Experimental only.
             # We known that after a reset the Xiaomi device stay in pairing mode for about 5' ( Heartbeat: 5 * 60 ) // HEARTBEAT)
             # The idea is during this elapsed to force a serie of leave/pairing, in order to push the device to setup the proprer route
@@ -480,11 +480,11 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     loggingCluster( self, 'Log', "---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr), MsgSrcAddr)
                     xiaomi_leave( self, MsgSrcAddr)
 
-        if sBatteryLvl != '' and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != 'Main'):    # Battery Level makes sense for non main powered devices
+        if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main' and  sBatteryLvl != '':
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery = voltage2batteryP( voltage, 3150, 2750)
-            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage), MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
             self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
 
@@ -616,7 +616,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
         loggingCluster( self, 'Debug', "readCluster 0001 - %s General Voltage: %s V " %(MsgSrcAddr, value) , MsgSrcAddr)
-        if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] == '8e':
+        if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84', '8e') or self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main':
             # This should reflect the main voltage.
             return
 
