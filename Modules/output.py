@@ -117,7 +117,7 @@ def zigateBlueLed( self, OnOff):
 
 def sendZigateCmd(self, cmd,datas ):
 
-    loggingOutput( self, 'Debug', "sendZigateCmd - %s %s" %(cmd, datas))
+    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s" %(cmd, datas), 'ffff')
     self.ZigateComm.sendData( cmd, datas )
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -155,6 +155,24 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
+    def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
+        if  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == {} and \
+                self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] != 0:
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                     %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
+            return
+        if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                     %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
+            return
+        if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
+                self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {}:
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+                     %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
+            return
+
+
+
     if 'Health' in self.ListOfDevices[addr]:
         if self.ListOfDevices[addr]['Health'] == 'Not Reachable':
             return
@@ -184,10 +202,9 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         weight = 1
 
         if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-                loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
-                         %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
+            if skipThisAttribute( self, addr, EpOut, Cluster, Attr):
                 return
+
             loggingOutput( self, 'Debug', "normalizedReadAttrReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]), nwkid=addr)
             self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] = {}
     else:
@@ -198,9 +215,9 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
         for x in ListOfAttributes:
             Attr_ = "%04x" %(x)
             if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-                if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != '00' and \
-                        self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] != {} :
+                if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
                     continue
+
                 loggingOutput( self, 'Debug', "normalizedReadAttrReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] = {}
             Attr += Attr_
