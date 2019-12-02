@@ -11,7 +11,7 @@
 """
 
 # Heartbeat of plugin set to 5s
-HEARTBEAT = 5   
+HEARTBEAT = 5
 
 # Number of Max Command to be submitted to Zigate
 MAX_LOAD_ZIGATE = 5
