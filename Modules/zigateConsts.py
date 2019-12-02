@@ -221,11 +221,11 @@ ZCL_CLUSTERS_LIST = {
         '0007': 'On/Off Switch Configuration',
         '0008': 'Level Control',
         '0009': 'Alarms',
-        '000A': 'Time',
-        '000C': 'Analog Input (basic)',
-        '000D': 'Analog Output (basic)',
-        '000E': 'Analog Value (basic)',
-        '000F': 'Binary Input (Basic)',
+        '000a': 'Time',
+        '000c': 'Analog Input (basic)',
+        '000d': 'Analog Output (basic)',
+        '000e': 'Analog Value (basic)',
+        '000f': 'Binary Input (Basic)',
         '0010': 'Binary Output (Basic)',
         '0011': 'Binary Value (Basic)',
         '0012': 'Multistate Input (Basic)',
@@ -442,6 +442,7 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         '0019',
         '0009',
         '000f',            # Binary Input (Basic)
+        '0100',            # Shade Configuration
         '0102',            # Windows Covering / SHutter
         '0403',            # Measurement: Pression atmospherique
         '0405',            # Relative Humidity Measurement

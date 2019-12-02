@@ -258,6 +258,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0008': [ 0x0000, 0x4000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
+            '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
             '0102': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x004, 0x0007, 0x0008, 0x0009, 0x000A, 0x000B, 0x0010, 0x0011, 0x0014, 0x0017, 0xfffd],
             '0300': [ 0x0000, 0x0001, 0x0003, 0x0004, 0x0007, 0x0008, 0x4010],
             '0400': [ 0x0000],
@@ -549,6 +550,23 @@ def ReadAttributeRequest_000C(self, key):
                     EPout=tmpEp
     loggingOutput( self, 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
     ReadAttributeReq( self, key, "01", EPout, "000C", listAttributes)
+
+def ReadAttributeRequest_0100(self, key):
+
+    loggingOutput( self, 'Debug', "Request shade Configuration status Read Attribute request: " + key , nwkid=key)
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+            if "0100" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                    EPout=tmpEp
+    listAttributes = []
+    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
+        if iterAttr not in listAttributes:
+            listAttributes.append( iterAttr )
+
+    loggingOutput( self, 'Log', "Request 0x0100 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+    ReadAttributeReq( self, key, "01", EPout, "0100", listAttributes)
+
 
 def ReadAttributeRequest_0102(self, key):
 

@@ -26,6 +26,7 @@ from Modules.output import  sendZigateCmd,  \
         schneider_thermostat, \
         ReadAttributeRequest_Ack,  \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
+        ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01
@@ -46,6 +47,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
     '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
+    '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
     '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
     '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
     '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
