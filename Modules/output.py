@@ -117,7 +117,7 @@ def zigateBlueLed( self, OnOff):
 
 def sendZigateCmd(self, cmd,datas ):
 
-    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s" %(cmd, datas), 'a4fa')
+    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'a4fa')
     self.ZigateComm.sendData( cmd, datas )
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -1013,6 +1013,8 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['Model'] in LEGRAND_REMOTES:
                     # Skip configure Reporting for all Legrand Remotes
                     continue
+                if self.ListOfDevices[key]['Model'] in ( 'lumi.ctrl_neutral1' , 'lumi.ctrl_neutral2' ):
+                    continue
 
         loggingOutput( self, 'Debug', "----> configurereporting - processing %s" %key, nwkid=key)
 
@@ -1151,6 +1153,7 @@ def processConfigureReporting( self, NWKID=None ):
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
 
+
     mode = "01"     # Group mode
     nwkid = 'ffff'
     if ieee in self.IEEE2NWK:
@@ -1183,6 +1186,9 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         if nwkid in self.ListOfDevices:
             if 'Model' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['Model'] != {}:
+                    if self.ListOfDevices[nwkid]['Model'] in ( 'lumi.ctrl_neutral2', 'lumi.ctrl_neutral1'):
+                        # Do not bind as the device do not respond to it.
+                        return
                     if self.ListOfDevices[nwkid]['Model'] == '3AFE14010402000D' and cluster == '0500':
                         loggingOutput( self, 'Debug',"Do not Bind Konke 3AFE14010402000D to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return    # Skip binding IAS for Konke Motion Sensor
