@@ -119,8 +119,13 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     # In fact this device doesn't really exist ... The cleanup was not correctly done in IEEE2NWK
                     del self.IEEE2NWK[IEEE]
                     found = False
+                    continue
 
                 # Make sure this device is valid 
+                if 'Status' not in  self.ListOfDevices[existingNWKkey]:
+                    found = False
+                    continue
+                    
                 if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
                     found = False
                     continue
