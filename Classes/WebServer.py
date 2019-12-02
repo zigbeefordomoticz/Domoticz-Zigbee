@@ -1748,29 +1748,35 @@ class WebServer(object):
 
             if len(parameters) == 0:
                 zgroup_lst = []
-                for item in ListOfGroups:
-                    self.logging( 'Debug', "Process Group: %s" %item)
+                for itergrp in ListOfGroups:
+                    self.logging( 'Debug', "Process Group: %s" %itergrp)
                     zgroup = {}
-                    zgroup['_GroupId'] = item
-                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['_GroupId'] = itergrp
+                    zgroup['GroupName'] = ListOfGroups[itergrp]['Name']
                     zgroup['Devices'] = []
-                    for dev, ep in ListOfGroups[item]['Devices']:
-                        self.logging( 'Debug', "--> add %s %s" %(dev, ep))
+                    for item in ListOfGroups[itergrp]['Devices']:
+                        if len(item) == 2:
+                            dev, ep = item
+                            ieee = self.ListOfDevices[dev]['IEEE']
+                        elif len(item) == 3:
+                            dev, ep, ieee = item
+                        self.logging( 'Debug', "--> add %s %s %s" %(dev, ep, ieee))
                         _dev = {}
                         _dev['_NwkId'] = dev
                         _dev['Ep'] = ep
+                        _dev['IEEE'] = ieee
                         zgroup['Devices'].append( _dev )
 
-                    if 'WidgetStyle' in ListOfGroups[item]:
-                        zgroup['WidgetStyle'] = ListOfGroups[item]['WidgetStyle']
-                    if 'Cluster' in ListOfGroups[item]:
-                        zgroup['Cluster'] = ListOfGroups[item]['Cluster']
+                    if 'WidgetStyle' in ListOfGroups[itergrp]:
+                        zgroup['WidgetStyle'] = ListOfGroups[itergrp]['WidgetStyle']
+                    if 'Cluster' in ListOfGroups[itergrp]:
+                        zgroup['Cluster'] = ListOfGroups[itergrp]['Cluster']
 
                     # Let's check if we don't have an Ikea Remote in the group
-                    if 'Tradfri Remote' in ListOfGroups[item]:
+                    if 'Tradfri Remote' in ListOfGroups[itergrp]:
                         self.logging( 'Debug', "--> add Ikea Tradfri Remote")
                         _dev = {}
-                        _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
+                        _dev['_NwkId'] = ListOfGroups[itergrp]["Tradfri Remote"]["Device Addr"]
                         _dev['Ep'] = "01"
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)

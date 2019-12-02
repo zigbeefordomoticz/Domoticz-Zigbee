@@ -145,15 +145,50 @@ class GroupsManagement(object):
     def _load_GroupList(self):
         ' unserialized (load) ListOfGroup from file'
 
-        self.ListOfGroups = {}
+        self.tmpListOfGroups = {}
         if os.path.isfile( self.groupListFileName ):
             with open( self.groupListFileName , 'rb') as handle:
-                self.ListOfGroups = pickle.load( handle )
-            for grpid in self.ListOfGroups:
-                if 'Imported' in self.ListOfGroups[grpid]:
-                    del self.ListOfGroups[grpid]['Imported']
-                self.ListOfGroups[grpid]['Imported'] = []
+                self.tmpListOfGroups = pickle.load( handle )
+
+        self.ListOfGroups = {}
+        updateneeded = False
+        for grpid in list(self.tmpListOfGroups):
+            self.ListOfGroups[grpid] = {}
+            for attribute in ( 'Name', 'WidgetStyle', 'Cluster'):
+                self.ListOfGroups[grpid][ attribute ] = {}
+                if attribute in self.tmpListOfGroups[grpid]:
+                    self.ListOfGroups[grpid][ attribute ] =  self.tmpListOfGroups[grpid][ attribute ]
+
+            if 'Tradfri Remote' in self.tmpListOfGroups[grpid]:
+                self.ListOfGroups[grpid]['Tradfri Remote'] = dict(self.tmpListOfGroups['Tradfri Remote'])
+
+            self.ListOfGroups[grpid]['Imported'] = []
+            self.ListOfGroups[grpid]['Devices'] = []
+
+            for item in self.tmpListOfGroups[grpid]['Devices']:
+                if len(item) == 2:
+                    dev, ep = item
+                    if dev not in self.ListOfDevices:
+                        Domoticz.Error("Loading groups - Looks like device %s do not exist anymore, please do a fullscan group" %dev)
+                        continue
+                    ieee = self.ListOfDevices[ dev ] ['IEEE']
+                elif len(item) == 3:
+                    dev, ep, ieee = item
+                    if dev not in self.ListOfDevices:
+                        if ieee in self.IEEE2NWK:
+                            dev = self.IEEE2NWK[ ieee ]
+                            updateneeded = true
+                else:
+                    continue
+                self.ListOfGroups[grpid][ 'Devices' ].append( (dev, ep , ieee) )
+
         self.logging( 'Debug', "Loading ListOfGroups: %s" %self.ListOfGroups)
+        self.logging( 'Debug', "Loading tmpListOfGroups: %s" %self.tmpListOfGroups)
+
+        del self.tmpListOfGroups
+        if updateneeded:
+            self._write_GroupList()
+
 
     def load_jsonZigateGroupConfig( self, load=True ):
 
@@ -491,13 +526,14 @@ class GroupsManagement(object):
                 self.ListOfGroups[groupID] = {}
                 self.ListOfGroups[groupID]['Name'] = ''
                 self.ListOfGroups[groupID]['Devices'] = []
-                self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP) )
+                #self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP) )
+                self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP, self.ListOfDevices[MsgSourceAddress]['IEEE']) )
             else:
                 if ( MsgSourceAddress,MsgEP) not in self.ListOfGroups[groupID]['Devices']:
-                    self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP) )
+                    self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP, self.ListOfDevices[MsgSourceAddress]['IEEE']) )
+                    #self.ListOfGroups[groupID]['Devices'].append( (MsgSourceAddress, MsgEP ) )
 
-            self.logging( 'Debug', "getGroupMembershipResponse - ( %s,%s ) is part of Group %s"
-                    %( MsgSourceAddress, MsgEP, groupID))
+            self.logging( 'Debug', "getGroupMembershipResponse - ( %s,%s ) is part of Group %s" %( MsgSourceAddress, MsgEP, groupID))
                 
             idx += 1
         return
@@ -733,7 +769,7 @@ class GroupsManagement(object):
         widget_style = None
         widget = WIDGET_STYLE['ColorControlFull']    # If not match, will create a RGBWWZ widget
 
-        for devNwkid, devEp in self.ListOfGroups[group_nwkid]['Devices']:
+        for devNwkid, devEp, iterIEEE in self.ListOfGroups[group_nwkid]['Devices']:
             if devNwkid == '0000': continue
             self.logging( 'Log', "bestGroupWidget - Group: %s processing %s" %(group_nwkid,devNwkid))
             if devNwkid not in self.ListOfDevices:
@@ -855,7 +891,7 @@ class GroupsManagement(object):
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
         level = None
-        for dev_nwkid, dev_ep in self.ListOfGroups[group_nwkid]['Devices']:
+        for dev_nwkid, dev_ep, dev_ieee in self.ListOfGroups[group_nwkid]['Devices']:
             if dev_nwkid in self.ListOfDevices:
                 if 'Ep' in  self.ListOfDevices[dev_nwkid]:
                     if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
@@ -1003,7 +1039,7 @@ class GroupsManagement(object):
             return
 
         # search for all Devices in the group
-        for iterDev, iterEp in self.ListOfGroups[grpid]['Devices']:
+        for iterDev, iterEp, iterIEEE in self.ListOfGroups[grpid]['Devices']:
             if iterDev == '0000': continue
             if iterDev not in self.ListOfDevices:
                 Domoticz.Error("_updateDeviceListAttribute - Device: %s of Group: %s not in the list anymore" %(iterDev,grpid))
@@ -1037,8 +1073,12 @@ class GroupsManagement(object):
 
         if nwkid not in self.ListOfGroups:
             return
-        for iterDev, iterEp in self.ListOfGroups[nwkid]['Devices']:
+        for iterDev, iterEp, iterIEEE in self.ListOfGroups[nwkid]['Devices']:
             self.logging( 'Debug', 'processCommand - reset heartbeat for device : %s' %iterDev)
+            if iterDev not in self.ListOfDevices:
+                if iterIEEE in self.IEEE2NWK:
+                    iterDev = self.IEEE2NWK[ iterIEEE ]
+                    
             if iterDev in self.ListOfDevices:
                 # Force Read Attribute consideration in the next hearbeat
                 if 'Heartbeat' in self.ListOfDevices[iterDev]:
@@ -1054,7 +1094,7 @@ class GroupsManagement(object):
                     if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
                         self.ListOfDevices[iterDev]['Health'] = ''
             else:
-                Domoticz.Error("processCommand - Looks like device %s does not exist anymore and you expect to be part of group %s" %(iterDev, nwkid))
+                Domoticz.Error("processCommand - Looks like device %s [%s] does not exist anymore and you expect to be part of group %s" %(iterDev, iterIEEE, nwkid))
 
         EPin = EPout = '01'
 
@@ -1221,8 +1261,8 @@ class GroupsManagement(object):
                     self.ListOfGroups[grp_id]['Name'] = 'Legrand Plug-in'
                     self.ListOfGroups[grp_id]['Devices'] = []
 
-                if ( device_addr, device_ep) not in self.ListOfGroups[grp_id]['Devices']:
-                    self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep) )
+                if ( device_addr, device_ep, device_ieee) not in self.ListOfGroups[grp_id]['Devices']:
+                    self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep, device_ieee) )
                     Domoticz.Log("Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
                     self._addGroup( device_ieee, device_addr, device_ep, grp_id)
 
@@ -1472,7 +1512,7 @@ class GroupsManagement(object):
                     for iterGrp in self.ListOfGroups:
                         self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                         self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
-                        for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                        for iterDev, iterEp, iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
                             if iterDev not in self.ListOfDevices:
                                 Domoticz.Error("Group Management - seems that Group %s is refering to a non-existing device %s/%s" \
                                         %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
@@ -1519,7 +1559,7 @@ class GroupsManagement(object):
                 self.logging( 'Debug', " - %s" %self.ListOfGroups[iterGrp]['Devices'])
                 self.logging( 'Debug', " - %s" %self.ListOfGroups[iterGrp]['Imported'])
 
-                for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                for iterDev, iterEp, iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
                     if iterDev not in self.ListOfDevices:
                         Domoticz.Error("hearbeat Group - Most likely, device %s is not paired anymore ..." %iterDev)
                         continue
@@ -1769,7 +1809,7 @@ class GroupsManagement(object):
             for iterGrp in self.ListOfGroups:
                 self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                 self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
-                for iterDev, iterEp in self.ListOfGroups[iterGrp]['Devices']:
+                for iterDev, iterEp , iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
                     if iterDev in self.ListOfDevices:
                         self.logging( 'Status', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
 
