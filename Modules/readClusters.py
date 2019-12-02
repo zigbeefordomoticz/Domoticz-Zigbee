@@ -1127,7 +1127,9 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         _Xiaomi_sAddr = MsgClusterData[2:6]
         _Xiaomi_Value = MsgClusterData[6:8]
 
-        XIAOMI_CODE = { '01': 'Power outage',
+        XIAOMI_CODE = { 
+                '00': '00 (please report to @pipiche)',
+                '01': 'Power outage',
                 '02': 'Power On',
                 '03': 'Physical Action',
                 '04': '04 (please report to @pipiche)',
