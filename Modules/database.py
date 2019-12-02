@@ -306,9 +306,9 @@ def CheckDeviceList(self, key, val) :
 
         elif key == '0000':
             # Reduce the number of Attributes loaded for Zigate
-            Modules.tools.loggingDatabase( self, 'Log', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
+            Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
             IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
-            Modules.tools.loggingDatabase( self, 'Log', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+            Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         else:
             Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
             IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
