@@ -120,12 +120,9 @@ def processKnownDevices( self, Devices, NWKID ):
     # Let's be smart and if intHB equal 0, this has been reset recently and we might take the opportunity to 
     # request 0x0001 (Voltage/Power information) for battery based devices
     if self.pluginconf.pluginConf['forcePollingAfterAction']:
-    #    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-    #        if self.ListOfDevices[NWKID]['Manufacturer Name'] not in ( 'LUMI' ):
         if intHB == 1:   # Most-likely Heartbeat has been reset to 0 as for a Group command
             loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
             _forceCommandCluster = True
-
 
     ## Starting this point, it is ony relevant for Main Powered Devices.
     #  except if _forceCommandCluster has been enabled.
@@ -165,7 +162,7 @@ def processKnownDevices( self, Devices, NWKID ):
                         continue
                     if self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral1' and tmpEp != '02': # All Eps other than '02' are blacklisted
                         continue
-                    if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp in ( '05' , '04' ):
+                    if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
 
                 if _forceCommandCluster and not _doReadAttribute:
