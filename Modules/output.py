@@ -156,6 +156,21 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
     def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
+        if 'TimeStamps' not in  self.ListOfDevices[addr]['ReadAttributes']:
+            return
+        if str(EpOut+'-'+str(Cluster)) not in self.ListOfDevices[addr]['ReadAttributes']['TimeStamps']:
+            return
+        if 'ReadAttributes' not in self.ListOfDevices[addr]:
+            return
+        if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
+            return
+        if EpOut not in  self.ListOfDevices[addr]['ReadAttributes']['Ep']:
+            return
+        if str(Cluster) not in  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
+            return
+        if Attr not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
+            return
+
         if  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == {} and \
                 self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] != 0:
             loggingOutput( self, 'Debug', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
