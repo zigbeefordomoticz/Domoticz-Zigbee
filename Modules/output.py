@@ -117,7 +117,7 @@ def zigateBlueLed( self, OnOff):
 
 def sendZigateCmd(self, cmd,datas ):
 
-    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s" %(cmd, datas), 'ffff')
+    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s" %(cmd, datas), 'a4fa')
     self.ZigateComm.sendData( cmd, datas )
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
