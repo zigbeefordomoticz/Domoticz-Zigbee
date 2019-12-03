@@ -351,7 +351,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         #
 
         #First manage level
-        if Hue_List['m'] != 3:
+        if Hue_List['m'] != 9998:
             # In case of m ==3, we will do the Setlevel
             OnOff = '01' # 00 = off, 01 = on
             value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
