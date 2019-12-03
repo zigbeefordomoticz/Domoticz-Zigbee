@@ -117,7 +117,7 @@ def zigateBlueLed( self, OnOff):
 
 def sendZigateCmd(self, cmd,datas ):
 
-    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'a4fa')
+    loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'ffff')
     self.ZigateComm.sendData( cmd, datas )
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -255,7 +255,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0004': [ 0x0000],
             '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
             '0006': [ 0x0000],
-            '0008': [ 0x0000, 0x4000],
+            '0008': [ 0x0000],
             '000a': [ 0x0000],
             '000c': [ 0x0051, 0x0055, 0x006f, 0xff05],
             '0100': [ 0x0000, 0x0001, 0x0002, 0x0010, 0x0011],
