@@ -24,7 +24,7 @@ from Modules.output import  sendZigateCmd,  \
         setPowerOn_OnOff, \
         scene_membership_request, \
         schneider_thermostat, \
-        ReadAttributeRequest_Ack,  \
+        ReadAttributeRequest_Ack,  ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
@@ -112,6 +112,10 @@ def processKnownDevices( self, Devices, NWKID ):
         if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
             return
+        # In case Health is unknown let's force a Read attribute.
+        _checkHealth = False
+        if self.ListOfDevices[NWKID]['Health'] == '':
+            _checkHealth = True
 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice( self, NWKID)
@@ -119,22 +123,14 @@ def processKnownDevices( self, Devices, NWKID ):
     _doReadAttribute = False
     _forceCommandCluster = False
 
-    # Let's be smart and if intHB equal 0, this has been reset recently and we might take the opportunity to 
-    # request 0x0001 (Voltage/Power information) for battery based devices
-    if self.pluginconf.pluginConf['forcePollingAfterAction']:
-        if intHB == 1:   # Most-likely Heartbeat has been reset to 0 as for a Group command
-            loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
-            _forceCommandCluster = True
+    if (intHB == 1) and self.pluginconf.pluginConf['forcePollingAfterAction']: # Most-likely Heartbeat has been reset to 0 as for a Group command
+        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
+        _forceCommandCluster = True
 
     ## Starting this point, it is ony relevant for Main Powered Devices.
     #  except if _forceCommandCluster has been enabled.
     if not _mainPowered and not _forceCommandCluster:
         return
-
-    # In case Health is unknown let's force a Read attribute.
-    if 'Health' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Health'] == '':
-            _doReadAttribute = True
 
     # In order to limit the load, we do it only every 15s
     if self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes']:
@@ -143,7 +139,6 @@ def processKnownDevices( self, Devices, NWKID ):
 
     # Do we need to force ReadAttribute at plugin startup ?
     # If yes, best is probably to have ResetReadAttribute to 1
-
     if _doReadAttribute or _forceCommandCluster:
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s frcRead: %s" %(NWKID, intHB, _mainPowered, _doReadAttribute, _forceCommandCluster), NWKID)
         # Read Attributes if enabled
@@ -209,6 +204,13 @@ def processKnownDevices( self, Devices, NWKID ):
                 loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
     # if _doReadAttribute or _forceCommandCluster:
+
+    if _mainPowered and (self.pluginconf.pluginConf['pingDevices'] or  _checkHealth):
+        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] ) : # Age is above 1 hours by default
+            if  len(self.ZigateComm.zigateSendingFIFO) == 0:
+                loggingHeartbeat( self, 'Debug', "processKnownDevices -  Ping device %s %s %s - Timing: %s %s %s" \
+                    %(NWKID, self.pluginconf.pluginConf['pingDevices'], _checkHealth, int(time.time()), self.ListOfDevices[NWKID]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq']), NWKID)
+                ReadAttributeRequest_0000_basic( self, NWKID)
 
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:

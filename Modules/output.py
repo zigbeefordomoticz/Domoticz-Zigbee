@@ -305,6 +305,19 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
     return targetAttribute
 
 
+def ReadAttributeRequest_0000_basic(self, key):
+
+    loggingOutput( self, 'Log', "Ping Device - Key: %s" %(key), nwkid=key)
+    EPin = "01"
+    EPout = '01'
+    listAttributes = []
+    listAttributes.append(0x0000)        # Attribut 0x0000
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+            EPout= tmpEp 
+
+    ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
     # The Ep to be used can be challenging, as if we are in the discovery process, the list of Eps is not yet none and it could even be that the Device has only 1 Ep != 01
