@@ -510,6 +510,8 @@ def _logginfilter( self, message, nwkid):
             Domoticz.Log( message )
         elif nwkid in _debugMatchId:
             Domoticz.Log( message )
+        elif nwkid == 'ffff':
+            Domoticz.Log( message )
         return
     #else:
     #    Domoticz.Log( message )
