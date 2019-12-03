@@ -1961,10 +1961,10 @@ class WebServer(object):
                 if data['Value'] == '' or data['Value'] is None:
                     Level = 0
                 else:
-                    if is_hex(data['Value']):
-                        Level = int(data['Value'],16)
+                    if is_hex(str(data['Value'])):
+                        Level = int(str(data['Value']),16)
                     else:
-                        Level = int(data['Value'])
+                        Level = int(str(data['Value']))
                 ColorMode = ColorValue = ''
                 color = ''
                 if data['Color'] == '' or data['Color'] is None:
