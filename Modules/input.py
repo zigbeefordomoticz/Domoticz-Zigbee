@@ -46,7 +46,7 @@ def ZigateRead(self, Devices, Data):
         '8024': Decode8024,
         '8028': Decode8028,
         '802b': Decode802B, '802c': Decode802C,
-        '8030': Decode8030, '8031': Decode8031,
+        '8030': Decode8030, '8031': Decode8031, '8035': Decode8035,
         '8034': Decode8034,
         '8040': Decode8040, '8041': Decode8041, '8042': Decode8042, '8043': Decode8043, '8044': Decode8044,
         '8045': Decode8045, '8046': Decode8046, '8047': Decode8047, '8048': Decode8048,
@@ -2271,3 +2271,32 @@ def Decode8807(self, Devices, MsgData, MsgRSSI):
     else:
         loggingInput( self, 'Status', "Get TxPower : %s" %int(TxPower,16))
 
+
+def Decode8035(self, Devices, MsgData, MsgRSSI):
+
+    # Payload: 030000f104
+
+    PDU_EVENT = {  '00': 'E_PDM_SYSTEM_EVENT_WEAR_COUNT_TRIGGER_VALUE_REACHED',
+            '01': 'E_PDM_SYSTEM_EVENT_DESCRIPTOR_SAVE_FAILED',
+            '02': 'E_PDM_SYSTEM_EVENT_PDM_NOT_ENOUGH_SPACE',
+            '03': 'E_PDM_SYSTEM_EVENT_LARGEST_RECORD_FULL_SAVE_NO_LONGER_POSSIBLE',
+            '04': 'E_PDM_SYSTEM_EVENT_SEGMENT_DATA_CHECKSUM_FAIL',
+            '05': 'E_PDM_SYSTEM_EVENT_SEGMENT_SAVE_OK',
+            '06': 'E_PDM_SYSTEM_EVENT_EEPROM_SEGMENT_HEADER_REPAIRED',
+            '07': 'E_PDM_SYSTEM_EVENT_SYSTEM_INTERNAL_BUFFER_WEAR_COUNT_SWAP',
+            '08': 'E_PDM_SYSTEM_EVENT_SYSTEM_DUPLICATE_FILE_SEGMENT_DETECTED',
+            '09': 'E_PDM_SYSTEM_EVENT_SYSTEM_ERROR',
+            '10': 'E_PDM_SYSTEM_EVENT_SEGMENT_PREWRITE',
+            '11': 'E_PDM_SYSTEM_EVENT_SEGMENT_POSTWRITE',
+            '12': 'E_PDM_SYSTEM_EVENT_SEQUENCE_DUPLICATE_DETECTED',
+            '13': 'E_PDM_SYSTEM_EVENT_SEQUENCE_VERIFY_FAIL',
+            '14': 'E_PDM_SYSTEM_EVENT_PDM_SMART_SAVE',
+            '15': 'E_PDM_SYSTEM_EVENT_PDM_FULL_SAVE'
+            }
+
+    MsgStatus1 = MsgData[0:2] 
+    MsgAddr = MsgData[2:6]
+    Msgf1 = MsgData[6:8]
+    MsgStatus2 = MsgData[8:10]
+
+    Domoticz.Log("Decode8035 - PDM avec un status : %s"  %MsgData)
