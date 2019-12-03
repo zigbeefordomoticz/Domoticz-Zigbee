@@ -160,7 +160,7 @@ class GroupsManagement(object):
                     self.ListOfGroups[grpid][ attribute ] =  self.tmpListOfGroups[grpid][ attribute ]
 
             if 'Tradfri Remote' in self.tmpListOfGroups[grpid]:
-                self.ListOfGroups[grpid]['Tradfri Remote'] = dict(self.tmpListOfGroups['Tradfri Remote'])
+                self.ListOfGroups[grpid]['Tradfri Remote'] = dict(self.tmpListOfGroups[grpid]['Tradfri Remote'])
 
             self.ListOfGroups[grpid]['Imported'] = []
             self.ListOfGroups[grpid]['Devices'] = []
