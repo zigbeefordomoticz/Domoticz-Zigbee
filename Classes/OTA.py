@@ -48,6 +48,12 @@ TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out for Notficatio
 TO_BATTERYPOWERED_NOTIFICATION = 1 * 3600 # We will leave the Image loaded on Zigate and Notified by device during 1 hour max.
 WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
 
+IKEA_MANUF_CODE = 0x117c
+LEDVANCE_MANUF_CODE = 0x4489
+
+OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE)
+OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '4489')
+
 
 BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
 """
@@ -105,11 +111,11 @@ class OTAManagement(object):
         return
 
     # Low level commands/messages
-    def ota_decode_new_image( self, image ):
+    def ota_decode_new_image( self, subfolder, image ):
         'LOAD_NEW_IMAGE 	0x0500 	Load headers to ZiGate. Use this command first.'
         
         try:
-            with open( self.pluginconf.pluginConf['pluginOTAFirmware'] + image, 'rb') as file:
+            with open( self.pluginconf.pluginConf['pluginOTAFirmware'] + subfolder + '/' + image, 'rb') as file:
                 ota_image = file.read()
 
         except OSError as err:
@@ -551,13 +557,15 @@ class OTAManagement(object):
         """
         Scanning the Firmware folder and processing them
         """
-        ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware']
-        ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
-        for ota_image_file in ota_image_files:
-            if ota_image_file in ( 'README.md', '.PRECIOUS' ):
-                continue
-            key = self.ota_decode_new_image( ota_image_file )
+        for brand in ('IKEA-TRADFRI', 'LEDVANCE' ):
+            ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware'] + brand
+            ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
+
+            for ota_image_file in ota_image_files:
+                if ota_image_file in ( 'README.md', '.PRECIOUS' ):
+                    continue
+                key = self.ota_decode_new_image( brand, ota_image_file )
 
     def heartbeat( self ):
         """ call by plugin onHeartbeat """
@@ -630,22 +638,26 @@ class OTAManagement(object):
                         self.logging( 'Debug', "OTA heartbeat - skip %s not main powered" %iterDev)
                         continue
 
-                ikeaDevice = False
+                otaDevice = False
                 if 'Manufacturer Name' in self.ListOfDevices[ iterDev ]:
-                    if self.ListOfDevices[iterDev]['Manufacturer Name'] in ( 'IKEA of Sweden'):
-                        ikeaDevice = True
+                    if self.ListOfDevices[iterDev]['Manufacturer'] in OTA_MANUF_NAME:
+                        otaDevice = True
                 if 'Manufacturer' in self.ListOfDevices[ iterDev ]:
-                    if self.ListOfDevices[iterDev]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
-                        ikeaDevice = True
+                    if self.ListOfDevices[iterDev]['Manufacturer Name'] in OTA_MANUF_NAME:
+                        otaDevice = True
 
-                if not ikeaDevice:
+                if not otaDevice:
                     self.logging( 'Debug', "OTA heartbeat - skip %s Not an IKEA products" %iterDev)
                     continue
 
-                if 0x117c in self.availableManufCode:
-                    self.upgradableDev.append( iterDev )
-                else:
-                    self.logging( 'Debug', "OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, 0x117c, self.availableManufCode))
+                upgradable = False
+                for manufCode in self.availableManufCode:
+                    if manufCode in OTA_MANUF_CODE:
+                        upgradable = True
+                        self.upgradableDev.append( iterDev )
+
+                if not upgradable:
+                    self.logging( 'Debug', "OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, str( OTA_MANUF_CODE ), self.availableManufCode))
         else:
             if self.upgradeInProgress is None and len(self.upgradableDev) > 0 :
                 if self.upgradeOTAImage is None:
@@ -681,8 +693,9 @@ class OTAManagement(object):
                         break
                 for x in self.OTA['Images']:
                     if x == 'Upgraded Device': continue
-                    if 0x117c == self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] and \
-                            self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
+                    if self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] in OTA_MANUF_CODE and \
+                        self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in OTA_MANUF_NAME:
+
                         self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
                         self.logging( 'Debug', "OTA hearbeat - Request Advertizement for %s %s" \
                                 %(self.upgradeInProgress, EPout))
