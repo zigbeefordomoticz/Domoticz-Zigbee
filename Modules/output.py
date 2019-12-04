@@ -129,7 +129,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
     if not isinstance(ListOfAttributes, list) or len (ListOfAttributes) < 5:
         normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes )
     else:
-        loggingOutput( self, 'Debug', "ReadAttributeReq - %s/%s %s ListOfAttributes: %s" %(addr, EpOut, Cluster, ListOfAttributes), nwkid=addr)
+        loggingOutput( self, 'Debug', "----------> ------- %s/%s %s ListOfAttributes: " %(addr, EpOut, Cluster) + " ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr)
         chunk = MAX_READATTRIBUTES_REQ
         if chunk > 4 and 'Manufacturer Name' in self.ListOfDevices[addr]:
             if self.ListOfDevices[addr]['Manufacturer'] == '1021':
@@ -150,7 +150,7 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
         nbpart = - (  - len(ListOfAttributes) // chunk) 
         for shortlist in split_list(ListOfAttributes, wanted_parts=nbpart):
-            loggingOutput( self, 'Debug', "----> Shorter: %s" %( shortlist), nwkid=addr)
+            loggingOutput( self, 'Debug', "----------> ------- Shorter: " + ", ".join("0x{:04x}".format(num) for num in shortlist), nwkid=addr)
             normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , shortlist )
 
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
@@ -173,19 +173,18 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 
         if  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == {} and \
                 self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] != 0:
-            loggingOutput( self, 'Debug', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            loggingOutput( self, 'Debug2', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                      %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
             return
         if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-            loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            loggingOutput( self, 'Debug2', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                      %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
             return
         if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {}:
-            loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            loggingOutput( self, 'Debug2', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                      %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
             return
-
 
 
     if 'Health' in self.ListOfDevices[addr]:
@@ -212,36 +211,29 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 
     if not isinstance(ListOfAttributes, list):
         # We received only 1 attribute
-        Attr = "%04x" %(ListOfAttributes)
-        lenAttr = 1
-        weight = 1
+        _tmpAttr = ListOfAttributes
+        ListOfAttributes = []
+        ListOfAttributes.append( _tmpAttr)
 
-        if Attr in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            if skipThisAttribute( self, addr, EpOut, Cluster, Attr):
-                return
+    lenAttr = 0
+    weight = int ((lenAttr ) / 2) + 1
+    Attr =''
+    loggingOutput( self, 'Debug2', "attributes: " +str(ListOfAttributes), nwkid=addr)
+    for x in ListOfAttributes:
+        Attr_ = "%04x" %(x)
+        if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
+            if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
+                continue
 
-            loggingOutput( self, 'Debug', "normalizedReadAttrReq: %s for %s/%s" %(Attr, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr]), nwkid=addr)
-            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] = {}
-    else:
-        lenAttr = 0
-        weight = int ((lenAttr ) / 2) + 1
-        Attr =''
-        loggingOutput( self, 'Debug', "attributes: " +str(ListOfAttributes), nwkid=addr)
-        for x in ListOfAttributes:
-            Attr_ = "%04x" %(x)
-            if Attr_ in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-                if skipThisAttribute(self,  addr, EpOut, Cluster, Attr_):
-                    continue
+            loggingOutput( self, 'Debug2', "normalizedReadAttrReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
+            self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] = {}
+        Attr += Attr_
+        lenAttr += 1
 
-                loggingOutput( self, 'Debug', "normalizedReadAttrReq: %s for %s/%s" %(Attr_, addr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_]), nwkid=addr)
-                self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr_] = {}
-            Attr += Attr_
-            lenAttr += 1
+    if lenAttr == 0:
+        return
 
-        if lenAttr == 0:
-            return
-
-    loggingOutput( self, 'Debug', "normalizedReadAttrReq - addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " +str(ListOfAttributes), nwkid=addr )
+    loggingOutput( self, 'Debug', "-- normalizedReadAttrReq ---- addr =" +str(addr) +" Cluster = " +str(Cluster) +" Attributes = " + ", ".join("0x{:04x}".format(num) for num in ListOfAttributes), nwkid=addr )
     self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] = int(time())
     datas = "02" + addr + EpIn + EpOut + Cluster + direction + manufacturer_spec + manufacturer + "%02x" %(lenAttr) + Attr
     sendZigateCmd(self, "0100", datas )
@@ -293,14 +285,14 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
                                     targetAttribute.append( addattr )
 
     if targetAttribute is None:
-        loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster, nwkid=key)
+        loggingOutput( self, 'Debug2', "retreive_ListOfAttributesByCluster: default attributes list for cluster: %s" %cluster, nwkid=key)
         if cluster in ATTRIBUTES:
             targetAttribute = ATTRIBUTES[cluster]
         else:
             Domoticz.Log("retreive_ListOfAttributesByCluster: Missing Attribute for cluster %s" %cluster)
             targetAttribute = [ 0x0000 ]
 
-    loggingOutput( self, 'Debug', "retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : %s" %(cluster, targetAttribute), nwkid=key)
+    loggingOutput( self, 'Debug', "---- retreive_ListOfAttributesByCluster: List of Attributes for cluster %s : " %(cluster) + " ".join("0x{:04x}".format(num) for num in targetAttribute), nwkid=key)
 
     return targetAttribute
 
@@ -1024,7 +1016,7 @@ def processConfigureReporting( self, NWKID=None ):
     now = int(time())
     if NWKID is None :
         if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-            loggingOutput( self, 'Debug', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+            loggingOutput( self, 'Debug2', "configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                   %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), nwkid=NWKID)
             return # Will do at the next round
         target = list(self.ListOfDevices.keys())
@@ -1062,7 +1054,7 @@ def processConfigureReporting( self, NWKID=None ):
                 if self.ListOfDevices[key]['Model'] in ( 'lumi.ctrl_neutral1' , 'lumi.ctrl_neutral2' ):
                     continue
 
-        loggingOutput( self, 'Debug', "----> configurereporting - processing %s" %key, nwkid=key)
+        loggingOutput( self, 'Debug2', "----> configurereporting - processing %s" %key, nwkid=key)
 
         manufacturer = "0000"
         manufacturer_spec = "00"
@@ -1070,9 +1062,9 @@ def processConfigureReporting( self, NWKID=None ):
         addr_mode = "02"
 
         for Ep in self.ListOfDevices[key]['Ep']:
-            loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
+            loggingOutput( self, 'Debug2', "------> Configurereporting - processing %s/%s" %(key,Ep), nwkid=key)
             clusterList = getClusterListforEP( self, key, Ep )
-            loggingOutput( self, 'Debug', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
+            loggingOutput( self, 'Debug2', "------> Configurereporting - processing %s/%s ClusterList: %s" %(key,Ep, clusterList), nwkid=key)
             for cluster in clusterList:
                 if cluster in ( 'Type', 'ColorMode', 'ClusterType' ):
                     continue
@@ -1087,7 +1079,7 @@ def processConfigureReporting( self, NWKID=None ):
                             if cluster in ( '0402', '0403', '0405', '0406'):
                                 continue
                 
-                loggingOutput( self, 'Debug', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
+                loggingOutput( self, 'Debug2', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ConfigureReporting'] = {}
                 if 'Ep' not in self.ListOfDevices[key]['ConfigureReporting']:
@@ -1099,7 +1091,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    loggingOutput( self, 'Debug', "--------> configurereporting - skiping due to existing error in the past", nwkid=key)
+                    loggingOutput( self, 'Debug2', "--------> configurereporting - skiping due to existing error in the past", nwkid=key)
                     continue
 
                 _idx = Ep + '-' + str(cluster)
@@ -1112,16 +1104,16 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
-                        loggingOutput( self, 'Debug', "------> configurereporting - skiping due to done past", nwkid=key)
+                        loggingOutput( self, 'Debug2', "------> configurereporting - skiping due to done past", nwkid=key)
                         continue
 
-                loggingOutput( self, 'Debug', "---> ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
+                loggingOutput( self, 'Debug2', "---> ConfigureReporting - Skip or not - NWKID: %s busy: %s Queue: %s" \
                         %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), nwkid=key)
 
                 if NWKID is None and (self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
-                    loggingOutput( self, 'Debug', "---> configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
+                    loggingOutput( self, 'Debug2', "---> configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
                         %(self.busy, len(self.ZigateComm.zigateSendingFIFO), key), nwkid=key)
-                    loggingOutput( self, 'Debug', "QUEUE: %s" %str(self.ZigateComm.zigateSendingFIFO), nwkid=key)
+                    loggingOutput( self, 'Debug2', "QUEUE: %s" %str(self.ZigateComm.zigateSendingFIFO), nwkid=key)
                     return # Will do at the next round
 
                 loggingOutput( self, 'Debug', "---> configureReporting - requested for device: %s on Cluster: %s" %(key, cluster), nwkid=key)
@@ -1157,7 +1149,7 @@ def processConfigureReporting( self, NWKID=None ):
                         if 'ZDeviceID' in  ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]:
                             if ZDeviceID not in ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] and \
                                     len( ATTRIBUTESbyCLUSTERS[cluster]['Attributes'][attr]['ZDeviceID'] ) != 0:
-                                loggingOutput( self, 'Debug',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
+                                loggingOutput( self, 'Debug2',"configureReporting - %s/%s skip Attribute %s for Cluster %s due to ZDeviceID %s" %(key,Ep,attr, cluster, ZDeviceID), nwkid=key)
                                 continue
                    
                     forceAttribute = False
