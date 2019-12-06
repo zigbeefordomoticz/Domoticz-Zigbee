@@ -182,7 +182,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.6.035'
+        self.pluginParameters['PluginVersion'] = '4.6.036'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -728,7 +728,6 @@ class BasePlugin:
             self.Ping['Nb Ticks'] += 1
 
         if self.HeartbeatCount % ( 3600 // HEARTBEAT) == 0:
-            Domoticz.Log("Ask Zigate Time")
             sendZigateCmd(self,"0017", "")
 
         if len(self.ZigateComm.zigateSendingFIFO) >= MAX_FOR_ZIGATE_BUZY:

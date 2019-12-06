@@ -98,7 +98,7 @@ def setTimeServer( self ):
 
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    Domoticz.Status("setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
+    #Domoticz.Status("setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
     data = "%08x" %UTCTime
     sendZigateCmd(self, "0016", data  )
     #Request Time
@@ -1522,7 +1522,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         Domoticz.Status("Request a rejoin of (%s/%s)" %(saddr, ieee))
         sendZigateCmd(self, "0047", datas )
 
-def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=False, Rejoin=False ):
+def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
 
     """
     E_SL_MSG_LEAVE_REQUEST / 0x004C / ZPS_eAplZdoLeaveNetwork
