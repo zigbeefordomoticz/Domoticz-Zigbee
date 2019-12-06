@@ -1129,7 +1129,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         _Xiaomi_Value = MsgClusterData[6:8]
 
         XIAOMI_CODE = { 
-                '00': '00 (please report to @pipiche)',
+                '00': 'Remote Aqara Bulb Off',
                 '01': 'Power outage',
                 '02': 'Power On',
                 '03': 'Physical Action',
