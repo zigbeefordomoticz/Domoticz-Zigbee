@@ -642,7 +642,7 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
         self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
 
     Domoticz.Status("Zigate details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
-            %(MsgExtendedAddress, MsgShortAddress, MsgChannel, MsgDataStatus, Status) )
+            %(MsgExtendedAddress, MsgShortAddress, int(MsgChannel,16), MsgDataStatus, Status) )
 
 def Decode8028(self, Devices, MsgData, MsgRSSI) : # Authenticate response
     MsgLen=len(MsgData)
@@ -1838,6 +1838,18 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     ReadAttributeRequest_0001( self,  MsgSrcAddr)   # Refresh battery
                     return
 
+        for tmpep in self.ListOfDevices[MsgSrcAddr]['Ep']:
+            if '0500' in self.ListOfDevices[MsgSrcAddr]['Ep'][tmpep]:
+                # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
+                loggingInput( self, 'Debug', "Decode004D - IAS Zone controler setting %s" \
+                        %( MsgSrcAddr), MsgSrcAddr)
+                self.iaszonemgt.IASZone_triggerenrollement( MsgSrcAddr, tmpep)
+                if '0502'  in self.ListOfDevices[MsgSrcAddr]['Ep'][tmpep]:
+                    loggingInput( self, 'Debug', "Decode004D - IAS WD enrolment %s" \
+                        %( MsgSrcAddr), MsgSrcAddr)
+                    self.iaszonemgt.IASWD_enroll( MsgSrcAddr, tmpep)
+                break
+
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
@@ -1895,9 +1907,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
              self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'End Device'
              self.ListOfDevices[MsgSrcAddr]['DeviceType'] = 'RFD'
 
-        loggingPairing( self, 'Debug', "--> Adding device %s in self.DevicesInPairingMode" %MsgSrcAddr)
-        self.DevicesInPairingMode.append( MsgSrcAddr )
-        loggingPairing( self, 'Debug',"--> %s" %str(self.DevicesInPairingMode))
+        loggingPairing( self, 'Log', "--> Adding device %s in self.DevicesInPairingMode" %MsgSrcAddr)
+        if MsgSrcAddr not in self.DevicesInPairingMode:
+            self.DevicesInPairingMode.append( MsgSrcAddr )
+        loggingPairing( self, 'Log',"--> %s" %str(self.DevicesInPairingMode))
 
         # 2- Store the Pairing info if needed
         if self.pluginconf.pluginConf['capturePairingInfos']:
@@ -2294,9 +2307,8 @@ def Decode8035(self, Devices, MsgData, MsgRSSI):
             '15': 'E_PDM_SYSTEM_EVENT_PDM_FULL_SAVE'
             }
 
-    MsgStatus1 = MsgData[0:2] 
-    MsgAddr = MsgData[2:6]
-    Msgf1 = MsgData[6:8]
-    MsgStatus2 = MsgData[8:10]
+    MsgSystemEventCode = MsgData[0:2]
+    MsgEventNumber = MsgData[2:10] 
 
-    Domoticz.Log("Decode8035 - PDM avec un status : %s"  %MsgData)
+    if MsgSystemEventCode in PDU_EVENT:
+        Domoticz.Log("Decode8035 - PDM event : EventNum: %s - EventCode: %s (%s)"  %(MsgEventNumber, MsgSystemEventCode, PDU_EVENT[ MsgSystemEventCode ]))
