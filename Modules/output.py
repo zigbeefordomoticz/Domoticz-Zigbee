@@ -78,7 +78,7 @@ def start_Zigate(self, Mode='Controller'):
 
     Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
             %self.pluginconf.pluginConf['channel'])
-    setChannel(self, self.pluginconf.pluginConf['channel'])
+    setChannel(self, str(self.pluginconf.pluginConf['channel']))
     
     if Mode == 'Controller':
         Domoticz.Status("Set Zigate as a Coordinator")
@@ -1398,19 +1398,19 @@ def maskChannel( channel ):
 
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
-            #12: 0x00001000,
-            #13: 0x00002000,
-            #14: 0x00004000,
+            #12: 0x00001000, # Not Zigate
+            #13: 0x00002000, # Not Zigate
+            #14: 0x00004000, # Not Zigate
             15: 0x00008000,
-            #16: 0x00010000,
-            #17: 0x00020000,
-            #18: 0x00040000,
+            #16: 0x00010000, # Not Zigate
+            #17: 0x00020000, # Not Zigate
+            #18: 0x00040000, # Not Zigate
             19: 0x00080000,
             20: 0x00100000,
-            #21: 0x00200000,
-            #22: 0x00400000,
-            #23: 0x00800000,
-            #24: 0x01000000,
+            #21: 0x00200000, # Not Zigate
+            #22: 0x00400000, # Not Zigate
+            #23: 0x00800000, # Not Zigate
+            #24: 0x01000000, # Not Zigate
             25: 0x02000000,
             26: 0x04000000 }
 
@@ -1423,7 +1423,18 @@ def maskChannel( channel ):
             else:
                 Domoticz.Error("maskChannel - invalid channel %s" %c)
     else:
-            mask = CHANNELS[int(channel)]
+            if isinstance( channel, int):
+                Domoticz.Log("==> Channel is int %s" %channel)
+                if channel in CHANNELS:
+                    mask = CHANNELS( channel )
+                else:
+                    Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
+            else:
+                Domoticz.Log("==> Channel is not int, but %s --> %s" %(type(channel),channel))
+                if int(channel) in CHANNELS:
+                    mask = CHANNELS[int(channel)]
+                else:
+                    Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
     return mask
 
 
