@@ -1081,17 +1081,19 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
                 # Konke Multi Purpose Switch
-                if MsgClusterData == '80': # Simple Click
+                value = None
+                if MsgClusterData in ( '01', '80'): # Simple Click
                     value = '01'
-                elif MsgClusterData == '81': # Multiple Click
+                elif MsgClusterData in ( '02', '81'): # Multiple Click
                     value = '02'
-
                 elif MsgClusterData == '82': # Long Click
                     value = '03'
+                else:
+                    Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
 
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
-                #self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = value
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(value)
+                if value:
+                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
                 loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - reception General: On/Off: %s" %value , MsgSrcAddr)
                 return
 
@@ -1572,23 +1574,27 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
 
     if MsgAttrID == "0000": # ZoneState ( 0x00 Not Enrolled / 0x01 Enrolled )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
-        if int(MsgClusterData,16) == 0x00:
-            loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
-        elif  int(MsgClusterData,16) == 0x01:
-            loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+        Domoticz.Log("ReadCluster0500 - Device: %s --- Attribute: %s MsgData: %s" %(MsgSrcAddr, MsgAttrID, MsgClusterData))
+        if MsgClusterData != '':
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+            if int(MsgClusterData,16) == 0x00:
+                loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s NOT ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
+            elif  int(MsgClusterData,16) == 0x01:
+                loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s ENROLLED (0x%02d)" %(MsgSrcAddr,  int(MsgClusterData,16)), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['IAS']['EnrolledStatus'] = int(MsgClusterData,16)
+            self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
 
     elif MsgAttrID == "0001": # ZoneType
+        Domoticz.Log("ReadCluster0500 - Device: %s --- Attribute: %s MsgData: %s" %(MsgSrcAddr, MsgAttrID, MsgClusterData))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
-        if int(MsgClusterData,16) in ZONE_TYPE:
-            loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s - ZoneType: %s" %(MsgSrcAddr, ZONE_TYPE[int(MsgClusterData,16)]), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
-        else: 
-            loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
-        self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
+        if MsgClusterData != '':
+            if int(MsgClusterData,16) in ZONE_TYPE:
+                loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s - ZoneType: %s" %(MsgSrcAddr, ZONE_TYPE[int(MsgClusterData,16)]), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneType'] = int(MsgClusterData,16)
+            else: 
+                loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s - Unknown ZoneType: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
+            self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
 
     elif MsgAttrID == "0002": # Zone Status
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
