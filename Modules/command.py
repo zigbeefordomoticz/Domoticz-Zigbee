@@ -339,7 +339,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if Command == "Set Color" :
         loggingCommand( self, 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         Hue_List = json.loads(Color)
-        
+        loggingCommand( self, 'Debug', "-----> Hue_List: %s" %str(Hue_List)) 
         #Color 
         #    ColorMode m;
         #    uint8_t t;     // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
@@ -364,7 +364,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
             #TODO : Jamais vu un device avec ca encore
-            loggingCommand( self, 'Debug', "Not implemented device color 1", NWKID)
+            loggingCommand( self, 'Log', "Not implemented device color 1", NWKID)
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
             #Value is in mireds (not kelvin)
@@ -373,7 +373,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
             TempMired = 1000000 // TempKelvin
             loggingCommand( self, 'Debug', "---------- Set Temp Kelvin: %s" %(TempMired), NWKID)
-            sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+            sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0010")
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
             x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -382,14 +382,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             y = int(y*65536)
             strxy = Hex_Format(4,x) + Hex_Format(4,y)
             loggingCommand( self, 'Debug', "---------- Set Temp X: %s Y: %s" %(x, y), NWKID)
-            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
+            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0010")
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List['m'] == 4:
+            #Gledopto GL_008
             ww = int(Hue_List['ww'])
             cw = int(Hue_List['cw'])
             x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
-            #TODO, Pas trouve de device avec ca encore ...
-            loggingCommand( self, 'Debug', "Not implemented device color 2", NWKID)
+            strxy = Hex_Format(4,x) + Hex_Format(4,y)
+            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0010")
+            loggingCommand( self, 'Log', "Not fully implemented device color 2", NWKID)
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
             h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -398,7 +400,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             hue = int(hue*254//360)
             saturation = int(saturation*254//100)
             loggingCommand( self, 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation), NWKID)
-            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0010")
             loggingCommand( self, 'Debug', "---------- Set Level: %s" %(value), NWKID)
             value = int(l * 254//100)
             OnOff = '01'
