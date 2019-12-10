@@ -370,7 +370,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             #Value is in mireds (not kelvin)
             #Correct values are from 153 (6500K) up to 588 (1700K)
             # t is 0 > 255
-            TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
+            TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700)
             TempMired = 1000000 // TempKelvin
             loggingCommand( self, 'Debug', "---------- Set Temp Kelvin: %s" %(TempMired), NWKID)
             sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
@@ -382,15 +382,26 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             y = int(y*65536)
             strxy = Hex_Format(4,x) + Hex_Format(4,y)
             loggingCommand( self, 'Debug', "---------- Set Temp X: %s Y: %s" %(x, y), NWKID)
-            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0010")
+            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List['m'] == 4:
             #Gledopto GL_008
             # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
-            ww = int(Hue_List['ww'])
-            cw = int(Hue_List['cw'])
-            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
             loggingCommand( self, 'Log', "Not fully implemented device color 4", NWKID)
+            ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
+            cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
+
+            t = (ww + cw) // 2
+            TempKelvin = int(((255 - int(t))*(6500-1700)/255)+1700)
+            TempMired = 1000000 // TempKelvin
+            loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s" %(TempMired), NWKID)
+            sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+
+            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
+            strxy = Hex_Format(4,x) + Hex_Format(4,y)
+            loggingCommand( self, 'Log', "---------- Set Temp X: %s Y: %s" %(x, y), NWKID)
+            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
+
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
             h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
