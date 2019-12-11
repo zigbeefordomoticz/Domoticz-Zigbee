@@ -124,6 +124,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                             loggingCommand( self, 'Debug', "mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
                             EPout = tmpEp
 
+    profalux = False
+    if 'Manufacturer' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer'] == '1110' and self.ListOfDevices[NWKID]['ZDeviceID'] in ('0200', '0202'):
+            # We are in a Profalux Shutter
+            profalux = True
+
 
     loggingCommand( self, 'Debug', "EPout = " +str(EPout) , NWKID)
     if 'Health' in self.ListOfDevices[NWKID]:
@@ -162,7 +168,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian /Blind (Off, for Close)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
-            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
+            if profalux:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + '01' + '%02X' %0 + "0000")
+            else:
+                sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if DeviceType == "AlarmWD":
@@ -198,7 +207,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian/Blind (On, for Open)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
-            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
+            if profalux:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + '01' + '%02X' %255 + "0000")
+            else:
+                sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if Devices[Unit].SwitchType in (13,14,15,16):
@@ -327,7 +339,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                     value = 1
 
             value=Hex_Format(2, value)
-            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
+            if profalux:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
+            else:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if Devices[Unit].SwitchType in (13,14,15,16):
