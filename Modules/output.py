@@ -241,7 +241,7 @@ def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttribu
 def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
     ATTRIBUTES = { 
-            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xE000, 0xF000],
+            '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000],
             '0001': [ 0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0035 ],
             '0003': [ 0x0000],
             '0004': [ 0x0000],
@@ -326,11 +326,6 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         loggingOutput( self, 'Debug', "--> Build list of Attributes", nwkid=key)
         skipModel = False
 
-        # Do We have Model Name
-        if not skipModel and self.ListOfDevices[key]['Model'] == {}:
-            loggingOutput( self, 'Debug', "----> Adding: %s" %'0005', nwkid=key)
-            listAttributes.append(0x0005)        # Model Identifier
-
         # Do we Have Manufacturer
         if self.ListOfDevices[key]['Manufacturer'] == '':
             loggingOutput( self, 'Debug', "----> Adding: %s" %'0004', nwkid=key)
@@ -342,9 +337,20 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 listAttributes.append(0xf000)
                 skipModel = True
 
-        if self.ListOfDevices[key]['Model'] != {} and self.ListOfDevices[key]['Model'] != 'TI0001':
-            loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
-            listAttributes.append(0x000A)        # Product Code
+        # Do We have Model Name
+        if not skipModel and self.ListOfDevices[key]['Model'] == {}:
+            loggingOutput( self, 'Debug', "----> Adding: %s" %'0005', nwkid=key)
+            listAttributes.append(0x0005)        # Model Identifier
+
+        if 'Model' in self.ListOfDevices[key]:
+            if self.ListOfDevices[key]['Model'] != {}:
+                if self.ListOfDevices[key]['Model'] != 'TI0001':
+                    loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
+                    listAttributes.append(0x000A)        # Product Code
+
+                if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
+                    loggingOutput( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
+                    listAttributes.append(0xe000)        # SNP.R.04.01.14
 
         if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
             loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
@@ -359,6 +365,7 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                     EPout= tmpEp 
             loggingOutput( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
             ReadAttributeReq( self, key, EPin, EPout, "0000", listAttributes )
+
     else:
         loggingOutput( self, 'Debug', "--> Full scope", nwkid=key)
         listAttributes = []
@@ -366,21 +373,30 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
             listAttributes.append( iterAttr )
 
         if 'Model' in self.ListOfDevices[key]:
-            if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
-                listAttributes.append(0xff01)
-                listAttributes.append(0xff02)
-            if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
-                listAttributes.append(0x0032)
-                listAttributes.append(0x0033)
-            if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
-                listAttributes.append(0xfffd)
-                listAttributes.append(0xfffe)
-                listAttributes.append(0xffe1)
-                listAttributes.append(0xffe2)
-                listAttributes.append(0xffe3)
-
-        if 'Model' in self.ListOfDevices[key]:
             if self.ListOfDevices[key]['Model'] != {}:
+                if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+                    listAttributes.append(0xff01)
+                    listAttributes.append(0xff02)
+
+                if str(self.ListOfDevices[key]['Model']).find('SML00') != -1:
+                    listAttributes.append(0x0032)
+                    listAttributes.append(0x0033)
+
+                if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
+                    listAttributes.append(0xfffd)
+                    listAttributes.append(0xfffe)
+                    listAttributes.append(0xffe1)
+                    listAttributes.append(0xffe2)
+                    listAttributes.append(0xffe3)
+
+                if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS': # Schneider Thermostat
+                    loggingOutput( self, 'Log', "Schneider Thermostat----> Adding: %s" %'0x0007, 0x0013, 0xe000, 0xe001, 0xe002', nwkid=key)
+                    listAttributes.append(0x0007)        # Power Source
+                    listAttributes.append(0x0013)        # Alarm Mask
+                    listAttributes.append(0xe000)        # SNP.R.04.01.14
+                    listAttributes.append(0xe001)        # 
+                    listAttributes.append(0xe002)        # 
+
                 if self.ListOfDevices[key]['Model'] == 'TI0001':
                     copylistAttributes= list( listAttributes)
                     listAttributes = []
