@@ -705,7 +705,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0021'])
 
-    BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "RH3001" ,"TS0201" )
+    BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201" )
     BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
