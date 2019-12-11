@@ -94,6 +94,14 @@ SETTINGS = {
                 'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
             }},
 
+        # Command Transitionin tenth of seconds
+        'CommandTransition': { 'Order': 7, 'param': {
+                'moveToHueSatu':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+                'moveToColourTemp':  { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+                'moveToColourRGB':   { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+                'moveToLevel':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+            }},
+
             #Over The Air Upgrade
         'OverTheAirUpgrade': { 'Order': 7, 'param': {
                 'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
@@ -101,7 +109,7 @@ SETTINGS = {
             }},
 
         # Plugin Transport
-        'PluginTransport': { 'Order': 8, 'param': {
+        'PluginTransport': { 'Order': 9, 'param': {
                 #'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 #'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 'CrcCheck':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
@@ -112,7 +120,7 @@ SETTINGS = {
             }},
 
         # Plugin Directories
-        'PluginConfiguration': { 'Order': 9, 'param': {
+        'PluginConfiguration': { 'Order': 10, 'param': {
                 'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
                 'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
@@ -125,7 +133,7 @@ SETTINGS = {
             }},
 
         # Verbose
-        'VerboseLogging': { 'Order': 9, 'param': {
+        'VerboseLogging': { 'Order': 11, 'param': {
                 'debugMatchId':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'logDeviceUpdate':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
@@ -149,8 +157,9 @@ SETTINGS = {
                 'debugAPS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'debugWebServer':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
                 }},
+
         # Legrand Specific
-        'Legrand': { 'Order': 11, 'param': {
+        'Legrand': { 'Order': 12, 'param': {
                 'EnableLedIfOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'EnableLedInDark': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -159,7 +168,7 @@ SETTINGS = {
                 }},
 
         #Others
-        'Others': { 'Order': 12, 'param': {
+        'Others': { 'Order': 13, 'param': {
                 'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -169,7 +178,7 @@ SETTINGS = {
                 }},
 
         # Experimental
-        'Experimental': { 'Order': 13, 'param': {
+        'Experimental': { 'Order': 14, 'param': {
                 'XiaomiLeave':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'rebindLivolo':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
