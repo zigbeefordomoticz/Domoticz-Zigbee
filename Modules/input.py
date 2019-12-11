@@ -1936,7 +1936,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
         if MsgIEEE == 'f0d1b80000125e49':
-            ReadAttributeRequest_0000(self, NWKID , fullScope=False)    # Request Model Name
+            ReadAttributeRequest_0000(self, MsgSrcAddr , fullScope=False)    # Request Model Name
 
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
