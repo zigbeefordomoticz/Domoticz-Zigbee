@@ -374,7 +374,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             # t is 0 > 255
             TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700)
             TempMired = 1000000 // TempKelvin
-            loggingCommand( self, 'Debug', "---------- Set Temp Kelvin: %s" %(TempMired), NWKID)
+            loggingCommand( self, 'Debug', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
             sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
 
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
@@ -396,7 +396,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
             TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
             TempMired = 1000000 // TempKelvin
-            loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s" %(TempMired), NWKID)
+            loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
             sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
 
             x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    

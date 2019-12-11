@@ -152,6 +152,7 @@ class OTAManagement(object):
                 'min_hw_version', 'max_hw_version' ]
         headers = dict(zip(header_headers, header_data_compact))
 
+
         # Sanity check
         if  headers['size'] != len(ota_image):
             Domoticz.Error("ota_decode_new_image - Header Size != real file size: %s %s / %s " \
@@ -173,6 +174,12 @@ class OTAManagement(object):
                 self.logging( 'Debug', "ota_decode_new_image - %21s : %s " %(x,str(struct.pack('B'*32,*headers[x]))))
             else:
                 self.logging( 'Debug', "ota_decode_new_image - %21s : 0x%X " %(x,headers[x]))
+
+        #for attribut in headers:
+        #    if isinstance(headers[attribut], int):
+        #        Domoticz.Log("==> %s : 0x%x" %(attribut,headers[attribut]))
+        #    else:
+        #        Domoticz.Log("==> %s : %s" %(attribut,headers[attribut]))
 
         # For DEV only in order to force Upgrade
         # Domoticz.Log('Force Image Version to +10 - MUST BE REMOVED BEFORE PRODUCTION')
