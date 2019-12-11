@@ -49,7 +49,7 @@ def ZigateRead(self, Devices, Data):
         '8030': Decode8030, '8031': Decode8031, '8035': Decode8035,
         '8034': Decode8034,
         '8040': Decode8040, '8041': Decode8041, '8042': Decode8042, '8043': Decode8043, '8044': Decode8044,
-        '8045': Decode8045, '8046': Decode8046, '8047': Decode8047, '8048': Decode8048,
+        '8045': Decode8045, '8046': Decode8046, '8047': Decode8047, '8048': Decode8048, '8049': Decode8049,
         '804a': Decode804A, '804b': Decode804B,
         '804e': Decode804E,
         '8060': Decode8060, '8061': Decode8061, '8062': Decode8062, '8063': Decode8063,
@@ -1206,6 +1206,10 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
 
     return
 
+def Decode8049(self, Devices, MsgData, MsgRSSI) : # E_SL_MSG_PERMIT_JOINING_RESPONSE
+
+    Domoticz.Log("Decode8049 - MsgData: %s" %MsgData)
+
 def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update response
 
     self.networkenergy.NwkScanResponse( MsgData)
@@ -1931,6 +1935,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingPairing( self, 'Debug', "Decode004d - Request End Point List ( 0x0045 )")
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = "0"
         self.ListOfDevices[MsgSrcAddr]['Status'] = "0045"
+        if MsgIEEE == 'f0d1b80000125e49':
+            ReadAttributeRequest_0000(self, NWKID , fullScope=False)    # Request Model Name
+
         sendZigateCmd(self,"0045", str(MsgSrcAddr))             # Request list of EPs
         loggingInput( self, 'Debug', "Decode004D - %s Infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 

@@ -439,7 +439,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
                 if self.pluginconf.pluginConf['capturePairingInfos']:
                     self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
-                ReadAttributeRequest_0000(self, NWKID , fullScope=False)    # Reuest Model Name
+                ReadAttributeRequest_0000(self, NWKID , fullScope=False)    # Request Model Name
         if self.pluginconf.pluginConf['capturePairingInfos']:
             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0045' )
         sendZigateCmd(self,"0045", str(NWKID))
