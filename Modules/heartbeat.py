@@ -545,6 +545,12 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 if '0003' not in cluster_to_bind:
                     cluster_to_bind.append( '0003' )
             if schneider:
+                if '0019' not in cluster_to_bind:
+                    cluster_to_bind.append( '0019' )
+                if '0000' not in cluster_to_bind:
+                    cluster_to_bind.append( '0000' )
+                if '0009' not in cluster_to_bind:
+                    cluster_to_bind.append( '0009' )
                 if '0003' not in cluster_to_bind:
                     cluster_to_bind.append( '0003' )
 
