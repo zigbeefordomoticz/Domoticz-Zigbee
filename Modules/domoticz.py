@@ -1053,7 +1053,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 if self.domoticzdb_DeviceStatus:
                     from Classes.DomoticzDB import DomoticzDB_DeviceStatus
                     adjvalue = round(self.domoticzdb_DeviceStatus.retreiveAddjValue_baro( Devices[x].ID),1)
-                loggingWidget( self, "Debug", "Adj Value : %s from: %s to %s " %(adjvalue, value, (value+adjvalue)), NWKID)
+                baroValue = round( (value + adjvalue), 1)
+                loggingWidget( self, "Debug", "Adj Value : %s from: %s to %s " %(adjvalue, value, baroValue), NWKID)
+
                 CurrentnValue = Devices[x].nValue
                 CurrentsValue = Devices[x].sValue
                 if CurrentsValue == '':
@@ -1063,21 +1065,21 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewNvalue = 0
                 NewSvalue = ''
 
-                if value < 1000:
+                if baroValue < 1000:
                     Bar_forecast = 4 # RAIN
-                elif value < 1020:
+                elif baroValue < 1020:
                     Bar_forecast = 3 # CLOUDY
-                elif value < 1030:
+                elif baroValue < 1030:
                     Bar_forecast = 2 # PARTLY CLOUDY
                 else:
                     Bar_forecast = 1 # SUNNY
 
                 if DeviceType == "Baro":
-                    NewSvalue = '%s;%s' %(round(value + adjvalue,1), Bar_forecast)
+                    NewSvalue = '%s;%s' %(baroValue, Bar_forecast)
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
                 elif DeviceType == "Temp+Hum+Baro":
-                    NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], round(value + adjvalue,1), Bar_forecast)
+                    NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
                     UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
 
             if ClusterType == "Orientation" and DeviceType == "Orientation":
