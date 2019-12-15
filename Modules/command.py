@@ -407,17 +407,32 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             #Gledopto GL_008
             # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
             loggingCommand( self, 'Log', "Not fully implemented device color 4", NWKID)
+
+            # Process White color
             cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
             ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
-            TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
-            TempMired = 1000000 // TempKelvin
-            loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
-            sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+            if cw != 0 and ww != 0:
+                TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
+                TempMired = 1000000 // TempKelvin
+                loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
+                sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+            else:
+                # How to powerOff the WW/CW channel ?
+                pass
 
-            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
-            strxy = Hex_Format(4,x) + Hex_Format(4,y)
-            loggingCommand( self, 'Log', "---------- Set Temp X: %s Y: %s" %(x, y), NWKID)
-            sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
+            # Process Colour
+            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            saturation = s * 100   #0 > 100
+            hue = h *360           #0 > 360
+            hue = int(hue*254//360)
+            saturation = int(saturation*254//100)
+            loggingCommand( self, 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation), NWKID)
+            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+
+            value = int(l * 254//100)
+            OnOff = '01'
+            loggingCommand( self, 'Log', "---------- Set Level: %s" %(value), NWKID)
+            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0000")
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
@@ -431,7 +446,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             loggingCommand( self, 'Debug', "---------- Set Level: %s" %(value), NWKID)
             value = int(l * 254//100)
             OnOff = '01'
-            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
+            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0000")
 
         #Update Device
         self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
