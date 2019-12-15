@@ -299,7 +299,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
 def ReadAttributeRequest_0000_basic(self, key):
 
-    loggingOutput( self, 'Log', "Ping Device - Key: %s" %(key), nwkid=key)
+    loggingOutput( self, 'Debug', "Ping Device - Key: %s" %(key), nwkid=key)
     EPin = "01"
     EPout = '01'
     listAttributes = []
