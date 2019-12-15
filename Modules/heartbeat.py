@@ -203,8 +203,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
                 func(self, NWKID )
-    # if _doReadAttribute or _forceCommandCluster:
-
+    
     if _mainPowered and (self.pluginconf.pluginConf['pingDevices'] or  _checkHealth):
         if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] ) : # Age is above 1 hours by default
             if  len(self.ZigateComm.zigateSendingFIFO) == 0:
