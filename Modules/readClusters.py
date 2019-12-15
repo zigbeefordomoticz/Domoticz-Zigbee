@@ -140,11 +140,6 @@ def ReadCluster(self, Devices, MsgData):
         Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
         return
 
-    if MsgAttrStatus != "00" and MsgClusterId != '0500':
-        loggingCluster( self, 'Debug', "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) , nwkid=MsgSrcAddr)
-        self.statistics._clusterKO += 1
-        return
-
     if DeviceExist(self, Devices, MsgSrcAddr) == False:
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
@@ -177,6 +172,12 @@ def ReadCluster(self, Devices, MsgData):
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId] = {}
     self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
+
+    if MsgAttrStatus != "00" and MsgClusterId != '0500':
+        loggingCluster( self, 'Debug', "ReadCluster - Status %s for addr: %s/%s on cluster/attribute %s/%s" %(MsgAttrStatus, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID) , nwkid=MsgSrcAddr)
+        self.statistics._clusterKO += 1
+        return
+
 
     DECODE_CLUSTER = {
             "0000": Cluster0000, "0001": Cluster0001, "0003": Cluster0003, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,
@@ -380,6 +381,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['PhysicalEnv'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '0013': # 
+        loggingCluster( self, 'debug', "ReadCluster - 0x0000 - Attribute 0013: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
     elif MsgAttrID == '0015': # SW_BUILD_ID
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 0015: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
@@ -402,6 +407,18 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut 8000: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['SWBUILD_3'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "e000": # Schneider Thermostat
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut e000: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "e001": # Schneider Thermostat
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut e001: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "e002": # Schneider Thermostat
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut e002: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "f000": 
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut f000: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
@@ -679,7 +696,11 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == "0035":
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0045: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0035: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+
+    elif MsgAttrID == "0036":
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+        loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0036: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == 'fffd': # Cluster Version
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
@@ -708,6 +729,11 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201" )
     BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
+    BATTERY_15_VOLTS = ( )
+    BATTERY_30_VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
+    BATTERY_45_VOLTS = ( 'EH-ZB-RTS' ,)
+
+
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
     if battRemainPer != 0:
@@ -721,6 +747,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
                 max_voltage = 30 ; min_voltage = 25
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
+                max_voltage = 3 * 1.5; min_voltage = 3 * 1
+
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)

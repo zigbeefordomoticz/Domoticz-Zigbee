@@ -372,8 +372,11 @@ class BasePlugin:
                 # sending a Leave Request to device, so the device will send a leave
                 leaveRequest( self, IEEE= IEEE )
                 # for a remove in case device didn't send the leave
-                sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
-                Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+                if self.ZigateIEEE:
+                    sendZigateCmd(self, "0026", self.ZigateIEEE + IEEE )
+                    Domoticz.Status("onDeviceRemoved - removing Device %s -> %s in Zigate" %(Devices[Unit].Name, IEEE))
+                else:
+                    Domotciz.Error("onDeviceRemoved - too early, Zigate and plugin initialisation not completed")
             else:
                 Domoticz.Status("onDeviceRemoved - device entry %s from Zigate not removed. You need to enable 'allowRemoveZigateDevice' parameter. Do consider that it works only for main powered devices." %Devices[Unit].DeviceID)
 

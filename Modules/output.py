@@ -156,36 +156,39 @@ def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 def normalizedReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes ):
 
     def skipThisAttribute( self, addr, EpOut, Cluster, Attr):
+        skipReadAttr = False
+
         if 'TimeStamps' not in  self.ListOfDevices[addr]['ReadAttributes']:
-            return
+            skipReadAttr = True
         if str(EpOut+'-'+str(Cluster)) not in self.ListOfDevices[addr]['ReadAttributes']['TimeStamps']:
-            return
+            skipReadAttr = True
         if 'ReadAttributes' not in self.ListOfDevices[addr]:
-            return
+            skipReadAttr = True
         if 'Ep' not in self.ListOfDevices[addr]['ReadAttributes']:
-            return
+            skipReadAttr = True
         if EpOut not in  self.ListOfDevices[addr]['ReadAttributes']['Ep']:
-            return
+            skipReadAttr = True
         if str(Cluster) not in  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut]:
-            return
+            skipReadAttr = True
         if Attr not in self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)]:
-            return
+            skipReadAttr = False
 
         if  self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] == {} and \
                 self.ListOfDevices[addr]['ReadAttributes']['TimeStamps'][EpOut+'-'+str(Cluster)] != 0:
-            loggingOutput( self, 'Debug2', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq - cannot get Attribute self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                      %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
-            return
+            skipReadAttr = True
         if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] in ( '86', '8c'):    # 8c Not supported, 86 No cluster match
-            loggingOutput( self, 'Debug2', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last status self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                      %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
-            return
+            skipReadAttr = True
         if self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != '00' and \
                 self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] != {}:
-            loggingOutput( self, 'Debug2', "normalizedReadAttrReq - Last value self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
+            loggingOutput( self, 'Debug', "normalizedReadAttrReq - Last status self.ListOfDevices[%s]['ReadAttributes']['Ep'][%s][%s][%s]: %s"
                      %(addr, EpOut, Cluster, Attr, self.ListOfDevices[addr]['ReadAttributes']['Ep'][EpOut][str(Cluster)][Attr] ), nwkid=addr)
-            return
+            skipReadAttr = True
 
+        return skipReadAttr
 
     if 'Health' in self.ListOfDevices[addr]:
         if self.ListOfDevices[addr]['Health'] == 'Not Reachable':
@@ -242,7 +245,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 
     ATTRIBUTES = { 
             '0000': [ 0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007, 0x000A, 0x000F, 0x0010, 0x0015, 0x4000, 0xF000],
-            '0001': [ 0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0035 ],
+            '0001': [ 0x0000, 0x0001, 0x0003, 0x0020, 0x0021, 0x0033, 0x0035 ],
             '0003': [ 0x0000],
             '0004': [ 0x0000],
             '0005': [ 0x0001, 0x0002, 0x0003, 0x0004],
@@ -1888,11 +1891,15 @@ def schneider_thermostat( self, key ):
     Hattribute = "%04x" %0x5011
     data_type = "42" # String
 
-    data = '%02x%02x' %( 0x65, 0x6e) # 'en'
+    data = '656e'  # 'en'
 
     loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+    #write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+    payload = '14' + '5e10' + '00' + '02' + '1150' + data_type + '02' + data 
+    raw_APS_request( self, key, EPout, '0000', '0104', payload, zigate_ep='01')
 
 def schneider_setpoint( self, key, setpoint):
 
@@ -1924,11 +1931,11 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
     #                               0x03 ==> Mode Economie
     #                               0x06 ==> Mode Vacances
     
-    EHZBRTS_THERMO_MODE = { '00': 0x00,
-            '10': 0x01,
-            '20': 0x02,
-            '30': 0x03,
-            '40': 0x06,
+    EHZBRTS_THERMO_MODE = { 0: 0x00,
+            10: 0x01,
+            20: 0x02,
+            30: 0x03,
+            40: 0x06,
             }
 
 
@@ -2225,7 +2232,8 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     """
 
-    SECURITY = 0x33
+    #SECURITY = 0x33
+    SECURITY = 0x30
     RADIUS = 0x00
 
     addr_mode ='%02X' % ADDRESS_MODE['short']

@@ -1754,12 +1754,12 @@ class WebServer(object):
                     zgroup['_GroupId'] = itergrp
                     zgroup['GroupName'] = ListOfGroups[itergrp]['Name']
                     zgroup['Devices'] = []
-                    for item in ListOfGroups[itergrp]['Devices']:
-                        if len(item) == 2:
-                            dev, ep = item
+                    for itemDevice in ListOfGroups[itergrp]['Devices']:
+                        if len(itemDevice) == 2:
+                            dev, ep = itemDevice
                             ieee = self.ListOfDevices[dev]['IEEE']
-                        elif len(item) == 3:
-                            dev, ep, ieee = item
+                        elif len(itemDevice) == 3:
+                            dev, ep, ieee = itemDevice
                         self.logging( 'Debug', "--> add %s %s %s" %(dev, ep, ieee))
                         _dev = {}
                         _dev['_NwkId'] = dev
@@ -1785,19 +1785,24 @@ class WebServer(object):
 
             elif len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
-                    item =  parameters[0]
+                    itemGroup =  parameters[0]
                     zgroup = {}
-                    zgroup['_GroupId'] = item
-                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['_GroupId'] = itemGroup
+                    zgroup['GroupName'] = ListOfGroups[itemGroup]['Name']
                     zgroup['Devices'] = {}
-                    for dev, ep in ListOfGroups[item]['Devices']:
+                    for itemDevice in ListOfGroups[itemGroup]['Devices']:
+                        if len(itemDevice) == 2:
+                            dev, ep = itemDevice
+                            _ieee = self.ListOfDevices[dev]['IEEE']
+                        elif len(itemDevice) == 3:
+                            dev, ep, _ieee = itemDevice
                         self.logging( 'Debug', "--> add %s %s" %(dev, ep))
                         zgroup['Devices'][dev] = ep 
                     # Let's check if we don't have an Ikea Remote in the group
-                    if 'Tradfri Remote' in ListOfGroups[item]:
+                    if 'Tradfri Remote' in ListOfGroups[itemGroup]:
                         self.logging( 'Log', "--> add Ikea Tradfri Remote")
                         _dev = {}
-                        _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
+                        _dev['_NwkId'] = ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]
                         _dev['Ep'] = "01"
                         zgroup['Devices'].append( _dev )
                     _response["Data"] = json.dumps( zgroup, sort_keys=True )
@@ -1884,7 +1889,13 @@ class WebServer(object):
                         if _tradfri_remote:
                             continue
                         # Process the rest
-                        for _dev,_ep in ListOfGroups[grpid]['Devices']:
+                        for itemDevice in ListOfGroups[grpid]['Devices']:
+                            if len(itemDevice) == 2:
+                                _dev, _ep = itemDevice
+                                _ieee = self.ListOfDevices[dev]['IEEE']
+                            elif len(itemDevice) == 3:
+                                _dev, _ep, _ieee = itemDevice
+
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:
                                     self.logging( 'Debug', "------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
