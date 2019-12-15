@@ -1060,26 +1060,25 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if MsgAttrID in ( "0000" , "8000"):
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral1':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral1' and MsgSrcEp != '02':
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
                 # endpoint 02 is for controlling the L1 outpu
                 # Blacklist all EPs other than '02'
-                if MsgSrcEp != '02':
-                    loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
-                         %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-                    return
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2':
+                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - Unexpected EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                     %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+                return
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2' and MsgSrcEp != '02' and MsgSrcEp != '03':
                 # EP 02 ON/OFF LEFT    -- OK
                 # EP 03 ON/ON RIGHT    -- OK
                 # EP 04 EVENT LEFT
                 # EP 05 EVENT RIGHT
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
-                if MsgSrcEp in ( '05' , '04' ):
-                    loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - not processed EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
-                       %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-                    return
+                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=%s - not processed EP, %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, Value: %s" \
+                   %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+                return
 
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
                 # Konke Multi Purpose Switch
                 value = None
                 if MsgClusterData in ( '01', '80'): # Simple Click
@@ -1090,14 +1089,10 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     value = '03'
                 else:
                     Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
+                    return
+                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Konke Multi Purpose Switch reception General: On/Off: %s" %value , MsgSrcAddr)
 
-                if value:
-                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
-                loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - reception General: On/Off: %s" %value , MsgSrcAddr)
-                return
-
-            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
                 # Livolo / Might get something else than On/Off
                  loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
                          %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
