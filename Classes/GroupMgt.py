@@ -177,7 +177,7 @@ class GroupsManagement(object):
                     if dev not in self.ListOfDevices:
                         if ieee in self.IEEE2NWK:
                             dev = self.IEEE2NWK[ ieee ]
-                            updateneeded = true
+                            updateneeded = True
                 else:
                     continue
                 self.ListOfGroups[grpid][ 'Devices' ].append( (dev, ep , ieee) )
