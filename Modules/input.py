@@ -1856,7 +1856,16 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
-            rebind_Clusters( self, MsgSrcAddr)
+            reBind = True
+            #if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+            #    if self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'OSRAM':
+            #        reBind = False
+            #if reBind and 'Manufacturer' in  self.ListOfDevices[MsgSrcAddr]:
+            #    if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == 'bbaa':
+            #        reBind = False
+
+            if reBind:
+                rebind_Clusters( self, MsgSrcAddr)
     
             # As we are redo bind, we need to redo the Configure Reporting
             if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
@@ -2318,4 +2327,4 @@ def Decode8035(self, Devices, MsgData, MsgRSSI):
     MsgEventNumber = MsgData[2:10] 
 
     if MsgSystemEventCode in PDU_EVENT:
-        Domoticz.Log("Decode8035 - PDM event : EventNum: %s - EventCode: %s (%s)"  %(MsgEventNumber, MsgSystemEventCode, PDU_EVENT[ MsgSystemEventCode ]))
+        Domoticz.Debug("Decode8035 - PDM event : EventNum: %s - EventCode: %s (%s)"  %(MsgEventNumber, MsgSystemEventCode, PDU_EVENT[ MsgSystemEventCode ]))
