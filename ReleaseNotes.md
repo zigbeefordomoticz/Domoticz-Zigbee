@@ -1,5 +1,12 @@
 # Release Notes 
 
+# 22 December 2019 - 4.5.9
+- [Issue] - Fix issue with Aqara Switch
+
+# 28 November 2019 - 4.5.8
+- [Issue] - Fix a potential with PiZigate on debuan 10.2
+- [Issue] - Sometime getting False Positive notification for Xiaomi water leak sensor
+
 # 13 November 2019 - 4.5.7
 - [Technical] - remove a limitation preventing opening a Serial port on Windows platform
 

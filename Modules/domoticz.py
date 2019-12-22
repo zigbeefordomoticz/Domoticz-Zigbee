@@ -1044,6 +1044,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == 255: state = "30"
                     else:
                         return  # Simply return and don't process any other values than the above
+                    value = int(state)/10
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "SwitchAQ3":  # Xiaomi Aqara Smart Wireless Switch Key Built In Gyro Multi-Functional 
@@ -1055,6 +1056,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == 18: state = "40"
                     else:
                         return  # Simply return and don't process any other values than the above
+                    value = int(state)/10
                     UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "DSwitch":
