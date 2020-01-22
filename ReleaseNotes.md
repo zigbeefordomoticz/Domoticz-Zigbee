@@ -1,5 +1,8 @@
 # Release Notes 
 
+# 22 January 2020 - 4.5.10
+- [Technical] - Allow 3.1c firmware
+
 # 22 December 2019 - 4.5.9
 - [Issue] - Fix issue with Aqara Switch
 

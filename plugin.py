@@ -184,7 +184,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'stable'
-        self.pluginParameters['PluginVersion'] = '4.5.9'
+        self.pluginParameters['PluginVersion'] = '4.5.10'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -580,7 +580,7 @@ class BasePlugin:
                 Domoticz.Status("You are not on the latest firmware version, This version is known to have problem loosing Xiaomi devices, please consider to upgrae")
             if self.FirmwareVersion and self.FirmwareVersion.lower() == '030f' and self.FirmwareMajorVersion == '0002':
                 Domoticz.Error("You are not running on the Official 3.0f version (it was a pre-3.0f)")
-            if self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031a:
+            if self.FirmwareVersion and int(self.FirmwareVersion,16) > 0x031c:
                 Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
             if self.FirmwareVersion and \
                     int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and\
