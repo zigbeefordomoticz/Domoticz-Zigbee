@@ -19,7 +19,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages
+from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages, mainPoweredDevice
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000
 from Modules.status import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -40,12 +40,12 @@ def ZigateRead(self, Devices, Data):
         '004d': Decode004D,
         '8000': Decode8000_v2, '8001': Decode8001, '8002': Decode8002, '8003': Decode8003, '8004': Decode8004,
         '8005': Decode8005, '8006': Decode8006, '8007': Decode8007,
-        '8009': Decode8009, '8010': Decode8010,
+        '8009': Decode8009, '8010': Decode8010, '8011': Decode8011, '8012': Decode8012,
         '8014': Decode8014, '8015': Decode8015,
         '8024': Decode8024,
         '8028': Decode8028,
         '802b': Decode802B, '802c': Decode802C,
-        '8030': Decode8030, '8031': Decode8031,
+        '8030': Decode8030, '8031': Decode8031, '8035': Decode8035,
         '8034': Decode8034,
         '8040': Decode8040, '8041': Decode8041, '8042': Decode8042, '8043': Decode8043, '8044': Decode8044,
         '8045': Decode8045, '8046': Decode8046, '8047': Decode8047, '8048': Decode8048,
@@ -471,6 +471,43 @@ def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
         self.zigatedata['Firmware Version'] =  str(MajorVersNum) + ' - ' +str(InstaVersNum)
 
     return
+
+
+def Decode8011( self, Devices, MsgData, MsgRSSI ):
+
+    # APP APS ACK
+    loggingInput( self, 'Debug', "Decode8011 - APS ACK: %s" %MsgData)
+    MsgStatus = MsgData[0:2]
+    MsgSrcAddr = MsgData[2:6]
+    MsgSrcEp = MsgData[6:8]
+    MsgClusterId = MsgData[8:12]
+
+    loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus))
+
+    if MsgSrcAddr not in self.ListOfDevices:
+        return
+
+    if MsgStatus == '00':
+        lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+        timeStamped( self, MsgSrcAddr , 0x8011)
+        if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Live':
+                loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
+    else:
+        if mainPoweredDevice( self, MsgSrcAddr)  and 'Health' in self.ListOfDevices[MsgSrcAddr]:
+            loggingInput( self, 'Log', "Receive an APS Nck from %s, let's put the device in default/not reachable" %MsgSrcAddr)
+            if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
+                self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
+
+def Decode8012( self, Devices, MsgData, MsgRSSI ):
+
+    MsgSrcAddr = MsgData[0:4]
+    MsgSrcEp = MsgData[4:6]
+    MsgClusterId = MsgData[6:10]
+    loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s, Cluster: %s" \
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     MsgLen=len(MsgData)
@@ -1826,4 +1863,32 @@ def Decode8807(self, Devices, MsgData, MsgRSSI) :
     TxPower = MsgData[0:2]
     self.zigatedata['Tx-Power'] = TxPower
     loggingInput( self, 'Debug', "Get TxPower : %s" %TxPower)
+
+def Decode8035(self, Devices, MsgData, MsgRSSI):
+
+    # Payload: 030000f104
+
+    PDU_EVENT = {  '00': 'E_PDM_SYSTEM_EVENT_WEAR_COUNT_TRIGGER_VALUE_REACHED',
+            '01': 'E_PDM_SYSTEM_EVENT_DESCRIPTOR_SAVE_FAILED',
+            '02': 'E_PDM_SYSTEM_EVENT_PDM_NOT_ENOUGH_SPACE',
+            '03': 'E_PDM_SYSTEM_EVENT_LARGEST_RECORD_FULL_SAVE_NO_LONGER_POSSIBLE',
+            '04': 'E_PDM_SYSTEM_EVENT_SEGMENT_DATA_CHECKSUM_FAIL',
+            '05': 'E_PDM_SYSTEM_EVENT_SEGMENT_SAVE_OK',
+            '06': 'E_PDM_SYSTEM_EVENT_EEPROM_SEGMENT_HEADER_REPAIRED',
+            '07': 'E_PDM_SYSTEM_EVENT_SYSTEM_INTERNAL_BUFFER_WEAR_COUNT_SWAP',
+            '08': 'E_PDM_SYSTEM_EVENT_SYSTEM_DUPLICATE_FILE_SEGMENT_DETECTED',
+            '09': 'E_PDM_SYSTEM_EVENT_SYSTEM_ERROR',
+            '10': 'E_PDM_SYSTEM_EVENT_SEGMENT_PREWRITE',
+            '11': 'E_PDM_SYSTEM_EVENT_SEGMENT_POSTWRITE',
+            '12': 'E_PDM_SYSTEM_EVENT_SEQUENCE_DUPLICATE_DETECTED',
+            '13': 'E_PDM_SYSTEM_EVENT_SEQUENCE_VERIFY_FAIL',
+            '14': 'E_PDM_SYSTEM_EVENT_PDM_SMART_SAVE',
+            '15': 'E_PDM_SYSTEM_EVENT_PDM_FULL_SAVE'
+            }
+
+    MsgSystemEventCode = MsgData[0:2]
+    MsgEventNumber = MsgData[2:10]
+
+    if MsgSystemEventCode in PDU_EVENT:
+        Domoticz.Debug("Decode8035 - PDM event : EventNum: %s - EventCode: %s (%s)"  %(MsgEventNumber, MsgSystemEventCode, PDU_EVENT[ MsgSystemEventCode ]))
 

@@ -608,3 +608,24 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
+
+def mainPoweredDevice( self, nwkid):
+    """
+    return True is it is Main Powered device
+    return False if it is not Main Powered
+    """
+
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
+        return False
+
+    mainPower = False
+    if 'MacCapa' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
+            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
+
+    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
+            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
+
+    return mainPower
