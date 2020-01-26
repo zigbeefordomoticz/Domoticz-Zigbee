@@ -1,5 +1,8 @@
 # Release Notes 
 
+# 26 January 2020 - 4.5.11
+- [Technical] - Comply with Firmware 3.1c as regards to bind
+
 # 22 January 2020 - 4.5.10
 - [Technical] - Allow 3.1c firmware
 

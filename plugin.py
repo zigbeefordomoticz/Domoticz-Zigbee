@@ -184,7 +184,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'stable'
-        self.pluginParameters['PluginVersion'] = '4.5.11'
+        self.pluginParameters['PluginVersion'] = '4.5.12'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
