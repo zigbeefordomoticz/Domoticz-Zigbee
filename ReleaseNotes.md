@@ -1,6 +1,6 @@
 # Release Notes 
 
-##             - beta 4.6
+## 8 February 2020 - 4.7.0 
 - [Hardware] - Update of IKEA Tradfri firmware
 - [Technical] - better management of APS Failure, network transmission
 - [Technical] - speedup the process to get Powered Devices with a correct Health state
@@ -48,7 +48,7 @@
 - [Technical] - Fully compliant with firmware 3.1c
 
 
-##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
+## 31 July 2019  - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
 - [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.
 - [Technical] - Full re-factory of Network Toplogy scanner
