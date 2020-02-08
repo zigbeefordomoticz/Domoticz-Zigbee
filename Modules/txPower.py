@@ -36,10 +36,10 @@ set/Get tx value  |  Mapped value (dBM)
 
 """
 
-POWER_LEVEL = { 0:0x00, # Max (Default)
-                1:0x32, # 
-                2:0x40, #
-                3:0x39# Min
+POWER_LEVEL = { 0:00, # Max (Default)
+                1:52, # 
+                2:40, #
+                3:32# Min
               }
 
 def set_TxPower( self, powerlevel):
@@ -47,8 +47,7 @@ def set_TxPower( self, powerlevel):
     if powerlevel not in POWER_LEVEL:
         powerlevel = 0
 
-    #setValue = POWER_LEVEL[powerlevel]
-    setValue = 0x00
+    setValue = POWER_LEVEL[powerlevel]
 
     attr_tx_power = '%02x' %setValue
     sendZigateCmd(self, "0806", attr_tx_power)

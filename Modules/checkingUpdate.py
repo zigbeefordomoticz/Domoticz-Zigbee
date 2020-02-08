@@ -45,22 +45,24 @@ def checkPluginUpdate( currentVersion, availVersion):
     availMaj, availMin, availUpd = availVersion.split('.')
 
     if availMaj > currentMaj:
-        Domoticz.Status("checkPluginVersion - Upgrade available: %s" %availVersion)
+        Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
         return True
     elif availMaj == currentMaj:
         if availMin > currentMin:
-            Domoticz.Status("checkPluginVersion - Upgrade available: %s" %availVersion)
+            Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
             return True
         elif availMin == currentMin:
             if availUpd > currentUpd:
-                Domoticz.Status("checkPluginVersion - Upgrade available: %s" %availVersion)
+                Domoticz.Debug("checkPluginVersion - Upgrade available: %s" %availVersion)
                 return True
     return False
 
 
 def checkFirmwareUpdate( currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
 
+    if not availfirmMinor or not currentFirmwareVersion:
+        return False
     if int(availfirmMinor,16) > int(currentFirmwareVersion,16):
-        Domoticz.Status("checkFirmwareUpdate - Firmware update available")
+        Domoticz.Debug("checkFirmwareUpdate - Firmware update available")
         return True
     return False

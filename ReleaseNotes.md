@@ -1,46 +1,54 @@
 # Release Notes 
 
-# 26 January 2020 - 4.5.11
-- [Technical] - Comply with Firmware 3.1c as regards to bind
+## 8 February 2020 - 4.7.0 
+- [Hardware] - Update of IKEA Tradfri firmware
+- [Technical] - better management of APS Failure, network transmission
+- [Technical] - speedup the process to get Powered Devices with a correct Health state
+- [Technical] - Consider Health 'Non rechable' as a dead device, and do not process them anymore.
+- [Technical] - Implement the possibility to setup the PowerOn after device PowerOff/Off (supported by Philips)
+- [Technical] - Handle ZHA1.2/Pluzzy Firmware 
+- [Technical] - Handle Pluzzy devices - Temp/Humi is working for now.
+- [Technical] - Transfert of GitHub repository
+- [Hardware] - Certify Tuya Door contact
+- [Hardware] - Certify Konke KIT Pro ( Multi Function switch, Door contact, Temp/Humi Sensor, Motion sensor)
+- [Technical] - New way to restart plugin.
+- [Hardware] - BITRON Home devices ( Door sensor )
+- [Hardware] - BITRON Home devices ( Motion sensor )
+- [Hardware] - BITRON Home devices ( Plug )
+- [Hardware] - Centralite Door Sensor
+- [Hardware] - Zemismart Blind and Shade. New way of handling widget creation (used ProfileID/DeviceID)
+- [Technical] - Using command 0x47 to remove device
+- [Hardware] - Livolo Switch
+- [Hardware] - Manage Legrand devices. Use Legrand cluster to enable features.
+- [Web Admin] - Possibility to delete unconsitent devices ( in Device Management)
+- [Web Admin] - On demand command (adHoc) offer the possibility to send Zigate command to paired devices
+- [Hardware] - INNR RC 110 remote command - Phase 2 ( widget creations for Scenes and Lights mode.
+- [Technical] - Allo input of port number of Web Admin, will allow multiple zigate on 1 Domoticz instance
+- [Hardware] - Tuya Temp/Humidity sensor
+- [Technical] - Force polling after a Group update
+- [Technical] - Improve group scan when Adding/Updating/Removing a group device
+- [Technical] - Report Battery voltage if any to Voltage widget
+- [Hardware] - TRADFRI bulb E27 WW clear 250lm
+- [Technical] - Reduce priority of Topology and Energy scanner
+- [Technical] - Speedup the Xiaomi pairing/provisioing process
+- [Technical] - Able to set PowerOn after a powerOff ( 0 for Off, 1 for On, 255, for previous state), Works for devices able to handle it. (Legrand, Philips)
+- [Technical] - Friendly Provisionning
+- [Technical] - Management of Zigate Blue Led. No need to restart plugin. Action taken immediatly from settings
+- [Technical] - Implement pingDevice policy (parameters pingDevices, pingDevicesFeq) . Ping every 3600s and once at plugin startup. The ping is much lighter than using the polling
+- [Technical] - Implement a way to force device status after command initiated. ( forcePollingAfterAction )
+- [Technical] - New way to manage Certified devices and make custom way to Bind and configure reporting
+- [Technical] - When Device in Left status, then Timeout
+- [Hardware] - LEDVANCE SMART+ INDOOR PLUG
+- [Hardware] - Schneider Wiser S-Meter, Plug, Actionneur
+- [Technical] - Split code and extract Legrand and Schneider to dedicate module
+- [Technical] - Makes configure reporting (with multiple attribute)
+- [Technical] - Manage Meter when not Current Summation, and makes Current Summation works for Salus, Legrand
+- [Technical] - Refactor the way Device configrations are managed, and dedicate one json per Model
+- [Technical] - Introduce ClusterToBind, ConfigureReportig and ReadAttributes pragma to configuration model
+- [Technical] - Fully compliant with firmware 3.1c
 
-# 22 January 2020 - 4.5.10
-- [Technical] - Allow 3.1c firmware
 
-# 22 December 2019 - 4.5.9
-- [Issue] - Fix issue with Aqara Switch
-
-# 28 November 2019 - 4.5.8
-- [Issue] - Fix a potential with PiZigate on debuan 10.2
-- [Issue] - Sometime getting False Positive notification for Xiaomi water leak sensor
-
-# 13 November 2019 - 4.5.7
-- [Technical] - remove a limitation preventing opening a Serial port on Windows platform
-
-## 4 November 2019 - 4.5.6
-- [Hardware] - Definition for GU10 WS Tradfri Bulb
-- [Technical] - Remove log for Rouet Discovery
-
-## 23 October 2019 - 4.5.5
-- [Issue] - Fix issue when reading attributes of cluster 0x0102
-
-## 27 August 2019 - 4.5.4
-- [Issue] - Error in _openDB for disableErasePDM method
-- [Issue] - Error in Decode8009, calling iaszonemgt when not initialized
-
-## 19 August 2019 - 4.5.3
-- [Technical] - Force TxPower to 0dBM attenuation
-
-## 6 August 2019 - 4.5.2
-- [Technical] - Fix problem with Python3.4
-- [Technical] - Remove un-necessary log
-
-## 3 August 2019 - 4.5.1
-- [Technical] - Cleanup, remove Zdatas directory
-- [Technical] - Cleanup, remove Reports/zigate folder and old fashon web page
-- [Issue] - When changing Color of a Group , the settings was not kept.
-- [Issue] - Philips Motion sensor: Motion detection not working
-
-## 31 July 2019 - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
+## 31 July 2019  - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
 - [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.
 - [Technical] - Full re-factory of Network Toplogy scanner
