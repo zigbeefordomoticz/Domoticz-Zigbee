@@ -2081,7 +2081,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                 '01': 'move', 
                 '02': 'click', 
                 '03': 'stop',
-                '04': 'Step 04',
+                '04': 'Dimmer',
                 '05': 'Step 05',
                 '06': 'Step 06',
                 '07': 'Step 07',

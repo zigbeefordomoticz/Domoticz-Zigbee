@@ -1,5 +1,10 @@
 # Release Notes 
 
+##                 - beta 4.8 
+
+- [Hardware] - Ikea Tradfri wireless dimmer. Works as a switch selector and provide movedown, moveup
+- [Technical] - Remove Permit to Join from the Domoticz Hardware page
+
 ## 8 February 2020 - 4.7.0 
 - [Hardware] - Update of IKEA Tradfri firmware
 - [Technical] - better management of APS Failure, network transmission
