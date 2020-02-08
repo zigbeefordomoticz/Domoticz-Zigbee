@@ -37,7 +37,7 @@ from os import listdir
 from os.path import isfile, join
 from time import time
 
-from Modules.consts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE
 
 from Classes.AdminWidgets import AdminWidgets
 
@@ -47,6 +47,13 @@ TO_TRANSFER = 60        # Time before timed out for Transfer
 TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out for Notfication for main powered devices
 TO_BATTERYPOWERED_NOTIFICATION = 1 * 3600 # We will leave the Image loaded on Zigate and Notified by device during 1 hour max.
 WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
+
+IKEA_MANUF_CODE = 0x117c
+LEDVANCE_MANUF_CODE = ( 0x1189 )
+OSRAM_MANUF_CODE    = ( 0xbbaa, 0x110C )
+
+OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE )
+OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM')
 
 
 BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
@@ -105,12 +112,13 @@ class OTAManagement(object):
         return
 
     # Low level commands/messages
-    def ota_decode_new_image( self, image ):
+    def ota_decode_new_image( self, subfolder, image ):
         'LOAD_NEW_IMAGE 	0x0500 	Load headers to ZiGate. Use this command first.'
         
         try:
-            with open( self.pluginconf.pluginConf['pluginOTAFirmware'] + image, 'rb') as file:
+            with open( self.pluginconf.pluginConf['pluginOTAFirmware'] + subfolder + '/' + image, 'rb') as file:
                 ota_image = file.read()
+
         except OSError as err:
             Domoticz.Error("ota_decode_new_image - error when opening %s - %s" %(image, err))
             return False
@@ -118,6 +126,14 @@ class OTAManagement(object):
         if len(ota_image) < 69:
             Domoticz.Error("ota_decode_new_image - invalid file size read %s - %s" %(image,len(ota_image)))
             return False
+
+        # From https://github.com/doudz
+        if ota_image.startswith(b'NGIS'):
+            self.logging( 'Debug', "ota_decode_new_image - Signed Firmware ...")
+            # IKEA Signed Firmware, let's remove it
+            header_end = struct.unpack('<I', ota_image[0x10:0x14])[0]
+            footer_pos = struct.unpack('<I', ota_image[0x18:0x1C])[0]
+            ota_image = ota_image[header_end:footer_pos]
 
         try:
             header_data = list(struct.unpack('<LHHHHHLH32BLBQHH', ota_image[:69]))
@@ -137,6 +153,7 @@ class OTAManagement(object):
                 'min_hw_version', 'max_hw_version' ]
         headers = dict(zip(header_headers, header_data_compact))
 
+
         # Sanity check
         if  headers['size'] != len(ota_image):
             Domoticz.Error("ota_decode_new_image - Header Size != real file size: %s %s / %s " \
@@ -151,13 +168,19 @@ class OTAManagement(object):
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
 
-        Domoticz.Status("Available Firmware  Type: %6s version: %8X - filename: %s size: %s Bytes" \
-                %( headers['image_type'], headers['image_version'], image, headers['size']))
+        Domoticz.Status("Available Firmware  Type: %6s version: %8X Manufacturer: %4X size: %7s Bytes - filename: %s" \
+                %( headers['image_type'], headers['image_version'], headers['manufacturer_code'], headers['size'], image ))
         for x in header_headers:
             if x == 'header_str':
                 self.logging( 'Debug', "ota_decode_new_image - %21s : %s " %(x,str(struct.pack('B'*32,*headers[x]))))
             else:
                 self.logging( 'Debug', "ota_decode_new_image - %21s : 0x%X " %(x,headers[x]))
+
+        for attribut in headers:
+            if isinstance(headers[attribut], int):
+                self.logging( 'Debug', "==> %s : 0x%x" %(attribut,headers[attribut]))
+            else:
+                self.logging( 'Debug', "==> %s : %s" %(attribut,headers[attribut]))
 
         # For DEV only in order to force Upgrade
         # Domoticz.Log('Force Image Version to +10 - MUST BE REMOVED BEFORE PRODUCTION')
@@ -251,7 +274,7 @@ class OTAManagement(object):
             _completion = round(((int(MsgFileOffset,16) / _size ) * 100),1)
         else:
             Domoticz.Error("ota_request_firmware - Unexpected Image Type: %s/0x%X" %(MsgImageType, MsgImageType))
-            self.logging( 'Debug', "ota_request_firmware - Unexpected Image Type on Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
+            self.logging( 'Log', "ota_request_firmware - Unexpected Image Type on Block request - %s/%s %s Offset: %s version: %X Type: %s Code: %s Delay: %s MaxSize: %s Control: %s"
                 %(MsgSrcAddr, MsgEP, MsgClusterId, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl))
             return
 
@@ -542,13 +565,15 @@ class OTAManagement(object):
         """
         Scanning the Firmware folder and processing them
         """
-        ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware']
-        ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
-        for ota_image_file in ota_image_files:
-            if ota_image_file in ( 'README.md', '.PRECIOUS' ):
-                continue
-            key = self.ota_decode_new_image( ota_image_file )
+        for brand in ('IKEA-TRADFRI', 'LEDVANCE' ):
+            ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware'] + brand
+            ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
+
+            for ota_image_file in ota_image_files:
+                if ota_image_file in ( 'README.md', '.PRECIOUS' ):
+                    continue
+                key = self.ota_decode_new_image( brand, ota_image_file )
 
     def heartbeat( self ):
         """ call by plugin onHeartbeat """
@@ -562,24 +587,25 @@ class OTAManagement(object):
         if self.HB < ( self.pluginconf.pluginConf['waitingOTA'] // HEARTBEAT): 
             return
 
-        if  len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-            self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm._normalQueue))
-            self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm._normalQueue)))
+        if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+            self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
+            self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
             self.logging( 'Debug', "Too busy, will come back later")
             return
 
-        if len(self.OTA['Images']) == 0 and \
-                self.upgradeInProgress is None and \
-                self.upgradableDev is None and \
-                self.upgradeOTAImage is None:
-            if ( self.HB % ( OTA_CYLCLE // HEARTBEAT) ) == 0: # Every 6 hours
-                self.ota_scan_folder()
-            return
+        if 'Images' in self.OTA:
+            if len(self.OTA['Images']) == 0 and \
+                    self.upgradeInProgress is None and \
+                    self.upgradableDev is None and \
+                    self.upgradeOTAImage is None:
+                if ( self.HB % ( OTA_CYLCLE // HEARTBEAT) ) == 0: # Every 6 hours
+                    self.ota_scan_folder()
+                return
 
-        if self.OTA['Images'] is None :
-            _lenOTA = '?'
-        else:
-            _lenOTA =len(self.OTA['Images'])
+            if self.OTA['Images'] is None :
+                _lenOTA = '?'
+            else:
+                _lenOTA =len(self.OTA['Images'])
 
         if self.upgradableDev is None:
             _lenUpgrade = '?'
@@ -590,17 +616,17 @@ class OTAManagement(object):
             if self.upgradeInProgress in self.OTA['Upgraded Device']:
                 if  self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] not in ( 'Block Requested', 'Transfer Progress' ):
                     if self.logMessageDone != 1:
-                        Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices" \
+                        Domoticz.Log("OTA heartbeat - [%s] Type: %s, %3s remaining Images, Device: %s, %3s remaining devices" \
                                 %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
                         self.logMessageDone = 1
             else:
                 if self.logMessageDone != 2:
-                    Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
+                    Domoticz.Log("OTA heartbeat - [%s] Type: %s, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
                         %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
                     self.logMessageDone = 2
         else:
             if self.logMessageDone != 3:
-                Domoticz.Log("OTA heartbeat - [%s] Type: %s out of %3s remaining Images, Device: %s, out of %3s remaining devices, upgradeInProgress: %4s" \
+                Domoticz.Log("OTA heartbeat - [%s] Type: %s, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
                     %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
                 self.logMessageDone = 3
 
@@ -608,30 +634,42 @@ class OTAManagement(object):
             self.upgradableDev = []
             for iterDev in self.ListOfDevices:
                 if iterDev in ( '0000', 'ffff' ): continue
-                if not self.pluginconf.pluginConf['batteryOTA']:
-                    _mainPowered = False
-                    if 'MacCapa' in self.ListOfDevices[iterDev]:
-                        if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
-                            _mainPowered = True
-                    if 'PowerSource' in self.ListOfDevices[iterDev]:
-                        if (self.ListOfDevices[iterDev]['PowerSource']) == 'Main':
-                            _mainPowered = True
-                    if not _mainPowered:
-                        self.logging( 'Debug', "OTA heartbeat - skip %s not main powered" %iterDev)
-                        continue
 
-                if 'Manufacturer' not in self.ListOfDevices[iterDev]:
-                    self.logging( 'Debug', "OTA heartbeat - skip %s No Manufacturer code !!!" %iterDev)
+                _mainPowered = False
+                if 'MacCapa' in self.ListOfDevices[iterDev]:
+                    if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
+                        _mainPowered = True
+                if 'PowerSource' in self.ListOfDevices[iterDev]:
+                    if (self.ListOfDevices[iterDev]['PowerSource']) == 'Main':
+                        _mainPowered = True
+
+                if  not _mainPowered and not self.pluginconf.pluginConf['batteryOTA']:
+                    self.logging( 'Debug', "OTA heartbeat - skip %s not main powered" %iterDev)
                     continue
-                                
-                if self.ListOfDevices[iterDev]['Manufacturer'] not in ( 'IKEA of Sweden', '117c'):
-                    self.logging( 'Debug', "OTA heartbeat - skip %s Not an IKEA products" %iterDev)
+
+                otaDevice = False
+                manufCode = None
+                if 'Manufacturer Name' in self.ListOfDevices[ iterDev ]:
+                    if self.ListOfDevices[iterDev]['Manufacturer'] in OTA_MANUF_NAME:
+                        manufCode = self.ListOfDevices[iterDev]['Manufacturer']
+                        otaDevice = True
+                if not otaDevice and 'Manufacturer' in self.ListOfDevices[ iterDev ]:
+                    if self.ListOfDevices[iterDev]['Manufacturer Name'] in OTA_MANUF_NAME:
+                        manufCode = self.ListOfDevices[iterDev]['Manufacturer']
+                        otaDevice = True
+
+                if not otaDevice:
+                    self.logging( 'Debug', "OTA heartbeat - skip %s Not firmwar update for that product ManufCode: %s" %(iterDev,manufCode ))
                     continue
-            
-                if 0x117c in self.availableManufCode:
-                    self.upgradableDev.append( iterDev )
-                else:
-                    self.logging( 'Debug', "OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, 0x117c, self.availableManufCode))
+
+                upgradable = False
+                for manufCode in self.availableManufCode:
+                    if manufCode in OTA_MANUF_CODE:
+                        upgradable = True
+                        self.upgradableDev.append( iterDev )
+
+                if not upgradable:
+                    self.logging( 'Debug', "OTA heartbeat - skip %s manufcode %s is not in %s" %(iterDev, str( OTA_MANUF_CODE ), self.availableManufCode))
         else:
             if self.upgradeInProgress is None and len(self.upgradableDev) > 0 :
                 if self.upgradeOTAImage is None:
@@ -667,8 +705,9 @@ class OTAManagement(object):
                         break
                 for x in self.OTA['Images']:
                     if x == 'Upgraded Device': continue
-                    if 0x117c == self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] and \
-                            self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in ( 'IKEA of Sweden', '117c'):
+                    if self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] in OTA_MANUF_CODE and \
+                        self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in OTA_MANUF_NAME:
+
                         self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
                         self.logging( 'Debug', "OTA hearbeat - Request Advertizement for %s %s" \
                                 %(self.upgradeInProgress, EPout))
@@ -727,7 +766,7 @@ class OTAManagement(object):
                     else:
                         Domoticz.Log("OTA heartbeat - Transfer not yet started")
 
-                elif _status in ( 'Transfer Aborted', ' Transfer Completed' ):
+                elif _status in ( 'Transfer Aborted', 'Transfer Completed' ):
                     self.upgradeInProgress = None
                 else:
                     Domoticz.Log("OTA heartbeat - _status: %s , upgradeInProgress: %s" %( _status, self.upgradeInProgress))
@@ -741,7 +780,9 @@ class OTAManagement(object):
             else:
                 Domoticz.Log("OTA heartbeat - No device to be upgraded...")
                 self.upgradeDone = None
-                del self.OTA['Images']
+                if 'Images' in self.OTA:
+                    del self.OTA['Images']
+                self.OTA['Images'] = {}
 
             self.upgradeOTAImage = None
             self.upgradableDev = None

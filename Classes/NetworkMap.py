@@ -121,8 +121,10 @@ class NetworkMap():
 
         self.logging( 'Debug', "LQIreq - nwkid: %s" %nwkid)
 
+
         if nwkid not in self.Neighbours:
             self._initNeighboursTableEntry( nwkid)
+
         
         router = False
         if nwkid != '0000' and nwkid not in self.ListOfDevices:
@@ -157,6 +159,13 @@ class NetworkMap():
             self.Neighbours[ nwkid ]['Status'] = 'WaitResponse'
         elif self.Neighbours[ nwkid ]['Status'] == 'ScanRequired2':
             self.Neighbours[ nwkid ]['Status'] = 'WaitResponse2'
+
+        if nwkid in self.ListOfDevices:
+            if 'Health' in self.ListOfDevices[nwkid]:
+                if self.ListOfDevices[nwkid]['Health'] == 'Not Reachable':
+                    self.logging( 'Log', "LQIreq - skiping device %s which is Not Reachable" %nwkid)
+                    self.Neighbours[ nwkid ]['Status'] = 'NotReachable'
+                    return
 
         sendZigateCmd(self, "004E",datas)    
 
@@ -201,7 +210,7 @@ class NetworkMap():
         for entry in self.Neighbours:
             if self.Neighbours[entry]['Status'] == 'Completed':
                 continue
-            elif self.Neighbours[entry]['Status'] in ( 'TimedOut'):
+            elif self.Neighbours[entry]['Status'] in ( 'TimedOut', 'NotReachable'):
                 continue
             elif self.Neighbours[entry]['Status'] in ( 'WaitResponse', 'WaitResponse2'):
                 waitResponse = True
@@ -225,10 +234,36 @@ class NetworkMap():
         Domoticz.Status("")
         Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s" %("Node", "Node", "Relation", "Type", "Deepth", "LQI", "Rx-Idle"))
 
+
         for nwkid in self.Neighbours:
-            if self.Neighbours[nwkid]['Status'] != 'Completed':
+            # We will keep 3 versions of Neighbours
+            if nwkid not in self.ListOfDevices:
+                Domoticz.Error("finish_scan - %s not found in list Of Devices." %nwkid)
+                continue
+
+            if 'Neighbours' not in self.ListOfDevices[nwkid]:
+                self.ListOfDevices[nwkid]['Neighbours'] = []
+            if not isinstance(self.ListOfDevices[nwkid]['Neighbours'], list):
+                del self.ListOfDevices[nwkid]['Neighbours']
+                self.ListOfDevices[nwkid]['Neighbours'] = []
+
+            if len(self.ListOfDevices[nwkid]['Neighbours']) > 3:
+                del self.ListOfDevices[nwkid]['Neighbours'][0]
+            LOD_Neighbours = {}
+            LOD_Neighbours['Time'] =  0
+            LOD_Neighbours['Devices'] =  []
+
+            # Set Time when the Neighbours have been calaculated
+            LOD_Neighbours['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') 
+
+            if self.Neighbours[nwkid]['Status'] == 'NotReachable':
+                Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s NotReachable" \
+                    %( nwkid, '-' , '-','-','-','-','-' ))
+                LOD_Neighbours['Devices'].append( 'Not Reachable' )
+            elif self.Neighbours[nwkid]['Status'] == 'TimedOut':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s TimedOut" \
                     %( nwkid, '-' , '-','-','-','-','-' ))
+                LOD_Neighbours['Devices'].append( 'Timed Out' )
             else:
                 for child in self.Neighbours[nwkid]['Neighbours']:
                     Domoticz.Status("%6s %6s %9s %11s %6d %4d %7s" \
@@ -237,6 +272,17 @@ class NetworkMap():
                                 int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16),
                                 int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16),
                                 self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl']))
+                    element = {}
+                    element[child] = {}
+                    element[child]['_relationshp'] = self.Neighbours[nwkid]['Neighbours'][child]['_relationshp']
+                    element[child]['_devicetype'] =  self.Neighbours[nwkid]['Neighbours'][child]['_devicetype']
+                    element[child]['_depth'] =   int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16)
+                    element[child]['_lnkqty'] =  int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16)
+                    element[child]['_rxonwhenidl'] = self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl'] 
+                    LOD_Neighbours['Devices'].append( element )
+
+            self.ListOfDevices[nwkid]['Neighbours'].append ( LOD_Neighbours )
+
         Domoticz.Status("--")
 
         self.prettyPrintNeighbours()
@@ -289,10 +335,10 @@ class NetworkMap():
             self.logging( 'Debug', "LQIresp - Firmware 3.1a - MsgSrc: %s" %MsgSrc)
 
         if Status != '00':
-            Domoticz.Error("LQI:LQIresp - Status: %s for %s" %(Status, MsgData))
+            self.logging( 'Debug', "LQI:LQIresp - Status: %s for %s (raw data: %s)" %(Status, MsgData[len(MsgData) - 4: len(MsgData)],MsgData))
             return
         if len(self.LQIreqInProgress) == 0:
-            Domoticz.Error("LQI:LQIresp - Receive unexpected message %s"  %(MsgData))
+            self.logging( 'Debug', "LQI:LQIresp - Receive unexpected message %s"  %(MsgData))
             return
 
         if len(ListOfEntries)//42 != NeighbourTableListCount:

@@ -31,10 +31,7 @@ def switchPiZigate_mode( self, mode='run' ):
     if platform.dist()[0] in ( 'fedora' ):
         runmode_with_gpiomodule()
     elif platform.dist()[0] in ( 'debian' ):
-        if platform.dist()[1] == '10.2':
-            runmode_with_osgpiocommand()
-        else:
-            runmode_with_gpiocommand()
+        runmode_with_gpiocommand()
 
 
 def runmode_with_gpiomodule( ):

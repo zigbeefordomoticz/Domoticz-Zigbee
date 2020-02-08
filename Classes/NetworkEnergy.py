@@ -30,7 +30,7 @@ from Modules.output import sendZigateCmd, maskChannel
 from Classes.AdminWidgets import AdminWidgets
 
 CHANNELS = [ '11','15','19','20','25','26']
-DURATION = 0x01
+DURATION = 0x03
 
 class NetworkEnergy():
 
@@ -94,6 +94,11 @@ class NetworkEnergy():
                     for nwkid in self.ListOfDevices:
                         if nwkid == '0000': continue
                         if nwkid == r: continue
+                        if 'Health' in self.ListOfDevices[nwkid]:
+                            Domoticz.Log("_initNwkEnrgy %s - >%s<" %(nwkid, self.ListOfDevices[nwkid]['Health']))
+                            if self.ListOfDevices[nwkid]['Health'] == 'Not Reachable':
+                                self.logging( 'Log', "_initNwkEnrgy - skiping device %s which is Not Reachable" %nwkid)
+                                continue
                         if not isRouter( nwkid ):
                             continue
                         self._initNwkEnrgyRecord( r, nwkid , channels)

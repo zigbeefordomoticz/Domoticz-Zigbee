@@ -22,9 +22,11 @@ except Exception as Err:
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
-from Modules.consts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE
-from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID
-
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, webBind
+from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
+from Modules.actuators import actuators
+from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
@@ -63,12 +65,12 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort):
 
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
-        self.httpPort = None
+        self.httpPort = httpPort
 
         self.httpsServerConn = None
         self.httpsClientConn = None
@@ -94,6 +96,8 @@ class WebServer(object):
         else:
             self.groupmgt = None
         self.ListOfDevices = ListOfDevices
+        self.DevicesInPairingMode = DevicesInPairingMode
+        self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
 
@@ -119,12 +123,12 @@ class WebServer(object):
 
     def  startWebServer( self ):
 
-        self.httpPort = '9440'
+        #self.httpPort = '9440'
         self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
         self.httpServerConn.Listen()
         self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
 
-        self.httpsPort = '9443'
+        #self.httpsPort = '9443'
         #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
         #self.httpsServerConn.Listen()
         #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
@@ -190,8 +194,9 @@ class WebServer(object):
 
     def onMessage( self, Connection, Data ):
 
-            self.logging( 'Debug', "WebServer onMessage")
+            self.logging( 'Debug', "WebServer onMessage : %s" %Data)
             #DumpHTTPResponseToLog(Data)
+
 
             headerCode = "200 OK"
             if (not 'Verb' in Data):
@@ -208,6 +213,11 @@ class WebServer(object):
             self.logging( 'Debug', "URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
             if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
             else: parsed_query = Data['URL'].split('/')
+
+            # Any Cookie ?
+            cookie = None
+            if 'Cookie' in Data['Headers']:
+                cookie = Data['Headers']['Cookie']
 
             if 'Data' not in Data: Data['Data'] = None
 
@@ -235,7 +245,7 @@ class WebServer(object):
                 self.logging( 'Debug', "Redirecting to /index.html")
 
             # We are ready to send the response
-            _response = setupHeadersResponse()
+            _response = setupHeadersResponse( cookie )
             if self.pluginconf.pluginConf['enableKeepalive']:
                 _response["Headers"]["Connection"] = "Keep-alive"
             else:
@@ -252,9 +262,12 @@ class WebServer(object):
             currentVersionOnServer = os.path.getmtime(webFilename)
             _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
 
+            # Check Referrrer
+            if 'Referer' in Data['Headers']:
+                self.logging( 'Debug', "Set Referer: %s" %Data["Headers"]["Referer"])
+                _response["Headers"]["Referer"] = Data['Headers']['Referer']
 
             # Can we use Cache if exists
-
             if self.pluginconf.pluginConf['enableCache']:
                 if 'If-Modified-Since' in Data['Headers']:
                     lastVersionInCache = Data['Headers']['If-Modified-Since']
@@ -296,9 +309,7 @@ class WebServer(object):
                     _response["Headers"]["Content-Encoding"] = _contentEncoding 
      
                 _response["Status"] = "200 OK"
-                if 'Cookie' in Data['Headers']: 
-                    _response['Headers']['Cookie'] = Data['Headers']['Cookie']
-    
+
                 if 'Accept-Encoding' in Data['Headers']:
                     self.sendResponse( Connection, _response, AcceptEncoding = Data['Headers']['Accept-Encoding']  )
                 else:
@@ -307,7 +318,14 @@ class WebServer(object):
 
     def sendResponse( self, Connection, Response, AcceptEncoding=None ):
 
-        if ('Data' not in Response) or (Response['Data'] == None):
+        if 'Data' not in Response:
+            DumpHTTPResponseToLog( Response )
+            Connection.Send( Response )
+            if not self.pluginconf.pluginConf['enableKeepalive']:
+                Connection.Disconnect()
+            return
+
+        if Response['Data'] is None:
             DumpHTTPResponseToLog( Response )
             Connection.Send( Response )
             if not self.pluginconf.pluginConf['enableKeepalive']:
@@ -392,13 +410,20 @@ class WebServer(object):
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
+                'binding':       {'Name':'binding',       'Verbs':{'PUT'}, 'function':self.rest_binding},
+                'new-hrdwr':     {'Name':'new-hrdwr',     'Verbs':{'GET'}, 'function':self.rest_new_hrdwr},
+                'rcv-nw-hrdwr':  {'Name':'rcv-nw-hrdwr',  'Verbs':{'GET'}, 'function':self.rest_rcv_nw_hrdwr},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
+                'dev-cap':       {'Name':'dev-cap',       'Verbs':{'GET'}, 'function':self.rest_dev_capabilities},
+                'dev-command':   {'Name':'dev-command',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
+                'raw-command':   {'Name':'raw-command',       'Verbs':{'PUT'}, 'function':self.rest_raw_command},
                 'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
                 'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
                 'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
                 'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
                 'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
+                'plugin-restart':   {'Name':'plugin-restart',   'Verbs':{'GET'}, 'function':self.rest_plugin_restart},
                 'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
                 'restart-needed':{'Name':'restart-needed','Verbs':{'GET'}, 'function':self.rest_restart_needed},
                 'req-nwk-inter': {'Name':'req-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
@@ -407,8 +432,8 @@ class WebServer(object):
                 'sw-reset-zigate':  {'Name':'sw-reset-zigate',  'Verbs':{'GET'}, 'function':self.rest_reset_zigate},
                 'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
                 'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
-                'zdevice':       {'Name':'zdevice',       'Verbs':{'GET'}, 'function':self.rest_zDevice},
-                'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_name},
+                'zdevice':       {'Name':'zdevice',       'Verbs':{'GET','DELETE'}, 'function':self.rest_zDevice},
+                'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT','DELETE'}, 'function':self.rest_zDevice_name},
                 'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
                 'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
                 'zgroup-list-available-device':   
@@ -418,7 +443,9 @@ class WebServer(object):
                 }
 
         self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
+
         HTTPresponse = {}
+
         if command in REST_COMMANDS:
             if verb in REST_COMMANDS[command]['Verbs']:
                 HTTPresponse = setupHeadersResponse()
@@ -435,7 +462,8 @@ class WebServer(object):
                 elif version == '2':
                     HTTPresponse = REST_COMMANDS[command]['functionv2']( verb, data, parameters)
 
-        if HTTPresponse == {}:
+        self.logging( 'Debug', "==> return HTTPresponse: %s" %(HTTPresponse))
+        if HTTPresponse == {} or HTTPresponse is None:
             # We reach here due to failure !
             HTTPresponse = setupHeadersResponse()
             if self.pluginconf.pluginConf['enableKeepalive']:
@@ -448,9 +476,10 @@ class WebServer(object):
                 HTTPresponse["Headers"]["Expires"] = "0"
                 HTTPresponse["Headers"]["Accept"] = "*/*"
             HTTPresponse["Status"] = "400 BAD REQUEST"
-            HTTPresponse["Data"] = 'Unknown REST command'
+            HTTPresponse["Data"] = 'Unknown REST command: %s' %command
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
+        self.logging( 'Debug', "==> sending HTTPresponse: %s to %s" %(HTTPresponse, Connection))
         self.sendResponse( Connection, HTTPresponse )
 
     def rest_plugin_health( self, verb, data, parameters):
@@ -471,7 +500,7 @@ class WebServer(object):
             health = {}
             health['HealthFlag'] = self.PluginHealth['Flag']
             health['HealthTxt'] = self.PluginHealth['Txt']
-            _response["Data"] = json.dumps( health, sort_keys=False )
+            _response["Data"] = json.dumps( health, sort_keys=True )
 
         return _response
 
@@ -493,7 +522,7 @@ class WebServer(object):
             action = {}
             action['Name'] = "Nwk-Interferences"
             action['TimeStamp'] = int(time())
-            _response["Data"] = json.dumps( action, sort_keys=False )
+            _response["Data"] = json.dumps( action, sort_keys=True )
 
             if self.pluginparameters['Mode1'] != 'None':
                 self.networkenergy.start_scan()
@@ -512,13 +541,14 @@ class WebServer(object):
             _response["Headers"]["Pragma"] = "no-cache"
             _response["Headers"]["Expires"] = "0"
             _response["Headers"]["Accept"] = "*/*"
+
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             action = {}
             action['Name'] = "Nwk-Energy-Full"
             action['TimeStamp'] = int(time())
-            _response["Data"] = json.dumps( action, sort_keys=False )
+            _response["Data"] = json.dumps( action, sort_keys=True )
 
             if self.pluginparameters['Mode1'] != 'None':
                 self.networkenergy.start_scan( root='0000', target='0000')
@@ -537,7 +567,7 @@ class WebServer(object):
             action = {}
             action['Name'] = 'Req-Topology'
             action['TimeStamp'] = int(time())
-            _response["Data"] = json.dumps( action, sort_keys=False )
+            _response["Data"] = json.dumps( action, sort_keys=True )
 
             self.logging( 'Log', "Request a Start of Network Topology scan")
             if self.networkmap:
@@ -565,7 +595,7 @@ class WebServer(object):
                 self.pluginconf.pluginConf['eraseZigatePDM'] = 0
 
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
-                self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
+                self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID'] ))
                 if self.pluginparameters['Mode1'] != 'None':
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {}
@@ -583,13 +613,21 @@ class WebServer(object):
             _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        action = {}
         if verb == 'GET':
             self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
-            self.logging( 'Log', "rest_rescan_group - Removing file: %s" %self.groupListFileName)
-            os.remove( self.groupListFileName )
-            action = {}
+            JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
+            TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
+            for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
+                if os.path.isfile( filename ):
+                    self.logging( 'Debug', "rest_rescan_group - Removing file: %s" %filename )
+                    os.remove( filename )
+                    self.restart_needed['RestartNeeded'] = True
             action['Name'] = 'Groups file removed.'
             action['TimeStamp'] = int(time())
+
+        _response["Data"] = json.dumps( action , sort_keys=True )
+
         return _response
 
 
@@ -602,13 +640,14 @@ class WebServer(object):
             _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        action = {}
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 sendZigateCmd(self, "0011", "" ) # Software Reset
                 start_Zigate( self )
-            action = {}
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
+        _response["Data"] = json.dumps( action , sort_keys=True )
         return _response
 
     def rest_zigate( self, verb, data, parameters):
@@ -622,7 +661,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.zigatedata:
-                _response["Data"] = json.dumps( self.zigatedata, sort_keys=False )
+                _response["Data"] = json.dumps( self.zigatedata, sort_keys=True )
             else:
                 fake_zigate = {}
                 fake_zigate['Firmware Version'] = "fake - 0310"
@@ -632,7 +671,7 @@ class WebServer(object):
                 fake_zigate['PANID'] = "51cf"
                 fake_zigate['Extended PANID'] = "bd1247ec9d358634"
 
-                _response["Data"] = json.dumps( fake_zigate , sort_keys=False )
+                _response["Data"] = json.dumps( fake_zigate , sort_keys=True )
         return _response
 
 
@@ -648,14 +687,14 @@ class WebServer(object):
         if verb == 'GET':
                 
                 dzenv = {}
-                dzenv['proto'] = self.pluginconf.pluginConf['proto']
-                dzenv['host'] = self.pluginconf.pluginConf['host']
+                #dzenv['proto'] = self.pluginconf.pluginConf['proto']
+                #dzenv['host'] = self.pluginconf.pluginConf['host']
                 dzenv['port'] = self.pluginconf.pluginConf['port']
 
                 dzenv['WebUserName'] = self.WebUsername
                 dzenv['WebPassword'] = self.WebPassword
 
-                _response["Data"] = json.dumps( dzenv, sort_keys=False )
+                _response["Data"] = json.dumps( dzenv, sort_keys=True )
         return _response
 
     def rest_PluginEnv( self, verb, data, parameters):
@@ -668,7 +707,7 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=False )
+                _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
         return _response
 
     def rest_netTopologie( self, verb, data, parameters):
@@ -686,7 +725,7 @@ class WebServer(object):
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if not os.path.isfile( _filename ) :
-            _response['Data'] = json.dumps( {} , sort_keys=False ) 
+            _response['Data'] = json.dumps( {} , sort_keys=True ) 
             return _response
 
         # Read the file, as we have anyway to do it
@@ -735,9 +774,16 @@ class WebServer(object):
                             elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
                                 _father = item
                                 _child  = x
-                            else:
-                                _father = item
-                                _child  = x
+                            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
+                                # Not a Parent, not a Child, not a Sibbling
+                                #_father = item
+                                #_child  = x
+                                continue
+                            elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'None':
+                                # Not a Parent, not a Child, not a Sibbling
+                                #_father = item
+                                #_child  = x
+                                continue
                         
                             _relation = {}
                             _relation['Father'] = _father
@@ -914,11 +960,56 @@ class WebServer(object):
                     for r in _scan[timestamp]:
                         self.logging( "Debug", "report: %s" %r)
                         if r['_NwkId'] == '0000':
-                            _response['Data'] = json.dumps( r['MeshRouters'] )
+                            _response['Data'] = json.dumps( r['MeshRouters'], sort_keys=True )
                 else:
                     _response['Data'] = json.dumps( [] , sort_keys=True)
         return _response
 
+    def rest_plugin_restart( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if verb == 'GET':
+            if self.WebUsername and self.WebPassword:
+                url = 'http://%s:%s@127.0.0.1:%s' %(self.WebUsername, self.WebPassword, self.pluginconf.pluginConf['port'])
+            else:
+                url = 'http://127.0.0.1:%s' %self.pluginconf.pluginConf['port']
+            url += '/json.htm?type=command&param=updatehardware&htype=94'
+            url += '&idx=%s' %self.pluginparameters['HardwareID']
+
+            url += '&name=%s' %self.pluginparameters['Name']
+            url += '&address=%s' %self.pluginparameters['Address']
+            url += '&port=%s' %self.pluginparameters['Port']
+            url += '&serialport=%s' %self.pluginparameters['SerialPort']
+            url += '&Mode1=%s' %self.pluginparameters['Mode1']
+            url += '&Mode2=%s' %self.pluginparameters['Mode2']
+            url += '&Mode3=%s' %self.pluginparameters['Mode3']
+            url += '&Mode4=%s' %self.pluginparameters['Mode4']
+            url += '&Mode5=%s' %self.pluginparameters['Mode5']
+            url += '&Mode6=%s' %self.pluginparameters['Mode6']
+            url += '&extra=%s' %self.pluginparameters['Key']
+            url += '&enabled=true'
+            url += '&datatimeout=0'
+
+            info = {}
+            info['Text'] = 'Plugin restarted'
+            info['TimeStamp'] = int(time())
+            _response["Data"] = json.dumps( info, sort_keys=True )
+
+            Domoticz.Log("Plugin Restart command : %s" %url)
+            _cmd = "/usr/bin/curl '%s' &" %url
+            try:
+                os.system( _cmd )
+            except:
+                Domoticz.Error("Error while trying to restart plugin %s" %_cmd)
+
+        return _response
+        
     def rest_restart_needed( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
@@ -929,9 +1020,10 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
-                _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
+            _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
         return _response
-        
+
+
 
     def rest_plugin_stat( self, verb, data, parameters):
 
@@ -942,13 +1034,16 @@ class WebServer(object):
         if self.pluginparameters['Mode1'] == 'None':
             Statistics['CRC'] = 1
             Statistics['FrameErrors'] = 1
-            Statistics['Sent'] = 144
-            Statistics['Received'] = 490
+            Statistics['Sent'] = 5
+            Statistics['Received'] = 10
             Statistics['Cluster'] = 268
             Statistics['ReTx'] = 3
             Statistics['CurrentLoad'] = 1
             Statistics['MaxLoad'] = 7
-            Statistics['StartTime'] = int(time())
+            Statistics['APSAck'] = 100
+            Statistics['APSNck'] =  0
+            Statistics['StartTime'] = int(time()) - 120
+            Statistics['Trend'] = [ ]
         else:
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -956,9 +1051,41 @@ class WebServer(object):
             Statistics['Received'] =self.statistics._received
             Statistics['Cluster'] =self.statistics._clusterOK
             Statistics['ReTx'] =self.statistics._reTx
-            Statistics['CurrentLoad'] = len(self.ZigateComm._normalQueue)
+            Statistics['APSFailure'] =self.statistics._APSFailure
+            Statistics['APSAck'] =self.statistics._APSAck
+            Statistics['APSNck'] =self.statistics._APSNck
+            Statistics['CurrentLoad'] = len(self.ZigateComm.zigateSendingFIFO)
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
+
+            Statistics['Trend'] = []
+            _nbitems = len(self.statistics.TrendStats)
+            
+            minTS = 0
+            if  len(self.statistics.TrendStats) == 120:
+                # Identify the smallest TS (we cannot assumed the list is sorted)
+                minTS = 120
+                for item in self.statistics.TrendStats:
+                    if item['_TS'] < minTS:
+                        minTS = item['_TS']
+                minTS -= 1 # To correct as the dataset start at 1 (and not 0)
+
+            # Renum
+            for item in self.statistics.TrendStats:
+                _TS = item['_TS'] 
+                if _nbitems >= 120:
+                    # Rolling window in progress
+                    _TS -= minTS
+
+                Statistics['Trend'].append( {"_TS":_TS, "Rxps": item['Rxps'],"Txps": item['Txps'], "Load": item['Load']} )
+
+        Statistics['Uptime'] = int(time() - Statistics['StartTime'])
+        Statistics['Txps'] = round(Statistics['Sent'] / Statistics['Uptime'], 2)
+        Statistics['Txpm'] = round(Statistics['Sent'] / Statistics['Uptime'] * 60, 2)
+        Statistics['Txph'] = round(Statistics['Sent'] / Statistics['Uptime'] * 3600, 2)
+        Statistics['Rxps'] = round(Statistics['Received'] / Statistics['Uptime'], 2)
+        Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
+        Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
@@ -999,10 +1126,17 @@ class WebServer(object):
                             setting['DataType'] = SETTINGS[_theme]['param'][param]['type']
                             setting['restart_need'] = SETTINGS[_theme]['param'][param]['restart']
                             setting['Advanced'] = SETTINGS[_theme]['param'][param]['Advanced']
-                            setting['current_value'] = self.pluginconf.pluginConf[param] 
+                            if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                                Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                if isinstance( self.pluginconf.pluginConf[param], int):
+                                    setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
+                                else:
+                                    setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                            else:
+                                setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
-                _response["Data"] = json.dumps( setting_lst, sort_keys=False )
+                _response["Data"] = json.dumps( setting_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -1023,10 +1157,13 @@ class WebServer(object):
                         if param != setting: continue
                         found = True
                         upd = True
-                        if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: 
+                        if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
                         self.logging( 'Debug', "Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        if SETTINGS[_theme]['param'][param]['restart']:
+                            self.restart_needed['RestartNeeded'] = True
+
                         if param == 'Certification':
                             if setting_lst[setting]['current'] in CERTIFICATION_CODE:
                                 self.pluginconf.pluginConf['Certification'] = setting_lst[setting]['current']
@@ -1034,6 +1171,36 @@ class WebServer(object):
                             else:
                                 Domoticz.Error("Unknown Certification code %s (allow are CE and FCC)" %(setting_lst[setting]['current']))
                                 continue
+
+                        elif param == 'blueLedOnOff':
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if self.pluginconf.pluginConf[param]:
+                                    zigateBlueLed( self, True)
+                                else:
+                                    zigateBlueLed( self, False)
+
+                        elif param == 'EnableLedInDark':
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_ledInDark( self, 'On')
+                                else:
+                                    legrand_ledInDark( self, 'Off')
+
+                        elif param == 'EnableDimmer':
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_dimOnOff( self, 'On')
+                                else:
+                                    legrand_dimOnOff( self, 'Off')
+
+                        elif param == 'EnableLedIfOn':
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_ledIfOnOnOff( self, 'On')
+                                else:
+                                    legrand_ledIfOnOnOff( self, 'Off')
 
                         elif param == 'debugMatchId':
                             if setting_lst[setting]['current'] == 'ffff':
@@ -1053,10 +1220,12 @@ class WebServer(object):
                                         self.pluginconf.pluginConf['debugMatchId'] += self.IEEE2NWK[key] + ","
                                 self.pluginconf.pluginConf['debugMatchId'] = self.pluginconf.pluginConf['debugMatchId'][:-1] # Remove the last ,
                         else:
-                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                                #Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                self.pluginconf.pluginConf[param] = int(setting_lst[setting]['current'],16)
+                            else:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
-                        if SETTINGS[_theme]['param'][param]['restart']:
-                            self.restart_needed['RestartNeeded'] = True
 
                 if not found:
                     Domoticz.Error("Unexpected parameter: %s" %setting)
@@ -1086,6 +1255,8 @@ class WebServer(object):
             info = {}
             if self.permitTojoin['Duration'] == 255:
                 info['PermitToJoin'] = 255
+            elif self.permitTojoin['Duration'] == 0:
+                info['PermitToJoin'] = 0
             elif int(time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
                 info['PermitToJoin'] = 0
             else:
@@ -1093,7 +1264,7 @@ class WebServer(object):
                 self.logging( 'Debug', "remain %s s" %rest)
                 info['PermitToJoin'] = rest
 
-            _response["Data"] = json.dumps( info, sort_keys=False )
+            _response["Data"] = json.dumps( info, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -1140,7 +1311,7 @@ class WebServer(object):
                     #device_info['Type'] = self.Devices[x].Type
                     #device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
-                _response["Data"] = json.dumps( device_lst, sort_keys=False )
+                _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
             elif len(parameters) == 1:
                 for x in self.Devices:
@@ -1158,7 +1329,7 @@ class WebServer(object):
                         _dictDevices['TimedOut'] = self.Devices[x].TimedOut
                         #_dictDevices['Type'] = self.Devices[x].Type
                         #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
-                        _response["Data"] = json.dumps( _dictDevices, sort_keys=False )
+                        _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
                         break
             else:
                 device_lst = []
@@ -1180,7 +1351,7 @@ class WebServer(object):
                             #device_info['Type'] = self.Devices[x].Type
                             #device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
-                _response["Data"] = json.dumps( device_lst, sort_keys=False )
+                _response["Data"] = json.dumps( device_lst, sort_keys=True )
         return _response
 
     def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):
@@ -1260,7 +1431,8 @@ class WebServer(object):
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 ( 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' not in self.ListOfDevices[x]) and \
                                 '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
-                                '0008' not in  self.ListOfDevices[x]['Ep'][ep]:
+                                '0008' not in  self.ListOfDevices[x]['Ep'][ep] and \
+                                '0102' not in  self.ListOfDevices[x]['Ep'][ep]:
                                 continue
                             if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' in self.ListOfDevices[x]:
                                 if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
@@ -1272,7 +1444,7 @@ class WebServer(object):
                                     if clusterType[widgetID] not in ( 'LvlControl', 'Switch', 'Plug', 
                                         "SwitchAQ2", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR',
                                         'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-                                        'WindowCovering'):
+                                        'VenetianInverted', 'Venetian', 'WindowCovering' ):
                                         continue
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
@@ -1288,7 +1460,7 @@ class WebServer(object):
                 if _device not in device_lst:
                     device_lst.append( _device )
             self.logging( 'Debug', "Response: %s" %device_lst)
-            _response["Data"] = json.dumps( device_lst, sort_keys=False )
+            _response["Data"] = json.dumps( device_lst, sort_keys=True )
             return _response
 
     def rest_zDevice_name( self, verb, data, parameters):
@@ -1309,33 +1481,33 @@ class WebServer(object):
                 device = {}
                 device['_NwkId'] = x
 
-                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'Health', 'RSSI', 'Battery'):
+                for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'RSSI', 'Battery'):
                     if item in self.ListOfDevices[x]:
-                        if item != 'MacCapa':
-                            if self.ListOfDevices[x][item] != {}:
-                                device[item.strip()] = self.ListOfDevices[x][item]
-                            else:
-                                device[item.strip()] = ''
+                        if item == 'MacCapa':
+                            device['MacCapa'] = []
+                            mac_capability = int(self.ListOfDevices[x][item],16)
+                            AltPAN      =   ( mac_capability & 0x00000001 )
+                            DeviceType  =   ( mac_capability >> 1 ) & 1
+                            PowerSource =   ( mac_capability >> 2 ) & 1
+                            ReceiveonIdle = ( mac_capability >> 3 ) & 1
+                            if DeviceType == 1 :
+                                device['MacCapa'].append("FFD")
+                            else :
+                                device['MacCapa'].append("RFD")
+                            if ReceiveonIdle == 1 :
+                                device['MacCapa'].append("RxonIdle")
+                            if PowerSource == 1 :
+                                device['MacCapa'].append("MainPower")
+                            else :
+                                device['MacCapa'].append("Battery")
+                            self.logging( 'Debug', "decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
                         else:
-                                device['MacCapa'] = []
-                                mac_capability = int(self.ListOfDevices[x][item],16)
-                                AltPAN      =   ( mac_capability & 0x00000001 )
-                                DeviceType  =   ( mac_capability >> 1 ) & 1
-                                PowerSource =   ( mac_capability >> 2 ) & 1
-                                ReceiveonIdle = ( mac_capability >> 3 ) & 1
-                                if DeviceType == 1 :
-                                    device['MacCapa'].append("FFD")
-                                else :
-                                    device['MacCapa'].append("RFD")
-                                if ReceiveonIdle == 1 :
-                                    device['MacCapa'].append("RxonIdle")
-                                if PowerSource == 1 :
-                                    device['MacCapa'].append("MainPower")
-                                else :
-                                    device['MacCapa'].append("Battery")
-                                self.logging( 'Debug', "decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
+                            if self.ListOfDevices[x][item] != {}:
+                                device[item] = self.ListOfDevices[x][item]
+                            else:
+                                device[item] = ''
                     else:
-                        device[item.strip()] = ""
+                        device[item] = ''
 
                 device['WidgetList'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
@@ -1355,7 +1527,7 @@ class WebServer(object):
                     device_lst.append( device )
             #_response["Data"] = json.dumps( device_lst, sort_keys=True )
             self.logging( 'Debug', "zDevice_name - sending %s" %device_lst)
-            _response["Data"] = json.dumps( device_lst, sort_keys=False )
+            _response["Data"] = json.dumps( device_lst, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
@@ -1373,6 +1545,35 @@ class WebServer(object):
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
 
+        elif verb == 'DELETE':
+            if len(parameters) == 1:
+                deviceId = parameters[0]
+                if len( deviceId ) == 4: # Short Network Addr
+                    if deviceId not in self.ListOfDevices:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    nwkid = deviceId
+                    ieee = self.ListOfDevices[deviceId]['IEEE']
+                else:
+                    if deviceId not in self.IEEE2NWK:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    ieee = deviceId
+                    nwkid = self.IEEE2NWK[ ieee ]
+                
+                del self.ListOfDevices[ nwkid ]
+                del self.IEEE2NWK[ ieee ]
+                # for a remove in case device didn't send the leave
+                sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
+
+                action = {}
+                action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
+                _response['Data'] = json.dumps( action , sort_keys=True)
+
         return _response
 
     def rest_zDevice( self, verb, data, parameters):
@@ -1386,7 +1587,34 @@ class WebServer(object):
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
-        if verb == 'GET':
+        if verb == 'DELETE':
+            if len(parameters) == 1:
+                deviceId = parameters[0]
+                if len( deviceId ) == 4: # Short Network Addr
+                    if deviceId not in self.ListOfDevices:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    nwkid = deviceId
+                    ieee = self.ListOfDevice[deviceId]['IEEE']
+                else:
+                    if deviceId not in self.IEEE2NWK:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    ieee = deviceId
+                    nwkid = self.IEEE2NWK[ ieee ]
+                
+                del self.ListOfDevice[ nwkid ]
+                del self.IEEE2NWK[ ieee ]
+                action = {}
+                action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
+                _response['Data'] = json.dumps( action , sort_keys=True)
+            return _response
+
+        elif verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
@@ -1398,7 +1626,7 @@ class WebServer(object):
                     device = {}
                     device['_NwkId'] = item
                     # Main Attributes
-                    for attribut in ( 'ZDeviceName', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
+                    for attribut in ( 'ZDeviceName', 'ConsistencyCheck', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
 
                         if attribut in self.ListOfDevices[item]:
                             if self.ListOfDevices[item][attribut] == {}:
@@ -1484,7 +1712,7 @@ class WebServer(object):
                     device['LastCmds'] = lastcmd_lst
                     zdev_lst.append( device )
 
-                _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
+                _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
         return _response
 
 
@@ -1507,7 +1735,9 @@ class WebServer(object):
             if len(parameters) == 0:
                 zdev_lst = []
                 for item in self.ListOfDevices:
-                    zdev_lst.append(self.ListOfDevices[item])
+                    entry = dict(self.ListOfDevices[item])
+                    entry['NwkID'] = item
+                    zdev_lst.append(entry)
                 _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
@@ -1539,50 +1769,72 @@ class WebServer(object):
 
             if len(parameters) == 0:
                 zgroup_lst = []
-                for item in ListOfGroups:
-                    self.logging( 'Debug', "Process Group: %s" %item)
+                for itergrp in ListOfGroups:
+                    self.logging( 'Debug', "Process Group: %s" %itergrp)
                     zgroup = {}
-                    zgroup['_GroupId'] = item
-                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['_GroupId'] = itergrp
+                    zgroup['GroupName'] = ListOfGroups[itergrp]['Name']
                     zgroup['Devices'] = []
-                    for dev, ep in ListOfGroups[item]['Devices']:
-                        self.logging( 'Debug', "--> add %s %s" %(dev, ep))
+                    for itemDevice in ListOfGroups[itergrp]['Devices']:
+                        if len(itemDevice) == 2:
+                            dev, ep = itemDevice
+                            ieee = self.ListOfDevices[dev]['IEEE']
+                        elif len(itemDevice) == 3:
+                            dev, ep, ieee = itemDevice
+                        self.logging( 'Debug', "--> add %s %s %s" %(dev, ep, ieee))
                         _dev = {}
                         _dev['_NwkId'] = dev
                         _dev['Ep'] = ep
+                        _dev['IEEE'] = ieee
                         zgroup['Devices'].append( _dev )
+
+                    if 'WidgetStyle' in ListOfGroups[itergrp]:
+                        zgroup['WidgetStyle'] = ListOfGroups[itergrp]['WidgetStyle']
+                    if 'Cluster' in ListOfGroups[itergrp]:
+                        zgroup['Cluster'] = ListOfGroups[itergrp]['Cluster']
+
                     # Let's check if we don't have an Ikea Remote in the group
-                    if 'Tradfri Remote' in ListOfGroups[item]:
+                    if 'Tradfri Remote' in ListOfGroups[itergrp]:
                         self.logging( 'Debug', "--> add Ikea Tradfri Remote")
                         _dev = {}
-                        _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
+                        _dev['_NwkId'] = ListOfGroups[itergrp]["Tradfri Remote"]["Device Addr"]
                         _dev['Ep'] = "01"
                         zgroup['Devices'].append( _dev )
                     zgroup_lst.append(zgroup)
                 self.logging( 'Debug', "zGroup: %s" %zgroup_lst)
-                _response["Data"] = json.dumps( zgroup_lst, sort_keys=False )
+                _response["Data"] = json.dumps( zgroup_lst, sort_keys=True )
 
             elif len(parameters) == 1:
                 if parameters[0] in ListOfGroups:
-                    item =  parameters[0]
+                    itemGroup =  parameters[0]
                     zgroup = {}
-                    zgroup['_GroupId'] = item
-                    zgroup['GroupName'] = ListOfGroups[item]['Name']
+                    zgroup['_GroupId'] = itemGroup
+                    zgroup['GroupName'] = ListOfGroups[itemGroup]['Name']
                     zgroup['Devices'] = {}
-                    for dev, ep in ListOfGroups[item]['Devices']:
+                    for itemDevice in ListOfGroups[itemGroup]['Devices']:
+                        if len(itemDevice) == 2:
+                            dev, ep = itemDevice
+                            _ieee = self.ListOfDevices[dev]['IEEE']
+                        elif len(itemDevice) == 3:
+                            dev, ep, _ieee = itemDevice
                         self.logging( 'Debug', "--> add %s %s" %(dev, ep))
                         zgroup['Devices'][dev] = ep 
                     # Let's check if we don't have an Ikea Remote in the group
-                    if 'Tradfri Remote' in ListOfGroups[item]:
+                    if 'Tradfri Remote' in ListOfGroups[itemGroup]:
                         self.logging( 'Log', "--> add Ikea Tradfri Remote")
                         _dev = {}
-                        _dev['_NwkId'] = ListOfGroups[item]["Tradfri Remote"]["Device Addr"]
+                        _dev['_NwkId'] = ListOfGroups[itemGroup]["Tradfri Remote"]["Device Addr"]
                         _dev['Ep'] = "01"
                         zgroup['Devices'].append( _dev )
-                    _response["Data"] = json.dumps( zgroup, sort_keys=False )
+                    _response["Data"] = json.dumps( zgroup, sort_keys=True )
 
         elif verb == 'PUT':
             _response["Data"] = None
+            if  not self.groupmgt:
+                Domoticz.Error("Looks like Group Management is not enabled")
+                _response["Data"] = {}
+                return _response
+
             ListOfGroups = self.groupmgt.ListOfGroups
             grp_lst = []
             if len(parameters) == 0:
@@ -1595,7 +1847,7 @@ class WebServer(object):
                     if '_GroupId' not in item:
                         self.logging( 'Debug', "--->Adding Group: ")
                         # Define a GroupId 
-                        for x in range( 0x0001, 0x9999):
+                        for x in range( 0x0001, 0x0999):
                             grpid = '%04d' %x
                             if grpid not in ListOfGroups:
                                 break
@@ -1630,8 +1882,8 @@ class WebServer(object):
                             ieee = devselected['IEEE']
                         elif '_NwkId' in devselected:
                             nwkid = devselected['_NwkId']
-                            if nwkid not in self.ListOfDevices:
-                                Domoticz.Error("Not able to find IEEE for %s %s - nwkid: %s" %(_dev, _ep, nwkid))
+                            if nwkid != '0000' and nwkid not in self.ListOfDevices:
+                                Domoticz.Error("Not able to find nwkid: %s" %(nwkid))
                                 continue
                             if 'IEEE' not in self.ListOfDevices[nwkid]:
                                 Domoticz.Error("Not able to find IEEE for %s %s - no IEEE entry in %s" %(_dev, _ep, self.ListOfDevices[nwkid]))
@@ -1658,7 +1910,13 @@ class WebServer(object):
                         if _tradfri_remote:
                             continue
                         # Process the rest
-                        for _dev,_ep in ListOfGroups[grpid]['Devices']:
+                        for itemDevice in ListOfGroups[grpid]['Devices']:
+                            if len(itemDevice) == 2:
+                                _dev, _ep = itemDevice
+                                _ieee = self.ListOfDevices[dev]['IEEE']
+                            elif len(itemDevice) == 3:
+                                _dev, _ep, _ieee = itemDevice
+
                             if _dev == devselected['_NwkId'] and _ep == devselected['Ep']:
                                 if (ieee, _ep) not in newdev:
                                     self.logging( 'Debug', "------>--> %s to be added to group %s" %( (ieee, _ep), grpid))
@@ -1689,17 +1947,20 @@ class WebServer(object):
                 # end for item / next group
                 # Finaly , we need to check if AnyGroup have been removed !
                 self.logging( 'Debug', "Group to be removed")
+                Domoticz.Log("ListOfGroups: %s" %ListOfGroups)
                 for grpid in ListOfGroups:
                     if grpid not in grp_lst:
                         self.logging( 'Debug', "--->Group %s has to be removed" %grpid)
-                        del ListOfGroups[grpid]['Imported']
+                        if 'Imported' in ListOfGroups[grpid]:
+                            del ListOfGroups[grpid]['Imported']
                         ListOfGroups[grpid]['Imported'] = []
 
                 self.logging( 'Debug', "Group to be worked out")
                 for grpid in ListOfGroups:
                     self.logging( 'Debug', "Group: %s" %grpid)
-                    for dev in ListOfGroups[grpid]['Imported']:
-                        self.logging( 'Debug', "---> %s to be imported" %str(dev))
+                    if 'Imported' in ListOfGroups[grpid]:
+                        for dev in ListOfGroups[grpid]['Imported']:
+                            self.logging( 'Debug', "---> %s to be imported" %str(dev))
 
                 self.groupmgt.write_jsonZigateGroupConfig()
             # end if len()
@@ -1707,6 +1968,455 @@ class WebServer(object):
 
         return _response
 
+    def rest_binding( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+
+                if 'sourceIeee' not in data and \
+                        'sourceEp' not in data and \
+                        'destIeee' not in data and \
+                        'destEp' not in data and \
+                        'cluster' not in data:
+                    Domoticz.Log("-----> uncomplet json %s" %data)
+                    _response["Data"] = json.dumps("uncomplet json %s" %data)
+                    return _response
+
+                self.logging( 'Debug', "rest_binding - Source: %s/%s Dest: %s/%s Cluster: %s" %(data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster']))
+                webBind( self, data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster'] )
+                _response["Data"] = json.dumps( "Binding cluster %s between %s/%s and %s/%s" %(data['cluster'], data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp']))
+                return _response
+
+    def rest_raw_command( self, verb, data, parameters):
+
+        Domoticz.Log("raw_command - %s %s" %(verb, data))
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+                Domoticz.Log("---> Data: %s" %str(data))
+                if 'Command' not in data and 'payload' not in data:
+                    domoticz.Error("Unexpected request: %s" %data)
+                    _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) )
+                    return _response
+                msgtype = int( data['Command'] , 16 )
+                if msgtype not in ZIGATE_COMMANDS:
+                    Domoticz.Error("raw_command - Unknown MessageType received %s" %msgtype)
+                    _response["Data"] = json.dumps( "Unknown MessageType received %s" %msgtype)
+                    return _response
+                
+                cmd = data['Command']
+                payload = data['payload']
+                if payload == None:
+                    payload = ""
+                sendZigateCmd( self, data['Command'], data['payload'])
+                self.logging( 'Log', "rest_dev_command - Command: %s payload %s" %(data['Command'], data['payload']))
+                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) ) 
+
+        return _response
+
+    def rest_dev_command( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+                Domoticz.Log("---> Data: %s" %str(data))
+                self.logging( 'Log', "rest_dev_command - Command: %s on object: %s with extra %s %s" %(data['Command'], data['NwkId'], data['Value'],  data['Color']))
+                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['NwkId']) ) 
+                if 'Command' not in data:
+                    return _response
+                if data['Command'] == '':
+                    return _response
+                if data['Value'] == '' or data['Value'] is None:
+                    Level = 0
+                else:
+                    if is_hex(str(data['Value'])):
+                        Level = int(str(data['Value']),16)
+                    else:
+                        Level = int(str(data['Value']))
+                ColorMode = ColorValue = ''
+                color = ''
+                if data['Color'] == '' or data['Color'] is None:
+                    Hue_List = {}
+                    Color = json.dumps( Hue_List )
+                else:
+                    # Decoding RGB
+                    # rgb(30,96,239)
+                    ColorMode = data['Color'].split('(')[0]
+                    ColorValue = data['Color'].split('(')[1].split(')')[0]
+                    if ColorMode == 'rgb':
+                        Hue_List = {}
+                        Hue_List['m'] = 3
+                        Hue_List['r'], Hue_List['g'], Hue_List['b'] = ColorValue.split(',') 
+                    self.logging( 'Log', "rest_dev_command -        Color decoding m: %s r:%s g: %s b: %s"  %(Hue_List['m'], Hue_List['r'], Hue_List['g'], Hue_List['b']))
+                    Color = json.dumps( Hue_List )
+
+
+
+                epout = '01'
+                if 'Type' not in data:
+                    actuators( self,  data['Command'], data['NwkId'], epout , 'Switch')
+                else:
+                    SWITCH_2_CLUSTER = { 'Switch':'0006',
+                        'LivoloSWL':'0006',
+                        'LivoloSWR':'0006',
+                        'LvlControl':'0008',
+                        'WindowCovering':'0102',
+                        'ThermoSetpoint':'0201',
+                        'ColorControlRGBWW':'0300',
+                        'ColorControlWW':'0300',
+                        'ColorControlRGB':'0300'}
+
+                    key = data['NwkId']
+                    if data['Type'] is None:
+                        clusterCode = '0003'
+                    else:
+                        clusterCode = SWITCH_2_CLUSTER[ data['Type'] ]
+
+                    for tmpEp in self.ListOfDevices[data['NwkId']]['Ep']:
+                        if clusterCode  in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                            epout=tmpEp
+                    actuators( self,  data['Command'], key, epout , data['Type'], value=Level, color=Color)
+
+        return _response
+
+    def rest_dev_capabilities( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            if self.Devices is None or len(self.Devices) == 0:
+                return _response
+            if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
+                return _response
+            if len(parameters) == 0:
+                Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" %(parameters))
+                return _response
+            elif len(parameters) == 1:
+                if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
+                    Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
+                    return _response
+                # Check Capabilities
+                CLUSTER_INFOS = {
+                        '0003': [ 
+                            { 'actuator': 'Identify', 'Value': '', 'Type': ( ) },
+                            { 'actuator': 'IdentifyEffect', 'Value': 'hex', 'Type': ( ) },
+                        ],
+                        '0006': [
+                            { 'actuator': 'On', 'Value':'', 'Type': ( 'Switch',) },
+                            { 'actuator': 'Off', 'Value':'', 'Type': ( 'Switch', ) },
+                            { 'actuator': 'Toggle', 'Value':'', 'Type': ( 'Switch', ) },
+                        ],
+                        '0008': [
+                            { 'actuator': 'SetLevel', 'Value':'int', 'Type': ( 'LvlControl',) },
+                        ],
+                        '0102': [
+                            { 'actuator': 'On', 'Value':'', 'Type': ( 'WindowCovering',) },
+                            { 'actuator': 'Off', 'Value':'', 'Type': ( 'WindowCovering',) },
+                            { 'actuator': 'Stop', 'Value':'', 'Type': ( 'WindowCovering',) },
+                            { 'actuator': 'SetLevel', 'Value':'hex', 'Type': ( 'WindowCovering',) },
+                        ],
+                        '0201': [
+                            { 'actuator': 'SetPoint', 'Value':'hex', 'Type': ( 'ThermoSetpoint',) },
+                        ],
+                        '0300': [
+                            { 'actuator': 'SetColor', 'Value':'rgbww', 'Type': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB') },
+                        ]
+
+                    }
+                dev_capabilities = {}
+                dev_capabilities['NwkId'] = {}
+                dev_capabilities['Capabilities'] = []
+                dev_capabilities['Types'] = []
+                if  parameters[0] in self.ListOfDevices:
+                    _nwkid = parameters[0]
+                elif parameters[0] in self.IEEE2NWK:
+                    _nwkid = self.IEEE2NWK[parameters[0]]
+                dev_capabilities['NwkId'] = _nwkid
+
+                for ep in self.ListOfDevices[ _nwkid ]['Ep']:
+                    for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
+                        if cluster in CLUSTER_INFOS:
+                            for action in CLUSTER_INFOS[cluster]:
+                                _capabilitie = {}
+                                _capabilitie['actuator'] = action['actuator']
+                                if action['Value'] == '':
+                                    _capabilitie['Value'] = False
+                                else: 
+                                    _capabilitie['Value'] = action['Value']
+                                if len( action['Type']):
+                                    _capabilitie['Type'] = True
+                                else:
+                                    _capabilitie['Type'] = False
+                                dev_capabilities['Capabilities'].append( _capabilitie )
+
+                                for cap in action['Type']:
+                                    if cap not in dev_capabilities['Types']:
+                                        dev_capabilities['Types'].append( cap )
+
+                                # Adding non generic Capabilities
+                                if 'Model' in self.ListOfDevices[ _nwkid ]:
+                                    if self.ListOfDevices[ _nwkid ]['Model'] != {}:
+                                        if self.ListOfDevices[ _nwkid ]['Model'] =='TI0001':
+                                            if 'LivoloSWL' not in dev_capabilities['Types']:
+                                                dev_capabilities['Types'].append( 'LivoloSWL' )
+                                            if 'LivoloSWR' not in dev_capabilities['Types']:
+                                                dev_capabilities['Types'].append( 'LivoloSWR' )
+
+                _response["Data"] = json.dumps( dev_capabilities )
+                return _response
+
+
+    def rest_new_hrdwr( self, verb, data, parameters):
+
+        """
+        This is call to Enable/Disable a Provisioning process. As a toggle you will enable the provisioning or disable it
+        it will return either Enable or Disable
+        """
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            data = {}
+            if len(parameters) != 1:
+                Domoticz.Error("rest_new_hrdwr - unexpected parameter %s " %parameters)
+                _response["Data"] = { "unexpected parameter %s " %parameters}
+                return _response
+
+            if parameters[0] not in ( 'enable', 'cancel', 'disable' ):
+                Domoticz.Error("rest_new_hrdwr - unexpected parameter %s " %parameters[0])
+                _response["Data"] = { "unexpected parameter %s " %parameters[0] }
+                return _response
+            if parameters[0] == 'enable':
+                Domoticz.Log("Enable Assisted pairing")
+                if len(self.DevicesInPairingMode):
+                    del self.DevicesInPairingMode
+                    self.DevicesInPairingMode = []
+                if not self.zigatedata:
+                    # Seems we are in None mode - Testing for ben
+                    self.fakeDevicesInPairingMode = 0
+
+                if self.permitTojoin['Duration'] != 255 and self.pluginparameters['Mode1'] != 'None':
+                    ZigatePermitToJoin(self, ( 4 * 60 ))
+
+                _response["Data"] = { "start pairing mode at %s " %int(time()) }
+                return _response
+
+            elif parameters[0] in ( 'cancel', 'disable'):
+                Domoticz.Log("Disable Assisted pairing")
+                if len(self.DevicesInPairingMode):
+                    del self.DevicesInPairingMode
+                    self.DevicesInPairingMode = []
+                if not self.zigatedata:
+                    # Seems we are in None mode - Testing for ben
+                    self.fakeDevicesInPairingMode = 0
+                if self.permitTojoin['Duration'] != 255 and self.pluginparameters['Mode1'] != 'None':
+                    ZigatePermitToJoin(self, 0)
+
+                _response["Data"] = { "stop pairing mode at %s " %int(time()) }
+                return _response
+
+    def rest_rcv_nw_hrdwr( self, verb, data, parameters):
+
+        """
+        Will return a status on the provisioning process. Either Enable or Disable and in case there is a new device provisionned
+        during the period, it will return the information captured.
+        """
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Data"] = {}
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'GET':
+            data = {}
+            data['NewDevices'] = []
+
+            if not self.zigatedata:
+                # Seems we are in None mode - Testing for ben
+                if self.fakeDevicesInPairingMode in ( 0, 1):
+                    # Do nothing just wait the next pool
+                    self.fakeDevicesInPairingMode += 1
+                    _response["Data"] = json.dumps( data )
+                    return _response
+
+                elif self.fakeDevicesInPairingMode in ( 2, 3 ):
+                    self.fakeDevicesInPairingMode += 1
+                    newdev = {}
+                    newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
+                    data['NewDevices'].append( newdev )
+                    _response["Data"] = json.dumps( data )
+                    return _response
+
+                elif self.fakeDevicesInPairingMode in ( 4, 5 ):
+                    self.fakeDevicesInPairingMode += 1
+                    newdev = {}
+                    newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
+                    data['NewDevices'].append( newdev )
+                    newdev = {}
+                    newdev['NwkId'] = list(self.ListOfDevices.keys())[1]
+                    data['NewDevices'].append( newdev )
+                    _response["Data"] = json.dumps( data )
+                    return _response
+
+                elif self.fakeDevicesInPairingMode in ( 6, 7 ):
+                    self.fakeDevicesInPairingMode += 1
+                    self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[0] )
+                    self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[1] )
+                    self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[2] )
+
+            Domoticz.Log("Assisted Pairing: Polling: %s" %str(self.DevicesInPairingMode))
+            if len(self.DevicesInPairingMode) == 0:
+                Domoticz.Log("--> Empty queue")
+                _response["Data"] = json.dumps( data )
+                return _response
+            else:
+                listOfPairedDevices = list(self.DevicesInPairingMode)
+                _fake = 0
+                for nwkid in listOfPairedDevices:
+                    if not self.zigatedata:
+                        _fake += 1
+                    newdev = {}
+                    newdev['NwkId'] = nwkid
+
+                    Domoticz.Log("--> New device: %s" %nwkid)
+                    if 'Status' not in self.ListOfDevices[ nwkid ]:
+                        Domoticz.Error("Something went wrong as the device seems not be created")
+                        data['NewDevices'].append( newdev )
+                        continue
+
+                    if self.ListOfDevices[ nwkid ]['Status'] in ( '004d', '0045', '0043', '8045', '8043') or ( _fake == 1):
+                        # Pairing in progress, just return the Nwkid
+                        data['NewDevices'].append( newdev )
+                        continue
+
+                    elif self.ListOfDevices[ nwkid ]['Status'] == 'UNKNOW' or ( _fake == 2):
+                        Domoticz.Log("--> UNKNOW , removed %s from List" %nwkid)
+                        self.DevicesInPairingMode.remove( nwkid )
+                        newdev['ProvisionStatus'] = 'Failed'
+                        newdev['ProvisionStatusDesc'] = 'Failed'
+
+                    elif self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
+                        Domoticz.Log("--> inDB , removed %s from List" %nwkid)
+                        self.DevicesInPairingMode.remove( nwkid )
+                        newdev['ProvisionStatus'] = 'inDB'
+                        newdev['ProvisionStatusDesc'] = 'inDB'
+                    else:
+                        Domoticz.Log("--> Unexpected , removed %s from List" %nwkid)
+                        self.DevicesInPairingMode.remove( nwkid )
+                        newdev['ProvisionStatus'] = 'Unexpected'
+                        newdev['ProvisionStatusDesc'] = 'Unexpected'
+                        Domoticz.Error('Unexpected')
+                        continue
+
+                    newdev['IEEE'] = 'Unknown'
+                    if 'IEEE' in self.ListOfDevices[ nwkid ]:
+                        newdev['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
+    
+                    newdev['ProfileId'] = ''
+                    newdev['ProfileIdDesc'] = 'Unknow'
+                    if 'ProfileID' in self.ListOfDevices[ nwkid ]:
+                        if self.ListOfDevices[ nwkid ]['ProfileID'] != {}:
+                            newdev['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
+                            if int(newdev['ProfileId'],16) in PROFILE_ID:
+                                newdev['ProfileIdDesc'] = PROFILE_ID[ int(newdev['ProfileId'],16) ]
+
+                    newdev['ZDeviceID'] = ''
+                    newdev['ZDeviceIDDesc'] = 'Unknow'
+                    if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
+                        if self.ListOfDevices[ nwkid ]['ZDeviceID'] != {}:
+                            newdev['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
+                            if int(newdev['ProfileId'],16) == 0x0104: # ZHA
+                                if int(newdev['ZDeviceID'],16) in ZHA_DEVICES:
+                                    newdev['ZDeviceIDDesc'] = ZHA_DEVICES[ int(newdev['ZDeviceID'],16) ]
+                                else:
+                                    newdev['ZDeviceIDDesc'] = 'Unknow'
+                            elif int(newdev['ProfileId'],16) == 0xc05e: # ZLL
+                                if int(newdev['ZDeviceID'],16) in ZLL_DEVICES:
+                                    newdev['ZDeviceIDDesc'] = ZLL_DEVICES[ int(newdev['ZDeviceID'],16) ]
+         
+                    if 'Model' in self.ListOfDevices[ nwkid ]:
+                        newdev['Model'] = self.ListOfDevices[ nwkid ]['Model']
+        
+                    newdev['PluginCertified'] = 'Unknow'
+                    if 'ConfigSource' in self.ListOfDevices[nwkid]:
+                        if self.ListOfDevices[nwkid]['ConfigSource'] == 'DeviceConf':
+                            newdev['PluginCertified'] = 'yes'
+                        else:
+                            newdev['PluginCertified'] = 'no'
+       
+                    newdev['Ep'] = []
+                    if 'Ep' in self.ListOfDevices[ nwkid ]:
+                        for iterEp in  self.ListOfDevices[ nwkid ][ 'Ep' ]:
+                            ep = {}
+                            ep['Ep'] = iterEp
+                            ep['Clusters'] = []
+                            for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
+                                if clusterId in ( 'ClusterType', 'Type', 'ColorControl' ): continue
+                                cluster = {}
+                                cluster['ClusterId'] = clusterId
+                                if clusterId in ZCL_CLUSTERS_LIST:
+                                    cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
+                                else:
+                                    cluster['ClusterDesc'] = 'Unknown'
+                                ep['Clusters'].append( cluster )
+                                Domoticz.Log("------> New Cluster: %s" %str(cluster))
+                            newdev['Ep'].append( ep )
+                            Domoticz.Log("----> New Ep: %s" %str(ep))
+                    data['NewDevices'].append( newdev )
+                    Domoticz.Log(" --> New Device: %s" %str(newdev))
+                # for nwkid in listOfPairedDevices:
+                    
+            _response["Data"] = json.dumps( data )
+            return _response
 
 def DumpHTTPResponseToLog(httpDict):
 
@@ -1725,15 +2435,28 @@ def DumpHTTPResponseToLog(httpDict):
                 else:
                     self.logging( 'Log', "--->'" + x + "':'" + str(httpDict[x]) + "'")
 
-def setupHeadersResponse():
+def setupHeadersResponse( cookie = None ):
 
     _response = {}
     _response["Headers"] = {}
     _response["Headers"]["Server"] = "Domoticz"
     _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
+
+    _response["Headers"]['Access-Control-Allow-Headers'] = 'Cache-Control, Pragma, Origin, Authorization,   Content-Type, X-Requested-With'
+    _response["Headers"]['Access-Control-Allow-Methods'] = 'GET, POST, DELETE'
+    _response["Headers"]['Access-Control-Allow-Origin'] = '*'
+
+    _response["Headers"]["Referrer-Policy"] = "no-referrer"
+
+    if cookie:
+        _response["Headers"]["Cookie"] = cookie
+
     #_response["Headers"]["Accept-Ranges"] = "bytes"
     # allow users of a web application to include images from any origin in their own conten
     # and all scripts only to a specific server that hosts trusted code.
     #_response["Headers"]["Content-Security-Policy"] = "default-src 'self'; img-src *"
     #_response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
+
     return _response
+
+

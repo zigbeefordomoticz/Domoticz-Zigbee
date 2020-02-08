@@ -1,0 +1,17 @@
+{
+	"Ep":{
+		"01":{
+			"0402":"",
+			"0405":"",
+			"Type":"Temp/Humi"
+		}
+	},
+	"Type":"",
+	"ClusterToBind": [],
+	"ConfigureReporting":{},
+	        "ReadAttributes": {
+                "0000": [ "0004", "0005" ],
+		"0402": [],
+		"0405": []
+        }
+}

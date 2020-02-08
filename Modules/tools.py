@@ -6,6 +6,7 @@
 """
     Module : z_tools.py
 
+
     Description: Zigate toolbox
 """
 import binascii
@@ -95,7 +96,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
 
     found = False
 
-    #check in ListOfDevices
+    #check in ListOfDevices, we can return only Found
     if newNWKID in self.ListOfDevices:
         if 'Status' in self.ListOfDevices[newNWKID] :
             if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
@@ -104,9 +105,10 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 if not IEEE :
                     return True
 
+    # Not found with NWKID, let's check in the IEEE
     #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
     if IEEE:
-        for existingIEEEkey in self.IEEE2NWK :
+        for existingIEEEkey in list(self.IEEE2NWK):
             if existingIEEEkey == IEEE :
                 # This device is already in Domoticz 
                 existingNWKkey = self.IEEE2NWK[IEEE]
@@ -117,9 +119,15 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     # In fact this device doesn't really exist ... The cleanup was not correctly done in IEEE2NWK
                     del self.IEEE2NWK[IEEE]
                     found = False
+                    continue
 
                 # Make sure this device is valid 
-                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left'):
+                if 'Status' not in  self.ListOfDevices[existingNWKkey]:
+                    found = False
+                    continue
+                    
+                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
+                    found = False
                     continue
 
                 # We got a new Network ID for an existing IEEE. So just re-connect.
@@ -152,8 +160,8 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                 # MostLikely exitsingKey(the old NetworkID)  is not needed any more
                 removeNwkInList( self, existingNWKkey )    
 
-                if self.ListOfDevices[newNWKID]['Status'] == 'Left' :
-                    Domoticz.Log("DeviceExist - Update Status from 'Left' to 'inDB' for NetworkID : " +str(newNWKID) )
+                if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
+                    Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
                     self.ListOfDevices[newNWKID]['Status'] = 'inDB'
                     self.ListOfDevices[newNWKID]['Heartbeat'] = 0
                     WriteDeviceList(self, 0)
@@ -194,23 +202,27 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
                         del self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'][str(ID)]
 
         # Finaly let's see if there is any Devices left in this .
-        emptyCT = 1
+        emptyCT = True
         if 'ClusterType' in self.ListOfDevices[key]: # Empty or Doesn't exist
             Domoticz.Log("removeDeviceInList - exitsing Global 'ClusterTpe'")
             if self.ListOfDevices[key]['ClusterType'] != {}:
-                emptyCT = 0
+                emptyCT = False
         for tmpEp in self.ListOfDevices[key]['Ep'] : 
             if 'ClusterType' in self.ListOfDevices[key]['Ep'][tmpEp]:
                 Domoticz.Log("removeDeviceInList - exitsing Ep 'ClusterTpe'")
                 if self.ListOfDevices[key]['Ep'][tmpEp]['ClusterType'] != {}:
-                    emptyCT = 0
+                    emptyCT = False
         
-        if emptyCT == 1 :     
+        if emptyCT :     
             del self.ListOfDevices[key]
             del self.IEEE2NWK[IEEE]
 
             self.adminWidgets.updateNotificationWidget( Devices, 'Device fully removed %s with IEEE: %s' %( Devices[Unit].Name, IEEE ))
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
+
+            return True
+        else:
+            return False
 
 
 
@@ -227,7 +239,7 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['RIA']="0"
             self.ListOfDevices[Nwkid]['RSSI']={}
             self.ListOfDevices[Nwkid]['Battery']={}
-            self.ListOfDevices[Nwkid]['Model']={}
+            self.ListOfDevices[Nwkid]['Model']= ''
             self.ListOfDevices[Nwkid]['MacCapa']={}
             self.ListOfDevices[Nwkid]['IEEE']={}
             self.ListOfDevices[Nwkid]['Type']={}
@@ -240,7 +252,7 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['Last Cmds']= []
             self.ListOfDevices[Nwkid]['LogicalType']=''
             self.ListOfDevices[Nwkid]['Manufacturer']=''
-            self.ListOfDevices[Nwkid]['Maufacturer Name']=''
+            self.ListOfDevices[Nwkid]['Manufacturer Name']=''
             self.ListOfDevices[Nwkid]['NbEp']=''
             self.ListOfDevices[Nwkid]['PowerSource']=''
             self.ListOfDevices[Nwkid]['ReadAttributes']={}
@@ -282,6 +294,8 @@ def updSQN_battery(self, key, newSQN):
         self.ListOfDevices[key]['SQN'] = {}
     return
 
+        
+
 def updSQN( self, key, newSQN) :
 
     if key not in self.ListOfDevices or \
@@ -298,7 +312,7 @@ def updSQN( self, key, newSQN) :
             updSQN_battery( self, key, newSQN)
 
     elif 'MacCapa' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['MacCapa'] == '8e' :     # So far we have a good understanding on 
+        if self.ListOfDevices[key]['MacCapa'] in ( '84', '8e'):     # So far we have a good understanding on 
             # Device on Main Power. SQN is increasing independetly of the object
             #updSQN_mainpower( self, key, newSQN)
             pass
@@ -496,9 +510,11 @@ def _logginfilter( self, message, nwkid):
             Domoticz.Log( message )
         elif nwkid in _debugMatchId:
             Domoticz.Log( message )
+        elif nwkid == 'ffff':
+            Domoticz.Log( message )
         return
-    else:
-        Domoticz.Log( message )
+    #else:
+    #    Domoticz.Log( message )
 
 
 def loggingCommand( self, logType, message, nwkid=None):
@@ -629,3 +645,4 @@ def mainPoweredDevice( self, nwkid):
             mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
 
     return mainPower
+

@@ -1,0 +1,24 @@
+{
+	"Ep":{
+		"01":{
+			"0000":"",
+			"0001":"",
+			"0003":"",
+			"0004":"",
+			"0005":"",
+			"0006":"",
+			"Type":"SwitchAQ2"}
+	},
+	"Type":"",
+	"NickName":"Konke_Switch",
+	"ClusterToBind": [ "0001", "0006" ],
+	"ConfigureReporting": {
+		    "0001": {"Attributes": { "0020": {"DataType": "20", "MinInterval":"0E10", "MaxInterval":"6460", "TimeOut":"0FFF","Change":"01"}}},
+		    "0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"01"}}}
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006" ],
+		"0001": [ "0020" ],
+		"0006": [ "0000" ]
+	}
+}
