@@ -113,13 +113,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             else:
                 self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
 
-        # Patch to make Livolo working
         # https://zigate.fr/forum/topic/livolo-compatible-zigbee/#postid-596
         if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
-            #if 'MacCapa' in self.ListOfDevices[NWKID]:
-            #        self.ListOfDevices[NWKID]['MacCapa'] = '8e'
-            #        self.ListOfDevices[NWKID]['PowerSource'] = 'Main'
-            #        self.ListOfDevices[NWKID]['LogicalType'] = 'Router'
             livolo_bind( self, NWKID, '06')
 
     waitForDomoDeviceCreation = False
@@ -127,14 +122,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
         reqColorModeAttribute = False
         self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
 
-        #for iterEp in self.ListOfDevices[NWKID]['Ep']:
-        #    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-        #        if iterCluster == '0006':
-        #            # Toggle
-        #            actuators( self, 'On', NWKID, iterEp, 'Switch')
-        #            actuators( self, 'Off', NWKID, iterEp, 'Switch')
-        #            actuators( self, 'Toggle', NWKID, iterEp, 'Switch')
-                    
         # Did we receive the Model Name
         skipModel = False
 
@@ -270,6 +257,18 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     self.ListOfDevices[NWKID]['Status'] = 'notDB'
                     return
 
+        # Check once more if we have received the Model Name
+        if 'ConfigSource' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                        self.ListOfDevices[NWKID]['ConfigSource'] = 'DeviceConf'
+        else:
+            if 'Model' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
+                    self.ListOfDevices[NWKID]['ConfigSource'] = 'DeviceConf'
+
+
         loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
         IsCreated=False
         # Let's check if the IEEE is not known in Domoticz
@@ -383,11 +382,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             if self.groupmgt and self.pluginconf.pluginConf['allowGroupMembership'] and 'Model' in self.ListOfDevices[NWKID]:
                 Domoticz.Log("Creation Group")
                 if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                    Domoticz.Log("--> In Device Conf")
                     if 'GroupMembership' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
-                        Domoticz.Log("----> with GroupMemberShip")
                         for groupToAdd in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['GroupMembership']:
-                            Domoticz.Log("------> adding groupmemebership %s -- %s" %(NWKID, str(groupToAdd)))
                             if len( groupToAdd ) == 2:
                                 self.groupmgt.addGroupMembership( NWKID, groupToAdd[0], groupToAdd[1] )
                             else:

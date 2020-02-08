@@ -275,6 +275,7 @@ ZCL_CLUSTERS_LIST = {
         '0501': 'IAS ACE (Ancillary Control Equipment)',
         '0502': 'IAS WD (Warning Device)',
         '0b04': 'Electrical Measurement',
+        '0b05': 'Diagnostics',
         '1000': 'Touchlink'
         }
 
