@@ -14,6 +14,9 @@ class TransportStatistics:
     def __init__(self, pluginconf):
         self._crcErrors = 0  # count of crc errors
         self._frameErrors = 0  # count of frames error
+        self._APSFailure = 0 # Count APS Failure
+        self._APSAck = 0 # Firmware 3.1b 0x8011 status 00
+        self._APSNck = 0 # Firmware 3.1b 0x8011 status not 00
         self._sent = 0  # count of sent messages
         self._received = 0  # count of received messages
         self._ack = 0  # count number of 0x8000
@@ -24,13 +27,26 @@ class TransportStatistics:
         self._clusterOK = 0
         self._clusterKO = 0
         self._reTx = 0
+        self._Load = 0
         self._MaxLoad = 0
         self._start = int(time())
+        self.TrendStats = []
         self.pluginconf = pluginconf
 
     # Statistics methods 
     def starttime(self):
         return self._start
+
+    def addPointforTrendStats( self, TimeStamp ):
+
+        MAX_TREND_STAT_TABLE = 120
+
+        uptime = int( time() - self._start)
+        Rxps = round( self._received / uptime, 2)
+        Txps = round( self._sent / uptime, 2)
+        if len(self.TrendStats) >= MAX_TREND_STAT_TABLE:
+            del self.TrendStats[0]
+        self.TrendStats.append( { "_TS":TimeStamp, "Rxps": Rxps,"Txps": Txps, "Load": self._Load} )
 
     def reTx(self):
         """ return the number of crc Errors """
@@ -73,6 +89,15 @@ class TransportStatistics:
     def clusterKO(self):
         return self._clusterKO
 
+    def APSFailure(self):
+        return self._APSFailure
+
+    def APSAck(self):
+        return self._APSAck
+    
+    def APSNck(self):
+        return self._APSNck
+
     def printSummary(self):
         if self.received() == 0:
             return
@@ -84,6 +109,9 @@ class TransportStatistics:
         Domoticz.Status("   TX timeout       : %s (%s" % (self.TOstatus(), round((self.TOstatus()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX data timeout  : %s (%s" % (self.TOdata(), round((self.TOdata()/self.sent())*100,2)) + '%)')
         Domoticz.Status("   TX reTransmit    : %s (%s" % (self.reTx(), round((self.reTx()/self.sent())*100,2)) + '%)')
+        Domoticz.Status("   TX APS Failure   : %s (%s" % (self.APSFailure(), round((self.APSFailure()/self.sent())*100,2)) + '%)')
+        Domoticz.Status("   TX APS Ack       : %s (%s" % (self.APSAck(), round((self.APSAck()/self.sent())*100,2)) + '%)')
+        Domoticz.Status("   TX APS Nck       : %s (%s" % (self.APSNck(), round((self.APSNck()/self.sent())*100,2)) + '%)')
         Domoticz.Status("Received:")
         Domoticz.Status("   RX frame         : %s" % (self.received()))
         Domoticz.Status("   RX crc errors    : %s (%s" % (self.crcErrors(), round((self.crcErrors()/self.received())*100,2)) + '%)')
@@ -113,6 +141,8 @@ class TransportStatistics:
         stats[timing]['frameErrors'] = self._frameErrors
         stats[timing]['sent'] = self._sent
         stats[timing]['received'] = self._received
+        stats[timing]['APS Ack'] = self._APSAck
+        stats[timing]['APS Nck'] = self._APSNck
         stats[timing]['ack'] = self._ack
         stats[timing]['ackKO'] = self._ackKO
         stats[timing]['data'] = self._data

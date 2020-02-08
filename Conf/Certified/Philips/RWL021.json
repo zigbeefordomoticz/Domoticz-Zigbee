@@ -1,0 +1,26 @@
+{
+	"_comment": "Philips Hue Remote",
+	"_version": "1.0",
+	"Ep":{
+		"02":{
+			"0000":"",
+			"0001":"",
+			"0003":"",
+			"000f":"",
+			"fc00":"", 
+			"Type":"LvlControl"
+		}
+	},
+	"Type":"",
+	"NickName":"Hue_Remote",
+	"ClusterToBind": [ "fc00", "0001", "000f" ],
+        "ConfigureReporting": {
+                "0001": {"Attributes": { "0021": {"DataType": "20", "MinInterval":"012C", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"00"}}}
+        },
+  	"ReadAttributes": {
+        	 "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006" ] ,
+        	 "0001": [ "0020" ] ,
+		 "000f": [ ],
+        	 "fc00": [ "0000" ] 
+	}
+}

@@ -16,22 +16,24 @@ import time
 import struct
 import json
 
+from Modules.actuators import actuators
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint
+from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode
+from Modules.legrand_netatmo import  legrand_fc40
+from Modules.schneider_wiser import  schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_thermostat_behaviour
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
-
+from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
-    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ))
 
-    # As we can have a new Short address, we need to retreive it from self.ListOfDevices
     if Devices[Unit].DeviceID in self.IEEE2NWK:
         NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
     else :
         Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
         return
+    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ), NWKID)
     loggingCommand( self, 'Debug', "mgtCommand - NWKID = " +str(NWKID) , NWKID)
 
     if self.ListOfDevices[NWKID]['RSSI'] != '' :
@@ -66,11 +68,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     ClusterSearch = ''
     DeviceType = ''
+    forceUpdateDev = False
     for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR'):
+        if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton', 'Toggle'):
+            forceUpdateDev = True
+
+        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
             ClusterSearch="0006"
             DeviceType = tmpDeviceType
-        if tmpDeviceType == "WindowCovering":
+        if tmpDeviceType in ( 'Venetian', 'VenetianInverted', "WindowCovering"):
             ClusterSearch = '0102'
             DeviceType = tmpDeviceType
         if tmpDeviceType =="LvlControl" :
@@ -79,7 +85,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
             ClusterSearch="0300"
             DeviceType = tmpDeviceType
-        if tmpDeviceType == 'ThermoSetpoint':
+        if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS'):
             ClusterSearch = '0201'
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'Motion':
@@ -88,8 +94,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType == "AlarmWD":
             ClusterSearch = '0502'
             DeviceType = tmpDeviceType
+        if tmpDeviceType in ( 'LegrandFilPilote', 'FIP', 'HACTMODE'):
+            DeviceType = tmpDeviceType
 
-    if DeviceType == '': 
+    if DeviceType == '' and self.pluginconf.pluginConf['forcePassiveWidget']:
+        if tmpDeviceType in ( "DButton_3", "SwitchAQ3") :
+            loggingCommand( self, 'Debug', "mgtCommand - forcePassiveWidget")
+            ClusterSearch="0006"
+            DeviceType = "Switch"
+
+    if DeviceType == '':
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
@@ -112,81 +126,222 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                             loggingCommand( self, 'Debug', "mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
                             EPout = tmpEp
 
+    profalux = False
+    if 'Manufacturer' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer'] == '1110' and self.ListOfDevices[NWKID]['ZDeviceID'] in ('0200', '0202'):
+            # We are in a Profalux Shutter
+            profalux = True
+
 
     loggingCommand( self, 'Debug', "EPout = " +str(EPout) , NWKID)
+    if 'Health' in self.ListOfDevices[NWKID]:
+        # If Health is Not Reachable, let's give it a chance to be updated
+        if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+            self.ListOfDevices[NWKID]['Health'] = ''
+
+    if Command == 'Stop':
+        loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
+        if DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
+            UpdateDevice_v2(self, Devices, Unit, 2, "50",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
     if Command == "Off" :
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        loggingCommand( self, 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
                 livolo_OnOff( self, NWKID , EPout, 'Left', 'Off')
+                UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
             elif DeviceType == 'LivoloSWR':
                 livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
+                UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
+
+        if DeviceType == 'ThermoModeEHZBRTS':
+            Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode Off" )
+            schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+            return
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01")
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Blind inverted (On, for Close)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        elif DeviceType == "VenetianInverted":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian Inverted/Blind (On, for Close)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        elif DeviceType == "Venetian":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian /Blind (Off, for Close)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
-            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
+            if profalux:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + '01' + '%02X' %0 + "0000")
+            else:
+                sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         if DeviceType == "AlarmWD":
             Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
             self.iaszonemgt.alarm_off( NWKID, EPout)
 
-        if Devices[Unit].SwitchType == 16 :
-            UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel)
+        if Devices[Unit].SwitchType in (13,14,15,16):
+            UpdateDevice_v2(self, Devices, Unit, 0, "0",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
         else :
-            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
     if Command == "On" :
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        loggingCommand( self, 'Debug', "mgtCommand : On for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
 
         if EPout == '06': # Mostlikely a Livolo Device
             if DeviceType == 'LivoloSWL':
                 livolo_OnOff( self, NWKID , EPout, 'Left', 'On')
+                UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
             elif DeviceType == 'LivoloSWR':
                 livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
+                UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                return
 
         if DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00")
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Blind inverted (Off, for Open)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        elif DeviceType == "VenetianInverted":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian inverted/Blind (Off, for Open)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        elif DeviceType == "Venetian":
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian/Blind (On, for Open)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
-            sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
-        if Devices[Unit].SwitchType == 16 :
-            UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel)
+            if profalux:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + '01' + '%02X' %255 + "0000")
+            else:
+                sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "01")
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+        if Devices[Unit].SwitchType in (13,14,15,16):
+            UpdateDevice_v2(self, Devices, Unit, 1, "100",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
         else:
-            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
 
     if Command == "Set Level" :
         #Level is normally an integer but may be a floating point number if the Unit is linked to a thermostat device
         #There is too, move max level, mode = 00/01 for 0%/100%
+        loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
         
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
         if DeviceType == 'ThermoSetpoint':
+
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             value = int(float(Level)*100)
-            Domoticz.Log("Calling thermostat_Setpoint( %s, %s) " %(NWKID, value))
             thermostat_Setpoint( self, NWKID, value )
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+            Level = round(float(Level),2)
+            # Normalize SetPoint value with 2 digits
+            Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
+            Level = Round( float(Level), 2 )
+
+            UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         elif DeviceType == 'ThermoMode':
-            Domoticz.Log("ThermoMode - requested value: %s" %value)
-            #'Off' : 0x00 ,
-            #'Auto' : 0x01 ,
-            #'Reserved' : 0x02,
-            #'Cool' : 0x03,
-            #'Heat' :  0x04,
-            #'Emergency Heating' : 0x05,
-            #'Pre-cooling' : 0x06,
-            #'Fan only' : 0x07 
-            if value == 0:
-                value = 'off'
-                thermostat_Mode( self, NWKID, value)
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            Domoticz.Log("ThermoMode - requested Level: %s" %Level)
+            if Level in THERMOSTAT_LEVEL_2_MODE:
+                Domoticz.Log(" - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]))
+                thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+                self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
-        elif  DeviceType == "WindowCovering":
+        elif DeviceType == 'ThermoModeEHZBRTS':
+            Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %Level)
+            schneider_EHZBRTS_thermoMode( self, NWKID, Level)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+        elif DeviceType == 'HACTMODE':
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+            if Level == 10: # Conventional
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
+                schneider_thermostat_behaviour( self, NWKID, 'conventionel')
+            elif Level == 20: # Fil Pilote
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
+                schneider_thermostat_behaviour( self, NWKID, 'FIP')
+            else:
+                Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
+
+        elif DeviceType == 'FIP':
+            FIL_PILOT_MODE = {
+                10: 'Confort',
+                20: 'Confort -1',
+                30: 'Confort -2',
+                40: 'Eco',
+                50: 'Frost Protection',
+                60: 'Off',
+                }
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for FIP: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+            if Level in FIL_PILOT_MODE:
+                loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOT_MODE[ Level ]), NWKID)
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-HACT':
+                        self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
+                        schneider_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
+
+        elif DeviceType == 'LegrandFilPilote':
+            
+            FIL_PILOTE_MODE = {
+                10: 'Confort',
+                20: 'Confort -1',
+                30: 'Confort -2',
+                40: 'Eco',
+                50: 'Hors Gel',
+                60: 'Off',
+                }
+
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            if Level in FIL_PILOTE_MODE:
+                loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOTE_MODE[ Level ]), NWKID)
+                legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
+                self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+
+        elif DeviceType == "WindowCovering": # Blind Inverted
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
             value = '%02x' %Level
-            Domoticz.Log("WindowCovering - Go To Lift Percentage Command - %s/%s Level: 0x%s" %(NWKID, EPout, value))
+            Domoticz.Log("WindowCovering - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+        elif DeviceType == "Venetian":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
+            value = '%02x' %Level
+            Domoticz.Log("Venetian blind - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+        elif DeviceType == "VenetianInverted":
+            # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
+            Level = 100 - Level
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
+            value = '%02x' %Level
+            Domoticz.Log("VenetianInverted blind - Lift Percentage Command - %s/%s Level: 0x%s %s" %(NWKID, EPout, value, Level))
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "05" + value)
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         elif DeviceType == "AlarmWD":
             Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
@@ -202,6 +357,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'armed')
             elif Level == 50: # Disarmed
                 self.iaszonemgt.write_IAS_WD_Squawk( NWKID, EPout, 'disarmed')
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        elif DeviceType == 'Toggle':
+            Domoticz.Log("Toggle switch - value: %s" %Level)
+            if Level == 10: # Off
+                actuators( self, NWKID, EPout, 'Off', 'Switch')
+            elif Level == 20: # On
+                actuators( self, NWKID, EPout, 'On', 'Switch')
+            elif Level == 30: # Toggle
+                actuators( self, NWKID, EPout, 'Toggle', 'Switch')
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
             OnOff = '01' # 00 = off, 01 = on
             if Level == 100: 
@@ -214,19 +379,23 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                     value = 1
 
             value=Hex_Format(2, value)
-            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
+            if profalux:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
+            else:
+                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0010")
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
-        if Devices[Unit].SwitchType == 16 :
+        if Devices[Unit].SwitchType in (13,14,15,16):
             UpdateDevice_v2(self, Devices, Unit, 2, str(Level) ,BatteryLevel, SignalLevel) 
         else:
             # A bit hugly, but '1' instead of '2' is needed for the ColorSwitch dimmer to behave correctky
             UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel) 
 
     if Command == "Set Color" :
-        loggingCommand( self, 'Debug', "onCommand - Set Color - Level = " + str(Level) + " Color = " + str(Color) , NWKID)
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        loggingCommand( self, 'Debug', "mgtCommand : Set Color for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s Color: %s" %(NWKID, EPout, Unit, DeviceType, Level, Color), NWKID)
         Hue_List = json.loads(Color)
-        
+        loggingCommand( self, 'Debug', "-----> Hue_List: %s" %str(Hue_List), NWKID)
+
         #Color 
         #    ColorMode m;
         #    uint8_t t;     // Range:0..255, Color temperature (warm / cold ratio, 0 is coldest, 255 is warmest)
@@ -237,12 +406,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         #    uint8_t ww;    // Range:0..255, Warm white level (also used as level for monochrome white)
         #
 
-        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # As we update the Device, let's restart and do the next pool in 5'
-
         #First manage level
-        OnOff = '01' # 00 = off, 01 = on
-        value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
-        sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
+        if Hue_List['m'] != 9998:
+            # In case of m ==3, we will do the Setlevel
+            OnOff = '01' # 00 = off, 01 = on
+            value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
+            loggingCommand( self, 'Debug', "---------- Set Level: %s" %(value), NWKID)
+            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + value + "0000")
 
         #Now color
         #ColorModeNone = 0   // Illegal
@@ -250,15 +420,18 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
             #TODO : Jamais vu un device avec ca encore
-            loggingCommand( self, 'Debug', "Not implemented device color 1", NWKID)
+            loggingCommand( self, 'Log', "Not implemented device color 1", NWKID)
+
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
             #Value is in mireds (not kelvin)
             #Correct values are from 153 (6500K) up to 588 (1700K)
             # t is 0 > 255
-            TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700);
+            TempKelvin = int(((255 - int(Hue_List['t']))*(6500-1700)/255)+1700)
             TempMired = 1000000 // TempKelvin
+            loggingCommand( self, 'Debug', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
             sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+
         #ColorModeRGB = 3    // Color. Valid fields: r, g, b.
         elif Hue_List['m'] == 3:
             x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -266,14 +439,41 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             x = int(x*65536)
             y = int(y*65536)
             strxy = Hex_Format(4,x) + Hex_Format(4,y)
+            loggingCommand( self, 'Debug', "---------- Set Temp X: %s Y: %s" %(x, y), NWKID)
             sendZigateCmd(self, "00B7","02" + NWKID + EPin + EPout + strxy + "0000")
+
         #ColorModeCustom = 4, // Custom (color + white). Valid fields: r, g, b, cw, ww, depending on device capabilities
         elif Hue_List['m'] == 4:
-            ww = int(Hue_List['ww'])
-            cw = int(Hue_List['cw'])
-            x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))    
-            #TODO, Pas trouve de device avec ca encore ...
-            loggingCommand( self, 'Debug', "Not implemented device color 2", NWKID)
+            #Gledopto GL_008
+            # Color: {"b":43,"cw":27,"g":255,"m":4,"r":44,"t":227,"ww":215}
+            loggingCommand( self, 'Log', "Not fully implemented device color 4", NWKID)
+
+            # Process White color
+            cw = int(Hue_List['cw'])   # 0 < cw < 255 Cold White
+            ww = int(Hue_List['ww'])   # 0 < ww < 255 Warm White
+            if cw != 0 and ww != 0:
+                TempKelvin = int(((255 - int(ww))*(6500-1700)/255)+1700)
+                TempMired = 1000000 // TempKelvin
+                loggingCommand( self, 'Log', "---------- Set Temp Kelvin: %s-%s" %(TempMired, Hex_Format(4,TempMired)), NWKID)
+                sendZigateCmd(self, "00C0","02" + NWKID + EPin + EPout + Hex_Format(4,TempMired) + "0000")
+            else:
+                # How to powerOff the WW/CW channel ?
+                pass
+
+            # Process Colour
+            h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
+            saturation = s * 100   #0 > 100
+            hue = h *360           #0 > 360
+            hue = int(hue*254//360)
+            saturation = int(saturation*254//100)
+            loggingCommand( self, 'Log', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation), NWKID)
+            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+
+            value = int(l * 254//100)
+            OnOff = '01'
+            loggingCommand( self, 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level), NWKID)
+            #sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0000")
+
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it
         elif Hue_List['m'] == 9998:
             h,l,s = rgb_to_hsl((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
@@ -281,38 +481,14 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             hue = h *360           #0 > 360
             hue = int(hue*254//360)
             saturation = int(saturation*254//100)
+            loggingCommand( self, 'Debug', "---------- Set Hue X: %s Saturation: %s" %(hue, saturation), NWKID)
+            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
+
             value = int(l * 254//100)
             OnOff = '01'
-            sendZigateCmd(self, "00B6","02" + NWKID + EPin + EPout + Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000")
-            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0010")
+            loggingCommand( self, 'Debug', "---------- Set Level: %s instead of Level: %s" %(value, Level), NWKID)
+            sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + OnOff + Hex_Format(2,value) + "0000")
 
         #Update Device
-        UpdateDevice_v2(self, Devices, Unit, 1, str(value) ,BatteryLevel, SignalLevel, str(Color))
-
-
-def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
-    """
-    Levolo On/Off command are based on Level Control cluster
-    Level: 108  -> On
-    Level: 1 -> Off
-    Left Unit: Timing 1
-    Right Unit: Timing 2
-    """
-
-    if onoff not in ( 'On', 'Off'): 
-        return
-    if devunit not in ( 'Left', 'Right'): 
-        return
-
-    if onoff == 'On': level_value = '%02x' %108
-    else: level_value = '01'
-
-    if devunit == 'Left': timing_value = '0001'
-    else: timing_value = '0002'
-
-    Domoticz.Log("livolo_OnOff - Level: %s, Timing: %s" %(level_value, timing_value))
-    sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
-
-
-
-
+        self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+        UpdateDevice_v2(self, Devices, Unit, 1, str(Level) ,BatteryLevel, SignalLevel, str(Color))

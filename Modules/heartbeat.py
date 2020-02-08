@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
 #
@@ -17,19 +15,26 @@ import datetime
 import struct
 import json
 
+from Modules.actuators import actuators
 from Modules.output import  sendZigateCmd,  \
         processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
-        bindDevice, rebind_Clusters, getListofAttribute, \
+        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
+        livolo_bind, \
         setPowerOn_OnOff, \
-        ReadAttributeRequest_Ack,  \
+        scene_membership_request, \
+        ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
+        ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
-        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702
+        ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01
+from Modules.legrand_netatmo import legrand_fc01
+from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fip_mode
 
-from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat
-from Modules.domoticz import CreateDomoDevice
-from Modules.consts import HEARTBEAT, MAX_LOAD_ZIGATE
+from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat, mainPoweredDevice
+from Modules.domoticz import CreateDomoDevice, timedOutDevice
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
+from Modules.pairingProcess import processNotinDBDevices
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport
@@ -43,6 +48,7 @@ READ_ATTRIBUTES_REQUEST = {
     '0006' : ( ReadAttributeRequest_0006, 'pollingONOFF' ),
     '0008' : ( ReadAttributeRequest_0008, 'pollingLvlControl' ),
     '000C' : ( ReadAttributeRequest_000C, 'polling000C' ),
+    '0100' : ( ReadAttributeRequest_0100, 'polling0100' ),
     '0102' : ( ReadAttributeRequest_0102, 'polling0102' ),
     '0201' : ( ReadAttributeRequest_0201, 'polling0201' ),
     '0204' : ( ReadAttributeRequest_0204, 'polling0204' ),
@@ -55,111 +61,37 @@ READ_ATTRIBUTES_REQUEST = {
     '0500' : ( ReadAttributeRequest_0500, 'polling0500' ),
     '0502' : ( ReadAttributeRequest_0502, 'polling0502' ),
     '0702' : ( ReadAttributeRequest_0702, 'polling0702' ),
+    '000f' : ( ReadAttributeRequest_000f, 'polling000f' ),
+    #'fc01' : ( ReadAttributeRequest_fc01, 'pollingfc01' ),
     }
 
-# Ordered List - Important for binding
-CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
-        '0500',            # IAS Zone
-        '0502',            # IAS WD Zone
-        '0406',            # Occupancy Sensing
-        '0402',            # Temperature Measurement
-        '0400',            # Illuminance Measurement
-        '0001',            # Power Configuration
-        '0102',            # Windows Covering / SHutter
-        '0403',            # Measurement: Pression atmospherique
-        '0405',            # Relative Humidity Measurement
-        '0702',            # Smart Energy Metering
-        '0006',            # On/Off
-        '0008',            # Level Control
-        '0201',            # Thermostat
-        '0204',            # Thermostat UI
-        '0300',            # Colour Control
-        '0000',            # Basic
-        'fc01',            # Private cluster 0xFC01 to manage some Legrand Netatmo stuff
-        'ff02'             # Used by Xiaomi devices for battery informations.
-        ]
+#READ_ATTR_COMMANDS = ( '0006', '0008', '0102' )
+# For now, we just look for On/Off state
+READ_ATTR_COMMANDS = ( '0006', '0201')
+
+# Read Attribute trigger: Every 10"
+# Configure Reporting trigger: Every 15
+# Network Topology start: 15' after plugin start
+# Network Energy start: 30' after plugin start
+# Legrand re-enforcement: Every 5'
+
+READATTRIBUTE_FEQ =    10 // HEARTBEAT # 10seconds ... 
+CONFIGURERPRT_FEQ =    30 // HEARTBEAT
+LEGRAND_FEATURES =    300 // HEARTBEAT
+SCHNEIDER_FEATURES =  300 // HEARTBEAT
+NETWORK_TOPO_START =  900 // HEARTBEAT
+NETWORK_ENRG_START = 1800 // HEARTBEAT
 
 def processKnownDevices( self, Devices, NWKID ):
 
-    if self.CommiSSionning: # We have a commission in progress, skip it.
-        return
-
+    # Normalize Hearbeat value if needed
     intHB = int( self.ListOfDevices[NWKID]['Heartbeat'])
-    _mainPowered = False
+    if intHB > 0xffff:
+        intHB -= 0xfff0
+        self.ListOfDevices[NWKID]['Heartbeat'] = intHB
 
-    if 'PowerSource' in self.ListOfDevices[NWKID]:
-        if (self.ListOfDevices[NWKID]['PowerSource']) == 'Main':
-            _mainPowered = True
-
-    if 'MacCapa' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['MacCapa'] == '8e': # Not a Main Powered 
-            _mainPowered = True
-
-    # On regular basis, try to collect as much information as possible from Main Powered devices
-    if  _mainPowered and \
-            ( self.HeartbeatCount % ( 300 // HEARTBEAT)) == 0 :
-        if 'Attributes List' not in  self.ListOfDevices[NWKID]:
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                    if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                        loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                                %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
-                        break # Will do at the next round
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
-
-        if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
-                'DeviceType' not in self.ListOfDevices[NWKID] or \
-                'LogicalType' not in self.ListOfDevices[NWKID] or \
-                'PowerSource' not in self.ListOfDevices[NWKID] or \
-                'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
-            if not self.busy and  len(self.ZigateComm._normalQueue) <= MAX_LOAD_ZIGATE:
-                loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                        %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
-                Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
-                sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
-
-    if _mainPowered and \
-            ( self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes'] ) and ( intHB % (30 // HEARTBEAT)) == 0 :
-        now = int(time.time())   # Will be used to trigger ReadAttributes
-        for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
-            if tmpEp == 'ClusterType': continue
-            for Cluster in READ_ATTRIBUTES_REQUEST:
-                if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                    continue
-                if Cluster in ( '0000' ) and (intHB != ( 120 // HEARTBEAT)):
-                    continue    # Just does it at plugin start
-                if self.busy  or len(self.ZigateComm._normalQueue) > MAX_LOAD_ZIGATE:
-                    loggingHeartbeat( self, 'Debug', 'processKnownDevices - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                            %(self.busy, len(self.ZigateComm._normalQueue), NWKID), NWKID)
-                    if intHB != 0:
-                        self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
-                    break # Will do at the next round
-
-                func = READ_ATTRIBUTES_REQUEST[Cluster][0]
-
-                # For now it is a bid hack, but later we might put all parameters 
-                if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
-                    timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST[Cluster][1] ]
-                else:
-                    Domoticz.Error("processKnownDevices - missing timing attribute for Cluster: %s - %s" %(Cluster,  READ_ATTRIBUTES_REQUEST[Cluster][1]))
-                    continue
-
-                if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
-                    self.ListOfDevices[NWKID]['ReadAttributes'] = {}
-                    self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
-                if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
-                    _idx = tmpEp + '-' + str(Cluster)
-                    if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                        loggingHeartbeat( self, 'Debug', "processKnownDevices - processing %s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
-                                %(NWKID, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
-                        if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
-                            if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
-                                continue
-
-                loggingHeartbeat( self, 'Debug', "%s/%s It's time to Request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
-                func(self, NWKID )
+    # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
+    _mainPowered = mainPoweredDevice( self, NWKID)
 
     # Checking current state of the this Nwk
     if 'Health' not in self.ListOfDevices[NWKID]:
@@ -171,286 +103,247 @@ def processKnownDevices( self, Devices, NWKID ):
     if 'LastSeen' not in self.ListOfDevices[NWKID]['Stamp']:
         self.ListOfDevices[NWKID]['Stamp']['LastSeen'] = 0
         self.ListOfDevices[NWKID]['Health'] = 'unknown'
-    if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 86400) : # Age is above 24 hours
+    if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + 21200) : # Age is above 6 hours
         if self.ListOfDevices[NWKID]['Health'] == 'Live':
             Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
                 %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
             self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
-    
-def writeDiscoveryInfos( self ):
 
-        if self.pluginconf.pluginConf['capturePairingInfos']:
-            for dev in self.DiscoveryDevices:
-                if 'IEEE' in self.DiscoveryDevices[dev]:
-                    _filename = self.pluginconf.pluginConf['pluginReports'] + 'PairingInfos-' + '%02d' %self.HardwareID + '-%s' %self.DiscoveryDevices[dev]['IEEE'] + '.json'
-                else:
-                    _filename = self.pluginconf.pluginConf['pluginReports'] + 'PairingInfos-' + '%02d' %self.HardwareID + '-%s' %dev + '.json'
-
-                with open ( _filename, 'wt') as json_file:
-                    json.dump(self.DiscoveryDevices[dev],json_file, indent=2, sort_keys=True)
-
-def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
-
-    # Starting V 4.1.x
-    # 0x0043 / List of EndPoints is requested at the time we receive the End Device Annocement
-    # 0x0045 / EndPoint Description is requested at the time we recice the List of EPs.
-    # In case Model is defined and is in DeviceConf, we will short cut the all process and go to the Widget creation
-    if status == 'UNKNOW':
-        return
-    
-    HB_ = int(self.ListOfDevices[NWKID]['Heartbeat'])
-    loggingPairing( self, 'Debug', "processNotinDBDevices - NWKID: %s, Status: %s, RIA: %s, HB_: %s " %(NWKID, status, RIA, HB_))
-    if self.pluginconf.pluginConf['capturePairingInfos']:
-        if NWKID not in self.DiscoveryDevices:
-            self.DiscoveryDevices[NWKID] = {}
-        self.DiscoveryDevices[NWKID]['CaptureProcess'] = {}
-        self.DiscoveryDevices[NWKID]['CaptureProcess']['Status'] = status
-        self.DiscoveryDevices[NWKID]['CaptureProcess']['RIA'] = RIA
-        self.DiscoveryDevices[NWKID]['CaptureProcess']['HB_'] = HB_
-        if 'Steps' not in self.DiscoveryDevices[NWKID]['CaptureProcess']:
-            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'] = []
-
-    if status not in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
+    if self.CommiSSionning: # We have a commission in progress, skip it.
         return
 
-    knownModel = False
-    if self.ListOfDevices[NWKID]['Model'] != {}:
-        Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
-        # Let's check if this Model is known
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                knownModel = True
-                if not self.pluginconf.pluginConf['capturePairingInfos']:
-                    status = 'createDB' # Fast track
-                else:
-                    self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
-
-    waitForDomoDeviceCreation = False
-    if status == "8043": # We have at least receive 1 EndPoint
-        reqColorModeAttribute = False
-        self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
-
-        # Did we receive the Model Name
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == {} or self.ListOfDevices[NWKID]['Model'] == '':
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
-                                                           # And wait 1 cycle
-            else: 
-                Domoticz.Status("[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Model']))
-                # Let's check if this Model is known
-                if knownModel:
-                    status = 'createDB' # Fast track
-
-        if 'Manufacturer' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer'] == {}:
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Node Descriptor" %(RIA, NWKID))
-                if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0042' )
-                sendZigateCmd(self,"0042", str(NWKID))     # Request a Node Descriptor
-            else:
-                loggingHeartbeat( self, 'Debug', "[%s] NEW OBJECT: %s Model Name: %s" %(RIA, NWKID, self.ListOfDevices[NWKID]['Manufacturer']), NWKID)
-
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            #IAS Zone
-            if '0500' in self.ListOfDevices[NWKID]['Ep'][iterEp] or \
-                    '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
-                Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS Zone controler setting" \
-                        %( RIA, NWKID, status))
-                if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IAS-ENROLL' )
-                self.iaszonemgt.IASZone_triggerenrollement( NWKID, iterEp)
-                if '0502'  in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    Domoticz.Status("[%s] NEW OBJECT: %s 0x%04s - IAS WD enrolment" \
-                        %( RIA, NWKID, status))
-                    if self.pluginconf.pluginConf['capturePairingInfos']:
-                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'IASWD-ENROLL' )
-                    self.iaszonemgt.IASWD_enroll( NWKID, iterEp)
-
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            # ColorMode
-            if '0300' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                if 'ColorInfos' in self.ListOfDevices[NWKID]:
-                    if 'ColorMode' in self.ListOfDevices[NWKID]['ColorInfos']:
-                        waitForDomoDeviceCreation = False
-                        reqColorModeAttribute = False
-                        break
-                    else:
-                        waitForDomoDeviceCreation = True
-                        reqColorModeAttribute = True
-                        break
-                else:
-                    waitForDomoDeviceCreation = True
-                    reqColorModeAttribute = True
-                    reqColorModeAttribute = True
-                    break
-        if reqColorModeAttribute:
-            self.ListOfDevices[NWKID]['RIA']=str(RIA + 1 )
-            Domoticz.Status("[%s] NEW OBJECT: %s Request Attribute for Cluster 0x0300 to get ColorMode" %(RIA,NWKID))
-            if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0300' )
-            ReadAttributeRequest_0300(self, NWKID )
-            if  self.ListOfDevices[NWKID]['RIA'] < '2':
-                return
-    # end if status== "8043"
-
-    # Timeout management
-    if (status == "004d" or status == "0045") and HB_ > 2 and status != 'createDB' and not knownModel: 
-        Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x004d" %(RIA, NWKID, status))
-        self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
-        self.ListOfDevices[NWKID]['Heartbeat']="0"
-        self.ListOfDevices[NWKID]['Status']="0045"
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == {}:
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
-                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
-        if self.pluginconf.pluginConf['capturePairingInfos']:
-            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0045' )
-        sendZigateCmd(self,"0045", str(NWKID))
-        return
-
-    if (status == "8045" or status == "0043") and HB_ > 1 and status != 'createDB':
-        Domoticz.Status("[%s] NEW OBJECT: %s TimeOut in %s restarting at 0x0043" %(RIA, NWKID, status))
-        self.ListOfDevices[NWKID]['RIA']=str( RIA + 1 )
-        self.ListOfDevices[NWKID]['Heartbeat'] = "0"
-        self.ListOfDevices[NWKID]['Status'] = "0043"
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == {}:
-                Domoticz.Status("[%s] NEW OBJECT: %s Request Model Name" %(RIA, NWKID))
-                if self.pluginconf.pluginConf['capturePairingInfos']:
-                    self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_0000' )
-                ReadAttributeRequest_0000(self, NWKID )    # Reuest Model Name
-        for iterEp in self.ListOfDevices[NWKID]['Ep']:
-            Domoticz.Status("[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', NWKID, iterEp))
-            if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( '0043' )
-            sendZigateCmd(self,"0043", str(NWKID)+str(iterEp))
-        return
-
-    if knownModel and RIA > 3 and status != 'UNKNOW' and status != 'inDB':
-        # We have done several retry to get Ep ...
-        Domoticz.Log("processNotinDB - Try several times to get all informations, let's use the Model now" +str(NWKID) )
-        status = 'createDB'
-
-    elif self.ListOfDevices[NWKID]['RIA'] > '4' and status != 'UNKNOW' and status != 'inDB':  # We have done several retry
-        Domoticz.Status("[%s] NEW OBJECT: %s Not able to get all needed attributes on time" %(RIA, NWKID))
-        self.ListOfDevices[NWKID]['Status']="UNKNOW"
-        Domoticz.Log("processNotinDB - not able to find response from " +str(NWKID) + " stop process at " +str(status) )
-        Domoticz.Log("processNotinDB - RIA: %s waitForDomoDeviceCreation: %s, capturePairingInfos: %s Model: %s " \
-                %( self.ListOfDevices[NWKID]['RIA'], waitForDomoDeviceCreation, self.pluginconf.pluginConf['capturePairingInfos'], self.ListOfDevices[NWKID]['Model']))
-        Domoticz.Log("processNotinDB - Collected Infos are : %s" %(str(self.ListOfDevices[NWKID])))
-        self.adminWidgets.updateNotificationWidget( Devices, 'Unable to collect all informations for enrollment of this devices. See Logs' )
-        self.CommiSSionning = False
-        if self.pluginconf.pluginConf['capturePairingInfos']:
-            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'UNKNOW' )
-        writeDiscoveryInfos( self )
-        return
-
-    if status in ( 'createDB', '8043' ):
-        #We will try to create the device(s) based on the Model , if we find it in DeviceConf or against the Cluster
-        if status == '8043' and self.ListOfDevices[NWKID]['RIA'] < '3':     # Let's take one more chance to get Model
-            Domoticz.Log("Too early, let's try to get the Model")
+    # If device flag as Not Reachable, don't do anything
+    if 'Health' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
+            loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
             return
-        loggingPairing( self, 'Debug', "[%s] NEW OBJECT: %s Trying to create Domoticz device(s)" %(RIA, NWKID))
-        IsCreated=False
-        # Let's check if the IEEE is not known in Domoticz
-        for x in Devices:
-            if self.ListOfDevices[NWKID].get('IEEE'):
-                if Devices[x].DeviceID == str(self.ListOfDevices[NWKID]['IEEE']):
-                    if self.pluginconf.pluginConf['capturePairingInfos'] == 1:
-                        Domoticz.Log("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Log("processNotinDBDevices - ForceCreationDevice enable, we continue")
-                    else:
-                        IsCreated = True
-                        Domoticz.Error("processNotinDBDevices - Devices already exist. "  + Devices[x].Name + " with " + str(self.ListOfDevices[NWKID]) )
-                        Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
-                        break
+        # In case Health is unknown let's force a Read attribute.
+        _checkHealth = False
+        if self.ListOfDevices[NWKID]['Health'] == '':
+            _checkHealth = True
 
-        if IsCreated == False:
-            loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
-            if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
-            CreateDomoDevice(self, Devices, NWKID)
+    _doReadAttribute = False
+    _forceCommandCluster = False
 
-            # Post creation widget
-            if NWKID not in self.ListOfDevices:
-                Domoticz.Error("processNotinDBDevices - %s doesn't exist in Post creation widget" %NWKID)
-                return
-            if 'Ep' not in self.ListOfDevices[NWKID]:
-                Domoticz.Error("processNotinDBDevices - %s doesn't have Ep in Post creation widget" %NWKID)
-                return
-                
-            if 'ConfigSource' in self.ListOfDevices[NWKID]:
-                loggingPairing( self, 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
-                        %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
+    if (intHB == 1) and self.pluginconf.pluginConf['forcePollingAfterAction']: # Most-likely Heartbeat has been reset to 0 as for a Group command
+        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
+        _forceCommandCluster = True
 
-            # Binding devices
-            for iterBindCluster in CLUSTERS_LIST:      # Bining order is important
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        Domoticz.Log('Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster))
-                        if self.pluginconf.pluginConf['capturePairingInfos']:
-                            self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
-                        bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
+    ## Starting this point, it is ony relevant for Main Powered Devices.
+    #  except if _forceCommandCluster has been enabled.
+    if not _mainPowered and not _forceCommandCluster:
+        return
 
-            # 2 Enable Configure Reporting for any applicable cluster/attributes
-            if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
-            processConfigureReporting( self, NWKID )  
+    # Action not taken, must be reschedule to next cycle
+    rescheduleAction = False
 
-            for iterReadAttrCluster in CLUSTERS_LIST:
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
-                            if self.pluginconf.pluginConf['capturePairingInfos']:
-                                self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
-                            func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
-                            func( self, NWKID)
+    # In order to limit the load, we do it only every 15s
+    if self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes']:
+        if ( intHB % READATTRIBUTE_FEQ ) == 0:
+            _doReadAttribute = True
 
-            # Identify for ZLL compatible devices
-            # Search for EP to be used 
-            ep = '01'
-            for ep in self.ListOfDevices[NWKID]['Ep']:
-                if ep in ( '01', '03', '06', '09' ):
-                    break
-            identifyEffect( self, NWKID, ep , effect='Blink' )
+    # Do we need to force ReadAttribute at plugin startup ?
+    # If yes, best is probably to have ResetReadAttribute to 1
+    if _doReadAttribute or _forceCommandCluster:
+        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s frcRead: %s" %(NWKID, intHB, _mainPowered, _doReadAttribute, _forceCommandCluster), NWKID)
+        # Read Attributes if enabled
+        now = int(time.time())   # Will be used to trigger ReadAttributes
+        for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
+            if tmpEp == 'ClusterType': continue
+            for Cluster in READ_ATTRIBUTES_REQUEST:
+                if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
+                    continue
+                if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
+                    self.ListOfDevices[NWKID]['ReadAttributes'] = {}
+                    self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
 
-            for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                loggingPairing( self, 'Debug', 'looking for List of Attributes ep: %s' %iterEp)
-                for iterCluster in  self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    #if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
+                    #    # Don't do it for Livolo
+                    #    continue
+                    if self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral1' and tmpEp != '02': # All Eps other than '02' are blacklisted
                         continue
-                    if self.pluginconf.pluginConf['capturePairingInfos']:
-                        self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'LST-ATTR_' + iterEp + '_' + iterCluster )
-                    getListofAttribute( self, NWKID, iterEp, iterCluster)
+                    if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
+                        continue
 
-            # Set the sensitivity for Xiaomi Vibration
-            if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
-                 Domoticz.Status('processNotinDBDevices - set viration Aqara %s sensitivity to %s' \
-                        %(NWKID, self.pluginconf.pluginConf['vibrationAqarasensitivity']))
-                 setXiaomiVibrationSensitivity( self, NWKID, sensitivity = self.pluginconf.pluginConf['vibrationAqarasensitivity'])
+                if _forceCommandCluster and not _doReadAttribute:
+                    # Force Majeur
+                    if ( intHB == 1 and _mainPowered and Cluster in READ_ATTR_COMMANDS ) or \
+                          ( intHB == 1 and not _mainPowered and Cluster == '0001') :
+                        loggingHeartbeat( self, 'Debug', '-- - Force Majeur on %s/%s cluster %s' %( NWKID, tmpEp, Cluster), NWKID)
 
-            self.adminWidgets.updateNotificationWidget( Devices, 'Successful creation of Widget for :%s DeviceID: %s' \
-                    %(self.ListOfDevices[NWKID]['Model'], NWKID))
-            self.CommiSSionning = False
-            if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[NWKID]['CaptureProcess']['ListOfDevice'] = dict( self.ListOfDevices[NWKID] )
+                        # Let's reset the ReadAttribute Flag
+                        if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
+                            _idx = tmpEp + '-' + str(Cluster)
+                            if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
+                                if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
+                                    self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] = 0
 
-            writeDiscoveryInfos( self )
+                if  (self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
+                    loggingHeartbeat( self, 'Debug', '--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)' 
+                            %(NWKID, self.busy, len(self.ZigateComm.zigateSendingFIFO)), NWKID)
+                    rescheduleAction = True
+                    continue # Do not break, so we can keep all clusters on the same states
+   
+                func = READ_ATTRIBUTES_REQUEST[Cluster][0]
+  
+                # For now it is a hack, but later we might put all parameters 
+                if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
+                    timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST[Cluster][1] ]
+                else:
+                    Domoticz.Error("processKnownDevices - missing timing attribute for Cluster: %s - %s" %(Cluster,  READ_ATTRIBUTES_REQUEST[Cluster][1]))
+                    continue
+ 
+                # Let's check the timing
+                if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
+                    _idx = tmpEp + '-' + str(Cluster)
+                    if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
+                        if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
+                            if now < (self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] + timing):
+                                continue
+                        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
+                                %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
 
-        #end if ( self.ListOfDevices[NWKID]['Status']=="8043" or self.ListOfDevices[NWKID]['Model']!= {} )
-    #end ( self.pluginconf.storeDiscoveryFrames == 0 and status != "UNKNOW" and status != "DUP")  or (  self.pluginconf.storeDiscoveryFrames == 1 and status == "8043" )
+                loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
+                func(self, NWKID )
     
+    if _mainPowered and (self.pluginconf.pluginConf['pingDevices'] or  _checkHealth):
+        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] ) : # Age is above 1 hours by default
+            if  len(self.ZigateComm.zigateSendingFIFO) == 0:
+                loggingHeartbeat( self, 'Debug', "processKnownDevices -  Ping device %s %s %s - Timing: %s %s %s" \
+                    %(NWKID, self.pluginconf.pluginConf['pingDevices'], _checkHealth, int(time.time()), self.ListOfDevices[NWKID]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq']), NWKID)
+                #sendZigateCmd(self ,'0041', '02' + NWKID + '00' + '01' )
+                ReadAttributeRequest_0000_basic( self, NWKID)
+
+    if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
+        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+                if self.pluginconf.pluginConf['EnableDimmer']:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
+                    else:
+                        rescheduleAction = True
+                else:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
+                    else:
+                        rescheduleAction = True
+        
+                if self.pluginconf.pluginConf['LegrandFilPilote']:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'FilPilote', 'On')
+                    else:
+                        rescheduleAction = True
+                else:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'FilPilote', 'Off')
+                    else:
+                        rescheduleAction = True
+
+                if self.pluginconf.pluginConf['EnableLedIfOn']:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
+                    else:
+                        rescheduleAction = True
+                else:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
+                    else:
+                        rescheduleAction = True
+
+                if self.pluginconf.pluginConf['EnableLedInDark']:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedInDark', 'On')
+                    else:
+                        rescheduleAction = True
+                else:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, 'EnableLedInDark', 'Off')
+                    else:
+                        rescheduleAction = True
+
+    if ( self.HeartbeatCount % SCHNEIDER_FEATURES ) == 0 :
+        if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
+            if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
+                if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                    schneider_thermostat_behaviour( self, NKWID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
+                else:
+                    rescheduleAction = True
+            if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
+                if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                    schneider_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
+                else:
+                    rescheduleAction = True
+
+    # If Attributes not yet discovered, let's do it
+    if 'ConfigSource' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+            if 'Attributes List' not in self.ListOfDevices[NWKID]:
+                for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                    if iterEp == 'ClusterType': continue
+                    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                        if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                            loggingHeartbeat( self, 'Debug', '-- -- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+                            getListofAttribute( self, NWKID, iterEp, iterCluster)
+                        else:
+                            rescheduleAction = True
+
+    # Checking if we have to change the Power On after On/Off
+    _skipPowerOn_OnOff = False
+    if 'Manufacturer' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer'] == '117c':
+            _skipPowerOn_OnOff = True
+    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'IKEA of Sweden':
+            _skipPowerOn_OnOff = True
+
+    #if not _skipPowerOn_OnOff and 'Ep' in self.ListOfDevices[NWKID]:
+    #    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+    #        # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
+    #        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+    #            if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
+    #                if self.pluginconf.pluginConf['PowerOn_OnOff'] == int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003']):
+    #                    continue
+    #                if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
+    #                    continue
+    #                loggingHeartbeat( self, 'Log', "-- - Change PowerOn OnOff for device: %s from %s -> %s" \
+    #                        %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['PowerOn_OnOff']))
+    #                setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['PowerOn_OnOff'] )
+
+    # If corresponding Attributes not present, let's do a Request Node Description
+    if ( intHB % 1800) == 0:
+        req_node_descriptor = False
+        if 'Manufacturer' not in self.ListOfDevices[NWKID] or \
+                'DeviceType' not in self.ListOfDevices[NWKID] or \
+                'LogicalType' not in self.ListOfDevices[NWKID] or \
+                'PowerSource' not in self.ListOfDevices[NWKID] or \
+                'ReceiveOnIdle' not in self.ListOfDevices[NWKID]:
+            req_node_descriptor = True
+        if 'Manufacturer'  in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Manufacturer'] == '':
+                req_node_descriptor = True
+    
+        if req_node_descriptor and not self.busy and  len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+            loggingHeartbeat( self, 'Debug', '-- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
+                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
+            Domoticz.Status("Requesting Node Descriptor for %s" %NWKID)
+            sendZigateCmd(self,"0042", str(NWKID) )         # Request a Node Descriptor
+
+    if rescheduleAction and intHB != 0: # Reschedule is set because Zigate was busy or Queue was too long to process
+        self.ListOfDevices[NWKID]['Heartbeat'] = str( intHB - 1 ) # So next round it trigger again
+
+    return
 
 def processListOfDevices( self , Devices ):
     # Let's check if we do not have a command in TimeOut
-    self.ZigateComm.checkTOwaitFor()
 
+    self.ZigateComm.checkTOwaitFor()
     entriesToBeRemoved = []
-    for NWKID in list(self.ListOfDevices):
+
+    for NWKID in list( self.ListOfDevices.keys() ):
         if NWKID in ('ffff', '0000'): continue
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
@@ -459,7 +352,11 @@ def processListOfDevices( self , Devices ):
             continue
             
         status = self.ListOfDevices[NWKID]['Status']
-        RIA = int(self.ListOfDevices[NWKID]['RIA'])
+        if self.ListOfDevices[NWKID]['RIA'] != '' and self.ListOfDevices[NWKID]['RIA'] != {}:
+            RIA = int(self.ListOfDevices[NWKID]['RIA'])
+        else:
+            RIA = 0
+            self.ListOfDevices[NWKID]['RIA'] = '0'
         self.ListOfDevices[NWKID]['Heartbeat']=str(int(self.ListOfDevices[NWKID]['Heartbeat'])+1)
 
         if status == "failDB":
@@ -469,13 +366,24 @@ def processListOfDevices( self , Devices ):
         if status == "inDB" and not self.busy: 
             processKnownDevices( self , Devices, NWKID )
 
-        if status == "Left":
-            # Device has sent a 0x8048 message annoucing its departure (Leave)
+        elif status == "Leave":
+            # We should then just reconnect the element
+            # Nothing to do
+            pass
+
+        elif status == "Left":
+            timedOutDevice( self, Devices, NwkId = NWKID)
+            # Device has sentt a 0x8048 message annoucing its departure (Leave)
             # Most likely we should receive a 0x004d, where the device come back with a new short address
             # For now we will display a message in the log every 1'
             # We might have to remove this entry if the device get not reconnected.
             if (( int(self.ListOfDevices[NWKID]['Heartbeat']) % 36 ) and  int(self.ListOfDevices[NWKID]['Heartbeat']) != 0) == 0:
-                Domoticz.Log("processListOfDevices - Device: " +str(NWKID) + " is in Status = 'Left' for " +str(self.ListOfDevices[NWKID]['Heartbeat']) + "HB" )
+                if 'ZDeviceName' in self.ListOfDevices[NWKID]:
+                    loggingHeartbeat( self, 'Debug', "processListOfDevices - Device: %s (%s) is in Status = 'Left' for %s HB" 
+                            %(self.ListOfDevices[NWKID]['ZDeviceName'], NWKID, self.ListOfDevices[NWKID]['Heartbeat']), NWKID)
+                else:
+                    loggingHeartbeat( self, 'Debug', "processListOfDevices - Device: (%s) is in Status = 'Left' for %s HB" 
+                            %( NWKID, self.ListOfDevices[NWKID]['Heartbeat']), NWKID)
                 # Let's check if the device still exist in Domoticz
                 for Unit in Devices:
                     if self.ListOfDevices[NWKID]['IEEE'] == Devices[Unit].DeviceID:
@@ -513,11 +421,12 @@ def processListOfDevices( self , Devices ):
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-    if ( self.HeartbeatCount % (60 // HEARTBEAT)) == 0:
-        # Trigger Conifre Reporting to eligeable decices
+
+    if ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
+        # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > ( 5 * 60 // HEARTBEAT):
+    if self.HeartbeatCount > NETWORK_TOPO_START:
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
@@ -525,14 +434,15 @@ def processListOfDevices( self , Devices ):
                 Domoticz.Log("Start NetworkMap process")
                 self.start_scan( )
             elif phase == 2:
-                if self.ZigateComm.loadTransmit() < 2 :
+                if self.ZigateComm.loadTransmit() < 1 : # Equal 0
                      self.networkmap.continue_scan( )
 
-    if self.HeartbeatCount > ( 3 * 60 // HEARTBEAT):
+    if self.HeartbeatCount > NETWORK_ENRG_START:
         # Network Energy Level
         if self.networkenergy:
-            if self.ZigateComm.loadTransmit() < 2:
+            if self.ZigateComm.loadTransmit() < 1: # Equal 0
                 self.networkenergy.do_scan()
+
 
     return True
 

@@ -1,0 +1,33 @@
+{
+	"_comment": "AQARA Bulb ZNLDP12LM - 9W E27 - 2700K/ 6500 K. 5 Off/On to reset and it will be blinking when reseted",
+	"_version": "1.0",
+	"Ep":{
+		"01":{
+			"0000":"",
+			"0001":"",
+			"0003":"",
+			"0004":"",
+			"0005":"",
+			"0006":"",
+			"0008":"",
+			"000a":"",
+			"000d":"",
+			"0013":"",
+			"0019":"",
+			"0300":"",
+			"Type":"ColorControlWW",
+			"ColorMode":"3"}
+	},
+	"Type":"",
+	"ClusterToBind": [ "0006", "0008", "0300" ],
+	"ConfigureReporting": {
+		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"01"}}},
+		"0008": {"Attributes": { "0000": {"DataType": "20", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0FFF","Change":"05"}}}
+	},
+  	"ReadAttributes": {
+        	 "0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006"] ,
+        	 "0006": [ "0000", "4001", "4002" ] ,
+        	 "0008": [ "0000" ] ,
+        	 "0300": [ "0002", "0003", "0004", "0007", "0008", "400b", "400c" ] 
+	}
+}

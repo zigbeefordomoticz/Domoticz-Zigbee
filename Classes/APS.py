@@ -1,23 +1,19 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
-"""
-
-    'List Cmds' = [ { 'cmd':'Time Stamps', ... } ]
-
-"""
-
-from time import time
+from time import time, ctime
 
 import Domoticz
-from Modules.status import DisplayStatusCode
+from Modules.errorCodes import DisplayStatusCode
 from Modules.domoticz import timedOutDevice
 
-MAX_CMD_PER_DEVICE = 5
-APS_TIME_WINDOW = 1.5
+APS_TIME_WINDOW = 15
 MAX_APS_TRACKING_ERROR = 5
 
-REDO = 0
-
-APS_FAILURE_CODE = (  'd4', 'e9', 'f0' , 'cf' )
+APS_FAILURE_CODE = (  'd0', 'd4', 'e9', 'f0' , 'cf' )
 
 CMD_NWK_2NDBytes = { 
         '0060':'Add Group', 
@@ -71,7 +67,6 @@ class APSManagement(object):
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.pluginconf = pluginconf
-        self.ZigateComm = None        # Point to the ZigateComm object
 
         return
 
@@ -86,51 +81,19 @@ class APSManagement(object):
             Domoticz.Status( message)
         return
     
-    def updateZigateComm( self, ZigateComm):
-
-        self.ZigateComm = ZigateComm
-
-    def _addNewCmdtoDevice(self, nwk, cmd, payload):
-        """ Add Cmd to the nwk list of Command FIFO mode """
-
-        self.logging( 'Debug', "addNewCmdtoDevice - %s %s" %(nwk, cmd))
+    def _errorMgt( self, cmd, nwk, ieee, aps_code):
+        """ Process the error """
 
         if nwk not in self.ListOfDevices:
             return
 
-        if 'Last Cmds' not in self.ListOfDevices[nwk]:
-            self.ListOfDevices[nwk]['Last Cmds'] = []
+        if 'ErrorManagement' not in self.ListOfDevices[nwk]: 
+            self.ListOfDevices[nwk]['ErrorManagement'] = 0
 
-        # This is to fix a miss-initialization done where it was initiatlized as a dict and not a list
-        if isinstance(self.ListOfDevices[nwk]['Last Cmds'], dict ):
-            self.ListOfDevices[nwk]['Last Cmds'] = []
-
-        if len(self.ListOfDevices[nwk]['Last Cmds']) >= MAX_CMD_PER_DEVICE:
-            # Remove the First element in the list.
-            self.ListOfDevices[nwk]['Last Cmds'].pop(0)
-        if not REDO:
-            _tuple = ( time(), cmd , None)
-        else:
-            _tuple = ( time(), cmd , payload) # Keep Payload as well in order to redo the command
-        # Add element at the end of the List
-        self.ListOfDevices[nwk]['Last Cmds'].append( _tuple )
-        self.logging( 'Debug', "addNewCmdtoDevice - %s adding cmd: %s into the Last Cmds list %s" \
-                %(nwk, cmd, self.ListOfDevices[nwk]['Last Cmds']))
-
-    def processCMD( self, cmd, payload):
-        """ extract from Payload the NetworkID of the interested commands"""
-
-        self.logging( 'Debug', "processCMD - cmd: %s, payload: %s" %(cmd, payload))
-        if len(payload) < 7 or cmd not in CMD_NWK_2NDBytes:
+        if self.ListOfDevices[nwk]['ErrorManagement'] == 0 and cmd in ( '0100', '0110', '0120', '0030'):
+            self.logging( 'Log', "_errorMgt - Give a chance of APS recovery for %s/%s on command %s" %(nwk,ieee, cmd))
+            self.ListOfDevices[nwk]['ErrorManagement']  = 1
             return
-
-        nwkid = payload[2:6]
-        self.logging( 'Debug', "processCMD - Retreive NWKID: %s" %nwkid)
-        if nwkid in self.ListOfDevices:
-            self._addNewCmdtoDevice( nwkid, cmd , payload)
-
-    def _errorMgt( self, cmd, nwk, ieee, aps_code):
-        """ Process the error """
 
         timedOutDevice( self, self.Devices, NwkId = nwk)
         _deviceName = 'not found'
@@ -138,6 +101,7 @@ class APSManagement(object):
             if self.Devices[x].DeviceID == ieee:
                 _deviceName = self.Devices[x].Name
                 break
+
         _cmdTxt = '0x' + cmd
         if cmd in CMD_NWK_2NDBytes:
             _cmdTxt += ':' + CMD_NWK_2NDBytes[cmd]
@@ -146,9 +110,8 @@ class APSManagement(object):
         if 'ZDeviceName' in self.ListOfDevices[nwk]:
             ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
 
-        Domoticz.Error("Command: %s failed on %s" %(_cmdTxt, ZDeviceName)) 
-        Domoticz.Error("- Device: %s NwkID: %s IEEE: %s" %( _deviceName, nwk, ieee))
-        Domoticz.Error("- Code: %s Status: %s" %( aps_code, DisplayStatusCode( aps_code )))
+        Domoticz.Error("APS Failure , Command: %s for %s (%s,%s,%s) not correctly transmited. ( %s, %s )" \
+                %( _cmdTxt, ZDeviceName, _deviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
         self.ListOfDevices[nwk]['Health'] = 'Not Reachable'
 
     def _updateAPSrecord( self, nwk, aps_code):
@@ -162,7 +125,6 @@ class APSManagement(object):
         _tuple = ( time(), aps_code )
         self.ListOfDevices[nwk]['APS Failure'].append( _tuple )
 
-
     def processAPSFailure( self, nwk, ieee, aps_code):
         """
         We are receiving a APS Failure code for that particular Device
@@ -170,12 +132,10 @@ class APSManagement(object):
         """
 
         self.logging( 'Debug', "processAPSFailure - %s %s %s" %(nwk, ieee, aps_code))
-
         if nwk not in self.ListOfDevices:
             return
         if 'Last Cmds' not in self.ListOfDevices[nwk]:
             return
-
         _mainPowered = False
         if 'MacCapa' in self.ListOfDevices[nwk]:
             if self.ListOfDevices[nwk]['MacCapa'] == '8e':
@@ -183,17 +143,16 @@ class APSManagement(object):
         elif 'PowerSource' in self.ListOfDevices[nwk]:
             if self.ListOfDevices[nwk]['PowerSource'] == 'Main':
                 _mainPowered = True
-
         ZDeviceName = ''
         if 'ZDeviceName' in  self.ListOfDevices[nwk]:
             ZDeviceName =  self.ListOfDevices[nwk]['ZDeviceName']
-
-        if self.pluginconf.pluginConf['enableAPSFailureLoging']:
-            Domoticz.Log("processAPSFailure - Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
-                    %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
-
+        #if self.pluginconf.pluginConf['enableAPSFailureLoging']:
+        #    Domoticz.Log("processAPSFailure - Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
+        #            %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
         self.logging( 'Debug', "processAPSFailure - Update APS record Device: %s NwkId: %s, IEEE: %s, Code: %s, Status: %s" \
                     %( ZDeviceName, nwk, ieee, aps_code, DisplayStatusCode( aps_code )))
+
+        # Keep track of APS Failure
         self._updateAPSrecord( nwk, aps_code)
 
         if  not _mainPowered \
@@ -203,26 +162,32 @@ class APSManagement(object):
                     %(_mainPowered, aps_code, self.pluginconf.pluginConf['enableAPSFailureReporting']))
             return
 
-        self.logging( 'Debug', "processAPSFailure - Error Reporting")
+        # We do not want to take action for internal Zigate activities. So we will find if there the saem command use in a short period of time
 
         _timeAPS = (time())
-        _lastCmds = self.ListOfDevices[nwk]['Last Cmds']
+        # Retreive Last command
+        rank = 0
+        self.logging( 'Debug', "processAPSFailure - Last Commands Queue for %s" %nwk)
+        for command in self.ListOfDevices[nwk]['Last Cmds']:
+            if len(command) == 3:
+                self.logging( 'Debug', "  [%2s] Command: %s Payload: %-10s TimeStamp:  %24s (%18s)" %(rank, command[1], command[2],  ctime(command[0]), command[0]))
+            rank += 1
 
+        _lastCmds = self.ListOfDevices[nwk]['Last Cmds'][::-1]  #Reverse list
         self.logging( 'Debug', "processAPSFailure - %s Last Cmds: %s" %(nwk, _lastCmds))
-        for iterItem in reversed(_lastCmds):
-            iterTime = iterItem[0]
-            iterCmd =iterItem[1]
-            iterpayLoad = None
-            if len(iterItem) == 3:
-                iterpayLoad =iterItem[2]
-            
-            self.logging( 'Debug', "processAPSFailure - %s process %18s %s - %s[%s]" %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
-            if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
-                # That command has been issued in the APS time window
-                if not REDO:
-                    self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
-                    self._errorMgt( iterCmd, nwk, ieee, aps_code)
-                if REDO and iterpayLoad and self.ZigateComm:
-                    self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
-                    self.logging( 'Debug', "--> REDO the command" )
-                    self.ZigateComm.sendData( iterCmd, iterpayLoad)
+        iterTime = 0
+        iterCmd = iterpayLoad = None
+        if len(_lastCmds) < 1:
+            return
+        if len(_lastCmds[0]) == 2:
+            return 
+        if len(_lastCmds[0]) == 3:
+            iterTime, iterCmd, iterpayLoad = _lastCmds[0]
+
+        self.logging( 'Debug', "processAPSFailure - Nwkid: %s process %18s InPeriod: %s - Cmd: %s Payload: %s" \
+                %(nwk, iterTime, (_timeAPS <= ( iterTime + APS_TIME_WINDOW)), iterCmd, iterpayLoad))
+        if _timeAPS <= ( iterTime + APS_TIME_WINDOW):
+            # That command has been issued in the APS time window
+            self.logging( 'Debug', "processAPSFailure - %s found cmd: %s[%s] in the APS time window, age is: %s sec" \
+                    %(nwk, iterCmd, iterpayLoad, round((_timeAPS - iterTime),2)))
+            self._errorMgt( iterCmd, nwk, ieee, aps_code)

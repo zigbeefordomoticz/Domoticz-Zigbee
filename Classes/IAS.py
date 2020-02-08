@@ -14,7 +14,7 @@
 import Domoticz
 
 from Modules.output import *
-from Modules.consts import ADDRESS_MODE
+from Modules.zigateConsts import ADDRESS_MODE
 from Classes.PluginConf import PluginConf
 
 ZONE_TYPE = { 0x0000: 'standard',

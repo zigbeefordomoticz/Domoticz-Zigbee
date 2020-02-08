@@ -17,11 +17,20 @@ import json
 
 import Modules.tools
 
-def _copyfile( source, dest ):
-    copy_buffer =''
-    with open(source, 'r') as src, open(dest, 'wt') as dst:
-        for line in src:
-            dst.write(line)
+def _copyfile( source, dest, move=True ):
+
+    try:
+        import shutil
+        if move:
+            shutil.move( source, dest)
+        else:
+            shutil.copy( source, dest)
+    except:
+        with open(source, 'r') as src, open(dest, 'wt') as dst:
+            for line in src:
+                dst.write(line)
+        return
+
 
 def _versionFile( source , nbversion ):
 
@@ -38,7 +47,8 @@ def _versionFile( source , nbversion ):
                 _fileversion_n1 =  source + "-%02d" %(version + 1)
                 _copyfile( _fileversion_n, _fileversion_n1 )
 
-        _copyfile( source, source +  "-%02d" %1 )
+        # Last one
+        _copyfile( source, source +  "-%02d" %1 , move=False)
 
 
 def LoadDeviceList( self ):
@@ -70,7 +80,8 @@ def LoadDeviceList( self ):
             key = key.replace(" ","")
             key = key.replace("'","")
 
-            if key in  ( 'ffff', '0000'): continue
+            #if key in  ( 'ffff', '0000'): continue
+            if key in  ( 'ffff'): continue
 
             try:
                 dlVal=eval(val)
@@ -81,12 +92,16 @@ def LoadDeviceList( self ):
             Modules.tools.loggingDatabase( self, 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
 
             if not dlVal.get('Version') :
+                if key == '0000': # Bug fixed in later version
+                    continue
                 Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
                 res = "Failed"
+                continue
 
             if dlVal['Version'] != '3' :
                 Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
                 res = "Failed"
+                continue
             else:
                 nb = nb +1
                 CheckDeviceList( self, key, val )
@@ -120,9 +135,16 @@ def WriteDeviceList(self, count):
             Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
         _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
         Modules.tools.loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
-        with open( _DeviceListFileName , 'wt') as file:
-            for key in self.ListOfDevices :
-                file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+        try:
+            with open( _DeviceListFileName , 'wt') as file:
+                for key in self.ListOfDevices :
+                    try:
+                        file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                    except IOError:
+                        Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
+        except IOError:
+            Domoticz.Error("Error while Opening plugin Database %s" %_DeviceListFileName)
+
         self.HBcount=0
         Modules.tools.loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
     else :
@@ -149,6 +171,66 @@ def importDeviceConf( self ) :
     #    Domoticz.Log("%s - %s" %(iterDevType, self.DeviceConf[iterDevType]))
 
     Domoticz.Status("DeviceConf loaded")
+
+
+def importDeviceConfV2( self ):
+
+    from os import listdir
+    from os.path import isfile, isdir, join
+
+    # Read DeviceConf for backward compatibility
+    importDeviceConf( self )
+
+    model_certified = self.pluginconf.pluginConf['pluginConfig'] + '/Certified'
+
+    if os.path.isdir( model_certified ):
+        model_brand_list = [ f for f in listdir(model_certified) if isdir(join(model_certified, f))]
+    
+        for brand in model_brand_list:
+            if brand in ( 'README.md', '.PRECIOUS' ):
+                continue
+    
+            model_directory = model_certified + '/' + brand 
+
+            model_list = [ f for f in listdir(model_directory) if isfile(join(model_directory, f))]
+         
+            for model_device in model_list:
+                if model_device in ( 'README.md', '.PRECIOUS' ):
+                    continue
+     
+                filename = model_directory + '/' + model_device
+                with open( filename, 'rt') as handle:
+                    try:
+                        model_definition = json.load( handle )
+                    except ValueError as e: 
+                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" %(filename, e))
+                        continue
+                    except Exception as e:
+                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" %(filename, e))
+                        continue
+
+                device_model_name = model_device.rsplit('.',1)[0]
+                if device_model_name == 'Dimmer switch wo neutral':
+                    device_model_name = 'Dimmer switch w/o neutral'
+
+                if device_model_name not in self.DeviceConf:
+                    Domoticz.Status("--> Config for %s/%s" %( brand, device_model_name))
+                    self.DeviceConf[ device_model_name ] = dict(model_definition)
+                else:
+                    Domoticz.Log("--> Config for %s/%s not loaded as already defined" %(brand, device_model_name))
+
+def checkDevices2LOD( self, Devices):
+
+    for nwkid in self.ListOfDevices:
+        self.ListOfDevices[nwkid]['ConsistencyCheck'] = ''
+        if self.ListOfDevices[nwkid]['Status'] == 'inDB':
+            for dev in Devices:
+                if Devices[dev].DeviceID == self.ListOfDevices[nwkid]['IEEE']:
+                    self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'ok'
+                    break
+            else:
+                self.ListOfDevices[nwkid]['ConsistencyCheck'] = 'not in DZ'
+
 
 def checkListOfDevice2Devices( self, Devices ) :
 
@@ -186,8 +268,11 @@ def saveZigateNetworkData( self, nkwdata ):
 
         json_filename = self.pluginconf.pluginConf['pluginData'] + "/Zigate.json" 
         Modules.tools.loggingDatabase( self, 'Debug', "Write " + json_filename + " = " + str(self.ListOfDevices))
-        with open (json_filename, 'wt') as json_file:
-            json.dump(nkwdata, json_file, indent=4, sort_keys=True)
+        try:
+            with open (json_filename, 'wt') as json_file:
+                json.dump(nkwdata, json_file, indent=4, sort_keys=True)
+        except IOError:
+            Domoticz.Error("Error while writing Zigate Network Details%s" %json_filename)
 
 
 def CheckDeviceList(self, key, val) :
@@ -206,16 +291,32 @@ def CheckDeviceList(self, key, val) :
             return
 
     if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
-        Modules.tools.initDeviceInList(self, key)
+
+        if key == '0000':
+            self.ListOfDevices[ key ] = {}
+            self.ListOfDevices[ key ]['Status'] = ''
+        else:
+            Modules.tools.initDeviceInList(self, key)
 
         self.ListOfDevices[key]['RIA']="10"
 
+        # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
+        ZIGATE_ATTRIBUTES = {
+                'Version',
+                'ZDeviceName',
+                'Ep',
+                'IEEE',
+                'LogicalType',
+                'PowerSource',
+                'Neighbours',
+                }
+
         MANDATORY_ATTRIBUTES = ( 'App Version', 
                 'Attributes List', 
-                'Battery', 
                 'Bind', 
                 'ColorInfos', 
                 'ClusterType', 
+                'ConfigSource',
                 'DeviceType', 
                 'Ep', 
                 'HW Version', 
@@ -233,13 +334,10 @@ def CheckDeviceList(self, key, val) :
                 'ReceiveOnIdle', 
                 'Stack Version', 
                 'RIA', 
-                'RSSI',
-                'SQN', 
                 'SWBUILD_1', 
                 'SWBUILD_2', 
                 'SWBUILD_3', 
                 'Stack Version', 
-                'Stamp', 
                 'Status', 
                 'Type',
                 'Version', 
@@ -247,24 +345,38 @@ def CheckDeviceList(self, key, val) :
                 'ZDeviceID', 
                 'ZDeviceName')
 
-        BUILD_ATTRIBUTES = ('ConfigureReporting',
+        # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
+        BUILD_ATTRIBUTES = (
+                'Battery', 
+                'ConfigureReporting',
                 'Last Cmds',
+                'Neighbours',
                 'ReadAttributes', 
+                'RSSI',
+                'SQN', 
                 'Stamp', 
                 'Health')
 
+        if self.pluginconf.pluginConf['resetPluginDS']:
+            Modules.tools.loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
+            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
-
-        if not self.pluginconf.pluginConf['resetPluginDS']:
+        elif key == '0000':
+            # Reduce the number of Attributes loaded for Zigate
+            Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
+            IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
+            Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+        else:
             Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
             IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
-        else:
-            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
         Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         for attribute in IMPORT_ATTRIBUTES:
             if attribute in DeviceListVal:
                 self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
+                # Patching unitialize Model to empty
+                if attribute == 'Model' and self.ListOfDevices[key][ attribute ] == {}:
+                    self.ListOfDevices[key][ attribute ] = ''
 
         self.ListOfDevices[key]['Health'] = ''
 
