@@ -1268,18 +1268,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
                 elif DeviceType == "Door":  # porte / fenetre
                     if value == "01":
+                        nvalue = 1
                         state = "Open"
                         UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
                     elif value == "00":
+                        nvalue = 0
                         state = "Closed"
-                        UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                        UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "Switch":  # Switch
+                    nvalue = 0
                     state = ''
                     if value == "01":
+                        nvalue = 1
                         state = "On"
                     elif value == "00":
+                        nvalue = 0
                         state = "Off"
-                    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel)
+                    UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel)
                 elif DeviceType == "Button":  # boutton simple
                     state = ''
                     if int(value) == 1:
@@ -1372,7 +1377,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if value == '00': nvalue = 1 ; state = '10' #Off
                     elif value == '01': nvalue = 2 ; state = "20" # On
                     elif value == 'moveup': nvalue = 3 ; state = "30" # Move Up
-                    elif value == 'movedown': nvalue = 3 ; state = "40" # Move Down
+                    elif value == 'movedown': nvalue = 4 ; state = "40" # Move Down
                     elif value == 'stop': nvalue = 5 ; state = "50" # Stop
                     UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
@@ -1601,6 +1606,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     elif value == '02': nvalue = 2; state = '20'
                     elif value == '03': nvalue = 3; state = '30'
                     elif value == '04': nvalue = 4; state = '40'
+                    UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
+
+                elif DeviceType == 'GenericLvlControl':
+                    # 1,10: Off
+                    # 2,20: On
+                    # 3,30: Move Up
+                    # 4,40: Move Down
+                    # 5,50: Stop
+                    loggingWidget( self, "Debug", "GenericLvlControl : Value -> %s" %value, NWKID)
+                    if value == '00': nvalue = 1 ; state = '10' #Off
+                    elif value == '01': nvalue = 2 ; state = "20" # On
+                    elif value == 'moveup': nvalue = 3 ; state = "30" # Move Up
+                    elif value == 'movedown': nvalue = 4 ; state = "40" # Move Down
+                    elif value == 'stop': nvalue = 5 ; state = "50" # Stop
                     UpdateDevice_v2(self, Devices, x, nvalue, str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
 
                 elif DeviceType == "INNR_RC110_SCENE":

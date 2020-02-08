@@ -2080,11 +2080,16 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         TYPE_ACTIONS = { None: '', 
                 '01': 'move', 
                 '02': 'click', 
-                '03': 'stop'
+                '03': 'stop',
+                '04': 'Dimmer',
+                '05': 'Step 05',
+                '06': 'Step 06',
+                '07': 'Step 07',
                 }
         DIRECTION = { None: '', 
-                '00': 'up', 
-                '01': 'down'}
+                '00': 'left', 
+                'ff': 'right'
+                }
 
         step_mod = MsgData[14:16]
         up_down = step_size = transition = None
@@ -2096,22 +2101,20 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             transition = MsgData[20:22]
 
         selector = None
-        if step_mod in TYPE_ACTIONS:
-            if up_down in DIRECTION:
-                if TYPE_ACTIONS[step_mod] in ( 'click', 'move'):
-                    selector = TYPE_ACTIONS[step_mod] + DIRECTION[up_down] 
-            if TYPE_ACTIONS[step_mod] == 'stop':
-                selector = TYPE_ACTIONS[step_mod]
-            else:
-                Domoticz.Error("Decode8085 - Unknown state for %s step_mod: %s up_down: %s" %(MsgSrcAddr, step_mod, up_down))
-        else:
-            Domoticz.Error("Decode8085 - Unknown step_mod %s and/or up_down %s cluster %s Cmd %s Unknown %s for device %s" \
-                    %(step_mod, up_down, MsgClusterId, MsgCmd, unknown_, MsgSrcAddr))
+        if step_mod == '04' and up_down == '00':
+            # Left
+            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning left step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'moveup' )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'moveup'
 
-        loggingInput( self, 'Debug', "Decode8085 - Legrand selector: %s" %selector, MsgSrcAddr)
-        if selector:
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
+        elif step_mod == '04' and up_down == 'ff':
+            # Right
+            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning right step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'movedown' )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'movedown'
+        #else:
+        #    loggingInput( self, 'Log', "Decode8085 - wireless dimmer %s/%s step_mod: %s up_down: %s step_size: %s transition: %s" \
+        #            %(MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition), MsgSrcAddr)
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
         loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
