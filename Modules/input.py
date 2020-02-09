@@ -1986,9 +1986,9 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             '07':'release_up'
             }
 
-    loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
-    loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
-            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+    #loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    #loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+    #        %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -2074,8 +2074,6 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in 'TRADFRI wireless dimmer':
-        loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
-            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
         TYPE_ACTIONS = { None: '', 
                 '01': 'moveleft', 
@@ -2101,34 +2099,38 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             transition = MsgData[20:22]
 
         selector = None
-        if step_mod == '04' and up_down == '00':
-            # Left
-            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning left step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'off' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'off'
 
-        elif step_mod == '04' and up_down == 'ff':
-            # Right
-            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning right step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'on' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'on'
-        elif step_mod == '01':
+        if step_mod == '01':
             # Move left
-            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning left step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'moveup' )
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning left step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'moveup'
-        elif step_mod == '05':
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'moveup' )
+
+        elif step_mod == '04' and up_down == '00' and step_size == '00' and transition == '01':
+            # Off
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning left step_size: %s transition: %s" %(step_size, transition), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'off'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'off' )
+
+        elif step_mod == '04' and up_down == 'ff' and step_size == '00' and transition == '01':
+            # On
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning right step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'on'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'on' )
+
+        elif step_mod == '05': 
             # Move Right
-            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning Right step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'movedown' )
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning Right step_size: %s transition: %s" %(step_size, transition), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'movedown'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'movedown' )
+
         elif step_mod == '07':
             # Stop Moving
-            #loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s Stop moving step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
+            loggingInput( self, 'Debug', "Decode8085 - =====> Stop moving step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
             pass
         else:
-            loggingInput( self, 'Log', "Decode8085 - wireless dimmer %s/%s step_mod: %s up_down: %s step_size: %s transition: %s" \
-                    %(MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition), MsgSrcAddr)
+            loggingInput( self, 'Log', "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s" \
+                    %(step_mod, up_down, step_size, transition), MsgSrcAddr)
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
         loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
