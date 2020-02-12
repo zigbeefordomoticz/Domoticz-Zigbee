@@ -162,7 +162,7 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
 
-    loggingCluster( self, 'Debug', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
+    loggingCluster( self, 'Debug', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr)
 
     if 'ReadAttributes' not in  self.ListOfDevices[MsgSrcAddr]:
@@ -802,6 +802,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
                 max_voltage = 60 ; min_voltage = 30
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+                max_voltage = 2 * 1.5; min_voltage = 2 * 1
+
 
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
@@ -2140,8 +2144,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 loggingCluster( self, 'Debug', "ReadCluster 0201 - %s/%s Host Flags: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
         
-    elif MsgAttrID == 'e010': # Schneider Thermostat Mode
-        THERMOSTAT_MODE = { '00': 'Mode Off',
+    elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e030', 'e031'):
+        if MsgAttrID == 'e010': # Schneider Thermostat Mode
+            THERMOSTAT_MODE = { '00': 'Mode Off',
                 '01': 'Manual',
                 '02': 'Schedule',
                 '03': 'Energy Saver',
@@ -2149,13 +2154,25 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 '05': 'Holiday Off',
                 '06': 'Holiday Frost Protection',
                 }
-        if MsgClusterData in THERMOSTAT_MODE:
-            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]), MsgSrcAddr)
-        else:
-            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            if MsgClusterData in THERMOSTAT_MODE:
+                loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]), MsgSrcAddr)
+            else:
+                loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
-    elif MsgAttrID == 'e011': # Schneider
-        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        elif MsgAttrID == 'e011': 
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+        elif MsgAttrID == 'e012': 
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        elif MsgAttrID == 'e030': 
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Position  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        elif MsgAttrID == 'e031':
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Calibration Status %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     else:
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
