@@ -174,6 +174,7 @@ SETTINGS = {
         # Schneider Wiser configuration
         'Schneider Wiser':  { 'Order': 13, 'param': {
                 'enableSchneiderWiser': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'reenforcementWiser': { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 }},
 
         #Others

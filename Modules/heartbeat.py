@@ -263,7 +263,7 @@ def processKnownDevices( self, Devices, NWKID ):
                     else:
                         rescheduleAction = True
 
-    if ( self.HeartbeatCount % SCHNEIDER_FEATURES ) == 0 :
+    if self.pluginconf.pluginConf['reenforcementWiser'] and ( self.HeartbeatCount % self.pluginconf.pluginConf['reenforcementWiser'] ) == 0 :
         if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
             if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
                 if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
