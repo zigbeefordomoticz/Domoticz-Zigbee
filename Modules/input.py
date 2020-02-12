@@ -629,6 +629,9 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
     if MsgDataStatus == '00':
          Domoticz.Status("Start Network - Success")
          Status = 'Success'
+    elif MsgDataStatus == '01':
+         Domoticz.Status("Start Network - Formed new network")
+         Status = 'Success'
     elif MsgDataStatus == '02':
         Domoticz.Status("Start Network: Error invalid parameter.")
         Status = 'Start Network: Error invalid parameter.'
@@ -731,7 +734,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
         return
 
-    loggingInput( self, 'Debug', "Decode8030 - Bind response, Device: %s SQN: %s Status: %s" %(MsgSrcAddr, MsgSequenceNumber, MsgDataStatus), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8030 - Bind response, Device: %s Status: %s" %(MsgSrcAddr, MsgDataStatus), MsgSrcAddr)
 
     if nwkid in self.ListOfDevices:
         if 'Bind' in self.ListOfDevices[nwkid]:
@@ -743,9 +746,9 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                     continue
 
                 for cluster in list(self.ListOfDevices[nwkid]['Bind'][ Ep ]):
-                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'binded':
+                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
-                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
+                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'binded'
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
                         return
     return
