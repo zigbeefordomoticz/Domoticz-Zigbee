@@ -1,5 +1,9 @@
 # Release Notes 
 
+## 12 February 2020 - 4.7.1
+- [Issue] - Using wrong ClusterId for 0201 read attribute
+- [Issue] - Fixing binding information
+
 ## 8 February 2020 - 4.7.0 
 - [Hardware] - Update of IKEA Tradfri firmware
 - [Technical] - better management of APS Failure, network transmission
