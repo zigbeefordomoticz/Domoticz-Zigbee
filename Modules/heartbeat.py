@@ -170,7 +170,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 if _forceCommandCluster and not _doReadAttribute:
                     # Force Majeur
                     if ( intHB == 1 and _mainPowered and Cluster in READ_ATTR_COMMANDS ) or \
-                          ( intHB == 1 and not _mainPowered and Cluster == '0001') :
+                          ( intHB == 1 and not _mainPowered and Cluster in ( '0001', '0201') ) :
                         loggingHeartbeat( self, 'Debug', '-- - Force Majeur on %s/%s cluster %s' %( NWKID, tmpEp, Cluster), NWKID)
 
                         # Let's reset the ReadAttribute Flag
