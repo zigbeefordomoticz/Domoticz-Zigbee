@@ -29,7 +29,11 @@ def schneider_wiser_registration( self, key ):
         if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    # Set Boolean flag to 0xE050
+    if 'Model' not in self.ListOfDevices[key]:
+        Domoticz.Error("Undefined Model, registration !!!")
+        return
+
+    # Set Commissioning as Done
     manuf_id = "105e"
     manuf_spec = "01"
     cluster_id = "%04x" %0x0000
@@ -40,13 +44,8 @@ def schneider_wiser_registration( self, key ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    if 'Model' not in self.ListOfDevices[key]:
-        Domoticz.Error("Undefined Model, registration !!!")
-        return
-
-    # Thermostat
-    if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
-        #  Wite Attribute 0x42 Value = 'en'
+    if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS': # Thermostat
+        # Set Language
         manuf_id = "105e"
         manuf_spec = "01"
         cluster_id = "%04x" %0x0000
@@ -57,9 +56,9 @@ def schneider_wiser_registration( self, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    # Write attribute for Actuator
-    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ):
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
 
+        # Set no Calibration
         manuf_id = "0000"
         manuf_spec = "00"
         cluster_id = "%04x" %0x0201
@@ -71,10 +70,12 @@ def schneider_wiser_registration( self, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-        # Set 0x01 to 0x0201/0xe010
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT'): # Actuator 
+        # ATTRIBUTE_THERMOSTAT_ZONE_MODE
         cluster_id = "%04x" %0x0201
         manuf_id = "105e"
         manuf_spec = "01"
+        # Set 0x01 to 0x0201/0xe010
         Hattribute = "%04x" %0xe010
         data_type = "30"
         data = '01'  
@@ -82,10 +83,12 @@ def schneider_wiser_registration( self, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-        # Set 0x01 to 0x0201/0xe011
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
+        # ATTRIBUTE_THERMOSTAT_HACT_CONFIG
         cluster_id = "%04x" %0x0201
         manuf_id = "105e"
         manuf_spec = "01"
+        # Set 0x01 to 0x0201/0xe011
         Hattribute = "%04x" %0xe011
         data_type = "18"
         data = '00'   # By default register as CONVENTIONEL mode

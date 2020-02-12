@@ -621,7 +621,6 @@ def ReadAttributeRequest_0201(self, key):
                 listAttributes.append(0x0408)   
                 listAttributes.append(0x0409)  
 
-
             # Adjustement before request
             listAttrSpecific = []
             listAttrGeneric = []
@@ -629,7 +628,7 @@ def ReadAttributeRequest_0201(self, key):
                 if self.ListOfDevices[key]['Manufacturer'] == '105e':
                     # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
                     for _attr in list(listAttributes):
-                        if _attr ==  0xe011:
+                        if _attr in ( 0xe011, 0xe010 ):
                             listAttrSpecific.append( _attr )
                         else:
                             listAttrGeneric.append( _attr )
@@ -1760,7 +1759,7 @@ def thermostat_Setpoint( self, key, setpoint):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
                 thermostat_Setpoint_SPZB( self, key, setpoint)
 
-            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT'):
+            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
                 schneider_setpoint( self, key, setpoint)
                 return
