@@ -642,7 +642,7 @@ def ReadAttributeRequest_0201(self, key):
 
             if len(listAttrSpecific) > 0:
                 loggingOutput( self, 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                ReadAttributeReq( self, key, EPin, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
+                ReadAttributeReq( self, key, EPin, EPout, "0201", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
 
 
 
@@ -1760,7 +1760,7 @@ def thermostat_Setpoint( self, key, setpoint):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
                 thermostat_Setpoint_SPZB( self, key, setpoint)
 
-            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT'):
+            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT'):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
                 schneider_setpoint( self, key, setpoint)
                 return
