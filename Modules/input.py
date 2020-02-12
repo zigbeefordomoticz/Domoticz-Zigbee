@@ -743,7 +743,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                     continue
 
                 for cluster in list(self.ListOfDevices[nwkid]['Bind'][ Ep ]):
-                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'binded':
+                    if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
