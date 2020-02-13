@@ -1568,6 +1568,11 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Temperature Measurement Cluster
+    # The possible values are used as follows:
+    #   0x0000 to 0x7FFF represent positive temperatures from 0°C to 327.67ºC
+    #   0x8000 indicates that the temperature measurement is invalid
+    #   0x8001 to 0x954C are unused values
+    #   0x954D to 0xFFFF represent negative temperatures from -273.15°C to -1°C 
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -1576,14 +1581,15 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    if MsgClusterData == '':
-        return
-
-    if MsgAttrID == '0000':
-        value = round(int(decodeAttribute( self, MsgAttType, MsgClusterData))/100,1)
-        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+    if MsgAttrID == '0000' and MsgClusterData != '':
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
+        if value > 0x7FFF and  value < 0x954D:
+            loggingCluster( self, 'Log', "readCluster - %s - %s/%s Invalid Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        else:
+            value = round(value/100,1)
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
     elif MsgAttrID == '0001':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Atribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
@@ -1636,6 +1642,13 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Measurement Umidity Cluster
+    # u16MeasuredValue is a mandatory attribute representing the measured relatively humidity as a percentage in steps of 0.01%, 
+    # as follows:u16MeasuredValue = 100 x relative humidity percentageSo, 
+    # for example, 0x197C represents a relative humidity measurement of 65.24%. 
+    # The possible values are used as follows:
+    #   0x0000 to 0x2710 represent relative humidities from 0% to 100%
+    #   0x2711 to 0xFFFE are unused values
+    #   0xFFFF indicates an invalid measure
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -1644,12 +1657,17 @@ def Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    if MsgClusterData != '':
-        value = round(int(decodeAttribute( self, MsgAttType, MsgClusterData))/100,1)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-
-    loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0405 - reception hum: " + str(int(MsgClusterData,16)/100) , MsgSrcAddr)
+    if MsgAttrID == '0000' and MsgClusterData != '':
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
+        if value > 0x2710:
+            loggingCluster( self, 'Log', "ReadCluster - ClusterId=0405 - Invalid hum: %s - %s" %(int(MsgClusterData,16),value) , MsgSrcAddr)
+        else:
+            value = round(value/100,1)
+            loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0405 - reception hum: %s - %s" %(int(MsgClusterData,16),value) , MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+    else:
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: Occupancy Sensing)
