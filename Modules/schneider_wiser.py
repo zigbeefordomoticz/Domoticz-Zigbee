@@ -134,7 +134,8 @@ def schneider_thermostat_behaviour( self, key, mode ):
     loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
-    Modules.output.ReadAttributeRequest_0201(self, key)
+    # Reset Heartbeat in order to force a ReadAttribute when possible
+    self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneider_fip_mode( self, key, mode):
 
