@@ -517,7 +517,7 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
                     if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
                         loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
                     else:
-                        loggingInput( self, 'Log', "Receive NACK from %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
                 if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
                     self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
 
