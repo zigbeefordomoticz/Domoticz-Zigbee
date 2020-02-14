@@ -1492,16 +1492,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == 'WindowCovering':
-                value = int(value,16)
                 if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
+                    value = int(value,16)
                     loggingWidget( self, "Debug", "MajDomoDevice - %s/%s Updating %s Value: %s" %(NWKID, Ep, DeviceType,value), NWKID)
                     if DeviceType == "VenetianInverted":
                         value = 100 - value
                         loggingWidget( self, "Debug", "--------------- - Patching %s/%s Value: %s" %(NWKID, Ep,value), NWKID)
-
-                    if value == 0: nValue = 0
-                    elif value == 100: nValue = 1
-                    else: nValue = 2
+                    if value == 0: 
+                        nValue = 0
+                    elif value == 100: 
+                        nValue = 1
+                    else: 
+                        nValue = 2
                     UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == "LvlControl":
