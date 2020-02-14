@@ -1492,8 +1492,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
             if ClusterType == 'WindowCovering':
-                value = int(value,16)
                 if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
+                    value = int(value,16)
                     loggingWidget( self, "Debug", "MajDomoDevice - %s/%s Updating %s Value: %s" %(NWKID, Ep, DeviceType,value), NWKID)
                     if DeviceType == "VenetianInverted":
                         value = 100 - value

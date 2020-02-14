@@ -1,5 +1,10 @@
 # Release Notes 
 
+## 14 February 2020 - 4.7.3
+- [Issue] - Fix issue when Window Covering device exist
+- [Issue] - Re-enable configureReporting split Atrribute by attribute
+- [Issue] - Check the validity of Temp and Humidity
+
 ## 12 February 2020 - 4.7.1
 - [Issue] - Using wrong ClusterId for 0201 read attribute
 - [Issue] - Fixing binding information
