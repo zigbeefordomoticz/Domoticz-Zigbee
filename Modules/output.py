@@ -628,7 +628,7 @@ def ReadAttributeRequest_0201(self, key):
                 if self.ListOfDevices[key]['Manufacturer'] == '105e':
                     # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
                     for _attr in list(listAttributes):
-                        if _attr in ( 0xe011, 0xe010 ):
+                        if _attr ==  0xe011:
                             listAttrSpecific.append( _attr )
                         else:
                             listAttrGeneric.append( _attr )

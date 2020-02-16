@@ -747,7 +747,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0035: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
-    elif MsgAttrID == "0036":
+    elif MsgAttrID == "0036": # Minimum Threshold
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Minimum Threshold: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
@@ -793,6 +793,10 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif battRemainingVolt != 0: 
         max_voltage = 30 ; min_voltage = 27
+        if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            if '0036' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+                if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != {} and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != '':
+                    battery_voltage_threshold = int(str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036']))/10
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
                 max_voltage = 30 ; min_voltage = 25
@@ -2195,6 +2199,34 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+    # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribute
+    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+
+            from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_setpoint
+
+            now = time.time()
+            # Manage SetPoint
+            if '0201' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+                if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
+                    if 'Schneider' not in self.ListOfDevices[MsgSrcAddr]:
+                        self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
+                    if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != ( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
+                            if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 7:
+                                Domoticz.Log("Target SetPoint: %s, 0012: %s" %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], ( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
+                                schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
+
+            # Manage Zone Mode
+                if 'e010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
+                    if 'Target Mode' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
+                        EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
+                        if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] != int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
+                            if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] + 7:
+                                Domoticz.Log("Target Mode: %s, e010: %s" %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
+                                schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
+
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 

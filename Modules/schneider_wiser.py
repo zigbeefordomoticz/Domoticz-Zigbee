@@ -14,6 +14,7 @@ import Domoticz
 import Modules.output
 
 from Modules.tools import loggingOutput
+from time import time
 
 
 def schneider_wiser_registration( self, key ):
@@ -56,8 +57,21 @@ def schneider_wiser_registration( self, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT'): # Thermostatic Valve
+        cluster_id = "%04x" %0x0201
+        manuf_id = "0000"
+        manuf_spec = "00"
+        # Set 0x01 to 0x0201/0xe013 : ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
+        Hattribute = "%04x" %0xe013
+        data_type = "20"
+        # 0x00  After a first Pairing
+        # 0x04  After a restart of the Hub or when changing battery of Valve
+        data = '00'  
+        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+                %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT' ): # Actuator, Valve
         # Set no Calibration
         manuf_id = "0000"
         manuf_spec = "00"
@@ -70,7 +84,7 @@ def schneider_wiser_registration( self, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT'): # Actuator 
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT'): # Actuator 
         # ATTRIBUTE_THERMOSTAT_ZONE_MODE
         cluster_id = "%04x" %0x0201
         manuf_id = "105e"
@@ -78,6 +92,9 @@ def schneider_wiser_registration( self, key ):
         # Set 0x01 to 0x0201/0xe010
         Hattribute = "%04x" %0xe010
         data_type = "30"
+        # 0x01 User Mode Manual
+        # 0x02 User Mode Schedule
+        # 0x03 User Mode Manual Energy Saver
         data = '01'  
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
@@ -96,16 +113,22 @@ def schneider_wiser_registration( self, key ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    # Write Location to 0x0000/0x5000 for all devices
-    manuf_id = "0000"
-    manuf_spec = "00"
-    cluster_id = "%04x" %0x0000
-    Hattribute = "%04x" %0x0010
-    data_type = "42"
-    data = '5A6967617465205A6F6E65'  # Zigate zone
-    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    if self.ListOfDevices[key]['Model'] not in ( 'EH-ZB-VACT' ): # Valve
+        # Write Location to 0x0000/0x5000 for all devices
+        manuf_id = "0000"
+        manuf_spec = "00"
+        cluster_id = "%04x" %0x0000
+        Hattribute = "%04x" %0x0010
+        data_type = "42"
+        data = '5A6967617465205A6F6E65'  # Zigate zone
+        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+                %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Valve
+        setpoint = 2000
+        schneider_setpoint( self, key, setpoint)
+        self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneider_thermostat_behaviour( self, key, mode ):
     """
@@ -180,6 +203,7 @@ def schneider_fip_mode( self, key, mode):
 
     Domoticz.Log("schneider_fip_mode - Nwkid: %s Fip Mode: %s ==> Payload: %s" %(key, fipmode, payload))
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
+    self.ListOfDevices[key]['Heartbeat'] = 0
 
 
 def schneider_setpoint( self, key, setpoint):
@@ -196,6 +220,11 @@ def schneider_setpoint( self, key, setpoint):
     cmd = 'e0'
 
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
+    if 'Schneider' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['Schneider'] = {}
+    self.ListOfDevices[key]['Schneider']['Target SetPoint'] = setpoint
+    self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
+
     setpoint = '%04X' %setpoint
     length = '01' # 1 attribute
 
@@ -208,6 +237,7 @@ def schneider_setpoint( self, key, setpoint):
 
     Domoticz.Log("schneider_setpoint - %s %s ==> Payload: %s" %(key, setpoint, payload))
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
+    self.ListOfDevices[key]['Heartbeat'] = 0
 
 
 def schneider_EHZBRTS_thermoMode( self, key, mode):
@@ -235,6 +265,11 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
         Domoticz.Error("Unknow Thermostat Mode %s for %s" %(mode, key))
         return
 
+    if 'Schneider' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['Schneider'] = {}
+    self.ListOfDevices[key]['Schneider']['Target Mode'] = mode
+    self.ListOfDevices[key]['Schneider']['TimeStamp Mode'] = int(time())
+
     manuf_id = "105e"
     manuf_spec = "01"
     cluster_id = "%04x" %0x0201
@@ -250,3 +285,4 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
     loggingOutput( self, 'Log', "Schneider EH-ZB-RTS Thermo Mode  %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    self.ListOfDevices[key]['Heartbeat'] = 0
