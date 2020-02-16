@@ -69,9 +69,6 @@ MIT
 @angular/router
 MIT
 
-@ben33880/gauge
-MIT
-
 @ng-bootstrap/ng-bootstrap
 MIT
 The MIT License (MIT)
