@@ -1,25 +1,22 @@
 {
-"Ep": {
+	"Ep": {
 		"0b": {
 			"0000":"",
 			"0003":"",
+			"0004":"",
 			"0005":"",
 			"0006":"",
 			"0008":"",
 			"0300":"",
-			"Type": "ColorControlRGB"
+			"Type": "LvlControl"
 		},
-		"0a": {
-			"0000":"",
-			"0003":"",
-			"0005":"",
-			"0006":"",
-			"0008":"",
-			"Type":"ColorControlWW"
+		"0d": {
+			"1000":"",
+			"Type": ""
 		}
 	},
 	"Type":"",
-	"ClusterToBind": [ "0006", "0008", "0300" ],
+	"ClusterToBind": [ "0006", "0008" ],
 	"ConfigureReporting": {
 	},
 	"ReadAttributes": {
@@ -30,3 +27,4 @@
 	}
 
 }
+	
