@@ -2034,7 +2034,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value)/100,2)
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
@@ -2048,18 +2048,18 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
                     if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
                         if int(time.time()) > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 30:
-                            loggingCluster( self, 'Log', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
-                            self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = ValueTemp * 100
+                            loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
+                            self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = int( ValueTemp * 100)
                             self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = int(time.time())
                             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
                     else:
-                        loggingCluster( self, 'Log', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
-                        self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = ValueTemp * 100
+                        loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
+                        self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = int(ValueTemp * 100)
                         self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = int(time.time())
                         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
                 else:
-                    loggingCluster( self, 'Log', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
-                    self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = ValueTemp * 100
+                    loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
+                    self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = int(ValueTemp * 100)
                     self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = int(time.time())
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
 

@@ -1091,9 +1091,6 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
                 if 'Model' in self.ListOfDevices[key]:
                     if  self.ListOfDevices[key]['Model'] != {}:
-                        if self.ListOfDevices[key]['Model'] in (  '3AFE14010402000D' ):
-                            if cluster == '0500': # Do not Configure Reporting the Konke Motion sensor
-                                continue
                         if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
                             if cluster in ( '0402', '0403', '0405', '0406'):
                                 continue
@@ -1292,10 +1289,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                                 loggingOutput( self, 'Debug',"----> Do not bind cluster %s due to Certified Conf for %s/%s" %(cluster, nwkid, ep), nwkid)
                                 return
 
-                    if self.ListOfDevices[nwkid]['Model'] == '3AFE14010402000D' and cluster == '0500':
-                        loggingOutput( self, 'Debug',"Do not Bind Konke 3AFE14010402000D to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
-                        return    # Skip binding IAS for Konke Motion Sensor
-                    elif self.ListOfDevices[nwkid]['Model'] == 'SML001' and ep != '02':
+                    if self.ListOfDevices[nwkid]['Model'] == 'SML001' and ep != '02':
                         # only on Ep 02
                         loggingOutput( self, 'Debug',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return
