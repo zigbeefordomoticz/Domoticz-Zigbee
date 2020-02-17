@@ -177,10 +177,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
             if profalux:
-                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + '01' + '%02X' %0 + "0000")
+                sendZigateCmd(self, "0081","02" + NWKID + "01" + EPout + '01' + '%02X' %0 + "0000")
             else:
                 sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+        # Making a trick for the GLEDOPTO LED STRIP.
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'GLEDOPTO' and EPout == '0a':
+                # When switching off the WW channel, make sure to switch Off the RGB channel
+                sendZigateCmd(self, "0092","02" + NWKID + "01" + '0b' + "00")
 
         if DeviceType == "AlarmWD":
             Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
