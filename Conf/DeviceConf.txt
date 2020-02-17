@@ -14,7 +14,6 @@
 
 "":"Konke",
     "3AFE130104020015":{"Ep":{"01":{"0000":"","0001":"","0003":"","0500":"","Type":"Door"}},"Type":"","NickName":"Konke_Door"},
-    "3AFE14010402000D":{"Ep":{"01":{"0000":"","0001":"","0003":"","0500":"","Type":"Motion"}},"Type":"","NickName":"Konke_Motion"},
 
 "":"Philips Hue",
     "LCT001":{"Ep":{"0b":{"0000":"","0003":"","0004":"","0005":"","0006":"","0008":"","0300":"","fc01":"","1000":"","Type":"ColorControlRGBWW","ColorMode":"2"}},"Type":"","ProfileID":"c05e","ZDeviceID":"0210"},
