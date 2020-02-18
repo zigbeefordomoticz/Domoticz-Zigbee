@@ -511,7 +511,8 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
                 self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     else:
         if _powered: # NACK for a Non powered device doesn't make sense
-            timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
+            if self.pluginconf.pluginConf['enableACKNACK']:
+                timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                     if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
