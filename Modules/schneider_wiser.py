@@ -57,6 +57,7 @@ def schneider_wiser_registration( self, key ):
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
+
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT'): # Thermostatic Valve
         cluster_id = "%04x" %0x0201
         manuf_id = "0000"
@@ -113,21 +114,25 @@ def schneider_wiser_registration( self, key ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    if self.ListOfDevices[key]['Model'] not in ( 'EH-ZB-VACT' ): # Valve
-        # Write Location to 0x0000/0x5000 for all devices
-        manuf_id = "0000"
-        manuf_spec = "00"
-        cluster_id = "%04x" %0x0000
-        Hattribute = "%04x" %0x0010
-        data_type = "42"
-        data = '5A6967617465205A6F6E65'  # Zigate zone
-        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-                %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    # Write Location to 0x0000/0x5000 for all devices
+    manuf_id = "0000"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0000
+    Hattribute = "%04x" %0x0010
+    data_type = "42"
+    data = '5A6967617465205A6F6E65'  # Zigate zone
+    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Valve
         setpoint = 2000
         schneider_setpoint( self, key, setpoint)
+        self.ListOfDevices[key]['Heartbeat'] = 0
+
+    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): # Pilotage Chaffe eau
+        sendZigateCmd(self, "0092","02" + key + "01" + EPout + "01")
+        sendZigateCmd(self, "0092","02" + key + "01" + EPout + "00")
         self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneider_thermostat_behaviour( self, key, mode ):
