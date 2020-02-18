@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 18 February 2020 - 4.7.4
+- [Hardware] - Update a number of device configuration
+
 ## 14 February 2020 - 4.7.3
 - [Issue] - Fix issue when Window Covering device exist
 - [Issue] - Re-enable configureReporting split Atrribute by attribute
