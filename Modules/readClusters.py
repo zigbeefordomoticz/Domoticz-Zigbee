@@ -2241,9 +2241,11 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     if 'Schneider' not in self.ListOfDevices[MsgSrcAddr]:
                         self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
-                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != ( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
                             if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 15:
-                                Domoticz.Log("Target SetPoint: %s, 0012: %s" %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], ( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
+                                Domoticz.Log("Target SetPoint: %s, 0012: %s" \
+                                        %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], 
+                                            int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
                                 schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
 
             # Manage Zone Mode
@@ -2252,7 +2254,9 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
                         if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] != int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
                             if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] + 15:
-                                Domoticz.Log("Target Mode: %s, e010: %s" %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
+                                Domoticz.Log("Target Mode: %s, e010: %s" \
+                                        %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], 
+                                            int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
                                 schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
 
 
