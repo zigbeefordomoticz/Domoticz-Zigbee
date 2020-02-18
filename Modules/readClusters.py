@@ -761,6 +761,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84', '8e') or \
             self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main':
             # This should reflect the main voltage.
+            # Cleanup Battery in case.
+            self.ListOfDevices[ MsgSrcAddr]['Battery'] = {}
         return
 
     # Compute Battery %
