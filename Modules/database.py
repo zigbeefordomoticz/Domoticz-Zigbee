@@ -220,7 +220,7 @@ def importDeviceConfV2( self ):
                     else:
                         Domoticz.Log("--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
                 except:
-                    Domoticz.Error("--> Unexpected error when loading a configuration file %s" %filename)
+                    Domoticz.Error("--> Unexpected error when loading a configuration file")
 
 def checkDevices2LOD( self, Devices):
 
