@@ -1850,6 +1850,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
 
+
         # Redo the binding if allow
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
@@ -1871,25 +1872,25 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     self.iaszonemgt.IASWD_enroll( MsgSrcAddr, tmpep)
                 break
 
-        # Let's check if this is a Schneider Wiser
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
-            if self.ListOfDevices[ MsgSrcAddr ]['Model'] in ( 'EH-ZB-SPD', 'EH-ZB-SPD-V2', 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-BMS' ):
-                schneider_wiser_registration( self, MsgSrcAddr )
-
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
     
-            # As we are redo bind, we need to redo the Configure Reporting
-            if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
-                del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
-            processConfigureReporting( self, NWKID=MsgSrcAddr )
+        # As we are redo bind, we need to redo the Configure Reporting
+        if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
+            del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
+        processConfigureReporting( self, NWKID=MsgSrcAddr )
 
-            # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
-            loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
-            ReadAttributeRequest_0000( self,  MsgSrcAddr)
-            ReadAttributeRequest_0001( self,  MsgSrcAddr)
-            sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+        # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
+        loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
+        ReadAttributeRequest_0000( self,  MsgSrcAddr)
+        ReadAttributeRequest_0001( self,  MsgSrcAddr)
+        sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+
+        # Let's check if this is a Schneider Wiser
+        if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '105e':
+                schneider_wiser_registration( self, MsgSrcAddr )
     else:
         # New Device coming for provisioning
 
