@@ -209,15 +209,18 @@ def importDeviceConfV2( self ):
                         Domoticz.Error("--> JSON ConfFile: %s load general error: %s" %(filename, e))
                         continue
 
-                device_model_name = model_device.rsplit('.',1)[0]
-                if device_model_name == 'Dimmer switch wo neutral':
-                    device_model_name = 'Dimmer switch w/o neutral'
-
-                if device_model_name not in self.DeviceConf:
-                    Domoticz.Status("--> Config for %s/%s" %( brand, str(device_model_name)))
-                    self.DeviceConf[ device_model_name ] = dict(model_definition)
-                else:
-                    Domoticz.Log("--> Config for %s/%s not loaded as already defined" %(brand, str(device_model_name)))
+                try:
+                    device_model_name = model_device.rsplit('.',1)[0]
+                    if device_model_name == 'Dimmer switch wo neutral':
+                        device_model_name = 'Dimmer switch w/o neutral'
+    
+                    if device_model_name not in self.DeviceConf:
+                        Domoticz.Status("--> Config for %s/%s" %( str(brand), str(device_model_name)))
+                        self.DeviceConf[ device_model_name ] = dict(model_definition)
+                    else:
+                        Domoticz.Log("--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
+                except:
+                    Domoticz.Error("--> Unexpected error when loading a configuration file %s" %filename)
 
 def checkDevices2LOD( self, Devices):
 
