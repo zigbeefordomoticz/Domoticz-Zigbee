@@ -264,10 +264,13 @@ def processKnownDevices( self, Devices, NWKID ):
                         rescheduleAction = True
 
     if self.pluginconf.pluginConf['reenforcementWiser'] and ( self.HeartbeatCount % self.pluginconf.pluginConf['reenforcementWiser'] ) == 0 :
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-VACT':
+                pass
         if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
             if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
                 if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                    schneider_thermostat_behaviour( self, NKWID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
+                    schneider_thermostat_behaviour( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
                 else:
                     rescheduleAction = True
             if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
