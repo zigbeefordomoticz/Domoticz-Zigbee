@@ -198,15 +198,15 @@ def importDeviceConfV2( self ):
                 if model_device in ( 'README.md', '.PRECIOUS' ):
                     continue
      
-                filename = model_directory + '/' + model_device
+                filename = str(model_directory + '/' + model_device)
                 with open( filename, 'rt') as handle:
                     try:
                         model_definition = json.load( handle )
                     except ValueError as e: 
-                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" %(filename, e))
+                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" %(str(filename), str(e)))
                         continue
                     except Exception as e:
-                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" %(filename, e))
+                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" %(str(filename), str(e)))
                         continue
 
                 try:
