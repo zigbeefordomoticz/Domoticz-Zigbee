@@ -344,7 +344,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
             # In case of Schneider Thermostat, let's do the Write Attribute now.
             if 'Model' in self.ListOfDevices[ NWKID ]:
-                if self.ListOfDevices[ NWKID ]['Model'] in ( 'EH-ZB-SPD', 'EH-ZB-SPD-V2', 'EH-ZB-RTS', 'EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-VACT', 'EH-ZB-HACT' ):
+                if self.ListOfDevices[ NWKID ]['Model'] in ( 'EH-ZB-SPD', 'EH-ZB-SPD-V2', 'EH-ZB-RTS', 'EH-ZB-HACT','EH-ZB-BMS', 'EH-ZB-VACT', 'EH-ZB-LMACT' ):
                     schneider_wiser_registration( self, NWKID )
 
             # Identify for ZLL compatible devices
