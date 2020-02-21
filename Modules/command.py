@@ -162,6 +162,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if DeviceType == 'ThermoModeEHZBRTS':
             Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode Off" )
             schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
             return
 
@@ -263,6 +264,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif DeviceType == 'ThermoModeEHZBRTS':
             Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %Level)
             schneider_EHZBRTS_thermoMode( self, NWKID, Level)
+            UpdateDevice_v2(self, Devices, Unit, in(Level)/10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
         elif DeviceType == 'HACTMODE':
