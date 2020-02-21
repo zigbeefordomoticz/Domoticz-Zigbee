@@ -1098,12 +1098,15 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, x, 0, setpoint, BatteryLevel, SignalLevel)
 
             # Wiser specific Thermostat Mode
-            if  'ThermoSetpoint' in ClusterType and DeviceType == "ThermoModeEHZBRTS" and Attribute_ == "e010":
-                loggingWidget( self, "Debug", "MajDomoDevice ThermoModeEHZBRTS Setpoint: %s %s" %(0,setpoint), NWKID)
+            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoModeEHZBRTS' and Attribute_ in ( '001c', 'e010'):
+                loggingWidget( self, "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
+                # Decode value
+                THERMOSTAT_MODE = {
+                        0:0, 1:10, 2:20, 3:30, 4:40, 5:50, 6:60 }
 
-                nValue = int( value)
-                sValue = nvalue * 10
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+                if value in THERMOSTAT_MODE:
+                    sValue = THERMOSTAT_MODE[ value ]
+                    UpdateDevice_v2(self, Devices, x, value, str(sValue), BatteryLevel, SignalLevel)
 
             # Wiser specific Fil Pilote
             if 'ThermoMode' in ClusterType and DeviceType == 'HACTMODE' and Attribute_ == "e011":
@@ -1128,24 +1131,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
                     UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
-
-            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoModeEHZBRTS' and Attribute_ == '001c':
-                loggingWidget( self, "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
-                # Decode value
-
-                THERMOSTAT_MODE = {
-                        0:0,
-                        1:10,
-                        2:20,
-                        3:30,
-                        4:40,
-                        5:50,
-                        6:60
-                        }
-
-                if value in THERMOSTAT_MODE:
-                    value = THERMOSTAT_MODE[ value ]
-                schneider_EHZBRTS_thermoMode( self, NWKID, value)
 
             if ClusterType == "Temp":  # temperature
                 loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
