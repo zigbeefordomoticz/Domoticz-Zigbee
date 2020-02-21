@@ -360,6 +360,9 @@ def CheckDeviceList(self, key, val) :
                 'Stamp', 
                 'Health')
 
+        MANUFACTURER_ATTRIBUTES = (
+                'Legrand', 'Schneider' )
+
         if self.pluginconf.pluginConf['resetPluginDS']:
             Modules.tools.loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
             IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
@@ -371,7 +374,7 @@ def CheckDeviceList(self, key, val) :
             Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         else:
             Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
-            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
+            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
 
         Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         for attribute in IMPORT_ATTRIBUTES:
