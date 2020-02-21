@@ -266,19 +266,23 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             schneider_EHZBRTS_thermoMode( self, NWKID, Level)
             UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+            return
 
         elif DeviceType == 'HACTMODE':
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
             if Level == 10: # Conventional
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
                 schneider_thermostat_behaviour( self, NWKID, 'conventionel')
             elif Level == 20: # Fil Pilote
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
                 schneider_thermostat_behaviour( self, NWKID, 'FIP')
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
+            return
 
         elif DeviceType == 'FIP':
             FIL_PILOT_MODE = {
@@ -298,9 +302,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                     if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-HACT':
                         self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
                         schneider_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
+                        UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         elif DeviceType == 'LegrandFilPilote':
-            
             FIL_PILOTE_MODE = {
                 10: 'Confort',
                 20: 'Confort -1',
@@ -315,7 +320,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOTE_MODE[ Level ]), NWKID)
                 legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
                 self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
-
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
