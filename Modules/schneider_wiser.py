@@ -109,7 +109,8 @@ def schneider_wiser_registration( self, key ):
         # Set 0x01 to 0x0201/0xe011
         Hattribute = "%04x" %0xe011
         data_type = "18"
-        data = '00'   # By default register as CONVENTIONEL mode
+        data = '03'   # By default register as CONVENTIONEL mode
+                      # E attente pour @hairv en FIP
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
