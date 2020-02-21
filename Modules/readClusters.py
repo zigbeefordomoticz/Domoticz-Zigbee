@@ -522,30 +522,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sLQI != '':
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
 
-        if self.pluginconf.pluginConf['XiaomiLeave'] and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main'):
-            # Experimental only.
-            # We known that after a reset the Xiaomi device stay in pairing mode for about 5' ( Heartbeat: 5 * 60 ) // HEARTBEAT)
-            # The idea is during this elapsed to force a serie of leave/pairing, in order to push the device to setup the proprer route
-            # And we will do that only if we receive a ff01/ff02 with RSSI/LQI values
-            zdvName = ''
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                zdvName = self.ListOfDevices[MsgSrcAddr]['ZDeviceName']
-                loggingCluster( self, 'Debug', "Device: %s -- %s -- %s -- %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['IEEE'], self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
-            _req_leave = True
-            if sRSSI != '':
-                loggingCluster( self, 'Debug', "---> Xiaomi %s (%s) RSSI: %s" %(zdvName, MsgSrcAddr, int(sRSSI,16)), MsgSrcAddr)
-                _req_leave = True
-            if sLQI != '':
-                loggingCluster( self, 'Debug', "---> Xiaomi %s (%s) LQI : %s" %(zdvName, MsgSrcAddr, int(sLQI,16)), MsgSrcAddr)
-                _req_leave = True
-            
-            if _req_leave:
-                if int(self.ListOfDevices[MsgSrcAddr]['Heartbeat']) < 60:
-                    loggingCluster( self, 'Log', "---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr), MsgSrcAddr)
-                    xiaomi_leave( self, MsgSrcAddr)
-
-        if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and \
-                self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main' and  sBatteryLvl != '':
+        if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main':
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery = voltage2batteryP( voltage, 3150, 2750)
@@ -2231,10 +2208,13 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]), MsgSrcAddr)
             else:
                 loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
         elif MsgAttrID == 'e011': 
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
         elif MsgAttrID == 'e012':  # 57362, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS

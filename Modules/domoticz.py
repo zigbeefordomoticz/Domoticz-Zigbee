@@ -1097,6 +1097,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
                 UpdateDevice_v2(self, Devices, x, 0, setpoint, BatteryLevel, SignalLevel)
 
+            # Wiser specific Thermostat Mode
+            if  'ThermoSetpoint' in ClusterType and DeviceType == "ThermoModeEHZBRTS" and Attribute_ == "e010":
+                nValue = int( value)
+                sValue = nvalue * 10
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
+            # Wiser specific Fil Pilote
+            if 'ThermoMode' in ClusterType and DeviceType == 'HACTMODE' and Attribute_ == "e011":
+                if value == '00':  # Conventional
+                    nValue = 1
+                    sValue = '10'
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif value == '03':  # FIP
+                    nValue = 2
+                    sValue = '20'
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
             if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode' and Attribute_ == '001c':
                 loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode %s" %value, NWKID)
                 if isinstance( value, str):
