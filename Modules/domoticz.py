@@ -1089,11 +1089,13 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint' and Attribute_ in ( '4003', '0012'):
 
-                nValue = round(float(value),2)
-                sValue = "%s;%s" % (nValue, nValue)
+                setpoint = round(float(value),2)
+                # Normalize SetPoint value with 2 digits
+                Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
+                setpoint = Round( float(setpoint), 2 )
 
-                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(nValue,sValue), NWKID)
-                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
+                UpdateDevice_v2(self, Devices, x, 0, setpoint, BatteryLevel, SignalLevel)
 
             if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode' and Attribute_ == '001c':
                 loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode %s" %value, NWKID)
