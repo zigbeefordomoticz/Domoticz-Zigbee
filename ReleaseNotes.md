@@ -1,5 +1,8 @@
 # Release Notes 
 
+## 22 February 2020 - 4.7.5
+- [Hardware] - More Device Configuration
+
 ## 18 February 2020 - 4.7.4
 - [Hardware] - Update a number of device configuration
 
