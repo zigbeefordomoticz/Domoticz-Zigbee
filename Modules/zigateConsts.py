@@ -157,6 +157,7 @@ ZHA_DEVICES = {
         0x000A: 'Door Lock',
         0x000B: 'Door Lock Controller',
         0x000C: 'Smart Plug',
+        0x000D: 'Consumption Awareness Device',
 
         # Lighting Devices
         0x0100: 'On/Off Light',
@@ -234,6 +235,8 @@ DOMOTICZ_COLOR_MODE = {
     9998: 'With saturation and hue'
 }
 
+ZCL_CLUSTERS_ACT = {
+        '0006', '0008', '0201', '0201', '0402' }
 
 ZCL_CLUSTERS_LIST = {
         '0000': 'Basic',
