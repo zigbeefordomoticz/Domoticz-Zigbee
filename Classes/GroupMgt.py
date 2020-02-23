@@ -1049,7 +1049,19 @@ class GroupsManagement(object):
             return
 
         # search for all Devices in the group
-        for iterDev, iterEp, iterIEEE in self.ListOfGroups[grpid]['Devices']:
+        for iterItem in self.ListOfGroups[grpid]['Devices']:
+            if len(iterItem) == 3:
+                iterDev,  iterEp, iterIEEE = iterItem
+            elif len(iterItem) == 2:
+                iterDev, iterEp = iterItem
+                if iterDev in self.ListOfDevices:
+                    iterIEEE = self.ListOfDevices[iterDev]['IEEE']
+                else:
+                    Domoticz.Error("Unknown device %s, it is recommended to do a full rescan of Groups" %iterDev)
+                    continue
+            else:
+                continue
+
             if iterDev == '0000': continue
             if iterDev not in self.ListOfDevices:
                 Domoticz.Error("_updateDeviceListAttribute - Device: %s of Group: %s not in the list anymore" %(iterDev,grpid))
@@ -1061,7 +1073,7 @@ class GroupsManagement(object):
                 Domoticz.Error("_updateDeviceListAttribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev,iterEp,grpid))
                 continue
             if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
-                Domoticz.Error("_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
+                self.logging( 'Debug', "_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
                 continue
 
             if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
