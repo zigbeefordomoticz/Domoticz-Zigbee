@@ -317,7 +317,7 @@ def CheckDeviceList(self, key, val) :
         MANDATORY_ATTRIBUTES = ( 'App Version', 
                 'Attributes List', 
                 'Bind', 
-                'WebBind':
+                'WebBind',
                 'ColorInfos', 
                 'ClusterType', 
                 'ConfigSource',
