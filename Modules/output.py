@@ -1314,6 +1314,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     if cluster not in self.ListOfDevices[nwkid]['Bind'][ep]:
         self.ListOfDevices[nwkid]['Bind'][ep][cluster] = {}
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Target'] = '0000' # Zigate
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Stamp'] = int(time())
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Status'] = ''
@@ -1359,6 +1360,17 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     sendZigateCmd(self, "0030", datas )
     loggingOutput( self, 'Debug', "---> %s %s" %("0030", datas), sourceNwkid)
 
+    if 'WebBind' not in self.ListOfDevices[sourceNwkid]:
+        self.ListOfDevices[sourceNwkid]['WebBind'] = {}
+    if sourceEp not in self.ListOfDevices[sourceNwkid]['WebBind']:
+        self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp] = {}
+    if Cluster not in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
+        self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Target'] = destNwkid
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetIEEE'] = destIeee
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetEp'] = destEp
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
 
 def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
