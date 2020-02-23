@@ -1981,6 +1981,7 @@ class WebServer(object):
 
         bindCluster = []
         for key in self.ListOfDevices:
+            if key == '0000': continue
             for ep in self.ListOfDevices[key]['Ep']:
                 for cluster in self.ListOfDevices[key]['Ep'][ep]:
                     if cluster in ZCL_CLUSTERS_ACT:
@@ -2002,6 +2003,7 @@ class WebServer(object):
             listofdevices = []
             clustertobind = parameters[0]
             for key in self.ListOfDevices:
+                if key == '0000': continue
                 for ep in self.ListOfDevices[key]['Ep']:
                     if clustertobind in self.ListOfDevices[key]['Ep'][ep]:
                         dev={}
