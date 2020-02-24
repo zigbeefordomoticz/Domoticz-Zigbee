@@ -1351,9 +1351,6 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     if destEp not in self.ListOfDevices[destNwkid]['Ep']:
         Domoticz.Error("---> unknown destEp: %s for destNwkid: %s" %(destEp, destNwkid))
         return
-    #if Cluster not in self.ListOfDevices[destNwkid]['Ep'][destEp]:
-    #    Domoticz.Error("---> Cluster %s not find in %s --> %s" %( Cluster, destNwkid, self.ListOfDevices[destNwkid]['Ep'][destEp].keys()))
-    #    return
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
@@ -1371,6 +1368,46 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetIEEE'] = destIeee
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetEp'] = destEp
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
+
+def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
+
+    if sourceIeee not in self.IEEE2NWK:
+        Domoticz.Error("---> unknown sourceIeee: %s" %sourceIeee)
+        return
+
+    if destIeee not in self.IEEE2NWK:
+        Domoticz.Error("---> unknown destIeee: %s" %destIeee)
+        return
+
+    sourceNwkid = self.IEEE2NWK[sourceIeee]
+    destNwkid = self.IEEE2NWK[destIeee]
+
+    if sourceEp not in self.ListOfDevices[sourceNwkid]['Ep']:
+        Domoticz.Error("---> unknown sourceEp: %s for sourceNwkid: %s" %(sourceEp, sourceNwkid))
+        return
+    loggingOutput( self, 'Debug', "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s" %(sourceIeee, sourceEp, destIeee, destEp, Cluster), sourceNwkid)
+    if Cluster not in self.ListOfDevices[sourceNwkid]['Ep'][sourceEp]:
+        Domoticz.Error("---> Cluster %s not find in %s --> %s" %( Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]['Ep'][sourceEp].keys()))
+        return
+    loggingOutput( self, 'Debug', "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s" %(sourceIeee, sourceEp, destIeee, destEp, Cluster), destNwkid)
+
+    if destEp not in self.ListOfDevices[destNwkid]['Ep']:
+        Domoticz.Error("---> unknown destEp: %s for destNwkid: %s" %(destEp, destNwkid))
+        return
+
+    mode = "03"     # IEEE
+    datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
+    sendZigateCmd(self, "0031", datas )
+    loggingOutput( self, 'Debug', "---> %s %s" %("0031", datas), sourceNwkid)
+
+    if 'WebBind' in self.ListOfDevices[sourceNwkid]:
+       if sourceEp in self.ListOfDevices[sourceNwkid]['WebBind']:
+            if Cluster in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
+                del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]
+                if len(self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]) == 0:
+                    del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]
+                if len(self.ListOfDevices[sourceNwkid]['WebBind']) == 0:
+                    del self.ListOfDevices[sourceNwkid]['WebBind']
 
 def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
