@@ -470,6 +470,7 @@ class BasePlugin:
         #        self.Ping['Permit'] = None
         #        ZigatePermitToJoin(self, 0)
         self.Ping['Permit'] = None
+        sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
 
         sendZigateCmd(self, "0009", "") # Request Network state
         sendZigateCmd(self, "0015", "") # Request List of Active Device

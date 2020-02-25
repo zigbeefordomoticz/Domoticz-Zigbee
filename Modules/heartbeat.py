@@ -76,6 +76,7 @@ READ_ATTR_COMMANDS = ( '0006', '0201')
 # Legrand re-enforcement: Every 5'
 
 READATTRIBUTE_FEQ =    10 // HEARTBEAT # 10seconds ... 
+QUIET_AFTER_START =    60 // HEARTBEAT # Quiet periode after a plugin start
 CONFIGURERPRT_FEQ =    30 // HEARTBEAT
 LEGRAND_FEATURES =    300 // HEARTBEAT
 SCHNEIDER_FEATURES =  300 // HEARTBEAT
@@ -425,11 +426,11 @@ def processListOfDevices( self , Devices ):
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
 
-    if ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
+    if self.HeartbeatCount > QUIET_AFTER_START and ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
         # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > NETWORK_TOPO_START:
+    if self.HeartbeatCount > QUIET_AFTER_START and self.HeartbeatCount > NETWORK_TOPO_START:
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
@@ -440,7 +441,7 @@ def processListOfDevices( self , Devices ):
                 if self.ZigateComm.loadTransmit() < 1 : # Equal 0
                      self.networkmap.continue_scan( )
 
-    if self.HeartbeatCount > NETWORK_ENRG_START:
+    if self.HeartbeatCount > QUIET_AFTER_START and self.HeartbeatCount > NETWORK_ENRG_START:
         # Network Energy Level
         if self.networkenergy:
             if self.ZigateComm.loadTransmit() < 1: # Equal 0

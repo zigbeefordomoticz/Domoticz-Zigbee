@@ -17,7 +17,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages, mainPoweredDevice
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting, ZigatePermitToJoin
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -537,14 +537,19 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     Status=MsgData[0:2]
     timestamp = int(time())
 
-    loggingInput( self, 'Debug',"Permit Join status: %s" %( Status == '01' ) , 'ffff')
+    loggingInput( self, 'Debug',"Decode8014 - Permit Join status: %s" %( Status == '01' ) , 'ffff')
 
     prev = self.Ping['Permit']
 
     if Status == "00": 
-        if ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
-            Domoticz.Status("Accepting new Hardware: Disable")
+        if self.permitTojoin['Starttime'] == 0:
+            # First Status after plugin start
+            # Let's force a Permit Join of Duration 0
+            ZigatePermitToJoin( self, 0 )
+            self.permitTojoin['Starttime'] = timestamp
 
+        elif ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
+            Domoticz.Status("Accepting new Hardware: Disable")
         self.permitTojoin['Duration'] = 0
         self.Ping['Permit'] = 'Off'
 
