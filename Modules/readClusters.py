@@ -1214,7 +1214,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 elif MsgClusterData == '82': # Long Click
                     value = '03'
                 elif MsgClusterData == 'cd': # short reset , a short click on the reset button
-                    pass
+                    return
                 else:
                     #Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
                     return
