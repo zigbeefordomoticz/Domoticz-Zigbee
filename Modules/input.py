@@ -1521,7 +1521,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
-        Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
+        Domoticz.Log("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
         Domoticz.Log("Request for IEEE for short address: %s" %(MsgSrcAddr))
         sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + '00' + '00' )
         #Domoticz.Status("Decode8102 - Will try to reconnect device : " + str(MsgSrcAddr) )
