@@ -86,7 +86,6 @@ from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
-
 from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf

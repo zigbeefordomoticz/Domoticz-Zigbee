@@ -132,7 +132,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             # We are in a Profalux Shutter
             profalux = True
 
-
     loggingCommand( self, 'Debug', "EPout = " +str(EPout) , NWKID)
     if 'Health' in self.ListOfDevices[NWKID]:
         # If Health is Not Reachable, let's give it a chance to be updated
@@ -219,7 +218,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian inverted/Blind (Off, for Open)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         elif DeviceType == "Venetian":
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian/Blind (On, for Open)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + '01') # Venetian/Blind (On, for Open)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
             if profalux:
