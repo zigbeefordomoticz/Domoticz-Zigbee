@@ -77,7 +77,7 @@ import sys
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList, loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed
+from Modules.output import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, importDeviceConfV2, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
@@ -470,7 +470,10 @@ class BasePlugin:
         #        self.Ping['Permit'] = None
         #        ZigatePermitToJoin(self, 0)
         self.Ping['Permit'] = None
-        sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
+        if self.pluginconf.pluginConf['resetPermit2Join']:
+            ZigatePermitToJoin( self, 0 )
+        else:
+            sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
 
         sendZigateCmd(self, "0009", "") # Request Network state
         sendZigateCmd(self, "0015", "") # Request List of Active Device
