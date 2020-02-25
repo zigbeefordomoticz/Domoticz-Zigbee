@@ -28,6 +28,7 @@ def ZigatePermitToJoin( self, permit ):
         # Enable Permit to join
         if self.permitTojoin['Duration'] == 255:
             # Nothing to do , it is already in permanent pairing mode.
+            sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "ff")
             pass
         else:
             if permit != 255:
@@ -43,13 +44,13 @@ def ZigatePermitToJoin( self, permit ):
             sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
     else: 
         # Disable Permit to Join
-        if self.permitTojoin['Duration'] == 0:
-            # Nothing to do , Pairing is already off
-            pass
-        else:
-            self.permitTojoin['Starttime'] = int(time())
-            self.permitTojoin['Duration'] = 0
-            sendZigateCmd(self, "0049","FFFC" + '00' + "00")
+        #if self.permitTojoin['Duration'] == 0:
+        #    # Nothing to do , Pairing is already off
+        #    pass
+        #else:
+        self.permitTojoin['Starttime'] = int(time())
+        self.permitTojoin['Duration'] = 0
+        sendZigateCmd(self, "0049","FFFC" + '00' + "00")
         Domoticz.Status("Request Disabling Accepting new Hardware")
 
     loggingOutput( self, 'Debug', "Permit Join set :" , 'ffff' )
