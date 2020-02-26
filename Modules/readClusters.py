@@ -2251,9 +2251,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                             Domoticz.Log("Call schneider_setpoint - Target SetPoint: %s, 0012: %s" \
                                     %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
                             schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
-                        else:
-                            Domoticz.Log("No action on schneider_stepoint - %s/%s Target SetPoint: %s, 0012: %s" \
-                                    %( MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
 
             # Manage Zone Mode
                 if 'e010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
@@ -2263,17 +2260,10 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                             if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] == int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
                                 self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] = None
                                 self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] = None
-
                             else: 
-                                Domoticz.Log("Target Mode: %s, e010: %s" \
-                                        %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], 
-                                            int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
-
+                                Domoticz.Log("Target Mode: %s, e010: %s"  %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], \
+                                                                            int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
                                 schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
-                        else:
-                            Domoticz.Log("No action on schneider_EHZBRTS_thermoMode - %s/%s Target Mode: %s, e010: %s" \
-                                    %( MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'],
-                                            int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
 
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
