@@ -2045,24 +2045,26 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 loggingCluster( self, 'Debug', "ReadCluster - 0201 - ValueTemp: %s" %int( ((ValueTemp * 100) * 2) / 2 ), MsgSrcAddr)
                 if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
                     if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
-                        loggingCluster( self, 'Debug', " ------> Target Temp: %s" %self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], MsgSrcAddr)
-                        if int(time.time()) > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 30:
-                            loggingCluster( self, 'Debug', " ------> Request update on Domoticz due to Time", MsgSrcAddr)
-                            self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = int( ((ValueTemp * 100) * 2) / 2 )
-                            self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = int(time.time())
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] == int( ((ValueTemp * 100) * 2) / 2 ):
+                            # Existing Target equal Local Setpoint in Device
+                            self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = None
+                            self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = None
+                            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+
+                        elif self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] is None:
+                            # Target is None
                             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
                     else:
-                        loggingCluster( self, 'Debug', " ------> Request update on Domoticz Target do not exist", MsgSrcAddr)
-                        self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = int( ((ValueTemp * 100) * 2) / 2 )
-                        self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = int(time.time())
+                        # No Target Setpoint, so we assumed Setpoint has been updated manualy.
+                        self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = None
+                        self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = None
                         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
                 else:
-                    loggingCluster( self, 'Debug', " ------> Request update on Domoticz Schneider do not exist", MsgSrcAddr)
+                    # No Schneider section, so we assumed Setpoint has been updated manualy.
                     self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
-                    self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = int( ((ValueTemp * 100) * 2) / 2 )
-                    self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = int(time.time())
+                    self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = None
+                    self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = None
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
-
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] != 'SPZB0001':
                 # In case it is not a Eurotronic, let's Update heatPoint
@@ -2196,18 +2198,15 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         
     elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031'):
         if MsgAttrID == 'e010': # Schneider Thermostat Mode
-            THERMOSTAT_MODE = { '00': 'Mode Off',
-                '01': 'Manual',
-                '02': 'Schedule',
-                '03': 'Energy Saver',
-                '04': 'Schedule Ebergy Saver',
-                '05': 'Holiday Off',
-                '06': 'Holiday Frost Protection',
-                }
+            THERMOSTAT_MODE = { '00': 'Mode Off', '01': 'Manual',
+                '02': 'Schedule', '03': 'Energy Saver',
+                '04': 'Schedule Ebergy Saver', '05': 'Holiday Off',
+                '06': 'Holiday Frost Protection', }
+
             if MsgClusterData in THERMOSTAT_MODE:
-                loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]), MsgSrcAddr)
+                loggingCluster( self, 'Log', "readCluster - %s - %s/%s Schneider Thermostat Mode %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]), MsgSrcAddr)
             else:
-                loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+                loggingCluster( self, 'Log', "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
@@ -2248,23 +2247,33 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     if 'Schneider' not in self.ListOfDevices[MsgSrcAddr]:
                         self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
-                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
-                            if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 15:
-                                Domoticz.Log("Call schneider_setpoint - Target SetPoint: %s, 0012: %s" \
-                                        %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], 
-                                            int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
-                                schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] and self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
+                            Domoticz.Log("Call schneider_setpoint - Target SetPoint: %s, 0012: %s" \
+                                    %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
+                            schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
+                        else:
+                            Domoticz.Log("No action on schneider_stepoint - %s/%s Target SetPoint: %s, 0012: %s" \
+                                    %( MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
 
             # Manage Zone Mode
                 if 'e010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
                     if 'Target Mode' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
                         EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
-                        if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] != int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
-                            if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] + 15:
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] is not None:
+                            if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] == int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
+                                self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] = None
+                                self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] = None
+
+                            else: 
                                 Domoticz.Log("Target Mode: %s, e010: %s" \
                                         %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], 
                                             int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
+
                                 schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
+                        else:
+                            Domoticz.Log("No action on schneider_EHZBRTS_thermoMode - %s/%s Target Mode: %s, e010: %s" \
+                                    %( MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'],
+                                            int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
 
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):

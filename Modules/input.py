@@ -510,17 +510,22 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
                 loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr, MsgSrcAddr)
                 self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     else:
-        if _powered: # NACK for a Non powered device doesn't make sense
-            if self.pluginconf.pluginConf['enableACKNACK']:
-                timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
+        if _powered and self.pluginconf.pluginConf['enableACKNACK']: # NACK for a Non powered device doesn't make sense
+            timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
+                    self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
                     if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
                         loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
                     else:
                         loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
-                if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
-                    self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
+        else:
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
+                    loggingInput( self, 'Debug', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+                else:
+                    loggingInput( self, 'Debug', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
 
@@ -1858,7 +1863,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingInput( self, 'Debug', "Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %(MsgSrcAddr, MsgIEEE, MsgRejoinFlag), MsgSrcAddr)
         MsgRejoinFlag = '00'
 
-    loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+    if MsgSrcAddr in self.ListOfDevices:
+        if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s" %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+        else:
+            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+    else:
+        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
