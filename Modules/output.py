@@ -28,6 +28,7 @@ def ZigatePermitToJoin( self, permit ):
         # Enable Permit to join
         if self.permitTojoin['Duration'] == 255:
             # Nothing to do , it is already in permanent pairing mode.
+            sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "ff")
             pass
         else:
             if permit != 255:
@@ -43,13 +44,13 @@ def ZigatePermitToJoin( self, permit ):
             sendZigateCmd(self, "0049","FFFC" + '%02x' %permit + "00")
     else: 
         # Disable Permit to Join
-        if self.permitTojoin['Duration'] == 0:
-            # Nothing to do , Pairing is already off
-            pass
-        else:
-            self.permitTojoin['Starttime'] = int(time())
-            self.permitTojoin['Duration'] = 0
-            sendZigateCmd(self, "0049","FFFC" + '00' + "00")
+        #if self.permitTojoin['Duration'] == 0:
+        #    # Nothing to do , Pairing is already off
+        #    pass
+        #else:
+        self.permitTojoin['Starttime'] = int(time())
+        self.permitTojoin['Duration'] = 0
+        sendZigateCmd(self, "0049","FFFC" + '00' + "00")
         Domoticz.Status("Request Disabling Accepting new Hardware")
 
     loggingOutput( self, 'Debug', "Permit Join set :" , 'ffff' )
@@ -621,7 +622,6 @@ def ReadAttributeRequest_0201(self, key):
                 listAttributes.append(0x0408)   
                 listAttributes.append(0x0409)  
 
-
             # Adjustement before request
             listAttrSpecific = []
             listAttrGeneric = []
@@ -1092,9 +1092,6 @@ def processConfigureReporting( self, NWKID=None ):
                     continue
                 if 'Model' in self.ListOfDevices[key]:
                     if  self.ListOfDevices[key]['Model'] != {}:
-                        if self.ListOfDevices[key]['Model'] in (  '3AFE14010402000D' ):
-                            if cluster == '0500': # Do not Configure Reporting the Konke Motion sensor
-                                continue
                         if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
                             if cluster in ( '0402', '0403', '0405', '0406'):
                                 continue
@@ -1293,10 +1290,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                                 loggingOutput( self, 'Debug',"----> Do not bind cluster %s due to Certified Conf for %s/%s" %(cluster, nwkid, ep), nwkid)
                                 return
 
-                    if self.ListOfDevices[nwkid]['Model'] == '3AFE14010402000D' and cluster == '0500':
-                        loggingOutput( self, 'Debug',"Do not Bind Konke 3AFE14010402000D to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
-                        return    # Skip binding IAS for Konke Motion Sensor
-                    elif self.ListOfDevices[nwkid]['Model'] == 'SML001' and ep != '02':
+                    if self.ListOfDevices[nwkid]['Model'] == 'SML001' and ep != '02':
                         # only on Ep 02
                         loggingOutput( self, 'Debug',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return
@@ -1321,6 +1315,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     if cluster not in self.ListOfDevices[nwkid]['Bind'][ep]:
         self.ListOfDevices[nwkid]['Bind'][ep][cluster] = {}
+        self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Target'] = '0000' # Zigate
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Stamp'] = int(time())
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Phase'] = 'requested'
         self.ListOfDevices[nwkid]['Bind'][ep][cluster]['Status'] = ''
@@ -1357,15 +1352,63 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     if destEp not in self.ListOfDevices[destNwkid]['Ep']:
         Domoticz.Error("---> unknown destEp: %s for destNwkid: %s" %(destEp, destNwkid))
         return
-    #if Cluster not in self.ListOfDevices[destNwkid]['Ep'][destEp]:
-    #    Domoticz.Error("---> Cluster %s not find in %s --> %s" %( Cluster, destNwkid, self.ListOfDevices[destNwkid]['Ep'][destEp].keys()))
-    #    return
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
     sendZigateCmd(self, "0030", datas )
     loggingOutput( self, 'Debug', "---> %s %s" %("0030", datas), sourceNwkid)
 
+    if 'WebBind' not in self.ListOfDevices[sourceNwkid]:
+        self.ListOfDevices[sourceNwkid]['WebBind'] = {}
+    if sourceEp not in self.ListOfDevices[sourceNwkid]['WebBind']:
+        self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp] = {}
+    if Cluster not in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
+        self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Target'] = destNwkid
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetIEEE'] = destIeee
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetEp'] = destEp
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
+
+def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
+
+    if sourceIeee not in self.IEEE2NWK:
+        Domoticz.Error("---> unknown sourceIeee: %s" %sourceIeee)
+        return
+
+    if destIeee not in self.IEEE2NWK:
+        Domoticz.Error("---> unknown destIeee: %s" %destIeee)
+        return
+
+    sourceNwkid = self.IEEE2NWK[sourceIeee]
+    destNwkid = self.IEEE2NWK[destIeee]
+
+    if sourceEp not in self.ListOfDevices[sourceNwkid]['Ep']:
+        Domoticz.Error("---> unknown sourceEp: %s for sourceNwkid: %s" %(sourceEp, sourceNwkid))
+        return
+    loggingOutput( self, 'Debug', "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s" %(sourceIeee, sourceEp, destIeee, destEp, Cluster), sourceNwkid)
+    if Cluster not in self.ListOfDevices[sourceNwkid]['Ep'][sourceEp]:
+        Domoticz.Error("---> Cluster %s not find in %s --> %s" %( Cluster, sourceNwkid, self.ListOfDevices[sourceNwkid]['Ep'][sourceEp].keys()))
+        return
+    loggingOutput( self, 'Debug', "UnBinding Device %s/%s with Device target %s/%s on Cluster: %s" %(sourceIeee, sourceEp, destIeee, destEp, Cluster), destNwkid)
+
+    if destEp not in self.ListOfDevices[destNwkid]['Ep']:
+        Domoticz.Error("---> unknown destEp: %s for destNwkid: %s" %(destEp, destNwkid))
+        return
+
+    mode = "03"     # IEEE
+    datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
+    sendZigateCmd(self, "0031", datas )
+    loggingOutput( self, 'Debug', "---> %s %s" %("0031", datas), sourceNwkid)
+
+    if 'WebBind' in self.ListOfDevices[sourceNwkid]:
+       if sourceEp in self.ListOfDevices[sourceNwkid]['WebBind']:
+            if Cluster in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
+                del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]
+                if len(self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]) == 0:
+                    del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]
+                if len(self.ListOfDevices[sourceNwkid]['WebBind']) == 0:
+                    del self.ListOfDevices[sourceNwkid]['WebBind']
 
 def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     '''
@@ -1760,7 +1803,7 @@ def thermostat_Setpoint( self, key, setpoint):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
                 thermostat_Setpoint_SPZB( self, key, setpoint)
 
-            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT'):
+            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
                 schneider_setpoint( self, key, setpoint)
                 return

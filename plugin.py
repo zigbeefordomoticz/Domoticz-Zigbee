@@ -22,7 +22,6 @@
             <ul style="list-style-type:square">
                 <li> Serial Port: this is the serial port where your USB or DIN Zigate is connected. (The plugin will provide you the list of possible ports)</li>
                 </ul>
-            <li> Permit join time: This is the time you want to allow the Zigate to accept new Hardware. Please consider also to set Accept New Hardware in Domoticz settings. </li>
             <li> Erase Persistent Data: This will erase the Zigate memory and you will delete all pairing information. After that you'll have to re-pair each devices. This is not removing any data from Domoticz nor the plugin database.</li>
     </ul>
     <h3> Support </h3>
@@ -41,7 +40,6 @@
         <param field="Address" label="IP" width="150px" required="true" default="0.0.0.0"/>
         <param field="Port" label="Port" width="150px" required="true" default="9999"/>
         <param field="SerialPort" label="Serial Port" width="150px" required="true" default="/dev/ttyUSB0"/>
-        <param field="Mode2" label="Permit join time on start (0 disable join; 1-254 up to 254 sec ; 255 enable join all the time) " width="75px" required="true" default="0" />
 
         <param field="Mode3" label="Erase Persistent Data ( !!! full devices setup need !!! ) " width="75px" required="true" default="False" >
             <options>
@@ -79,7 +77,7 @@ import sys
 
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList, loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, ZigatePermitToJoin, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed
+from Modules.output import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, importDeviceConfV2, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
@@ -88,7 +86,6 @@ from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
-
 from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
 from Classes.PluginConf import PluginConf
@@ -181,8 +178,8 @@ class BasePlugin:
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
-        self.pluginParameters['PluginBranch'] = 'stable'
-        self.pluginParameters['PluginVersion'] = '4.7.005'
+        self.pluginParameters['PluginBranch'] = 'beta'
+        self.pluginParameters['PluginVersion'] = '4.7.006'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -458,18 +455,24 @@ class BasePlugin:
 
             start_Zigate( self )
 
-        if Parameters['Mode2'].isdigit(): # Permit to join
-            self.permitToJoin = int(Parameters['Mode2'])
-            if self.permitToJoin != 0:
-                Domoticz.Status("Configure Permit To Join")
-                self.Ping['Permit'] = None
-                ZigatePermitToJoin(self, self.permitToJoin)
-                if Settings["AcceptNewHardware"] != "1":
-                    Domoticz.Error("Pairing devices will most-likely failed, because Accept New Hardware in Domoticz settings is disabled!")
-            else:
-                self.permitToJoin = 0
-                self.Ping['Permit'] = None
-                ZigatePermitToJoin(self, 0)
+
+        #if Parameters['Mode2'].isdigit(): # Permit to join
+        #    self.permitToJoin = int(Parameters['Mode2'])
+        #    if self.permitToJoin != 0:
+        #        Domoticz.Status("Configure Permit To Join")
+        #        self.Ping['Permit'] = None
+        #        ZigatePermitToJoin(self, self.permitToJoin)
+        #        if Settings["AcceptNewHardware"] != "1":
+        #            Domoticz.Error("Pairing devices will most-likely failed, because Accept New Hardware in Domoticz settings is disabled!")
+        #    else:
+        #        self.permitToJoin = 0
+        #        self.Ping['Permit'] = None
+        #        ZigatePermitToJoin(self, 0)
+        self.Ping['Permit'] = None
+        if self.pluginconf.pluginConf['resetPermit2Join']:
+            ZigatePermitToJoin( self, 0 )
+        else:
+            sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
 
         sendZigateCmd(self, "0009", "") # Request Network state
         sendZigateCmd(self, "0015", "") # Request List of Active Device

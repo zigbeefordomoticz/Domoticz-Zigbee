@@ -132,7 +132,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             # We are in a Profalux Shutter
             profalux = True
 
-
     loggingCommand( self, 'Debug', "EPout = " +str(EPout) , NWKID)
     if 'Health' in self.ListOfDevices[NWKID]:
         # If Health is Not Reachable, let's give it a chance to be updated
@@ -162,6 +161,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if DeviceType == 'ThermoModeEHZBRTS':
             Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode Off" )
             schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
+            UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
             return
 
@@ -177,10 +177,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
             if profalux:
-                sendZigateCmd(self, "0081","02" + NWKID + EPin + EPout + '01' + '%02X' %0 + "0000")
+                sendZigateCmd(self, "0081","02" + NWKID + "01" + EPout + '01' + '%02X' %0 + "0000")
             else:
                 sendZigateCmd(self, "0092","02" + NWKID + "01" + EPout + "00")
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+
+        # Making a trick for the GLEDOPTO LED STRIP.
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'GLEDOPTO' and EPout == '0a':
+                # When switching off the WW channel, make sure to switch Off the RGB channel
+                sendZigateCmd(self, "0092","02" + NWKID + "01" + '0b' + "00")
 
         if DeviceType == "AlarmWD":
             Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
@@ -212,7 +218,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Venetian inverted/Blind (Off, for Open)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         elif DeviceType == "Venetian":
-            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Venetian/Blind (On, for Open)
+            sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + '01') # Venetian/Blind (On, for Open)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
         else:
             if profalux:
@@ -257,20 +263,25 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif DeviceType == 'ThermoModeEHZBRTS':
             Domoticz.Log("MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %Level)
             schneider_EHZBRTS_thermoMode( self, NWKID, Level)
+            UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+            return
 
         elif DeviceType == 'HACTMODE':
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
             if Level == 10: # Conventional
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
                 schneider_thermostat_behaviour( self, NWKID, 'conventionel')
             elif Level == 20: # Fil Pilote
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
                 schneider_thermostat_behaviour( self, NWKID, 'FIP')
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
+            return
 
         elif DeviceType == 'FIP':
             FIL_PILOT_MODE = {
@@ -290,9 +301,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                     if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-HACT':
                         self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
                         schneider_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
+                        UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         elif DeviceType == 'LegrandFilPilote':
-            
             FIL_PILOTE_MODE = {
                 10: 'Confort',
                 20: 'Confort -1',
@@ -307,7 +319,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOTE_MODE[ Level ]), NWKID)
                 legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
                 self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
-
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847

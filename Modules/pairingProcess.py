@@ -285,7 +285,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         break
 
         if IsCreated == False:
-            loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s" %self.ListOfDevices[NWKID])
+            loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
             CreateDomoDevice(self, Devices, NWKID)
@@ -342,9 +342,9 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
 
-            # In case of Schneider Thermostat, let's do the Write Attribute now.
-            if 'Model' in self.ListOfDevices[ NWKID ]:
-                if self.ListOfDevices[ NWKID ]['Model'] in ( 'EH-ZB-SPD', 'EH-ZB-SPD-V2', 'EH-ZB-RTS', 'EH-ZB-HACT','EH-ZB-BMS' ):
+            # In case of Schneider Wiser, let's do the Registration Process
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
                     schneider_wiser_registration( self, NWKID )
 
             # Identify for ZLL compatible devices

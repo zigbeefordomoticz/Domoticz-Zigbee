@@ -22,8 +22,8 @@ except Exception as Err:
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS
-from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, webBind
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS, ZCL_CLUSTERS_ACT
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, webBind, webUnBind
 from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
 from Modules.actuators import actuators
 from Modules.tools import is_hex
@@ -410,7 +410,10 @@ class WebServer(object):
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
+                'unbinding':     {'Name':'unbinding',     'Verbs':{'PUT'}, 'function':self.rest_unbinding},
                 'binding':       {'Name':'binding',       'Verbs':{'PUT'}, 'function':self.rest_binding},
+                'bindLSTcluster':{'Name':'bindLSTcluster','Verbs':{'GET'}, 'function':self.rest_bindLSTcluster},
+                'bindLSTdevice': {'Name':'bindLSTdevice', 'Verbs':{'GET'}, 'function':self.rest_bindLSTdevice},
                 'new-hrdwr':     {'Name':'new-hrdwr',     'Verbs':{'GET'}, 'function':self.rest_new_hrdwr},
                 'rcv-nw-hrdwr':  {'Name':'rcv-nw-hrdwr',  'Verbs':{'GET'}, 'function':self.rest_rcv_nw_hrdwr},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
@@ -1968,8 +1971,56 @@ class WebServer(object):
 
         return _response
 
-    def rest_binding( self, verb, data, parameters):
+    def rest_bindLSTcluster( self, verb, data, parameters):
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
+        bindCluster = []
+        for key in self.ListOfDevices:
+            if key == '0000': continue
+            for ep in self.ListOfDevices[key]['Ep']:
+                for cluster in self.ListOfDevices[key]['Ep'][ep]:
+                    if cluster in ZCL_CLUSTERS_ACT:
+                        if cluster not in bindCluster:
+                            bindCluster.append( cluster )
+        _response["Data"] = json.dumps( bindCluster )
+        return _response
+
+    def rest_bindLSTdevice( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if len(parameters) == 1:
+            listofdevices = []
+            clustertobind = parameters[0]
+            for key in self.ListOfDevices:
+                if key == '0000': continue
+                for ep in self.ListOfDevices[key]['Ep']:
+                    if clustertobind in self.ListOfDevices[key]['Ep'][ep]:
+                        dev={}
+                        dev['IEEE'] = self.ListOfDevices[key]['IEEE']
+                        dev['NwkId'] = key
+                        dev['Ep'] = ep
+                        dev['ZDeviceName'] = self.ListOfDevices[key]['ZDeviceName']
+                        if dev not in listofdevices:
+                            listofdevices.append( dev )
+            _response["Data"] = json.dumps( listofdevices )
+        else:
+            Domoticz.Error("Must have 1 argument. %s" %parameters)
+        return _response
+
+
+    def rest_binding( self, verb, data, parameters):
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
             _response["Headers"]["Connection"] = "Keep-alive"
@@ -1993,8 +2044,37 @@ class WebServer(object):
                     _response["Data"] = json.dumps("uncomplet json %s" %data)
                     return _response
 
-                self.logging( 'Debug', "rest_binding - Source: %s/%s Dest: %s/%s Cluster: %s" %(data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster']))
+                self.logging( 'Log', "rest_binding - Source: %s/%s Dest: %s/%s Cluster: %s" %(data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster']))
                 webBind( self, data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster'] )
+                _response["Data"] = json.dumps( "Binding cluster %s between %s/%s and %s/%s" %(data['cluster'], data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp']))
+                return _response
+
+    def rest_unbinding( self, verb, data, parameters):
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+
+                if 'sourceIeee' not in data and \
+                        'sourceEp' not in data and \
+                        'destIeee' not in data and \
+                        'destEp' not in data and \
+                        'cluster' not in data:
+                    Domoticz.Log("-----> uncomplet json %s" %data)
+                    _response["Data"] = json.dumps("uncomplet json %s" %data)
+                    return _response
+
+                self.logging( 'Log', "rest_unbinding - Source: %s/%s Dest: %s/%s Cluster: %s" %(data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster']))
+                webUnBind( self, data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster'] )
                 _response["Data"] = json.dumps( "Binding cluster %s between %s/%s and %s/%s" %(data['cluster'], data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp']))
                 return _response
 

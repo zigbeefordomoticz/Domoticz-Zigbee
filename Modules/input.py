@@ -17,7 +17,7 @@ import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, loggingPairing, loggingInput, loggingMessages, mainPoweredDevice
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting, ZigatePermitToJoin
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -211,7 +211,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
         loggingInput( self, 'Debug',"Decode8401 MsgZoneStatus: %s " %MsgZoneStatus[2:4], MsgSrcAddr)
         value = MsgZoneStatus[2:4]
 
-        if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE14010402000D': #Konke Motion Sensor
+        if self.ListOfDevices[MsgSrcAddr]['Model'] in ( '3AFE14010402000D', '3AFE28010402000D'): #Konke Motion Sensor
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0406", '%02d' %alarm1 )
         elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_magnet', 'lumi.sensor_magnet.aq2' ): # Xiaomi Door sensor
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", '%02d' %alarm1 )
@@ -510,16 +510,22 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
                 loggingInput( self, 'Log', "Receive an APS Ack from %s, let's put the device back to Live" %MsgSrcAddr, MsgSrcAddr)
                 self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     else:
-        if _powered: # NACK for a Non powered device doesn't make sense
+        if _powered and self.pluginconf.pluginConf['enableACKNACK']: # NACK for a Non powered device doesn't make sense
             timedOutDevice( self, Devices, NwkId = MsgSrcAddr)
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
-                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
-                        loggingInput( self, 'Log', "Receive NACK from %s (%s)" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr), MsgSrcAddr)
-                    else:
-                        loggingInput( self, 'Log', "Receive NACK from %s" %MsgSrcAddr, MsgSrcAddr)
                 if self.ListOfDevices[MsgSrcAddr]['Health'] != 'Not Reachable':
                     self.ListOfDevices[MsgSrcAddr]['Health'] = 'Not Reachable'
+                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
+                        loggingInput( self, 'Log', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+                    else:
+                        loggingInput( self, 'Log', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+        else:
+            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {} and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '':
+                    loggingInput( self, 'Debug', "Receive NACK from %s (%s) clusterId: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgClusterId), MsgSrcAddr)
+                else:
+                    loggingInput( self, 'Debug', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
 
@@ -536,14 +542,19 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     Status=MsgData[0:2]
     timestamp = int(time())
 
-    loggingInput( self, 'Debug',"Permit Join status: %s" %( Status == '01' ) , 'ffff')
+    loggingInput( self, 'Debug',"Decode8014 - Permit Join status: %s" %( Status == '01' ) , 'ffff')
 
     prev = self.Ping['Permit']
 
     if Status == "00": 
-        if ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
-            Domoticz.Status("Accepting new Hardware: Disable")
+        if self.permitTojoin['Starttime'] == 0:
+            # First Status after plugin start
+            # Let's force a Permit Join of Duration 0
+            ZigatePermitToJoin( self, 0 )
+            self.permitTojoin['Starttime'] = timestamp
 
+        elif ( self.Ping['Permit'] is None) or (self.permitTojoin['Starttime'] >= timestamp - 240):
+            Domoticz.Status("Accepting new Hardware: Disable")
         self.permitTojoin['Duration'] = 0
         self.Ping['Permit'] = 'Off'
 
@@ -628,6 +639,9 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
 
     if MsgDataStatus == '00':
          Domoticz.Status("Start Network - Success")
+         Status = 'Success'
+    elif MsgDataStatus == '01':
+         Domoticz.Status("Start Network - Formed new network")
          Status = 'Success'
     elif MsgDataStatus == '02':
         Domoticz.Status("Start Network: Error invalid parameter.")
@@ -731,7 +745,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
         Domoticz.Error("Decode8030 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
         return
 
-    loggingInput( self, 'Debug', "Decode8030 - Bind response, Device: %s SQN: %s Status: %s" %(MsgSrcAddr, MsgSequenceNumber, MsgDataStatus), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8030 - Bind response, Device: %s Status: %s" %(MsgSrcAddr, MsgDataStatus), MsgSrcAddr)
 
     if nwkid in self.ListOfDevices:
         if 'Bind' in self.ListOfDevices[nwkid]:
@@ -745,7 +759,7 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                 for cluster in list(self.ListOfDevices[nwkid]['Bind'][ Ep ]):
                     if self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] == 'requested':
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Stamp'] = int(time())
-                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'received'
+                        self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'binded'
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
                         return
     return
@@ -1438,6 +1452,19 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     except : 
         self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
 
+        if self.pluginconf.pluginConf['debugRSSI']:
+            if self.ListOfDevices[MsgSrcAddr]['RSSI'] <= self.pluginconf.pluginConf['debugRSSI']:
+                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '' and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {}:
+                        Domoticz.Log("Decode8100 - RSSI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)%s" \
+                                %(self.ListOfDevices[MsgSrcAddr]['RSSI'], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['ZDeviceName']))
+                    else:
+                        Domoticz.Log("Decode8100 - RSSI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)" \
+                                %(self.ListOfDevices[MsgSrcAddr]['RSSI'], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp))
+                else:
+                    Domoticz.Log("Decode8100 - RSSI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)" \
+                            %(self.ListOfDevices[MsgSrcAddr]['RSSI'], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp))
+
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
@@ -1494,11 +1521,28 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
     loggingMessages( self, '8102', MsgSrcAddr, None, MsgRSSI, MsgSQN)
 
+
+
     if DeviceExist(self, Devices, MsgSrcAddr) == True :
         try:
             self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
         except:
             self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+
+        if self.pluginconf.pluginConf['debugRSSI']:
+            if self.ListOfDevices[MsgSrcAddr]['RSSI'] <= self.pluginconf.pluginConf['debugRSSI']:
+                if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+                    if self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != '' and self.ListOfDevices[MsgSrcAddr]['ZDeviceName'] != {}:
+                        Domoticz.Log("Decode8102 - RSSI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)%s" \
+                                %(self.ListOfDevices[MsgSrcAddr]['RSSI'], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp, self.ListOfDevices[MsgSrcAddr]['ZDeviceName']))
+                    else:
+                        Domoticz.Log("Decode8102 - RSSI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)" \
+                                %(self.ListOfDevices[MsgSrcAddr]['RSSI'], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp))
+                else:
+                    Domoticz.Log("Decode8102 - RSSI: %3s Received Cluster:%s Attribute: %4s Value: %4s from (%4s/%2s)" \
+                            %(self.ListOfDevices[MsgSrcAddr]['RSSI'], MsgClusterId, MsgAttrID, MsgClusterData, MsgSrcAddr, MsgSrcEp))
+
+
 
         loggingInput( self, 'Debug2', "Decode8102 : Attribute Report from " + str(MsgSrcAddr) + " SQN = " + str(MsgSQN) + " ClusterID = " 
                         + str(MsgClusterId) + " AttrID = " +str(MsgAttrID) + " Attribute Data = " + str(MsgClusterData) , MsgSrcAddr)
@@ -1512,7 +1556,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
-        Domoticz.Error("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
+        Domoticz.Log("Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
         Domoticz.Log("Request for IEEE for short address: %s" %(MsgSrcAddr))
         sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + '00' + '00' )
         #Domoticz.Status("Decode8102 - Will try to reconnect device : " + str(MsgSrcAddr) )
@@ -1761,6 +1805,17 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
+    """
+    Il y a un Device Announce interne qui ne peut pas avoir un LQI ni de rejoin
+    et un autre Device announce qui a le LQI et le rejoin. 
+    J'avais supprimé le premier mais tu en as besoin. 
+    Du coup, pour une même commande on se retrouve avec 2 structures.
+
+    if len(MsgData) == 22 ==> No Join Flag
+    if len(MsgData) == 24 ==> Join Flag 
+
+    """
+
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
@@ -1819,7 +1874,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingInput( self, 'Debug', "Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %(MsgSrcAddr, MsgIEEE, MsgRejoinFlag), MsgSrcAddr)
         MsgRejoinFlag = '00'
 
-    loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+    if MsgSrcAddr in self.ListOfDevices:
+        if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
+            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s" %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+        else:
+            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+    else:
+        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
@@ -1846,6 +1907,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
 
+
         # Redo the binding if allow
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
@@ -1867,25 +1929,25 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     self.iaszonemgt.IASWD_enroll( MsgSrcAddr, tmpep)
                 break
 
-        # Let's check if this is a Schneider Wiser
-        if 'Model' in self.ListOfDevices[ MsgSrcAddr ]:
-            if self.ListOfDevices[ MsgSrcAddr ]['Model'] in ( 'EH-ZB-SPD', 'EH-ZB-SPD-V2', 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-BMS' ):
-                schneider_wiser_registration( self, MsgSrcAddr )
-
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
     
-            # As we are redo bind, we need to redo the Configure Reporting
-            if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
-                del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
-            processConfigureReporting( self, NWKID=MsgSrcAddr )
+        # As we are redo bind, we need to redo the Configure Reporting
+        if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
+            del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
+        processConfigureReporting( self, NWKID=MsgSrcAddr )
 
-            # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
-            loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
-            ReadAttributeRequest_0000( self,  MsgSrcAddr)
-            ReadAttributeRequest_0001( self,  MsgSrcAddr)
-            sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+        # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
+        loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
+        ReadAttributeRequest_0000( self,  MsgSrcAddr)
+        ReadAttributeRequest_0001( self,  MsgSrcAddr)
+        sendZigateCmd(self,"0042", str(MsgSrcAddr) )
+
+        # Let's check if this is a Schneider Wiser
+        if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '105e':
+                schneider_wiser_registration( self, MsgSrcAddr )
     else:
         # New Device coming for provisioning
 
@@ -1986,9 +2048,9 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             '07':'release_up'
             }
 
-    loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
-    loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
-            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+    #loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    #loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+    #        %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
@@ -2074,17 +2136,15 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in 'TRADFRI wireless dimmer':
-        loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
-            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
         TYPE_ACTIONS = { None: '', 
-                '01': 'move', 
+                '01': 'moveleft', 
                 '02': 'click', 
                 '03': 'stop',
-                '04': 'Dimmer',
-                '05': 'Step 05',
+                '04': 'OnOff',
+                '05': 'moveright',
                 '06': 'Step 06',
-                '07': 'Step 07',
+                '07': 'stop',
                 }
         DIRECTION = { None: '', 
                 '00': 'left', 
@@ -2101,20 +2161,38 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             transition = MsgData[20:22]
 
         selector = None
-        if step_mod == '04' and up_down == '00':
-            # Left
-            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning left step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'moveup' )
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'moveup'
 
-        elif step_mod == '04' and up_down == 'ff':
-            # Right
-            loggingInput( self, 'Debug', "Decode8085 - wireless dimmer %s turning right step_size: %s transition: %s" %(MsgSrcAddr,  step_size, transition), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'movedown' )
+        if step_mod == '01':
+            # Move left
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning left step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'moveup'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'moveup' )
+
+        elif step_mod == '04' and up_down == '00' and step_size == '00' and transition == '01':
+            # Off
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning left step_size: %s transition: %s" %(step_size, transition), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'off'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'off' )
+
+        elif step_mod == '04' and up_down == 'ff' and step_size == '00' and transition == '01':
+            # On
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning right step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'on'
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'on' )
+
+        elif step_mod == '05': 
+            # Move Right
+            loggingInput( self, 'Debug', "Decode8085 - =====> turning Right step_size: %s transition: %s" %(step_size, transition), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'movedown'
-        #else:
-        #    loggingInput( self, 'Log', "Decode8085 - wireless dimmer %s/%s step_mod: %s up_down: %s step_size: %s transition: %s" \
-        #            %(MsgSrcAddr, MsgEP, step_mod, up_down, step_size, transition), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, 'movedown' )
+
+        elif step_mod == '07':
+            # Stop Moving
+            loggingInput( self, 'Debug', "Decode8085 - =====> Stop moving step_size: %s transition: %s" %( step_size, transition), MsgSrcAddr)
+            pass
+        else:
+            loggingInput( self, 'Log', "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s" \
+                    %(step_mod, up_down, step_size, transition), MsgSrcAddr)
 
     elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
         loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \

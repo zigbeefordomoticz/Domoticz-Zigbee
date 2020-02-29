@@ -76,6 +76,7 @@ READ_ATTR_COMMANDS = ( '0006', '0201')
 # Legrand re-enforcement: Every 5'
 
 READATTRIBUTE_FEQ =    10 // HEARTBEAT # 10seconds ... 
+QUIET_AFTER_START =    60 // HEARTBEAT # Quiet periode after a plugin start
 CONFIGURERPRT_FEQ =    30 // HEARTBEAT
 LEGRAND_FEATURES =    300 // HEARTBEAT
 SCHNEIDER_FEATURES =  300 // HEARTBEAT
@@ -170,7 +171,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 if _forceCommandCluster and not _doReadAttribute:
                     # Force Majeur
                     if ( intHB == 1 and _mainPowered and Cluster in READ_ATTR_COMMANDS ) or \
-                          ( intHB == 1 and not _mainPowered and Cluster == '0001') :
+                          ( intHB == 1 and not _mainPowered and Cluster in ( '0001', '0201') ) :
                         loggingHeartbeat( self, 'Debug', '-- - Force Majeur on %s/%s cluster %s' %( NWKID, tmpEp, Cluster), NWKID)
 
                         # Let's reset the ReadAttribute Flag
@@ -263,11 +264,14 @@ def processKnownDevices( self, Devices, NWKID ):
                     else:
                         rescheduleAction = True
 
-    if ( self.HeartbeatCount % SCHNEIDER_FEATURES ) == 0 :
+    if self.pluginconf.pluginConf['reenforcementWiser'] and ( self.HeartbeatCount % self.pluginconf.pluginConf['reenforcementWiser'] ) == 0 :
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-VACT':
+                pass
         if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
             if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
                 if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                    schneider_thermostat_behaviour( self, NKWID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
+                    schneider_thermostat_behaviour( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
                 else:
                     rescheduleAction = True
             if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
@@ -422,11 +426,11 @@ def processListOfDevices( self , Devices ):
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
 
-    if ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
+    if self.HeartbeatCount > QUIET_AFTER_START and ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
         # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > NETWORK_TOPO_START:
+    if self.HeartbeatCount > QUIET_AFTER_START and self.HeartbeatCount > NETWORK_TOPO_START:
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
@@ -437,7 +441,7 @@ def processListOfDevices( self , Devices ):
                 if self.ZigateComm.loadTransmit() < 1 : # Equal 0
                      self.networkmap.continue_scan( )
 
-    if self.HeartbeatCount > NETWORK_ENRG_START:
+    if self.HeartbeatCount > QUIET_AFTER_START and self.HeartbeatCount > NETWORK_ENRG_START:
         # Network Energy Level
         if self.networkenergy:
             if self.ZigateComm.loadTransmit() < 1: # Equal 0

@@ -1089,11 +1089,37 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint' and Attribute_ in ( '4003', '0012'):
 
-                nValue = round(float(value),2)
-                sValue = "%s;%s" % (nValue, nValue)
+                setpoint = round(float(value),2)
+                # Normalize SetPoint value with 2 digits
+                Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
+                setpoint = Round( float(setpoint), 2 )
 
-                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(nValue,sValue), NWKID)
-                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
+                UpdateDevice_v2(self, Devices, x, 0, setpoint, BatteryLevel, SignalLevel)
+
+            # Wiser specific Thermostat Mode
+            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoModeEHZBRTS' and Attribute_ in ( '001c', 'e010'):
+                loggingWidget( self, "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
+                # Decode value
+                THERMOSTAT_MODE = {
+                        0:0, 1:10, 2:20, 3:30, 4:40, 5:50, 6:60 }
+
+                if value in THERMOSTAT_MODE:
+                    sValue = THERMOSTAT_MODE[ value ]
+                    UpdateDevice_v2(self, Devices, x, value, str(sValue), BatteryLevel, SignalLevel)
+
+            # Wiser specific Fil Pilote
+            if 'ThermoMode' in ClusterType and DeviceType == 'HACTMODE' and Attribute_ == "e011":
+                loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s %s" %(0,setpoint), NWKID)
+                if value == '00':  # Conventional
+                    nValue = 1
+                    sValue = '10'
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+
+                elif value == '03':  # FIP
+                    nValue = 2
+                    sValue = '20'
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
             if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode' and Attribute_ == '001c':
                 loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode %s" %value, NWKID)
@@ -1105,24 +1131,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
                     UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
-
-            if 'ThermoMode' in ClusterType and DeviceType == 'ThermoModeEHZBRTS' and Attribute_ == '001c':
-                loggingWidget( self, "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
-                # Decode value
-
-                THERMOSTAT_MODE = {
-                        0:0,
-                        1:10,
-                        2:20,
-                        3:30,
-                        4:40,
-                        5:50,
-                        6:60
-                        }
-
-                if value in THERMOSTAT_MODE:
-                    value = THERMOSTAT_MODE[ value ]
-                schneider_EHZBRTS_thermoMode( self, NWKID, value)
 
             if ClusterType == "Temp":  # temperature
                 loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
@@ -1374,8 +1382,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     # 4,40: Move Down
                     # 5,50: Stop
                     loggingWidget( self, "Debug", "GenericLvlControl : Value -> %s" %value, NWKID)
-                    if value == '00': nvalue = 1 ; state = '10' #Off
-                    elif value == '01': nvalue = 2 ; state = "20" # On
+                    if value == 'off': nvalue = 1 ; state = '10' #Off
+                    elif value == 'on': nvalue = 2 ; state = "20" # On
                     elif value == 'moveup': nvalue = 3 ; state = "30" # Move Up
                     elif value == 'movedown': nvalue = 4 ; state = "40" # Move Down
                     elif value == 'stop': nvalue = 5 ; state = "50" # Stop
@@ -1498,10 +1506,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if DeviceType == "VenetianInverted":
                         value = 100 - value
                         loggingWidget( self, "Debug", "--------------- - Patching %s/%s Value: %s" %(NWKID, Ep,value), NWKID)
-
-                    if value == 0: nValue = 0
-                    elif value == 100: nValue = 1
-                    else: nValue = 2
+                    if value == 0: 
+                        nValue = 0
+                    elif value == 100: 
+                        nValue = 1
+                    else: 
+                        nValue = 2
                     UpdateDevice_v2(self, Devices, x, nValue, str(value), BatteryLevel, SignalLevel)
 
             if ClusterType == "LvlControl":
@@ -1615,8 +1625,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     # 4,40: Move Down
                     # 5,50: Stop
                     loggingWidget( self, "Debug", "GenericLvlControl : Value -> %s" %value, NWKID)
-                    if value == '00': nvalue = 1 ; state = '10' #Off
-                    elif value == '01': nvalue = 2 ; state = "20" # On
+                    if value == 'off': nvalue = 1 ; state = '10' #Off
+                    elif value == 'on': nvalue = 2 ; state = "20" # On
                     elif value == 'moveup': nvalue = 3 ; state = "30" # Move Up
                     elif value == 'movedown': nvalue = 4 ; state = "40" # Move Down
                     elif value == 'stop': nvalue = 5 ; state = "50" # Stop

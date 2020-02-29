@@ -198,26 +198,29 @@ def importDeviceConfV2( self ):
                 if model_device in ( 'README.md', '.PRECIOUS' ):
                     continue
      
-                filename = model_directory + '/' + model_device
+                filename = str(model_directory + '/' + model_device)
                 with open( filename, 'rt') as handle:
                     try:
                         model_definition = json.load( handle )
                     except ValueError as e: 
-                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" %(filename, e))
+                        Domoticz.Error("--> JSON ConfFile: %s load failed with error: %s" %(str(filename), str(e)))
                         continue
                     except Exception as e:
-                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" %(filename, e))
+                        Domoticz.Error("--> JSON ConfFile: %s load general error: %s" %(str(filename), str(e)))
                         continue
 
-                device_model_name = model_device.rsplit('.',1)[0]
-                if device_model_name == 'Dimmer switch wo neutral':
-                    device_model_name = 'Dimmer switch w/o neutral'
-
-                if device_model_name not in self.DeviceConf:
-                    Domoticz.Status("--> Config for %s/%s" %( brand, device_model_name))
-                    self.DeviceConf[ device_model_name ] = dict(model_definition)
-                else:
-                    Domoticz.Log("--> Config for %s/%s not loaded as already defined" %(brand, device_model_name))
+                try:
+                    device_model_name = model_device.rsplit('.',1)[0]
+                    if device_model_name == 'Dimmer switch wo neutral':
+                        device_model_name = 'Dimmer switch w/o neutral'
+    
+                    if device_model_name not in self.DeviceConf:
+                        Domoticz.Status("--> Config for %s/%s" %( str(brand), str(device_model_name)))
+                        self.DeviceConf[ device_model_name ] = dict(model_definition)
+                    else:
+                        Domoticz.Log("--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
+                except:
+                    Domoticz.Error("--> Unexpected error when loading a configuration file")
 
 def checkDevices2LOD( self, Devices):
 
@@ -314,6 +317,7 @@ def CheckDeviceList(self, key, val) :
         MANDATORY_ATTRIBUTES = ( 'App Version', 
                 'Attributes List', 
                 'Bind', 
+                'WebBind',
                 'ColorInfos', 
                 'ClusterType', 
                 'ConfigSource',
@@ -357,6 +361,9 @@ def CheckDeviceList(self, key, val) :
                 'Stamp', 
                 'Health')
 
+        MANUFACTURER_ATTRIBUTES = (
+                'Legrand', 'Schneider' )
+
         if self.pluginconf.pluginConf['resetPluginDS']:
             Modules.tools.loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
             IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
@@ -368,7 +375,7 @@ def CheckDeviceList(self, key, val) :
             Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         else:
             Modules.tools.loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
-            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES))
+            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
 
         Modules.tools.loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
         for attribute in IMPORT_ATTRIBUTES:

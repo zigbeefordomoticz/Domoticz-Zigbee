@@ -1,5 +1,13 @@
 # Release Notes 
 
+## 29 February 2020 - 4.7.6
+- [Technical] - Scrip for PiZiGate on Fedora distribution
+- [Technical] - Provide Firmware
+- [Web Admin] - User Interface Optimisation
+- [Hardware] - Support Schneider Wiser Thermostatic Valve
+- [Hardware] - OTA Firmware for Ledvance devices
+- [Technical] - Allo device to device bindings via Web Admin Interface
+
 ## 22 February 2020 - 4.7.5
 - [Hardware] - More Device Configuration
 

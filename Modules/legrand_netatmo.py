@@ -24,12 +24,39 @@ from Modules.output import raw_APS_request, write_attribute
 
 def legrand_fake_read_attribute_response( self, nwkid ):
 
-    
     cluster_frame = '11'
     sqn = '00'
     payload = cluster_frame + sqn + '0100F0002311000000'
     raw_APS_request( self, nwkid, '01', '0000', '0104', payload)
 
+
+def rejoin_legrand( self, nwkid):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = '1021'
+    manuf_spec = "01"
+    cluster_id = '0000'
+    Hattribute = 'f000'
+    data_type = '23'
+    Hdata = '00000000'
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    loggingOutput( self, 'Debug', "Write Attributes No Response ")
+
+    # Overwrite nwkid with 'ffff' in order to make a broadcast
+    write_attribute( self, 'ffff', "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
+    # To be use if the Write Attribute is not conclusive
+    cluster_frame = '14'
+    sqn = '00'
+    payload = cluster_frame + sqn + '0500f02300000000'
+    raw_APS_request( self, 'ffff', '01', '0000', '0104', payload)
 
 
 def legrand_fc01( self, nwkid, command, OnOff):
@@ -175,7 +202,6 @@ def legrand_dimOnOff( self, OnOff):
                             legrand_fc01( self, NWKID, 'EnableDimmer', OnOff)
                         #else:
                         #    Domoticz.Error("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
-
 
 def legrand_ledIfOnOnOff( self, OnOff):
     '''
