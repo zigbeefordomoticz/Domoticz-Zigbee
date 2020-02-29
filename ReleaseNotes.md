@@ -1,9 +1,27 @@
 # Release Notes 
 
-##                 - beta 4.8 
+## 29 February 2020 - 4.7.6
+- [Technical] - Scrip for PiZiGate on Fedora distribution
+- [Technical] - Provide Firmware
+- [Web Admin] - User Interface Optimisation
+- [Hardware] - Support Schneider Wiser Thermostatic Valve
+- [Hardware] - OTA Firmware for Ledvance devices
+- [Technical] - Allo device to device bindings via Web Admin Interface
 
-- [Hardware] - Ikea Tradfri wireless dimmer. Works as a switch selector and provide movedown, moveup
-- [Technical] - Remove Permit to Join from the Domoticz Hardware page
+## 22 February 2020 - 4.7.5
+- [Hardware] - More Device Configuration
+
+## 18 February 2020 - 4.7.4
+- [Hardware] - Update a number of device configuration
+
+## 14 February 2020 - 4.7.3
+- [Issue] - Fix issue when Window Covering device exist
+- [Issue] - Re-enable configureReporting split Atrribute by attribute
+- [Issue] - Check the validity of Temp and Humidity
+
+## 12 February 2020 - 4.7.1
+- [Issue] - Using wrong ClusterId for 0201 read attribute
+- [Issue] - Fixing binding information
 
 ## 8 February 2020 - 4.7.0 
 - [Hardware] - Update of IKEA Tradfri firmware

@@ -47,17 +47,16 @@ def rejoin_legrand( self, nwkid):
         if "fc01" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Debug', "Write Attributes No Response - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
+    loggingOutput( self, 'Debug', "Write Attributes No Response ")
 
     # Overwrite nwkid with 'ffff' in order to make a broadcast
     write_attribute( self, 'ffff', "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
     # To be use if the Write Attribute is not conclusive
-    #cluster_frame = '14'
-    #sqn = '00'
-    #payload = cluster_frame + sqn + '0500f02300000000'
-    #raw_APS_request( self, 'ffff', '01', '0000', '0104', payload)
+    cluster_frame = '14'
+    sqn = '00'
+    payload = cluster_frame + sqn + '0500f02300000000'
+    raw_APS_request( self, 'ffff', '01', '0000', '0104', payload)
 
 
 def legrand_fc01( self, nwkid, command, OnOff):

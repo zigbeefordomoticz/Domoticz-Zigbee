@@ -1805,6 +1805,17 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
+    """
+    Il y a un Device Announce interne qui ne peut pas avoir un LQI ni de rejoin
+    et un autre Device announce qui a le LQI et le rejoin. 
+    J'avais supprimé le premier mais tu en as besoin. 
+    Du coup, pour une même commande on se retrouve avec 2 structures.
+
+    if len(MsgData) == 22 ==> No Join Flag
+    if len(MsgData) == 24 ==> Join Flag 
+
+    """
+
     MsgSrcAddr=MsgData[0:4]
     MsgIEEE=MsgData[4:20]
     MsgMacCapa=MsgData[20:22]
