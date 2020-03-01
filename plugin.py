@@ -178,7 +178,7 @@ class BasePlugin:
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
-        self.pluginParameters['PluginBranch'] = 'beta'
+        self.pluginParameters['PluginBranch'] = 'stable'
         self.pluginParameters['PluginVersion'] = '4.7.006'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
