@@ -2248,7 +2248,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
                         if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] and self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
-                                    %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
                             # Protect against overloading Zigate
                             if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 15:
                                 schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
