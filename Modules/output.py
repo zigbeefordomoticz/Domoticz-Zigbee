@@ -2048,7 +2048,7 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
     len_payload = (len(payload)) // 2
     len_payload = '%02x' %len_payload
 
-    loggingOutput( self, 'Log', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
+    loggingOutput( self, 'Debug', "raw_APS_request - Addr: %s Ep: %s Cluster: %s ProfileId: %s Payload: %s" %(targetaddr, dest_ep, cluster, profileId, payload))
 
     sendZigateCmd(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 

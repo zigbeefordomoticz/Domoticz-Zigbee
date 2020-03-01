@@ -2248,7 +2248,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
                         if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] and self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
-                            Domoticz.Log("Call schneider_setpoint - Target SetPoint: %s, 0012: %s" \
                                     %( self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'], int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100)))
                             # Protect against overloading Zigate
                             if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 15:
@@ -2263,8 +2262,6 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] = None
                                 self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] = None
                             else: 
-                                Domoticz.Log("Target Mode: %s, e010: %s"  %(EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']], \
-                                                                            int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16)))
                                 if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] + 15:
                                     schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
 

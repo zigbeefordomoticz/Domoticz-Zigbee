@@ -122,7 +122,7 @@ def schneider_wiser_registration( self, key ):
     Hattribute = "%04x" %0x0010
     data_type = "42"
     data = '5A6967617465205A6F6E65'  # Zigate zone
-    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -207,7 +207,6 @@ def schneider_fip_mode( self, key, mode):
 
     payload = cluster_frame + sqn + cmd + zone_mode + fipmode + prio + 'ff'
 
-    Domoticz.Log("schneider_fip_mode - Nwkid: %s Fip Mode: %s ==> Payload: %s" %(key, fipmode, payload))
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
     self.ListOfDevices[key]['Heartbeat'] = 0
 
@@ -241,7 +240,6 @@ def schneider_setpoint( self, key, setpoint):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Domoticz.Log("schneider_setpoint - %s %s ==> Payload: %s" %(key, setpoint, payload))
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
     self.ListOfDevices[key]['Heartbeat'] = 0
 
