@@ -4,16 +4,16 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_output.py
+    Module: schneider_wiser.py
 
-    Description: All communications towards Zigate
+    Description: 
 
 """
 
 import Domoticz
 import Modules.output
 
-from Modules.tools import loggingOutput
+#from Modules.logging import loggingOutput
 from time import time
 
 
@@ -132,8 +132,8 @@ def schneider_wiser_registration( self, key ):
         self.ListOfDevices[key]['Heartbeat'] = 0
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): # Pilotage Chaffe eau
-        sendZigateCmd(self, "0092","02" + key + "01" + EPout + "01")
-        sendZigateCmd(self, "0092","02" + key + "01" + EPout + "00")
+        Modules.output.sendZigateCmd(self, "0092","02" + key + "01" + EPout + "01")
+        Modules.output.sendZigateCmd(self, "0092","02" + key + "01" + EPout + "00")
         self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneider_thermostat_behaviour( self, key, mode ):
