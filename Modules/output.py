@@ -896,6 +896,21 @@ def ReadAttributeRequest_fc01(self, key):
     loggingOutput( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
     ReadAttributeReq( self, key, EPin, EPout, "fc01", listAttributes)
 
+def ReadAttributeRequest_fc21(self, key):
+
+    # Cluster PFX Profalux
+    loggingOutput( self, 'Log', "ReadAttributeRequest_fc21 - Key: %s " %key, nwkid=key)
+
+    EPin = "01"
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                EPout=tmpEp
+    listAttributes = []
+    listAttributes.append( 0x0001 )
+    loggingOutput( self, 'Log', "Request Profalux BSO via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+    ReadAttributeReq( self, key, EPin, EPout, "fc21", listAttributes)
+
 def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
 
     addr_mode = "02" # Short address
