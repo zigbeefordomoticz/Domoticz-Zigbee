@@ -133,12 +133,14 @@ SETTINGS = {
                 'pluginConfig':         { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'pluginOTAFirmware':    { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'pluginReports':        { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'pluginWWW':            { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
+                'pluginWWW':            { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'pluginLogs':           { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
             }},
 
         # Verbose
         'VerboseLogging': { 'Order': 11, 'param': {
                 'debugMatchId':         { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'useDomoticzLog':      { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'logDeviceUpdate':      { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'logFORMAT':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'capturePairingInfos':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
@@ -226,6 +228,8 @@ class PluginConf:
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
                 elif param == 'pluginOTAFirmware':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+                elif param == 'pluginLogs':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Logs/'
                 else:
                     self.pluginConf[param] = SETTINGS[theme]['param'][param]['default']
 

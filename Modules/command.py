@@ -17,7 +17,8 @@ import struct
 import json
 
 from Modules.actuators import actuators
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.logging import loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import  schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_thermostat_behaviour

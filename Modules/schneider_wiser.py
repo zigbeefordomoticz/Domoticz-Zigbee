@@ -13,7 +13,7 @@
 import Domoticz
 import Modules.output
 
-#from Modules.logging import loggingOutput
+from Modules.logging import loggingOutput
 from time import time
 
 

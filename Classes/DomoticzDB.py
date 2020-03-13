@@ -15,12 +15,13 @@ import Domoticz
 import os.path
 from base64 import b64decode
 from time import time
+from datetime import datetime
 
 CACHE_TIMEOUT = ((15 * 60) + 15)   # num seconds
 
 class DomoticzDB_Preferences:
 
-    def __init__(self, database, pluginconf):
+    def __init__(self, database, pluginconf, loggingFileHandle):
         self.dbConn = None
         self.dbCursor = None
         self.preferences = None
@@ -29,22 +30,61 @@ class DomoticzDB_Preferences:
         self.database = database
         self.debugDZDB = None
         self.pluginconf = pluginconf
+        self.loggingFileHandle = loggingFileHandle
 
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             Domoticz.Error("DB_DeviceStatus - Not existing DB %s" %self.database)
             return 
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugDZDB = self.pluginconf.pluginConf['debugDZDB']
 
         if logType == 'Debug' and self.debugDZDB:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
 
@@ -167,7 +207,7 @@ class DomoticzDB_Preferences:
 
 class DomoticzDB_Hardware:
 
-    def __init__(self, database, pluginconf, hardwareID ):
+    def __init__(self, database, pluginconf, hardwareID , loggingFileHandle):
         self.Devices = {}
         self.dbConn = None
         self.dbCursor = None
@@ -175,24 +215,63 @@ class DomoticzDB_Hardware:
         self.database = database
         self.debugDZDB = None
         self.pluginconf = pluginconf
+        self.loggingFileHandle = loggingFileHandle
 
         # Check if we have access to the database, if not Error and return
         if not os.path.isfile( database ) :
             Domoticz.Error("DB_DeviceStatus - Not existing DB %s" %self.database)
             return
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+
     def logging( self, logType, message):
 
         self.debugDZDB = self.pluginconf.pluginConf['debugDZDB']
 
         if logType == 'Debug' and self.debugDZDB:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
-
 
     def _openDB( self ):
 
@@ -229,7 +308,7 @@ class DomoticzDB_Hardware:
 
 class DomoticzDB_DeviceStatus:
 
-    def __init__(self, database, pluginconf, hardwareID ):
+    def __init__(self, database, pluginconf, hardwareID , loggingFileHandle):
         self.database = database
         self.Devices = {}
         self.dbConn = None
@@ -237,6 +316,7 @@ class DomoticzDB_DeviceStatus:
         self.HardwareID = hardwareID
         self.debugDZDB = None
         self.pluginconf = pluginconf
+        self.loggingFileHandle = loggingFileHandle
 
         self.AdjValue = {}
         self.AdjValue['Baro'] = {}
@@ -247,18 +327,55 @@ class DomoticzDB_DeviceStatus:
         if not os.path.isfile( database ) :
             return
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugDZDB = self.pluginconf.pluginConf['debugDZDB']
 
         if logType == 'Debug' and self.debugDZDB:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
-
 
     def _openDB( self):
 

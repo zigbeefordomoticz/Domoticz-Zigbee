@@ -13,7 +13,8 @@
 import Domoticz
 import json
 
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.logging import loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint
 
 def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):

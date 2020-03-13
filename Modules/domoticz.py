@@ -14,7 +14,7 @@ import time
 import struct
 import json
 
-from Modules.tools import loggingWidget
+from Modules.logging import loggingWidget
 from Modules.output import schneider_EHZBRTS_thermoMode
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
 
@@ -684,8 +684,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
 
-
-            if t == "WindowCovering":
+            if t in ( 'BlindInverted', 'Blind', 'WindowCovering'):
                 # Subtype = 
                 # Blind / Window covering
                 #   13 Blind percentage
@@ -693,30 +692,39 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Shade
                 #   14 Venetian Blinds US
                 #   15 Venetian Blind EU
-                loggingWidget( self, "Debug", "Create Widget WindowCovering" , NWKID)
+                loggingWidget( self, "Debug", "Create Widget %s" %t , NWKID)
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
-                if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
-                    loggingWidget( self, "Debug", "---> Blind based on ZDeviceID" , NWKID)
-                    # Window covering
-                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                        Unit=unit, Type=244, Subtype=73, Switchtype=16)
-                elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
-                    # Shade
-                    loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
-                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                        Unit=unit, Type=244, Subtype=73, Switchtype=15)
-                else:
-                    myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                        Unit=unit, Type=244, Subtype=73, Switchtype=7)
+                if t == 'BlindInverted':
+                    # We keep ClusterType LvlControl as it will be operated as a LvlControl
+                    _switchtype = 16
+                    _clustertype = 'LvlControl'
+                elif t == 'Blind':
+                    # We keep ClusterType LvlControl as it will be operated as a LvlControl
+                    _switchtype = 13
+                    _clustertype = 'LvlControl'
+                elif t == 'WindowCovering':
+                    if self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0202':
+                        # Window covering
+                        _switchtype = 16
+                        _clustertype = t
+                    elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
+                        # Shade
+                        _switchtype = 15
+                        _clustertype = t
+                    else:
+                        _switchtype = 7
+                        _clustertype = t
 
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
+                    Unit=unit, Type=244, Subtype=73, Switchtype=_switchtype)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
                     self.ListOfDevices[NWKID]['Status'] = "failDB"
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
-                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = _clustertype
 
             if t == "LvlControl":
                 loggingWidget( self, "Debug", "Create Widget LvlControl" , NWKID)

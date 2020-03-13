@@ -19,7 +19,8 @@ from datetime import datetime
 from time import time
 
 from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ, LEGRAND_REMOTES, ADDRESS_MODE, CFG_RPT_ATTRIBUTESbyCLUSTERS, SIZE_DATA_TYPE
-from Modules.tools import getClusterListforEP, loggingOutput, mainPoweredDevice
+from Modules.tools import getClusterListforEP, mainPoweredDevice
+from Modules.logging import loggingOutput
 from Modules.schneider_wiser import schneider_setpoint, schneider_EHZBRTS_thermoMode
 
 def ZigatePermitToJoin( self, permit ):
@@ -32,9 +33,9 @@ def ZigatePermitToJoin( self, permit ):
             pass
         else:
             if permit != 255:
-                Domoticz.Status("Request Accepting new Hardware for %s seconds " %permit)
+                loggingOutput( self, "Status", "Request Accepting new Hardware for %s seconds " %permit)
             else:
-                Domoticz.Status("Request Accepting new Hardware for ever ")
+                loggingOutput( self, "Status", "Request Accepting new Hardware for ever ")
 
             self.permitTojoin['Starttime'] = int(time())
             if permit == 1:
@@ -51,7 +52,7 @@ def ZigatePermitToJoin( self, permit ):
         self.permitTojoin['Starttime'] = int(time())
         self.permitTojoin['Duration'] = 0
         sendZigateCmd(self, "0049","FFFC" + '00' + "00")
-        Domoticz.Status("Request Disabling Accepting new Hardware")
+        loggingOutput( self, "Status", "Request Disabling Accepting new Hardware")
 
     loggingOutput( self, 'Debug', "Permit Join set :" , 'ffff' )
     loggingOutput( self, 'Debug', "---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'], 'ffff' )
@@ -76,18 +77,18 @@ def start_Zigate(self, Mode='Controller'):
         Domoticz.Error("start_Zigate - Unknown mode: %s" %Mode)
         return
 
-    Domoticz.Status("ZigateConf setting Channel(s) to: %s" \
+    loggingOutput( self, "Status", "ZigateConf setting Channel(s) to: %s" \
             %self.pluginconf.pluginConf['channel'])
     setChannel(self, str(self.pluginconf.pluginConf['channel']))
     
     if Mode == 'Controller':
-        Domoticz.Status("Set Zigate as a Coordinator")
+        loggingOutput( self, "Status", "Set Zigate as a Coordinator")
         sendZigateCmd(self, "0023","00")
 
-        Domoticz.Status("Set Zigate as a TimeServer")
+        loggingOutput( self, "Status", "Set Zigate as a TimeServer")
         setTimeServer( self)
 
-        Domoticz.Status("Start network")
+        loggingOutput( self, "Status", "Start network")
         sendZigateCmd(self, "0024", "" )   # Start Network
     
         loggingOutput( self, 'Debug', "Request network Status", '0000')
@@ -98,7 +99,7 @@ def setTimeServer( self ):
 
     EPOCTime = datetime(2000,1,1)
     UTCTime = int((datetime.now() - EPOCTime).total_seconds())
-    #Domoticz.Status("setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
+    #loggingOutput( self, "Status", "setTimeServer - Setting UTC Time to : %s" %( UTCTime) )
     data = "%08x" %UTCTime
     sendZigateCmd(self, "0016", data  )
     #Request Time
@@ -108,10 +109,10 @@ def setTimeServer( self ):
 def zigateBlueLed( self, OnOff):
 
     if OnOff:
-        Domoticz.Log("Switch Blue Led On")
+        loggingOutput( self, 'Log', "Switch Blue Led On")
         sendZigateCmd(self, "0018","01")
     else:
-        Domoticz.Log("Switch Blue Led off")
+        loggingOutput( self, 'Log', "Switch Blue Led off")
         sendZigateCmd(self, "0018","00")
 
 
@@ -126,7 +127,7 @@ def sendZigateCmd(self, cmd,datas ):
         loggingOutput( self, 'Debug', "=====> sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'ffff')
 
     if len(self.ZigateComm.zigateSendingFIFO) > 15:
-        Domoticz.Log("WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
+        loggingOutput( self, 'Log', "WARNING - ZigateCmd: %s %18s ZigateQueue: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)))
 
     self.ZigateComm.sendData( cmd, datas )
 
@@ -1529,12 +1530,12 @@ def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
 def initiateTouchLink( self):
 
-    Domoticz.Status("initiate Touch Link")
+    loggingOutput( self, "Status", "initiate Touch Link")
     sendZigateCmd(self, "00D0", '' )
 
 def factoryresetTouchLink( self):
 
-    Domoticz.Status("Factory Reset Touch Link Over The Air")
+    loggingOutput( self, "Status", "Factory Reset Touch Link Over The Air")
     sendZigateCmd(self, "00D2", '' )
 
 
@@ -1595,7 +1596,7 @@ def setChannel( self, channel):
     ZigBee supports channels 11-26.
     '''
     mask = maskChannel( channel )
-    Domoticz.Status("setChannel - Channel set to : %08.x " %(mask))
+    loggingOutput( self, "Status", "setChannel - Channel set to : %08.x " %(mask))
 
     sendZigateCmd(self, "0021", "%08.x" %(mask))
     return
@@ -1603,12 +1604,12 @@ def setChannel( self, channel):
 
 def channelChangeInitiate( self, channel ):
 
-    Domoticz.Status("Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
+    loggingOutput( self, "Status", "Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
     NwkMgtUpdReq( self, channel, 'change')
 
 def channelChangeContinue( self ):
 
-    Domoticz.Status("Restart network")
+    loggingOutput( self, "Status", "Restart network")
     sendZigateCmd(self, "0024", "" )   # Start Network
     sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
 
@@ -1643,13 +1644,13 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
 
     """
 
-    Domoticz.Log("leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
+    loggingOutput( self, 'Log', "leaveMgtReJoin - sAddr: %s , ieee: %s, [%s/%s]" %( saddr, ieee,  self.pluginconf.pluginConf['allowAutoPairing'], rejoin))
     if not self.pluginconf.pluginConf['allowAutoPairing']:
-        Domoticz.Log("leaveMgtReJoin - no action taken as 'allowAutoPairing' is %s" %self.pluginconf.pluginConf['allowAutoPairing'])
+        loggingOutput( self, 'Log', "leaveMgtReJoin - no action taken as 'allowAutoPairing' is %s" %self.pluginconf.pluginConf['allowAutoPairing'])
         return
 
     if rejoin:
-        Domoticz.Status("Switching Zigate in pairing mode to allow %s (%s) coming back" %(saddr, ieee))
+        loggingOutput( self, "Status", "Switching Zigate in pairing mode to allow %s (%s) coming back" %(saddr, ieee))
 
         # If Zigate not in Permit to Join, let's switch it to Permit to Join for 60'
         duration = self.permitTojoin['Duration']
@@ -1679,7 +1680,7 @@ def leaveMgtReJoin( self, saddr, ieee, rejoin=True):
         _dnt_rmv_children = '00'
 
         datas = saddr + ieee + _rejoin + _dnt_rmv_children
-        Domoticz.Status("Request a rejoin of (%s/%s)" %(saddr, ieee))
+        loggingOutput( self, "Status", "Request a rejoin of (%s/%s)" %(saddr, ieee))
         sendZigateCmd(self, "0047", datas )
 
 def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x00 ):
@@ -1709,9 +1710,9 @@ def leaveRequest( self, ShortAddr=None, IEEE= None, RemoveChild=0x00, Rejoin=0x0
     _rejoin = '%02X' %Rejoin
 
     datas = _ieee + _rmv_children + _rejoin
-    #Domoticz.Status("Sending a leaveRequest - %s %s" %( '0047', datas))
-    Domoticz.Log("---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s" %( ShortAddr, IEEE, RemoveChild, Rejoin))
-    Domoticz.Log("---------> Sending a leaveRequest - payload %s" %( datas))
+    #loggingOutput( self, "Status", "Sending a leaveRequest - %s %s" %( '0047', datas))
+    loggingOutput( self, 'Log', "---------> Sending a leaveRequest - NwkId: %s, IEEE: %s, RemoveChild: %s, Rejoin: %s" %( ShortAddr, IEEE, RemoveChild, Rejoin))
+    loggingOutput( self, 'Log', "---------> Sending a leaveRequest - payload %s" %( datas))
     sendZigateCmd(self, "0047", datas )
 
 def removeZigateDevice( self, IEEE ):
@@ -1755,7 +1756,7 @@ def removeZigateDevice( self, IEEE ):
         if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
             router = True
 
-        Domoticz.Status("Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
+        loggingOutput( self, "Status", "Remove from Zigate Device = " + " IEEE = " +str(IEEE) )
 
     if router:
         ParentAddr = IEEE
@@ -1841,7 +1842,7 @@ def thermostat_eurotronic_hostflag( self, key, action):
             }
 
     if action not in HOSTFLAG_ACTION:
-        Domoticz.Log("thermostat_eurotronic_hostflag - unknown action %s" %action)
+        loggingOutput( self, 'Log', "thermostat_eurotronic_hostflag - unknown action %s" %action)
         return
 
     manuf_id = "0000"
@@ -2063,11 +2064,11 @@ def scene_membership_request( self, nwkid, ep, groupid='0000'):
 def xiaomi_leave( self, NWKID):
 
     if self.permitTojoin['Duration'] != 255:
-        Domoticz.Log("------> switch zigate in pairing mode")
+        loggingOutput( self, 'Log', "------> switch zigate in pairing mode")
         ZigatePermitToJoin(self, ( 1 * 60 ))
 
     # sending a Leave Request to device, so the device will send a leave
-    Domoticz.Log("------> Sending a leave to Xiaomi battery devive: %s" %(NWKID))
+    loggingOutput( self, 'Log', "------> Sending a leave to Xiaomi battery devive: %s" %(NWKID))
     leaveRequest( self, IEEE= self.ListOfDevices[NWKID]['IEEE'], Rejoin=True )
 
 

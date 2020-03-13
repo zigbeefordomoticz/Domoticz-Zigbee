@@ -20,6 +20,7 @@ import pickle
 import os.path
 
 from time import time
+from datetime import datetime
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE
@@ -48,7 +49,7 @@ def _copyfile( source, dest, move=True ):
 
 class GroupsManagement(object):
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
         self.StartupPhase = 'init'
         self._SaveGroupFile = None
         self.ListOfGroups = {}      # Data structutre to store all groups
@@ -69,6 +70,7 @@ class GroupsManagement(object):
         self.targetDevices = []
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
         self.pluginconf = PluginConf
+        self.loggingFileHandle = loggingFileHandle
 
         self.Firmware = None
         self.homeDirectory = HomeDirectory
@@ -83,7 +85,7 @@ class GroupsManagement(object):
         self.json_groupsConfigFilename = self.pluginconf.pluginConf['pluginData'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json"
         if os.path.isfile( self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json" ):
             # Let's move it to Data
-            Domoticz.Status("Moving %s to Data %s" %(self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json",
+            self.logging( 'Status', "Moving %s to Data %s" %(self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json",
                 self.json_groupsConfigFilename))
             _copyfile( self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json", self.json_groupsConfigFilename, move=True)
 
@@ -92,15 +94,54 @@ class GroupsManagement(object):
 
         return
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+    
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else: 
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+
     def logging( self, logType, message):
 
         self.debugGroups = self.pluginconf.pluginConf['debugGroups']
         if logType == 'Debug' and self.debugGroups:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
     def updateFirmware( firmware ):

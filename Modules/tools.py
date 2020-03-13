@@ -490,111 +490,27 @@ def rgb_to_hsl(rgb):
     return h, s, l
 
 
-def loggingPairing( self, logType, message):
+def mainPoweredDevice( self, nwkid):
+    """
+    return True is it is Main Powered device
+    return False if it is not Main Powered
+    """
 
-    if self.pluginconf.pluginConf['debugPairing'] and logType == 'Debug':
-        Domoticz.Log( message )
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
+        return False
 
-    return
+    mainPower = False
+    if 'MacCapa' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
+            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
 
-def _logginfilter( self, message, nwkid):
+    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
+            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
 
-    if nwkid:
-        nwkid = nwkid.lower()
-        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower().split(',')
-        if 'ffff' in _debugMatchId:
-            Domoticz.Log( message )
-        elif nwkid in _debugMatchId:
-            Domoticz.Log( message )
-        elif nwkid == 'ffff':
-            Domoticz.Log( message )
-        return
-    #else:
-    #    Domoticz.Log( message )
+    return mainPower
 
-
-def loggingCommand( self, logType, message, nwkid=None):
-    if self.pluginconf.pluginConf['debugCommand'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingDatabase( self, logType, message, nwkid=None):
-    if self.pluginconf.pluginConf['debugDatabase'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingPlugin( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugPlugin'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingCluster( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugCluster'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingOutput( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugOutput'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingInput( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugInput'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingWidget( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugWidget'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-
-def loggingHeartbeat( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugHeartbeat'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
 
 def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
@@ -624,25 +540,3 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
-
-def mainPoweredDevice( self, nwkid):
-    """
-    return True is it is Main Powered device
-    return False if it is not Main Powered
-    """
-
-    if nwkid not in self.ListOfDevices:
-        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
-        return False
-
-    mainPower = False
-    if 'MacCapa' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
-            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
-
-    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
-            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
-
-    return mainPower
-

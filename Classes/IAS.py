@@ -12,6 +12,7 @@
 
 
 import Domoticz
+from datetime import datetime
 
 from Modules.output import *
 from Modules.zigateConsts import ADDRESS_MODE
@@ -37,7 +38,7 @@ ZONE_ID = 0x00
 
 class IAS_Zone_Management:
 
-    def __init__( self , pluginconf, ZigateComm, ListOfDevices, ZigateIEEE = None):
+    def __init__( self , pluginconf, ZigateComm, ListOfDevices, loggingFileHandle, ZigateIEEE = None):
         self.devices = {}
         self.ListOfDevices = ListOfDevices
         self.tryHB = 0
@@ -48,16 +49,55 @@ class IAS_Zone_Management:
         if ZigateIEEE != '':
             self.ZigateIEEE = ZigateIEEE
         self.pluginconf = pluginconf
+        self.loggingFileHandle = loggingFileHandle
+
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
 
     def logging( self, logType, message):
 
         self.debugIAS = self.pluginconf.pluginConf['debugIAS']
         if logType == 'Debug' and self.debugIAS:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
     def __write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):

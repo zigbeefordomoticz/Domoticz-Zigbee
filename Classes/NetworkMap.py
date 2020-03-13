@@ -24,7 +24,7 @@
 """
 
 
-import datetime
+from datetime import datetime
 import time
 import os.path
 import json
@@ -35,13 +35,14 @@ from Classes.AdminWidgets import AdminWidgets
 
 class NetworkMap():
 
-    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
+    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, loggingFileHandle):
 
         self.pluginconf = PluginConf
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
+        self.loggingFileHandle = loggingFileHandle
 
         self._NetworkMapPhase = 0
         self.LQIreqInProgress = []
@@ -49,15 +50,53 @@ class NetworkMap():
         self.Neighbours = {}                   # Table of Neighbours
 
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugNetworkMap = self.pluginconf.pluginConf['debugNetworkMap']
         if logType == 'Debug' and self.debugNetworkMap:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
     def NetworkMapPhase( self ):
@@ -254,7 +293,7 @@ class NetworkMap():
             LOD_Neighbours['Devices'] =  []
 
             # Set Time when the Neighbours have been calaculated
-            LOD_Neighbours['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') 
+            LOD_Neighbours['Time'] = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S') 
 
             if self.Neighbours[nwkid]['Status'] == 'NotReachable':
                 Domoticz.Status("%6s %6s %9s %11s %6s %4s %7s NotReachable" \

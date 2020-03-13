@@ -22,7 +22,8 @@ from math import atan, sqrt, pi
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import DeviceExist, getEPforClusterType, is_hex, loggingCluster
+from Modules.tools import DeviceExist, getEPforClusterType, is_hex
+from Modules.logging import loggingCluster
 from Modules.output import  xiaomi_leave
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_setpoint
 

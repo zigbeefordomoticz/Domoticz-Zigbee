@@ -10,6 +10,8 @@ import Domoticz
 from Modules.errorCodes import DisplayStatusCode
 from Modules.domoticz import timedOutDevice
 
+from datetime import datetime
+
 APS_TIME_WINDOW = 15
 MAX_APS_TRACKING_ERROR = 5
 
@@ -62,23 +64,63 @@ CMD_NWK_2NDBytes = {
 
 class APSManagement(object):
 
-    def __init__(self, ListOfDevices, Devices, pluginconf ):
+    def __init__(self, ListOfDevices, Devices, pluginconf , loggingFileHandle):
 
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.pluginconf = pluginconf
+        self.loggingFileHandle = loggingFileHandle
 
         return
+
+
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
 
     def logging( self, logType, message):
 
         self.debugAPS = self.pluginconf.pluginConf['debugAPS']
         if logType == 'Debug' and self.debugAPS:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
     
     def _errorMgt( self, cmd, nwk, ieee, aps_code):

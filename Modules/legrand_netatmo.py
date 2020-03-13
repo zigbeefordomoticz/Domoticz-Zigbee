@@ -18,7 +18,7 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.tools import loggingOutput
+from Modules.logging import loggingOutput
 from Modules.output import raw_APS_request, write_attribute
 
 

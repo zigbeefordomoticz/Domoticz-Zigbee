@@ -31,7 +31,8 @@ from Modules.output import  sendZigateCmd,  \
 from Modules.legrand_netatmo import legrand_fc01
 from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fip_mode
 
-from Modules.tools import removeNwkInList, loggingPairing, loggingHeartbeat, mainPoweredDevice
+from Modules.tools import removeNwkInList, mainPoweredDevice
+from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice, timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
 from Modules.pairingProcess import processNotinDBDevices
