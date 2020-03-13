@@ -273,7 +273,8 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
             '0702': [ 0x0000, 0x0200, 0x0301, 0x0302, 0x0303, 0x0306, 0x0400],
             '000f': [ 0x0000, 0x0051, 0x0055, 0x006f, 0xfffd], 
             '0b04': [ 0x0505, 0x0508, 0x050b], # https://docs.smartthings.com/en/latest/ref-docs/zigbee-ref.html
-            'fc01': [ 0x0000, 0x0001]
+            'fc01': [ 0x0000, 0x0001],
+            'fc21': [ 0x0001]
             }
 
     targetAttribute = None
@@ -356,8 +357,13 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
         else:
             if self.ListOfDevices[key]['Manufacturer'] == 'Legrand':
                 loggingOutput( self, 'Debug', "----> Adding: %s" %'f000', nwkid=key)
-                listAttributes.append(0x4000)
-                listAttributes.append(0xf000)
+                if 0x4000 not in listAttributes:
+                    listAttributes.append(0x4000)
+                if 0xf000 not in listAttributes:
+                    listAttributes.append(0xf000)
+                skipModel = True
+            if self.ListOfDevices[key]['Manufacturer'] == '1110':
+                listAttributes.append(0x0010)
                 skipModel = True
 
         # Do We have Model Name
@@ -1103,11 +1109,6 @@ def processConfigureReporting( self, NWKID=None ):
                         # Do not Configure Reports Remote Command
                         loggingOutput( self, 'Log',"----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" %(cluster, key, Ep), key)
                         continue
-                    elif self.ListOfDevices[key]['ZDeviceID'] == '0200': # Shutter
-                        if cluster not in  ( '0008' ):
-                            # Do not Configure Reports other cluster than 0x0008
-                            loggingOutput( self, 'Log',"----> Do not Configure Reports cluster %s for Profalux shutter %s/%s" %(cluster, key, Ep), key)
-                            continue
 
                 loggingOutput( self, 'Debug', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
@@ -1277,11 +1278,6 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                     # Do not bind Remote Command
                     loggingOutput( self, 'Log',"----> Do not bind cluster %s for Profalux Remote command %s/%s" %(cluster, nwkid, ep), nwkid)
                     return
-                elif self.ListOfDevices[nwkid]['ZDeviceID'] == '0200': # Shutter
-                    if cluster not in  ( '0008' ):
-                        # Do not bind other cluster than 0x0008
-                        loggingOutput( self, 'Log',"----> Do not bind cluster %s for Profalux shutter %s/%s" %(cluster, nwkid, ep), nwkid)
-                        return
 
             if 'Model' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['Model'] != {}:

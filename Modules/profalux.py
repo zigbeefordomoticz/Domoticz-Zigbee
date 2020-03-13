@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+from Modules.output import sendZigateCmd
 
 def profalux_fake_deviceModel( self , nwkid):
 
@@ -37,12 +38,108 @@ def profalux_fake_deviceModel( self , nwkid):
     if self.ListOfDevices[nwkid]['Manufacturer'] != '1110':
         return
 
-    if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-        # Main Powered device => Volet or BSO
-        self.ListOfDevices[nwkid]['Model'] = 'Volets-Profalux'
-        self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
+    location =''
+    if 'Ep' in self.ListOfDevices[nwkid]:
+        if '01' in self.ListOfDevices[nwkid]['Ep']:
+            if '0000' in self.ListOfDevices[nwkid]['Ep']['01']:
+                if '0010' in self.ListOfDevices[nwkid]['Ep']['01']['0000']:
+                    location = self.ListOfDevices[nwkid]['Ep']['01']['0000']['0010']
 
-    elif self.ListOfDevices[nwkid]['MacCapa'] == '80' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0201':
+    if self.ListOfDevices[nwkid]['MacCapa'] == '8e' and self.ListOfDevices[nwkid]['ZDeviceID'] == '0200':
+        self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
+        # Main Powered device => Volet or BSO
+        self.ListOfDevices[nwkid]['Model'] = 'VoletBSO-Profalux'
+        if location.find('BSO') != -1:
+            self.ListOfDevices[nwkid]['Model'] = 'BSO-Profalux'
+        if location.find('Volet') != -1:
+            self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
+        Domoticz.Log("++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']))
+
+    elif self.ListOfDevices[nwkid]['MacCapa'] == '80' and self.ListOfDevices[nwkid]['ZDeviceID'] == '0201':
         # Batterie Device => Remote command
         self.ListOfDevices[nwkid]['Model'] = 'Telecommande-Profalux'
         self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
+        Domoticz.Log("++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']))
+
+def profalux_stop( self, nwkid ):
+
+    # determine which Endpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    cluster_frame = '11'
+    sqn = '00'
+    cmd = '03'
+
+    payload = cluster_frame + sqn + cmd 
+    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+
+    return
+
+def profalux_MoveToLevelWithOnOff( self, nwkid, level):
+
+    # determine which Endpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    cluster_frame = '11'
+    sqn = '00'
+    cmd = '04'
+
+    payload = cluster_frame + sqn + cmd + '%02x' %level
+    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    return
+
+def profalux_MoveWithOnOff( self, nwkid, OnOff):
+
+    if OnOff != 0x00 and OnOff != 0x01:
+        return
+
+    # determine which Endpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    cluster_frame = '11'
+    sqn = '00'
+    cmd = '05'
+
+    payload = cluster_frame + sqn + cmd + '%02x' %OnOff
+    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+
+    return
+
+def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
+
+    if level is None and tilt is None:
+        return
+
+    # determine which Endpoint
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    cluster_frame = '11'
+    sqn = '00'
+    cmd = '10'
+
+    if level is None and tilt:
+        option = 0x02
+        level = 0x00
+    elif level and tilt is None:
+        option = 0x01
+        tilt = 0x00
+    elif level and tilt:
+        option = 0x03
+
+    payload = cluster_frame + sqn + cmd + option + '%02x' %level + '%02x' %tilt + 'ffff'
+    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+
+    return
+
