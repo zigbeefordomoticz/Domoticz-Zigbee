@@ -690,7 +690,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                    Unit=unit, Type=244, Subtype=73, Switchtype=13)
+                    Unit=unit, Used=1, Type=244, Subtype=73, Switchtype=13)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
@@ -733,7 +733,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         _clustertype = t
 
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
-                    Unit=unit, Type=244, Subtype=73, Switchtype=_switchtype)
+                    Unit=unit, Type=244, Subtype=73, Used=1, Switchtype=_switchtype)
                 myDev.Create()
                 ID = myDev.ID
                 if myDev.ID == -1 :
