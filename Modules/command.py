@@ -80,6 +80,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType in ( 'Venetian', 'VenetianInverted', "WindowCovering"):
             ClusterSearch = '0102'
             DeviceType = tmpDeviceType
+        if tmpDeviceType == 'BSO':
+            ClusterSearch = 'fc21'
+            DeviceType = tmpDeviceType
         if tmpDeviceType =="LvlControl" :
             ClusterSearch="0008"
             DeviceType = tmpDeviceType
@@ -141,7 +144,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Command == 'Stop':
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
+        if DeviceType == 'BSO':
+            from Modules.profalux import profalux_stop
+            profalux_stop( self, NWKID)
+
+        elif DeviceType in ( "WindowCovering", "VenetianInverted", "Venetian"):
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "02")
             UpdateDevice_v2(self, Devices, Unit, 2, "50",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -165,8 +172,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
             return
+        if DeviceType == 'BSO':
+            from Modules.profalux import profalux_MoveWithOnOff
+            profalux_MoveWithOnOff( self, NWKID, 0x00 )
 
-        if DeviceType == "WindowCovering":
+        elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "01") # Blind inverted (On, for Close)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
@@ -210,8 +220,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 livolo_OnOff( self, NWKID , EPout, 'Right', 'On')
                 UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 return
+        if DeviceType == 'BSO':
+            from Modules.profalux import profalux_MoveWithOnOff
+            profalux_MoveWithOnOff( self, NWKID, 0x01 )
 
-        if DeviceType == "WindowCovering":
+        elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + "01" + EPout + "00") # Blind inverted (Off, for Open)
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
@@ -322,6 +335,13 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+
+        elif DeviceType == 'BSO':
+            from Modules.profalux import profalux_MoveToLiftAndTilt
+
+            orientation = (Level * 90 ) // 100
+            if orientation > 90: orientation = 90
+            profalux_MoveToLiftAndTilt( self, NWKID, tilt=orientation)
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847

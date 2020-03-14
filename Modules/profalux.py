@@ -11,7 +11,7 @@
 """
 
 import Domoticz
-from Modules.output import sendZigateCmd
+from Modules.output import sendZigateCmd, raw_APS_request
 
 def profalux_fake_deviceModel( self , nwkid):
 
@@ -65,8 +65,8 @@ def profalux_stop( self, nwkid ):
 
     # determine which Endpoint
     EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -74,7 +74,8 @@ def profalux_stop( self, nwkid ):
     cmd = '03'
 
     payload = cluster_frame + sqn + cmd 
-    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    Domoticz.Log("profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload))
 
     return
 
@@ -82,8 +83,8 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     # determine which Endpoint
     EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -91,7 +92,8 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
     cmd = '04'
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
-    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    Domoticz.Log("profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload))
     return
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
@@ -101,8 +103,8 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
     # determine which Endpoint
     EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -110,7 +112,8 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
     cmd = '05'
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
-    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    Domoticz.Log("profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload))
 
     return
 
@@ -121,8 +124,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     # determine which Endpoint
     EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]:
+    for tmpEp in self.ListOfDevices[nwkid]['Ep']:
+        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -138,8 +141,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     elif level and tilt:
         option = 0x03
 
-    payload = cluster_frame + sqn + cmd + option + '%02x' %level + '%02x' %tilt + 'ffff'
-    Modules.output.raw_APS_request( self, key, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    Domoticz.Log("profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload))
 
     return
 
