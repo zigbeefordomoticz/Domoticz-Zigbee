@@ -1264,6 +1264,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if ClusterType == "Strenght" and DeviceType == "Strength":
                 UpdateDevice_v2(self, Devices, x, 0, str(value), BatteryLevel, SignalLevel)
 
+            if ClusterType == "BSO" and Devicetype == "BSO":
+                # Receveive Level (orientation) in degrees to convert into % for the dimmer
+                percent_value = (int(value) * 100 // 90)
+                UpdateDevice_v2(self, Devices, x, 2, str(percent_value), BatteryLevel, SignalLevel)
+
             if ClusterType == "Door":
                 if DeviceType == "Door":  # Door / Window
                     value = int(value)
@@ -1596,13 +1601,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             # Do nothing. We receive a ReadAttribute  giving the position of a Off device.
                             pass
                         elif Devices[x].SwitchType in (13,14,15,16):
-                            nValue = 2
                             loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(nValue,sValue, Devices[x].SwitchType), NWKID)
-                            UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, 2, str(sValue), BatteryLevel, SignalLevel)
                         else:
-                            nValue = 1
                             loggingWidget( self, "Debug", "--> LvlControl UpdateDevice: -> %s/%s SwitchType: %s" %(nValue,sValue, Devices[x].SwitchType), NWKID)
-                            UpdateDevice_v2(self, Devices, x, str(nValue), str(sValue), BatteryLevel, SignalLevel)
+                            UpdateDevice_v2(self, Devices, x, 1, str(sValue), BatteryLevel, SignalLevel)
 
                 elif DeviceType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                     if Devices[x].nValue == 0 and Devices[x].sValue == 'Off':
@@ -2124,6 +2127,8 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "0b04": TypeFromCluster = "Power/Meter"
 
     elif cluster == "fc00" : TypeFromCluster = 'LvlControl'   # RWL01 - Hue remote
+
+    elif cluster == "fc21" : TypeFromCluster = 'BSO'   # PXF Cluster from Profalux
 
     # Propriatory Cluster. Plugin Cluster
     elif cluster == "rmt1": TypeFromCluster = "Ikea_Round_5b"
