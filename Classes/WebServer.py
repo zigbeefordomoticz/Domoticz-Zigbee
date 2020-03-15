@@ -25,7 +25,7 @@ from time import time, ctime, strftime, gmtime, mktime, strptime
 
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS, ZCL_CLUSTERS_ACT
 from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, webBind, webUnBind
-from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff
+from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
@@ -1222,6 +1222,15 @@ class WebServer(object):
                                     zigateBlueLed( self, True)
                                 else:
                                     zigateBlueLed( self, False)
+
+                        elif param == 'EnableLedShutter':
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_ledShutter( self, 'On')
+                                else:
+                                    legrand_ledShutter( self, 'Off')
+
 
                         elif param == 'EnableLedInDark':
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:

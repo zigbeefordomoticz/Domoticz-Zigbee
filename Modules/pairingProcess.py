@@ -103,10 +103,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
     if status not in ( '004d', '0043', '0045', '8045', '8043') and 'Model' in self.ListOfDevices[NWKID]:
         return
 
-    # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
-    if 'Manufacturer' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Manufacturer'] == '1110':
-            profalux_fake_deviceModel( self, NWKID)
 
     knownModel = False
     if self.ListOfDevices[NWKID]['Model'] != {} and self.ListOfDevices[NWKID]['Model'] != '':
@@ -292,6 +288,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
         if IsCreated == False:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
+
+            # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
+            # We do it just before calling CreateDomoDevice
+            if 'Manufacturer' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID]['Manufacturer'] == '1110':
+                profalux_fake_deviceModel( self, NWKID)
+
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
             CreateDomoDevice(self, Devices, NWKID)

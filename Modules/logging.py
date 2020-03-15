@@ -75,7 +75,9 @@ def _loggingDebug(self, message):
 
 def _logginfilter( self, message, nwkid):
 
-    if nwkid:
+    if nwkid is None:
+        _loggingDebug( self, message )
+    elif nwkid:
         nwkid = nwkid.lower()
         _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower().split(',')
         if ('ffff' in _debugMatchId) or (nwkid in _debugMatchId) or (nwkid == 'ffff'):
@@ -154,6 +156,36 @@ def loggingWidget( self, logType, message, nwkid=None):
 def loggingHeartbeat( self, logType, message, nwkid=None):
 
     if self.pluginconf.pluginConf['debugHeartbeat'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return
+
+def loggingLegrand( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugLegrand'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return
+
+def loggingProfalux( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugProfalux'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return
+
+def loggingSchneider( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugSchneider'] and logType == 'Debug':
         _logginfilter( self, message, nwkid)
     elif  logType == 'Log':
         _loggingLog( self,  message )

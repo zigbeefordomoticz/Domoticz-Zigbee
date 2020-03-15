@@ -221,49 +221,17 @@ def processKnownDevices( self, Devices, NWKID ):
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
         if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                if self.pluginconf.pluginConf['EnableDimmer']:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'EnableDimmer', 'On')
+                for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
+                    if self.pluginconf.pluginConf[ cmd ]:
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, cmd , 'On')
+                        else:
+                            rescheduleAction = True
                     else:
-                        rescheduleAction = True
-                else:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'EnableDimmer', 'Off')
-                    else:
-                        rescheduleAction = True
-        
-                if self.pluginconf.pluginConf['LegrandFilPilote']:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'FilPilote', 'On')
-                    else:
-                        rescheduleAction = True
-                else:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'FilPilote', 'Off')
-                    else:
-                        rescheduleAction = True
-
-                if self.pluginconf.pluginConf['EnableLedIfOn']:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'On')
-                    else:
-                        rescheduleAction = True
-                else:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'EnableLedIfOn', 'Off')
-                    else:
-                        rescheduleAction = True
-
-                if self.pluginconf.pluginConf['EnableLedInDark']:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'EnableLedInDark', 'On')
-                    else:
-                        rescheduleAction = True
-                else:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, 'EnableLedInDark', 'Off')
-                    else:
-                        rescheduleAction = True
+                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                            legrand_fc01( self, NWKID, cmd, 'Off')
+                        else:
+                            rescheduleAction = True
 
     if self.pluginconf.pluginConf['reenforcementWiser'] and ( self.HeartbeatCount % self.pluginconf.pluginConf['reenforcementWiser'] ) == 0 :
         if 'Model' in self.ListOfDevices[NWKID]:
