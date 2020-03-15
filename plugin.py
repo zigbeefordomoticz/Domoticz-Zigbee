@@ -485,7 +485,6 @@ class BasePlugin:
         sendZigateCmd(self, "0009", "") # Request Network state
         sendZigateCmd(self, "0015", "") # Request List of Active Device
 
-
         # Create IAS Zone object
         self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
 
@@ -648,6 +647,11 @@ class BasePlugin:
                     self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
                             self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
                     self.groupmgt_NotStarted = False
+
+                    if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
+                        # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
+                        self.groupmgt.addGroupMembership( '0000', '01', '0000')
+
 
             # In case we have Transport = None , let's check if we have to active Group management or not.
             if self.groupmgt is None and self.transport == 'None' and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:

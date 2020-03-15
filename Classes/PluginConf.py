@@ -82,6 +82,7 @@ SETTINGS = {
 
         # Zigate Configuration
         'ZigateConfiguration': { 'Order': 6, 'param': {
+                'zigatePartOfGroup0000':         { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'allowRemoveZigateDevice':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'blueLedOnOff':                  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'enableACKNACK':                 { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
