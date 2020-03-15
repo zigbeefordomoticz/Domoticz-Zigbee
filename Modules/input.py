@@ -2050,8 +2050,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             }
 
     #loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
-    #loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
-    #        %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+            %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
