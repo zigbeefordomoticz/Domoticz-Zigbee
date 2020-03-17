@@ -293,7 +293,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # We do it just before calling CreateDomoDevice
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer'] == '1110':
-                profalux_fake_deviceModel( self, NWKID)
+                    profalux_fake_deviceModel( self, NWKID)
 
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'CR-DOMO' )
