@@ -49,9 +49,9 @@ def profalux_fake_deviceModel( self , nwkid):
         self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
         # Main Powered device => Volet or BSO
         self.ListOfDevices[nwkid]['Model'] = 'VoletBSO-Profalux'
-        if location.find('BSO') != -1:
+        if location.find('bso') != -1:
             self.ListOfDevices[nwkid]['Model'] = 'BSO-Profalux'
-        if location.find('Volet') != -1:
+        if location.find('volet') != -1:
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
         Domoticz.Log("++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']))
 
