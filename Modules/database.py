@@ -160,7 +160,7 @@ def importDeviceConf( self ) :
         try:
             self.DeviceConf=eval(tmpread)
         except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConf['pluginConfig'], tmpread))
+            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConf['pluginConfig']+"DeviceConf.txt", tmpread))
             return
 
     # Remove comments
