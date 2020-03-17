@@ -146,4 +146,3 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     Domoticz.Log("profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload))
 
     return
-
