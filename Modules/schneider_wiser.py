@@ -126,10 +126,15 @@ def schneider_wiser_registration( self, key ):
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
-    if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Valve
-        setpoint = 2000
-        schneider_setpoint( self, key, setpoint)
-        self.ListOfDevices[key]['Heartbeat'] = 0
+    #if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Valve
+    #    setpoint = 2000
+    #    if 'Schneider' in self.ListOfDevices[key]:
+    #        if 'Target SetPoint' in self.ListOfDevices[key]['Schneider']:
+    #            if self.ListOfDevices[key]['Schneider']['Target SetPoint'] is not Null:
+    #                setpoint = self.ListOfDevices[key]['Schneider']['Target SetPoint']
+    #
+    #    schneider_setpoint( self, key, setpoint)
+    #    self.ListOfDevices[key]['Heartbeat'] = 0
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): # Pilotage Chaffe eau
         Modules.output.sendZigateCmd(self, "0092","02" + key + "01" + EPout + "01")
