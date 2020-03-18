@@ -1325,14 +1325,14 @@ class GroupsManagement(object):
             self.ListOfGroups[grp_id]['Devices'] = []
 
         if ( device_addr, device_ep, device_ieee) not in self.ListOfGroups[grp_id]['Devices']:
-                self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep, device_ieee) )
-                Domoticz.Log("Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
-                self._addGroup( device_ieee, device_addr, device_ep, grp_id)
+            self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep, device_ieee) )
+            self.logging( 'Log', "Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
+            self._addGroup( device_ieee, device_addr, device_ep, grp_id)
 
-        for filename in ( self.json_groupsConfigFilename, self.groupListFileName ):
-            if os.path.isfile( filename ):
-                self.logging( 'Log', "rest_rescan_group - Removing file: %s" %filename )
-                os.remove( filename )
+            for filename in ( self.json_groupsConfigFilename, self.groupListFileName ):
+                if os.path.isfile( filename ):
+                    self.logging( 'Log', "rest_rescan_group - Removing file: %s" %filename )
+                    os.remove( filename )
 
     def manageIkeaTradfriRemoteLeftRight( self, addr, type_dir):
 
