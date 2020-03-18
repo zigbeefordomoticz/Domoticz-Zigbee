@@ -484,6 +484,7 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
 #        '0000',            # Basic
         '0b04',             # Electrical Meansurement
         'ff02',             # Used by Xiaomi devices for battery informations.
+        'fc21'              # Cluster Profalux PFX
         ]
 
 

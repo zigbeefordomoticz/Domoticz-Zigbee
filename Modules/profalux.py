@@ -12,6 +12,7 @@
 
 import Domoticz
 from Modules.output import sendZigateCmd, raw_APS_request
+from Modules.logging import loggingProfalux
 
 def profalux_fake_deviceModel( self , nwkid):
 
@@ -53,13 +54,13 @@ def profalux_fake_deviceModel( self , nwkid):
             self.ListOfDevices[nwkid]['Model'] = 'BSO-Profalux'
         if location.find('volet') != -1:
             self.ListOfDevices[nwkid]['Model'] = 'Volet-Profalux'
-        Domoticz.Log("++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']))
+        loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
     elif self.ListOfDevices[nwkid]['MacCapa'] == '80' and self.ListOfDevices[nwkid]['ZDeviceID'] == '0201':
         # Batterie Device => Remote command
         self.ListOfDevices[nwkid]['Model'] = 'Telecommande-Profalux'
         self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
-        Domoticz.Log("++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']))
+        loggingProfalux( self, 'Log', "++++++ Model Name for %s forced to : %s" %(nwkid, self.ListOfDevices[nwkid]['Model']), nwkid)
 
 def profalux_stop( self, nwkid ):
 
@@ -75,7 +76,7 @@ def profalux_stop( self, nwkid ):
 
     payload = cluster_frame + sqn + cmd 
     raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
-    Domoticz.Log("profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload))
+    loggingProfalux( self, 'Log', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
     return
 
@@ -93,7 +94,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
     raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
-    Domoticz.Log("profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload))
+    loggingProfalux( self, 'Log', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
     return
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
@@ -113,7 +114,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
     raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
-    Domoticz.Log("profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload))
+    loggingProfalux( self, 'Log', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
 
     return
 
@@ -143,6 +144,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
-    Domoticz.Log("profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload))
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
 
     return
