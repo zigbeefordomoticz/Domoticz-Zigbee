@@ -58,8 +58,11 @@ OSRAM_MANUF_CODE    = ( 0xbbaa, 0x110C )
 LEGRAND_MANUF_CODE = 0x1021
 LEGRAND_MANUF_NAME = 'Legrand'
 
-OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE)
-OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand')
+PHILIPS_MANUF_CODE = 0x100b
+PHILIPS_MANUF_NAME = 'Philips'
+
+OTA_MANUF_CODE = ( IKEA_MANUF_CODE, LEDVANCE_MANUF_CODE, OSRAM_MANUF_CODE , LEGRAND_MANUF_CODE, PHILIPS_MANUF_CODE)
+OTA_MANUF_NAME = ( '117c', 'IKEA of Sweden', '1189', 'LEDVANCE', 'bbaa', '110c', 'OSRAM', '1021', 'Legrand', '100b', 'Philips')
 
 
 BATTERY_TYPES = ( 4545, 4546, 4548, 4549 )
@@ -254,13 +257,6 @@ class OTAManagement(object):
         else:
             self.logging( 'Debug', "==> Security Credential: Reserved")
 
-        # Sanity check
-        Domoticz.Log("headers['size']: %s, len(ota_image): %s" %(headers['size'], len(ota_image)))
-        #if  headers['size'] != len(ota_image):
-        #    Domoticz.Error("ota_decode_new_image - Header Size != real file size: %s %s / %s " \
-        #            %(image,  headers['size'],  len(ota_image)))
-        #    return False
-
         if headers['image_type'] in self.OTA['Images']:
             # Check if we have a better Version
             _imported_header = self.OTA['Images'][headers['image_type']]['Decoded Header']
@@ -269,7 +265,7 @@ class OTAManagement(object):
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
 
-        Domoticz.Status("Available Firmware - ManufCode: %4X ImageType: %6s FileVersion: %8X Size: %8s Bytes Filename: %s" \
+        Domoticz.Status("Available Firmware - ManufCode: %4X ImageType: 0x%04X FileVersion: %8X Size: %8s Bytes Filename: %s" \
                 %(headers['manufacturer_code'], headers['image_type'],  headers['image_version'], headers['size'], image ))
         for x in header_headers:
             if x == 'header_str':
@@ -626,7 +622,7 @@ class OTAManagement(object):
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgImageVersion, MsgImageType, MsgManufCode, MsgStatus))
 
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
-            Domoticz.Error("Decode8503 - OTA upgrade completed - Unknown device: %s" %MsgSrcAddr)
+            Domoticz.Error("Decode8503 - OTA upgrade completed - %s not in Upgraded devices" %MsgSrcAddr)
             return
 
         if 'Start Time' not in self.OTA['Upgraded Device'][MsgSrcAddr]:
@@ -694,7 +690,7 @@ class OTAManagement(object):
         Scanning the Firmware folder and processing them
         """
 
-        for brand in ('IKEA-TRADFRI', 'LEDVANCE', 'LEGRAND' ):
+        for brand in ('IKEA-TRADFRI', 'LEDVANCE', 'LEGRAND' , 'PHILIPS'):
             ota_dir = self.pluginconf.pluginConf['pluginOTAFirmware'] + brand
             ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
@@ -748,19 +744,29 @@ class OTAManagement(object):
             if self.upgradeInProgress in self.OTA['Upgraded Device']:
                 if  self.OTA['Upgraded Device'][self.upgradeInProgress]['Status'] not in ( 'Block Requested', 'Transfer Progress' ):
                     if self.logMessageDone != 1:
-                        Domoticz.Log("OTA heartbeat - [%s] Type: %s, %3s remaining Images, Device: %s, %3s remaining devices" \
+                        if self.upgradeOTAImage:
+                            Domoticz.Log("OTA heartbeat - [%s] Type:   0x%04X, %3s remaining Images, Device: %s, %3s remaining devices" \
                                 %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+                        else:
+                            Domoticz.Log("OTA heartbeat - [%s] Type: %6s, %3s remaining Images, Device: %s, %3s remaining devices" \
+                                %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade))
+
                         self.logMessageDone = 1
             else:
                 if self.logMessageDone != 2:
-                    Domoticz.Log("OTA heartbeat - [%s] Type: %s, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
+                    Domoticz.Log("OTA heartbeat - [%s] Type:   0x%04X, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
                         %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
                     self.logMessageDone = 2
         else:
             # Looks like we have completed one firmware update.
             if self.logMessageDone != 3:
-                Domoticz.Log("OTA heartbeat - [%s] Type: %s, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
-                    %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
+                if self.upgradeOTAImage:
+                    Domoticz.Log("OTA heartbeat - [%s] Type:   0x%04X, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
+                        %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
+                else:
+                    Domoticz.Log("OTA heartbeat - [%s] Type: 0x%6s, %3s remaining Images, Device: %s, %3s remaining devices, upgradeInProgress: %4s" \
+                        %(self.HB, self.upgradeOTAImage, _lenOTA, self.upgradeInProgress, _lenUpgrade, self.upgradeInProgress))
+
                 self.logMessageDone = 3
 
         if self.upgradableDev is None: 
@@ -820,7 +826,7 @@ class OTAManagement(object):
                         # Looks like we have the remaining firmware only for Battery devices
                         key = next(iter(self.OTA['Images']))
 
-                    Domoticz.Log("OTA heartbeat - Image: %s from file: %s" %(key, self.OTA['Images'][key]['Filename']))
+                    Domoticz.Log("OTA heartbeat - Image: 0x%04X from file: %s" %(key, self.OTA['Images'][key]['Filename']))
 
                     # Loading Image in Zigate
                     self.upgradeOTAImage = key
@@ -851,7 +857,7 @@ class OTAManagement(object):
                         if self.upgradeInProgress in self.ListOfDevices:
                             if 'Manufacturer' in self.ListOfDevices[self.upgradeInProgress]:
                                 if int(self.ListOfDevices[self.upgradeInProgress]['Manufacturer'],16) != self.OTA['Images'][x]['Decoded Header']['manufacturer_code']:
-                                    Domoticz.Log("     No need to notify %s:  %s != %s" %(self.upgradeInProgress, self.ListOfDevices[self.upgradeInProgress]['Manufacturer'], self.OTA['Images'][x]['Decoded Header']['manufacturer_code']))
+                                    self.logging( 'Debug', "     No need to notify %s:  %s != %s" %(self.upgradeInProgress, self.ListOfDevices[self.upgradeInProgress]['Manufacturer'], self.OTA['Images'][x]['Decoded Header']['manufacturer_code']))
                                     # No need to advertise as this is not a Manufacturer code match.
                                     continue
 
