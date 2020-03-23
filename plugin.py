@@ -363,10 +363,7 @@ class BasePlugin:
         if self.webserver:
             self.webserver.onStop()
 
-        major, minor = Parameters["DomoticzVersion"].split('.')
-        major = int(major)
-        minor = int(minor)
-        if major > 4 or ( major == 4 and minor >= 10355):
+        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
