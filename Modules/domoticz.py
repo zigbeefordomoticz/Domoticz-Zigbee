@@ -1988,7 +1988,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     if Unit:
         loggingWidget( self, "Debug", "Touch unit %s" %( Devices[Unit].Name ))
-        if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
+        if not self.VersionNewFashion or (self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
             loggingWidget( self, "Debug", "Not the good Domoticz level for Touch")
             return
         # Extract NwkId from Device Unit
@@ -2024,7 +2024,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
 
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
-        if self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547):
+        if not self.VersionNewFashion or (self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
             loggingWidget( self, "Debug", "Not the good Domoticz level for Touch", NwkId)
             return
         for x in Devices:

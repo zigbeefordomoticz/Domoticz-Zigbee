@@ -165,6 +165,7 @@ class BasePlugin:
         self.mainpowerSQN = None    # Tracking main Powered SQN
         #self.ForceCreationDevice = None   # 
 
+        self.VersionNewFashion = None
         self.DomoticzMajor = None
         self.DomoticzMinor = None
 
@@ -208,9 +209,23 @@ class BasePlugin:
         self.transport = Parameters["Mode1"]
 
         # Import PluginConf.txt
-        major, minor = Parameters["DomoticzVersion"].split('.')
-        self.DomoticzMajor = int(major)
-        self.DomoticzMinor = int(minor)
+        Domoticz.Log("DomoticzVersion: %s" %Parameters["DomoticzVersion"])
+        if Parameters["DomoticzVersion"].find('build') == -1:
+            self.VersionNewFashion = False
+            # Old fashon Versioning
+            major, minor = Parameters["DomoticzVersion"].split('.')
+            self.DomoticzMajor = int(major)
+            self.DomoticzMinor = int(minor)
+        else:
+            self.VersionNewFashion = True
+            majorminor, dummy, build = Parameters["DomoticzVersion"].split(' ')
+            build = build.strip(')')
+            major, minor = majorminor.split('.')
+
+            self.DomoticzMajor = int(major)
+            self.DomoticzMinor = int(minor)
+            self.DomoticzBuild = int(build)
+
 
         Domoticz.Status( "load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
@@ -226,7 +241,7 @@ class BasePlugin:
         loggingPlugin( self, 'Status',  "DomoticzHash: %s" %Parameters["DomoticzHash"])
         loggingPlugin( self, 'Status',  "DomoticzBuildTime: %s" %Parameters["DomoticzBuildTime"])
 
-        if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355):
+        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
             # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
 
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
@@ -665,7 +680,7 @@ class BasePlugin:
             if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
                 from Classes.WebServer import WebServer
 
-                if self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901):
+                if (not self.VersionNewFashion or (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
                 if not Parameters['Mode4'].isdigit():
