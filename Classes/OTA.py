@@ -300,6 +300,10 @@ class OTAManagement(object):
     def ota_load_new_image( self, key):
         " Send the image headers to Zigate."
 
+        if key not in self.OTA['Images']:
+            self.logging( 'Debug', "ota_load_new_image - Unknown Image %s in %s" %(key, str(self.OTA['Images']).keys() ))
+            return
+
         file_id = '%08X' %self.OTA['Images'][key]['Decoded Header']['file_id']
         header_version = '%04X' %self.OTA['Images'][key]['Decoded Header']['header_version']
         header_length = '%04X' %self.OTA['Images'][key]['Decoded Header']['header_length']
