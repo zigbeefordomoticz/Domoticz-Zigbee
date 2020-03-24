@@ -106,12 +106,14 @@ class OTAManagement(object):
         self.pluginconf = PluginConf
         self.homeDirectory = HomeDirectory
         self.OTA = {} # Store Firmware infos
+        self.OTA['Filename'] = {}
         self.OTA['Images'] = {}
         self.OTA['Upgraded Device'] = {}
         self.logMessageDone = 0
         self.batteryTypeFirmware = []
         self.availableManufCode = []
         self.upgradableDev = None
+        self.TypeInProgress = None
         self.upgradeInProgress = None
         self.upgradeOTAImage = None
         self.upgradeDone = None
@@ -186,14 +188,6 @@ class OTAManagement(object):
             Domoticz.Error("ota_decode_new_image - invalid file size read %s - %s" %(image,len(ota_image)))
             return False
 
-        # From https://github.com/doudz
-        #if ota_image.startswith(b'NGIS'):
-        #    self.logging( 'Debug', "ota_decode_new_image - Signed Firmware ...")
-        ##    # IKEA Signed Firmware, let's remove it
-        #    header_end = struct.unpack('<I', ota_image[0x10:0x14])[0]
-        #    footer_pos = struct.unpack('<I', ota_image[0x18:0x1C])[0]
-        #    ota_image = ota_image[header_end:footer_pos]
-
         #Search for the OTA Upgrade File Identifier (  “0x0BEEF11E” )
         offset = None
         for i in range(len(ota_image)-4):
@@ -262,10 +256,12 @@ class OTAManagement(object):
         if headers['image_type'] in self.OTA['Images']:
             # Check if we have a better Version
             _imported_header = self.OTA['Images'][headers['image_type']]['Decoded Header']
+
             if headers['image_version'] <= _imported_header['image_version']:
                 Domoticz.Log("ota_decode_new_image - Image %s already imported. Type: %s with better version %x versus %x" \
                         %(image, headers['image_type'], headers['image_version'], _imported_header['image_version']))
                 return False
+            # We will overwrite the new loaded image as it is more recent
 
         Domoticz.Status("Available Firmware - ManufCode: %4X ImageType: 0x%04X FileVersion: %8X Size: %8s Bytes Filename: %s" \
                 %(headers['manufacturer_code'], headers['image_type'],  headers['image_version'], headers['size'], image ))
@@ -290,6 +286,11 @@ class OTAManagement(object):
         self.OTA['Images'][key]['image'] = ota_image
         if self.OTA['Images'][key]['Decoded Header']['manufacturer_code'] not in self.availableManufCode:
             self.availableManufCode.append( self.OTA['Images'][key]['Decoded Header']['manufacturer_code'])
+
+        self.OTA['Filename'][key] = {}
+        self.OTA['Filename'][key]['subfolder'] = subfolder
+        self.OTA['Filename'][key]['image'] = image
+        subfolder, image
 
         if key in BATTERY_TYPES:    # In such case let's pile it so we will expsoe it a while after the powered Devices Type.
             self.logging( 'Debug', "ota_decode_new_image - Firmware for battery type detected - %s %s" %(key, image))
@@ -332,35 +333,28 @@ class OTAManagement(object):
         self.ZigateComm.sendData( "0500", datas)
         return
 
-    def trigger_request( self, MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgIEEE ):
+    def notify_device( self, MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut=None ):
 
         """
-        Purpose is to load and notifiy a specifc device.
+        Purpose is to notifiy a specifc device.
         """
-        self.logging( 'Log', "trigger_request: Manuf: %s Type: %s Version: %s Nwkid: %s IEEE: %s" %(MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgIEEE))
-
-
-        if self.upgradeInProgress:
-            self.logging( 'Log', "trigger_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
-            return
+        self.logging( 'Log', "notify_device: Manuf: 0x%x Type: 0x%04x Version: 0x%0x Nwkid: %s EPOut: %s" %(MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut))
 
         if MsgImageType not in self.OTA['Images']:
-            self.logging( 'Log', "trigger_request: %s Image Type not found in %s" %(MsgImageType, str(self.OTA['Images'].keys())))
+            self.logging( 'Log', "notify_device: 0x%x Image Type not found in %s" %(MsgImageType, str(self.OTA['Images'].keys())))
             return
 
-        self.upgradeOTAImage = MsgImageVersion
-        self.upgradeOTAImageType = MsgImageType
-        # Loading Image in Zigate
-        self.ota_load_new_image( MsgImageType )
+        self.OTA['Upgraded Device'][MsgSrcAddr] = {}
 
         self.upgradeInProgress = MsgSrcAddr
-        EPout = "01"
-        if 'Ep' in self.ListOfDevices[self.upgradeInProgress]:
-            for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
-                if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
-                    EPout = x
-                    break
-        self.ota_image_advertize(self.upgradeInProgress, EPout, \
+        if MsgEpOut is None:
+            MsgEpOut = "01"
+            if 'Ep' in self.ListOfDevices[self.upgradeInProgress]:
+                for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
+                    if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
+                        MsgEpOut = x
+                        break
+        self.ota_image_advertize(self.upgradeInProgress, MsgEpOut, \
                                 self.OTA['Images'][MsgImageType]['Decoded Header']['image_version'], \
                                 self.OTA['Images'][MsgImageType]['Decoded Header']['image_type'], \
                                 self.OTA['Images'][MsgImageType]['Decoded Header']['manufacturer_code'])
@@ -372,8 +366,21 @@ class OTAManagement(object):
         Purpose is to handle an Async request (most-likely Legrand), when there is nothing to do
         """
 
-        self.trigger_request( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgIEEE)
+        if self.upgradeInProgress:
+            self.logging( 'Log', "async_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
+            return
 
+        # Import the image is not loaded anymore
+        if MsgImageType not in self.OTA['Images']:
+            self.ota_decode_new_image( self.OTA['Filename'][MsgImageType]['subfolder'], self.OTA['Filename'][MsgImageType]['image'])
+
+        Domoticz.Log("OTA heartbeat - Image: 0x%04X from file: %s" %(MsgImageType, self.OTA['Images'][MsgImageType]['Filename']))
+
+        # Loading Image in Zigate
+        self.ota_load_new_image( MsgImageType )
+        self.upgradeOTAImage = MsgImageVersion
+        self.upgradeOTAImageType = MsgImageType
+        self.notify_device( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr)
 
 
     def ota_request_firmware( self , MsgData):
@@ -402,16 +409,18 @@ class OTAManagement(object):
 
         self.logging( 'Debug', "Decode8501 - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
             %(int(MsgSQN,16), MsgSrcAddr, MsgEP, int(MsgFileOffset,16), MsgImageVersion, MsgImageType, MsgManufCode, int(MsgBlockRequestDelay,16), int(MsgMaxDataSize,16), MsgFieldControl))
-
+        
         # Patching in order to make Legrand update with Image Page Request working
-        if MsgManufCode == 0x00C8:
+        if MsgManufCode == 0x00C8 and self.TypeInProgress:
             # Request a Page , and Note a Block
             # For the time been , we are forcing a response with a Block
-            MsgImageType = 0x0010
+            MsgImageType = self.TypeInProgress
             MsgManufCode = 0x1021
             MsgBlockRequestDelay = 'ffff'
             MsgMaxDataSize = '40'
             MsgFieldControl = 0x00
+            self.logging( 'Debug', "  Fixing   - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
+                %(int(MsgSQN,16), MsgSrcAddr, MsgEP, int(MsgFileOffset,16), MsgImageVersion, MsgImageType, MsgManufCode, int(MsgBlockRequestDelay,16), int(MsgMaxDataSize,16), MsgFieldControl))
 
         block_request = {}
         block_request['ReqAddr'] = MsgSrcAddr
@@ -427,10 +436,6 @@ class OTAManagement(object):
 
         if MsgSrcAddr not in self.OTA['Upgraded Device']:
             Domoticz.Error("OTA image Block request - Not in upgrade mode ...")
-            return
-
-        if MsgImageType not in self.OTA['Images']:
-            Domoticz.Error("ota_request_firmware - Unexpected Image Type: 0x%04X not found in %s" %(MsgImageType, str(self.OTA['Images'].keys())))
             return
 
         _size = self.OTA['Images'][MsgImageType]['Decoded Header']['size']
@@ -497,6 +502,8 @@ class OTAManagement(object):
                 self.OTA['Upgraded Device'][dest_addr]['Status'] = 'Transfer Aborted'
             return
 
+        self.TypeInProgress = image
+
         manufacturer_code =  '%04x' %self.OTA['Images'][image]['Decoded Header']['manufacturer_code']
         image_type = '%04x' %self.OTA['Images'][image]['Decoded Header']['image_type']
         image_version = '%08x' %self.OTA['Images'][image]['Decoded Header']['image_version']
@@ -529,6 +536,7 @@ class OTAManagement(object):
         self.OTA['Upgraded Device'][dest_addr]['received'] = _offset
         self.OTA['Upgraded Device'][dest_addr]['sent'] = _offset + _lenght
 
+        # This is to Hack a Firmware issue on Legrand which is requesting Page update and not Block
         self.logging( 'Debug', "ota_block_send - Block sent to %s/%s Received yet: %s Sent now: %s" 
                 %( dest_addr, dest_ep, _offset, _lenght))
         return 
@@ -759,8 +767,6 @@ class OTAManagement(object):
 
         self.HB += 1
 
-        if not self.pluginconf.pluginConf['autoOTA']:
-            return
 
         if self.HB < ( self.pluginconf.pluginConf['waitingOTA'] // HEARTBEAT): 
             return
@@ -886,6 +892,7 @@ class OTAManagement(object):
                     self.upgradeOTAImageType = None
                     self.ota_load_new_image( key )
                     return # Will come back in the next cycle for Notification
+
                 # At that stage: Image for key has been loaded into Zigate
                 # Let's start the process
                 self.upgradeInProgress = self.upgradableDev[0]
@@ -895,6 +902,7 @@ class OTAManagement(object):
                     if ((self.HB % 60 ) != 0 ):
                         return
 
+                # Find EP
                 EPout = "01"
                 if 'Ep' not in self.ListOfDevices[self.upgradeInProgress]:
                     return
@@ -906,22 +914,25 @@ class OTAManagement(object):
                     if x == 'Upgraded Device': continue
                     if self.OTA['Images'][x]['Decoded Header']['manufacturer_code'] in OTA_MANUF_CODE and \
                         self.ListOfDevices[self.upgradeInProgress]['Manufacturer'] in OTA_MANUF_NAME:
-
                         if self.upgradeInProgress in self.ListOfDevices:
                             if 'Manufacturer' in self.ListOfDevices[self.upgradeInProgress]:
                                 if int(self.ListOfDevices[self.upgradeInProgress]['Manufacturer'],16) != self.OTA['Images'][x]['Decoded Header']['manufacturer_code']:
-                                    self.logging( 'Debug', "     No need to notify %s:  %s != %s" %(self.upgradeInProgress, self.ListOfDevices[self.upgradeInProgress]['Manufacturer'], self.OTA['Images'][x]['Decoded Header']['manufacturer_code']))
+                                    self.logging( 'Debug', "     No need to notify %s:  %s != %s" \
+                                            %(self.upgradeInProgress, self.ListOfDevices[self.upgradeInProgress]['Manufacturer'], self.OTA['Images'][x]['Decoded Header']['manufacturer_code']))
                                     # No need to advertise as this is not a Manufacturer code match.
                                     continue
 
-                        self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
-                        self.logging( 'Debug', "OTA hearbeat - Request Advertizement for %s %s" \
-                                %(self.upgradeInProgress, EPout))
+                        self.notify_device( self.OTA['Images'][x]['Decoded Header']['manufacturer_code'], self.OTA['Images'][x]['Decoded Header']['image_type'], 
+                                self.OTA['Images'][x]['Decoded Header']['image_version'], self.upgradeInProgress, MsgEpOut=EPout )
 
-                        self.ota_image_advertize(self.upgradeInProgress, EPout, \
-                                self.OTA['Images'][x]['Decoded Header']['image_version'], \
-                                self.OTA['Images'][x]['Decoded Header']['image_type'], \
-                                self.OTA['Images'][x]['Decoded Header']['manufacturer_code'])
+                        #self.OTA['Upgraded Device'][self.upgradeInProgress] = {}
+                        #self.logging( 'Debug', "OTA hearbeat - Request Advertizement for %s %s" \
+                        #        %(self.upgradeInProgress, EPout))
+                        #
+                        #self.ota_image_advertize(self.upgradeInProgress, EPout, \
+                        #        self.OTA['Images'][x]['Decoded Header']['image_version'], \
+                        #        self.OTA['Images'][x]['Decoded Header']['image_type'], \
+                        #        self.OTA['Images'][x]['Decoded Header']['manufacturer_code'])
                         break
             elif self.upgradeInProgress:
                 # Check Timeout
