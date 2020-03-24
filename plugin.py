@@ -677,7 +677,11 @@ class BasePlugin:
             if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
                 from Classes.WebServer import WebServer
 
-                if (not self.VersionNewFashion or (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
+                if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
+                    Domoticz.Log("self.VersionNewFashion: %s" %self.VersionNewFashion)
+                    Domoticz.Log("self.DomoticzMajor    : %s" %self.DomoticzMajor)
+                    Domoticz.Log("self.DomoticzMinor    : %s" %self.DomoticzMinor)
+
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
                 if not Parameters['Mode4'].isdigit():
