@@ -334,6 +334,7 @@ def CheckDeviceList(self, key, val) :
                 'Manufacturer Name', 
                 'Model', 
                 'NbEp',
+                'OTA',
                 'PowerSource', 
                 'ProfileID', 
                 'ReceiveOnIdle', 

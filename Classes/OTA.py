@@ -45,11 +45,13 @@ from Classes.AdminWidgets import AdminWidgets
 OTA_CLUSTER_ID = '0019'
 OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
 TO_TRANSFER = 60        # Time before timed out for Transfer
-#TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out for Notfication for main powered devices
-TO_MAINPOWERED_NOTIFICATION = 30 * 60          # Time before timed out for Notfication for main powered devices
+TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out for Notfication for main powered devices
 TO_BATTERYPOWERED_NOTIFICATION = 1 * 3600 # We will leave the Image loaded on Zigate and Notified by device during 1 hour max.
-#WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
-WAIT_TO_NEXT_IMAGE = 15 * 60 # Time to wait before processing next Image/Firmware
+WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
+
+WAIT_TO_NEXT_IMAGE = 60 # Time to wait before processing next Image/Firmware
+####TO_MAINPOWERED_NOTIFICATION = 30 * 60          # Time before timed out for Notfication for main powered devices
+###WAIT_TO_NEXT_IMAGE = 15 * 60 # Time to wait before processing next Image/Firmware
 
 IKEA_MANUF_CODE = 0x117c
 LEDVANCE_MANUF_CODE = ( 0x1189 )
@@ -326,6 +328,50 @@ class OTAManagement(object):
         self.ZigateComm.sendData( "0500", datas)
         return
 
+    def trigger_request( self, MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgIEEE ):
+
+        """
+        Purpose is to load and notifiy a specifc device.
+        """
+        self.logging( 'Log', "trigger_request: Manuf: %s Type: %s Version: %s Nwkid: %s IEEE: %s" %(MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgIEEE))
+
+
+        if self.upgradeInProgress:
+            self.logging( 'Log', "trigger_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
+            return
+
+        if MsgImageType not in self.OTA['Images']:
+            self.logging( 'Log', "trigger_request: %s Image Type not found in %s" %(MsgImageType, str(self.OTA['Images'].keys())))
+            return
+
+        self.upgradeOTAImage = MsgImageVersion
+        self.upgradeOTAImageType = MsgImageType
+        # Loading Image in Zigate
+        self.ota_load_new_image( MsgImageVersion )
+
+        self.upgradeInProgress = MsgSrcAddr
+        EPout = "01"
+        if 'Ep' in self.ListOfDevices[self.upgradeInProgress]:
+            for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
+                if OTA_CLUSTER_ID in self.ListOfDevices[self.upgradeInProgress]['Ep'][x]:
+                    EPout = x
+                    break
+        self.ota_image_advertize(self.upgradeInProgress, EPout, \
+                                self.OTA['Images'][MsgImageType]['Decoded Header']['image_version'], \
+                                self.OTA['Images'][MsgImageType]['Decoded Header']['image_type'], \
+                                self.OTA['Images'][MsgImageType]['Decoded Header']['manufacturer_code'])
+
+
+    def async_request( self, MsgSrcAddr, MsgIEEE, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl):
+
+        """
+        Purpose is to handle an Async request (most-likely Legrand), when there is nothing to do
+        """
+
+        self.trigger_request( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgIEEE)
+
+
+
     def ota_request_firmware( self , MsgData):
         'BLOCK_REQUEST 	0x8501 	ZiGate will receive this command when device asks OTA firmware'
 
@@ -347,6 +393,7 @@ class OTAManagement(object):
 
         if self.upgradeInProgress != MsgSrcAddr:
             Domoticz.Log("Unexpected request from device: %s, we are currently looking to serve device: %s" %(MsgSrcAddr, self.upgradeInProgress))
+            self.async_request( MsgSrcAddr, MsgIEEE, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl)
             return
 
         self.logging( 'Debug', "Decode8501 - [%3s] OTA image Block request - %s/%s Offset: %s version: 0x%08X Type: 0%04X Code: 0x%04X Delay: %s MaxSize: %s Control: 0x%02X"
@@ -695,7 +742,7 @@ class OTAManagement(object):
             ota_image_files = [ f for f in listdir(ota_dir) if isfile(join(ota_dir, f))]
 
             for ota_image_file in ota_image_files:
-                if ota_image_file in ( 'README.md', '.PRECIOUS' ):
+                if ota_image_file in ( 'README.md', 'README.txt', '.PRECIOUS' ):
                     continue
                 key = self.ota_decode_new_image( brand, ota_image_file )
 
@@ -708,13 +755,15 @@ class OTAManagement(object):
 
         self.HB += 1
 
+        if not self.pluginconf.pluginConf['autoOTA']:
+            return
+
         if self.HB < ( self.pluginconf.pluginConf['waitingOTA'] // HEARTBEAT): 
             return
 
         if  len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-            self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
-            self.logging( 'Debug', "normalQueue: %s" %(str(self.ZigateComm.zigateSendingFIFO)))
-            self.logging( 'Debug', "Too busy, will come back later")
+            self.logging( 'Debug', "heartbeat - normalQueue: %s : %s" %( len(self.ZigateComm.zigateSendingFIFO), str(self.ZigateComm.zigateSendingFIFO)))
+            self.logging( 'Debug', "            Too busy, will come back later")
             return
 
         if 'Images' in self.OTA:
@@ -801,7 +850,7 @@ class OTAManagement(object):
                         otaDevice = True
 
                 if not otaDevice:
-                    self.logging( 'Debug', "OTA heartbeat - skip %s Not firmware update for that product ManufCode: %s" %(iterDev,manufCode ))
+                    self.logging( 'Debug', "OTA heartbeat - skip %s No firmware update for that product ManufCode: %s" %(iterDev,manufCode ))
                     continue
 
                 upgradable = False
@@ -930,7 +979,10 @@ class OTAManagement(object):
             # We have been through all Devices for this particular Image.
             # Let's go to the next Image
             if self.upgradeOTAImage:
-                del self.OTA['Images'][self.upgradeOTAImage]
+                if self.upgradeOTAImage in self.OTA['Images']:
+                    del self.OTA['Images'][self.upgradeOTAImage]
+                else:
+                    Domoticz.Log("OTA heartbeat - %s not found in %s" %( self.upgradeOTAImage, str(self.OTA['Images'].keys())))
             else:
                 Domoticz.Log("OTA heartbeat - No device to be upgraded...")
                 self.upgradeDone = None

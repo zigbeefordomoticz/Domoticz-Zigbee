@@ -110,6 +110,7 @@ SETTINGS = {
 
             #Over The Air Upgrade
         'OverTheAirUpgrade': { 'Order': 7, 'param': {
+                'autoOTA':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                 'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
             }},
