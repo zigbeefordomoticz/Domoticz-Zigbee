@@ -263,7 +263,7 @@ class OTAManagement(object):
                 return False
             # We will overwrite the new loaded image as it is more recent
 
-        Domoticz.Status("Available Firmware - ManufCode: %4X ImageType: 0x%04X FileVersion: %8X Size: %8s Bytes Filename: %s" \
+        self.logging( 'Status', "Available Firmware - ManufCode: %4X ImageType: 0x%04X FileVersion: %8X Size: %8s Bytes Filename: %s" \
                 %(headers['manufacturer_code'], headers['image_type'],  headers['image_version'], headers['size'], image ))
         for x in header_headers:
             if x == 'header_str':
@@ -453,7 +453,7 @@ class OTAManagement(object):
         if 'Start Time' not in self.OTA['Upgraded Device'][MsgSrcAddr]:
             # Starting Process
             self.upgradeDone = True
-            Domoticz.Status("Starting firmware process on %s/%s" %(MsgSrcAddr, MsgEP))
+            self.logging( 'Status', "Starting firmware process on %s/%s" %(MsgSrcAddr, MsgEP))
             self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time'] = time()
 
             _ieee = self.ListOfDevices[MsgSrcAddr]['IEEE']
@@ -677,6 +677,10 @@ class OTAManagement(object):
         MsgManufCode = int(MsgData[26:30],16)
         MsgStatus = MsgData[30:32]
 
+        if self.upgradeInProgress is None:
+            self.logging( 'Debug', "ota_request_firmware_completed - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress" %(MsgSrcAddr, self.upgradeInProgress))
+            return
+            
         Domoticz.Log("Decode8503 - OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s"
             %(MsgSrcAddr, MsgEP, MsgClusterId, MsgImageVersion, MsgImageType, MsgManufCode, MsgStatus))
 
@@ -707,7 +711,7 @@ class OTAManagement(object):
         #define OTA_REQUIRE_MORE_IMAGE                    (uint8)0x99
 
         if MsgStatus == '00': # OTA_STATUS_SUCCESS
-            Domoticz.Status("ota_request_firmware_completed - OTA Firmware upload completed with success")
+            self.logging( 'Status', "ota_request_firmware_completed - OTA Firmware upload completed with success")
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Completed'
             self.ota_upgrade_end_response( MsgSrcAddr, MsgEP,MsgImageVersion, MsgImageType, MsgManufCode )
             _textmsg = 'Device: %s has been updated with firmware %s in %s hour %s min %s sec' \
@@ -730,7 +734,7 @@ class OTAManagement(object):
 
         elif MsgStatus == '99': # OTA_REQUIRE_MORE_IMAGE: The downloaded image was successfully received 
                                 # and verified, but the client requires multiple images before performing an upgrade
-            Domoticz.Status("ota_request_firmware_completed - OTA Firmware  The downloaded image was successfully received, but there is a need for additional image")
+            self.logging( 'Status', "ota_request_firmware_completed - OTA Firmware  The downloaded image was successfully received, but there is a need for additional image")
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Completed'
             _textmsg = 'Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed' \
                     %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
@@ -1015,7 +1019,7 @@ class OTAManagement(object):
                 _textmsg = 'No new firmware to transfer, stop OTA upgrade'
                 self.adminWidgets.updateNotificationWidget( self.Devices, _textmsg)
                 self.stopOTA = True
-                Domoticz.Status("OTA heartbeat - Stop OTA upgrade")
+                self.logging( 'Status', "OTA heartbeat - Stop OTA upgrade")
 
 
 def convertTime( _timeInSec):
