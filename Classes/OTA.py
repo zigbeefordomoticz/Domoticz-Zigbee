@@ -338,7 +338,7 @@ class OTAManagement(object):
         """
         Purpose is to notifiy a specifc device.
         """
-        self.logging( 'Log', "notify_device: Manuf: 0x%x Type: 0x%04x Version: 0x%0x Nwkid: %s EPOut: %s" %(MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut))
+        self.logging( 'Log', "notify_device: Manuf: 0x%x Type: 0x%04x Version: 0x%08x Nwkid: %s EPOut: %s" %(MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr, MsgEpOut))
 
         if MsgImageType not in self.OTA['Images']:
             self.logging( 'Log', "notify_device: 0x%x Image Type not found in %s" %(MsgImageType, str(self.OTA['Images'].keys())))
@@ -367,18 +367,19 @@ class OTAManagement(object):
         """
 
         if self.upgradeInProgress:
-            self.logging( 'Log', "async_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
+            self.logging( 'Debug', "async_request: There is an upgrade in progress, drop request from %s" %(MsgSrcAddr))
             return
 
         # Import the image is not loaded anymore
         if MsgImageType not in self.OTA['Images']:
             self.ota_decode_new_image( self.OTA['Filename'][MsgImageType]['subfolder'], self.OTA['Filename'][MsgImageType]['image'])
 
-        Domoticz.Log("OTA heartbeat - Image: 0x%04X from file: %s" %(MsgImageType, self.OTA['Images'][MsgImageType]['Filename']))
+        self.logging( 'Debug', "OTA heartbeat - Image: 0x%04X from file: %s" %(MsgImageType, self.OTA['Images'][MsgImageType]['Filename']))
 
         # Loading Image in Zigate
         self.ota_load_new_image( MsgImageType )
         self.upgradeOTAImage = MsgImageType
+        Domoticz.Log("--self.upgradeOTAImage = %s" %self.upgradeOTAImage)
         self.upgradeOTAImageType = MsgImageType
         self.notify_device( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr)
 
@@ -441,7 +442,7 @@ class OTAManagement(object):
         _size = self.OTA['Images'][MsgImageType]['Decoded Header']['size']
         _completion = round(((int(MsgFileOffset,16) / _size ) * 100),1)
         if (_completion % 5) == 0:
-            Domoticz.Log("Firmware transfert for %s/%s - Progress: %4s %%" %(MsgSrcAddr, MsgEP, _completion))
+            self.logging( 'Log', "Firmware transfert for %s/%s - Progress: %4s %%" %(MsgSrcAddr, MsgEP, _completion))
 
         self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Block Requested'
 
@@ -893,6 +894,7 @@ class OTAManagement(object):
 
                     # Loading Image in Zigate
                     self.upgradeOTAImage = key
+                    Domoticz.Log("----self.upgradeOTAImage = %s" %self.upgradeOTAImage)
                     self.upgradeOTAImageType = None
                     self.ota_load_new_image( key )
                     return # Will come back in the next cycle for Notification
@@ -1011,6 +1013,7 @@ class OTAManagement(object):
                 self.OTA['Images'] = {}
 
             self.upgradeOTAImage = None
+            Domoticz.Log("------self.upgradeOTAImage = %s" %self.upgradeOTAImage)
             self.upgradableDev = None
             self.upgradeInProgress = None
 
