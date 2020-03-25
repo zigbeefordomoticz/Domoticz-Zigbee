@@ -543,6 +543,10 @@ class WebServer(object):
             health = {}
             health['HealthFlag'] = self.PluginHealth['Flag']
             health['HealthTxt'] = self.PluginHealth['Txt']
+            if 'Firmware Update' in self.PluginHealth:
+                health['OTAupdateProgress'] = self.PluginHealth['Firmware Update']['Progress']
+                health['OTAupdateDevice'] = self.PluginHealth['Firmware Update']['Device']
+
             _response["Data"] = json.dumps( health, sort_keys=True )
 
         return _response

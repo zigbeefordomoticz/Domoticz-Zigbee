@@ -150,7 +150,6 @@ class BasePlugin:
         self.DeviceListName = None
         self.pluginParameters = None
 
-
         self.PluginHealth = {}
         self.Ping = {}
         self.connectionState = None
@@ -336,6 +335,9 @@ class BasePlugin:
                     wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         elif self.transport == "None":
             loggingPlugin( self, 'Status', "Transport mode set to None, no communication.")
+            self.PluginHealth['Firmware Update'] = {}
+            self.PluginHealth['Firmware Update']['Progress'] = '75 %'
+            self.PluginHealth['Firmware Update']['Device'] = '1234'
             return
         else :
             Domoticz.Error("Unknown Transport comunication protocol : "+str(self.transport) )
@@ -697,7 +699,7 @@ class BasePlugin:
             loggingPlugin( self, 'Status', "Plugin with Zigate firmware %s correctly initialized" %self.FirmwareVersion)
             if self.OTA is None and self.pluginconf.pluginConf['allowOTA']:
                 self.OTA = OTAManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"],
-                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle)
+                            self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle, self.PluginHealth)
 
             if self.FirmwareVersion and self.FirmwareVersion >= "030d":
                 if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0  and self.transport != 'None':
