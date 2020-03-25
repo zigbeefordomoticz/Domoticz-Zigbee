@@ -378,7 +378,7 @@ class OTAManagement(object):
 
         # Loading Image in Zigate
         self.ota_load_new_image( MsgImageType )
-        self.upgradeOTAImage = MsgImageVersion
+        self.upgradeOTAImage = MsgImageType
         self.upgradeOTAImageType = MsgImageType
         self.notify_device( MsgManufCode, MsgImageType, MsgImageVersion, MsgSrcAddr)
 
