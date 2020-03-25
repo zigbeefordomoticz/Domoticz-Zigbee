@@ -404,7 +404,7 @@ class OTAManagement(object):
         MsgFieldControl = int(MsgData[60:62],16)
 
         if self.upgradeInProgress != MsgSrcAddr:
-            Domoticz.Log("Unexpected request from device: %s, we are currently looking to serve device: %s" %(MsgSrcAddr, self.upgradeInProgress))
+            self.logging( 'Debug', "Unexpected request from device: %s, we are currently looking to serve device: %s" %(MsgSrcAddr, self.upgradeInProgress))
             self.async_request( MsgSrcAddr, MsgIEEE, MsgFileOffset, MsgImageVersion, MsgImageType, MsgManufCode, MsgBlockRequestDelay, MsgMaxDataSize, MsgFieldControl)
             return
 
