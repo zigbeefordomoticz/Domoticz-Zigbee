@@ -678,7 +678,7 @@ class OTAManagement(object):
         MsgStatus = MsgData[30:32]
 
         if self.upgradeInProgress is None:
-            self.logging( 'Debug', "ota_request_firmware_completed - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress" %(MsgSrcAddr, self.upgradeInProgress))
+            self.logging( 'Debug', "ota_request_firmware_completed - Receive Firmware Completed from %s most likely a duplicated packet as there is nothing in Progress. %s" %(MsgSrcAddr, self.upgradeInProgress))
             return
             
         Domoticz.Log("Decode8503 - OTA upgrade completed - %s/%s %s Version: 0x%08x Type: 0x%04x Code: 0x%04x Status: %s"
@@ -969,8 +969,9 @@ class OTAManagement(object):
                                     EPout = x
                                     break
                         _key = self.upgradeOTAImage
-                        self.upgradeOTAImageType = self.OTA['Images'][_key]['Decoded Header']['image_type']
-                        self.ota_image_advertize(self.upgradeInProgress, EPout, \
+                        if _key in self.OTA['Images']:
+                            self.upgradeOTAImageType = self.OTA['Images'][_key]['Decoded Header']['image_type']
+                            self.ota_image_advertize(self.upgradeInProgress, EPout, \
                                 self.OTA['Images'][_key]['Decoded Header']['image_version'], \
                                 self.OTA['Images'][_key]['Decoded Header']['image_type'], \
                                 self.OTA['Images'][_key]['Decoded Header']['manufacturer_code'], Flag_ = True)
