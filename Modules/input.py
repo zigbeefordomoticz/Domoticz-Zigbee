@@ -1250,7 +1250,8 @@ def Decode8049(self, Devices, MsgData, MsgRSSI) : # E_SL_MSG_PERMIT_JOINING_RESP
 
 def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update response
 
-    self.networkenergy.NwkScanResponse( MsgData)
+    if self.networkenergy:
+        self.networkenergy.NwkScanResponse( MsgData)
     return
 
 def Decode804B(self, Devices, MsgData, MsgRSSI) : # System Server Discovery response
