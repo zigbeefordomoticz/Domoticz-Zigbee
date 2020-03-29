@@ -1,5 +1,9 @@
 # Release Notes 
 
+# 29 Mars 2020 - 4.7.7
+- [Hardware] Specific device profiles for Gledopto and Philips
+- [Technical] Makes plugin compatible with Domoticz versioning schema
+
 ## 29 February 2020 - 4.7.6
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
