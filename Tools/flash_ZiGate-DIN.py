@@ -95,7 +95,7 @@ def main():
 	# Set CBUS2/3 back to tristate
     ftdi_set_bitmode(dev, 0xCC)
 
-    command = "./JennicModuleProgrammer -V 6 -P "+speed+" -f "+firmware+" -s "+serial
+    command = "./JennicModuleProgrammer/Build/JennicModuleProgrammer -V 6 -P "+speed+" -f "+firmware+" -s "+serial
     os.system(command)
     
     print("\033[1;33;40m")
