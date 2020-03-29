@@ -334,6 +334,7 @@ class BasePlugin:
                     wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         elif self.transport == "None":
             loggingPlugin( self, 'Status', "Transport mode set to None, no communication.")
+            self.FirmwareVersion = '031c'
             self.PluginHealth['Firmware Update'] = {}
             self.PluginHealth['Firmware Update']['Progress'] = '75 %'
             self.PluginHealth['Firmware Update']['Device'] = '1234'
@@ -690,37 +691,38 @@ class BasePlugin:
 
 def zigateInit_Phase1(self ):
 
-    # Ask for Firmware Version
-    sendZigateCmd(self, "0010", "") 
-
-    # Set Time server to HOST time
-    setTimeServer( self )
-
-    # Check if we have to Erase PDM. 
-    if Parameters["Mode3"] == "True": # Erase PDM
-        if self.domoticzdb_Hardware:
-            self.domoticzdb_Hardware.disableErasePDM()
-        loggingPlugin( self, 'Status', "Erase Zigate PDM")
-        sendZigateCmd(self, "0012", "")
-        if self.pluginconf.pluginConf['extendedPANID'] is not None:
-            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
-            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
-
-        # After an Erase PDM we have to do a full start of Zigate
-        start_Zigate( self )
-
-    # If applicable, put Zigate in NO Pairing Mode
-    self.Ping['Permit'] = None
-    if self.pluginconf.pluginConf['resetPermit2Join']:
-        ZigatePermitToJoin( self, 0 )
-    else:
-        sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
-
-    # Request Network State
-    sendZigateCmd(self, "0009", "") 
-
-    # Request List of Active Devices
-    sendZigateCmd(self, "0015", "") 
+    if self.transport != "None":
+        # Ask for Firmware Version
+        sendZigateCmd(self, "0010", "") 
+    
+        # Set Time server to HOST time
+        setTimeServer( self )
+    
+        # Check if we have to Erase PDM. 
+        if Parameters["Mode3"] == "True": # Erase PDM
+            if self.domoticzdb_Hardware:
+                self.domoticzdb_Hardware.disableErasePDM()
+            loggingPlugin( self, 'Status', "Erase Zigate PDM")
+            sendZigateCmd(self, "0012", "")
+            if self.pluginconf.pluginConf['extendedPANID'] is not None:
+                loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
+                setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+    
+            # After an Erase PDM we have to do a full start of Zigate
+            start_Zigate( self )
+    
+        # If applicable, put Zigate in NO Pairing Mode
+        self.Ping['Permit'] = None
+        if self.pluginconf.pluginConf['resetPermit2Join']:
+            ZigatePermitToJoin( self, 0 )
+        else:
+            sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
+    
+        # Request Network State
+        sendZigateCmd(self, "0009", "") 
+    
+        # Request List of Active Devices
+        sendZigateCmd(self, "0015", "") 
 
     # Create IAS Zone object
     self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)

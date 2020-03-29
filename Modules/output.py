@@ -116,7 +116,7 @@ def zigateBlueLed( self, OnOff):
         sendZigateCmd(self, "0018","00")
 
 
-def sendZigateCmd(self, cmd,datas ):
+def sendZigateCmd(self, cmd, datas ):
 
     if self.ZigateComm is None:
         Domoticz.Error("Zigate Communication error.")
