@@ -162,6 +162,7 @@ class BasePlugin:
         self.mainpowerSQN = None    # Tracking main Powered SQN
         #self.ForceCreationDevice = None   # 
 
+        self.VersionNewFashion = None
         self.DomoticzMajor = None
         self.DomoticzMinor = None
 
@@ -179,7 +180,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'stable'
-        self.pluginParameters['PluginVersion'] = '4.7.006'
+        self.pluginParameters['PluginVersion'] = '4.7.007'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -213,14 +214,26 @@ class BasePlugin:
 
 
         # Import PluginConf.txt
-        major, minor = Parameters["DomoticzVersion"].split('.')
-        self.DomoticzMajor = int(major)
-        self.DomoticzMinor = int(minor)
+        if Parameters["DomoticzVersion"].find('build') == -1:
+            self.VersionNewFashion = False
+            # Old fashon Versioning
+            major, minor = Parameters["DomoticzVersion"].split('.')
+            self.DomoticzMajor = int(major)
+            self.DomoticzMinor = int(minor)
+        else:
+            self.VersionNewFashion = True
+            majorminor, dummy, build = Parameters["DomoticzVersion"].split(' ')
+            build = build.strip(')')
+            major, minor = majorminor.split('.')
+
+            self.DomoticzMajor = int(major)
+            self.DomoticzMinor = int(minor)
+            self.DomoticzBuild = int(build)
 
         Domoticz.Status("load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
 
-        if self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355):
+        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
             # This is done here and not global, as on Domoticz V4.9700 it is not compatible with Threaded modules
 
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus, DomoticzDB_Hardware, DomoticzDB_Preferences
@@ -342,10 +355,7 @@ class BasePlugin:
         if self.webserver:
             self.webserver.onStop()
 
-        major, minor = Parameters["DomoticzVersion"].split('.')
-        major = int(major)
-        minor = int(minor)
-        if major > 4 or ( major == 4 and minor >= 10355):
+        if (not self.VersionNewFashion and (self.DomoticzMajor > 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor >= 10355))) or self.VersionNewFashion:
             import threading
             for thread in threading.enumerate():
                 if (thread.name != threading.current_thread().name):
@@ -653,7 +663,7 @@ class BasePlugin:
             if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
                 from Classes.WebServer import WebServer
 
-                if self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901):
+                if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
                     Domoticz.Error("ATTENTION: the WebServer part is not supported with this version of Domoticz. Please upgrade to a version greater than 4.10901")
 
                 if not Parameters['Mode4'].isdigit():
