@@ -1,5 +1,8 @@
 # Release Notes 
 
+# 31 March 2020 - 4.7.8
+- [Technical] Makes plugin compatible with Domoticz versioning schema, fix a remaining issue
+
 # 29 Mars 2020 - 4.7.7
 - [Hardware] Specific device profiles for Gledopto and Philips
 - [Technical] Makes plugin compatible with Domoticz versioning schema
