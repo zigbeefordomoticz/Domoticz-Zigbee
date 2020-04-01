@@ -399,6 +399,18 @@ ZIGATE_COMMANDS = {
         # Miscaleneous
         0x0530: {'Sequence': (0x8000,), 'Command': 'Raw APS Data Request' , 'NwkId 2nd Bytes': False },
         0x0806: {'Sequence': (0x8000,), 'Command': 'AHI Control' , 'NwkId 2nd Bytes': False },
+
+        # PDM response
+        0x8200 : {'Sequence': ( ),'Command': 'PDM Save Request', 'NwkId 2nd Bytes': False },
+        0x8201 : {'Sequence': ( ),'Command': 'PDM Load Request', 'NwkId 2nd Bytes': False },
+        0x8202 : {'Sequence': ( ),'Command': 'PDM ', 'NwkId 2nd Bytes': False },
+        0x8203 : {'Sequence': ( ),'Command': 'PDM ', 'NwkId 2nd Bytes': False },
+        0x8204 : {'Sequence': ( ),'Command': 'PDM Create Bitmap', 'NwkId 2nd Bytes': False },
+        0x8205 : {'Sequence': ( ),'Command': 'PDM Delete Bitmap', 'NwkId 2nd Bytes': False },
+        0x8206 : {'Sequence': ( ),'Command': 'PDM Get Bitmap', 'NwkId 2nd Bytes': False },
+        0x8207 : {'Sequence': ( ),'Command': 'PDM Inc Bitmap', 'NwkId 2nd Bytes': False },
+        0x8208 : {'Sequence': ( ),'Command': 'PDM Existance Request', 'NwkId 2nd Bytes': False },
+        0x8300 : {'Sequence': ( ),'Command': 'Ack PDM Hosts Available', 'NwkId 2nd Bytes': False }
     }
 
 # Zigate command to be retransmited by Transport if expected Data not received
