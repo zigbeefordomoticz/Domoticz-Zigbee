@@ -550,7 +550,7 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
-        if not self.InitPhase1:
+        if not self.InitPhase1 and self.transport != 'None':
             zigateInit_Phase1( self)
             return
 
@@ -764,7 +764,7 @@ def zigateInit_Phase2( self ):
     elif int(self.FirmwareVersion,16) > 0x031c:
         Domoticz.Error("Firmware %s is not yet supported" %self.FirmwareVersion.lower())
 
-    if int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003 and self.transport != 'None':
+    if self.transport != 'None' and int(self.FirmwareVersion,16) >= 0x030f and int(self.FirmwareMajorVersion,16) >= 0x0003:
         if self.pluginconf.pluginConf['blueLedOnOff']:
             zigateBlueLed( self, True)
         else:
@@ -774,7 +774,7 @@ def zigateInit_Phase2( self ):
         set_TxPower( self, self.pluginconf.pluginConf['TXpower_set'])
 
         # Set Certification Code
-        if self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION and self.transport != 'None':
+        if self.transport != 'None' and self.pluginconf.pluginConf['CertificationCode'] in CERTIFICATION:
             loggingPlugin( self, 'Status', "Zigate set to Certification : %s" %CERTIFICATION[self.pluginconf.pluginConf['CertificationCode']])
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
