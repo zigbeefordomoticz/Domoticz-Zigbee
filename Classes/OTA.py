@@ -458,9 +458,13 @@ class OTAManagement(object):
             self.upgradeDone = True
             if 'Firmware Update' in self.PluginHealth:
                 del self.PluginHealth['Firmware Update']
+
+            if 'Firmware Update' not in self.PluginHealth:
                 self.PluginHealth['Firmware Update'] = {}
-                self.PluginHealth['Firmware Update']['Progress'] = '0%'
-                self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
+
+            self.PluginHealth['Firmware Update']['Progress'] = '0%'
+            self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
+
             self.logging( 'Status', "Starting firmware process on %s/%s" %(MsgSrcAddr, MsgEP))
             self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time'] = time()
 
