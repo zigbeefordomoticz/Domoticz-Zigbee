@@ -45,13 +45,8 @@ from Classes.AdminWidgets import AdminWidgets
 OTA_CLUSTER_ID = '0019'
 OTA_CYLCLE = 21600      # We check Firmware upgrade every 5 minutes
 TO_TRANSFER = 60        # Time before timed out for Transfer
-TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out for Notfication for main powered devices
+TO_MAINPOWERED_NOTIFICATION = 15          # Time before timed out after notify for main powered devices
 TO_BATTERYPOWERED_NOTIFICATION = 1 * 3600 # We will leave the Image loaded on Zigate and Notified by device during 1 hour max.
-WAIT_TO_NEXT_IMAGE = 25 # Time to wait before processing next Image/Firmware
-
-WAIT_TO_NEXT_IMAGE = 60 # Time to wait before processing next Image/Firmware
-####TO_MAINPOWERED_NOTIFICATION = 30 * 60          # Time before timed out for Notfication for main powered devices
-###WAIT_TO_NEXT_IMAGE = 15 * 60 # Time to wait before processing next Image/Firmware
 
 IKEA_MANUF_CODE = 0x117c
 LEDVANCE_MANUF_CODE = ( 0x1189 )
@@ -376,12 +371,12 @@ class OTAManagement(object):
             if MsgImageType in self.OTA['Filename']:
                 self.ota_decode_new_image( self.OTA['Filename'][MsgImageType]['subfolder'], self.OTA['Filename'][MsgImageType]['image'])
             else:
-                Domoticz.Log("async_request - %s request Type: %s not found in %s nor %s" \
-                        %(MsgSrcAddr, MsgImageType, str(self.OTA['Images'].keys()), str(self.OTA['Filename'].keys())))
+                Domoticz.Log("async_request - %s request Type: %s (%s) not found in 'Filename': %s" \
+                        %(MsgSrcAddr, MsgImageType, type(MsgImageType), str(self.OTA['Filename'].keys())))
                 return
         else:
-            Domoticz.Log("async_request - %s request Type: %s not found in %s nor %s" \
-                    %(MsgSrcAddr, MsgImageType, str(self.OTA['Images'].keys()), str(self.OTA['Filename'].keys())))
+            Domoticz.Log("async_request - %s request Type: %s (%s) not found in 'Images': %s" \
+                    %(MsgSrcAddr, MsgImageType, type(MsgImageType), str(self.OTA['Images'].keys())))
             return
 
         self.logging( 'Debug', "OTA heartbeat - Image: 0x%04X from file: %s" %(MsgImageType, self.OTA['Images'][MsgImageType]['Filename']))
@@ -1038,7 +1033,7 @@ class OTAManagement(object):
                     Domoticz.Log("OTA heartbeat - _status: %s , upgradeInProgress: %s" %( _status, self.upgradeInProgress))
 
         if self.upgradeInProgress is None and len(self.upgradableDev) == 0 and \
-                ((self.HB % ( WAIT_TO_NEXT_IMAGE // HEARTBEAT) ) == 0):
+                ((self.HB % ( self.pluginconf.pluginConf['OTAwait4nextImage'] // HEARTBEAT) ) == 0):
             # We have been through all Devices for this particular Image.
             # Let's go to the next Image
             if self.upgradeOTAImage:
