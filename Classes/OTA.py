@@ -444,7 +444,7 @@ class OTAManagement(object):
         _completion = round(((int(MsgFileOffset,16) / _size ) * 100),1)
         if (_completion % 5) == 0:
             self.logging( 'Log', "Firmware transfert for %s/%s - Progress: %4s %%" %(MsgSrcAddr, MsgEP, _completion))
-            self.PluginHealth['Firmware Update']['Progress'] = '%4s %%'
+            ##self.PluginHealth['Firmware Update']['Progress'] = '%4s %%'
 
         self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Block Requested'
 
@@ -456,14 +456,14 @@ class OTAManagement(object):
         if 'Start Time' not in self.OTA['Upgraded Device'][MsgSrcAddr]:
             # Starting Process
             self.upgradeDone = True
-            if 'Firmware Update' in self.PluginHealth:
-                del self.PluginHealth['Firmware Update']
-
-            if 'Firmware Update' not in self.PluginHealth:
-                self.PluginHealth['Firmware Update'] = {}
-
-            self.PluginHealth['Firmware Update']['Progress'] = '0%'
-            self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
+            #if 'Firmware Update' in self.PluginHealth:
+            #    del self.PluginHealth['Firmware Update']
+            #
+            #            if 'Firmware Update' not in self.PluginHealth:
+            #                self.PluginHealth['Firmware Update'] = {}
+            #
+            #            self.PluginHealth['Firmware Update']['Progress'] = '0%'
+            #            self.PluginHealth['Firmware Update']['Device'] = MsgSrcAddr
 
             self.logging( 'Status', "Starting firmware process on %s/%s" %(MsgSrcAddr, MsgEP))
             self.OTA['Upgraded Device'][MsgSrcAddr]['Start Time'] = time()
@@ -723,7 +723,7 @@ class OTAManagement(object):
         #define OTA_REQUIRE_MORE_IMAGE                    (uint8)0x99
 
         if MsgStatus == '00': # OTA_STATUS_SUCCESS
-            self.PluginHealth['Firmware Update']['Progress'] = 'Success'
+            ##self.PluginHealth['Firmware Update']['Progress'] = 'Success'
             self.logging( 'Status', "ota_request_firmware_completed - OTA Firmware upload completed with success")
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Completed'
             self.ota_upgrade_end_response( MsgSrcAddr, MsgEP,MsgImageVersion, MsgImageType, MsgManufCode )
@@ -731,10 +731,10 @@ class OTAManagement(object):
                     %(_name, MsgImageVersion, _transferTime_hh, _transferTime_mm, _transferTime_ss)
             self.logging( 'Status', _textmsg )
             self.upgradeInProgress = None
-            self.PluginHealth['Firmware Update'] = None
+            ##self.PluginHealth['Firmware Update'] = None
 
         elif MsgStatus == '95': # OTA_STATUS_ABORT The image download that is currently in progress should be cancelled
-            self.PluginHealth['Firmware Update']['Progress'] = 'Aborted'
+            ##self.PluginHealth['Firmware Update']['Progress'] = 'Aborted'
             Domoticz.Error("ota_request_firmware_completed - OTA Firmware aborted")
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Aborted'
             _textmsg = 'Firmware update aborted error code %s for Device %s in %s hour %s min %s sec' \
@@ -742,7 +742,7 @@ class OTAManagement(object):
 
         elif MsgStatus == '96': # OTA_STATUS_INVALID_IMAGE: The downloaded image failed the verification
                                 # checks and will be discarded
-            self.PluginHealth['Firmware Update']['Progress'] = 'Failed'
+            ##self.PluginHealth['Firmware Update']['Progress'] = 'Failed'
             Domoticz.Error("ota_request_firmware_completed - OTA Firmware image validation failed")
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Aborted'
             _textmsg = 'Firmware update aborted error code %s for Device %s in %s hour %s min %s sec' \
@@ -751,14 +751,14 @@ class OTAManagement(object):
         elif MsgStatus == '99': # OTA_REQUIRE_MORE_IMAGE: The downloaded image was successfully received 
                                 # and verified, but the client requires multiple images before performing an upgrade
             self.logging( 'Status', "ota_request_firmware_completed - OTA Firmware  The downloaded image was successfully received, but there is a need for additional image")
-            self.PluginHealth['Firmware Update']['Progress'] = 'More'
+            ##self.PluginHealth['Firmware Update']['Progress'] = 'More'
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Completed'
             _textmsg = 'Device: %s has been updated to latest firmware in %s hour %s min %s sec, but additional Image needed' \
                     %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
 
         else:
             Domoticz.Error("ota_request_firmware_completed - OTA Firmware unexpected error %s" %MsgStatus)
-            self.PluginHealth['Firmware Update']['Progress'] = 'Aborted'
+            ##self.PluginHealth['Firmware Update']['Progress'] = 'Aborted'
             self.OTA['Upgraded Device'][MsgSrcAddr]['Status'] = 'Transfer Aborted'
             _textmsg = 'Firmware update aborted error code %s for Device %s in %s hour %s min %s sec' \
                     %(MsgStatus, _name, _transferTime_hh, _transferTime_mm, _transferTime_ss)
