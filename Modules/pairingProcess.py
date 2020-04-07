@@ -19,7 +19,7 @@ from Modules.actuators import actuators
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.legrand_netatmo import legrand_fc01
 from Modules.output import  sendZigateCmd,  \
-        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
+        identifyEffect, setXiaomiVibrationSensitivity, \
         unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
         livolo_bind, \
         setPowerOn_OnOff, \
@@ -31,6 +31,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 
+from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoticz import CreateDomoDevice

@@ -18,7 +18,8 @@ import json
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages
 from Modules.logging import loggingPairing, loggingInput
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, processConfigureReporting, ZigatePermitToJoin
+from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, ZigatePermitToJoin
+from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
@@ -1864,6 +1865,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             '01': '0x01 - joining directly or rejoining the network using the orphaning procedure',
             '02': '0x02 - joining the network using the NWK rejoining procedure.',
             '03': '0x03 - change the operational network channel to that identified in the ScanChannels parameter.',
+            '99': '0x99 - Unknown value received.'
             }
 
     if MsgSrcAddr in self.ListOfDevices:
@@ -1875,7 +1877,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     now = time()
     if MsgRejoinFlag not in REJOIN_NETWORK:
         loggingInput( self, 'Debug', "Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %(MsgSrcAddr, MsgIEEE, MsgRejoinFlag), MsgSrcAddr)
-        MsgRejoinFlag = '00'
+        MsgRejoinFlag = '99'
 
     if MsgSrcAddr in self.ListOfDevices:
         if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
@@ -1896,6 +1898,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
             if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 10:
                 # Looks like we have a duplicate Device Announced in less than 5s
+                loggingInput( self, 'Log', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
                 return
 
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
@@ -1909,7 +1912,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
             loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
-
 
         # Redo the binding if allow
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:

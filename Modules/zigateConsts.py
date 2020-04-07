@@ -495,13 +495,11 @@ LEGRAND_REMOTE_SHUTTER = ( 'Shutters central remote switch', )
 
 
 CFG_RPT_ATTRIBUTESbyCLUSTERS = {
-        # 0xFFFF sable reporting-
-        # 6460   - 6 hours
-        # 0x0E10 - 3600s A hour
-        # 0x0708 - 30'
-        # 0x0384 - 15'
-        # 0x012C - 5'
-        # 0x003C - 1'
+        # 0xFFFF sable reporting- # 6460   - 6 hours # 0x0E10 - 3600s A hour # 0x0708 - 30' # 0x0384 - 15' # 0x012C - 5' # 0x003C - 1'
+
+        # Datatype   
+        #   10 - Boolean - 8bit #   18 - 8bitmap #   19 - 16bitmap #   20 - BbitUint #   21 - 16bitUint #   25 - 48bitUnint #   29 - 16BitInt
+        #   2a - 24bitInt #   30 - 8bitenum #   31 - 16bitenum
 
     # Power Cluster
     '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'0001'},
