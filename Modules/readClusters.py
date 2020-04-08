@@ -1522,6 +1522,9 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         value = 100 - value
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
+                    # The Shutter should have the Led on its right
+                    # Present Value: 0x01 -> Open
+                    # Present Value: 0x00 -> Closed
                     value = value
                     #value = 100 - value
 
@@ -2415,6 +2418,9 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
+                    # The Shutter should have the Led on its right
+                    # Present Value: 0x01 -> Open
+                    # Present Value: 0x00 -> Closed
                     loggingCluster( self, 'Debug', "---->Legrand Shutter switch with neutral Present Value: %s" %MsgClusterData, MsgSrcAddr)
                     if MsgClusterData == '01':
                         value = '%02x' %100
