@@ -1507,7 +1507,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0008":
-        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
@@ -1522,7 +1522,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         value = 100 - value
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
-                    value = 100 - value
+                    #value = 100 - value
 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
@@ -2415,7 +2415,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
                     loggingCluster( self, 'Debug', "---->Legrand Shutter switch with neutral Present Value: %s" %MsgClusterData, MsgSrcAddr)
-                    if MsgClusterData == '00':
+                    if MsgClusterData == '01':
                         value = '%02x' %100
                     else:
                         value = '%02x' %0
