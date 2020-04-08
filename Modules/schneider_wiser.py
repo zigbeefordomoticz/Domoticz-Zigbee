@@ -204,6 +204,9 @@ def schneider_fip_mode( self, key, mode):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[key]['SQN'],16) + 1)
     cmd = 'e1'
 
     zone_mode = '01' # Heating
@@ -227,6 +230,9 @@ def schneider_setpoint( self, key, setpoint):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '':
+            sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
     cmd = 'e0'
 
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees

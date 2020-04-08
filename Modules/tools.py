@@ -271,57 +271,19 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
-def updSQN_mainpower(self, key, newSQN):
-
-    return
-
-def updSQN_battery(self, key, newSQN):
-
-    if 'SQN' in self.ListOfDevices[key]:
-        oldSQN = self.ListOfDevices[key]['SQN']
-        if oldSQN == '' or oldSQN is None or oldSQN == {} :
-            oldSQN='00'
-    else :
-        oldSQN='00'
-
-    try:
-        if int(oldSQN,16) != int(newSQN,16) :
-            self.ListOfDevices[key]['SQN'] = newSQN
-            if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                # Out of seq
-                return
-    except:
-        self.ListOfDevices[key]['SQN'] = {}
-    return
-
-        
 
 def updSQN( self, key, newSQN) :
 
-    if key not in self.ListOfDevices or \
-             newSQN == {} or newSQN == '' or newSQN is None:
+    if key not in self.ListOfDevices:
+        return
+    if newSQN == {}:
+        return
+    if newSQN is None:
         return
 
-    if 'PowerSource' in self.ListOfDevices[key] :
-        if self.ListOfDevices[key]['PowerSource'] == 'Main':
-            # Device on Main Power. SQN is increasing independetly of the object
-           # updSQN_mainpower( self, key, newSQN)
-            pass
-        elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-
-    elif 'MacCapa' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['MacCapa'] in ( '84', '8e'):     # So far we have a good understanding on 
-            # Device on Main Power. SQN is increasing independetly of the object
-            #updSQN_mainpower( self, key, newSQN)
-            pass
-        elif self.ListOfDevices[key]['MacCapa'] == '80':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-        else:
-            self.ListOfDevices[key]['SQN'] = {}
-
+    #Domoticz.Log("-->SQN updated %s from %s to %s" %(key, self.ListOfDevices[key]['SQN'], newSQN))
+    self.ListOfDevices[key]['SQN'] = newSQN
+    return
 
 #### Those functions will be use with the new DeviceConf structutre
 
