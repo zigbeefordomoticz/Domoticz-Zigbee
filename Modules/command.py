@@ -21,7 +21,7 @@ from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.logging import loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode
 from Modules.legrand_netatmo import  legrand_fc40
-from Modules.schneider_wiser import  schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_thermostat_behaviour
+from Modules.schneider_wiser import  schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_thermostat_behaviour, schneider_temp_Setcurrent
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE
@@ -91,6 +91,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             DeviceType = tmpDeviceType
         if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS'):
             ClusterSearch = '0201'
+            DeviceType = tmpDeviceType
+        if tmpDeviceType == 'TempSetCurrent' :
+            ClusterSearch = '0402'
             DeviceType = tmpDeviceType
         if tmpDeviceType == 'Motion':
             ClusterSearch = '0406'
@@ -265,6 +268,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+        if DeviceType == 'TempSetCurrent':
+
+            loggingCommand( self, 'Debug', "mgtCommand : Set Temp for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            value = int(float(Level)*100)
+            schneider_temp_Setcurrent( self, NWKID, value )
+
+            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+            Level = round(float(Level),2)
+            # Normalize SetPoint value with 2 digits
+            Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
+            Level = Round( float(Level), 2 )
+
+            UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+            return
 
         elif DeviceType == 'ThermoMode':
             loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
@@ -289,7 +306,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
                 schneider_thermostat_behaviour( self, NWKID, 'conventionel')
-            elif Level == 20: # Fil Pilote
+            elif Level == 20: # setpoint
+                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'setpoint'
+                schneider_thermostat_behaviour( self, NWKID, 'setpoint')
+            elif Level == 30: # Fil Pilote
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
                 schneider_thermostat_behaviour( self, NWKID, 'FIP')
