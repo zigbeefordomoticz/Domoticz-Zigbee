@@ -578,7 +578,7 @@ def ReadAttributeRequest_0100(self, key):
         if "0100" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
             EPout=tmpEp
             listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
+            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0100'):
                 if iterAttr not in listAttributes:
                     listAttributes.append( iterAttr )
 
