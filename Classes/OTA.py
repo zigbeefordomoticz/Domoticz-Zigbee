@@ -946,6 +946,8 @@ class OTAManagement(object):
 
                 # Find EP
                 EPout = "01"
+                if self.upgradeInProgress not in self.ListOfDevices:
+                    return
                 if 'Ep' not in self.ListOfDevices[self.upgradeInProgress]:
                     return
                 for x in self.ListOfDevices[self.upgradeInProgress]['Ep']:
