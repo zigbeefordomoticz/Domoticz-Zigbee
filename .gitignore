@@ -1,9 +1,14 @@
 Conf/PluginConf-*
 Conf/ZigateGroupsConfig-*
+Logs/*
 Data/DeviceList-*
 Data/GroupsList-*
 Data/Zigate.json
 www/zigate/reports/*
+OTAFirmware/IKEA-TRADFRI/*
+OTAFirmware/LEDVANCE/*
+OTAFirmware/LEGRAND/*
+OTAFirmware/PHILIPS/*
 Reports/*
 Zdatas/DiscoveryDevice*
 Reports/*

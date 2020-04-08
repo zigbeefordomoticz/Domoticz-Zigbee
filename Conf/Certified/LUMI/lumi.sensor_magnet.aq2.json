@@ -1,0 +1,18 @@
+{
+	"Ep":{
+		"01":{
+			"0000":"",
+			"0006":"",
+			"0003":"",
+			"ffff":"",
+			"Type":"Door"
+		}
+	},
+	"Type":"",
+	"ClusterToBind": [],
+        "ConfigureReporting":{},
+	"ReadAttributes": {
+		"0000": [ "0004", "0005"] ,
+		"0006": []
+	}
+}

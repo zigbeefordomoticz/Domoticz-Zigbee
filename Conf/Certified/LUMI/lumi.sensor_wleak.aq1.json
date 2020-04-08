@@ -1,0 +1,15 @@
+{
+	"Ep":{
+		"01":{
+			"0006":"",
+			"Type":"Water"
+		}
+	},
+	"Type":"",
+	"ClusterToBind": [],
+        "ConfigureReporting":{},
+	"ReadAttributes": {
+		"0000": [ "0004", "0005"] ,
+		"0006": []
+	}
+}
