@@ -270,7 +270,7 @@ def checkListOfDevice2Devices( self, Devices ) :
 
 def saveZigateNetworkData( self, nkwdata ):
 
-        json_filename = self.pluginconf.pluginConf['pluginData'] + "/Zigate.json" 
+        json_filename = self.pluginconf.pluginConf['pluginData'] + "Zigate.json" 
         loggingDatabase( self, 'Debug', "Write " + json_filename + " = " + str(self.ListOfDevices))
         try:
             with open (json_filename, 'wt') as json_file:
