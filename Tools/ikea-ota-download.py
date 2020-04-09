@@ -5,13 +5,22 @@ Snipped to dowload current IKEA ZLL OTA files into current directory
 """
 
 import os
+import sys
 import json
 import urllib.request
 
 f = urllib.request.urlopen("https://fw.ota.homesmart.ikea.net/feed/version_info.json")
-data = f.read()
+data = f.read().decode('utf-8')
 
-arr = json.loads(data)
+try:
+    arr = json.loads(data)
+except ValueError as e:
+    print("Error while decoding json %s" %e)
+    sys.exit(1)
+except Exception as e:
+    print("Error with error: %s" %e)
+    sys.exit(2)
+
 
 otapath = './'
 
