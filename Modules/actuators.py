@@ -13,7 +13,8 @@
 import Domoticz
 import json
 
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl, loggingCommand
+from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
+from Modules.logging import loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint
 
 def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):
@@ -45,7 +46,7 @@ def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, col
     elif action == 'IdentifyEffect':
         actuator_identify( self, nwkid, epout, value)
     else:
-        Domoticz.Error("actuators - Command: %s error: %s/%s %s %s" %(action, nwkid, epout, value, color))
+        Domoticz.Error("actuators - Command: %s not yet implemented: %s/%s %s %s" %(action, nwkid, epout, value, color))
 
 
 def actuator_toggle( self, nwkid, EPout, DeviceType):
@@ -251,13 +252,15 @@ def actuator_identify( self, nwkid, ep, value=None):
         Domoticz.Log("value: %s" %value)
         Domoticz.Log("Type: %s" %type(value))
     
+        color = 0x00 # Default
         if value is None or value == 0:
-            value = 0x01 # Breath
+            value = 0x00 # Blink
             if 'Manufactuer Name' in self.ListOfDevices:
                 if self.ListOfDevices['Manufacturer Name'] == 'Legrand':
-                    value = 0x03 # Flashing
+                    value = 0x00 # Flashing
+                    color = 0x03 # Blue
 
-        datas = "02" + "%s"%(nwkid) + "01" + ep + "%02x"%value  + "%02x" %0
+        datas = "02" + "%s"%(nwkid) + "01" + ep + "%02x"%value  + "%02x" %color
         loggingCommand( self, 'Log', "identifyEffect - send an Identify Effecty Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)
         loggingCommand( self, 'Log', "identifyEffect - data sent >%s< " %(datas) , nwkid=nwkid)
         sendZigateCmd(self, "00E0", datas )

@@ -108,7 +108,7 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
     # Not found with NWKID, let's check in the IEEE
     #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
     if IEEE:
-        for existingIEEEkey in self.IEEE2NWK :
+        for existingIEEEkey in list(self.IEEE2NWK):
             if existingIEEEkey == IEEE :
                 # This device is already in Domoticz 
                 existingNWKkey = self.IEEE2NWK[IEEE]
@@ -239,7 +239,7 @@ def initDeviceInList(self, Nwkid) :
             self.ListOfDevices[Nwkid]['RIA']="0"
             self.ListOfDevices[Nwkid]['RSSI']={}
             self.ListOfDevices[Nwkid]['Battery']={}
-            self.ListOfDevices[Nwkid]['Model']={}
+            self.ListOfDevices[Nwkid]['Model']= ''
             self.ListOfDevices[Nwkid]['MacCapa']={}
             self.ListOfDevices[Nwkid]['IEEE']={}
             self.ListOfDevices[Nwkid]['Type']={}
@@ -271,57 +271,19 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
-def updSQN_mainpower(self, key, newSQN):
-
-    return
-
-def updSQN_battery(self, key, newSQN):
-
-    if 'SQN' in self.ListOfDevices[key]:
-        oldSQN = self.ListOfDevices[key]['SQN']
-        if oldSQN == '' or oldSQN is None or oldSQN == {} :
-            oldSQN='00'
-    else :
-        oldSQN='00'
-
-    try:
-        if int(oldSQN,16) != int(newSQN,16) :
-            self.ListOfDevices[key]['SQN'] = newSQN
-            if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                # Out of seq
-                return
-    except:
-        self.ListOfDevices[key]['SQN'] = {}
-    return
-
-        
 
 def updSQN( self, key, newSQN) :
 
-    if key not in self.ListOfDevices or \
-             newSQN == {} or newSQN == '' or newSQN is None:
+    if key not in self.ListOfDevices:
+        return
+    if newSQN == {}:
+        return
+    if newSQN is None:
         return
 
-    if 'PowerSource' in self.ListOfDevices[key] :
-        if self.ListOfDevices[key]['PowerSource'] == 'Main':
-            # Device on Main Power. SQN is increasing independetly of the object
-           # updSQN_mainpower( self, key, newSQN)
-            pass
-        elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-
-    elif 'MacCapa' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['MacCapa'] in ( '84', '8e'):     # So far we have a good understanding on 
-            # Device on Main Power. SQN is increasing independetly of the object
-            #updSQN_mainpower( self, key, newSQN)
-            pass
-        elif self.ListOfDevices[key]['MacCapa'] == '80':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-        else:
-            self.ListOfDevices[key]['SQN'] = {}
-
+    #Domoticz.Log("-->SQN updated %s from %s to %s" %(key, self.ListOfDevices[key]['SQN'], newSQN))
+    self.ListOfDevices[key]['SQN'] = newSQN
+    return
 
 #### Those functions will be use with the new DeviceConf structutre
 
@@ -490,111 +452,27 @@ def rgb_to_hsl(rgb):
     return h, s, l
 
 
-def loggingPairing( self, logType, message):
+def mainPoweredDevice( self, nwkid):
+    """
+    return True is it is Main Powered device
+    return False if it is not Main Powered
+    """
 
-    if self.pluginconf.pluginConf['debugPairing'] and logType == 'Debug':
-        Domoticz.Log( message )
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
+        return False
 
-    return
+    mainPower = False
+    if 'MacCapa' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
+            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
 
-def _logginfilter( self, message, nwkid):
+    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
+            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
 
-    if nwkid:
-        nwkid = nwkid.lower()
-        _debugMatchId =  self.pluginconf.pluginConf['debugMatchId'].lower().split(',')
-        if 'ffff' in _debugMatchId:
-            Domoticz.Log( message )
-        elif nwkid in _debugMatchId:
-            Domoticz.Log( message )
-        elif nwkid == 'ffff':
-            Domoticz.Log( message )
-        return
-    #else:
-    #    Domoticz.Log( message )
+    return mainPower
 
-
-def loggingCommand( self, logType, message, nwkid=None):
-    if self.pluginconf.pluginConf['debugCommand'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingDatabase( self, logType, message, nwkid=None):
-    if self.pluginconf.pluginConf['debugDatabase'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingPlugin( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugPlugin'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingCluster( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugCluster'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingOutput( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugOutput'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingInput( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugInput'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-def loggingWidget( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugWidget'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
-
-
-def loggingHeartbeat( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugHeartbeat'] and logType == 'Debug':
-        _logginfilter( self, message, nwkid)
-    elif  logType == 'Log':
-        Domoticz.Log( message )
-    elif logType == 'Status':
-        Domoticz.Status( message )
-    return
 
 def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
@@ -624,25 +502,3 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
-
-def mainPoweredDevice( self, nwkid):
-    """
-    return True is it is Main Powered device
-    return False if it is not Main Powered
-    """
-
-    if nwkid not in self.ListOfDevices:
-        Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
-        return False
-
-    mainPower = False
-    if 'MacCapa' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
-            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
-
-    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
-            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
-
-    return mainPower
-

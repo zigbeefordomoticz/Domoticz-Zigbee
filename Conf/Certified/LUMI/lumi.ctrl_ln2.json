@@ -1,0 +1,17 @@
+{
+	"Ep":{
+		"01":{"0006":"","0004":"","Type":"Switch"},
+		"02":{"0006":"","0004":"","Type":"Switch"},
+		"03":{"000c":"","Type":"Power/Meter"},
+		"04":{"000c":"","Type":"Power/Meter"}
+	},
+	"Type":"",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [ "0004", "0005"],
+		"0006": [ "0000" ],
+		"000c": []
+	}
+}
+

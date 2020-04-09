@@ -1,6 +1,32 @@
 # Release Notes 
 
-##             - beta 4.6
+##                 - 4.8
+- [Technical] - Ready for PDM on host.
+- [Technical] - Scrip for PiZiGate on Fedora distribution
+- [Technical] - Provide Firmware
+- [Web Admin] - User Interface Optimisation
+- [Hardware] - Support Schneider Wiser Thermostatic Valve
+- [Technical] - Allo device to device bindings via Web Admin Interface
+- [Technical] - Revise Strategy for OTA device firmware update. Provides only way to retreive/pull the firmware
+- [Technical] - Handle OTA Firmware update for LEDVANCE, Philips, Legrand ( would require 3.1d Zigate)
+- [Technical] - Log mecanishm for the plugin (all Logs save under Logs folder)
+
+## 22 February 2020 - 4.7.5
+- [Hardware] - More Device Configuration
+
+## 18 February 2020 - 4.7.4
+- [Hardware] - Update a number of device configuration
+
+## 14 February 2020 - 4.7.3
+- [Issue] - Fix issue when Window Covering device exist
+- [Issue] - Re-enable configureReporting split Atrribute by attribute
+- [Issue] - Check the validity of Temp and Humidity
+
+## 12 February 2020 - 4.7.1
+- [Issue] - Using wrong ClusterId for 0201 read attribute
+- [Issue] - Fixing binding information
+
+## 8 February 2020 - 4.7.0 
 - [Hardware] - Update of IKEA Tradfri firmware
 - [Technical] - better management of APS Failure, network transmission
 - [Technical] - speedup the process to get Powered Devices with a correct Health state
@@ -36,9 +62,19 @@
 - [Technical] - Management of Zigate Blue Led. No need to restart plugin. Action taken immediatly from settings
 - [Technical] - Implement pingDevice policy (parameters pingDevices, pingDevicesFeq) . Ping every 3600s and once at plugin startup. The ping is much lighter than using the polling
 - [Technical] - Implement a way to force device status after command initiated. ( forcePollingAfterAction )
+- [Technical] - New way to manage Certified devices and make custom way to Bind and configure reporting
+- [Technical] - When Device in Left status, then Timeout
+- [Hardware] - LEDVANCE SMART+ INDOOR PLUG
+- [Hardware] - Schneider Wiser S-Meter, Plug, Actionneur
+- [Technical] - Split code and extract Legrand and Schneider to dedicate module
+- [Technical] - Makes configure reporting (with multiple attribute)
+- [Technical] - Manage Meter when not Current Summation, and makes Current Summation works for Salus, Legrand
+- [Technical] - Refactor the way Device configrations are managed, and dedicate one json per Model
+- [Technical] - Introduce ClusterToBind, ConfigureReportig and ReadAttributes pragma to configuration model
+- [Technical] - Fully compliant with firmware 3.1c
 
 
-##             - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
+## 31 July 2019  - 4.5.0 ( Web User Interface ) https://github.com/sasu-drooz/Domoticz-Zigate/releases/tag/4.5.0
 - [Technical] - Web Server Class
 - [Technical] - New way of managing PluginConf/Parameters, in order to be managed from UI.
 - [Technical] - Full re-factory of Network Toplogy scanner

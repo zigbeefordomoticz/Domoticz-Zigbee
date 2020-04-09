@@ -14,7 +14,7 @@
 HEARTBEAT = 5
 
 # Number of Max Command to be submitted to Zigate
-MAX_LOAD_ZIGATE = 5
+MAX_LOAD_ZIGATE = 4
 
 # Threshold before switching to Busy state. If we have or more than MAX_FOR_ZIGATE_BUZY in the FIFO queue
 MAX_FOR_ZIGATE_BUZY = 4
@@ -80,7 +80,8 @@ ZHA_DATA_TYPE = {
         'nodata': 0x00,  # Bytestream 
         'data16': 0x09,  # 16bit Data
         'bool'  : 0x10,
-        '8bmap' : 0x16,
+        '8bmap' : 0x18,
+        '16bmap': 0x19,
         'uint8' : 0x20,  # B
         'uchar' : 0x20,  # B
         'Uint16': 0x21,  # H
@@ -96,6 +97,29 @@ ZHA_DATA_TYPE = {
         'enum16': 0x31,
         'Xfloat': 0x39,  # f
         'string': 0x42   # s
+             }
+
+SIZE_DATA_TYPE = {
+        """ 
+        For each Data Type, provide the length in number of bytes
+        """
+
+        '09': 2,    # 16bit data
+        '10': 1,    # Bool
+        '18': 1,    # 8bitmap
+        '16': 2,    # 16bitmap
+        '20': 1,    # uint8
+        '21': 2,    # uint16
+        '22': 3,    # Uint24
+        '23': 4,    # Uint32
+        '25': 6,    # Uint48
+        '28': 1,    # int8
+        '29': 2,    # int16
+        '2a': 3,    # int24
+        '2b': 4,    # int32
+        '2d': 6,    # int48
+        '30': 1,    # enum8
+        '31': 2,    # enum16
              }
 
 
@@ -133,6 +157,7 @@ ZHA_DEVICES = {
         0x000A: 'Door Lock',
         0x000B: 'Door Lock Controller',
         0x000C: 'Smart Plug',
+        0x000D: 'Consumption Awareness Device',
 
         # Lighting Devices
         0x0100: 'On/Off Light',
@@ -210,6 +235,8 @@ DOMOTICZ_COLOR_MODE = {
     9998: 'With saturation and hue'
 }
 
+ZCL_CLUSTERS_ACT = {
+        '0006', '0008', '0201', '0201', '0402' }
 
 ZCL_CLUSTERS_LIST = {
         '0000': 'Basic',
@@ -251,6 +278,7 @@ ZCL_CLUSTERS_LIST = {
         '0501': 'IAS ACE (Ancillary Control Equipment)',
         '0502': 'IAS WD (Warning Device)',
         '0b04': 'Electrical Measurement',
+        '0b05': 'Diagnostics',
         '1000': 'Touchlink'
         }
 
@@ -456,6 +484,7 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
 #        '0000',            # Basic
         '0b04',             # Electrical Meansurement
         'ff02',             # Used by Xiaomi devices for battery informations.
+        'fc21'              # Cluster Profalux PFX
         ]
 
 
@@ -463,4 +492,72 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
 LEGRAND_REMOTES = ( 'Remote switch', 'Double gangs remote switch', 'Shutters central remote switch')
 LEGRAND_REMOTE_SWITCHS = ( 'Remote switch', 'Double gangs remote switch')
 LEGRAND_REMOTE_SHUTTER = ( 'Shutters central remote switch', )
+
+
+CFG_RPT_ATTRIBUTESbyCLUSTERS = {
+        # 0xFFFF sable reporting- # 6460   - 6 hours # 0x0E10 - 3600s A hour # 0x0708 - 30' # 0x0384 - 15' # 0x012C - 5' # 0x003C - 1'
+
+        # Datatype   
+        #   10 - Boolean - 8bit #   18 - 8bitmap #   19 - 16bitmap #   20 - BbitUint #   21 - 16bitUint #   25 - 48bitUnint #   29 - 16BitInt
+        #   2a - 24bitInt #   30 - 8bitenum #   31 - 16bitenum
+
+    # Power Cluster
+    '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'0001'},
+                             '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
+                             '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'}}},
+
+    # On/Off Cluster
+    '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01'}}},
+
+    # Level Control Cluster
+    '0008': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'05'}}},
+
+    # Windows Covering
+    '0102': {'Attributes': { '0003': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
+                             '0004': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
+                             '0008': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'},
+                             '0009': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'}}},
+    # Thermostat
+    '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'},
+                             '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
+                             '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
+                             '0014': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'}}},
+    # Colour Control
+    '0300': {'Attributes': { '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color X
+                             '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color Y
+                             '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001', 'ZDeviceID':{ "0102", "010D", "0210", "0220"}}, # Color Temp
+                             '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01', 'ZDeviceID':{ }}}}, # Color Mode
+    # Illuminance Measurement
+    '0400': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'000F'}}},
+    # Temperature
+    '0402': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'}}},
+    # Pression Atmo
+    '0403': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'},
+                             '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
+    # Humidity
+    '0405': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
+
+    # Occupancy Sensing
+    '0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01'},
+                             # Sensitivy for HUE Motion
+                             '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0000','Change':'01'}}},
+    # IAS ZOne
+    '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'},
+                             '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'},
+                             '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
+    # IAS Warning Devices
+    '0502': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
+
+    # Power
+    '0702': {'Attributes': { 
+                            '0000': {'DataType': '25', 'MinInterval':'FFFF', 'MaxInterval':'0000', 'TimeOut':'0000','Change': '000000000000000a'},
+                            '0400': {'DataType': '2a', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change': '0000000a'}}},
+
+    # Electrical Measurement
+    '0b04': {'Attributes': {
+                            '0505': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'},
+                            '0508': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'},
+                            '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'}}},
+
+    }
 

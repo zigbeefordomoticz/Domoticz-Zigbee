@@ -60,6 +60,8 @@ def checkPluginUpdate( currentVersion, availVersion):
 
 def checkFirmwareUpdate( currentMajorVersion, currentFirmwareVersion, availfirmMajor, availfirmMinor):
 
+    if not availfirmMinor or not currentFirmwareVersion:
+        return False
     if int(availfirmMinor,16) > int(currentFirmwareVersion,16):
         Domoticz.Debug("checkFirmwareUpdate - Firmware update available")
         return True

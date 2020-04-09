@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python3
 # coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
@@ -22,8 +22,10 @@ from math import atan, sqrt, pi
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import DeviceExist, getEPforClusterType, is_hex, loggingCluster
+from Modules.tools import DeviceExist, getEPforClusterType, is_hex
+from Modules.logging import loggingCluster
 from Modules.output import  xiaomi_leave
+from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_setpoint
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
@@ -52,8 +54,10 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if int(AttType,16) == 0x10:    # Boolean
         return Attribute
-    elif int(AttType,16) == 0x16:  # 8Bit bitmap
+    elif int(AttType,16) == 0x18:  # 8Bit bitmap
         return int(Attribute, 16 )
+    elif int(AttType,16) == 0x19:  # 16BitBitMap
+        return str(int(Attribute, 16 ))
     elif int(AttType,16) == 0x20:  # Uint8 / unsigned char
         return int(Attribute, 16 )
     elif int(AttType,16) == 0x21:   # 16BitUint
@@ -160,7 +164,7 @@ def ReadCluster(self, Devices, MsgData):
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
 
-    loggingCluster( self, 'Debug', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s Status: %s AttrValue: %s" \
+    loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgAttrStatus, MsgClusterData),MsgSrcAddr)
 
     if 'ReadAttributes' not in  self.ListOfDevices[MsgSrcAddr]:
@@ -181,6 +185,7 @@ def ReadCluster(self, Devices, MsgData):
 
     DECODE_CLUSTER = {
             "0000": Cluster0000, "0001": Cluster0001, "0003": Cluster0003, "0005": Cluster0005, "0006": Cluster0006,"0008": Cluster0008,
+            "0009": Cluster0009,
             "0012": Cluster0012, "000c": Cluster000c,
             "0100": Cluster0100,
             "0101": Cluster0101, "0102": Cluster0102,
@@ -191,7 +196,8 @@ def ReadCluster(self, Devices, MsgData):
             "0702": Cluster0702,
             "0b04": Cluster0b04, "fc00": Clusterfc00,
             "000f": Cluster000f,
-            "fc01": Clusterfc01
+            "fc01": Clusterfc01,
+            "fc21": Clusterfc21
             }
 
     if MsgClusterId in DECODE_CLUSTER:
@@ -310,22 +316,45 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if self.ListOfDevices[MsgSrcAddr]['Model'] in self.DeviceConf:                 # If the model exist in DeviceConf.txt
                     modelName = self.ListOfDevices[MsgSrcAddr]['Model']
                     loggingCluster( self, 'Debug', "Extract all info from Model : %s" %self.DeviceConf[modelName], MsgSrcAddr)
+
+                    if 'ConfigSource' in self.ListOfDevices[MsgSrcAddr]:
+                        if self.ListOfDevices[MsgSrcAddr]['ConfigSource'] == 'DeviceConf':
+                            loggingCluster( self, 'Debug', "Not redoing the DeviceConf enrollement", MsgSrcAddr)
+                            return
+
+                    _BackupEp = None
                     if 'Type' in self.DeviceConf[modelName]:                                   # If type exist at top level : copy it
-                        self.ListOfDevices[MsgSrcAddr]['ConfigSource'] ='DeviceConf'
-                        self.ListOfDevices[MsgSrcAddr]['Type']=self.DeviceConf[modelName]['Type']
-                        _BackupEp = None
+                        if 'ConfigSource' not in self.ListOfDevices[MsgSrcAddr]:
+                            self.ListOfDevices[MsgSrcAddr]['ConfigSource'] = 'DeviceConf'
+
+                        self.ListOfDevices[MsgSrcAddr]['Type'] = self.DeviceConf[modelName]['Type']
                         if 'Ep' in self.ListOfDevices[MsgSrcAddr]:
                             loggingCluster( self, 'Debug', "Removing existing received Ep", MsgSrcAddr)
                             _BackupEp = dict(self.ListOfDevices[MsgSrcAddr]['Ep'])
                             del self.ListOfDevices[MsgSrcAddr]['Ep']                           # It has been prepopulated by some 0x8043 message, let's remove them.
                             self.ListOfDevices[MsgSrcAddr]['Ep'] = {}                          # It has been prepopulated by some 0x8043 message, let's remove them.
+                            loggingCluster( self, 'Debug',"-- Record removed 'Ep' %s" %(self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
                     for Ep in self.DeviceConf[modelName]['Ep']:                                # For each Ep in DeviceConf.txt
                         if Ep not in self.ListOfDevices[MsgSrcAddr]['Ep']:                     # If this EP doesn't exist in database
                             self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]={}                        # create it.
+                            loggingCluster( self, 'Debug', "-- Create Endpoint %s in record %s" %(Ep, self.ListOfDevices[MsgSrcAddr]['Ep']), MsgSrcAddr)
+
                         for cluster in self.DeviceConf[modelName]['Ep'][Ep]:                   # For each cluster discribe in DeviceConf.txt
                             if cluster not in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]:        # If this cluster doesn't exist in database
+                                loggingCluster( self, 'Debug', "----> Cluster: %s" %cluster, MsgSrcAddr)
                                 self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]={}           # create it.
+                                if _BackupEp and Ep in _BackupEp:                              # In case we had data, let's retreive it
+                                    if cluster in _BackupEp[Ep]:
+                                        for attr in _BackupEp[Ep][cluster]:
+                                            if attr in self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster]:
+                                                if self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] == '' or self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] == {}:
+                                                    self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
+                                            else:
+                                                self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
+
+                                            loggingCluster( self, 'Debug', "------> Cluster %s set with Attribute %s" %(cluster, attr), MsgSrcAddr)
+
                         if 'Type' in self.DeviceConf[modelName]['Ep'][Ep]:                     # If type exist at EP level : copy it
                             self.ListOfDevices[MsgSrcAddr]['Ep'][Ep]['Type']=self.DeviceConf[modelName]['Ep'][Ep]['Type']
                         if 'ColorMode' in self.DeviceConf[modelName]['Ep'][Ep]:
@@ -333,12 +362,6 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos'] ={}
                             if 'ColorMode' in  self.DeviceConf[modelName]['Ep'][Ep]:
                                 self.ListOfDevices[MsgSrcAddr]['ColorInfos']['ColorMode'] = int(self.DeviceConf[modelName]['Ep'][Ep]['ColorMode'])
-                                if _BackupEp:
-                                    if Ep in _BackupEp:
-                                        if cluster == {}:
-                                            if cluster in _BackupEp[Ep]:
-                                                for attr in _BackupEp[Ep][cluster]:
-                                                    self.ListOfDevices[MsgSrcAddr]['Ep'][Ep][cluster][attr] = _BackupEp[Ep][cluster][attr]
 
                     loggingCluster( self, 'Debug', "Result based on DeviceConf is: %s" %str(self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
@@ -371,6 +394,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - Product Code: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == '000b': # 
+        loggingCluster( self, 'Debug', "ReadCluster - Attribute 0x000b: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
     elif MsgAttrID == '0010': # LOCATION_DESCRIPTION
         loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Location: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
@@ -380,6 +407,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'debug', "ReadCluster - 0x0000 - Physical Environment: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['PhysicalEnv'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == '0012': # 
+        loggingCluster( self, 'debug', "ReadCluster - 0x0000 - Attribute 0012: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == '0013': # 
         loggingCluster( self, 'debug', "ReadCluster - 0x0000 - Attribute 0013: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
@@ -421,7 +452,24 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID == "f000": 
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut f000: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
+        legrand = False
+        if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1021' :
+               legrand = True 
+        if legrand:
+            op_time = int(str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
+            dd = op_time // 62400
+            op_time = op_time - ( dd * 62400 )
+            hh =  op_time  // 3600
+            op_time = op_time - ( hh * 3600 )
+            mm = op_time // 60
+            op_time = op_time - ( mm * 60)
+            ss =  op_time 
+
+            self.ListOfDevices[MsgSrcAddr]['Operating Time'] = '%sd %sh %sm %ss' %(dd,hh,mm,ss)
+            loggingCluster( self, 'Debug', "%s/%s ReadCluster - 0x0000 - Operating Time: %sdays %shours %smin %ssec" %(MsgSrcAddr, MsgSrcEp, dd, hh,mm,ss), MsgSrcAddr)
+        else:
+            loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - Attribut f000: %s" %str(decodeAttribute( self, MsgAttType, MsgClusterData) ), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID in ( 'ff0d', 'ff22', 'ff23'): # Xiaomi Code
@@ -476,30 +524,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sLQI != '':
             loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
 
-        if self.pluginconf.pluginConf['XiaomiLeave'] and ( self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and  self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main'):
-            # Experimental only.
-            # We known that after a reset the Xiaomi device stay in pairing mode for about 5' ( Heartbeat: 5 * 60 ) // HEARTBEAT)
-            # The idea is during this elapsed to force a serie of leave/pairing, in order to push the device to setup the proprer route
-            # And we will do that only if we receive a ff01/ff02 with RSSI/LQI values
-            zdvName = ''
-            if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                zdvName = self.ListOfDevices[MsgSrcAddr]['ZDeviceName']
-                loggingCluster( self, 'Log', "Device: %s -- %s -- %s -- %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['IEEE'], self.ListOfDevices[MsgSrcAddr]['Model']), MsgSrcAddr)
-            _req_leave = True
-            if sRSSI != '':
-                loggingCluster( self, 'Log', "---> Xiaomi %s (%s) RSSI: %s" %(zdvName, MsgSrcAddr, int(sRSSI,16)), MsgSrcAddr)
-                _req_leave = True
-            if sLQI != '':
-                loggingCluster( self, 'Log', "---> Xiaomi %s (%s) LQI : %s" %(zdvName, MsgSrcAddr, int(sLQI,16)), MsgSrcAddr)
-                _req_leave = True
-            
-            if _req_leave:
-                if int(self.ListOfDevices[MsgSrcAddr]['Heartbeat']) < 60:
-                    loggingCluster( self, 'Log', "---> Request Xiaomi device: %s (%s) to leave" %(zdvName, MsgSrcAddr), MsgSrcAddr)
-                    xiaomi_leave( self, MsgSrcAddr)
-
-        if self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and \
-                self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main' and  sBatteryLvl != '':
+        if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main':
             voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
             voltage = int(voltage, 16 )
             ValueBattery = voltage2batteryP( voltage, 3150, 2750)
@@ -564,7 +589,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sOnOff != '':
             if 'Model' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
-                    loggingCluster( self, 'Log', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
+                    loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
                     # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
                     return
 
@@ -581,7 +606,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb / Lumi Curtain - Position
             if 'Model' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
-                    loggingCluster( self, 'Log', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
+                    loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
                     # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
                     return
             loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
@@ -604,9 +629,10 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']:
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = {}
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = sLevel
-
-    elif MsgAttrID == 'ffe2': # Zemismart
-        loggingCluster( self, 'Log', "ReadCluster - 0000 %s/%s attribute Zemismart - ffe2: 0x%s %s" %(MsgSrcAddr, MsgSrcEp, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
+    elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2'):
+        # Tuya, Zemismart
+        loggingCluster( self, 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
+                %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, decodeAttribute( self, MsgAttType, MsgClusterData)), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
 
@@ -616,7 +642,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Cluster Revision'] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     else:
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " 
+                %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
 def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -679,6 +706,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == "0020": # Battery Voltage
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery: %s V" %(MsgSrcAddr, value) , MsgSrcAddr)
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
+                value = round( value/10, 1)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
 
     elif MsgAttrID == "0021": # Battery %
@@ -698,9 +728,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0035: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
-    elif MsgAttrID == "0036":
+    elif MsgAttrID == "0036": # Minimum Threshold
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-        loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0036: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster 0001 - %s Minimum Threshold: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == 'fffd': # Cluster Version
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
@@ -711,7 +741,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84', '8e') or \
             self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main':
-            # This should reflect the main voltage.
+        # This should reflect the main voltage.
+        # Cleanup Battery in case.
+        self.ListOfDevices[ MsgSrcAddr]['Battery'] = {}
         return
 
     # Compute Battery %
@@ -727,7 +759,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0021'])
 
     BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201" )
-    BATTERY_3VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
+    BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
 
     BATTERY_15_VOLTS = ( )
     BATTERY_30_VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
@@ -744,12 +776,22 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif battRemainingVolt != 0: 
         max_voltage = 30 ; min_voltage = 27
+        if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            if '0036' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+                if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != {} and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != '':
+                    battery_voltage_threshold = int(str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036']))/10
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
                 max_voltage = 30 ; min_voltage = 25
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
                 max_voltage = 3 * 1.5; min_voltage = 3 * 1
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
+                max_voltage = 60 ; min_voltage = 30
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+                max_voltage = 2 * 1.5; min_voltage = 2 * 1
 
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
@@ -781,12 +823,31 @@ def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
+    def compute_conso( self, MsgSrcAddr, raw_value ):
+
+        conso = raw_value # Raw value
+        if '0302' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+            diviser = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0302']
+            value = round( conso / ( diviser / 1000 ),3)
+            loggingCluster( self, 'Debug', "Cluster0702 - 0x0400 Instant demand %s, div: %s --> %s Watts" %( conso, diviser, value))
+        elif '0301' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+            multiplier = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0301']
+            value = round( conso * multiplier, 3)
+            loggingCluster( self, 'Debug', "Cluster0702 - 0x0400 Instant demand %s, multiply: %s --> %s Watts" %( conso, multiplier, value))
+        else:
+            # Old fashion
+            value = round(conso/10, 3)
+            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-SPD-V2':
+                    value = round(conso, 3)
+
+        return ( value )
+
+
     # Smart Energy Metering
     if int(MsgAttSize,16) == 0:
         loggingCluster( self, 'Debug', "Cluster0702 - empty message ", MsgSrcAddr)
         return
-
-    value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -795,14 +856,31 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
+
+    # Convert to int
+    value = decodeAttribute( self, MsgAttType, MsgClusterData )
+    try:
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
+
+    except:
+        Domoticz.Error("Cluster0702 - %s/%s unable to decode %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" 
+                %(MsgSrcAddr, MsgSrcEp, value, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData))
+        value = 0
+
     loggingCluster( self, 'Debug', "Cluster0702 - MsgAttrID: %s MsgAttType: %s DataLen: %s Data: %s decodedValue: %s" %(MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     if MsgAttrID == "0000": # CurrentSummationDelivered
-        loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED %s " %(value), MsgSrcAddr)
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+        conso = compute_conso( self,  MsgSrcAddr, value)
+        loggingCluster( self, 'Debug', "Cluster0702 - 0x0000 CURRENT_SUMMATION_DELIVERED Value: %s Conso: %s " %(value, conso), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = conso
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(conso), Attribute_='0000' )
 
     elif MsgAttrID == "0001": #CURRENT_SUMMATION_RECEIVED
         loggingCluster( self, 'Debug', "Cluster0702 - CURRENT_SUMMATION_RECEIVED %s " %(value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+
+    elif MsgAttrID == "0002": #Current Max Demand Delivered
+        loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Max Demand Delivered %s " %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "000a": #ATTR_DEFAULT_UPDATE_PERIOD
@@ -838,19 +916,19 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if value in MEASURE_UNITS:
             value = MEASURE_UNITS[value]
 
-        loggingCluster( self, 'Debug', "Cluster0702 - Unit of Measure: %s" %(value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Unit of Measure: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "0301":   # Multiplier
-        loggingCluster( self, 'Debug', "Cluster0702 - Multiplier: %s" %(value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Multiplier: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "0302":   # Divisor
-        loggingCluster( self, 'Debug', "Cluster0702 - Divisor: %s" %(value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Divisor: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "0303":   # "Summation Formatting
-        loggingCluster( self, 'Debug', "Cluster0702 - Summation Formatting: %s" %(value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Summation Formatting: %s" %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "0306":   # Device Type
@@ -869,12 +947,30 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "0400": 
+        # InstantDemand will be transfer to Domoticz in Watts
+        conso = compute_conso( self, MsgSrcAddr, value )
 
-        value = round(value/10, 3)
-        loggingCluster( self, 'Debug', "Cluster0702 - 0x0400 Instant demand %s" %(value), MsgSrcAddr)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(value))
+        loggingCluster( self, 'Debug', "Cluster0702 - 0x0400 Instant demand raw_value: %s Conso: %s" %(value, conso), MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,str(conso))
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(conso)
+
+    elif MsgAttrID == '0801':
+        loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Electricty Alarm Mask: %s " %(MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
+    elif MsgAttrID in ( '5000', '5001', '5101', '5121', '5500', '5501', '5601', '5622', '5a20', '5a22' ):
+        ELECTRICAL_MEASURES = { '5000': 'electricCurrentMultiplier',
+                '5001': 'electricCurrentDivisor',
+                'e200': 'ctStatusRegister',
+                'e201': 'ctPowerConfiguration',
+                'e202': 'ctCalibrationMultiplier'
+                }
+
+        if MsgAttrID in ELECTRICAL_MEASURES:
+            loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Schneider %s : %s " %(MsgSrcAddr, MsgSrcEp, ELECTRICAL_MEASURES[MsgAttrID], value), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+        else:
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Attribute: %s  Raw Data: %s Decoded Data: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, value), MsgSrcAddr)
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
@@ -974,6 +1070,7 @@ def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
     elif MsgAttrID == '4010':
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr) 
+
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
@@ -1058,25 +1155,25 @@ def Cluster0005( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     if MsgAttrID == '0000': # SceneCount
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Scene Count: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Scene Count: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == '0001': # CurrentScene
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Scene Cuurent Scene: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Scene Cuurent Scene: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == '0002': # CurrentGroup
-        loggingCluster( self, 'Log', "readCluster - %s - %s/% Scene Current Group: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/% Scene Current Group: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == '0003': # SceneVal id
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Scene Valid : %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Scene Valid : %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == '0004': # NameSupport
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Scene NameSupport: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Scene NameSupport: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     elif MsgAttrID == '0005': # LastConfiguredBy
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s Scene Last Configured By : %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Scene Last Configured By : %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     else:
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Cluster On/Off
@@ -1117,10 +1214,14 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     value = '02'
                 elif MsgClusterData == '82': # Long Click
                     value = '03'
+                elif MsgClusterData == 'cd': # short reset , a short click on the reset button
+                    return
                 else:
-                    Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
+                    #Domoticz.Log("Konke Multi Purpose Switch - Unknown Value: %s" %MsgClusterData)
                     return
                 loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Konke Multi Purpose Switch reception General: On/Off: %s" %value , MsgSrcAddr)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
+                return
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
                 # Livolo / Might get something else than On/Off
@@ -1147,6 +1248,14 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
+    elif MsgAttrID == "8001":
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+    elif MsgAttrID == "8002":
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
     elif MsgAttrID == "f000" and MsgAttType == "23" and MsgAttSize == "0004":
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
@@ -1170,12 +1279,12 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if _Xiaomi_code in XIAOMI_CODE:
             if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-                loggingCluster( self, 'Log', "ReadCluster - Xiaomi 0006/f000 - %s %s/%s %s: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[ _Xiaomi_code ], int(_Xiaomi_Value,16)), MsgSrcAddr)
+                loggingCluster( self, 'Debug', "ReadCluster - Xiaomi 0006/f000 - %s %s/%s %s: %s" %(self.ListOfDevices[MsgSrcAddr]['ZDeviceName'],MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[ _Xiaomi_code ], int(_Xiaomi_Value,16)), MsgSrcAddr)
             else:
-                loggingCluster( self, 'Log', "ReadCluster - Xiaomi 0006/f000 - %s/%s %s: %s" %(MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[ _Xiaomi_code ], int(_Xiaomi_Value,16)), MsgSrcAddr)
+                loggingCluster( self, 'Debug', "ReadCluster - Xiaomi 0006/f000 - %s/%s %s: %s" %(MsgSrcAddr, MsgSrcEp, XIAOMI_CODE[ _Xiaomi_code ], int(_Xiaomi_Value,16)), MsgSrcAddr)
 
         else:
-            loggingCluster( self, 'Log', "ReadCluster - Xiaomi 0006/f000 - - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData), MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster - Xiaomi 0006/f000 - - %s/%s Unknown Xiaomi Code %s raw data: %s (please report to @pipiche)" %(MsgSrcAddr, MsgSrcEp, _Xiaomi_code, MsgClusterData), MsgSrcAddr)
 
 
     elif MsgAttrID == 'fffd':
@@ -1238,6 +1347,19 @@ def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+
+def Cluster0009( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+    loggingCluster( self, 'Log', "ReadCluster 0101 - Dev: %s, EP:%s AttrID: %s, AttrType: %s, AttrSize: %s Attribute: %s Len: %s" \
+            %( MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, len(MsgClusterData)), MsgSrcAddr)
 
 def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Door Lock Cluster
@@ -1352,22 +1474,22 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                             }
 
     elif  MsgAttrID == "0001":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Physical close limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Physical close limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif  MsgAttrID == "0002":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Physical close limit Tilt cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Physical close limit Tilt cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0003":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Curent position Lift in cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Curent position Lift in cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0004":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Curent position Tilt in cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Curent position Tilt in cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0005":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Number of Actuations – Lift: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Number of Actuations – Lift: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0006":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Number of Actuations – Tilt: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Number of Actuations – Tilt: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0007":
         # 00000001 - 0-Not Operational, 1-Operational
@@ -1380,12 +1502,12 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 10000000 - Reserved
 
         if MsgClusterData != '03':
-            loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
         else:
             loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Config Status: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0008":
-        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Current position lift in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302' and value == 50:
@@ -1400,22 +1522,26 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         value = 100 - value
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Shutter switch with neutral':
-                    value = 100 - value
+                    # The Shutter should have the Led on its right
+                    # Present Value: 0x01 -> Open
+                    # Present Value: 0x00 -> Closed
+                    value = value
+                    #value = 100 - value
 
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, "%02x" %value )
 
     elif MsgAttrID == "0009":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Curent position Tilte in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Curent position Tilte in %%: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0010":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Open limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Open limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0011":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Closed limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Closed limit lift cm: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
 
     elif MsgAttrID == "0014":
-        loggingCluster( self, 'Log', "ReadCluster - %s - %s/%s - Velocity lift: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
-        loggingCluster( self, 'Log', "Velocity", MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Velocity lift: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "Velocity", MsgSrcAddr)
 
     elif MsgAttrID == "0017":
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Windows Covering mode: %s, Type: %s, Size: %s Data: %s-%s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, value), MsgSrcAddr)
@@ -1453,6 +1579,11 @@ def Cluster0400( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Temperature Measurement Cluster
+    # The possible values are used as follows:
+    #   0x0000 to 0x7FFF represent positive temperatures from 0°C to 327.67ºC
+    #   0x8000 indicates that the temperature measurement is invalid
+    #   0x8001 to 0x954C are unused values
+    #   0x954D to 0xFFFF represent negative temperatures from -273.15°C to -1°C 
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -1461,12 +1592,27 @@ def Cluster0402( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    if MsgClusterData != '':
-        value = round(int(decodeAttribute( self, MsgAttType, MsgClusterData))/100,1)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+    if MsgAttrID == '0000' and MsgClusterData != '':
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
+        if value > 0x7FFF and  value < 0x954D:
+            loggingCluster( self, 'Log', "readCluster - %s - %s/%s Invalid Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        else:
+            value = round(value/100,1)
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Temperature Measurement: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+    elif MsgAttrID == '0001':
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Atribute 0x0001: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+
+    elif MsgAttrID == '0002':
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Atribute 0x0002: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, value), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+
     else:
-        Domoticz.Error("ReadCluster - ClusterId=0402 - MsgClusterData vide")
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: Pression atmospherique)
@@ -1507,6 +1653,13 @@ def Cluster0403( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
 def Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # Measurement Umidity Cluster
+    # u16MeasuredValue is a mandatory attribute representing the measured relatively humidity as a percentage in steps of 0.01%, 
+    # as follows:u16MeasuredValue = 100 x relative humidity percentageSo, 
+    # for example, 0x197C represents a relative humidity measurement of 65.24%. 
+    # The possible values are used as follows:
+    #   0x0000 to 0x2710 represent relative humidities from 0% to 100%
+    #   0x2711 to 0xFFFE are unused values
+    #   0xFFFF indicates an invalid measure
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -1515,12 +1668,17 @@ def Cluster0405( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    if MsgClusterData != '':
-        value = round(int(decodeAttribute( self, MsgAttType, MsgClusterData))/100,1)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-
-    loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0405 - reception hum: " + str(int(MsgClusterData,16)/100) , MsgSrcAddr)
+    if MsgAttrID == '0000' and MsgClusterData != '':
+        value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
+        if value > 0x2710:
+            loggingCluster( self, 'Log', "ReadCluster - ClusterId=0405 - Invalid hum: %s - %s" %(int(MsgClusterData,16),value) , MsgSrcAddr)
+        else:
+            value = round(value/100,1)
+            loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0405 - reception hum: %s - %s" %(int(MsgClusterData,16),value) , MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value )
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+    else:
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
     # (Measurement: Occupancy Sensing)
@@ -1538,22 +1696,22 @@ def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,MsgClusterData)
 
     elif MsgAttrID == '0001':
-        loggingCluster( self, 'Log', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
+        loggingCluster( self, 'Debug', "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
-        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0406 - Sensor Type: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0406 - Sensor Type: " + str(MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '0010':
-        loggingCluster( self, 'Log', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
+        loggingCluster( self, 'Debug', "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
-        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0406 - Occupied to UnOccupied delay: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0406 - Occupied to UnOccupied delay: " + str(MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '0011':
-        loggingCluster( self, 'Log', "ReadCluster - %s NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
+        loggingCluster( self, 'Debug', "ReadCluster - %s - NwkId: %s Ep: %s AttrId: %s AttyType: %s Attsize: %s AttrValue: %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData),MsgSrcAddr)
-        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0406 - UnOccupied to Occupied delay: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0406 - UnOccupied to Occupied delay: " + str(MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID == '0030':
-        loggingCluster( self, 'Log', "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData) , MsgSrcAddr)
 
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -1599,7 +1757,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['IAS']['ZoneStatus'] = {}
 
     if MsgAttrID == "0000": # ZoneState ( 0x00 Not Enrolled / 0x01 Enrolled )
-        Domoticz.Log("ReadCluster0500 - Device: %s --- Attribute: %s MsgData: %s" %(MsgSrcAddr, MsgAttrID, MsgClusterData))
+        #Domoticz.Log("ReadCluster0500 - Device: %s --- Attribute: %s MsgData: %s" %(MsgSrcAddr, MsgAttrID, MsgClusterData))
         if MsgClusterData != '':
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
             if int(MsgClusterData,16) == 0x00:
@@ -1611,7 +1769,7 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 5, MsgClusterData)
 
     elif MsgAttrID == "0001": # ZoneType
-        Domoticz.Log("ReadCluster0500 - Device: %s --- Attribute: %s MsgData: %s" %(MsgSrcAddr, MsgAttrID, MsgClusterData))
+        #Domoticz.Log("ReadCluster0500 - Device: %s --- Attribute: %s MsgData: %s" %(MsgSrcAddr, MsgAttrID, MsgClusterData))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
         if MsgClusterData != '':
             if int(MsgClusterData,16) in ZONE_TYPE:
@@ -1808,7 +1966,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     # Thermostat cluster
-    loggingCluster( self, 'Debug', "ReadCluster 0201 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+    loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -1833,87 +1991,115 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = {}
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = ValueTemp
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Local Temp: %s" %ValueTemp, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Local Temp: %s" %ValueTemp, MsgSrcAddr)
 
     elif MsgAttrID == '0001': # Outdoor Temperature
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Outdoor Temp: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Outdoor Temp: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0002': # Occupancy
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Occupancy: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Occupancy: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0003': # Min Heat Setpoint Limit
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Min Heat Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Min Heat Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0004': # Max Heat Setpoint Limit
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Max Heat Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Max Heat Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0005': # Min Cool Setpoint Limit
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Min Cool Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Min Cool Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0006': # Max Cool Setpoint Limit
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Max Cool Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Max Cool Setpoint Limit: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0007':   #  Pi Cooling Demand  (valve position %)
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Pi Cooling Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Pi Cooling Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0008':   #  Pi Heating Demand  (valve position %)
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s Pi Heating Demand: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0009':   #  HVAC System Type Config
-        loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s HVAC System Type Config: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s HVAC System Type Config: %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     elif MsgAttrID == '0010':   # Calibration / Adjustement
         value = value / 10 
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Calibration: %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Calibration: %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0011':   # Cooling Setpoint (Zinte16)
         ValueTemp=round(int(value)/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Cooling Setpoint: %s" %ValueTemp, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Cooling Setpoint: %s" %ValueTemp, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
     elif MsgAttrID == '0012':   # Heat Setpoint (Zinte16)
         ValueTemp = round(int(value)/100,2)
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Heating Setpoint: %s ==> %s" %(value, ValueTemp), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
-        if str(self.ListOfDevices[MsgSrcAddr]['Model']).find('SPZB') == -1:
-            # In case it is not a Eurotronic, let's Update heatPoint
-            # As Eurotronics will rely on 0x4003 attributes
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Request update on Domoticz", MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+                # In case of Schneider Wiser Valve, we have to 
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - ValueTemp: %s" %int( ((ValueTemp * 100) * 2) / 2 ), MsgSrcAddr)
+                if 'Schneider' in self.ListOfDevices[MsgSrcAddr]:
+                    if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] == int( ((ValueTemp * 100) * 2) / 2 ):
+                            # Existing Target equal Local Setpoint in Device
+                            self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = None
+                            self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = None
+                            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+
+                        elif self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] is None:
+                            # Target is None
+                            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+                    else:
+                        # No Target Setpoint, so we assumed Setpoint has been updated manualy.
+                        self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = None
+                        self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = None
+                        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+                else:
+                    # No Schneider section, so we assumed Setpoint has been updated manualy.
+                    self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
+                    self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] = None
+                    self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] = None
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
+
+            elif self.ListOfDevices[MsgSrcAddr]['Model'] != 'SPZB0001':
+                # In case it is not a Eurotronic, let's Update heatPoint
+                # As Eurotronics will rely on 0x4003 attributes
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - Request update on Domoticz %s not a Schneider, not a Eurotronics" %MsgSrcAddr, MsgSrcAddr)
+                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,ValueTemp,Attribute_=MsgAttrID)
 
     elif MsgAttrID == '0014':   # Unoccupied Heating
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Unoccupied Heating:  %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Unoccupied Heating:  %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0015':   # MIN_HEAT_SETPOINT_LIMIT
         ValueTemp=round(int(value)/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Min SetPoint: %s" %ValueTemp, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Min SetPoint: %s" %ValueTemp, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
     elif MsgAttrID == '0016':   # MAX_HEAT_SETPOINT_LIMIT
         ValueTemp=round(int(value)/100,1)
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Max SetPoint: %s" %ValueTemp, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Max SetPoint: %s" %ValueTemp, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
 
     elif MsgAttrID == '0025':   # Scheduler state
         # Bit #0 => disable/enable Scheduler
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Scheduler state:  %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Scheduler state:  %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0029':   # Heating operation state
         # bit #0 heat On/Off state
         # bit #1 cool on/off state
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Heating operation state:  %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Heating operation state:  %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '001b': # Control Sequence Operation
@@ -1938,80 +2124,155 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 0x07: 'Fan only'  }
 
         if int(value) in SYSTEM_MODE:
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]), MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster - 0201 - System Mode: %s / %s" %(value, SYSTEM_MODE[value]), MsgSrcAddr)
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value, Attribute_=MsgAttrID )
         else:
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 1C: %s" %value, MsgSrcAddr)
+            loggingCluster( self, 'Debug', "ReadCluster - 0201 - Attribute 1C: %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '001d':
 
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Alarm Mask: %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Alarm Mask: %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0403':
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 403: %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Attribute 403: %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0405':
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Attribute 405 ( thermostat mode ?=regulator mode For Elko) : %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Attribute 405 ( thermostat mode ?=regulator mode For Elko) : %s" %value, MsgSrcAddr)
 
     elif MsgAttrID == '0406':
-        loggingCluster( self, 'Log', "ReadCluster 0201 - Attribute 406 : %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Attribute 406 : %s" %value, MsgSrcAddr)
 
     elif MsgAttrID == '0408':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 408 ( Elko power consumption in last 10 minutes): %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Attribute 408 ( Elko power consumption in last 10 minutes): %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == '0409':
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData))
-        loggingCluster( self, 'Debug', "ReadCluster 0201 - Attribute 409: %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0201 - Attribute 409: %s" %value, MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID in ( '4000', '4001', '4002', '4003', '4008' ):
-        # Eurotronic SPZB Specifics
 
-        if MsgAttrID == '4000': # TRV Mode for EUROTRONICS
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - TRV Mode: %s" %value, MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-    
-        elif MsgAttrID == '4001': # Valve position for EUROTRONICS
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Valve position: %s" %value, MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-    
-        elif MsgAttrID == '4002': # Erreors for EUROTRONICS
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Status: %s" %value, MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
-    
-        elif MsgAttrID == '4003': # Current Temperature Set point for EUROTRONICS
-            setPoint = ValueTemp = round(int(value)/100,2)
-            if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-                setPoint = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0012']
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Current Temp Set point: %s versus %s " %(ValueTemp, setPoint), MsgSrcAddr)
-            if ValueTemp != float(setPoint):
-                # Seems that there is a local setpoint
-                MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
+        eurotronics = False
+        if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1037':
+                eurotronics = True
+        if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+            if self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'Eurotronic':
+                eurotronics = True
 
-        elif MsgAttrID == '4008': # Host Flags for EUROTRONICS
-            HOST_FLAGS = {
-                    0x000002:'Display Flipped',
-                    0x000004:'Boost mode',
-                    0x000010:'disable off mode',
-                    0x000020:'enable off mode',
-                    0x000080:'child lock'
-                    }
-            loggingCluster( self, 'Debug', "ReadCluster 0201 - Host Flags: %s" %value, MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        if eurotronics:
+            # Eurotronic SPZB Specifics
+            if MsgAttrID == '4000': # TRV Mode for EUROTRONICS
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s TRV Mode: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+     
+            elif MsgAttrID == '4001': # Valve position for EUROTRONICS
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Valve position: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+     
+            elif MsgAttrID == '4002': # Erreors for EUROTRONICS
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Status: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+     
+            elif MsgAttrID == '4003': # Current Temperature Set point for EUROTRONICS
+                setPoint = ValueTemp = round(int(value)/100,2)
+                if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+                    setPoint = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0012']
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Current Temp Set point: %s versus %s " %(MsgSrcAddr, MsgSrcEp,ValueTemp, setPoint), MsgSrcAddr)
+                if ValueTemp != float(setPoint):
+                    # Seems that there is a local setpoint
+                    MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',ValueTemp, Attribute_=MsgAttrID)
+                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = ValueTemp
+                    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0012'] = ValueTemp
+    
+            elif MsgAttrID == '4008': # Host Flags for EUROTRONICS
+                HOST_FLAGS = {
+                        0x000002:'Display Flipped',
+                        0x000004:'Boost mode',
+                        0x000010:'disable off mode',
+                        0x000020:'enable off mode',
+                        0x000080:'child lock'
+                        }
+                loggingCluster( self, 'Debug', "ReadCluster - 0201 - %s/%s Host Flags: %s" %(MsgSrcAddr, MsgSrcEp,value), MsgSrcAddr)
+                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
         
+    elif MsgAttrID in ( 'e010', 'e011', 'e012', 'e013', 'e014', 'e030', 'e031'):
+        if MsgAttrID == 'e010': # Schneider Thermostat Mode
+            THERMOSTAT_MODE = { '00': 'Mode Off', '01': 'Manual',
+                '02': 'Schedule', '03': 'Energy Saver',
+                '04': 'Schedule Ebergy Saver', '05': 'Holiday Off',
+                '06': 'Holiday Frost Protection', }
+
+            if MsgClusterData in THERMOSTAT_MODE:
+                loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, THERMOSTAT_MODE[MsgClusterData]), MsgSrcAddr)
+            else:
+                loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Thermostat Mode 0xe010 %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+        elif MsgAttrID == 'e011': 
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_HACT_CONFIG  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0201',MsgClusterData, Attribute_=MsgAttrID)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+        elif MsgAttrID == 'e012':  # 57362, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_STATUS  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        elif MsgAttrID == 'e013': # 57363, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_THRESHOLD  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        elif MsgAttrID == 'e014': # 57364, ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider ATTRIBUTE_THERMOSTAT_OPEN_WINDOW_DETECTION_INTERVAL  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+        elif MsgAttrID == 'e030': 
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Position  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        elif MsgAttrID == 'e031':
+            loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Calibration Status %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
     else:
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+    # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribute
+    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
+            now = time.time()
+            # Manage SetPoint
+            if '0201' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+                if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
+                    if 'Schneider' not in self.ListOfDevices[MsgSrcAddr]:
+                        self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
+                    if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] and self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
+                            # Protect against overloading Zigate
+                            if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 15:
+                                schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
+
+            # Manage Zone Mode
+                if 'e010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
+                    if 'Target Mode' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
+                        EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
+                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] is not None:
+                            if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] == int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
+                                self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] = None
+                                self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] = None
+                            else: 
+                                if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] + 15:
+                                    schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
+
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-    loggingCluster( self, 'Debug', "ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
+    loggingCluster( self, 'Log', "ReadCluster 0204 - Addr: %s Ep: %s AttrId: %s AttrType: %s AttSize: %s Data: %s"
             %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -2026,9 +2287,9 @@ def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == '0001':
         # Lock Mode
         value = decodeAttribute( self, MsgAttType, MsgClusterData)
-        loggingCluster( self, 'Log', "ReadCluster 0204 - Lock Mode: %s" %value, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0204 - Lock Mode: %s" %value, MsgSrcAddr)
     else:
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 
 
@@ -2153,14 +2414,18 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     if MsgClusterData == '01':
                         value = '%02x' %100
                     else:
-                        value = MsgClusterData
+                        value = '%02x' %0
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Shutter switch with neutral' ):
+                    # The Shutter should have the Led on its right
+                    # Present Value: 0x01 -> Open
+                    # Present Value: 0x00 -> Closed
+                    loggingCluster( self, 'Debug', "---->Legrand Shutter switch with neutral Present Value: %s" %MsgClusterData, MsgSrcAddr)
                     if MsgClusterData == '01':
                         value = '%02x' %100
                     else:
-                        value = MsgClusterData
+                        value = '%02x' %0
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch w/o neutral' ):
@@ -2243,6 +2508,26 @@ def Clusterfc01( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 
+def Clusterfc21( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+
+    loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+
+    if MsgAttrID == "0001":
+        loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Orientation BSO: %s - %s °" \
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData, int(MsgClusterData,16)), MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgClusterData)
+
+
 def Cluster0100( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -2255,15 +2540,15 @@ def Cluster0100( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
     if MsgAttrID == "0000":
-        loggingCluster( self, 'Log', "ReadCluster 0100 - Shade Config: PhysicalClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: PhysicalClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
     elif MsgAttrID == "0001":
-        loggingCluster( self, 'Log', "ReadCluster 0100 - Shade Config: MotorStepSize: %s" %MsgClusterData, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: MotorStepSize: %s" %MsgClusterData, MsgSrcAddr)
     elif MsgAttrID == "0002":
-        loggingCluster( self, 'Log', "ReadCluster 0100 - Shade Config: Status: %s" %MsgClusterData, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: Status: %s" %MsgClusterData, MsgSrcAddr)
     elif MsgAttrID == "0010":
-        loggingCluster( self, 'Log', "ReadCluster 0100 - Shade Config: ClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: ClosedLimit: %s" %MsgClusterData, MsgSrcAddr)
     elif MsgAttrID == "0011":
-        loggingCluster( self, 'Log', "ReadCluster 0100 - Shade Config: Mode: %s" %MsgClusterData, MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster 0100 - Shade Config: Mode: %s" %MsgClusterData, MsgSrcAddr)
     else:
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" \
             %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)

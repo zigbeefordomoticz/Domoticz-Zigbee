@@ -62,36 +62,43 @@ SETTINGS = {
                 'polling0406':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'polling0500':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'polling0502':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                'polling0702':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'polling0702':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'polling000f':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                'pollingfc01':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
+                'pollingfc01':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'pollingfc21':          { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True}
             }},
         # Device Management
         'DeviceManagement': { 'Order': 5, 'param': {
-                'forcePollingAfterAction':     { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'forcePassiveWidget':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
-                'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':True, 'Advanced':True},
-                'resetPluginDS': { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':True, 'Advanced':True},
-                'resetConfigureReporting': { 'type':'bool', 'default':0 , 'current': None , 'restart':True , 'hidden':False, 'Advanced':True},
-                'resetReadAttributes': { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':True},
-                'resetMotiondelay': { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'doUnbindBind':  { 'type':'bool', 'default':0 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True},
-                'allowReBindingClusters':  { 'type':'bool', 'default':1 , 'current': None , 'restart':False , 'hidden':False, 'Advanced':True}
+                'forcePollingAfterAction':       { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'forcePassiveWidget':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'allowForceCreationDomoDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'resetPluginDS':                 { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'resetConfigureReporting':       { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'resetReadAttributes':           { 'type':'bool', 'default':0 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':True},
+                'resetMotiondelay':              { 'type':'int', 'default':30 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'allowGroupMembership':          { 'type':'bool', 'default':1 , 'current': None, 'restart':True  , 'hidden':False, 'Advanced':True},
+                'doUnbindBind':                  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'allowReBindingClusters':        { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
             }},
 
         # Zigate Configuration
         'ZigateConfiguration': { 'Order': 6, 'param': {
-                'allowRemoveZigateDevice':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'blueLedOnOff':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'enableAPSFailureLoging':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
-                'enableAPSFailureReporting':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
-                'Ping':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'eraseZigatePDM':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'Certification':  { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                'CertificationCode':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-                'channel':  { 'type':'str', 'default':'0' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                'TXpower_set':  { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'extendedPANID': { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
+                'zigatePartOfGroup0000':         { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'allowRemoveZigateDevice':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'blueLedOnOff':                  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'enableACKNACK':                 { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'resetPermit2Join':              { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'enableAPSFailureLoging':        { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                'enableAPSFailureReporting':     { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                'Ping':                          { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'eraseZigatePDM':                { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'breakConfigureReporting':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'Certification':                 { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                'CertificationCode':             { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                'channel':                       { 'type':'str', 'default':'0' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                'TXpower_set':                   { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'extendedPANID':                 { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'zigatePDMonHost':               { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True}
             }},
 
         # Command Transitionin tenth of seconds
@@ -105,81 +112,98 @@ SETTINGS = {
             #Over The Air Upgrade
         'OverTheAirUpgrade': { 'Order': 7, 'param': {
                 'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
+                'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                'OTAwait4nextImage': { 'type':'int', 'default':60 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
             }},
 
         # Plugin Transport
         'PluginTransport': { 'Order': 9, 'param': {
                 #'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 #'APSreTx': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
-                'CrcCheck':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-                'reTransmit':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-                'sendDelay':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                 #'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
-                'zTimeOut':  { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                'CrcCheck':    { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                'reTransmit':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                'sendDelay':   { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
+                'zTimeOut':    { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
             }},
 
         # Plugin Directories
         'PluginConfiguration': { 'Order': 10, 'param': {
                 'numDeviceListVersion': { 'type':'int', 'default':12 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'filename':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
-                'pluginHome':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
-                'homedirectory':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
-                'pluginData':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'pluginConfig': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'pluginOTAFirmware': { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'pluginReports':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'pluginWWW':  { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
+                'filename':             { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                'pluginHome':           { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                'homedirectory':        { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
+                'pluginData':           { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'pluginConfig':         { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'pluginOTAFirmware':    { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'pluginReports':        { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'pluginWWW':            { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'pluginLogs':           { 'type':'path', 'default':'' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
             }},
 
         # Verbose
         'VerboseLogging': { 'Order': 11, 'param': {
-                'debugMatchId':  { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'logDeviceUpdate':  { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'logFORMAT':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'capturePairingInfos': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'debugInput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugOutput':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugTransportTx':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                'debugTransportRx':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                'debugCluster':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugHeartbeat':{ 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugWidget':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugPlugin':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugDatabase':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugCommand':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugPairing':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugNetworkMap':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugNetworkEnergy':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugGroups':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugIAS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugAPS':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'debugWebServer':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
+                'debugMatchId':         { 'type':'str', 'default':'ffff' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'useDomoticzLog':      { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'logDeviceUpdate':      { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'logFORMAT':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'capturePairingInfos':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'debugRSSI':            { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'debugInput':           { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugOutput':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugTransportTx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'debugTransportRx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'debugCluster':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugHeartbeat':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugWidget':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugPlugin':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugDatabase':        { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugCommand':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugPairing':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugNetworkMap':      { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugNetworkEnergy':   { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugGroups':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugOTA':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugIAS':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugAPS':             { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugDZDB':            { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugWebServer':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugzigateCmd':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'debugLegrand':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugProfalux':        { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugSchneider':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugPDM':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
                 }},
 
         # Legrand Specific
         'Legrand': { 'Order': 12, 'param': {
-                'EnableLedIfOn': {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'EnableLedInDark': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'EnableDimmer': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'EnableLedIfOn':    {'type':'bool', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'EnableLedInDark':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'EnableLedShutter': {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'EnableDimmer':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'EnableReleaseButton':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'LegrandFilPilote': { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
-                'LegrandGroups': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
+                }},
+
+        # Schneider Wiser configuration
+        'Schneider Wiser':  { 'Order': 13, 'param': {
+                'enableSchneiderWiser': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'reenforcementWiser': { 'type':'int', 'default':300 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 }},
 
         #Others
-        'Others': { 'Order': 13, 'param': {
+        'Others': { 'Order': 14, 'param': {
                 'alarmDuration': {'type':'int', 'default':1, 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'numTopologyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'PowerOn_OnOff': { 'type':'int', 'default':255 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
-                'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False}
+                'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'PowerOn_OnOff': { 'type':'int', 'default':255 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
+                'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 }},
 
         # Experimental
-        'Experimental': { 'Order': 14, 'param': {
-                'XiaomiLeave':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+        'Experimental': { 'Order': 15, 'param': {
+                'XiaomiLeave':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'rebindLivolo':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                 'APSrteError':  {'type':'bool', 'default':0, 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
@@ -213,6 +237,8 @@ class PluginConf:
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
                 elif param == 'pluginOTAFirmware':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+                elif param == 'pluginLogs':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Logs/'
                 else:
                     self.pluginConf[param] = SETTINGS[theme]['param'][param]['default']
 
@@ -321,7 +347,10 @@ class PluginConf:
         for theme in SETTINGS:
             for param in SETTINGS[theme]['param']:
                 if self.pluginConf[param] != SETTINGS[theme]['param'][param]['default']:
-                    write_pluginConf[param] = self.pluginConf[param]
+                    if SETTINGS[theme]['param'][param]['type'] == 'hex':
+                        write_pluginConf[param] = '%X' %self.pluginConf[param]
+                    else:
+                        write_pluginConf[param] = self.pluginConf[param]
 
         with open( pluginConfFile , 'wt') as handle:
             json.dump( write_pluginConf, handle, sort_keys=True, indent=2)

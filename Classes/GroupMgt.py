@@ -20,6 +20,7 @@ import pickle
 import os.path
 
 from time import time
+from datetime import datetime
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE
@@ -48,8 +49,8 @@ def _copyfile( source, dest, move=True ):
 
 class GroupsManagement(object):
 
-    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK ):
-        self.StartupPhase = 'init'
+    def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
+        self.StartupPhase = 'start'
         self._SaveGroupFile = None
         self.ListOfGroups = {}      # Data structutre to store all groups
         self.TobeAdded = []         # List of IEEE/NWKID/EP/GROUP to be added
@@ -69,6 +70,7 @@ class GroupsManagement(object):
         self.targetDevices = []
         self.ZigateComm = ZigateComm        # Point to the ZigateComm object
         self.pluginconf = PluginConf
+        self.loggingFileHandle = loggingFileHandle
 
         self.Firmware = None
         self.homeDirectory = HomeDirectory
@@ -83,7 +85,7 @@ class GroupsManagement(object):
         self.json_groupsConfigFilename = self.pluginconf.pluginConf['pluginData'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json"
         if os.path.isfile( self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json" ):
             # Let's move it to Data
-            Domoticz.Status("Moving %s to Data %s" %(self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json",
+            self.logging( 'Status', "Moving %s to Data %s" %(self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json",
                 self.json_groupsConfigFilename))
             _copyfile( self.pluginconf.pluginConf['pluginConfig'] + GROUPS_CONFIG_FILENAME + "-%02d" %hardwareID + ".json", self.json_groupsConfigFilename, move=True)
 
@@ -92,15 +94,54 @@ class GroupsManagement(object):
 
         return
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+    
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else: 
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+
     def logging( self, logType, message):
 
         self.debugGroups = self.pluginconf.pluginConf['debugGroups']
         if logType == 'Debug' and self.debugGroups:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
     def updateFirmware( firmware ):
@@ -891,7 +932,17 @@ class GroupsManagement(object):
         # If one device is on, then the group is on. If all devices are off, then the group is off
         nValue = 0
         level = None
-        for dev_nwkid, dev_ep, dev_ieee in self.ListOfGroups[group_nwkid]['Devices']:
+
+        
+        for item in self.ListOfGroups[group_nwkid]['Devices']:
+            if len(item) == 2:
+                dev_nwkid, dev_ep = item
+                dev_ieee = self.ListOfDevices[dev_nwkid]['IEEE']
+            elif len(item) == 3:
+                dev_nwkid, dev_ep, dev_ieee = item
+            else:
+                Domoticz.Error("Invalid item %s" %str(item))
+                continue
             if dev_nwkid in self.ListOfDevices:
                 if 'Ep' in  self.ListOfDevices[dev_nwkid]:
                     if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
@@ -1039,7 +1090,19 @@ class GroupsManagement(object):
             return
 
         # search for all Devices in the group
-        for iterDev, iterEp, iterIEEE in self.ListOfGroups[grpid]['Devices']:
+        for iterItem in self.ListOfGroups[grpid]['Devices']:
+            if len(iterItem) == 3:
+                iterDev,  iterEp, iterIEEE = iterItem
+            elif len(iterItem) == 2:
+                iterDev, iterEp = iterItem
+                if iterDev in self.ListOfDevices:
+                    iterIEEE = self.ListOfDevices[iterDev]['IEEE']
+                else:
+                    Domoticz.Error("Unknown device %s, it is recommended to do a full rescan of Groups" %iterDev)
+                    continue
+            else:
+                continue
+
             if iterDev == '0000': continue
             if iterDev not in self.ListOfDevices:
                 Domoticz.Error("_updateDeviceListAttribute - Device: %s of Group: %s not in the list anymore" %(iterDev,grpid))
@@ -1051,7 +1114,7 @@ class GroupsManagement(object):
                 Domoticz.Error("_updateDeviceListAttribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev,iterEp,grpid))
                 continue
             if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
-                Domoticz.Error("_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
+                self.logging( 'Debug', "_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
                 continue
 
             if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
@@ -1073,7 +1136,19 @@ class GroupsManagement(object):
 
         if nwkid not in self.ListOfGroups:
             return
-        for iterDev, iterEp, iterIEEE in self.ListOfGroups[nwkid]['Devices']:
+
+        for iterDevice in self.ListOfGroups[nwkid]['Devices']:
+            if len(iterDevice) == 2:
+                iterDev, iterEp = iterDevice
+                if iterDev in self.ListOfDevices:
+                    if 'IEEE' in self.ListOfDevices[iterDev]:
+                        iterIEEE = self.ListOfDevices[iterDev]['IEEE']
+            elif len(iterDevice) == 3:
+                iterDev, iterEp, iterIEEE = iterDevice
+            else:
+                Domoticz.Error("Group - processCommand - Error unexpected item: %s" %str(iterDevice))
+                return
+
             self.logging( 'Debug', 'processCommand - reset heartbeat for device : %s' %iterDev)
             if iterDev not in self.ListOfDevices:
                 if iterIEEE in self.IEEE2NWK:
@@ -1237,34 +1312,22 @@ class GroupsManagement(object):
             sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_) 
 
-    def manageLegrandGroups( self, device_addr, device_ep, unittype):
-        """
-        Will add group Membership to recently paired device
+    def addGroupMembership( self, device_addr, device_ep, grp_id):
 
-        fff7: Home (Master Remote)
-        fff6: Away (Master Remote)
-        fff5:
-        fff4: 
-        """
-
-        LEGRAND_GROUPS = {
-                    'Plug': ( 'fff7', 'fff5'),
-                    'Switch': ( 'fff6', 'fff4')
-                    }
-
+        if device_addr not in self.ListOfDevices:
+            return
+        if 'IEEE' not in self.ListOfDevices[device_addr]:
+            return
         device_ieee = self.ListOfDevices[device_addr]['IEEE']
-        if unittype in LEGRAND_GROUPS:
-            for grp_id in LEGRAND_GROUPS[unittype]:
+        if grp_id not in self.ListOfGroups:
+            self.ListOfGroups[grp_id] = {}
+            self.ListOfGroups[grp_id]['Name'] = 'Group ' + str(grp_id)
+            self.ListOfGroups[grp_id]['Devices'] = []
 
-                if grp_id not in self.ListOfGroups:
-                    self.ListOfGroups[grp_id] = {}
-                    self.ListOfGroups[grp_id]['Name'] = 'Legrand Plug-in'
-                    self.ListOfGroups[grp_id]['Devices'] = []
-
-                if ( device_addr, device_ep, device_ieee) not in self.ListOfGroups[grp_id]['Devices']:
-                    self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep, device_ieee) )
-                    Domoticz.Log("Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
-                    self._addGroup( device_ieee, device_addr, device_ep, grp_id)
+        if ( device_addr, device_ep, device_ieee) not in self.ListOfGroups[grp_id]['Devices']:
+            self.ListOfGroups[grp_id]['Devices'].append( ( device_addr, device_ep, device_ieee) )
+            self.logging( 'Log', "Adding %s groupmembership to device: %s/%s" %(grp_id, device_addr, device_ep))
+            self._addGroup( device_ieee, device_addr, device_ep, grp_id)
 
             for filename in ( self.json_groupsConfigFilename, self.groupListFileName ):
                 if os.path.isfile( filename ):
@@ -1356,13 +1419,13 @@ class GroupsManagement(object):
             for group_nwkid in self.ListOfGroups:
                 self.updateDomoGroupDevice( group_nwkid)
 
-        elif self.StartupPhase == 'init':
+        elif self.StartupPhase == 'start':
             # Check if there is an existing Pickle file. If this file is newer than ZigateConf, we can simply load it and finish the Group startup.
             # In case the file is older, this means that ZigateGroupConf is newer and has some changes, do the full process.
 
             # Check if the DeviceList file exist.
             self.logging( 'Log', "Group Management - Init phase")
-            self.StartupPhase = 'discovery'
+            self.StartupPhase = 'scan'
             last_update_GroupList = 0
             if os.path.isfile( self.groupListFileName ) :
                 self.logging( 'Debug', "--->GroupList.pck exists")
@@ -1391,15 +1454,15 @@ class GroupsManagement(object):
                 if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
                     # GroupList is newer , just reload the file and exit
                     self.logging( 'Status', "--------->No update of Groups needed")
-                    self.StartupPhase = 'end of group startup'
+                    self.StartupPhase = 'completion'
                     self._load_GroupList()
             else:   # No config file, so let's move on
                 self.logging( 'Debug', "------>No Config file, let's use the GroupList")
                 self.logging( 'Debug', "------>switch to end of Group Startup")
                 self._load_GroupList()
-                self.StartupPhase = 'end of group startup'
+                self.StartupPhase = 'completion'
 
-        elif self.StartupPhase == 'discovery':
+        elif self.StartupPhase == 'scan':
             if self.HB <= 12:
                 # Tempo 1' before starting Group
                 self.HB += 1
@@ -1417,6 +1480,9 @@ class GroupsManagement(object):
             self.logging( 'Log', "Group Management - Discovery mode - Devices to be queried: %s" %str(listofdevices))
             for iterDev in listofdevices:
                 _mainPowered = False
+                if iterDev not in self.ListOfDevices:
+                    # Most likely this device has been removed
+                    continue
                 if 'MacCapa' in self.ListOfDevices[iterDev]:
                     if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
                         _mainPowered = True
@@ -1470,13 +1536,13 @@ class GroupsManagement(object):
             else:
                 if _workcompleted:
                     self.logging( 'Log', "hearbeatGroupMgt - Finish Discovery Phase" )
-                    self.StartupPhase = 'finish discovery'
+                    self.StartupPhase = 'finish scan'
 
-        elif self.StartupPhase in ( 'finish discovery', 'finish discovery continue') :
+        elif self.StartupPhase in ( 'finish scan', 'finish scan continue') :
             # Check for completness or Timeout
-            if self.StartupPhase ==  'finish discovery':
+            if self.StartupPhase ==  'finish scan':
                 self.logging( 'Log', "Group Management - Membership gathering")
-            self.StartupPhase = 'finish discovery continue'
+            self.StartupPhase = 'finish scan continue'
             now = time()
             self.stillWIP = True
             _completed = True
@@ -1653,9 +1719,9 @@ class GroupsManagement(object):
                     self._identifyEffect( iterGroup, '01', effect='Okay' )
                     self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s operational' %iterGroup)
             else:
-                self.StartupPhase = 'perform command'
+                self.StartupPhase = 'processing'
 
-        elif self.StartupPhase == 'perform command':
+        elif self.StartupPhase == 'processing':
             self.stillWIP = True
             _completed = True
             self.logging( 'Debug', "hearbeatGroupMgt - Perform Zigate commands")
@@ -1762,7 +1828,7 @@ class GroupsManagement(object):
                         self._SaveGroupFile = False
                         self.StartupPhase = 'check group list'
                     else:
-                        self.StartupPhase = 'discovery'
+                        self.StartupPhase = 'scan'
                         for iterDev in self.ListOfDevices:
                             if 'GroupMgt' in self.ListOfDevices[iterDev]:
                                 del self.ListOfDevices[iterDev]['GroupMgt']
@@ -1798,14 +1864,14 @@ class GroupsManagement(object):
                     self.logging( 'Log', "hearbeatGroupMgt - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                     self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
 
-            self.StartupPhase = 'end of group startup'
+            self.StartupPhase = 'completion'
             # We write GroupList to cash only if in case of success.
             if self._SaveGroupFile:
                 self._write_GroupList()
                 self.logging( 'Status', "Group Management - startup done")
                 self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
 
-        elif self.StartupPhase == 'end of group startup':
+        elif self.StartupPhase == 'completion':
             for iterGrp in self.ListOfGroups:
                 self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                 self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))

@@ -9,6 +9,7 @@ import json
 import os
 import os.path
 import mimetypes
+from datetime import datetime
 
 try:
     import zlib
@@ -22,8 +23,9 @@ except Exception as Err:
 from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
 from time import time, ctime, strftime, gmtime, mktime, strptime
 
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES
-from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, zigateBlueLed
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS, ZCL_CLUSTERS_ACT
+from Modules.output import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed, webBind, webUnBind
+from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
 from Modules.actuators import actuators
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
@@ -64,12 +66,13 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort):
+    def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle):
 
         self.httpServerConn = None
         self.httpClientConn = None
         self.httpServerConns = {}
         self.httpPort = httpPort
+        self.loggingFileHandle = loggingFileHandle
 
         self.httpsServerConn = None
         self.httpsClientConn = None
@@ -108,15 +111,53 @@ class WebServer(object):
         mimetypes.init()
         self.startWebServer()
         
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugWebServer = self.pluginconf.pluginConf['debugWebServer']
         if self.debugWebServer and logType == 'Debug':
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
 
@@ -409,11 +450,16 @@ class WebServer(object):
     def do_rest( self, Connection, verb, data, version, command, parameters):
 
         REST_COMMANDS = { 
+                'unbinding':     {'Name':'unbinding',     'Verbs':{'PUT'}, 'function':self.rest_unbinding},
+                'binding':       {'Name':'binding',       'Verbs':{'PUT'}, 'function':self.rest_binding},
+                'bindLSTcluster':{'Name':'bindLSTcluster','Verbs':{'GET'}, 'function':self.rest_bindLSTcluster},
+                'bindLSTdevice': {'Name':'bindLSTdevice', 'Verbs':{'GET'}, 'function':self.rest_bindLSTdevice},
                 'new-hrdwr':     {'Name':'new-hrdwr',     'Verbs':{'GET'}, 'function':self.rest_new_hrdwr},
                 'rcv-nw-hrdwr':  {'Name':'rcv-nw-hrdwr',  'Verbs':{'GET'}, 'function':self.rest_rcv_nw_hrdwr},
                 'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
                 'dev-cap':       {'Name':'dev-cap',       'Verbs':{'GET'}, 'function':self.rest_dev_capabilities},
                 'dev-command':   {'Name':'dev-command',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
+                'raw-command':   {'Name':'raw-command',       'Verbs':{'PUT'}, 'function':self.rest_raw_command},
                 'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
                 'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
                 'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
@@ -459,6 +505,7 @@ class WebServer(object):
                 elif version == '2':
                     HTTPresponse = REST_COMMANDS[command]['functionv2']( verb, data, parameters)
 
+        self.logging( 'Debug', "==> return HTTPresponse: %s" %(HTTPresponse))
         if HTTPresponse == {} or HTTPresponse is None:
             # We reach here due to failure !
             HTTPresponse = setupHeadersResponse()
@@ -475,6 +522,7 @@ class WebServer(object):
             HTTPresponse["Data"] = 'Unknown REST command: %s' %command
             HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
+        self.logging( 'Debug', "==> sending HTTPresponse: %s to %s" %(HTTPresponse, Connection))
         self.sendResponse( Connection, HTTPresponse )
 
     def rest_plugin_health( self, verb, data, parameters):
@@ -495,6 +543,13 @@ class WebServer(object):
             health = {}
             health['HealthFlag'] = self.PluginHealth['Flag']
             health['HealthTxt'] = self.PluginHealth['Txt']
+            if 'Firmware Update' in self.PluginHealth:
+                health['OTAupdateProgress'] = self.PluginHealth['Firmware Update']['Progress']
+                health['OTAupdateDevice'] = self.PluginHealth['Firmware Update']['Device']
+
+            if self.groupmgt:
+                health['GroupStatus'] = self.groupmgt.StartupPhase
+
             _response["Data"] = json.dumps( health, sort_keys=True )
 
         return _response
@@ -590,7 +645,7 @@ class WebServer(object):
                 self.pluginconf.pluginConf['eraseZigatePDM'] = 0
 
             if self.pluginconf.pluginConf['extendedPANID'] is not None:
-                self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( int(self.pluginconf.pluginConf['extendedPANID']) ))
+                self.logging( 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID'] ))
                 if self.pluginparameters['Mode1'] != 'None':
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {}
@@ -608,18 +663,21 @@ class WebServer(object):
             _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        action = {}
         if verb == 'GET':
             self.groupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %self.hardwareID
             JsonGroupConfigFileName = self.pluginconf.pluginConf['pluginData'] + "/ZigateGroupsConfig-%02d.json" %self.hardwareID
             TxtGroupConfigFileName = self.pluginconf.pluginConf['pluginConfig'] + "/ZigateGroupsConfig-%02d.txt" %self.hardwareID
             for filename in ( TxtGroupConfigFileName, JsonGroupConfigFileName, self.groupListFileName ):
                 if os.path.isfile( filename ):
-                    self.logging( 'Log', "rest_rescan_group - Removing file: %s" %filename )
+                    self.logging( 'Debug', "rest_rescan_group - Removing file: %s" %filename )
                     os.remove( filename )
                     self.restart_needed['RestartNeeded'] = True
-            action = {}
             action['Name'] = 'Groups file removed.'
             action['TimeStamp'] = int(time())
+
+        _response["Data"] = json.dumps( action , sort_keys=True )
+
         return _response
 
 
@@ -632,13 +690,14 @@ class WebServer(object):
             _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        action = {}
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 sendZigateCmd(self, "0011", "" ) # Software Reset
                 start_Zigate( self )
-            action = {}
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
+        _response["Data"] = json.dumps( action , sort_keys=True )
         return _response
 
     def rest_zigate( self, verb, data, parameters):
@@ -1034,9 +1093,7 @@ class WebServer(object):
             Statistics['APSAck'] = 100
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
-            Statistics['Trend'] = [
-{"Load": 2, "Rxps": 2.9, "Txps": 1.6, "_TS": 1}, {"Load": 0, "Rxps": 2.36, "Txps": 1.29, "_TS": 2}, {"Load": 3, "Rxps": 1.74, "Txps": 1.0, "_TS": 3}, {"Load": 0, "Rxps": 1.88, "Txps": 0.92, "_TS": 4}, {"Load": 6, "Rxps": 1.55, "Txps": 0.79, "_TS": 5}, {"Load": 0, "Rxps": 2.35, "Txps": 0.85, "_TS": 6}, {"Load": 6, "Rxps": 2.05, "Txps": 0.77, "_TS": 7}, {"Load": 0, "Rxps": 2.43, "Txps": 0.82, "_TS": 8}, {"Load": 0, "Rxps": 2.18, "Txps": 0.73, "_TS": 9}, {"Load": 0, "Rxps": 1.98, "Txps": 0.67, "_TS": 10}, {"Load": 0, "Rxps": 1.81, "Txps": 0.61, "_TS": 11}, {"Load": 0, "Rxps": 1.67, "Txps": 0.56, "_TS": 12}, {"Load": 0, "Rxps": 1.55, "Txps": 0.54, "_TS": 13}, {"Load": 0, "Rxps": 1.46, "Txps": 0.5, "_TS": 14}, {"Load": 0, "Rxps": 1.37, "Txps": 0.48, "_TS": 15}, {"Load": 0, "Rxps": 1.3, "Txps": 0.46, "_TS": 16}, {"Load": 0, "Rxps": 1.26, "Txps": 0.45, "_TS": 17}, {"Load": 0, "Rxps": 1.27, "Txps": 0.44, "_TS": 18}, {"Load": 0, "Rxps": 1.25, "Txps": 0.41, "_TS": 19}, {"Load": 0, "Rxps": 1.21, "Txps": 0.4, "_TS": 20}, {"Load": 0, "Rxps": 1.18, "Txps": 0.39, "_TS": 21}, {"Load": 0, "Rxps": 1.16, "Txps": 0.39, "_TS": 22}, {"Load": 0, "Rxps": 1.14, "Txps": 0.38, "_TS": 23}, {"Load": 0, "Rxps": 1.12, "Txps": 0.36, "_TS": 24}, {"Load": 0, "Rxps": 1.09, "Txps": 0.35, "_TS": 25}, {"Load": 0, "Rxps": 1.05, "Txps": 0.34, "_TS": 26}, {"Load": 0, "Rxps": 1.03, "Txps": 0.34, "_TS": 27}, {"Load": 0, "Rxps": 1.01, "Txps": 0.33, "_TS": 28}, {"Load": 0, "Rxps": 1.03, "Txps": 0.33, "_TS": 29}, {"Load": 0, "Rxps": 1.03, "Txps": 0.32, "_TS": 30}, {"Load": 0, "Rxps": 1.01, "Txps": 0.31, "_TS": 31}, {"Load": 0, "Rxps": 0.99, "Txps": 0.31, "_TS": 32}, {"Load": 0, "Rxps": 0.99, "Txps": 0.31, "_TS": 33}, {"Load": 0, "Rxps": 0.98, "Txps": 0.3, "_TS": 34}, {"Load": 0, "Rxps": 0.97, "Txps": 0.3, "_TS": 35}, {"Load": 0, "Rxps": 0.96, "Txps": 0.29, "_TS": 36}, {"Load": 0, "Rxps": 0.93, "Txps": 0.29, "_TS": 37}, {"Load": 0, "Rxps": 0.92, "Txps": 0.28, "_TS": 38}, {"Load": 0, "Rxps": 0.91, "Txps": 0.28, "_TS": 39}, {"Load": 0, "Rxps": 0.91, "Txps": 0.28, "_TS": 40}, {"Load": 0, "Rxps": 0.9, "Txps": 0.27, "_TS": 41}, {"Load": 0, "Rxps": 0.89, "Txps": 0.27, "_TS": 42}, {"Load": 0, "Rxps": 0.87, "Txps": 0.26, "_TS": 43}, {"Load": 0, "Rxps": 0.86, "Txps": 0.26, "_TS": 44}, {"Load": 0, "Rxps": 0.86, "Txps": 0.26, "_TS": 45}, {"Load": 0, "Rxps": 0.86, "Txps": 0.26, "_TS": 46}, {"Load": 1, "Rxps": 0.85, "Txps": 0.26, "_TS": 47}, {"Load": 2, "Rxps": 0.89, "Txps": 0.26, "_TS": 48}, {"Load": 0, "Rxps": 0.92, "Txps": 0.27, "_TS": 49}, {"Load": 0, "Rxps": 0.91, "Txps": 0.27, "_TS": 50}, {"Load": 0, "Rxps": 0.9, "Txps": 0.27, "_TS": 51}, {"Load": 0, "Rxps": 0.89, "Txps": 0.26, "_TS": 52}, {"Load": 0, "Rxps": 0.88, "Txps": 0.26, "_TS": 53}, {"Load": 0, "Rxps": 0.87, "Txps": 0.25, "_TS": 54}, {"Load": 0, "Rxps": 0.85, "Txps": 0.25, "_TS": 55}, {"Load": 0, "Rxps": 0.84, "Txps": 0.24, "_TS": 56}, {"Load": 0, "Rxps": 0.82, "Txps": 0.24, "_TS": 57}, {"Load": 0, "Rxps": 0.81, "Txps": 0.24, "_TS": 58}, {"Load": 0, "Rxps": 0.81, "Txps": 0.23, "_TS": 59}, {"Load": 3, "Rxps": 0.8, "Txps": 0.23, "_TS": 60}, {"Load": 3, "Rxps": 0.8, "Txps": 0.23, "_TS": 61}, {"Load": 3, "Rxps": 0.79, "Txps": 0.23, "_TS": 62}, {"Load": 3, "Rxps": 0.8, "Txps": 0.23, "_TS": 63}, {"Load": 0, "Rxps": 0.83, "Txps": 0.24, "_TS": 64}, {"Load": 0, "Rxps": 0.81, "Txps": 0.23, "_TS": 65}, {"Load": 0, "Rxps": 0.8, "Txps": 0.23, "_TS": 66}, {"Load": 0, "Rxps": 0.79, "Txps": 0.23, "_TS": 67}, {"Load": 0, "Rxps": 0.79, "Txps": 0.23, "_TS": 68}, {"Load": 0, "Rxps": 0.78, "Txps": 0.23, "_TS": 69}, {"Load": 0, "Rxps": 0.78, "Txps": 0.23, "_TS": 70}, {"Load": 0, "Rxps": 0.78, "Txps": 0.23, "_TS": 71}, {"Load": 0, "Rxps": 0.77, "Txps": 0.22, "_TS": 72}, {"Load": 0, "Rxps": 0.76, "Txps": 0.22, "_TS": 73}, {"Load": 0, "Rxps": 0.75, "Txps": 0.22, "_TS": 74}, {"Load": 0, "Rxps": 0.74, "Txps": 0.21, "_TS": 75}, {"Load": 0, "Rxps": 0.73, "Txps": 0.21, "_TS": 76}, {"Load": 0, "Rxps": 0.72, "Txps": 0.21, "_TS": 77}, {"Load": 0, "Rxps": 0.73, "Txps": 0.21, "_TS": 78}, {"Load": 0, "Rxps": 0.73, "Txps": 0.21, "_TS": 79}, {"Load": 0, "Rxps": 0.73, "Txps": 0.21, "_TS": 80}, {"Load": 0, "Rxps": 0.72, "Txps": 0.21, "_TS": 81}, {"Load": 0, "Rxps": 0.71, "Txps": 0.21, "_TS": 82}, {"Load": 0, "Rxps": 0.71, "Txps": 0.21, "_TS": 83}, {"Load": 0, "Rxps": 0.7, "Txps": 0.2, "_TS": 84}, {"Load": 0, "Rxps": 0.69, "Txps": 0.2, "_TS": 85}, {"Load": 0, "Rxps": 0.69, "Txps": 0.2, "_TS": 86}, {"Load": 0, "Rxps": 0.69, "Txps": 0.2, "_TS": 87}, {"Load": 0, "Rxps": 0.69, "Txps": 0.2, "_TS": 88}, {"Load": 0, "Rxps": 0.69, "Txps": 0.2, "_TS": 89}, {"Load": 0, "Rxps": 0.69, "Txps": 0.2, "_TS": 90}, {"Load": 0, "Rxps": 0.68, "Txps": 0.2, "_TS": 91}, {"Load": 0, "Rxps": 0.67, "Txps": 0.2, "_TS": 92}, {"Load": 0, "Rxps": 0.67, "Txps": 0.2, "_TS": 93}, {"Load": 0, "Rxps": 0.67, "Txps": 0.2, "_TS": 94}, {"Load": 0, "Rxps": 0.67, "Txps": 0.2, "_TS": 95}, {"Load": 0, "Rxps": 0.67, "Txps": 0.19, "_TS": 96}, {"Load": 0, "Rxps": 0.66, "Txps": 0.19, "_TS": 97}
-                ]
+            Statistics['Trend'] = [ ]
         else:
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -1119,7 +1176,14 @@ class WebServer(object):
                             setting['DataType'] = SETTINGS[_theme]['param'][param]['type']
                             setting['restart_need'] = SETTINGS[_theme]['param'][param]['restart']
                             setting['Advanced'] = SETTINGS[_theme]['param'][param]['Advanced']
-                            setting['current_value'] = self.pluginconf.pluginConf[param] 
+                            if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                                Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                if isinstance( self.pluginconf.pluginConf[param], int):
+                                    setting['current_value'] = '%x' %self.pluginconf.pluginConf[param] 
+                                else:
+                                    setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
+                            else:
+                                setting['current_value'] = self.pluginconf.pluginConf[param] 
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
                 _response["Data"] = json.dumps( setting_lst, sort_keys=True )
@@ -1143,10 +1207,13 @@ class WebServer(object):
                         if param != setting: continue
                         found = True
                         upd = True
-                        if setting_lst[setting]['current'] == self.pluginconf.pluginConf[param]: 
+                        if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
                         self.logging( 'Debug', "Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
+                        if SETTINGS[_theme]['param'][param]['restart']:
+                            self.restart_needed['RestartNeeded'] = True
+
                         if param == 'Certification':
                             if setting_lst[setting]['current'] in CERTIFICATION_CODE:
                                 self.pluginconf.pluginConf['Certification'] = setting_lst[setting]['current']
@@ -1162,6 +1229,15 @@ class WebServer(object):
                                     zigateBlueLed( self, True)
                                 else:
                                     zigateBlueLed( self, False)
+
+                        elif param == 'EnableLedShutter':
+                            if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                                if setting_lst[setting]['current']:
+                                    legrand_ledShutter( self, 'On')
+                                else:
+                                    legrand_ledShutter( self, 'Off')
+
 
                         elif param == 'EnableLedInDark':
                             if self.pluginconf.pluginConf[param] != setting_lst[setting]['current']:
@@ -1203,10 +1279,12 @@ class WebServer(object):
                                         self.pluginconf.pluginConf['debugMatchId'] += self.IEEE2NWK[key] + ","
                                 self.pluginconf.pluginConf['debugMatchId'] = self.pluginconf.pluginConf['debugMatchId'][:-1] # Remove the last ,
                         else:
-                            self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
+                            if SETTINGS[_theme]['param'][param]['type'] == 'hex':
+                                #Domoticz.Log("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
+                                self.pluginconf.pluginConf[param] = int(setting_lst[setting]['current'],16)
+                            else:
+                                self.pluginconf.pluginConf[param] = setting_lst[setting]['current']
 
-                        if SETTINGS[_theme]['param'][param]['restart']:
-                            self.restart_needed['RestartNeeded'] = True
 
                 if not found:
                     Domoticz.Error("Unexpected parameter: %s" %setting)
@@ -1716,7 +1794,9 @@ class WebServer(object):
             if len(parameters) == 0:
                 zdev_lst = []
                 for item in self.ListOfDevices:
-                    zdev_lst.append(self.ListOfDevices[item])
+                    entry = dict(self.ListOfDevices[item])
+                    entry['NwkID'] = item
+                    zdev_lst.append(entry)
                 _response["Data"] = json.dumps( zdev_lst, sort_keys=False )
             elif len(parameters) == 1:
                 if parameters[0] in self.ListOfDevices:
@@ -1944,6 +2024,150 @@ class WebServer(object):
                 self.groupmgt.write_jsonZigateGroupConfig()
             # end if len()
         # end if Verb=
+
+        return _response
+
+    def rest_bindLSTcluster( self, verb, data, parameters):
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        bindCluster = []
+        for key in self.ListOfDevices:
+            if key == '0000': continue
+            for ep in self.ListOfDevices[key]['Ep']:
+                for cluster in self.ListOfDevices[key]['Ep'][ep]:
+                    if cluster in ZCL_CLUSTERS_ACT:
+                        if cluster not in bindCluster:
+                            bindCluster.append( cluster )
+        _response["Data"] = json.dumps( bindCluster )
+        return _response
+
+    def rest_bindLSTdevice( self, verb, data, parameters):
+
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        if len(parameters) == 1:
+            listofdevices = []
+            clustertobind = parameters[0]
+            for key in self.ListOfDevices:
+                if key == '0000': continue
+                for ep in self.ListOfDevices[key]['Ep']:
+                    if clustertobind in self.ListOfDevices[key]['Ep'][ep]:
+                        dev={}
+                        dev['IEEE'] = self.ListOfDevices[key]['IEEE']
+                        dev['NwkId'] = key
+                        dev['Ep'] = ep
+                        dev['ZDeviceName'] = self.ListOfDevices[key]['ZDeviceName']
+                        if dev not in listofdevices:
+                            listofdevices.append( dev )
+            _response["Data"] = json.dumps( listofdevices )
+        else:
+            Domoticz.Error("Must have 1 argument. %s" %parameters)
+        return _response
+
+
+    def rest_binding( self, verb, data, parameters):
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+
+                if 'sourceIeee' not in data and \
+                        'sourceEp' not in data and \
+                        'destIeee' not in data and \
+                        'destEp' not in data and \
+                        'cluster' not in data:
+                    Domoticz.Log("-----> uncomplet json %s" %data)
+                    _response["Data"] = json.dumps("uncomplet json %s" %data)
+                    return _response
+
+                self.logging( 'Log', "rest_binding - Source: %s/%s Dest: %s/%s Cluster: %s" %(data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster']))
+                webBind( self, data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster'] )
+                _response["Data"] = json.dumps( "Binding cluster %s between %s/%s and %s/%s" %(data['cluster'], data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp']))
+                return _response
+
+    def rest_unbinding( self, verb, data, parameters):
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+
+                if 'sourceIeee' not in data and \
+                        'sourceEp' not in data and \
+                        'destIeee' not in data and \
+                        'destEp' not in data and \
+                        'cluster' not in data:
+                    Domoticz.Log("-----> uncomplet json %s" %data)
+                    _response["Data"] = json.dumps("uncomplet json %s" %data)
+                    return _response
+
+                self.logging( 'Log', "rest_unbinding - Source: %s/%s Dest: %s/%s Cluster: %s" %(data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster']))
+                webUnBind( self, data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp'], data['cluster'] )
+                _response["Data"] = json.dumps( "Binding cluster %s between %s/%s and %s/%s" %(data['cluster'], data['sourceIeee'], data['sourceEp'], data['destIeee'], data['destEp']))
+                return _response
+
+    def rest_raw_command( self, verb, data, parameters):
+
+        Domoticz.Log("raw_command - %s %s" %(verb, data))
+        _response = setupHeadersResponse()
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        _response["Status"] = "200 OK"
+        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+        if verb == 'PUT':
+            _response["Data"] = None
+            if len(parameters) == 0:
+                data = data.decode('utf8')
+                data = json.loads(data)
+                Domoticz.Log("---> Data: %s" %str(data))
+                if 'Command' not in data and 'payload' not in data:
+                    domoticz.Error("Unexpected request: %s" %data)
+                    _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) )
+                    return _response
+                msgtype = int( data['Command'] , 16 )
+                if msgtype not in ZIGATE_COMMANDS:
+                    Domoticz.Error("raw_command - Unknown MessageType received %s" %msgtype)
+                    _response["Data"] = json.dumps( "Unknown MessageType received %s" %msgtype)
+                    return _response
+                
+                cmd = data['Command']
+                payload = data['payload']
+                if payload == None:
+                    payload = ""
+                sendZigateCmd( self, data['Command'], data['payload'])
+                self.logging( 'Log', "rest_dev_command - Command: %s payload %s" %(data['Command'], data['payload']))
+                _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) ) 
 
         return _response
 

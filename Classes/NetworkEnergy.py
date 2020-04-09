@@ -20,7 +20,7 @@
 """
 
 
-import datetime
+from datetime import datetime
 from time import time
 import os.path
 import json
@@ -34,28 +34,67 @@ DURATION = 0x03
 
 class NetworkEnergy():
 
-    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID):
+    def __init__( self, PluginConf, ZigateComm, ListOfDevices, Devices, HardwareID, loggingFileHandle):
 
         self.pluginconf = PluginConf
         self.ZigateComm = ZigateComm
         self.ListOfDevices = ListOfDevices
         self.Devices = Devices
         self.HardwareID = HardwareID
+        self.loggingFileHandle = loggingFileHandle
 
         self.EnergyLevel = None
         self.ScanInProgress = False
         self.nwkidInQueue = []
         self.ticks = 0
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
     def logging( self, logType, message):
 
         self.debugNetworkEnergy = self.pluginconf.pluginConf['debugNetworkEnergy']
         if logType == 'Debug' and self.debugNetworkEnergy:
-            Domoticz.Log( message)
+            self._loggingDebug( message)
         elif logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message)
+            self._loggingStatus( message)
         return
 
 

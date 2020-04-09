@@ -8,6 +8,7 @@ import Domoticz
 import binascii
 import struct
 from time import time
+from datetime import datetime
 
 from Modules.tools import is_hex
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_RESPONSES, ZIGATE_COMMANDS, RETRANSMIT_COMMAND
@@ -90,23 +91,62 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
+    def _loggingStatus( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Status( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Status( message )
+            else:
+                Domoticz.Status( message )
+
+    def _loggingLog( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+                Domoticz.Log( message )
+            else:
+                Domoticz.Log( message )
+
+    def _loggingDebug( self, message):
+
+        if self.pluginconf.pluginConf['useDomoticzLog']:
+            Domoticz.Log( message )
+        else:
+            if self.loggingFileHandle:
+                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
+                self.loggingFileHandle.write( message )
+                self.loggingFileHandle.flush()
+            else:
+                Domoticz.Log( message )
+
+
     def loggingSend( self, logType, message):
 
         if self.pluginconf.pluginConf['debugTransportTx'] and logType == 'Debug':
-            Domoticz.Log( message )
+            self._loggingDebug( message )
         elif  logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message )
+            self._loggingStatus( message )
 
     def loggingReceive( self, logType, message):
 
         if self.pluginconf.pluginConf['debugTransportRx'] and logType == 'Debug':
-            Domoticz.Log( message )
+            self._loggingDebug( message )
         elif  logType == 'Log':
-            Domoticz.Log( message )
+            self._loggingLog( message )
         elif logType == 'Status':
-            Domoticz.Status( message )
+            self._loggingStatus.Status( message )
 
     # Transport / Opening / Closing Communication
     def setConnection( self ):

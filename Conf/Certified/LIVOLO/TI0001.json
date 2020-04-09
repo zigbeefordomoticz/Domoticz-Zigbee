@@ -1,0 +1,20 @@
+{
+	"Ep":{
+		"06":{
+			"0000":"",
+			"0003":"",
+			"0006":"",
+			"0008":"",
+			"Type":"LivoloSWL/LivoloSWR"
+		}
+	},
+	"Type":"",
+	"ClusterToBind": [],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [ "0004", "0005" ],
+		"0001": [],
+		"0006": [],
+		"0008": []
+	}
+}

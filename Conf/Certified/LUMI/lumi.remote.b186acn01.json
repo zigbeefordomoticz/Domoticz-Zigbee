@@ -1,0 +1,17 @@
+{
+	"Ep":{
+		"01":{
+			"0000":"",
+			"0003":"",
+			"0006":"",
+			"Type":"Button_3"
+		}
+	},
+	"Type":"",
+        "ClusterToBind": [],
+        "ConfigureReporting":{},
+        "ReadAttributes": {
+                "0000": [ "0004", "0005"] ,
+                "0006": []
+        }
+}
