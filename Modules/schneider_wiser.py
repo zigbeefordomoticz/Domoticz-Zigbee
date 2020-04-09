@@ -148,7 +148,7 @@ def schneider_thermostat_behaviour( self, key, mode ):
     HAC into Fil Pilot FIP 0x03, in Covential Mode 0x00
     """
 
-    MODE = { 'conventionel': 0x00, 'FIP': 0x03 }
+    MODE = { 'conventionel': 0x00, 'setpoint' : 0x02, 'FIP': 0x03 }
 
     loggingOutput( self, 'Log', "schneider_thermostat_behaviour for device %s requesting mode: %s" %(key, mode))
     if mode not in MODE:
@@ -253,6 +253,44 @@ def schneider_setpoint( self, key, setpoint):
 
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
     self.ListOfDevices[key]['Heartbeat'] = 0
+
+def schneider_temp_Setcurrent( self, key, setpoint):
+
+    # SetPoint 21°C ==> 2100 => 0x0834
+    # APS Data: 0x00 0x0b 0x01 0x02 0x04 0x01 0x0b 0x45 0x11 0xc1 0xe0 0x00 0x01 0x34 0x08 0xff
+    #                                                                            |---------------> LB HB Setpoint
+    #                                                             |--|---------------------------> Command 0xe0
+    #                                                        |--|--------------------------------> SQN
+    #                                                   |--|-------------------------------------> Cluster Frame
+
+    cluster_frame = '18'
+    attr = '0000'
+    sqn = '00'
+    dataType = '29'
+    if 'SQN' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '':
+            sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
+    cmd = '0a'
+
+    setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
+    if 'Schneider' not in self.ListOfDevices[key]:
+        self.ListOfDevices[key]['Schneider'] = {}
+    self.ListOfDevices[key]['Schneider']['Target SetPoint'] = setpoint
+    self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
+
+    setpoint = '%04X' %setpoint
+    length = '01' # 1 attribute
+
+    payload = cluster_frame + sqn + cmd + attr + dataType + setpoint[2:4] + setpoint[0:2] 
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
+    Modules.output.raw_APS_request( self, key, EPout, '0402', '0104', payload, zigate_ep='01')
+    self.ListOfDevices[key]['Heartbeat'] = 0
+
 
 
 def schneider_EHZBRTS_thermoMode( self, key, mode):
