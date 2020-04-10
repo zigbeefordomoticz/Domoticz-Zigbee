@@ -1873,19 +1873,24 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             # Let's skip it has this is a duplicate message from the device
             loggingInput( self, 'Debug', "Decode004D - Already known device %s with status: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Status']), MsgSrcAddr)
             return
+    deviceMacCapa = list(decodeMacCapa( MsgMacCapa ))
 
     now = time()
+
     if MsgRejoinFlag not in REJOIN_NETWORK:
-        loggingInput( self, 'Debug', "Device Announced ShortAddr: %s, IEEE: %s with an Unknown RejoinFlag: %s" %(MsgSrcAddr, MsgIEEE, MsgRejoinFlag), MsgSrcAddr)
         MsgRejoinFlag = '99'
 
     if MsgSrcAddr in self.ListOfDevices:
         if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s" %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s" \
+                    %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
         else:
-            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" \
+                    %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
     else:
-        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" \
+                %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
     # Test if Device Exist, if Left then we can reconnect, otherwise initialize the ListOfDevice for this entry
@@ -1895,13 +1900,33 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         #
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
 
+        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+
+        # In case where the Device Annoucement is received from a device which is main powered
+        # if the plugin device health is Live then we just drop the packet.
+        if self.pluginconf.pluginConf['ExpDeviceAnnoucement1'] and MsgRejoinFlag == '99':
+            loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement1: drop as %s unknown rejoin flag as %s and health is %s" \
+                    %(MsgSrcAddr, REJOIN_NETWORK[ MsgRejoinFlag ], self.ListOfDevices[MsgSrcAddr]['Health']), MsgSrcAddr)
+            return
+   
+        if self.pluginconf.pluginConf['ExpDeviceAnnoucement2'] and 'Main Powered' in deviceMacCapa:
+            if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
+                    loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement2: droping as %s is %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Health']), MsgSrcAddr)
+                    return
+  
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
             if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 15:
                 # Looks like we have a duplicate Device Announced in less than 15s
                 loggingInput( self, 'Log', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
                 return
 
-        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
+        if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
+            loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement3 drop as %s Rejoining network as %s and health is %s" \
+                    %(MsgSrcAddr, REJOIN_NETWORK[ MsgRejoinFlag ], self.ListOfDevices[MsgSrcAddr]['Health']), MsgSrcAddr)
+            return
+
+
         timeStamped( self, MsgSrcAddr , 0x004d)
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
@@ -1986,7 +2011,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingPairing( self, 'Debug',"Decode004d - Looks like it is a new device sent by Zigate")
         self.CommiSSionning = True
         self.ListOfDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
-        self.ListOfDevices[MsgSrcAddr]['Capability'] = list(decodeMacCapa( MsgMacCapa ))
+        self.ListOfDevices[MsgSrcAddr]['Capability'] = deviceMacCapa
         self.ListOfDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
 
@@ -2013,7 +2038,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.DiscoveryDevices[MsgSrcAddr]['NWKID'] = MsgSrcAddr
             self.DiscoveryDevices[MsgSrcAddr]['IEEE'] = MsgIEEE
             self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
-            self.DiscoveryDevices[MsgSrcAddr]['Decode-MacCapa'] = list(decodeMacCapa( MsgMacCapa ))
+            self.DiscoveryDevices[MsgSrcAddr]['Decode-MacCapa'] = deviceMacCapa
 
         # 3- We will request immediatly the List of EndPoints
         PREFIX_IEEE_XIAOMI = '00158d000'
