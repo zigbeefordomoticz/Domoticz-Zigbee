@@ -346,7 +346,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             MsgDestinationAddress=MsgData[34:40]
             MsgPayload=MsgData[40:len(MsgData)]
     
-    loggingInput( self, 'Status', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Payload size : " + MsgPayloadSize + " Message Payload : " + MsgPayload)
+    loggingInput( self, 'Status', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
     return
 
 def Decode8003(self, Devices, MsgData, MsgRSSI) : # Device cluster list
