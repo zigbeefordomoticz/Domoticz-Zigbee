@@ -344,12 +344,15 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
+            Domoticz.Log("Start Read Attributes")
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                # Let's scan each Endpoint cluster and check if there is anything to read
                 for iterReadAttrCluster in CLUSTERS_LIST:
                     if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
                             if self.pluginconf.pluginConf['capturePairingInfos']:
                                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
+                            Domoticz.Log("---> for cluster: %s" %iterReadAttrCluster)
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
 
