@@ -20,7 +20,7 @@ from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IE
 from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, livolo_bind, ZigatePermitToJoin
 from Modules.configureReporting import processConfigureReporting
-from Modules.schneider_wiser import schneider_wiser_registration
+from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
@@ -345,8 +345,38 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             # IEEE
             MsgDestinationAddress=MsgData[34:40]
             MsgPayload=MsgData[40:len(MsgData)]
+
+    loggingInput( self, 'Log', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
     
-    loggingInput( self, 'Status', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
+    # Let's check if this is an Schneider related APS. In that case let's process
+    srcnwkid = dstnwkid = None
+    if len(MsgSourceAddress) == 4:
+        # Short address
+        if MsgSourceAddress not in self.ListOfDevices:
+            return
+        srcnwkid = MsgSourceAddress
+    else:
+        # IEEE 
+        if MsgSourceAddress not in self.IEEE2NWK:
+            return
+        srcnwkid = self.IEEE2NWK[ MsgSourceAddress ]
+
+    if len(MsgDestinationAddress) == 4:
+        # Short address
+        if MsgDestinationAddress not in self.ListOfDevices:
+            return
+        dstnwkid = MsgDestinationAddress
+    else:
+        # IEEE 
+        if MsgDestinationAddress not in self.IEEE2NWK:
+            return
+        dstnwkid = self.IEEE2NWK[ MsgDestinationAddress ]
+
+    if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
+        return
+    if self.ListOfDevices[srcnwkid]['Manufacturer'] == '105e':
+        schneiderReadRawAPS(self, srcnwkid, MsgClusterID, dstnwkid, MsgPayload)
+
     return
 
 def Decode8003(self, Devices, MsgData, MsgRSSI) : # Device cluster list
