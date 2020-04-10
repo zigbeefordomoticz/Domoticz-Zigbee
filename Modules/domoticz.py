@@ -1145,7 +1145,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             # Wiser specific Fil Pilote
             if 'ThermoMode' in ClusterType and DeviceType == 'HACTMODE' and Attribute_ == "e011":
-                loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s %s" %(0,setpoint), NWKID)
+                loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s" %(value), NWKID)
                 if value == '00':  # Conventional
                     nValue = 1
                     sValue = '10'
