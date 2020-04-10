@@ -298,34 +298,53 @@ def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
 def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     MsgLen=len(MsgData)
 
+    """
+    0-2: 00
+    2:6: 0104
+    6:10: 0201
+    10:12: 0b
+    12:14: 01
+    14:16: 02
+    16:20: e2ce
+    20:22: 02
+    22:26: 0000
+    26     100d0010e0
+
+    """
     MsgLogLvl=MsgData[0:2]
     MsgProfilID=MsgData[2:6]
     MsgClusterID=MsgData[6:10]
     MsgSourcePoint=MsgData[10:12]
     MsgEndPoint=MsgData[12:14]
-    MsgSourceAddressMode=MsgData[16:18]
-    if int(MsgSourceAddressMode)==0 :
-        MsgSourceAddress=MsgData[18:24]  # uint16_t
-        MsgDestinationAddressMode=MsgData[24:26]
-        if int(MsgDestinationAddressMode)==0 : # uint16_t
-            MsgDestinationAddress=MsgData[26:32]
-            MsgPayloadSize=MsgData[32:34]
-            MsgPayload=MsgData[34:len(MsgData)]
+    MsgSourceAddressMode=MsgData[14:16]
+
+    if int(MsgSourceAddressMode,16)==0x02 :
+        #Short Address
+        MsgSourceAddress=MsgData[16:20]  # uint16_t
+        MsgDestinationAddressMode=MsgData[20:22]
+
+        if int(MsgDestinationAddressMode,16)==0x02 : # uint16_t
+            # Short Address
+            MsgDestinationAddress=MsgData[22:26]
+            MsgPayload=MsgData[26:len(MsgData)]
+
         else : # uint32_t
-            MsgDestinationAddress=MsgData[26:42]
-            MsgPayloadSize=MsgData[42:44]
-            MsgPayload=MsgData[44:len(MsgData)]
-    else : # uint32_t
-        MsgSourceAddress=MsgData[18:34]
-        MsgDestinationAddressMode=MsgData[34:36]
-        if int(MsgDestinationAddressMode)==0 : # uint16_t
-            MsgDestinationAddress=MsgData[36:40]
-            MsgPayloadSize=MsgData[40:42]
-            MsgPayload=MsgData[42:len(MsgData)]
-        else : # uint32_t
-            MsgDestinationAddress=MsgData[36:52]
-            MsgPayloadSize=MsgData[52:54]
-            MsgPayload=MsgData[54:len(MsgData)]
+            # IEEE
+            MsgDestinationAddress=MsgData[22:38]
+            MsgPayload=MsgData[38:len(MsgData)]
+
+    else : 
+        # IEEE
+        MsgSourceAddress=MsgData[16:32]
+        MsgDestinationAddressMode=MsgData[32:34]
+        if int(MsgDestinationAddressMode,16)==0x02 : # uint16_t
+            # Short Address
+            MsgDestinationAddress=MsgData[34:38]
+            MsgPayload=MsgData[38:len(MsgData)]
+        else : 
+            # IEEE
+            MsgDestinationAddress=MsgData[34:40]
+            MsgPayload=MsgData[40:len(MsgData)]
     
     loggingInput( self, 'Status', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Payload size : " + MsgPayloadSize + " Message Payload : " + MsgPayload)
     return
