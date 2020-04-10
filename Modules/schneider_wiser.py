@@ -341,25 +341,19 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
-def schneiderReadRawAPS(self, MsgSourceAddress, MsgClusterID, MsgDestinationAddress, MsgPayload):
+def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
-    """
-    MsgSourceAddress: Short Address of device sending this Payload
-    MsgDestinationAddress: Short Address of device receiving this payload ( zigate )
-    MsgClusterID
-    MsgPayload
-    """
 
-    """
-    Payload format
-    Frame Control Field: uint8
-    Sequence Number: uint8
-    Command: uint8
-    """
+    loggingOutput( self, 'Log', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
+            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
 
     fcf = MsgPayload[0:2] # uint8
     sqn = MsgPayload[2:4] # uint8
     cmd = MsgPayload[4:6] # uint8
     data = MsgPayload[6:] # all the rest
+
+    loggingOutput( self, 'Log', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
+            %( fcf, sqn, cmd, data), srcNWKID)
+
 
     return

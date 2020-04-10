@@ -315,7 +315,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     MsgProfilID=MsgData[2:6]
     MsgClusterID=MsgData[6:10]
     MsgSourcePoint=MsgData[10:12]
-    MsgEndPoint=MsgData[12:14]
+    MsgDestPoint=MsgData[12:14]
     MsgSourceAddressMode=MsgData[14:16]
 
     if int(MsgSourceAddressMode,16)==0x02 :
@@ -375,7 +375,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
     if self.ListOfDevices[srcnwkid]['Manufacturer'] == '105e':
-        schneiderReadRawAPS(self, srcnwkid, MsgClusterID, dstnwkid, MsgPayload)
+        schneiderReadRawAPS(self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
 
     return
 
