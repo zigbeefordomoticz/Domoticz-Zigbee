@@ -19,7 +19,8 @@ import json
 from Modules.actuators import actuators
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.logging import loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint, livolo_OnOff, thermostat_Mode
+from Modules.output import sendZigateCmd, thermostat_Setpoint, thermostat_Mode
+from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import  schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_thermostat_behaviour, schneider_temp_Setcurrent
 from Modules.domoticz import UpdateDevice_v2
