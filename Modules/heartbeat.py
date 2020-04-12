@@ -93,6 +93,16 @@ def processKnownDevices( self, Devices, NWKID ):
         intHB -= 0xfff0
         self.ListOfDevices[NWKID]['Heartbeat'] = intHB
 
+    # Hack bad devices
+    # Xiaomi b86opcn01 annouced itself as Main Powered!
+    if self.ListOfDevices[NWKID]['MacCapa'] == '84':
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
+                self.ListOfDevices[NWKID]['MacCapa'] = '80'
+                self.ListOfDevices[NWKID]['PowerSource'] = ''
+                if 'Main Powered' in self.ListOfDevices[NWKID]['Capacility']:
+                    self.ListOfDevices[NWKID]['Capacility'].remove( 'Main Powered')
+
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice( self, NWKID)
 
