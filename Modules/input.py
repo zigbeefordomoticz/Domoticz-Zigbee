@@ -2373,6 +2373,20 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
+
+        step_mod = MsgData[14:16]
+        up_down = step_size = transition = None
+        if len(MsgData) >= 18:
+            up_down = MsgData[16:18]
+        if len(MsgData) >= 20:
+            step_size = MsgData[18:20]
+        if len(MsgData) >= 22:
+            transition = MsgData[20:22]
+
+        loggingInput( self, 'Log', "Decode8085 - lumi.remote.b686opcn01   %s/%s MsgData: %s MsgCmd: %s step_mod: %s up_down: %s step_size: %s transition: %s " \
+               %( MsgSrcAddr, MsgEP, MsgData, MsgCmd, step_mod, up_down, step_size, transition)) 
+
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110':
             # Profalux
