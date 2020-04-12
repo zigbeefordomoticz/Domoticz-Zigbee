@@ -502,3 +502,29 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
+
+
+def lookupForIEEE( self, nwkid ):
+
+    """
+    Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
+    """
+
+    for key in self.ListOfDevices:
+        if 'Neighbours' not in self.ListOfDevices[key]:
+            continue
+
+        if len(self.ListOfDevices[key]['Neighbours']) == 0:
+            continue
+
+        # We are interested only on the last one
+        if nwkid not in (self.ListOfDevices[key]['Neighbours'][-1])['Devices']:
+            continue
+
+        dev = (self.ListOfDevices[key]['Neighbours'][-1])['Devices'][ nwkid ]
+        if 'IEEE' in dev:
+            ieee = dev['IEEE']
+            Domoticz.Log("lookupForIEEE for IEEE of %s: %s" %(nwkid, ieee))
+            return ieee
+
+    return None

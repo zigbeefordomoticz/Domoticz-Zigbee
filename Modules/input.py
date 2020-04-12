@@ -16,7 +16,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages
+from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE
 from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
 from Modules.livolo import livolo_bind
@@ -1627,12 +1627,14 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         # Will request in the next hearbeat to for a IEEE request
         loggingInput( self, 'Log',"Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
         loggingInput( self, 'Log',"Request for IEEE for short address: %s" %(MsgSrcAddr))
-        sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + '00' + '00' )
-        #Domoticz.Status("Decode8102 - Will try to reconnect device : " + str(MsgSrcAddr) )
-        #Domoticz.Status("Decode8102 - but will most likely fail if it is battery powered device.")
-        #initDeviceInList(self, MsgSrcAddr)
-        #self.ListOfDevices[MsgSrcAddr]['Status']="0041"
-        #self.ListOfDevices[MsgSrcAddr]['MacCapa']= "0"
+        ieee = lookupForIEEE( self, MsgSrcAddr )
+        if ieee:
+            loggingInput( self, 'Log',"Found IEEE for short address: %s is %s" %(MsgSrcAddr, ieee))
+
+        # This should work only for FFD devices ( Receive on idle )
+        u8RequestType = '00'
+        u8StartIndex = '00'
+        sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + u8RequestType + u8StartIndex )
     return
 
 def Decode8110(self, Devices, MsgData, MsgRSSI) :  # Write Attribute response
