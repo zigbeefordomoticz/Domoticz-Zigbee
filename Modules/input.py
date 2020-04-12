@@ -1590,8 +1590,6 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
     loggingMessages( self, '8102', MsgSrcAddr, None, MsgRSSI, MsgSQN)
 
-
-
     if DeviceExist(self, Devices, MsgSrcAddr) == True :
         try:
             self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
@@ -1625,16 +1623,20 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
-        loggingInput( self, 'Log',"Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
-        loggingInput( self, 'Log',"Request for IEEE for short address: %s" %(MsgSrcAddr))
         ieee = lookupForIEEE( self, MsgSrcAddr )
         if ieee:
             loggingInput( self, 'Log',"Found IEEE for short address: %s is %s" %(MsgSrcAddr, ieee))
 
-        # This should work only for FFD devices ( Receive on idle )
-        u8RequestType = '00'
-        u8StartIndex = '00'
-        sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + u8RequestType + u8StartIndex )
+        else:
+            loggingInput( self, 'Log',"Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
+            loggingInput( self, 'Log',"           - [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
+                %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
+    
+            # This should work only for FFD devices ( Receive on idle )
+            loggingInput( self, 'Log',"Request for IEEE for short address: %s" %(MsgSrcAddr))
+            u8RequestType = '00'
+            u8StartIndex = '00'
+            sendZigateCmd(self ,'0041', '02' + MsgSrcAddr + u8RequestType + u8StartIndex )
     return
 
 def Decode8110(self, Devices, MsgData, MsgRSSI) :  # Write Attribute response
@@ -1979,23 +1981,29 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement1'] and MsgRejoinFlag == '99':
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
-                loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 1: droping packet for %s due to MsgRejoinFlag: 99. Health: %s, MacCapa: %s" \
-                    %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Health'], str(deviceMacCapa)), MsgSrcAddr)
+                loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 1: droping packet for %s due to MsgRejoinFlag: 99. Health: %s, MacCapa: %s, RSSI: %s" \
+                    %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Health'], str(deviceMacCapa), MsgRSSI), MsgSrcAddr)
             else:
-                loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 1: droping packet for %s due to MsgRejoinFlag: 99.MacCapa: %s" \
-                    %( MsgSrcAddr, str(deviceMacCapa)), MsgSrcAddr)
+                loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 1: droping packet for %s due to MsgRejoinFlag: 99.MacCapa: %s, RSSI: %s" \
+                    %( MsgSrcAddr, str(deviceMacCapa), MsgRSSI), MsgSrcAddr)
+            timeStamped( self, MsgSrcAddr , 0x004d)
+            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
             return
    
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement2'] and 'Main Powered' in deviceMacCapa:
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
-                    loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live" \
-                            %(MsgSrcAddr), MsgSrcAddr)
+                    loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live RSSI: %s" \
+                            %(MsgSrcAddr, MsgRSSI), MsgSrcAddr)
+                    timeStamped( self, MsgSrcAddr , 0x004d)
+                    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
                     return
 
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
-            loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s" \
-                    %(MsgSrcAddr, MsgRejoinFlag), MsgSrcAddr)
+            loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
+                    %(MsgSrcAddr, MsgRejoinFlag, MsgRSSI), MsgSrcAddr)
+            timeStamped( self, MsgSrcAddr , 0x004d)
+            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
             return
 
         timeStamped( self, MsgSrcAddr , 0x004d)
