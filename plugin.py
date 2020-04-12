@@ -704,7 +704,7 @@ class BasePlugin:
 
 def zigateInit_Phase1(self ):
 
-    loggingPlugin( self, 'Log', "zigateInit_Phase1 PDMDone: %s" %(self.ErasePDMDone))
+    loggingPlugin( self, 'Debug', "zigateInit_Phase1 PDMDone: %s" %(self.ErasePDMDone))
     # Check if we have to Erase PDM.
     if Parameters["Mode3"] == "True" and not self.ErasePDMDone: # Erase PDM
         if not self.ErasePDMDone:
