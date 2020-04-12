@@ -182,7 +182,7 @@ def importDeviceConfV2( self ):
     # Read DeviceConf for backward compatibility
     importDeviceConf( self )
 
-    model_certified = self.pluginconf.pluginConf['pluginConfig'] + '/Certified'
+    model_certified = self.pluginconf.pluginConf['pluginConfig'] + 'Certified'
 
     if os.path.isdir( model_certified ):
         model_brand_list = [ f for f in listdir(model_certified) if isdir(join(model_certified, f))]
@@ -216,12 +216,14 @@ def importDeviceConfV2( self ):
                         device_model_name = 'Dimmer switch w/o neutral'
     
                     if device_model_name not in self.DeviceConf:
-                        loggingDatabase( self, "Status", "--> Config for %s/%s" %( str(brand), str(device_model_name)))
+                        loggingDatabase( self, "Debug", "--> Config for %s/%s" %( str(brand), str(device_model_name)))
                         self.DeviceConf[ device_model_name ] = dict(model_definition)
                     else:
-                        loggingDatabase( self, "Log", "--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
+                        loggingDatabase( self, "Debug", "--> Config for %s/%s not loaded as already defined" %(str(brand), str(device_model_name)))
                 except:
                     Domoticz.Error("--> Unexpected error when loading a configuration file")
+
+    loggingDatabase( self, 'Status', "--> Config loaded: %s" %self.DeviceConf.keys())
 
 def checkDevices2LOD( self, Devices):
 
