@@ -180,6 +180,7 @@ class BasePlugin:
         self.PDMready = False
         self.InitPhase2 = False
         self.InitPhase1 = False
+        self.ErasePDMDone = False
 
         return
 
@@ -540,6 +541,9 @@ class BasePlugin:
         if self.pluginconf is None:
             return
 
+        if self.ZigateComm:
+            self.ZigateComm.checkTOwaitFor()
+
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
         if self.pluginconf.pluginConf['zigatePDMonHost'] and not self.PDMready:
@@ -555,10 +559,19 @@ class BasePlugin:
             return
 
         # If ZigateIEEE not known, try to get it during the first 10 HB
-        if (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount in ( 2, 4) and self.transport != 'None':
-            sendZigateCmd(self, "0009","")
-        elif (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff') and self.HeartbeatCount == 5 and self.transport != 'None':
-            start_Zigate( self )
+        if self.transport != 'None' and (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff'):
+            if self.HeartbeatCount in ( 2, 4):
+                # Request Network State (valid for firmware above 3.0d)
+                sendZigateCmd(self, "0009","")
+
+            elif self.HeartbeatCount == 5:
+                start_Zigate( self )
+
+            elif self.HeartbeatCount > 10:
+                Domoticz.Error("We are having difficulties to start Zigate. Basically we are not receiving what we expect from Zigate")
+                Domoticz.Error("- Communication issue with the Zigate")
+                Domoticz.Error("- restart once the plugin, and if this remain the same")
+                Domoticz.Error("- unplug/plug the zigate")
             return
 
         if self.FirmwareVersion is None and self.transport != 'None' and self.HeartbeatCount > 1:
@@ -691,25 +704,35 @@ class BasePlugin:
 
 def zigateInit_Phase1(self ):
 
+    loggingPlugin( self, 'Log', "zigateInit_Phase1 PDMDone: %s" %(self.ErasePDMDone))
+    # Check if we have to Erase PDM.
+    if Parameters["Mode3"] == "True" and not self.ErasePDMDone: # Erase PDM
+        if not self.ErasePDMDone:
+            self.ErasePDMDone = True
+            if self.domoticzdb_Hardware:
+                self.domoticzdb_Hardware.disableErasePDM()
+            loggingPlugin( self, 'Status', "Erase Zigate PDM")
+            sendZigateCmd(self, "0012", "")
+            self.PDMready = False
+            self.HeartbeatCount = 0
+            return
+
+        # ErasePDM has been requested, we are in the next Loop.
+        if self.pluginconf.pluginConf['extendedPANID'] is not None:
+            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
+            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+
+        # After an Erase PDM we have to do a full start of Zigate
+        loggingPlugin( self, 'Debug', "----> starZigate")
+        start_Zigate( self )
+        return
+
     if self.transport != "None":
         # Ask for Firmware Version
         sendZigateCmd(self, "0010", "") 
     
         # Set Time server to HOST time
         setTimeServer( self )
-    
-        # Check if we have to Erase PDM. 
-        if Parameters["Mode3"] == "True": # Erase PDM
-            if self.domoticzdb_Hardware:
-                self.domoticzdb_Hardware.disableErasePDM()
-            loggingPlugin( self, 'Status', "Erase Zigate PDM")
-            sendZigateCmd(self, "0012", "")
-            if self.pluginconf.pluginConf['extendedPANID'] is not None:
-                loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
-                setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
-    
-            # After an Erase PDM we have to do a full start of Zigate
-            start_Zigate( self )
     
         # If applicable, put Zigate in NO Pairing Mode
         self.Ping['Permit'] = None

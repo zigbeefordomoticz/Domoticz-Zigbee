@@ -314,7 +314,7 @@ def processKnownDevices( self, Devices, NWKID ):
 def processListOfDevices( self , Devices ):
     # Let's check if we do not have a command in TimeOut
 
-    self.ZigateComm.checkTOwaitFor()
+    #self.ZigateComm.checkTOwaitFor()
     entriesToBeRemoved = []
 
     for NWKID in list( self.ListOfDevices.keys() ):

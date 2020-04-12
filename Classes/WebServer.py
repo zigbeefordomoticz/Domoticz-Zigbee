@@ -1627,7 +1627,8 @@ class WebServer(object):
                 del self.ListOfDevices[ nwkid ]
                 del self.IEEE2NWK[ ieee ]
                 # for a remove in case device didn't send the leave
-                sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
+                if 'IEEE' in self.zigatedata:
+                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
 
                 action = {}
                 action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)

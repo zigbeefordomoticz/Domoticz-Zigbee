@@ -1464,25 +1464,36 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     # Right On: 03
     loggingInput( self, 'Debug', "Decode0100 - Livolo %s/%s Data: %s" %(MsgSrcAddr, MsgSrcEp, MsgStatus), MsgSrcAddr)
 
+    brand = ''
     if MsgSrcAddr not in self.ListOfDevices:
         return
-    if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
-        return
-    if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
-        return
-    if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-        return
+    if 'Manufacturer Name' in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]['Manufacturer Name'] == 'LIVOLO':
+            brand = 'Livolo'
+    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+            brand = 'Livolo'
 
-    if MsgStatus == '00': # Left / Single - Off
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
-    elif MsgStatus == '01': # Left / Single - On
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
-    if MsgStatus == '02': # Right - Off
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
-    elif MsgStatus == '03': # Right - On
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
-
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
+    if brand == 'Livolo':
+        if 'Ep' not in self.ListOfDevices[MsgSrcAddr]:
+            return
+        if MsgSrcEp not in self.ListOfDevices[MsgSrcAddr]['Ep']:
+            return
+        if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+            return
+    
+        if MsgStatus == '00': # Left / Single - Off
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
+        elif MsgStatus == '01': # Left / Single - On
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
+        if MsgStatus == '02': # Right - Off
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
+        elif MsgStatus == '03': # Right - On
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
+    
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
+    else:
+        Domoticz.Log("Decode0100 - Request from %s/%s Data: %s Status: %s" %(MsgSrcAddr, MsgSrcEp, MsgUnknown, MsgStatus))
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
