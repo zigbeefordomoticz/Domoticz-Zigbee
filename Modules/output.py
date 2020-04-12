@@ -1344,6 +1344,12 @@ def identifySend( self, nwkid, ep, duration=0):
 
 def maskChannel( channel ):
 
+
+    # https://github.com/fairecasoimeme/ZiGate/blob/c5a6b5569f6651f72daec9dabbc0d8688e797426/Module%20Radio/Firmware/src/ZiGate/Source/ZigbeeNodeControlBridge/ZigbeeNodeControlBridgeCoordinator.zpscfg#L513https
+    #  <ChannelMask Channel11="true" Channel12="false" Channel13="false" Channel14="false" Channel15="true" 
+    #  Channel16="false" Channel17="false" Channel18="false" Channel19="true" Channel20="true" Channel21="false" 
+    #  Channel22="false" Channel23="false" Channel24="false" Channel25="true" Channel26="true"/>
+
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
             #12: 0x00001000, # Not Zigate
