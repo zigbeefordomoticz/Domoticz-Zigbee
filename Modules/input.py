@@ -2373,20 +2373,6 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
-
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
-
-        loggingInput( self, 'Log', "Decode8085 - lumi.remote.b686opcn01   %s/%s MsgData: %s MsgCmd: %s step_mod: %s up_down: %s step_size: %s transition: %s " \
-               %( MsgSrcAddr, MsgEP, MsgData, MsgCmd, step_mod, up_down, step_size, transition)) 
-
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110':
             # Profalux
@@ -2416,6 +2402,20 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Debug', "Decode8085 - Profalux remote selector: %s" %selector, MsgSrcAddr)
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
+
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
+
+        step_mod = MsgData[14:16]
+        up_down = step_size = transition = None
+        if len(MsgData) >= 18:
+            up_down = MsgData[16:18]
+        if len(MsgData) >= 20:
+            step_size = MsgData[18:20]
+        if len(MsgData) >= 22:
+            transition = MsgData[20:22]
+
+        loggingInput( self, 'Log',"Decode8085 - lumi.remote.b686opcn01 %s/%s Cluster: %s Cmd: %s, Unk: %s, step_mod: %s, up_down: %s, step_size: %s, transition: %s"
+               %( MsgSrcAddr, MsgEP, MsgCmd, unknown_, step_mod, up_down, step_size, transition), MsgSrcAddr)
 
     else:
        loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
@@ -2538,6 +2538,16 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
+
+        delayed_all_off = effect_variant = None
+        if len(MsgData) >= 16:
+            delayed_all_off = MsgData[16:18]
+        if len(MsgData) >= 18:
+            effect_variant = MsgData[18:20]
+
+        loggingInput( self, 'Log', "Decode8095 - lumi.remote.b686opcn01 %s/%s, Cluster: %s, Cmd: %s, Unknown: %s, delayed_all_off:%s , effect_variant: %s " \
+                %( MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, delayed_all_off, effect_variant), MsgSrcAddr)
 
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
