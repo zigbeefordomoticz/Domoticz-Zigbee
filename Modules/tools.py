@@ -515,6 +515,7 @@ def lookupForIEEE( self, nwkid ):
     Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
     """
 
+    Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
     for key in self.ListOfDevices:
         if 'Neighbours' not in self.ListOfDevices[key]:
             continue
@@ -523,19 +524,21 @@ def lookupForIEEE( self, nwkid ):
             continue
 
         # We are interested only on the last one
-        if nwkid not in (self.ListOfDevices[key]['Neighbours'][-1])['Devices']:
-            Domoticz.Log("--> %s not found in %s" %(nwkid,str((self.ListOfDevices[key]['Neighbours'][-1])['Devices'].keys())))
-            continue
+        lastScan = LOD[key]['Neighbours'][-1]
 
-        dev = (self.ListOfDevices[key]['Neighbours'][-1])['Devices'][ nwkid ]
-        if 'IEEE' in dev:
-            ieee = dev['IEEE']
-            oldNWKID = 'none'
-            if ieee in self.IEEE2NWK:
-                oldNWKID = self.IEEE2NWK[ ieee ]
-                #reconnectNWkDevice( self, nwkid, IEEE, oldNWKID)
-            Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
+        for item in lastScan[ 'Devices' ]:
+            
+            if nwkid not in item:
+                continue
 
-            return ieee
+            # Found !
+            if '_IEEE' in item[ nwkid ]:
+                ieee = item[ nwkid ]['_IEEE']
+                oldNWKID = 'none'
+                if ieee in self.IEEE2NWK:
+                    oldNWKID = self.IEEE2NWK[ ieee ]
+                    #reconnectNWkDevice( self, nwkid, IEEE, oldNWKID)
+                Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
+                return ieee
 
     return None
