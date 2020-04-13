@@ -30,6 +30,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 
+from Modules.lumi import enableOppleSwitch
 from Modules.livolo import livolo_bind
 from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
@@ -379,6 +380,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'ConfigSource' in self.ListOfDevices[NWKID]:
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
+
+            if  self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
+                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
+                enableOppleSwitch( self, NWKID)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':

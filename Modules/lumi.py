@@ -1,0 +1,23 @@
+
+
+import Domoticz
+
+from Modules.output import write_attribute
+
+def enableOppleSwitch( self, nwkid ):
+
+    if nwkid not in self.ListOfDevices:
+        return
+
+    manuf_id = '115F'
+    manuf_spec = "01"
+    cluster_id = 'FCC0'
+    Hattribute = '0009'
+    data_type = '20'
+    Hdata = '01'
+
+    EPout = '01'
+
+    Domoticz.Log( "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
+    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
