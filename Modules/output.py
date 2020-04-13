@@ -1092,10 +1092,10 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                         loggingOutput( self, 'Debug',"Do not Bind SML001 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
                         return
 
-                    if self.ListOfDevices[nwkid]['Model'] == 'lumi.remote.b686opcn01' and ep != '01':
-                        # We bind only on EP 01
-                        loggingOutput( self, 'Debug',"Do not Bind lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
-                        return
+                    #if self.ListOfDevices[nwkid]['Model'] == 'lumi.remote.b686opcn01' and ep != '01':
+                    #    # We bind only on EP 01
+                    #    loggingOutput( self, 'Log',"Do not Bind lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                    #    return
 
 
     mode = "03"     # IEEE
