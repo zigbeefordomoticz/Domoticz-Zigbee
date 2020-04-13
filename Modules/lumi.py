@@ -16,8 +16,7 @@ def enableOppleSwitch( self, nwkid ):
     data_type = '20'
     Hdata = '01'
 
-    EPout = '01'
 
-    Domoticz.Log( "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
-    write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+    Domoticz.Log( "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid)
+    write_attribute( self, nwkid, "01", '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
