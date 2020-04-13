@@ -321,6 +321,7 @@ def CheckDeviceList(self, key, val) :
                 'Attributes List', 
                 'Bind', 
                 'WebBind',
+                'Capability'
                 'ColorInfos', 
                 'ClusterType', 
                 'ConfigSource',

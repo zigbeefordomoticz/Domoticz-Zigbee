@@ -100,8 +100,9 @@ def processKnownDevices( self, Devices, NWKID ):
             if self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
                 self.ListOfDevices[NWKID]['MacCapa'] = '80'
                 self.ListOfDevices[NWKID]['PowerSource'] = ''
-                if 'Main Powered' in self.ListOfDevices[NWKID]['Capacility']:
-                    self.ListOfDevices[NWKID]['Capacility'].remove( 'Main Powered')
+                if 'Capability' in self.ListOfDevices[NWKID]:
+                    if 'Main Powered' in self.ListOfDevices[NWKID]['Capability']:
+                        self.ListOfDevices[NWKID]['Capability'].remove( 'Main Powered')
 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice( self, NWKID)
