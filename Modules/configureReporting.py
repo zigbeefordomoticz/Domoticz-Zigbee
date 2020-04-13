@@ -104,9 +104,9 @@ def processConfigureReporting( self, NWKID=None ):
                         if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
                             if cluster in ( '0402', '0403', '0405', '0406'):
                                 continue
-                        if self.ListOfDevices[nwkid]['Model'] == 'lumi.remote.b686opcn01' and ep != '01':
+                        if self.ListOfDevices[key]['Model'] == 'lumi.remote.b686opcn01' and ep != '01':
                             # We bind only on EP 01
-                            loggingOutput( self, 'Log',"Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                            loggingOutput( self, 'Log',"Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(ep, cluster), key)
                             continue
                 
                 # Bad Hack for now. FOR PROFALUX
