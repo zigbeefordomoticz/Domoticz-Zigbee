@@ -524,7 +524,7 @@ def lookupForIEEE( self, nwkid ):
             continue
 
         # We are interested only on the last one
-        lastScan = LOD[key]['Neighbours'][-1]
+        lastScan = self.ListOfDevices[key]['Neighbours'][-1]
 
         for item in lastScan[ 'Devices' ]:
             
