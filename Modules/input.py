@@ -1623,11 +1623,16 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
-        ieee = lookupForIEEE( self, MsgSrcAddr )
+        ieee = lookupForIEEE( self, MsgSrcAddr , True)
         if ieee:
             loggingInput( self, 'Log',"Found IEEE for short address: %s is %s" %(MsgSrcAddr, ieee))
-
         else:
+            # If we didn't find it, let's trigger a NetworkMap scan if not one in progress
+            if self.networkmap:
+                if not self.networkmap.NetworkMapPhase():
+                    loggingInput( self, 'Status',"Trigger a Network Scan in order to update Neighbours Tables", MsgSrcAddr)
+                    self.networkmap.start_scan()
+
             loggingInput( self, 'Log',"Decode8102 - Receiving a message from unknown device : " + str(MsgSrcAddr) + " with Data : " +str(MsgData) )
             loggingInput( self, 'Log',"           - [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
                 %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)

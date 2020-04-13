@@ -104,6 +104,10 @@ def processConfigureReporting( self, NWKID=None ):
                         if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02':
                             if cluster in ( '0402', '0403', '0405', '0406'):
                                 continue
+                        if self.ListOfDevices[nwkid]['Model'] == 'lumi.remote.b686opcn01' and ep != '01':
+                            # We bind only on EP 01
+                            loggingOutput( self, 'Log',"Do not Configure Reporting lumi.remote.b686opcn01 to Zigate Ep %s Cluster %s" %(ep, cluster), nwkid)
+                            continue
                 
                 # Bad Hack for now. FOR PROFALUX
                 if self.ListOfDevices[key]['ProfileID'] == '0104':
@@ -111,6 +115,7 @@ def processConfigureReporting( self, NWKID=None ):
                         # Do not Configure Reports Remote Command
                         loggingOutput( self, 'Debug',"----> Do not Configure Reports cluster %s for Profalux Remote command %s/%s" %(cluster, key, Ep), key)
                         continue
+
 
                 loggingOutput( self, 'Debug', "--------> Configurereporting - processing %s/%s - %s" %(key,Ep,cluster), nwkid=key)
                 if 'ConfigureReporting' not in self.ListOfDevices[key]:
