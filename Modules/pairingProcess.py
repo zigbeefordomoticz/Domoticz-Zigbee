@@ -19,9 +19,8 @@ from Modules.actuators import actuators
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.legrand_netatmo import legrand_fc01
 from Modules.output import  sendZigateCmd,  \
-        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
+        identifyEffect, setXiaomiVibrationSensitivity, \
         unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
-        livolo_bind, \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \
@@ -31,6 +30,9 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 
+from Modules.lumi import enableOppleSwitch
+from Modules.livolo import livolo_bind
+from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoticz import CreateDomoDevice
@@ -343,12 +345,15 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
+            Domoticz.Log("Start Read Attributes")
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                # Let's scan each Endpoint cluster and check if there is anything to read
                 for iterReadAttrCluster in CLUSTERS_LIST:
                     if iterReadAttrCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
                         if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
                             if self.pluginconf.pluginConf['capturePairingInfos']:
                                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
+                            Domoticz.Log("---> for cluster: %s" %iterReadAttrCluster)
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
 
@@ -375,6 +380,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'ConfigSource' in self.ListOfDevices[NWKID]:
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
+
+            if  self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
+                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
+                enableOppleSwitch( self, NWKID)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':

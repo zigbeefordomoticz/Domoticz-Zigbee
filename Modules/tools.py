@@ -130,46 +130,54 @@ def DeviceExist(self, Devices, newNWKID , IEEE = ''):
                     found = False
                     continue
 
-                # We got a new Network ID for an existing IEEE. So just re-connect.
-                # - mapping the information to the new newNWKID
-
-                self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[existingNWKkey])
-
-                self.IEEE2NWK[IEEE] = newNWKID
-
-                Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(existingNWKkey) + " and is attached to IEEE : " +str(IEEE) )
+                reconnectNWkDevice( self, newNWKID, IEEE, existingNWKkey)
                 devName = ''
                 for x in Devices:
                     if Devices[x].DeviceID == existingIEEEkey:
                         devName = Devices[x].Name
-
-                if self.groupmgt:
-                    # We should check if this belongs to a group
-                    self.groupmgt.deviceChangeNetworkID( existingNWKkey, newNWKID)
-
+                        break
                 self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
-
-                # We will also reset ReadAttributes
-                if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
-                    del self.ListOfDevices[newNWKID]['ReadAttributes']
-
-                if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
-                    del self.ListOfDevices[newNWKID]['ConfigureReporting']
-                self.ListOfDevices[newNWKID]['Heartbeat'] = 0
-
-                # MostLikely exitsingKey(the old NetworkID)  is not needed any more
-                removeNwkInList( self, existingNWKkey )    
-
-                if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
-                    Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
-                    self.ListOfDevices[newNWKID]['Status'] = 'inDB'
-                    self.ListOfDevices[newNWKID]['Heartbeat'] = 0
-                    WriteDeviceList(self, 0)
 
                 found = True
                 break
 
     return found
+
+def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
+
+    # We got a new Network ID for an existing IEEE. So just re-connect.
+    # - mapping the information to the new newNWKID
+    self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[oldNWKID])
+    self.IEEE2NWK[IEEE] = newNWKID
+
+    Domoticz.Status("NetworkID : " +str(newNWKID) + " is replacing " +str(oldNWKID) + " and is attached to IEEE : " +str(IEEE) )
+
+    if 'ZDeviceName' in self.ListOfDevices[ newNWKID ]:
+        devName = self.ListOfDevices[ newNWKID ]['ZDeviceName']
+
+    if self.groupmgt:
+        # We should check if this belongs to a group
+        self.groupmgt.deviceChangeNetworkID( oldNWKID, newNWKID)
+
+    # We will also reset ReadAttributes
+    if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
+        del self.ListOfDevices[newNWKID]['ReadAttributes']
+
+    if 'ConfigureReporting' in self.ListOfDevices[newNWKID]:
+        del self.ListOfDevices[newNWKID]['ConfigureReporting']
+
+    self.ListOfDevices[newNWKID]['Heartbeat'] = 0
+
+    # MostLikely exitsingKey(the old NetworkID)  is not needed any more
+    removeNwkInList( self, oldNWKID )    
+
+    if self.ListOfDevices[newNWKID]['Status'] in ( 'Left', 'Leave') :
+        Domoticz.Log("DeviceExist - Update Status from %s to 'inDB' for NetworkID : %s" %(self.ListOfDevices[newNWKID]['Status'], newNWKID) )
+        self.ListOfDevices[newNWKID]['Status'] = 'inDB'
+        self.ListOfDevices[newNWKID]['Heartbeat'] = 0
+        WriteDeviceList(self, 0)
+
+    return
 
 def removeNwkInList( self, NWKID) :
 
@@ -271,57 +279,19 @@ def timeStamped( self, key, Type ):
         self.ListOfDevices[key]['Stamp']['Time'] = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
         self.ListOfDevices[key]['Stamp']['MsgType'] = "%4x" %(Type)
 
-def updSQN_mainpower(self, key, newSQN):
-
-    return
-
-def updSQN_battery(self, key, newSQN):
-
-    if 'SQN' in self.ListOfDevices[key]:
-        oldSQN = self.ListOfDevices[key]['SQN']
-        if oldSQN == '' or oldSQN is None or oldSQN == {} :
-            oldSQN='00'
-    else :
-        oldSQN='00'
-
-    try:
-        if int(oldSQN,16) != int(newSQN,16) :
-            self.ListOfDevices[key]['SQN'] = newSQN
-            if ( int(oldSQN,16)+1 != int(newSQN,16) ) and newSQN != "00" :
-                # Out of seq
-                return
-    except:
-        self.ListOfDevices[key]['SQN'] = {}
-    return
-
-        
 
 def updSQN( self, key, newSQN) :
 
-    if key not in self.ListOfDevices or \
-             newSQN == {} or newSQN == '' or newSQN is None:
+    if key not in self.ListOfDevices:
+        return
+    if newSQN == {}:
+        return
+    if newSQN is None:
         return
 
-    if 'PowerSource' in self.ListOfDevices[key] :
-        if self.ListOfDevices[key]['PowerSource'] == 'Main':
-            # Device on Main Power. SQN is increasing independetly of the object
-           # updSQN_mainpower( self, key, newSQN)
-            pass
-        elif  self.ListOfDevices[key]['PowerSource'] == 'Battery':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-
-    elif 'MacCapa' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['MacCapa'] in ( '84', '8e'):     # So far we have a good understanding on 
-            # Device on Main Power. SQN is increasing independetly of the object
-            #updSQN_mainpower( self, key, newSQN)
-            pass
-        elif self.ListOfDevices[key]['MacCapa'] == '80':
-            # On Battery, each object managed its SQN
-            updSQN_battery( self, key, newSQN)
-        else:
-            self.ListOfDevices[key]['SQN'] = {}
-
+    #Domoticz.Log("-->SQN updated %s from %s to %s" %(key, self.ListOfDevices[key]['SQN'], newSQN))
+    self.ListOfDevices[key]['SQN'] = newSQN
+    return
 
 #### Those functions will be use with the new DeviceConf structutre
 
@@ -540,3 +510,39 @@ def loggingMessages( self, msgtype, sAddr=None, ieee=None, RSSI=None, SQN=None):
 
     Domoticz.Log("Device activity for | %4s | %14s | %4s | %16s | %3s | 0x%02s |" \
         %( msgtype, zdevname, sAddr, ieee, int(RSSI,16), SQN))
+
+
+def lookupForIEEE( self, nwkid , reconnect=False):
+
+    """
+    Purpose of this function is to search a Nwkid in the Neighbours table and find an IEEE
+    """
+
+    Domoticz.Log("lookupForIEEE - looking for %s in Neighbourgs table" %nwkid)
+    for key in self.ListOfDevices:
+        if 'Neighbours' not in self.ListOfDevices[key]:
+            continue
+
+        if len(self.ListOfDevices[key]['Neighbours']) == 0:
+            continue
+
+        # We are interested only on the last one
+        lastScan = self.ListOfDevices[key]['Neighbours'][-1]
+
+        for item in lastScan[ 'Devices' ]:
+            
+            if nwkid not in item:
+                continue
+
+            # Found !
+            if '_IEEE' in item[ nwkid ]:
+                ieee = item[ nwkid ]['_IEEE']
+                oldNWKID = 'none'
+                if ieee in self.IEEE2NWK:
+                    oldNWKID = self.IEEE2NWK[ ieee ]
+                    if reconnect:
+                        reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
+                Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
+                return ieee
+
+    return None

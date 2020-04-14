@@ -17,9 +17,8 @@ import json
 
 from Modules.actuators import actuators
 from Modules.output import  sendZigateCmd,  \
-        processConfigureReporting, identifyEffect, setXiaomiVibrationSensitivity, \
+        identifyEffect, setXiaomiVibrationSensitivity, \
         unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
-        livolo_bind, \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \
@@ -28,6 +27,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import legrand_fc01
 from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fip_mode
 
@@ -92,6 +92,17 @@ def processKnownDevices( self, Devices, NWKID ):
     if intHB > 0xffff:
         intHB -= 0xfff0
         self.ListOfDevices[NWKID]['Heartbeat'] = intHB
+
+    # Hack bad devices
+    # Xiaomi b86opcn01 annouced itself as Main Powered!
+    if self.ListOfDevices[NWKID]['MacCapa'] == '84':
+        if 'Model' in self.ListOfDevices[NWKID]:
+            if self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
+                self.ListOfDevices[NWKID]['MacCapa'] = '80'
+                self.ListOfDevices[NWKID]['PowerSource'] = ''
+                if 'Capability' in self.ListOfDevices[NWKID]:
+                    if 'Main Powered' in self.ListOfDevices[NWKID]['Capability']:
+                        self.ListOfDevices[NWKID]['Capability'].remove( 'Main Powered')
 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice( self, NWKID)
@@ -314,7 +325,7 @@ def processKnownDevices( self, Devices, NWKID ):
 def processListOfDevices( self , Devices ):
     # Let's check if we do not have a command in TimeOut
 
-    self.ZigateComm.checkTOwaitFor()
+    #self.ZigateComm.checkTOwaitFor()
     entriesToBeRemoved = []
 
     for NWKID in list( self.ListOfDevices.keys() ):
