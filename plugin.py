@@ -105,6 +105,11 @@ from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.ListOfDevices import ListOfDevices
 
+TEMPO_NETWORK = 2    # Start HB totrigget Network Status
+TIMEDOUT_START = 10  # Timeoud for the all startup
+TIMEDOUT_FIRMWARE = 5# HB before request Firmware again
+TEMPO_START_ZIGATE = 1 # Nb HB before requesting a Start_Zigate
+
 class BasePlugin:
     enabled = False
 
@@ -178,9 +183,11 @@ class BasePlugin:
 
         self.PDM = {}
         self.PDMready = False
+        self.InitPhase3 = False
         self.InitPhase2 = False
         self.InitPhase1 = False
         self.ErasePDMDone = False
+        self.startZigateNeeded = False
 
         return
 
@@ -537,12 +544,12 @@ class BasePlugin:
 
     def onHeartbeat(self):
         
-        busy_ = False
         if self.pluginconf is None:
             return
-
         if self.ZigateComm:
             self.ZigateComm.checkTOwaitFor()
+
+        busy_ = False
 
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
@@ -550,44 +557,30 @@ class BasePlugin:
             Domoticz.Log(" zigatePDMonHost: %s, PDMready: %s" %(self.pluginconf.pluginConf['zigatePDMonHost'], self.PDMready))
             return
 
-        loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s" %(self.busy, self.PluginHealth))
-
         self.HeartbeatCount += 1
 
-        if not self.InitPhase1 and self.transport != 'None':
-            zigateInit_Phase1( self)
-            return
+        loggingPlugin( self, 'Log', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s" \
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3))
 
-        # If ZigateIEEE not known, try to get it during the first 10 HB
-        if self.transport != 'None' and (self.ZigateIEEE is None or self.ZigateNWKID == 'ffff'):
-            if self.HeartbeatCount in ( 2, 4):
-                # Request Network State (valid for firmware above 3.0d)
-                sendZigateCmd(self, "0009","")
+        if self.transport != 'None' :
+            # Require Transport
+            if not self.InitPhase1:
+                zigateInit_Phase1( self)
+                return
 
-            elif self.HeartbeatCount == 5:
-                start_Zigate( self )
+            # Check if Restart is needed ( After an ErasePDM or a Soft Reset
+            if self.startZigateNeeded:
+                if ( self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE):
+                    start_Zigate( self )
+                    self.startZigateNeeded = False
+                return
 
-            elif self.HeartbeatCount > 10:
-                Domoticz.Error("We are having difficulties to start Zigate. Basically we are not receiving what we expect from Zigate")
-                Domoticz.Error("- Communication issue with the Zigate")
-                Domoticz.Error("- restart once the plugin, and if this remain the same")
-                Domoticz.Error("- unplug/plug the zigate")
-            return
+            if not self.InitPhase2:
+                zigateInit_Phase2(self)
+                return
 
-        if self.FirmwareVersion is None and self.transport != 'None' and self.HeartbeatCount > 1:
-            loggingPlugin( self, 'Log', "No Firmware Version received from Zigate")
-            if self.HeartbeatCount in ( 4, 8 ): # Try to get Firmware version once more time.
-                loggingPlugin( self, 'Log', "Try to get Firmware version once more HB:%s" %self.HeartbeatCount)
-                sendZigateCmd(self, "0010", "") # Get Firmware version
-            elif self.HeartbeatCount > 10:
-                Domoticz.Error("Plugin is not started ...")
-                Domoticz.Error(" - Communication issue with the Zigate")
-                Domoticz.Error(" - restart once the plugin, and if this remain the same")
-                Domoticz.Error(" - unplug/plug the zigate")
-            return
-
-        if not self.InitPhase2:
-            zigateInit_Phase2( self )
+        if not self.InitPhase3:
+            zigateInit_Phase3( self )
             return
 
         # Checking Version
@@ -703,6 +696,9 @@ class BasePlugin:
         return True
 
 def zigateInit_Phase1(self ):
+    """
+    Mainly managed Erase PDM if required
+    """
 
     loggingPlugin( self, 'Debug', "zigateInit_Phase1 PDMDone: %s" %(self.ErasePDMDone))
     # Check if we have to Erase PDM.
@@ -714,7 +710,8 @@ def zigateInit_Phase1(self ):
             loggingPlugin( self, 'Status', "Erase Zigate PDM")
             sendZigateCmd(self, "0012", "")
             self.PDMready = False
-            self.HeartbeatCount = 0
+            self.startZigateNeeded = 1
+            self.HeartbeatCount = 1
             return
 
         # ErasePDM has been requested, we are in the next Loop.
@@ -724,44 +721,60 @@ def zigateInit_Phase1(self ):
 
         # After an Erase PDM we have to do a full start of Zigate
         loggingPlugin( self, 'Debug', "----> starZigate")
-        start_Zigate( self )
         return
-
-    if self.transport != "None":
-        # Ask for Firmware Version
-        sendZigateCmd(self, "0010", "") 
-    
-        # Set Time server to HOST time
-        setTimeServer( self )
-    
-        # If applicable, put Zigate in NO Pairing Mode
-        self.Ping['Permit'] = None
-        if self.pluginconf.pluginConf['resetPermit2Join']:
-            ZigatePermitToJoin( self, 0 )
-        else:
-            sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
-    
-        # Request Network State
-        sendZigateCmd(self, "0009", "") 
-    
-        # Request List of Active Devices
-        sendZigateCmd(self, "0015", "") 
-
-    # Create IAS Zone object
-    self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
 
     self.busy = False
     self.InitPhase1 = True
     return True
 
-def zigateInit_Phase2( self ):
+def zigateInit_Phase2( self):
+    """
+    Make sure that all setup is in place
+    """
+
+
+    if self.FirmwareVersion is None  or self.ZigateIEEE is None or self.ZigateNWKID == 'ffff':
+        if self.FirmwareVersion is None:
+            # Ask for Firmware Version
+            sendZigateCmd(self, "0010", "") 
+        if self.ZigateIEEE is None or self.ZigateNWKID == 'ffff':
+            # Request Network State
+            sendZigateCmd(self, "0009", "") 
+
+        if self.HeartbeatCount > TIMEDOUT_FIRMWARE:
+            Domoticz.Error("We are having difficulties to start Zigate. Basically we are not receiving what we expect from Zigate")
+            Domoticz.Error("Plugin is not started ...")
+        return
+
+
+    # Set Time server to HOST time
+    setTimeServer( self )
+
+    # If applicable, put Zigate in NO Pairing Mode
+    self.Ping['Permit'] = None
+    if self.pluginconf.pluginConf['resetPermit2Join']:
+        ZigatePermitToJoin( self, 0 )
+    else:
+        sendZigateCmd( self, "0014", "" ) # Request Permit to Join status
+
+    # Request List of Active Devices
+    sendZigateCmd(self, "0015", "") 
+
+    # Create IAS Zone object
+    self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
+    # Ready for next phase
+    self.InitPhase2 = True
+    return
+
+def zigateInit_Phase3( self ):
 
     # We can now do what must be done when we known the Firmware version
 
     if self.FirmwareVersion is None:
         return
 
-    self.InitPhase2 = True
+    self.InitPhase3 = True
 
     self.pluginParameters['FirmwareVersion'] = self.FirmwareVersion
 

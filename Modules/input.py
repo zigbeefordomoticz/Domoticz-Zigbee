@@ -277,6 +277,10 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
     elif PacketType=="0026" : loggingInput( self, 'Log',"Remove Device cmd status : " +  Status )
     elif PacketType=="0044" : loggingInput( self, 'Log',"request Power Descriptor status : " +  Status )
 
+    if PacketType=="0012":
+        # Let's trigget a zigate_Start
+        self.startZigateNeeded = self.HeartbeatCount
+
     # Group Management
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
         if self.groupmgt:
@@ -450,6 +454,8 @@ def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
         Status = "NFN_START"
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
+
+    self.startZigateNeeded = self.HeartbeatCount
     loggingInput( self, 'Status', "Non 'Factory new' Restart status: %s" %(Status) )
 
 def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
@@ -465,6 +471,8 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
         Status = "NFN_START"
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
+
+    self.startZigateNeeded = self.HeartbeatCount
     loggingInput( self, 'Status', "'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
@@ -700,8 +708,8 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
         loggingInput( self, 'Status', "Start Network: Error invalid parameter.")
         Status = 'Start Network: Error invalid parameter.'
     elif MsgDataStatus == '04':
-        loggingInput( self, 'Status', "Start Network: Node is on network. ZiGate is already in network so network is already format")
-        Status = 'Start Network: Node is on network. ZiGate is already in network so network is already format'
+        loggingInput( self, 'Status', "Start Network: Node is on network. ZiGate is already in network so network is already formed")
+        Status = 'Start Network: Node is on network. ZiGate is already in network so network is already formed'
     elif MsgDataStatus == '06':
         loggingInput( self, 'Status', "Start Network: Commissioning in progress. If network forming is already in progress")
         Status = 'Start Network: Commissioning in progress. If network forming is already in progress'

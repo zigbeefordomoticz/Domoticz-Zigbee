@@ -650,8 +650,8 @@ class WebServer(object):
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {}
             action['Description'] = 'Erase Zigate PDM - Non Implemente'
-            if self.pluginparameters['Mode1'] != 'None':
-                start_Zigate( self )
+            #if self.pluginparameters['Mode1'] != 'None':
+            #    start_Zigate( self )
         return _response
 
     def rest_rescan_group( self, verb, data, parameters):
@@ -694,7 +694,7 @@ class WebServer(object):
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 sendZigateCmd(self, "0011", "" ) # Software Reset
-                start_Zigate( self )
+                #start_Zigate( self )
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
         _response["Data"] = json.dumps( action , sort_keys=True )

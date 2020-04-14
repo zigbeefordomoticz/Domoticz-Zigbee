@@ -59,7 +59,7 @@ def ZigatePermitToJoin( self, permit ):
     loggingOutput( self, 'Debug', "---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'], 'ffff' )
 
     # Request Time in order to leave time to get the Zigate in pairing mode
-    sendZigateCmd(self, "0017", "")
+    #sendZigateCmd(self, "0017", "")
 
     # Request a Status to update the various permitTojoin structure
     sendZigateCmd( self, "0014", "" ) # Request status
