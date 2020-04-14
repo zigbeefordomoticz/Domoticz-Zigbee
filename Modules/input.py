@@ -319,36 +319,51 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     MsgDestPoint=MsgData[12:14]
     MsgSourceAddressMode=MsgData[14:16]
 
-    if int(MsgSourceAddressMode,16)==0x02 :
-        #Short Address
+    Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
+            %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
+
+    if MsgProfilID != '0104':
+        Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
+        return
+
+    if int(MsgSourceAddressMode,16) == ADDRESS_MODE['short'] or int(MsgSourceAddressMode,16) == ADDRESS_MODE['group']:
         MsgSourceAddress=MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode=MsgData[20:22]
 
-        if int(MsgDestinationAddressMode,16)==0x02 : # uint16_t
+        if int(MsgDestinationAddressMode,16)==ADDRESS_MODE['short'] or int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
             # Short Address
-            MsgDestinationAddress=MsgData[22:26]
+            MsgDestinationAddress=MsgData[22:26] # uint16_t
             MsgPayload=MsgData[26:len(MsgData)]
 
-        else : # uint32_t
+        elif int(MsgDestinationAddressMode,16)==ADDRESS_MODE['ieee']: # uint32_t
             # IEEE
-            MsgDestinationAddress=MsgData[22:38]
+            MsgDestinationAddress=MsgData[22:38] # uint32_t
             MsgPayload=MsgData[38:len(MsgData)]
 
-    else : 
-        # IEEE
-        MsgSourceAddress=MsgData[16:32]
+        else:
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
+            return
+    elif int(MsgSourceAddressMode,16) == ADDRESS_MODE['ieee']:
+        MsgSourceAddress=MsgData[16:32] #uint32_t
         MsgDestinationAddressMode=MsgData[32:34]
-        if int(MsgDestinationAddressMode,16)==0x02 : # uint16_t
-            # Short Address
-            MsgDestinationAddress=MsgData[34:38]
+
+        if int(MsgDestinationAddressMode,16)== ADDRESS_MODE['short'] or int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
+            MsgDestinationAddress=MsgData[34:38] # uint16_t
             MsgPayload=MsgData[38:len(MsgData)]
-        else : 
+
+        elif int(MsgDestinationAddressMode,16)== ADDRESS_MODE['ieee']:
             # IEEE
-            MsgDestinationAddress=MsgData[34:40]
+            MsgDestinationAddress=MsgData[34:40] #uint32_t
             MsgPayload=MsgData[40:len(MsgData)]
+        else:
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
+            return
+    else:
+        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" %(MsgSourceAddressMode, MsgData))
+        return
 
     loggingInput( self, 'Log', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
-    
+
     # Let's check if this is an Schneider related APS. In that case let's process
     srcnwkid = dstnwkid = None
     if len(MsgSourceAddress) == 4:
@@ -815,6 +830,21 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Phase'] = 'binded'
                         self.ListOfDevices[nwkid]['Bind'][Ep][cluster]['Status'] = MsgDataStatus
                         return
+        if 'WebBind' in self.ListOfDevices[nwkid]:
+            for Ep in list(self.ListOfDevices[nwkid]['WebBind']):
+                if Ep not in self.ListOfDevices[nwkid]['Ep']:
+                    # Bad hack - Root cause not identify. Suspition of back and fourth move between stable and beta branch
+                    Domoticz.Error("Decode8030 --> %s Found an inconstitent Ep : %s in %s" %(nwkid, Ep, str(self.ListOfDevices[nwkid]['WebBind'])))
+                    del self.ListOfDevices[nwkid]['WebBind'][ Ep ]
+                    continue
+
+                for cluster in list(self.ListOfDevices[nwkid]['WebBind'][ Ep ]):
+                    if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Phase'] == 'requested':
+                        self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Stamp'] = int(time())
+                        self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Phase'] = 'binded'
+                        self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Status'] = MsgDataStatus
+                        return
+
     return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
