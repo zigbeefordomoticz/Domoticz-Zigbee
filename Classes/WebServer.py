@@ -547,6 +547,9 @@ class WebServer(object):
                 health['OTAupdateProgress'] = self.PluginHealth['Firmware Update']['Progress']
                 health['OTAupdateDevice'] = self.PluginHealth['Firmware Update']['Device']
 
+            if self.groupmgt:
+                health['GroupStatus'] = self.groupmgt.StartupPhase
+
             _response["Data"] = json.dumps( health, sort_keys=True )
 
         return _response
@@ -647,8 +650,8 @@ class WebServer(object):
                     setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
             action = {}
             action['Description'] = 'Erase Zigate PDM - Non Implemente'
-            if self.pluginparameters['Mode1'] != 'None':
-                start_Zigate( self )
+            #if self.pluginparameters['Mode1'] != 'None':
+            #    start_Zigate( self )
         return _response
 
     def rest_rescan_group( self, verb, data, parameters):
@@ -691,7 +694,7 @@ class WebServer(object):
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 sendZigateCmd(self, "0011", "" ) # Software Reset
-                start_Zigate( self )
+                #start_Zigate( self )
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
         _response["Data"] = json.dumps( action , sort_keys=True )
@@ -1624,7 +1627,8 @@ class WebServer(object):
                 del self.ListOfDevices[ nwkid ]
                 del self.IEEE2NWK[ ieee ]
                 # for a remove in case device didn't send the leave
-                sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
+                if 'IEEE' in self.zigatedata:
+                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
 
                 action = {}
                 action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)

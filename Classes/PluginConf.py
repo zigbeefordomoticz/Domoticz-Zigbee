@@ -92,13 +92,13 @@ SETTINGS = {
                 'enableAPSFailureReporting':     { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True},
                 'Ping':                          { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'eraseZigatePDM':                { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
-                'ConfigureReportingBug':         { 'type':'bool', 'default':1 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
+                'breakConfigureReporting':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'Certification':                 { 'type':'str', 'default':'CE' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                 'CertificationCode':             { 'type':'int', 'default':1 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
                 'channel':                       { 'type':'str', 'default':'0' , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                 'TXpower_set':                   { 'type':'int', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'extendedPANID':                 { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
-                'zigatePDMonHost':               { 'type':'hex', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True}
+                'zigatePDMonHost':               { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':True, 'Advanced':True}
             }},
 
         # Command Transitionin tenth of seconds
@@ -111,9 +111,9 @@ SETTINGS = {
 
             #Over The Air Upgrade
         'OverTheAirUpgrade': { 'Order': 7, 'param': {
-                'autoOTA':  { 'type':'bool', 'default':1 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
-                'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False}
+                'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
+                'OTAwait4nextImage': { 'type':'int', 'default':60 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
             }},
 
         # Plugin Transport
@@ -203,6 +203,9 @@ SETTINGS = {
 
         # Experimental
         'Experimental': { 'Order': 15, 'param': {
+                'ExpDeviceAnnoucement1': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'ExpDeviceAnnoucement2': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'ExpDeviceAnnoucement3': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'XiaomiLeave':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'rebindLivolo':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 'zmode':  { 'type':'str', 'default':'ZigBee' , 'current': None, 'restart':True , 'hidden':True, 'Advanced':False},
