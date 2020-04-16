@@ -50,6 +50,8 @@ class ZigateTransport(object):
         ##DEBUG Domoticz.Debug("Setting Transport object")
         self.lock = False
 
+        self.PDMCommandOnly = False    # This flag indicate if any command can be sent to Zigate or only PDM related one
+
         self.LOD = LOD # Object managing the Plugin Devices
         self._checkTO_flag = None
         self._connection = None  # connection handle
@@ -183,6 +185,19 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
+
+    def PDMonly( self , lock):
+
+        if lock:
+            Domoticz.Log("TRANSPORT: LOCK   communication FOR PDM ONLY")
+        else:
+            Domoticz.Log("TRANSPORT: UNLOCK communication FOR PDM ONLY")
+        self.PDMCommandOnly = lock
+
+    def PDMonlyStatus( self ):
+
+        Domoticz.Log("TRANSPORT: Status is : %s " % self.PDMCommandOnly)
+        return self.PDMCommandOnly
 
     def openConn(self):
         self.setConnection()
