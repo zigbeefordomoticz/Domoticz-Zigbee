@@ -183,6 +183,7 @@ class BasePlugin:
 
         self.PDM = {}
         self.PDMready = False
+
         self.InitPhase3 = False
         self.InitPhase2 = False
         self.InitPhase1 = False
@@ -560,8 +561,8 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
-        loggingPlugin( self, 'Log', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s" \
-                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3))
+        loggingPlugin( self, 'Log', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMonlyStatus() ))
 
         if self.transport != 'None' :
 
