@@ -125,10 +125,11 @@ def sendZigateCmd(self, cmd, datas ):
         Domoticz.Error("Zigate Communication error.")
         return
 
-    #PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
-    #if self.pluginconf.pluginConf['zigatePDMonHost'] and not self.PDMready and cmd not in PDM_COMMANDS:
-    #    Domoticz.Log("PDM not yet ready, droping command %s %s" %(cmd, datas))
-    #    return
+    PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
+    if self.ZigateComm.PDMonlyStatus() and cmd not in PDM_COMMANDS:
+        # Only PDM related command can go , all others will be dropped.
+        Domoticz.Log("PDM not yet ready, droping command %s %s" %(cmd, datas))
+        return
 
     if self.pluginconf.pluginConf['debugzigateCmd']:
         loggingOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'ffff')
