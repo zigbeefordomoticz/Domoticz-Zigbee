@@ -11,7 +11,7 @@
 """
 
 # Heartbeat of plugin set to 5s
-HEARTBEAT = 1
+HEARTBEAT = 5
 
 # Number of Max Command to be submitted to Zigate
 MAX_LOAD_ZIGATE = 4
@@ -285,7 +285,7 @@ ZCL_CLUSTERS_LIST = {
 # Zigate Commands, with there sequence of response ( Status + Data)
 ZIGATE_COMMANDS = {
         0x0009: {'Sequence': (0x8000, 0x8009), 'Command': 'Get Network State (Firm v3.0d)', 'NwkId 2nd Bytes': False },
-        0x0010: {'Sequence': (0x8000, 0x8010), 'Command': 'Get Version' , 'NwkId 2nd Bytes': False },
+        0x0010: {'Sequence': ( ), 'Command': 'Get Version' , 'NwkId 2nd Bytes': False },
         0x0011: {'Sequence': (0x8000,), 'Command': 'Reset' , 'NwkId 2nd Bytes': False },
         0x0012: {'Sequence': (0x8000,), 'Command': 'Erase Persistent Data' , 'NwkId 2nd Bytes': False },
         0x0013: {'Sequence': (0x8000,), 'Command': 'ZLO/ZLL “Factory New” Reset' , 'NwkId 2nd Bytes': False },
