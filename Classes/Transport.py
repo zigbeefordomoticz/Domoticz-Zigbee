@@ -18,6 +18,7 @@ STANDALONE_MESSAGE =[]
 for x in ZIGATE_RESPONSES:
     STANDALONE_MESSAGE.append( x )
 
+CMD_PDM_ON_HOST = []
 CMD_ONLY_STATUS = []
 CMD_NWK_2NDBytes = {}
 CMD_DATA = {}
@@ -26,6 +27,9 @@ for x in ZIGATE_COMMANDS:
         CMD_NWK_2NDBytes[ x ] = x
     if len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 1:
             CMD_ONLY_STATUS.append( x )
+    elif len ( ZIGATE_COMMANDS[ x ]['Sequence']) == 0:
+            CMD_PDM_ON_HOST.append ( x )
+
     else:
         CMD_DATA[ x ] = ZIGATE_COMMANDS[ x ]['Sequence'][1]
 
@@ -45,6 +49,8 @@ class ZigateTransport(object):
     def __init__(self, LOD, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
         self.lock = False
+
+        self.PDMCommandOnly = False    # This flag indicate if any command can be sent to Zigate or only PDM related one
 
         self.LOD = LOD # Object managing the Plugin Devices
         self._checkTO_flag = None
@@ -151,6 +157,8 @@ class ZigateTransport(object):
     # Transport / Opening / Closing Communication
     def setConnection( self ):
 
+        BAUDS = 115200
+
         if self._connection is not None:
             del self._connection
             self._connection = None
@@ -159,17 +167,17 @@ class ZigateTransport(object):
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=115200)
+                         Address=self._serialPort, Baud= 460800)
         elif self._transp == "DIN":
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=115200)
+                         Address=self._serialPort, Baud=BAUDS)
         elif self._transp == "PI":
             if self._serialPort.find('/dev/') != -1 or self._serialPort.find('COM') != -1:
                 Domoticz.Status("Connection Name: Zigate, Transport: Serial, Address: %s" %( self._serialPort ))
                 self._connection = Domoticz.Connection(Name="ZiGate", Transport="Serial", Protocol="None",
-                         Address=self._serialPort, Baud=115200)
+                         Address=self._serialPort, Baud=BAUDS)
         elif self._transp == "Wifi":
             Domoticz.Status("Connection Name: Zigate, Transport: TCP/IP, Address: %s:%s" %( self._serialPort, self._wifiPort ))
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
@@ -177,6 +185,14 @@ class ZigateTransport(object):
         else:
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
+
+    def PDMonly( self , lock):
+
+        self.PDMCommandOnly = lock
+
+    def PDMonlyStatus( self ):
+
+        return self.PDMCommandOnly
 
     def openConn(self):
         self.setConnection()
@@ -204,8 +220,6 @@ class ZigateTransport(object):
         """
         send data to Zigate via the communication transport
         """
-
-
         self.loggingSend('Debug', "--> _sendData - %s %s %s" %(cmd, datas, delay))
 
         if datas == "":
@@ -393,16 +407,19 @@ class ZigateTransport(object):
             return
 
         if self.zmode == 'Agressive':
-            sendNow = len(self._waitForStatus) == 0
+            sendNow = (len(self._waitForStatus) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
         else:
-            sendNow = len(self._waitForStatus) == 0 and len(self._waitForData) == 0
+            sendNow = (len(self._waitForStatus) == 0 and len(self._waitForData) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
 
-        self.loggingSend('Debug', "sendData - zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(self.zmode, len(self._waitForStatus), len(self._waitForData), sendNow))
+        self.loggingSend('Debug', "sendData - Command: %s zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(cmd, self.zmode, len(self._waitForStatus), len(self._waitForData), sendNow))
 
+        # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
         if sendNow:
-            self._addCmdToWaitQueue(cmd, datas)
-            if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
-                self._addCmdToWaitDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
+            if int(cmd,16) not in CMD_PDM_ON_HOST:
+                # That is a Standard command (not PDM on  Host), let's process as usall
+                self._addCmdToWaitQueue(cmd, datas)
+                if self.zmode == 'ZigBee' and int(cmd, 16) in CMD_DATA:  # We do wait only if required and if not in AGGRESSIVE mode
+                    self._addCmdToWaitDataQueue(CMD_DATA[int(cmd, 16)], cmd, datas)
             if delay is None:
                 self._sendData(cmd, datas, self.sendDelay )
             else:

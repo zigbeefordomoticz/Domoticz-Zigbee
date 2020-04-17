@@ -29,6 +29,9 @@ from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTE
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
+from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, PDMDeleteRecord, PDMDeleteAllRecord
+
+
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
 
 from Classes.IAS import IAS_Zone_Management
@@ -69,7 +72,10 @@ def ZigateRead(self, Devices, Data):
         '8501': Decode8501,
         '8503': Decode8503,
         '8701': Decode8701, '8702': Decode8702,
-        '8806': Decode8806, '8807': Decode8807
+        '8806': Decode8806, '8807': Decode8807,
+        '0300': Decode0300, '0301': Decode0301, '0302': Decode0302,
+        '0200': Decode0200, '0201': Decode0201, '0202': Decode0202, '0203': Decode0203, '0204':Decode0204, 
+        '0205': Decode0205, '0206': Decode0206, '0207': Decode0207, '0208': Decode0208
     }
     
     NOT_IMPLEMENTED = ( '00d1', '8029', '80a0', '80a1', '80a2', '80a3', '80a4' )
@@ -280,6 +286,8 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
     if PacketType=="0012":
         # Let's trigget a zigate_Start
         self.startZigateNeeded = self.HeartbeatCount
+        if self.HeartbeatCount == 0:
+            self.startZigateNeeded = self.HeartbeatCount +1
 
     # Group Management
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
@@ -443,7 +451,7 @@ def Decode8005(self, Devices, MsgData, MsgRSSI) : # Command list
 
 def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
 
-    loggingInput( self, 'Debug', "Decode8006 - MsgData: %s" %(MsgData))
+    loggingInput( self, 'Log', "Decode8006 - MsgData: %s" %(MsgData))
 
     Status = MsgData[0:2]
     if MsgData[0:2] == "00":
@@ -456,6 +464,8 @@ def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
         Status = "RUNNING"
 
     self.startZigateNeeded = self.HeartbeatCount
+    if self.HeartbeatCount == 0:
+        self.startZigateNeeded = self.HeartbeatCount +1
     loggingInput( self, 'Status', "Non 'Factory new' Restart status: %s" %(Status) )
 
 def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
@@ -473,6 +483,8 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
         Status = "RUNNING"
 
     self.startZigateNeeded = self.HeartbeatCount
+    if self.HeartbeatCount == 0:
+        self.startZigateNeeded = self.HeartbeatCount +1
     loggingInput( self, 'Status', "'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
@@ -544,6 +556,7 @@ def Decode8010(self, Devices, MsgData, MsgRSSI): # Reception Version list
         self.FirmwareMajorVersion = str(MajorVersNum)
         self.zigatedata['Firmware Version'] =  str(MajorVersNum) + ' - ' +str(InstaVersNum)
 
+    self.PDMready = True
     return
 
 def Decode8011( self, Devices, MsgData, MsgRSSI ):
@@ -697,6 +710,8 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
 
     MsgLen=len(MsgData)
     MsgDataStatus=MsgData[0:2]
+
+    Domoticz.Log("Decode8024: Status: %s" %MsgDataStatus)
 
     if MsgDataStatus == '00':
          loggingInput( self, 'Status', "Start Network - Success")
@@ -2699,3 +2714,77 @@ def Decode8035(self, Devices, MsgData, MsgRSSI):
 
     if eventStatus in PDU_EVENT:
         loggingInput( self, 'Debug2', "Decode8035 - PDM event : recordID: %s - eventStatus: %s (%s)"  %(recordID, eventStatus, PDU_EVENT[ eventStatus ]), 'ffff')
+
+
+## PDM HOST
+def Decode0300( self, Devices, MsgData, MsgRSSI):
+
+    loggingInput( self, 'Debug',  "Decode0300 - PDMHostAvailableRequest: %20.20s" %(MsgData))
+    pdmHostAvailableRequest(self, MsgData )
+    return
+
+def Decode0301( self, Devices, MsgData, MsgRSSI):
+
+    loggingInput( self, 'Debug',  "Decode0301 - E_SL_MSG_ASC_LOG_MSG: %20.20s" %(MsgData))
+    return
+
+def Decode0302( self, Devices, MsgData, MsgRSSI):
+
+    loggingInput( self, 'Debug',  "Decode0302 - PDMloadConfirmed: %20.20s" %(MsgData))
+    pdmLoadConfirmed(self, MsgData )
+    return
+
+def Decode0200( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0200 - PDMSaveRequest: %20.20s" %(MsgData))
+    PDMSaveRequest( self, MsgData)
+    return
+
+def Decode0201( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0201 - PDMLoadRequest: %20.20s" %(MsgData))
+    PDMLoadRequest(self, MsgData)
+    return
+
+def Decode0202( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0202 - PDMDeleteAllRecord: %20.20s" %(MsgData))
+    PDMDeleteAllRecord( self, MsgData)
+
+def Decode0203( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0203 - PDMDeleteRecord: %20.20s" %(MsgData))
+    PDMDeleteRecord( self, MsgData)
+
+def Decode0204( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0204 - E_SL_MSG_CREATE_BITMAP_RECORD_REQUEST: %20.20s" %(MsgData))
+    PDMCreateBitmap(self, MsgData)
+
+def Decode0205( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0205 - E_SL_MSG_DELETE_BITMAP_RECORD_REQUEST: %20.20s" %(MsgData))
+    PDMDeleteBitmapRequest( self, MsgData)
+
+
+def Decode0206( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0206 - PDMGetBitmapRequest: %20.20s" %(MsgData))
+    PDMGetBitmapRequest(self, MsgData )
+    return
+
+def Decode0207( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0207 - PDMIncBitmapRequest: %20.20s" %(MsgData))
+    PDMIncBitmapRequest( self, MsgData)
+    return
+
+def Decode0208( self, Devices, MsgData, MsgRSSI):
+
+    #loggingInput( self, 'Debug',  "Decode0208 - PDMExistanceRequest: %20.20s" %(MsgData))
+    PDMExistanceRequest(self, MsgData )
+    return
+
+
+
+

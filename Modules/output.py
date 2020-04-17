@@ -95,6 +95,9 @@ def start_Zigate(self, Mode='Controller'):
         sendZigateCmd( self, "0014", "" ) # Request status
         sendZigateCmd( self, "0009", "" ) # Request status
 
+        # Request a Status to update the various permitTojoin structure
+        sendZigateCmd( self, "0014", "" ) # Request status
+
 def setTimeServer( self ):
 
     EPOCTime = datetime(2000,1,1)
@@ -121,6 +124,13 @@ def sendZigateCmd(self, cmd, datas ):
     if self.ZigateComm is None:
         Domoticz.Error("Zigate Communication error.")
         return
+
+    PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
+    if self.ZigateComm.PDMonlyStatus() and cmd not in PDM_COMMANDS:
+        # Only PDM related command can go , all others will be dropped.
+        Domoticz.Log("PDM not yet ready, droping command %s %s" %(cmd, datas))
+        return
+
     if self.pluginconf.pluginConf['debugzigateCmd']:
         loggingOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'ffff')
     else:

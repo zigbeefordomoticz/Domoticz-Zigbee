@@ -181,8 +181,9 @@ class BasePlugin:
         self.loggingFileHandle = None
         self.level = 0
 
-        self.PDM = {}
+        self.PDM = None
         self.PDMready = False
+
         self.InitPhase3 = False
         self.InitPhase2 = False
         self.InitPhase1 = False
@@ -195,7 +196,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.8.012'
+        self.pluginParameters['PluginVersion'] = '4.8.014'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -470,6 +471,19 @@ class BasePlugin:
         self.Ping['Permit'] = None
         self.Ping['Nb Ticks'] = 1
 
+        # Create IAS Zone object
+        self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
+        self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        if len(self.ListOfDevices) > 1:
+            loggingPlugin( self, 'Status', "Trigger a Topology Scan")
+            self.networkmap.start_scan( ) 
+  
+        self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        if len(self.ListOfDevices) > 1:
+           loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
+           self.networkenergy.start_scan()
+
         return True
 
 
@@ -553,16 +567,18 @@ class BasePlugin:
 
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
-        if self.pluginconf.pluginConf['zigatePDMonHost'] and not self.PDMready:
+        if self.pluginconf.pluginConf['zigatePDMonHost'] and self.transport != 'None' and not self.PDMready:
             Domoticz.Log(" zigatePDMonHost: %s, PDMready: %s" %(self.pluginconf.pluginConf['zigatePDMonHost'], self.PDMready))
+            sendZigateCmd(self, "0010", "")
             return
 
         self.HeartbeatCount += 1
 
-        loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s" \
-                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3))
+        loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMonlyStatus() ))
 
         if self.transport != 'None' :
+
             # Require Transport
             if not self.InitPhase1:
                 zigateInit_Phase1( self)
@@ -570,7 +586,9 @@ class BasePlugin:
 
             # Check if Restart is needed ( After an ErasePDM or a Soft Reset
             if self.startZigateNeeded:
+                Domoticz.Log("Start_Zigate is needed")
                 if ( self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE):
+                    Domoticz.Log("-->Start_Zigate is called")
                     start_Zigate( self )
                     self.startZigateNeeded = False
                 return
@@ -759,9 +777,6 @@ def zigateInit_Phase2( self):
 
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
-
-    # Create IAS Zone object
-    self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
 
     # Ready for next phase
     self.InitPhase2 = True
