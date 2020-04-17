@@ -109,20 +109,20 @@ class NetworkMap():
         self.logging( 'Debug', "_initNeighbours")
 
         for nwkid in self.ListOfDevices:
-            router = False
+            tobescanned = False
             if nwkid == '0000':
-                router = True
+                tobescanned = True
             elif 'LogicalType' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['LogicalType'] == 'Router':
-                    router = True
+                    tobescanned = True
                 if 'DeviceType' in self.ListOfDevices[nwkid]:
                     if self.ListOfDevices[nwkid]['DeviceType'] == 'FFD':
-                        router = True
+                        tobescanned = True
                 if 'MacCapa' in self.ListOfDevices[nwkid]:
                     if self.ListOfDevices[nwkid]['MacCapa'] == '8e':
-                        router = True
+                        tobescanned = True
 
-            if not router:
+            if not tobescanned:
                 continue
             self._initNeighboursTableEntry( nwkid )
 
@@ -165,28 +165,29 @@ class NetworkMap():
             self._initNeighboursTableEntry( nwkid)
 
         
-        router = False
+        tobescanned = False
         if nwkid != '0000' and nwkid not in self.ListOfDevices:
             return
         if nwkid == '0000':
-            router = True
+            tobescanned = True
         elif 'LogicalType' in self.ListOfDevices[nwkid]:
             if self.ListOfDevices[nwkid]['LogicalType'] in ( 'Router' ):
-                router = True
+                tobescanned = True
             if 'DeviceType' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['DeviceType'] in ( 'FFD' ):
-                    router = True
+                    tobescanned = True
             if 'MacCapa' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['MacCapa'] in ( '8e' ):
-                    router = True
+                    tobescanned = True
             if 'PowerSource' in self.ListOfDevices[nwkid]:
                 if self.ListOfDevices[nwkid]['PowerSource'] in ( 'Main'):
-                    router = True
+                    tobescanned = True
 
-        if not router:
+        if not tobescanned:
             self.logging( 'Debug', "Skiping %s as it's not a Router nor Coordinator" %nwkid)
             return
 
+        # u8StartIndex is the Neighbour table index of the first entry to be included in the response to this request
         index = self.Neighbours[ nwkid ]['TableCurSize']
 
         self.LQIreq
@@ -318,6 +319,9 @@ class NetworkMap():
                     element[child]['_depth'] =   int(self.Neighbours[nwkid]['Neighbours'][child]['_depth'],16)
                     element[child]['_lnkqty'] =  int(self.Neighbours[nwkid]['Neighbours'][child]['_lnkqty'],16)
                     element[child]['_rxonwhenidl'] = self.Neighbours[nwkid]['Neighbours'][child]['_rxonwhenidl'] 
+                    element[child]['_IEEE']        = self.Neighbours[nwkid]['Neighbours'][child]['_ieee']
+                    element[child]['_permitjnt']   = self.Neighbours[nwkid]['Neighbours'][child]['_permitjnt']
+
                     LOD_Neighbours['Devices'].append( element )
 
             self.ListOfDevices[nwkid]['Neighbours'].append ( LOD_Neighbours )
@@ -371,7 +375,7 @@ class NetworkMap():
         if len(MsgData) == ( 10 + 42*NeighbourTableListCount + 4 ):
             # Firmware 3.1a and aboce
             MsgSrc = MsgData[ 10 + 42*NeighbourTableListCount: len(MsgData)]
-            self.logging( 'Debug', "LQIresp - Firmware 3.1a - MsgSrc: %s" %MsgSrc)
+            self.logging( 'Debug', "LQIresp - MsgSrc: %s" %MsgSrc)
 
         if Status != '00':
             self.logging( 'Debug', "LQI:LQIresp - Status: %s for %s (raw data: %s)" %(Status, MsgData[len(MsgData) - 4: len(MsgData)],MsgData))

@@ -50,7 +50,7 @@ def _copyfile( source, dest, move=True ):
 class GroupsManagement(object):
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
-        self.StartupPhase = 'init'
+        self.StartupPhase = 'start'
         self._SaveGroupFile = None
         self.ListOfGroups = {}      # Data structutre to store all groups
         self.TobeAdded = []         # List of IEEE/NWKID/EP/GROUP to be added
@@ -1419,13 +1419,13 @@ class GroupsManagement(object):
             for group_nwkid in self.ListOfGroups:
                 self.updateDomoGroupDevice( group_nwkid)
 
-        elif self.StartupPhase == 'init':
+        elif self.StartupPhase == 'start':
             # Check if there is an existing Pickle file. If this file is newer than ZigateConf, we can simply load it and finish the Group startup.
             # In case the file is older, this means that ZigateGroupConf is newer and has some changes, do the full process.
 
             # Check if the DeviceList file exist.
             self.logging( 'Log', "Group Management - Init phase")
-            self.StartupPhase = 'discovery'
+            self.StartupPhase = 'scan'
             last_update_GroupList = 0
             if os.path.isfile( self.groupListFileName ) :
                 self.logging( 'Debug', "--->GroupList.pck exists")
@@ -1454,15 +1454,15 @@ class GroupsManagement(object):
                 if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
                     # GroupList is newer , just reload the file and exit
                     self.logging( 'Status', "--------->No update of Groups needed")
-                    self.StartupPhase = 'end of group startup'
+                    self.StartupPhase = 'completion'
                     self._load_GroupList()
             else:   # No config file, so let's move on
                 self.logging( 'Debug', "------>No Config file, let's use the GroupList")
                 self.logging( 'Debug', "------>switch to end of Group Startup")
                 self._load_GroupList()
-                self.StartupPhase = 'end of group startup'
+                self.StartupPhase = 'completion'
 
-        elif self.StartupPhase == 'discovery':
+        elif self.StartupPhase == 'scan':
             if self.HB <= 12:
                 # Tempo 1' before starting Group
                 self.HB += 1
@@ -1536,13 +1536,13 @@ class GroupsManagement(object):
             else:
                 if _workcompleted:
                     self.logging( 'Log', "hearbeatGroupMgt - Finish Discovery Phase" )
-                    self.StartupPhase = 'finish discovery'
+                    self.StartupPhase = 'finish scan'
 
-        elif self.StartupPhase in ( 'finish discovery', 'finish discovery continue') :
+        elif self.StartupPhase in ( 'finish scan', 'finish scan continue') :
             # Check for completness or Timeout
-            if self.StartupPhase ==  'finish discovery':
+            if self.StartupPhase ==  'finish scan':
                 self.logging( 'Log', "Group Management - Membership gathering")
-            self.StartupPhase = 'finish discovery continue'
+            self.StartupPhase = 'finish scan continue'
             now = time()
             self.stillWIP = True
             _completed = True
@@ -1719,9 +1719,9 @@ class GroupsManagement(object):
                     self._identifyEffect( iterGroup, '01', effect='Okay' )
                     self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s operational' %iterGroup)
             else:
-                self.StartupPhase = 'perform command'
+                self.StartupPhase = 'processing'
 
-        elif self.StartupPhase == 'perform command':
+        elif self.StartupPhase == 'processing':
             self.stillWIP = True
             _completed = True
             self.logging( 'Debug', "hearbeatGroupMgt - Perform Zigate commands")
@@ -1828,7 +1828,7 @@ class GroupsManagement(object):
                         self._SaveGroupFile = False
                         self.StartupPhase = 'check group list'
                     else:
-                        self.StartupPhase = 'discovery'
+                        self.StartupPhase = 'scan'
                         for iterDev in self.ListOfDevices:
                             if 'GroupMgt' in self.ListOfDevices[iterDev]:
                                 del self.ListOfDevices[iterDev]['GroupMgt']
@@ -1864,14 +1864,14 @@ class GroupsManagement(object):
                     self.logging( 'Log', "hearbeatGroupMgt - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
                     self._createDomoGroupDevice( self.ListOfGroups[iterGrp]['Name'], iterGrp)
 
-            self.StartupPhase = 'end of group startup'
+            self.StartupPhase = 'completion'
             # We write GroupList to cash only if in case of success.
             if self._SaveGroupFile:
                 self._write_GroupList()
                 self.logging( 'Status', "Group Management - startup done")
                 self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups management startup completed')
 
-        elif self.StartupPhase == 'end of group startup':
+        elif self.StartupPhase == 'completion':
             for iterGrp in self.ListOfGroups:
                 self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
                 self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))

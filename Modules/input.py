@@ -485,8 +485,6 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
     self.startZigateNeeded = self.HeartbeatCount
     if self.HeartbeatCount == 0:
         self.startZigateNeeded = self.HeartbeatCount +1
-    loggingInput( self, 'Status', "Non 'Factory new' Restart status: %s" %(Status) )
-
     loggingInput( self, 'Status', "'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)

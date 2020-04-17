@@ -196,7 +196,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.8.012'
+        self.pluginParameters['PluginVersion'] = '4.8.014'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -664,6 +664,18 @@ class BasePlugin:
                 sendZigateCmd( self, "0014", "" ) # Request status
                 self.permitTojoin['Duration'] = 0
 
+        if self.networkmap is None and self.HeartbeatCount > 12:
+            loggingPlugin( self, 'Status', "Trigger a Topology Scan")
+            self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+            if len(self.ListOfDevices) > 1:
+                self.networkmap.start_scan( ) 
+     
+        if self.networkenergy is None and self.HeartbeatCount > 24:
+            loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
+            self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+            if len(self.ListOfDevices) > 1:
+                self.networkenergy.start_scan()
+
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
         if self.pluginconf.pluginConf['Ping']:
@@ -765,7 +777,6 @@ def zigateInit_Phase2( self):
 
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
-
 
     # Ready for next phase
     self.InitPhase2 = True

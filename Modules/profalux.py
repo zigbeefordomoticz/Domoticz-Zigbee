@@ -72,6 +72,9 @@ def profalux_stop( self, nwkid ):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     cmd = '03'
 
     payload = cluster_frame + sqn + cmd 
@@ -90,6 +93,9 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     cmd = '04'
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
@@ -110,6 +116,9 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     cmd = '05'
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
@@ -131,6 +140,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     cmd = '10'
 
     if level is None and tilt:

@@ -26,6 +26,9 @@ def legrand_fake_read_attribute_response( self, nwkid ):
 
     cluster_frame = '11'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     payload = cluster_frame + sqn + '0100F0002311000000'
     raw_APS_request( self, nwkid, '01', '0000', '0104', payload)
     loggingLegrand( self, 'Debug', "legrand_fake_read_attribute_response nwkid: %s" %nwkid, nwkid)
@@ -56,6 +59,9 @@ def rejoin_legrand( self, nwkid):
     # To be use if the Write Attribute is not conclusive
     cluster_frame = '14'
     sqn = '00'
+    if 'SQN' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
+            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     payload = cluster_frame + sqn + '0500f02300000000'
     raw_APS_request( self, 'ffff', '01', '0000', '0104', payload)
 

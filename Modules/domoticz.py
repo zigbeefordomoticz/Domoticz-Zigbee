@@ -207,7 +207,18 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
-
+            if t == "TempSetCurrent":
+                self.ListOfDevices[NWKID]['Status'] = "inDB"
+                unit = FreeUnit(self, Devices)
+                myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep),
+                                Unit=unit, Type=242, Subtype=1)
+                myDev.Create()
+                ID = myDev.ID
+                if myDev.ID == -1 :
+                    self.ListOfDevices[NWKID]['Status'] = "failDB"
+                    Domoticz.Error("Domoticz widget creation failed. %s" %(str(myDev)))
+                else:
+                    self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = t
             if t == "ThermoMode":
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 unit = FreeUnit(self, Devices)
@@ -226,7 +237,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "HACTMODE":
                     self.ListOfDevices[NWKID]['Status'] = "inDB"
                     unit = FreeUnit(self, Devices)
-                    Options = {"LevelActions": "||", "LevelNames": "Off|Conventional|Fil Pilote",
+                    Options = {"LevelActions": "||", "LevelNames": "Off|Conventional|Set Point|Fil Pilote",
                             "LevelOffHidden": "true", "SelectorStyle": "0"}
                     myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=str(t) + "-" + str(DeviceID_IEEE) + "-" + str(Ep),
                             Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
@@ -1134,15 +1145,18 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             # Wiser specific Fil Pilote
             if 'ThermoMode' in ClusterType and DeviceType == 'HACTMODE' and Attribute_ == "e011":
-                loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s %s" %(0,setpoint), NWKID)
+                loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s" %(value), NWKID)
                 if value == '00':  # Conventional
                     nValue = 1
                     sValue = '10'
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
-
-                elif value == '03':  # FIP
-                    nValue = 2
+                elif value == '02': #Setpoint
+                    nvalue = 2
                     sValue = '20'
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+                elif value == '03':  # FIP
+                    nValue = 3 
+                    sValue = '30'
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
             if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode' and Attribute_ == '001c':
@@ -1988,7 +2002,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     if Unit:
         loggingWidget( self, "Debug", "Touch unit %s" %( Devices[Unit].Name ))
-        if not self.VersionNewFashion or (self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
+        if not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
             loggingWidget( self, "Debug", "Not the good Domoticz level for Touch")
             return
         # Extract NwkId from Device Unit
