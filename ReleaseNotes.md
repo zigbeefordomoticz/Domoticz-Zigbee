@@ -1,5 +1,9 @@
 # Release Notes 
 
+# 17 April 2020 - 4.7.9
+- [Issue] - Fix potential issue, due to uninitialized parameter
+- [Hardware] - Enable support of new Xiaomi Lum sensor ( lumi.sen_ill.mgl01 )
+
 # 31 March 2020 - 4.7.8
 - [Technical] Makes plugin compatible with Domoticz versioning schema, fix a remaining issue
 

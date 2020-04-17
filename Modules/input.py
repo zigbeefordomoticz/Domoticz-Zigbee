@@ -668,7 +668,8 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
         self.currentChannel = int(MsgChannel,16)
         self.ZigateIEEE = MsgExtendedAddress
         self.ZigateNWKID = MsgShortAddress
-        self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
+        if self.iaszonemgt:
+            self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
 
     Domoticz.Status("Zigate details IEEE: %s, NetworkID: %s, Channel: %s, Status: %s: %s" \
             %(MsgExtendedAddress, MsgShortAddress, int(MsgChannel,16), MsgDataStatus, Status) )
