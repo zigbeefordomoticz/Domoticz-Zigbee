@@ -16,6 +16,59 @@ import Modules.output
 from Modules.logging import loggingOutput
 from time import time
 
+def polling_Schneider( self, key ):
+
+    """
+    This fonction is call if enabled to perform any Manufacturer specific polling action
+    The frequency is defined in the pollingSchneider parameter (in number of seconds)
+    """
+
+    return
+
+
+def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
+
+    """
+    This is fonction is call when receiving a message from a Manufacturer battery based device.
+    The function is called after processing the readCluster part
+    """
+
+    if cluster == '0201':
+        callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
+
+    return
+
+def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
+
+    # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribute
+    if 'Model' in self.ListOfDevices[NwkId]:
+        if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-VACT':
+            now = time()
+            # Manage SetPoint
+            if '0201' in self.ListOfDevices[NwkId]['Ep'][EndPoint]:
+                if '0012' in self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']:
+                    if 'Schneider' not in self.ListOfDevices[NwkId]:
+                        self.ListOfDevices[NwkId]['Schneider'] = {}
+                    if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
+                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] * 100):
+                            # Protect against overloading Zigate
+                            if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
+                                schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
+
+            # Manage Zone Mode
+                if 'e010' in self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']:
+                    if 'Target Mode' in self.ListOfDevices[NwkId]['Schneider']:
+                        EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
+                        if self.ListOfDevices[NwkId]['Schneider']['Target Mode'] is not None:
+                            if EHZBRTS_THERMO_MODE[self.ListOfDevices[NwkId]['Schneider']['Target Mode']] == int(self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['e010'],16):
+                                self.ListOfDevices[NwkId]['Schneider']['Target Mode'] = None
+                                self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] = None
+                            else:
+                                if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp Mode'] + 15:
+                                    schneider_EHZBRTS_thermoMode( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target Mode'] )
+
+
+    return
 
 def schneider_wiser_registration( self, key ):
     """

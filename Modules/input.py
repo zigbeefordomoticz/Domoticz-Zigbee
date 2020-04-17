@@ -29,6 +29,8 @@ from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTE
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
+from Modules.callback import callbackDeviceAwake
+from Modules.inRawAps import inRawAps
 from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, PDMDeleteRecord, PDMDeleteAllRecord
 
 
@@ -405,8 +407,10 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
 
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
-    if self.ListOfDevices[srcnwkid]['Manufacturer'] == '105e':
-        schneiderReadRawAPS(self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
+
+    incomingRawAps( self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
+
+    callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
 
     return
 
@@ -1594,6 +1598,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     updSQN( self, MsgSrcAddr, MsgSQN)
     ReadCluster(self, Devices, MsgData) 
+    callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
     return
 
@@ -1675,6 +1680,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         ReadCluster(self, Devices, MsgData) 
+        callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
