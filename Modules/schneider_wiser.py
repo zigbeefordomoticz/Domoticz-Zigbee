@@ -43,7 +43,7 @@ def schneider_wiser_registration( self, key ):
     data = "%02x" %True
     loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS': # Thermostat
         # Set Language
@@ -55,7 +55,7 @@ def schneider_wiser_registration( self, key ):
         data = '656e'  # 'en'
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+        Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT'): # Thermostatic Valve
@@ -70,7 +70,7 @@ def schneider_wiser_registration( self, key ):
         data = '00'  
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+        Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT' ): # Actuator, Valve
         # Set no Calibration
@@ -83,7 +83,7 @@ def schneider_wiser_registration( self, key ):
         data = '00'  
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+        Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT', 'EH-ZB-VACT'): # Actuator 
         # ATTRIBUTE_THERMOSTAT_ZONE_MODE
@@ -99,7 +99,7 @@ def schneider_wiser_registration( self, key ):
         data = '01'  
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+        Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-HACT' ): # Actuator
         # ATTRIBUTE_THERMOSTAT_HACT_CONFIG
@@ -113,7 +113,7 @@ def schneider_wiser_registration( self, key ):
                       # E attente pour @hairv en FIP
         loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-        Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+        Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     # Write Location to 0x0000/0x5000 for all devices
     manuf_id = "0000"
@@ -124,7 +124,7 @@ def schneider_wiser_registration( self, key ):
     data = '5A6967617465205A6F6E65'  # Zigate zone
     loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     #if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT' ): # Valve
     #    setpoint = 2000
@@ -137,8 +137,8 @@ def schneider_wiser_registration( self, key ):
     #    self.ListOfDevices[key]['Heartbeat'] = 0
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-LMACT'): # Pilotage Chaffe eau
-        Modules.output.sendZigateCmd(self, "0092","02" + key + "01" + EPout + "01")
-        Modules.output.sendZigateCmd(self, "0092","02" + key + "01" + EPout + "00")
+        Modules.output.sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "01")
+        Modules.output.sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "00")
         self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneider_thermostat_behaviour( self, key, mode ):
@@ -167,7 +167,7 @@ def schneider_thermostat_behaviour( self, key, mode ):
     data = '%02X' %MODE[ mode ]
     loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
 
@@ -215,7 +215,7 @@ def schneider_fip_mode( self, key, mode):
 
     payload = cluster_frame + sqn + cmd + zone_mode + fipmode + prio + 'ff'
 
-    Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
+    Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
@@ -251,7 +251,7 @@ def schneider_setpoint( self, key, setpoint):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep='01')
+    Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneider_temp_Setcurrent( self, key, setpoint):
@@ -282,7 +282,7 @@ def schneider_temp_Setcurrent( self, key, setpoint):
         if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    Modules.output.raw_APS_request( self, key, EPout, '0402', '0104', payload, zigate_ep='01')
+    Modules.output.raw_APS_request( self, key, EPout, '0402', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
@@ -331,7 +331,7 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
 
     loggingOutput( self, 'Log', "Schneider EH-ZB-RTS Thermo Mode  %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
-    Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+    Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, attr, dataType, data):
@@ -351,7 +351,7 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, attr
     loggingOutput( self, 'Log', "Schneider calls raw_APS_request payload %s" \
             %(payload), NWKID)
 
-    Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep='01')
+    Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
 
 def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -395,7 +395,7 @@ def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPa
                    data = 'Zigate_zone4'.encode('utf-8').hex()  # Zigate zone
                    loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s data: %s"
                             %(srcNWKID,data,cluster_id,Hattribute,data_type,data), nwkid=srcNWKID)
-                   Modules.output.write_attribute( self, srcNWKID, "01", Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+                   Modules.output.write_attribute( self, srcNWKID, ZIGATE_EP, Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
                    # Set Language
                    manuf_id = "105e"
@@ -406,7 +406,7 @@ def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPa
                    data = 'en'.encode('utf-8').hex()   # 'en'
                    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                            %(srcNWKID,data,cluster_id,Hattribute,data_type), nwkid=srcNWKID)
-                   Modules.output.write_attribute( self, srcNWKID, "01", Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+                   Modules.output.write_attribute( self, srcNWKID, ZIGATE_EP, Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
 
     return

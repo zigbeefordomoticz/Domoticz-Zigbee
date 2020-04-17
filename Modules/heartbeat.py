@@ -34,7 +34,7 @@ from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fi
 from Modules.tools import removeNwkInList, mainPoweredDevice
 from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice, timedOutDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 
 from Classes.IAS import IAS_Zone_Management
@@ -227,7 +227,6 @@ def processKnownDevices( self, Devices, NWKID ):
             if  len(self.ZigateComm.zigateSendingFIFO) == 0:
                 loggingHeartbeat( self, 'Debug', "processKnownDevices -  Ping device %s %s %s - Timing: %s %s %s" \
                     %(NWKID, self.pluginconf.pluginConf['pingDevices'], _checkHealth, int(time.time()), self.ListOfDevices[NWKID]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq']), NWKID)
-                #sendZigateCmd(self ,'0041', '02' + NWKID + '00' + '01' )
                 ReadAttributeRequest_0000_basic( self, NWKID)
 
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
