@@ -35,33 +35,42 @@ PDM_E_STATUS_INTERNAL_ERROR = '0B'
 
 MAX_LOAD_BLOCK_SIZE = 256   # Max Block size in Bytes, send to Zigate
 
-#####
-#
-# Mode Pickle
-#
-#
-#def openPDM(self):
-##
-#    self.PDM = {}
-#    zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
-#    if os.path.isfile(zigatePDMfilename):
-#        with open( zigatePDMfilename, 'rb') as zigatePDMfile:
-#            self.PDM = pickle.load( zigatePDMfile )
-#
-#
-#def savePDM(self):
-#
-#    zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
-#    with open( zigatePDMfilename, 'wb') as zigatePDMfile:
-#        pickle.dump( self.ListOfGroups, zigatePDMfile, protocol=pickle.HIGHEST_PROTOCOL)
-
-
 
 def openPDM( self ):
+    def _copyfile( source, dest, move=True ):
+        try:
+            import shutil
+            if move: shutil.move( source, dest)
+            else: shutil.copy( source, dest)
+        except:
+            with open(source, 'r') as src, open(dest, 'wt') as dst:
+                for line in src: dst.write(line)
+            return
+    
+    def _versionFile( source , nbversion ):
+    
+        if nbversion == 0: return
+        elif nbversion == 1: _copyfile( source, source +  "-%02d" %1 )
+        else:
+            for version in range ( nbversion - 1 , 0, -1 ):
+                _fileversion_n =  source + "-%02d" %version
+                if not os.path.isfile( _fileversion_n ):
+                    continue
+                else:
+                    _fileversion_n1 =  source + "-%02d" %(version + 1)
+                    _copyfile( _fileversion_n, _fileversion_n1 )
+            # Last one
+            _copyfile( source, source +  "-%02d" %1 , move=False)
+
 
     self.PDM = {}
+    #zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
+    #if os.path.isfile(zigatePDMfilename):
+    #    with open( zigatePDMfilename, 'rb') as zigatePDMfile:
+    #        self.PDM = pickle.load( zigatePDMfile )
     zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.json" %self.HardwareID
     if os.path.isfile(zigatePDMfilename):
+        _versionFile( zigatePDMfilename , 12)
         with open( zigatePDMfilename, 'r') as zigatePDMfile:
             self.PDM = {}
             try:
@@ -73,6 +82,9 @@ def openPDM( self ):
 
 def savePDM( self):
 
+    #zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
+    #with open( zigatePDMfilename, 'wb') as zigatePDMfile:
+    #   pickle.dump( self.ListOfGroups, zigatePDMfile, protocol=pickle.HIGHEST_PROTOCOL)
     zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.json" %self.HardwareID
     with open( zigatePDMfilename, 'wt') as zigatePDMfile:
         try:
@@ -94,7 +106,8 @@ def pdmHostAvailableRequest(self, MsgData ):
     self.ZigateComm.PDMonly( True )
 
     # Open PDM file and populate the Data Structure self.PDM
-    openPDM( self )
+    if self.PDM is None:
+        openPDM( self )
     sendZigateCmd(self, "8300", status )
 
     return
@@ -120,6 +133,8 @@ def PDMSaveRequest( self, MsgData):
 
     loggingPDM( self, 'Debug',  "PDMSaveRequest - receiving 0x0200 with data: %s" %(MsgData))
 
+    if self.PDM is None:
+        openPDM( self )
     # Allow only PDM traffic
     self.ZigateComm.PDMonly( True )
 
@@ -138,11 +153,10 @@ def PDMSaveRequest( self, MsgData):
         self.PDM[RecordId]['RecSize'] = u16Size
         self.PDM[RecordId]['PersistedData'] = sWriteData
     else:
-        if u16Size != self.PDM[RecordId]['RecSize']:
-            Domoticz.Error("PDMSaveRequest - u16Size %s received != that existing %s" %(u16Size, self.PDM[RecordId]['RecSize']))
         if int(u16BlocksWritten,16) > 0:
             # We assume block comes in the righ order
             sWriteData = self.PDM[RecordId]['PersistedData'] + sWriteData
+        self.PDM[RecordId]['RecSize'] = u16Size
         self.PDM[RecordId]['PersistedData'] = sWriteData
 
     if int(u16NumberOfWrites,16) == int(u16BlocksWritten,16) + 1:
@@ -170,6 +184,8 @@ def PDMLoadRequest(self, MsgData):
     loggingPDM( self, 'Debug',  "PDMLoadRequest - receiving 0x0200 with data: %s" %(MsgData))
     RecordId = MsgData[0:4]
 
+    if self.PDM is None:
+        openPDM( self )
     # Allow only PDM traffic
     self.ZigateComm.PDMonly( True )
 
@@ -246,6 +262,8 @@ def PDMDeleteAllRecord( self , MsgData):
     "Decode0202"
 
     loggingPDM( self, 'Debug',  "PDMDeleteAllRecord - Remove ALL records with data: %s" %(MsgData))
+    if self.PDM is None:
+        openPDM( self )
     del self.PDM
     self.PDM = {}
     if self.PDMready:
@@ -260,6 +278,8 @@ def PDMDeleteRecord( self, MsgData):
     loggingPDM( self, 'Debug',  "PDMDeleteRecord - receiving 0x0202 with data: %s" %(MsgData))
 
     RecordId = MsgData[:4]                #record ID
+    if self.PDM is None:
+        openPDM( self )
 
     if RecordId in self.PDM:
         del self.PDM[ RecordId ]
@@ -290,6 +310,8 @@ def PDMCreateBitmap( self, MsgData):
 
     loggingPDM( self, 'Debug',  "PDMCreateBitmap - Create Bitmap counter RecordId: %s BitMapValue: %s" %(RecordId, BitMapValue))
     # Do what ever has to be done
+    if self.PDM is None:
+        openPDM( self )
 
     datas = RecordId
     if RecordId not in self.PDM:
@@ -309,6 +331,8 @@ def PDMDeleteBitmapRequest( self, MsgData):
     loggingPDM( self, 'Debug',  "PDMDeleteBitmapRequest - Delete Bitmap counter RecordId: %s" %(RecordId))
     # Do what ever has to be done
     
+    if self.PDM is None:
+        openPDM( self )
 
 def PDMGetBitmapRequest( self, MsgData):
     """
@@ -333,6 +357,8 @@ def PDMGetBitmapRequest( self, MsgData):
     loggingPDM( self, 'Debug',  "PDMGetBitmapRequest - Get BitMaprequest data: %s" %(MsgData))
 
     RecordId = MsgData[0:4]
+    if self.PDM is None:
+        openPDM
 
     status = PDM_E_STATUS_OK
 
@@ -372,6 +398,8 @@ def PDMIncBitmapRequest( self, MsgData):
     loggingPDM( self, 'Debug',  "PDMIncBitmapRequest - Inc BitMap request data: %s" %(MsgData))
 
     RecordId = MsgData[0:4]
+    if self.PDM is None:
+        openPDM( self )
 
     datas = '00' + RecordId + '%08x' %0
 
@@ -404,6 +432,8 @@ def PDMExistanceRequest( self, MsgData):
 
     loggingPDM( self, 'Debug',  "PDMExistanceRequest - receiving 0x0208 with data: %s" %(MsgData))
     RecordId = MsgData[0:4]
+    if self.PDM is None:
+        openPDM( self )
 
     recordExist = 0x00
     if RecordId in self.PDM:

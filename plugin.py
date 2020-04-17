@@ -181,7 +181,7 @@ class BasePlugin:
         self.loggingFileHandle = None
         self.level = 0
 
-        self.PDM = {}
+        self.PDM = None
         self.PDMready = False
 
         self.InitPhase3 = False
