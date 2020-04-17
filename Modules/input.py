@@ -287,7 +287,7 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
         # Let's trigget a zigate_Start
         self.startZigateNeeded = self.HeartbeatCount
         if self.HeartbeatCount == 0:
-            self.startZigateNeeded = self.HeartbeatCount +1
+            self.startZigateNeeded = 1
 
     # Group Management
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
@@ -325,6 +325,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     26     100d0010e0
 
     """
+
     MsgLogLvl=MsgData[0:2]
     MsgProfilID=MsgData[2:6]
     MsgClusterID=MsgData[6:10]
@@ -356,6 +357,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
         else:
             Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
             return
+
     elif int(MsgSourceAddressMode,16) == ADDRESS_MODE['ieee']:
         MsgSourceAddress=MsgData[16:32] #uint32_t
         MsgDestinationAddressMode=MsgData[32:34]
@@ -480,7 +482,7 @@ def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
 
     self.startZigateNeeded = self.HeartbeatCount
     if self.HeartbeatCount == 0:
-        self.startZigateNeeded = self.HeartbeatCount +1
+        self.startZigateNeeded = 1
     loggingInput( self, 'Status', "Non 'Factory new' Restart status: %s" %(Status) )
 
 def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
@@ -499,7 +501,7 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
 
     self.startZigateNeeded = self.HeartbeatCount
     if self.HeartbeatCount == 0:
-        self.startZigateNeeded = self.HeartbeatCount +1
+        self.startZigateNeeded = 1
     loggingInput( self, 'Status', "'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
