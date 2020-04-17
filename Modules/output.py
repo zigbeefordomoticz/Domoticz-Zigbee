@@ -1178,10 +1178,13 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
     if Cluster not in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
         self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['SourceIEEE'] = sourceIeee
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Target'] = destNwkid
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetIEEE'] = destIeee
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetEp'] = destEp
     self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Phase'] = 'requested'
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Status'] = ''
 
 def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 

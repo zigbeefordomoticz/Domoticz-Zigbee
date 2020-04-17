@@ -242,9 +242,9 @@ def schneider_setpoint( self, key, setpoint):
     self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
 
     setpoint = '%04X' %setpoint
-    length = '01' # 1 attribute
+    zone = '01'
 
-    payload = cluster_frame + sqn + cmd + '00' + length + setpoint[2:4] + setpoint[0:2] + 'ff'
+    payload = cluster_frame + sqn + cmd + '00' + zone + setpoint[2:4] + setpoint[0:2] + 'ff'
 
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -273,13 +273,7 @@ def schneider_temp_Setcurrent( self, key, setpoint):
     cmd = '0a'
 
     setpoint = int(( setpoint * 2 ) / 2)   # Round to 0.5 degrees
-    if 'Schneider' not in self.ListOfDevices[key]:
-        self.ListOfDevices[key]['Schneider'] = {}
-    self.ListOfDevices[key]['Schneider']['Target SetPoint'] = setpoint
-    self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
-
     setpoint = '%04X' %setpoint
-    length = '01' # 1 attribute
 
     payload = cluster_frame + sqn + cmd + attr + dataType + setpoint[2:4] + setpoint[0:2] 
 
@@ -340,6 +334,24 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
     Modules.output.write_attribute( self, key, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     self.ListOfDevices[key]['Heartbeat'] = 0
 
+def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, attr, dataType, data):
+
+    cmd = "01"
+    status = "00"
+    cluster_frame = "18"
+
+    loggingOutput( self, 'Log', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s, attr: %s, dataType: %s, data: %s" \
+            %(NWKID, EPout, ClusterID, sqn, attr, dataType, data ), NWKID)
+
+    if dataType == '29':
+        payload = cluster_frame + sqn + cmd + attr + status + dataType + data[2:4] + data[0:2]
+    elif dataType == '30':
+        payload = cluster_frame + sqn + cmd + attr + status + dataType + data
+
+    loggingOutput( self, 'Log', "Schneider calls raw_APS_request payload %s" \
+            %(payload), NWKID)
+
+    Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep='01')
 
 def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -352,8 +364,49 @@ def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPa
     cmd = MsgPayload[4:6] # uint8
     data = MsgPayload[6:] # all the rest
 
+    if data == '10e0':
+       schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '30', "01")
+    elif data == '1500': #min setpoint temp
+        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '29', "0032")#0.5 degree
+    elif data == '1600': #max setpoint temp
+        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '29', "0DAC")#35.00 degree
+    elif data == '1200': #occupied setpoint temp
+        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '29', "079E") #19.50 degree
+
     loggingOutput( self, 'Log', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
             %( fcf, sqn, cmd, data), srcNWKID)
+
+    if 'WebBind' in self.ListOfDevices[srcNWKID]:
+       for Ep in list(self.ListOfDevices[srcNWKID]['WebBind']):
+           for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
+               if self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase'] == 'requested':
+                   Domoticz.Error ("FOUND !!!!!!!!!!! bind to be redone " + srcNWKID)
+                   sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['SourceIEEE']
+                   destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetIEEE']
+                   destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetEp']
+                   Modules.output.webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
+
+                   # Write Location to 0x0000/0x5000 for all devices
+                   manuf_id = "0000"
+                   manuf_spec = "00"
+                   cluster_id = "%04x" %0x0000
+                   Hattribute = "%04x" %0x0010
+                   data_type = "42"
+                   data = 'Zigate_zone4'.encode('utf-8').hex()  # Zigate zone
+                   loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s data: %s"
+                            %(srcNWKID,data,cluster_id,Hattribute,data_type,data), nwkid=srcNWKID)
+                   Modules.output.write_attribute( self, srcNWKID, "01", Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+                   # Set Language
+                   manuf_id = "105e"
+                   manuf_spec = "01"
+                   cluster_id = "%04x" %0x0000
+                   Hattribute = "%04x" %0x5011
+                   data_type = "42" # String
+                   data = 'en'.encode('utf-8').hex()   # 'en'
+                   loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+                           %(srcNWKID,data,cluster_id,Hattribute,data_type), nwkid=srcNWKID)
+                   Modules.output.write_attribute( self, srcNWKID, "01", Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
 
     return
