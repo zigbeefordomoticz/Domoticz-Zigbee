@@ -188,15 +188,10 @@ class ZigateTransport(object):
 
     def PDMonly( self , lock):
 
-        if lock:
-            Domoticz.Log("TRANSPORT: LOCK   communication FOR PDM ONLY")
-        else:
-            Domoticz.Log("TRANSPORT: UNLOCK communication FOR PDM ONLY")
         self.PDMCommandOnly = lock
 
     def PDMonlyStatus( self ):
 
-        Domoticz.Log("TRANSPORT: Status is : %s " % self.PDMCommandOnly)
         return self.PDMCommandOnly
 
     def openConn(self):

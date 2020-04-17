@@ -145,8 +145,10 @@ def PDMSaveRequest( self, MsgData):
             sWriteData = self.PDM[RecordId]['PersistedData'] + sWriteData
         self.PDM[RecordId]['PersistedData'] = sWriteData
 
-    if self.PDMready:
-        savePDM(self)
+    if int(u16NumberOfWrites,16) == int(u16BlocksWritten,16) + 1:
+        Domoticz.Log("Saving on Disk")
+        if self.PDMready:
+            savePDM(self)
 
     datas =  PDM_E_STATUS_OK + RecordId +  u16BlocksWritten 
     sendZigateCmd( self, "8200", datas)

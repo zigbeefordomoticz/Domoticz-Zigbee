@@ -575,7 +575,8 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=True )
 
             if self.pluginparameters['Mode1'] != 'None':
-                self.networkenergy.start_scan()
+                if self.networkenergy:
+                    self.networkenergy.start_scan()
 
         return _response
 
@@ -601,7 +602,8 @@ class WebServer(object):
             _response["Data"] = json.dumps( action, sort_keys=True )
 
             if self.pluginparameters['Mode1'] != 'None':
-                self.networkenergy.start_scan( root='0000', target='0000')
+                if self.networkenergy:
+                    self.networkenergy.start_scan( root='0000', target='0000')
 
         return _response
 

@@ -471,6 +471,19 @@ class BasePlugin:
         self.Ping['Permit'] = None
         self.Ping['Nb Ticks'] = 1
 
+        # Create IAS Zone object
+        self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
+
+        self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        if len(self.ListOfDevices) > 1:
+            loggingPlugin( self, 'Status', "Trigger a Topology Scan")
+            self.networkmap.start_scan( ) 
+  
+        self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
+        if len(self.ListOfDevices) > 1:
+           loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
+           self.networkenergy.start_scan()
+
         return True
 
 
@@ -561,7 +574,7 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
-        loggingPlugin( self, 'Log', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
+        loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
                 %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMonlyStatus() ))
 
         if self.transport != 'None' :
@@ -650,18 +663,6 @@ class BasePlugin:
             if int(time.time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
                 sendZigateCmd( self, "0014", "" ) # Request status
                 self.permitTojoin['Duration'] = 0
-
-        if self.networkmap is None and self.HeartbeatCount > 12:
-            loggingPlugin( self, 'Status', "Trigger a Topology Scan")
-            self.networkmap = NetworkMap( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-            if len(self.ListOfDevices) > 1:
-                self.networkmap.start_scan( ) 
-     
-        if self.networkenergy is None and self.HeartbeatCount > 24:
-            loggingPlugin( self, 'Status', "Trigger a Energy Level Scan")
-            self.networkenergy = NetworkEnergy( self.pluginconf, self.ZigateComm, self.ListOfDevices, Devices, self.HardwareID, self.loggingFileHandle)
-            if len(self.ListOfDevices) > 1:
-                self.networkenergy.start_scan()
 
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
@@ -765,8 +766,6 @@ def zigateInit_Phase2( self):
     # Request List of Active Devices
     sendZigateCmd(self, "0015", "") 
 
-    # Create IAS Zone object
-    self.iaszonemgt = IAS_Zone_Management( self.pluginconf, self.ZigateComm , self.ListOfDevices, self.loggingFileHandle)
 
     # Ready for next phase
     self.InitPhase2 = True
