@@ -18,17 +18,20 @@ import json
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE
 from Modules.logging import loggingPairing, loggingInput
-from Modules.output import sendZigateCmd, leaveMgtReJoin, rebind_Clusters, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
+from Modules.output import sendZigateCmd, leaveMgtReJoin, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
+from Modules.bindings import rebind_Clusters
 from Modules.livolo import livolo_bind
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
 from Modules.errorCodes import DisplayStatusCode
 from Modules.readClusters import ReadCluster
 from Modules.database import saveZigateNetworkData
-from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS
+from Modules.zigateConsts import ADDRESS_MODE, ZCL_CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pluzzy import pluzzyDecode8102
 from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpDescriptor
 
+from Modules.callback import callbackDeviceAwake
+from Modules.inRawAps import inRawAps
 from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, PDMDeleteRecord, PDMDeleteAllRecord
 
 
@@ -310,21 +313,6 @@ def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     return
 
 def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
-    MsgLen=len(MsgData)
-
-    """
-    0-2: 00
-    2:6: 0104
-    6:10: 0201
-    10:12: 0b
-    12:14: 01
-    14:16: 02
-    16:20: e2ce
-    20:22: 02
-    22:26: 0000
-    26     100d0010e0
-
-    """
 
     MsgLogLvl=MsgData[0:2]
     MsgProfilID=MsgData[2:6]
@@ -340,11 +328,13 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
         Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
         return
 
-    if int(MsgSourceAddressMode,16) == ADDRESS_MODE['short'] or int(MsgSourceAddressMode,16) == ADDRESS_MODE['group']:
+    if int(MsgSourceAddressMode,16) == ADDRESS_MODE['short'] or \
+            int(MsgSourceAddressMode,16) == ADDRESS_MODE['group']:
         MsgSourceAddress=MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode=MsgData[20:22]
 
-        if int(MsgDestinationAddressMode,16)==ADDRESS_MODE['short'] or int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
+        if int(MsgDestinationAddressMode,16)==ADDRESS_MODE['short'] or \
+                int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
             # Short Address
             MsgDestinationAddress=MsgData[22:26] # uint16_t
             MsgPayload=MsgData[26:len(MsgData)]
@@ -355,14 +345,16 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             MsgPayload=MsgData[38:len(MsgData)]
 
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" \
+                    %(MsgDestinationAddressMode, MsgData))
             return
 
     elif int(MsgSourceAddressMode,16) == ADDRESS_MODE['ieee']:
         MsgSourceAddress=MsgData[16:32] #uint32_t
         MsgDestinationAddressMode=MsgData[32:34]
 
-        if int(MsgDestinationAddressMode,16)== ADDRESS_MODE['short'] or int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
+        if int(MsgDestinationAddressMode,16)== ADDRESS_MODE['short'] or \
+                int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
             MsgDestinationAddress=MsgData[34:38] # uint16_t
             MsgPayload=MsgData[38:len(MsgData)]
 
@@ -371,10 +363,12 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             MsgDestinationAddress=MsgData[34:40] #uint32_t
             MsgPayload=MsgData[40:len(MsgData)]
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" \
+                    %(MsgDestinationAddressMode, MsgData))
             return
     else:
-        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" %(MsgSourceAddressMode, MsgData))
+        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" \
+                %(MsgSourceAddressMode, MsgData))
         return
 
     loggingInput( self, 'Log', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
@@ -405,8 +399,10 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
 
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
-    if self.ListOfDevices[srcnwkid]['Manufacturer'] == '105e':
-        schneiderReadRawAPS(self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
+
+    inRawAps( self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
+
+    callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
 
     return
 
@@ -1594,6 +1590,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     updSQN( self, MsgSrcAddr, MsgSQN)
     ReadCluster(self, Devices, MsgData) 
+    callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
     return
 
@@ -1675,6 +1672,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
         ReadCluster(self, Devices, MsgData) 
+        callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     else :
         # This device is unknown, and we don't have the IEEE to check if there is a device coming with a new sAddr
         # Will request in the next hearbeat to for a IEEE request
@@ -2751,18 +2749,18 @@ def Decode8035(self, Devices, MsgData, MsgRSSI):
 ## PDM HOST
 def Decode0300( self, Devices, MsgData, MsgRSSI):
 
-    loggingInput( self, 'Debug',  "Decode0300 - PDMHostAvailableRequest: %20.20s" %(MsgData))
+    loggingInput( self, 'Log',  "Decode0300 - PDMHostAvailableRequest: %20.20s" %(MsgData))
     pdmHostAvailableRequest(self, MsgData )
     return
 
 def Decode0301( self, Devices, MsgData, MsgRSSI):
 
-    loggingInput( self, 'Debug',  "Decode0301 - E_SL_MSG_ASC_LOG_MSG: %20.20s" %(MsgData))
+    loggingInput( self, 'Log',  "Decode0301 - E_SL_MSG_ASC_LOG_MSG: %20.20s" %(MsgData))
     return
 
 def Decode0302( self, Devices, MsgData, MsgRSSI):
 
-    loggingInput( self, 'Debug',  "Decode0302 - PDMloadConfirmed: %20.20s" %(MsgData))
+    loggingInput( self, 'Log',  "Decode0302 - PDMloadConfirmed: %20.20s" %(MsgData))
     pdmLoadConfirmed(self, MsgData )
     return
 

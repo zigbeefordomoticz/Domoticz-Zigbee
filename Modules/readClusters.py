@@ -2270,32 +2270,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
 
-    # Schneider Wiser Valve Thermostat is a battery device, which receive commands only when it has sent a Report Attribute
-    if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
-            now = time.time()
-            # Manage SetPoint
-            if '0201' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                if '0012' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
-                    if 'Schneider' not in self.ListOfDevices[MsgSrcAddr]:
-                        self.ListOfDevices[MsgSrcAddr]['Schneider'] = {}
-                    if 'Target SetPoint' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
-                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] and self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['0012'] * 100):
-                            # Protect against overloading Zigate
-                            if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp SetPoint'] + 15:
-                                schneider_setpoint( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target SetPoint'] )
 
-            # Manage Zone Mode
-                if 'e010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']:
-                    if 'Target Mode' in self.ListOfDevices[MsgSrcAddr]['Schneider']:
-                        EHZBRTS_THERMO_MODE = { 0: 0x00, 10: 0x01, 20: 0x02, 30: 0x03, 40: 0x04, 50: 0x05, 60: 0x06, }
-                        if self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] is not None:
-                            if EHZBRTS_THERMO_MODE[self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode']] == int(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0201']['e010'],16):
-                                self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] = None
-                                self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] = None
-                            else: 
-                                if now > self.ListOfDevices[MsgSrcAddr]['Schneider']['TimeStamp Mode'] + 15:
-                                    schneider_EHZBRTS_thermoMode( self, MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Schneider']['Target Mode'] )
 
 
 def Cluster0204( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):

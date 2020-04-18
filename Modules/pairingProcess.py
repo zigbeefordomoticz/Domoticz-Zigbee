@@ -18,9 +18,10 @@ import json
 from Modules.actuators import actuators
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.legrand_netatmo import legrand_fc01
+from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.output import  sendZigateCmd,  \
         identifyEffect, setXiaomiVibrationSensitivity, \
-        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
+        getListofAttribute, \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \
@@ -36,7 +37,7 @@ from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
 from Modules.domoticz import CreateDomoDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.Transport import ZigateTransport

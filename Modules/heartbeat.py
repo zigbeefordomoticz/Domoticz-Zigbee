@@ -18,7 +18,7 @@ import json
 from Modules.actuators import actuators
 from Modules.output import  sendZigateCmd,  \
         identifyEffect, setXiaomiVibrationSensitivity, \
-        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
+        getListofAttribute, \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \
@@ -28,13 +28,15 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
-from Modules.legrand_netatmo import legrand_fc01
+from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fip_mode
+from Modules.philips import pollingPhilips
+from Modules.gledopto import pollingGledopto
 
 from Modules.tools import removeNwkInList, mainPoweredDevice
 from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice, timedOutDevice
-from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS
+from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 
 from Classes.IAS import IAS_Zone_Management
@@ -85,6 +87,29 @@ SCHNEIDER_FEATURES =  300 // HEARTBEAT
 NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
 
+
+def attributeDiscovery( self, NWKID ):
+
+    rescheduleAction = False
+    # If Attributes not yet discovered, let's do it
+
+    if 'ConfigSource' not in self.ListOfDevices[NWKID]:
+        return
+
+    if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
+        if 'Attributes List' not in self.ListOfDevices[NWKID]:
+            for iterEp in self.ListOfDevices[NWKID]['Ep']:
+                if iterEp == 'ClusterType': continue
+                for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        getListofAttribute( self, NWKID, iterEp, iterCluster)
+                    else:
+                        rescheduleAction = True
+
+    return rescheduleAction
+
+
 def processKnownDevices( self, Devices, NWKID ):
 
     # Normalize Hearbeat value if needed
@@ -123,14 +148,17 @@ def processKnownDevices( self, Devices, NWKID ):
                 %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
             self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
 
-    if self.CommiSSionning: # We have a commission in progress, skip it.
+    # Check if we are in the process of provisioning a new device. If so, just stop
+    if self.CommiSSionning: 
         return
 
     # If device flag as Not Reachable, don't do anything
     if 'Health' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
-            loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
+            loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s stop here due to Health %s" \
+                    %(NWKID, self.ListOfDevices[NWKID]['Health']), NWKID)
             return
+
         # In case Health is unknown let's force a Read attribute.
         _checkHealth = False
         if self.ListOfDevices[NWKID]['Health'] == '':
@@ -139,7 +167,7 @@ def processKnownDevices( self, Devices, NWKID ):
     _doReadAttribute = False
     _forceCommandCluster = False
 
-    if (intHB == 1) and self.pluginconf.pluginConf['forcePollingAfterAction']: # Most-likely Heartbeat has been reset to 0 as for a Group command
+    if self.pluginconf.pluginConf['forcePollingAfterAction'] and (intHB == 1): # HB has been reset to 0 as for a Group command
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
         _forceCommandCluster = True
 
@@ -159,7 +187,9 @@ def processKnownDevices( self, Devices, NWKID ):
     # Do we need to force ReadAttribute at plugin startup ?
     # If yes, best is probably to have ResetReadAttribute to 1
     if _doReadAttribute or _forceCommandCluster:
-        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s frcRead: %s" %(NWKID, intHB, _mainPowered, _doReadAttribute, _forceCommandCluster), NWKID)
+        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s frcRead: %s" \
+                %(NWKID, intHB, _mainPowered, _doReadAttribute, _forceCommandCluster), NWKID)
+
         # Read Attributes if enabled
         now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
@@ -173,9 +203,6 @@ def processKnownDevices( self, Devices, NWKID ):
                     self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
 
                 if 'Model' in self.ListOfDevices[NWKID]:
-                    #if self.ListOfDevices[NWKID]['Model'] == 'TI0001':
-                    #    # Don't do it for Livolo
-                    #    continue
                     if self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral1' and tmpEp != '02': # All Eps other than '02' are blacklisted
                         continue
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
@@ -185,7 +212,8 @@ def processKnownDevices( self, Devices, NWKID ):
                     # Force Majeur
                     if ( intHB == 1 and _mainPowered and Cluster in READ_ATTR_COMMANDS ) or \
                           ( intHB == 1 and not _mainPowered and Cluster in ( '0001', '0201') ) :
-                        loggingHeartbeat( self, 'Debug', '-- - Force Majeur on %s/%s cluster %s' %( NWKID, tmpEp, Cluster), NWKID)
+                        loggingHeartbeat( self, 'Debug', '-- - Force Majeur on %s/%s cluster %s' \
+                                %( NWKID, tmpEp, Cluster), NWKID)
 
                         # Let's reset the ReadAttribute Flag
                         if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
@@ -193,6 +221,7 @@ def processKnownDevices( self, Devices, NWKID ):
                             if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
                                 if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
                                     self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] = 0
+                
 
                 if  (self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
                     loggingHeartbeat( self, 'Debug', '--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)' 
@@ -206,7 +235,8 @@ def processKnownDevices( self, Devices, NWKID ):
                 if READ_ATTRIBUTES_REQUEST[Cluster][1] in self.pluginconf.pluginConf:
                     timing =  self.pluginconf.pluginConf[ READ_ATTRIBUTES_REQUEST[Cluster][1] ]
                 else:
-                    Domoticz.Error("processKnownDevices - missing timing attribute for Cluster: %s - %s" %(Cluster,  READ_ATTRIBUTES_REQUEST[Cluster][1]))
+                    Domoticz.Error("processKnownDevices - missing timing attribute for Cluster: %s - %s" \
+                            %(Cluster,  READ_ATTRIBUTES_REQUEST[Cluster][1]))
                     continue
  
                 # Let's check the timing
@@ -219,84 +249,49 @@ def processKnownDevices( self, Devices, NWKID ):
                         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s/%s with cluster %s TimeStamps: %s, Timing: %s , Now: %s "
                                 %(NWKID, tmpEp, Cluster, self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx], timing, now), NWKID)
 
-                loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" %( NWKID, tmpEp, Cluster ), NWKID)
+                loggingHeartbeat( self, 'Debug', "-- -  %s/%s and time to request ReadAttribute for %s" \
+                        %( NWKID, tmpEp, Cluster ), NWKID)
+
                 func(self, NWKID )
-    
+
+    # Polling Manuf specific devices like Gledopto, Philips
+    POLLING_TABLE_SPECIFICS = {
+        'pollingPhilips':  ( pollingPhilips , 'c05e', 'unknow' ),
+        'pollingGledopto': ( pollingGledopto , 'unknow', 'GELDOPTO')
+        }
+
+    devManufCode = devManufName = ''
+    if 'Manufacturer' in self.ListOfDevices[NWKID]:
+        devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
+    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+        devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
+
+    for brand in POLLING_TABLE_SPECIFICS:
+        func , manufCode, manufName = POLLING_TABLE_SPECIFICS[ brand ]
+        if devManufCode == manufCode or devManufName == manufName:
+            if self.pluginconf.pluginConf[ brand] and \
+                ( self.HeartbeatCount % self.pluginconf.pluginConf[ brand ] ) == 0 :
+                rescheduleAction = ( rescheduleAction or func( self, NWKID) )
+
+
+    # Pinging devices to check they are still Alive
     if _mainPowered and (self.pluginconf.pluginConf['pingDevices'] or  _checkHealth):
-        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq'] ) : # Age is above 1 hours by default
+        if int(time.time()) > (self.ListOfDevices[NWKID]['Stamp']['LastSeen'] + self.pluginconf.pluginConf['pingDevicesFeq']):
             if  len(self.ZigateComm.zigateSendingFIFO) == 0:
-                loggingHeartbeat( self, 'Debug', "processKnownDevices -  Ping device %s %s %s - Timing: %s %s %s" \
-                    %(NWKID, self.pluginconf.pluginConf['pingDevices'], _checkHealth, int(time.time()), self.ListOfDevices[NWKID]['Stamp']['LastSeen'], self.pluginconf.pluginConf['pingDevicesFeq']), NWKID)
-                #sendZigateCmd(self ,'0041', '02' + NWKID + '00' + '01' )
                 ReadAttributeRequest_0000_basic( self, NWKID)
 
+    # Reenforcement of Legrand devices options if required
     if ( self.HeartbeatCount % LEGRAND_FEATURES ) == 0 :
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
-                    if self.pluginconf.pluginConf[ cmd ]:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, cmd , 'On')
-                        else:
-                            rescheduleAction = True
-                    else:
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            legrand_fc01( self, NWKID, cmd, 'Off')
-                        else:
-                            rescheduleAction = True
+        rescheduleAction = ( rescheduleAction or legrandReenforcement( self, NWKID))
 
-    if self.pluginconf.pluginConf['reenforcementWiser'] and ( self.HeartbeatCount % self.pluginconf.pluginConf['reenforcementWiser'] ) == 0 :
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-VACT':
-                pass
-        if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
-            if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-                if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                    schneider_thermostat_behaviour( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
-                else:
-                    rescheduleAction = True
-            if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
-                if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                    schneider_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
-                else:
-                    rescheduleAction = True
+    # Call Schneider Reenforcement if needed
+    if self.pluginconf.pluginConf['reenforcementWiser'] and \
+            ( self.HeartbeatCount % self.pluginconf.pluginConf['reenforcementWiser'] ) == 0 :
+        rescheduleAction = ( rescheduleAction or schneiderRenforceent(self, NWKID))
 
-    # If Attributes not yet discovered, let's do it
-    if 'ConfigSource' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
-            if 'Attributes List' not in self.ListOfDevices[NWKID]:
-                for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                    if iterEp == 'ClusterType': continue
-                    for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                        if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
-                        if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                            loggingHeartbeat( self, 'Debug', '-- -- - skip ReadAttribute for now ... system too busy (%s/%s) for %s' 
-                                    %(self.busy, len(self.ZigateComm.zigateSendingFIFO), NWKID), NWKID)
-                            getListofAttribute( self, NWKID, iterEp, iterCluster)
-                        else:
-                            rescheduleAction = True
-
-    # Checking if we have to change the Power On after On/Off
-    _skipPowerOn_OnOff = False
-    if 'Manufacturer' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Manufacturer'] == '117c':
-            _skipPowerOn_OnOff = True
-    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'IKEA of Sweden':
-            _skipPowerOn_OnOff = True
-
-    #if not _skipPowerOn_OnOff and 'Ep' in self.ListOfDevices[NWKID]:
-    #    for iterEp in self.ListOfDevices[NWKID]['Ep']:
-    #        # Let's check if we have to change the PowerOn OnOff setting. ( What is the state of PowerOn after a Power On )
-    #        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-    #            if '4003' in self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']:
-    #                if self.pluginconf.pluginConf['PowerOn_OnOff'] == int(self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003']):
-    #                    continue
-    #                if self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE:
-    #                    continue
-    #                loggingHeartbeat( self, 'Log', "-- - Change PowerOn OnOff for device: %s from %s -> %s" \
-    #                        %(NWKID, self.ListOfDevices[NWKID]['Ep'][iterEp]['0006']['4003'], self.pluginconf.pluginConf['PowerOn_OnOff']))
-    #                setPowerOn_OnOff( self, NWKID, OnOffMode=self.pluginconf.pluginConf['PowerOn_OnOff'] )
+    # Do Attribute Disocvery if needed
+    if ( intHB % 1800) == 0:
+        rescheduleAction = ( rescheduleAction or attributeDiscovery( self, NWKID ) )
 
     # If corresponding Attributes not present, let's do a Request Node Description
     if ( intHB % 1800) == 0:

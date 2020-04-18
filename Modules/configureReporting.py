@@ -18,9 +18,10 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.output import  sendZigateCmd, bindDevice
+from Modules.output import  sendZigateCmd
+from Modules.bindings import bindDevice
 
-from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS 
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
 from Modules.tools import getClusterListforEP, mainPoweredDevice
 from Modules.logging import loggingOutput
 
@@ -222,7 +223,7 @@ def processConfigureReporting( self, NWKID=None ):
                         attrLen = 1
                         loggingOutput( self, 'Debug', "Configure Reporting %s/%s on cluster %s" %(key, Ep, cluster), nwkid=key)
                         loggingOutput( self, 'Debug', "-->  Len: %s Attribute List: %s" %(attrLen, attrList), nwkid=key)
-                        datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
                         loggingOutput( self, 'Debug', "configureReporting - 0120 - %s" %(datas))
                         sendZigateCmd(self, "0120", datas )
@@ -248,7 +249,7 @@ def processConfigureReporting( self, NWKID=None ):
                         # Let's check if we have to send a chunk
                         if attrLen == MAX_ATTR_PER_REQ:
                             # Prepare the payload
-                            datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                            datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
                             datas +=  "%02x" %(attrLen) + attrList
 
                             loggingOutput( self, 'Debug', "configureReporting - Splitting in several parts" )
@@ -264,7 +265,7 @@ def processConfigureReporting( self, NWKID=None ):
                     # Let's check if we have some remaining to send
                     if attrLen != 0 :
                         # Prepare the payload
-                        datas =   addr_mode + key + "01" + Ep + cluster + direction + manufacturer_spec + manufacturer 
+                        datas =   addr_mode + key + ZIGATE_EP + Ep + cluster + direction + manufacturer_spec + manufacturer 
                         datas +=  "%02x" %(attrLen) + attrList
 
                         loggingOutput( self, 'Debug', "configureReporting - last parts" )

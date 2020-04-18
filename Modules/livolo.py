@@ -15,6 +15,7 @@ import binascii
 import struct
 import json
 
+from Modules.zigateConsts import ZIGATE_EP
 from Modules.output import sendZigateCmd
 from Modules.logging import loggingOutput
 
@@ -58,7 +59,7 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
     if onoff == 'Toggle' and devunit == 'All':
         loggingOutput( self, 'Debug', "livolo_toggle" , nwkid=nwkid)
-        sendZigateCmd(self, "0092","02" + nwkid + '01' + EPout + '02')
+        sendZigateCmd(self, "0092","02" + nwkid + ZIGATE_EP + EPout + '02')
     else:
         level_value = timing_value = None
         if onoff == 'On': level_value = '%02x' %108
@@ -69,6 +70,6 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
 
         if level_value is not None and timing_value is not None:
             loggingOutput( self, 'Debug', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)
-            sendZigateCmd(self, "0081","02" + nwkid + '01' + EPout + '00' + level_value + timing_value)
+            sendZigateCmd(self, "0081","02" + nwkid + ZIGATE_EP + EPout + '00' + level_value + timing_value)
         else:
             Domoticz.Error( "livolo_OnOff - Wrong parameters sent ! onoff: %s devunit: %s" %(onoff, devunit))

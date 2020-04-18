@@ -10,6 +10,9 @@
 
 """
 
+# Zigate Endpoint number (by default Zigate works on 01
+ZIGATE_EP = '01'
+
 # Heartbeat of plugin set to 5s
 HEARTBEAT = 5
 
