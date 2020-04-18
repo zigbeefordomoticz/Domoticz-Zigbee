@@ -14,6 +14,7 @@ import Domoticz
 import Modules.output
 
 from Modules.logging import loggingOutput
+from Modules.zigateConsts import ZIGATE_EP
 from time import time
 
 
