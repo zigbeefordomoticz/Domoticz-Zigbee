@@ -321,8 +321,8 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     MsgDestPoint=MsgData[12:14]
     MsgSourceAddressMode=MsgData[14:16]
 
-    Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
-            %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
+    #Domoticz.Log("Decode8002 - MsgLogLvl: %s , MsgProfilID: %s, MsgClusterID: %s MsgSourcePoint: %s, MsgDestPoint: %s, MsgSourceAddressMode: %s" \
+    #        %(MsgLogLvl, MsgProfilID, MsgClusterID, MsgSourcePoint, MsgDestPoint, MsgSourceAddressMode))
 
     if MsgProfilID != '0104':
         Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
@@ -371,7 +371,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
                 %(MsgSourceAddressMode, MsgData))
         return
 
-    loggingInput( self, 'Log', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
+    loggingInput( self, 'Debug', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
 
     # Let's check if this is an Schneider related APS. In that case let's process
     srcnwkid = dstnwkid = None
