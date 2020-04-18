@@ -4,6 +4,7 @@ import Domoticz
 from time import time
 from Modules.output import sendZigateCmd
 from Modules.logging import loggingOutput
+from Modules.zigateConsts import CLUSTERS_LIST
 
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
