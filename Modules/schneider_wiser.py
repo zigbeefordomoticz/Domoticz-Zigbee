@@ -390,6 +390,25 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     self.ListOfDevices[key]['Heartbeat'] = 0
 
+def schneiderRenforceent( self, NWKID):
+    
+    if 'Model' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-VACT':
+            pass
+    if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
+        if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
+            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                schneider_thermostat_behaviour( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
+            else:
+                rescheduleAction = True
+        if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
+            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                schneider_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
+            else:
+                rescheduleAction = True
+
+    return rescheduleAction
+
 def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, attr, dataType, data):
 
     cmd = "01"
