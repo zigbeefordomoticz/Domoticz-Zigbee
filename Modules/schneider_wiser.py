@@ -33,6 +33,8 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
+    Domoticz.Log("callbackDeviceAwake_Schneider - Nwkid: %s, EndPoint: %s cluster: %s" \
+            %(NwkId, EndPoint, cluster))
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
 

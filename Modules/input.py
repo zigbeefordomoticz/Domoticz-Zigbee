@@ -312,21 +312,6 @@ def Decode8001(self, Decode, MsgData, MsgRSSI) : # Reception log Level
     return
 
 def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
-    MsgLen=len(MsgData)
-
-    """
-    0-2: 00
-    2:6: 0104
-    6:10: 0201
-    10:12: 0b
-    12:14: 01
-    14:16: 02
-    16:20: e2ce
-    20:22: 02
-    22:26: 0000
-    26     100d0010e0
-
-    """
 
     MsgLogLvl=MsgData[0:2]
     MsgProfilID=MsgData[2:6]
@@ -342,11 +327,13 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
         Domoticz.Log("Decode8002 - Not an HA Profile, let's drop the packet %s" %MsgData)
         return
 
-    if int(MsgSourceAddressMode,16) == ADDRESS_MODE['short'] or int(MsgSourceAddressMode,16) == ADDRESS_MODE['group']:
+    if int(MsgSourceAddressMode,16) == ADDRESS_MODE['short'] or \
+            int(MsgSourceAddressMode,16) == ADDRESS_MODE['group']:
         MsgSourceAddress=MsgData[16:20]  # uint16_t
         MsgDestinationAddressMode=MsgData[20:22]
 
-        if int(MsgDestinationAddressMode,16)==ADDRESS_MODE['short'] or int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
+        if int(MsgDestinationAddressMode,16)==ADDRESS_MODE['short'] or \
+                int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
             # Short Address
             MsgDestinationAddress=MsgData[22:26] # uint16_t
             MsgPayload=MsgData[26:len(MsgData)]
@@ -357,14 +344,16 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             MsgPayload=MsgData[38:len(MsgData)]
 
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" \
+                    %(MsgDestinationAddressMode, MsgData))
             return
 
     elif int(MsgSourceAddressMode,16) == ADDRESS_MODE['ieee']:
         MsgSourceAddress=MsgData[16:32] #uint32_t
         MsgDestinationAddressMode=MsgData[32:34]
 
-        if int(MsgDestinationAddressMode,16)== ADDRESS_MODE['short'] or int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
+        if int(MsgDestinationAddressMode,16)== ADDRESS_MODE['short'] or \
+                int(MsgDestinationAddressMode,16)==ADDRESS_MODE['group']:
             MsgDestinationAddress=MsgData[34:38] # uint16_t
             MsgPayload=MsgData[38:len(MsgData)]
 
@@ -373,10 +362,12 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
             MsgDestinationAddress=MsgData[34:40] #uint32_t
             MsgPayload=MsgData[40:len(MsgData)]
         else:
-            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" %(MsgDestinationAddressMode, MsgData))
+            Domoticz.Log("Decode8002 - Unexpected Destination ADDR_MOD: %s, drop packet %s" \
+                    %(MsgDestinationAddressMode, MsgData))
             return
     else:
-        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" %(MsgSourceAddressMode, MsgData))
+        Domoticz.Log("Decode8002 - Unexpected Source ADDR_MOD: %s, drop packet %s" \
+                %(MsgSourceAddressMode, MsgData))
         return
 
     loggingInput( self, 'Log', "Reception Data indication, Source Address : " + MsgSourceAddress + " Destination Address : " + MsgDestinationAddress + " ProfilID : " + MsgProfilID + " ClusterID : " + MsgClusterID + " Message Payload : " + MsgPayload)
@@ -408,7 +399,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
 
-    incomingRawAps( self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
+    inRawAps( self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
 
     callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
 

@@ -21,6 +21,27 @@ from time import time
 from Modules.logging import loggingLegrand
 from Modules.output import raw_APS_request, write_attribute
 
+def polling_Legrand( self, key ):
+
+    """
+    This fonction is call if enabled to perform any Manufacturer specific polling action
+    The frequency is defined in the pollingSchneider parameter (in number of seconds)
+    """
+
+    return
+
+
+def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
+
+    """
+    This is fonction is call when receiving a message from a Manufacturer battery based device.
+    The function is called after processing the readCluster part
+    """
+
+    Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
+            %(NwkId, EndPoint, cluster))
+
+    return
 
 def legrand_fake_read_attribute_response( self, nwkid ):
 
@@ -33,6 +54,11 @@ def legrand_fake_read_attribute_response( self, nwkid ):
     raw_APS_request( self, nwkid, '01', '0000', '0104', payload)
     loggingLegrand( self, 'Debug', "legrand_fake_read_attribute_response nwkid: %s" %nwkid, nwkid)
 
+
+def legrandReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+
+    Domoticz.Log("legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
 
 def rejoin_legrand( self, nwkid):
 
