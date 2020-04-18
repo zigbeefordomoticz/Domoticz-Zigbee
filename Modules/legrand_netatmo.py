@@ -18,6 +18,7 @@ import json
 from datetime import datetime
 from time import time
 
+from Modules.zigateConsts import MAX_LOAD_ZIGATE
 from Modules.logging import loggingLegrand
 from Modules.output import raw_APS_request, write_attribute
 
