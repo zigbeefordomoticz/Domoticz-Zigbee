@@ -21,14 +21,15 @@ from time import time
 from Modules.logging import loggingLegrand
 from Modules.output import raw_APS_request, write_attribute
 
-def polling_Legrand( self, key ):
+def pollingLegrand( self, key ):
 
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
+    rescheduleAction= False
 
-    return
+    return rescheduleAction
 
 
 def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
@@ -308,4 +309,24 @@ def legrand_ledInDark( self, OnOff):
                         #else:
                         #    Domoticz.Error("legrand_ledInDark not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
+
+
+def legrandReenforcement( self, NWKID):
+
+    rescheduleAction = False
+    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
+            for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
+                if self.pluginconf.pluginConf[ cmd ]:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, cmd , 'On')
+                    else:
+                        rescheduleAction = True
+                else:
+                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
+                        legrand_fc01( self, NWKID, cmd, 'Off')
+                    else:
+                        rescheduleAction = True
+
+    return rescheduleAction
 

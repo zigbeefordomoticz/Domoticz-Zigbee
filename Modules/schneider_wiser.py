@@ -17,14 +17,16 @@ from Modules.logging import loggingOutput
 from Modules.zigateConsts import ZIGATE_EP
 from time import time
 
-def polling_Schneider( self, key ):
+def pollingSchneider( self, key ):
 
     """
     This fonction is call if enabled to perform any Manufacturer specific polling action
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
 
-    return
+    rescheduleAction = False
+
+    return rescheduleAction
 
 
 def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
@@ -392,6 +394,7 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
 
 def schneiderRenforceent( self, NWKID):
     
+    rescheduleAction = False
     if 'Model' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-VACT':
             pass
