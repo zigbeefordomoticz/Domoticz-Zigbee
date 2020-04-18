@@ -186,11 +186,11 @@ class ZigateTransport(object):
             Domoticz.Error("Unknown Transport Mode: %s" %transport)
 
 
-    def PDMonly( self , lock):
+    def PDMLock( self , lock):
 
         self.PDMCommandOnly = lock
 
-    def PDMonlyStatus( self ):
+    def PDMLockStatus( self ):
 
         return self.PDMCommandOnly
 
@@ -411,6 +411,14 @@ class ZigateTransport(object):
         else:
             sendNow = (len(self._waitForStatus) == 0 and len(self._waitForData) == 0) or int(cmd,16) in CMD_PDM_ON_HOST
 
+        # PDM Management.
+        # When PDM traffic is ongoing we cannot interupt, so we need to FIFO all other commands until the PDMLock is released
+        PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
+        if self.PDMLockStatus() and cmd not in PDM_COMMANDS:
+            # Only PDM related command can go , all others will be dropped.
+            Domoticz.Log("PDM not yet ready, FIFO command %s %s" %(cmd, datas))
+            sendNow = False
+
         self.loggingSend('Debug', "sendData - Command: %s zMode: %s Q(Status): %s Q(Data): %s sendNow: %s" %(cmd, self.zmode, len(self._waitForStatus), len(self._waitForData), sendNow))
 
         # In case the cmd is part of the PDM on Host commands, that is High Priority and must go through.
@@ -441,6 +449,7 @@ class ZigateTransport(object):
         if frame == '' or frame is None or len(frame) < 12:
             return
 
+        Status = None
         MsgType = frame[2:6]
         MsgLength = frame[6:10]
         MsgCRC = frame[10:12]
@@ -457,7 +466,8 @@ class ZigateTransport(object):
 
         if MsgType == "8000":  # We are receiving a Status
             # We have receive a Status code in response to a command.
-            self._process8000(Status, PacketType, frame)
+            if Status:
+                self._process8000(Status, PacketType, frame)
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
