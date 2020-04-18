@@ -4,8 +4,8 @@ import Domoticz
 from datetime import datetime
 from time import time
 
-from Modules.logging import loggingLegrand
-from Modules.output import raw_APS_request, write_attribute
+from Modules.output import raw_APS_request, write_attribute,  \
+    ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000
 
 
 def pollingGledopto( self, key ):
@@ -16,6 +16,12 @@ def pollingGledopto( self, key ):
     """
 
     rescheduleAction = False
+
+    #if  ( self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
+    #    return True
+
+    ReadAttributeRequest_0006_0000( self, key)
+    ReadAttributeRequest_0008_0000( self, key)
 
     return rescheduleAction
 

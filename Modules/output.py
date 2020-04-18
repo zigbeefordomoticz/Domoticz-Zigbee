@@ -471,6 +471,15 @@ def ReadAttributeRequest_0001(self, key):
                 loggingOutput( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes )
 
+def ReadAttributeRequest_0006_0000(self, key):
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
+
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                EPout=tmpEp
+    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", '0000')
+
 def ReadAttributeRequest_0006_400x(self, key):
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
 
@@ -509,6 +518,15 @@ def ReadAttributeRequest_0006(self, key):
             if len(listAttributes) > 0:
                 loggingOutput( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
+
+def ReadAttributeRequest_0008_0000(self, key):
+    loggingOutput( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
+
+    EPout= "01"
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
+                EPout=tmpEp
+    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", '0000')
 
 
 def ReadAttributeRequest_0008(self, key):
