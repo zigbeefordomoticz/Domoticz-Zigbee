@@ -436,10 +436,6 @@ def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPa
            for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
                if self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase'] == 'requested':
                    Domoticz.Error ("FOUND !!!!!!!!!!! bind to be redone " + srcNWKID)
-                   sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['SourceIEEE']
-                   destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetIEEE']
-                   destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetEp']
-                   Modules.output.webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
                    # Write Location to 0x0000/0x5000 for all devices
                    manuf_id = "0000"

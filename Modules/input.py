@@ -2749,18 +2749,18 @@ def Decode8035(self, Devices, MsgData, MsgRSSI):
 ## PDM HOST
 def Decode0300( self, Devices, MsgData, MsgRSSI):
 
-    loggingInput( self, 'Debug',  "Decode0300 - PDMHostAvailableRequest: %20.20s" %(MsgData))
+    loggingInput( self, 'Log',  "Decode0300 - PDMHostAvailableRequest: %20.20s" %(MsgData))
     pdmHostAvailableRequest(self, MsgData )
     return
 
 def Decode0301( self, Devices, MsgData, MsgRSSI):
 
-    loggingInput( self, 'Debug',  "Decode0301 - E_SL_MSG_ASC_LOG_MSG: %20.20s" %(MsgData))
+    loggingInput( self, 'Log',  "Decode0301 - E_SL_MSG_ASC_LOG_MSG: %20.20s" %(MsgData))
     return
 
 def Decode0302( self, Devices, MsgData, MsgRSSI):
 
-    loggingInput( self, 'Debug',  "Decode0302 - PDMloadConfirmed: %20.20s" %(MsgData))
+    loggingInput( self, 'Log',  "Decode0302 - PDMloadConfirmed: %20.20s" %(MsgData))
     pdmLoadConfirmed(self, MsgData )
     return
 
