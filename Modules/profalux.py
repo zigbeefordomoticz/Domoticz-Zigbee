@@ -11,6 +11,7 @@
 """
 
 import Domoticz
+from Modules.zigateConsts import ZIGATE_EP
 from Modules.output import sendZigateCmd, raw_APS_request
 from Modules.logging import loggingProfalux
 
@@ -78,7 +79,7 @@ def profalux_stop( self, nwkid ):
     cmd = '03'
 
     payload = cluster_frame + sqn + cmd 
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
     return
@@ -99,7 +100,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
     cmd = '04'
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
     return
 
@@ -122,7 +123,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
     cmd = '05'
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
 
     return
@@ -155,7 +156,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         option = 0x03
 
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep='01')
+    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
 
     return

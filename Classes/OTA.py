@@ -38,7 +38,7 @@ from os.path import isfile, join
 from time import time
 from datetime import datetime
 
-from Modules.zigateConsts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ADDRESS_MODE, HEARTBEAT, MAX_LOAD_ZIGATE, ZIGATE_EP
 
 from Classes.AdminWidgets import AdminWidgets
 
@@ -544,7 +544,7 @@ class OTAManagement(object):
         _raw_ota_data = self.OTA['Images'][image]['image'][_offset:_offset+_lenght]
 
         # Build the message and send
-        datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + "01" + dest_ep 
+        datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep 
         datas += "%02x" %sequence + "%02x" %_status 
         datas += "%08x" %_offset 
         datas += image_version + image_type + manufacturer_code
@@ -582,7 +582,7 @@ class OTAManagement(object):
         _ImageType = MsgImageType
         _ManufacturerCode = MsgManufCode
 
-        datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + "01" + dest_ep 
+        datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep 
         datas += "%08x" %_UpgradeTime
         datas += "%08x" %0x00
         datas += "%08x" %_FileVersion
@@ -638,7 +638,7 @@ class OTAManagement(object):
         elif IMG_NTFY_PAYLOAD_TYPE == 2:
             image_version = 0xFFFFFFFF  # Wildcard
 
-        datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + "01" + dest_ep + "%02x" %IMG_NTFY_PAYLOAD_TYPE
+        datas = "%02x" %ADDRESS_MODE['short'] + dest_addr + ZIGATE_EP + dest_ep + "%02x" %IMG_NTFY_PAYLOAD_TYPE
         datas += '%08X' %image_version + '%04X' %image_type + '%04X' %manufacturer_code 
         datas += "%02x" %JITTER_OPTION
         self.logging( 'Debug', "ota_image_advertize - Type: 0x%0X, Version: 0x%0X => datas: %s" %(image_type, image_version, datas))
@@ -673,7 +673,7 @@ class OTAManagement(object):
         # update the local attribute with this value)
         _BlockRequestDelayMs = 500
 
-        datas = "%02x" %ADDRESS_MODE['short'] + MsgSrcAddr + "01" + MsgEP 
+        datas = "%02x" %ADDRESS_MODE['short'] + MsgSrcAddr + ZIGATE_EP + MsgEP 
         datas += "%02X" %_status
         datas += "%08X" %_CurrentTime
         datas += "%08X" %_RequestTime

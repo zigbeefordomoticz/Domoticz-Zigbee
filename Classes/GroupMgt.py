@@ -23,7 +23,7 @@ from time import time
 from datetime import datetime
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE
+from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 
 from Classes.AdminWidgets import AdminWidgets
 
@@ -170,7 +170,7 @@ class GroupsManagement(object):
         identify = False
         if effect not in effect_command:
             effect = 'Okay'
-        datas = "%02d" %ADDRESS_MODE['group'] + "%s"%(nwkid) + "01" + ep + "%02x"%(effect_command[effect])  + "%02x" %0
+        datas = "%02d" %ADDRESS_MODE['group'] + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
         self.ZigateComm.sendData( "00E0", datas)
 
     def _write_GroupList(self):
@@ -407,7 +407,7 @@ class GroupsManagement(object):
 
         self.logging( 'Debug', "_addGroup - Adding device: %s/%s into group: %s" \
                 %( device_addr, device_ep, grpid))
-        datas = "02" + device_addr + "01" + device_ep + grpid
+        datas = "02" + device_addr + ZIGATE_EP + device_ep + grpid
         self.ZigateComm.sendData( "0060", datas)
 
         return
@@ -476,7 +476,7 @@ class GroupsManagement(object):
     def _viewGroup( self, device_addr, device_ep, goup_addr ):
 
         self.logging( 'Debug', "_viewGroup - addr: %s ep: %s group: %s" %(device_addr, device_ep, goup_addr))
-        datas = "02" + device_addr + "01" + device_ep + goup_addr
+        datas = "02" + device_addr + ZIGATE_EP + device_ep + goup_addr
         self.ZigateComm.sendData( "0061", datas)
         return
 
@@ -498,7 +498,7 @@ class GroupsManagement(object):
     def _getGroupMembership(self, device_addr, device_ep, group_list=None):
 
         self.logging( 'Debug', "_getGroupMembership - %s/%s from %s" %(device_addr, device_ep, group_list))
-        datas = "02" + device_addr + "01" + device_ep 
+        datas = "02" + device_addr + ZIGATE_EP + device_ep 
 
         if not group_list:
             lenGrpLst = 0
@@ -585,7 +585,7 @@ class GroupsManagement(object):
             self.UpdatedGroups.append(goup_addr)
 
         self.logging( 'Debug', "_removeGroup - %s/%s on %s" %(device_addr, device_ep, goup_addr))
-        datas = "02" + device_addr + "01" + device_ep + goup_addr
+        datas = "02" + device_addr + ZIGATE_EP + device_ep + goup_addr
         self.ZigateComm.sendData( "0063", datas)
         return
 
@@ -650,12 +650,12 @@ class GroupsManagement(object):
     def _removeAllGroups(self, device_addr, device_ep ):
 
         self.logging( 'Debug', "_removeAllGroups - %s/%s " %(device_addr, device_ep))
-        datas = "02" + device_addr + "01" + device_ep
+        datas = "02" + device_addr + ZIGATE_EP + device_ep
         self.ZigateComm.sendData( "0064", datas)
         return
 
     def _addGroupifIdentify(self, device_addr, device_ep, goup_addr = "0000"):
-        datas = "02" + device_addr + "01" + device_ep + goup_addr
+        datas = "02" + device_addr + ZIGATE_EP + device_ep + goup_addr
         self.ZigateComm.sendData( "0065", datas)
         return
 
@@ -1080,7 +1080,7 @@ class GroupsManagement(object):
         strxy = Hex_Format(4,x) + Hex_Format(4,y)
         zigate_cmd = "00B7"
         zigate_param = strxy + transit
-        datas = "%02d" %mode + addr + EPin + EPout + zigate_param
+        datas = "%02d" %mode + addr + ZIGATE_EP + EPout + zigate_param
         self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
         self.ZigateComm.sendData( zigate_cmd, datas)
 
@@ -1197,7 +1197,7 @@ class GroupsManagement(object):
 
                 self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
                 self._updateDeviceListAttribute( nwkid, '0102', zigate_param)
-                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
                 self.logging( 'Debug', "Group Command: %s" %datas)
                 self.ZigateComm.sendData( zigate_cmd, datas)
                 return
@@ -1212,7 +1212,7 @@ class GroupsManagement(object):
             self._updateDeviceListAttribute( nwkid, '0006', '00')
             self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
-            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
 
@@ -1226,7 +1226,7 @@ class GroupsManagement(object):
 
             self.updateDomoGroupDevice( nwkid)
             #datas = "01" + nwkid + EPin + EPout + zigate_param
-            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
 
@@ -1244,7 +1244,7 @@ class GroupsManagement(object):
             sValue = str(Level)
             self.Devices[unit].Update(nValue=int(nValue), sValue=str(sValue))
             self._updateDeviceListAttribute( nwkid, '0008', value)
-            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s" %datas)
             self.ZigateComm.sendData( zigate_cmd, datas)
             self.updateDomoGroupDevice( nwkid)
@@ -1257,7 +1257,7 @@ class GroupsManagement(object):
             #value=Hex_Format(2,round(1+Level*254/100)) #To prevent off state
             zigate_cmd = "0081"
             zigate_param = OnOff + value + "0000"
-            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+            datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
             self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
             self._updateDeviceListAttribute( nwkid, '0008', value)
             self.ZigateComm.sendData( zigate_cmd, datas)
@@ -1297,12 +1297,12 @@ class GroupsManagement(object):
                 OnOff = '01'
                 zigate_cmd = "00B6"
                 zigate_param = Hex_Format(2,hue) + Hex_Format(2,saturation) + "0000"
-                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
                 self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
                 zigate_cmd = "0081"
                 zigate_param = OnOff + value + "0010"
-                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + EPin + EPout + zigate_param
+                datas = "%02d" %ADDRESS_MODE['group'] + nwkid + ZIGATE_EP + EPout + zigate_param
                 self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
                 self.ZigateComm.sendData( zigate_cmd, datas)
                 self._updateDeviceListAttribute( nwkid, '0008', value)

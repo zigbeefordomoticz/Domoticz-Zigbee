@@ -15,7 +15,7 @@ import Domoticz
 from datetime import datetime
 
 from Modules.output import *
-from Modules.zigateConsts import ADDRESS_MODE
+from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Classes.PluginConf import PluginConf
 
 ZONE_TYPE = { 0x0000: 'standard',
@@ -154,7 +154,7 @@ class IAS_Zone_Management:
         attribute = "%04x" %0x0010
         data_type = "F0" # ZigBee_IeeeAddress = 0xf0
         data = str(self.ZigateIEEE)
-        self.__write_attribute( key, "01", Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+        self.__write_attribute( key, ZIGATE_EP, Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
     def readConfirmEnroll( self, key, Epout ):
 
@@ -167,7 +167,7 @@ class IAS_Zone_Management:
 
         cluster_id = "%04x" %0x0500
         attribute = 0x0000
-        self.__ReadAttributeReq( key, "01", Epout, cluster_id , attribute )
+        self.__ReadAttributeReq( key, ZIGATE_EP, Epout, cluster_id , attribute ), __write_attribute
 
     def IASZone_enroll_response_( self, nwkid, Epout ):
         '''2.the CIE sends a ‘enroll’ message to the IAS Zone device'''
@@ -184,7 +184,7 @@ class IAS_Zone_Management:
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
 
-        datas = addr_mode + nwkid + "01" + Epout + enroll_rsp_code + zoneid
+        datas = addr_mode + nwkid + ZIGATE_EP + Epout + enroll_rsp_code + zoneid
         self.ZigateComm.sendData( "0400", datas )
         return
 
@@ -203,7 +203,7 @@ class IAS_Zone_Management:
         enroll_rsp_code =   "%02x" %ENROLL_RESPONSE_CODE
         zoneid = "%02x" %ZONE_ID
 
-        datas = addr_mode + nwkid + "01" + Epout + enroll_rsp_code + zoneid
+        datas = addr_mode + nwkid + ZIGATE_EP + Epout + enroll_rsp_code + zoneid
         self.ZigateComm.sendData( "0400", datas )
         return
 
@@ -215,7 +215,7 @@ class IAS_Zone_Management:
         attribute = "0000"
         data_type = "%02X" %0x21
         data = "%04X" %0xFFFE
-        self.__write_attribute( nwkid, "01", Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
+        self.__write_attribute( nwkid, ZIGATE_EP, Epout, cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
     def IASZone_attributes( self, nwkid, Epout):
 
@@ -228,7 +228,7 @@ class IAS_Zone_Management:
 
         cluster_id = "%04x" %0x0500
         attribute = [ 0x0000, 0x0001, 0x0002 ]
-        self.__ReadAttributeReq( nwkid, "01", Epout, cluster_id , attribute )
+        self.__ReadAttributeReq( nwkid, ZIGATE_EP, Epout, cluster_id , attribute ), __write_attribute
 
     def IASZone_triggerenrollement( self, nwkid, Epout):
 
@@ -424,7 +424,7 @@ class IAS_Zone_Management:
 
         datas  = "%02X" %ADDRESS_MODE['short']
         datas += nwkid
-        datas += '01'
+        datas += ZIGATE_EP
         datas += ep
         datas += "%02x" %direction
         datas += "%02X" %manuf
@@ -460,7 +460,7 @@ class IAS_Zone_Management:
     
         datas  = "%02X" %ADDRESS_MODE['short']
         datas += nwkid
-        datas += '01'
+        datas += ZIGATE_EP
         datas += ep
         datas += "%02x" %direction
         datas += "%02X" %manuf
