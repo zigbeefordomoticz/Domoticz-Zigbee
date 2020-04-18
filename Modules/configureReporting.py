@@ -18,7 +18,8 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.output import  sendZigateCmd, bindDevice
+from Modules.output import  sendZigateCmd
+from Modules.bindings import bindDevice
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, CFG_RPT_ATTRIBUTESbyCLUSTERS , ZIGATE_EP
 from Modules.tools import getClusterListforEP, mainPoweredDevice

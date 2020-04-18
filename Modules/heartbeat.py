@@ -18,7 +18,7 @@ import json
 from Modules.actuators import actuators
 from Modules.output import  sendZigateCmd,  \
         identifyEffect, setXiaomiVibrationSensitivity, \
-        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
+        getListofAttribute, \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \

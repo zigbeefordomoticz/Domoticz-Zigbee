@@ -18,9 +18,10 @@ import json
 from Modules.actuators import actuators
 from Modules.schneider_wiser import schneider_wiser_registration
 from Modules.legrand_netatmo import legrand_fc01
+from Modules.bindings import unbindDevice, bindDevice, rebind_Clusters
 from Modules.output import  sendZigateCmd,  \
         identifyEffect, setXiaomiVibrationSensitivity, \
-        unbindDevice, bindDevice, rebind_Clusters, getListofAttribute, \
+        getListofAttribute, \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \
