@@ -473,7 +473,8 @@ def ReadAttributeRequest_0006_0000(self, key):
         if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout=tmpEp
     if EPout:
-        listAttributes = [ 0x0000 ]
+        listAttributes = [ ]
+        listAttributes.append ( 0x0000 )
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0006_400x(self, key):
@@ -523,7 +524,8 @@ def ReadAttributeRequest_0008_0000(self, key):
         if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout=tmpEp
     if EPout:
-        listAttributes = [ 0x0000 ]
+        listAttributes = [ ]
+        listAttributes.append ( 0x0000 )
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", listAttributes)
 
 
