@@ -330,17 +330,17 @@ class BasePlugin:
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
         if  self.transport == "USB":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    serialPort=Parameters["SerialPort"] )
+                    self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "DIN":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    serialPort=Parameters["SerialPort"] )
+                    self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
             switchPiZigate_mode( self, 'run' )
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    serialPort=Parameters["SerialPort"] )
+                    self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
+                    self.loggingFileHandle, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         elif self.transport == "None":
             loggingPlugin( self, 'Status', "Transport mode set to None, no communication.")
             self.FirmwareVersion = '031c'
