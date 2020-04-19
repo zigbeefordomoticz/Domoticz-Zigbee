@@ -125,12 +125,6 @@ def sendZigateCmd(self, cmd, datas ):
         Domoticz.Error("Zigate Communication error.")
         return
 
-    PDM_COMMANDS = ( '8300', '8200', '8201', '8204', '8205', '8206', '8207', '8208' )
-    if self.ZigateComm.PDMonlyStatus() and cmd not in PDM_COMMANDS:
-        # Only PDM related command can go , all others will be dropped.
-        Domoticz.Log("PDM not yet ready, droping command %s %s" %(cmd, datas))
-        return
-
     if self.pluginconf.pluginConf['debugzigateCmd']:
         loggingOutput( self, 'Log', "sendZigateCmd - %s %s Queue Length: %s" %(cmd, datas, len(self.ZigateComm.zigateSendingFIFO)), 'ffff')
     else:
@@ -474,11 +468,14 @@ def ReadAttributeRequest_0001(self, key):
 def ReadAttributeRequest_0006_0000(self, key):
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
 
-    EPout= "01"
+    EPout= None
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout=tmpEp
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", '0000')
+    if EPout:
+        listAttributes = [ ]
+        listAttributes.append ( 0x0000 )
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0006_400x(self, key):
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
@@ -522,11 +519,14 @@ def ReadAttributeRequest_0006(self, key):
 def ReadAttributeRequest_0008_0000(self, key):
     loggingOutput( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
 
-    EPout= "01"
+    EPout= None
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
                 EPout=tmpEp
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", '0000')
+    if EPout:
+        listAttributes = [ ]
+        listAttributes.append ( 0x0000 )
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", listAttributes)
 
 
 def ReadAttributeRequest_0008(self, key):
@@ -545,7 +545,7 @@ def ReadAttributeRequest_0008(self, key):
                     listAttributes.append( iterAttr )
         
             if len(listAttributes) > 0:
-                loggingOutput( self, 'Debug', "Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+                loggingOutput( self, 'Debug', "Request Level Control via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0)
 
 def ReadAttributeRequest_0300(self, key):

@@ -40,8 +40,8 @@ def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
-            %(NwkId, EndPoint, cluster))
+    #Domoticz.Log("callbackDeviceAwake_Legrand - Nwkid: %s, EndPoint: %s cluster: %s" \
+    #        %(NwkId, EndPoint, cluster))
 
     return
 

@@ -4,6 +4,7 @@ import Domoticz
 from time import time
 from Modules.output import sendZigateCmd
 from Modules.logging import loggingOutput
+from Modules.zigateConsts import CLUSTERS_LIST
 
 
 def bindGroup( self, ieee, ep, cluster, groupid ):
@@ -269,16 +270,20 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
     Check that WebBind are well set
     """
 
+    if srcNWKID not in self.ListOfDevices:
+        return
     if 'WebBind' not in self.ListOfDevices[srcNWKID]:
         return
 
     for Ep in list(self.ListOfDevices[srcNWKID]['WebBind']):
-       for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
-           if self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase'] == 'requested':
-               loggingOutput( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
-               sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['SourceIEEE']
-               destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetIEEE']
-               destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetEp']
-               webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
+        for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
+            if 'Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]:
+                if self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase'] == 'requested':
+                    loggingOutput( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
+                    sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['SourceIEEE']
+                    destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetIEEE']
+                    destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetEp']
+                    # Perforning the bind
+                    webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
 

@@ -103,7 +103,7 @@ def pdmHostAvailableRequest(self, MsgData ):
     status = PDM_E_STATUS_OK
 
     # Allow only PDM traffic
-    self.ZigateComm.PDMonly( True )
+    self.ZigateComm.PDMLock( True )
 
     # Open PDM file and populate the Data Structure self.PDM
     if self.PDM is None:
@@ -119,7 +119,7 @@ def pdmLoadConfirmed( self, MsgData):
     savePDM( self )
 
     # Allow ALL traffic
-    self.ZigateComm.PDMonly( False )
+    self.ZigateComm.PDMLock( False )
 
     # Let's tell the plugin that we can enter in run mode.
     self.PDMready = True
@@ -136,7 +136,7 @@ def PDMSaveRequest( self, MsgData):
     if self.PDM is None:
         openPDM( self )
     # Allow only PDM traffic
-    self.ZigateComm.PDMonly( True )
+    self.ZigateComm.PDMLock( True )
 
     RecordId = MsgData[:4]                #record ID
     u16Size = MsgData[4:8]                # total PDM record size
@@ -169,7 +169,7 @@ def PDMSaveRequest( self, MsgData):
 
     if (int(u16BlocksWritten,16) + 1) == int(u16NumberOfWrites,16):
         # Allow ALL traffic
-        self.ZigateComm.PDMonly( False )
+        self.ZigateComm.PDMLock( False )
     return
 
 def PDMLoadRequest(self, MsgData):
@@ -187,7 +187,7 @@ def PDMLoadRequest(self, MsgData):
     if self.PDM is None:
         openPDM( self )
     # Allow only PDM traffic
-    self.ZigateComm.PDMonly( True )
+    self.ZigateComm.PDMLock( True )
 
     if RecordId not in self.PDM:
         #Record not found
@@ -208,7 +208,7 @@ def PDMLoadRequest(self, MsgData):
 
         sendZigateCmd( self, "8201", datas)
         # Allow ALL traffic
-        self.ZigateComm.PDMonly( False )
+        self.ZigateComm.PDMLock( False )
     else:
         # Let's retreive the recordID Data and RecordSize from PDM
         persistedData = self.PDM[RecordId]['PersistedData']
@@ -254,7 +254,7 @@ def PDMLoadRequest(self, MsgData):
             lowerBound += 2 * u16CurrentBlockSize
             if not bMoreData:
                 # Allow ALL traffic
-                self.ZigateComm.PDMonly( False )
+                self.ZigateComm.PDMLock( False )
     return
 
 def PDMDeleteAllRecord( self , MsgData):

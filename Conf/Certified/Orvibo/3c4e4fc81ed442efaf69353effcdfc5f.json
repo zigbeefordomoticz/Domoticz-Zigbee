@@ -1,0 +1,17 @@
+{
+	"Ep": {
+		"00": {
+		},
+		"01": {
+			"0000":"",
+			"0017":"",
+			"Type:": "Generic_5_buttons"
+		}
+	},
+	"Type":"",
+	"Bind": [ "0017" ],
+	"ConfigureReporting": {},
+	"ReadAttributes": {
+		"0000": [ "0004", "0005", "00aa" ]
+	}
+}

@@ -196,7 +196,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.8.015'
+        self.pluginParameters['PluginVersion'] = '4.8.016'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -330,17 +330,17 @@ class BasePlugin:
         loggingPlugin( self, 'Status', "Transport mode: %s" %self.transport)
         if  self.transport == "USB":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    serialPort=Parameters["SerialPort"] )
+                    self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "DIN":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    serialPort=Parameters["SerialPort"] )
+                    self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "PI":
             switchPiZigate_mode( self, 'run' )
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    serialPort=Parameters["SerialPort"] )
+                    self.loggingFileHandle, serialPort=Parameters["SerialPort"] )
         elif  self.transport == "Wifi":
             self.ZigateComm = ZigateTransport( self.LOD, self.transport, self.statistics, self.pluginconf, self.processFrame,\
-                    wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
+                    self.loggingFileHandle, wifiAddress= Parameters["Address"], wifiPort=Parameters["Port"] )
         elif self.transport == "None":
             loggingPlugin( self, 'Status', "Transport mode set to None, no communication.")
             self.FirmwareVersion = '031c'
@@ -577,7 +577,7 @@ class BasePlugin:
         self.HeartbeatCount += 1
 
         loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
-                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMonlyStatus() ))
+                %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMLockStatus() ))
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
 

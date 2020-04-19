@@ -23,8 +23,8 @@ def callbackDeviceAwake(self, nwkid, endpoint, cluster):
         }
 
 
-    Domoticz.Log("callbackDeviceAwake - nwkid: %s ep: %s cluster: %s" \
-            %(nwkid, endpoint, cluster))
+    #Domoticz.Log("callbackDeviceAwake - nwkid: %s ep: %s cluster: %s" \
+    #        %(nwkid, endpoint, cluster))
 
     if nwkid not in self.ListOfDevices:
         return
