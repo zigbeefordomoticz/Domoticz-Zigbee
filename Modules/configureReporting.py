@@ -130,7 +130,7 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] in ( '86', '8c') and \
                         self.ListOfDevices[key]['ConfigureReporting']['Ep'][Ep][str(cluster)] != {} :
-                    loggingOutput( self, 'Debug', "--------> configurereporting - skiping due to existing error in the past", nwkid=key)
+                    loggingOutput( self, 'Debug', "--------> configurereporting - %s skiping due to existing error in the past" %key, nwkid=key)
                     continue
 
                 _idx = Ep + '-' + str(cluster)
@@ -143,12 +143,12 @@ def processConfigureReporting( self, NWKID=None ):
 
                 if  self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] != 0:
                      if now <  ( self.ListOfDevices[key]['ConfigureReporting']['TimeStamps'][_idx] + (21 * 3600)):  # Do almost every day
-                        loggingOutput( self, 'Debug', "------> configurereporting - skiping due to done past", nwkid=key)
+                        loggingOutput( self, 'Debug', "------> configurereporting - %s skiping due to done past" %key, nwkid=key)
                         continue
 
                 if NWKID is None and (self.busy or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
-                    loggingOutput( self, 'Debug2', "---> configureReporting - skip configureReporting for now ... system too busy (%s/%s) for %s"
-                        %(self.busy, len(self.ZigateComm.zigateSendingFIFO), key), nwkid=key)
+                    loggingOutput( self, 'Debug2', "---> configureReporting - %s skip configureReporting for now ... system too busy (%s/%s) for %s"
+                        %(key, self.busy, len(self.ZigateComm.zigateSendingFIFO), key), nwkid=key)
                     loggingOutput( self, 'Debug2', "QUEUE: %s" %str(self.ZigateComm.zigateSendingFIFO), nwkid=key)
                     return # Will do at the next round
 
