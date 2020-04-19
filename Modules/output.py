@@ -545,7 +545,7 @@ def ReadAttributeRequest_0008(self, key):
                     listAttributes.append( iterAttr )
         
             if len(listAttributes) > 0:
-                loggingOutput( self, 'Debug', "Request Control level of shutter via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+                loggingOutput( self, 'Debug', "Request Level Control via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0)
 
 def ReadAttributeRequest_0300(self, key):
