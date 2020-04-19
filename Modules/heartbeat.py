@@ -256,7 +256,7 @@ def processKnownDevices( self, Devices, NWKID ):
 
     # Polling Manuf specific devices like Gledopto, Philips
     POLLING_TABLE_SPECIFICS = {
-        'pollingPhilips':  ( pollingPhilips , 'c05e', 'unknow' ),
+        'pollingPhilips':  ( pollingPhilips , '100b', 'Philips' ),
         'pollingGledopto': ( pollingGledopto , 'unknow', 'GELDOPTO')
         }
 
