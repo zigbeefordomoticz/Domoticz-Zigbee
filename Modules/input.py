@@ -1140,6 +1140,8 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
             MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
             if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
                 if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] != 'DeviceConf':
+                    if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
+                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
                     if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster] = {}
                 else:
@@ -1171,9 +1173,11 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     i=1
     if int(MsgDataOutClusterCount,16)>0 :
         while i <= int(MsgDataOutClusterCount,16) :
-            MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
+            MsgDataCluster = MsgData[idx+((i-1)*4):idx+(i*4)]
             if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
                 if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] != 'DeviceConf':
+                    if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
+                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
                     if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                         self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
                 else:
