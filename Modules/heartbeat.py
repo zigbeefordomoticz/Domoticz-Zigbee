@@ -22,7 +22,7 @@ from Modules.output import  sendZigateCmd,  \
         setPowerOn_OnOff, \
         scene_membership_request, \
         ReadAttributeRequest_0000_basic, \
-        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, \
+        ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
@@ -124,7 +124,7 @@ def pollingManufSpecificDevices( self, NWKID):
     if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
         devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
 
-    loggingHeartbeat( self, 'Debug', "pollingManufSpecificDevices -  %s Found: %s %s" \
+    loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s %s" \
             %(NWKID, devManufCode, devManufName), NWKID)
     for brand in POLLING_TABLE_SPECIFICS:
         if brand not in self.pluginconf.pluginConf:
@@ -140,6 +140,28 @@ def pollingManufSpecificDevices( self, NWKID):
                 rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 
     return rescheduleAction
+
+def pollingDeviceStatus( self, NWKID):
+
+    """
+    Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
+    """
+
+    rescheduleAction = False
+
+    for iterEp in self.ListOfDevices[NWKID]['Ep']:
+        if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+            ReadAttributeRequest_0006_0000( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for ON/OFF" \
+            %(NWKID), NWKID)
+
+        if '0008' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
+            ReadAttributeRequest_0008_0000( self, NWKID)
+            loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
+            %(NWKID), NWKID)
+
+    return rescheduleAction
+
 
 def processKnownDevices( self, Devices, NWKID ):
 
@@ -192,20 +214,16 @@ def processKnownDevices( self, Devices, NWKID ):
         if self.ListOfDevices[NWKID]['Health'] == '':
             _checkHealth = True
 
-    _doReadAttribute = False
-    _forceCommandCluster = False
+    # Action not taken, must be reschedule to next cycle
+    rescheduleAction = False
 
     if self.pluginconf.pluginConf['forcePollingAfterAction'] and (intHB == 1): # HB has been reset to 0 as for a Group command
         loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s due to intHB %s" %(NWKID, intHB), NWKID)
-        _forceCommandCluster = True
+        rescheduleAction = (rescheduleAction or pollingDeviceStatus( self, NWKID))
 
     ## Starting this point, it is ony relevant for Main Powered Devices.
-    #  except if _forceCommandCluster has been enabled.
-    if not _mainPowered and not _forceCommandCluster:
+    if not _mainPowered:
         return
-
-    # Action not taken, must be reschedule to next cycle
-    rescheduleAction = False
 
     # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
     rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))
@@ -215,15 +233,16 @@ def processKnownDevices( self, Devices, NWKID ):
         return
 
     # In order to limit the load, we do it only every 15s
+    _doReadAttribute = False
     if self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes']:
         if ( intHB % READATTRIBUTE_FEQ ) == 0:
             _doReadAttribute = True
 
     # Do we need to force ReadAttribute at plugin startup ?
     # If yes, best is probably to have ResetReadAttribute to 1
-    if _doReadAttribute or _forceCommandCluster:
-        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s frcRead: %s" \
-                %(NWKID, intHB, _mainPowered, _doReadAttribute, _forceCommandCluster), NWKID)
+    if _doReadAttribute:
+        loggingHeartbeat( self, 'Debug', "processKnownDevices -  %s intHB: %s _mainPowered: %s doReadAttr: %s" \
+                %(NWKID, intHB, _mainPowered, _doReadAttribute ), NWKID)
 
         # Read Attributes if enabled
         now = int(time.time())   # Will be used to trigger ReadAttributes
@@ -242,21 +261,6 @@ def processKnownDevices( self, Devices, NWKID ):
                         continue
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
-
-                if _forceCommandCluster and not _doReadAttribute:
-                    # Force Majeur
-                    if ( intHB == 1 and _mainPowered and Cluster in READ_ATTR_COMMANDS ) or \
-                          ( intHB == 1 and not _mainPowered and Cluster in ( '0001', '0201') ) :
-                        loggingHeartbeat( self, 'Debug', '-- - Force Majeur on %s/%s cluster %s' \
-                                %( NWKID, tmpEp, Cluster), NWKID)
-
-                        # Let's reset the ReadAttribute Flag
-                        if 'TimeStamps' in self.ListOfDevices[NWKID]['ReadAttributes']:
-                            _idx = tmpEp + '-' + str(Cluster)
-                            if _idx in self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps']:
-                                if self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] != {}:
-                                    self.ListOfDevices[NWKID]['ReadAttributes']['TimeStamps'][_idx] = 0
-                
 
                 if  (self.busy  or len(self.ZigateComm.zigateSendingFIFO) > MAX_LOAD_ZIGATE):
                     loggingHeartbeat( self, 'Debug', '--  -  %s skip ReadAttribute for now ... system too busy (%s/%s)' 
