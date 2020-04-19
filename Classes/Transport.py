@@ -46,7 +46,7 @@ class ZigateTransport(object):
     Managed also the Command -> Status -> Data sequence
     """
 
-    def __init__(self, LOD, transport, statistics, pluginconf, F_out, serialPort=None, wifiAddress=None, wifiPort=None):
+    def __init__(self, LOD, transport, statistics, pluginconf, F_out, loggingFileHandle, serialPort=None, wifiAddress=None, wifiPort=None):
         ##DEBUG Domoticz.Debug("Setting Transport object")
         self.lock = False
 
@@ -75,6 +75,8 @@ class ZigateTransport(object):
         self.zmode = pluginconf.pluginConf['zmode']
         self.sendDelay = pluginconf.pluginConf['sendDelay']
         self.zTimeOut = pluginconf.pluginConf['zTimeOut']
+
+        self.loggingFileHandle = loggingFileHandle
 
         self.loggingSend('Debug',"STANDALONE_MESSAGE: %s" %STANDALONE_MESSAGE)
         self.loggingSend('Debug',"CMD_ONLY_STATUS: %s" %CMD_ONLY_STATUS)
