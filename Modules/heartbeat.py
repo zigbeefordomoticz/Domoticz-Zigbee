@@ -109,6 +109,37 @@ def attributeDiscovery( self, NWKID ):
 
     return rescheduleAction
 
+def pollingManufSpecificDevices( self, NWKID):
+
+    # Polling Manuf specific devices like Gledopto, Philips
+    POLLING_TABLE_SPECIFICS = {
+        'pollingPhilips':  ( pollingPhilips , '100b', 'Philips' ),
+        'pollingGledopto': ( pollingGledopto , 'unknow', 'GLEDOPTO')
+        }
+
+    rescheduleAction = False
+    devManufCode = devManufName = ''
+    if 'Manufacturer' in self.ListOfDevices[NWKID]:
+        devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
+    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+        devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
+
+    loggingHeartbeat( self, 'Debug', "pollingManufSpecificDevices -  %s Found: %s %s" \
+            %(NWKID, devManufCode, devManufName), NWKID)
+    for brand in POLLING_TABLE_SPECIFICS:
+        if brand not in self.pluginconf.pluginConf:
+            continue
+        if not self.pluginconf.pluginConf[ brand]:
+            continue
+        _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
+        _FEQ = self.pluginconf.pluginConf[ brand ] // HEARTBEAT
+
+        if ( _HB % _FEQ ) == 0:
+            func , manufCode, manufName = POLLING_TABLE_SPECIFICS[ brand ]
+            if (devManufCode == manufCode) or (devManufName == manufName):
+                rescheduleAction = ( rescheduleAction or func( self, NWKID) )
+
+    return rescheduleAction
 
 def processKnownDevices( self, Devices, NWKID ):
 
@@ -148,9 +179,6 @@ def processKnownDevices( self, Devices, NWKID ):
                 %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
             self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
 
-    # Check if we are in the process of provisioning a new device. If so, just stop
-    if self.CommiSSionning: 
-        return
 
     # If device flag as Not Reachable, don't do anything
     if 'Health' in self.ListOfDevices[NWKID]:
@@ -178,6 +206,13 @@ def processKnownDevices( self, Devices, NWKID ):
 
     # Action not taken, must be reschedule to next cycle
     rescheduleAction = False
+
+    # Polling Manufacturer Specific devices ( Philips, Gledopto  ) if applicable
+    rescheduleAction = (rescheduleAction or pollingManufSpecificDevices( self, NWKID))
+
+    # Check if we are in the process of provisioning a new device. If so, just stop
+    if self.CommiSSionning: 
+        return
 
     # In order to limit the load, we do it only every 15s
     if self.pluginconf.pluginConf['enableReadAttributes'] or self.pluginconf.pluginConf['resetReadAttributes']:
@@ -254,24 +289,6 @@ def processKnownDevices( self, Devices, NWKID ):
 
                 func(self, NWKID )
 
-    # Polling Manuf specific devices like Gledopto, Philips
-    POLLING_TABLE_SPECIFICS = {
-        'pollingPhilips':  ( pollingPhilips , '100b', 'Philips' ),
-        'pollingGledopto': ( pollingGledopto , 'unknow', 'GELDOPTO')
-        }
-
-    devManufCode = devManufName = ''
-    if 'Manufacturer' in self.ListOfDevices[NWKID]:
-        devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
-    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-        devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
-
-    for brand in POLLING_TABLE_SPECIFICS:
-        func , manufCode, manufName = POLLING_TABLE_SPECIFICS[ brand ]
-        if devManufCode == manufCode or devManufName == manufName:
-            if self.pluginconf.pluginConf[ brand] and \
-                ( self.HeartbeatCount % self.pluginconf.pluginConf[ brand ] ) == 0 :
-                rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 
 
     # Pinging devices to check they are still Alive
@@ -343,7 +360,7 @@ def processListOfDevices( self , Devices ):
             entriesToBeRemoved.append( NWKID )
 
         ########## Known Devices 
-        if status == "inDB" and not self.busy: 
+        if status == "inDB":
             processKnownDevices( self , Devices, NWKID )
 
         elif status == "Leave":
