@@ -1323,7 +1323,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if DeviceType in SWITCH_LVL_MATRIX:
                 if value in SWITCH_LVL_MATRIX[ DeviceType ]:
-                    if len(SWITCH_LVL_MATRIX[ DeviceType ]) == 2:
+                    if len(SWITCH_LVL_MATRIX[ DeviceType ][ value] ) == 2:
                         nValue, sValue = SWITCH_LVL_MATRIX[ DeviceType ][ value ]
                         _ForceUpdate =  SWITCH_LVL_MATRIX[ DeviceType ]['ForceUpdate']
                         loggingWidget( self, "Log", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID)
