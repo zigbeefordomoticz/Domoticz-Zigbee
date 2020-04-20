@@ -25,7 +25,6 @@ from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex
 from Modules.logging import loggingCluster
 from Modules.output import  xiaomi_leave
-from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_setpoint
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
