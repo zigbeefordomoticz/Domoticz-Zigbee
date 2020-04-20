@@ -1649,7 +1649,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if DeviceType == "Lux":
                 nValue = int(value)
                 sValue = value
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate)
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= True)
 
 def ResetDevice(self, Devices, ClusterType, HbCount):
     '''

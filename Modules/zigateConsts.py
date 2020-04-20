@@ -578,95 +578,95 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
 
 SWITCH_LVL_MATRIX = {
     'Plug': { 
-            '01': ( 1, 'On') , 
-            '00': ( 0, 'Off'), 
-            'ForceUpdate': False },
+        '01': ( 1, 'On') , 
+        '00': ( 0, 'Off'), 
+        'ForceUpdate': False },
 
     'Door':  { 
-            '00': ( 0, 'Closed'), 
-            '01': ( 1,'Open'), 
-            'ForceUpdate': False},
+        '00': ( 0, 'Closed'), 
+        '01': ( 1,'Open'), 
+        'ForceUpdate': False},
 
     'Smoke': { 
-            '00': ( 0, 'Off'), 
-            '01': ( 1,'On'), 
-            'ForceUpdate': False},
+        '00': ( 0, 'Off'), 
+        '01': ( 1,'On'), 
+        'ForceUpdate': False},
 
     'Water': { 
-            '00': ( 0, 'Off'), 
-            '01': ( 1, 'On'), 
-            'ForceUpdate': False},
+        '00': ( 0, 'Off'), 
+        '01': ( 1, 'On'), 
+        'ForceUpdate': False},
 
     'Switch': { 
-            '00': ( 0,'Off'), 
-            '01': ( 1,'On') , 
-            'ForceUpdate': False},
+        '00': ( 0,'Off'), 
+        '01': ( 1,'On') , 
+        'ForceUpdate': False},
 
     'Motion': { 
-            '00': ( 0, 'Off'), 
-            '01': ( 1, 'On') , 
-            'ForceUpdate': True},
+        '00': ( 0, 'Off'), 
+        '01': ( 1, 'On') , 
+        'ForceUpdate': True},
 
     'LivoloSWL': { 
-            '00': ( 0, 'Off'), 
-            '01': ( 1, 'On'), 
-            'ForceUpdate': False },
+        '00': ( 0, 'Off'), 
+        '01': ( 1, 'On'), 
+        'ForceUpdate': False },
 
     'LivoloSWR': { 
-            '00': ( 0, 'Off'), 
-            '01': ( 1, 'On'), 
-            'ForceUpdate': False },
+        '00': ( 0, 'Off'), 
+        '01': ( 1, 'On'), 
+        'ForceUpdate': False },
 
     'INNR_RC110_SCENE': {
-            '00': (0, '00'), 
-            '01': (1, '01'), 
-            'ForceUpdate': False, 
-            "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6"},
+        '00': (0, '00'), 
+        '01': (1, '01'), 
+        'ForceUpdate': False, 
+        "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6"},
 
     'INNR_RC110_LIGHT': {
-            '00': (0,'00'), 
-            '01': (1, '01'), 
-            'ForceUpdate': False, 
-            "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop"},
+        '00': (0,'00'), 
+        '01': (1, '01'), 
+        'ForceUpdate': False, 
+        "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop"},
 
     'Button': { 
-            '01': (1,'On') , 
-            'ForceUpdate': True},
+        '01': (1,'On') , 
+        'ForceUpdate': True},
 
     'Button_3': { 
-            '00': (0, '00'), 
-            '01': (1, '10'), 
-            '02': (2, '20'), 
-            '03': (3, '30') , 
-            'ForceUpdate': True, 
-            "LevelNames": "Off|Click|Double Click|Long Click"},
+        '00': (0, '00'), 
+        '01': (1, '10'), 
+        '02': (2, '20'), 
+        '03': (3, '30') , 
+        'ForceUpdate': True, 
+        "LevelNames": "Off|Click|Double Click|Long Click"},
 
     'Generic_5_buttons': { 
-            '00': (0, '00'), 
-            '01': (1, '10'), 
-            '02': (2, '20'),
-            '03': (3, '30'), 
-            '04': (4, '40'), 
-            'ForceUpdate': True, 
-            "LevelNames": "button1|button2|button3|button4|button5"},
+        '00': (0, '00'), 
+        '01': (1, '10'), 
+        '02': (2, '20'),
+        '03': (3, '30'), 
+        '04': (4, '40'), 
+        'ForceUpdate': True, 
+        "LevelNames": "button1|button2|button3|button4|button5"},
 
     'GenericLvlControl': { 
-            'off': (1, '10'), 
-            'on': (2, '20'), 
-            'moveup': (3, '30'),
-            'movedown': (4, '40'),
-            'stop': ( 5, '50') ,
-            'ForceUpdate': True, 
-            "LevelNames": "Off|Off|On|Move Up|Move Down|Stop"},
+        'off': (1, '10'), 
+        'on': (2, '20'), 
+        'moveup': (3, '30'),
+        'movedown': (4, '40'),
+        'stop': ( 5, '50') ,
+        'ForceUpdate': True, 
+        "LevelNames": "Off|Off|On|Move Up|Move Down|Stop"},
 
     'LegrandSelector': { 
-            '00': (0, '00'), 
-            '01': (1, '10'), 
-            'moveup': (2, '20'), 
-            'movedown': (3, '30'), 
-            'stop': (4,'40'), 
-            'ForceUpdate': True, 
-            'LevelNames': 'Off|On|Move Up|Move Down|Stop'},
+        '00': (0, '00'), 
+        '01': (1, '10'), 
+        'moveup': (2, '20'), 
+        'movedown': (3, '30'), 
+        'stop': (4,'40'), 
+        'ForceUpdate': True, 
+        'LevelNames': 'Off|On|Move Up|Move Down|Stop'},
 
     'SwitchAQ2': { 
         '1': (0, '00'),
@@ -694,30 +694,35 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Click|Double Click|Long Click|Release Click|Shake"},
 
     'DSwitch': {
-            "LevelNames": "Off|Left Click|Right Click|Both Click" },
+        "LevelNames": "Off|Left Click|Right Click|Both Click" },
 
     'DButton': {
-            "LevelNames": "Off|Switch 1|Switch 2|Both_Click"},
+        "LevelNames": "Off|Switch 1|Switch 2|Both_Click"},
 
     'DButton_3': {
-            "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click"},
+        "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click"},
 
     'Toggle': {
-            "LevelNames": "Off|On|Toggle"},
+        "LevelNames": "Off|On|Toggle"},
 
     'Aqara': {
-            "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"},
+        "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"},
 
     'XCube': {
-            "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"},
+        "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"},
 
     'Vibration': {
-            "LevelNames": "Off|Tilt|Vibrate|Free Fall"},
+        '00': (0, '00'),
+        '10': (1, '10'),
+        '20': (2, '20'),
+        '30': (3, '30'),
+        'ForceUpdate': False,
+        "LevelNames": "Off|Tilt|Vibrate|Free Fall"},
 
     'SwitchIKEA': { 
-            '00': (0,'Off'), 
-            '01': (1,'On'), 
-            'ForceUpdate': True , "LevelNames": "Off|On|Push Up|Push Down|Release"},
+        '00': (0,'Off'), 
+        '01': (1,'On'), 
+        'ForceUpdate': True , "LevelNames": "Off|On|Push Up|Push Down|Release"},
 
     'Ikea_Round_OnOff': { 
         '00': '00', 
@@ -754,19 +759,19 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection"},
 
     'ThermoMode': {
-            0: 'Off', 
-            1: '10', 
-            2:'20', 
-            3:'30', 
-            4: '40',
-            'ForceUpdate': False,
-            "LevelNames": "Off|Auto|Cool|Heat|Force Heat"},
+        0: (0, 'Off'), 
+        1: (1, '10'), 
+        2: (2, '20'), 
+        3: (3, '30'), 
+        4: (4, '40'),
+        'ForceUpdate': False,
+        "LevelNames": "Off|Auto|Cool|Heat|Force Heat"},
 
     'HACTMODE': {
-            '00': ( 1, '10'),
-            '03': ( 2, '20'),
-            'ForceUpdate': False,
-            "LevelNames": "Off|Conventional|Set Point|Fil Pilote" },
+        '00': ( 1, '10'),
+        '03': ( 2, '20'),
+        'ForceUpdate': False,
+        "LevelNames": "Off|Conventional|Set Point|Fil Pilote" },
 
     'FIP': { 
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off" },
@@ -776,4 +781,14 @@ SWITCH_LVL_MATRIX = {
 
     'AlarmWD': { 
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed" },
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+  
+    }
 }
