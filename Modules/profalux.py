@@ -75,11 +75,12 @@ def profalux_stop( self, nwkid ):
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-    cmd = '03'
+            sqn = '%02x' % (int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+
+    cmd = '03' # Ask the Tilt Blind to stop moving
 
     payload = cluster_frame + sqn + cmd 
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
     return
@@ -97,10 +98,11 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
             sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-    cmd = '04'
+
+    cmd = '04' # Ask the Tilt Blind to go to a certain Level
 
     payload = cluster_frame + sqn + cmd + '%02x' %level
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveToLevelWithOnOff ++++ %s/%s Level: %s payload: %s" %( nwkid, EPout, level, payload), nwkid)
     return
 
@@ -116,14 +118,16 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
             EPout= tmpEp
 
     cluster_frame = '11'
+
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
             sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-    cmd = '05'
+
+    cmd = '05'  # Ask the Tilt Blind to open or Close
 
     payload = cluster_frame + sqn + cmd + '%02x' %OnOff
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveWithOnOff ++++ %s/%s OnOff: %s payload: %s" %( nwkid, EPout, OnOff, payload), nwkid)
 
     return
@@ -144,7 +148,8 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
             sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
-    cmd = '10'
+
+    cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
 
     if level is None and tilt:
         option = 0x02
@@ -156,7 +161,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         option = 0x03
 
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    raw_APS_request( self, nwkid, EPout, 'fc21', '0104', payload, zigate_ep=ZIGATE_EP)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
 
     return
