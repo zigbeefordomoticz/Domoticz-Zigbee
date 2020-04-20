@@ -57,7 +57,7 @@ def legrand_fake_read_attribute_response( self, nwkid ):
     loggingLegrand( self, 'Debug', "legrand_fake_read_attribute_response nwkid: %s" %nwkid, nwkid)
 
 
-def legrandReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     Domoticz.Log("legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
