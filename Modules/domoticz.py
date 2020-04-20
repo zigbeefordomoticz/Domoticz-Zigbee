@@ -12,6 +12,7 @@ import json
 import time
 
 import Domoticz
+
 from Modules.logging import loggingWidget
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL, SWITCH_LVL_MATRIX
 
@@ -1317,7 +1318,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(percent_value)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
 
@@ -1635,35 +1636,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 #value is a str containing all Orientation information to be updated on Text Widget
                 nValue = 0
                 sValue = value
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
         if 'Strenght' in ClusterType:
             if DeviceType == "Strength":
                 #value is a str containing all Orientation information to be updated on Text Widget
                 nValue = 0
                 sValue = value
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
-        if ClusterType == DeviceType == "Vibration":
-                if value =="00":
-                    data = 0
-                    state = "00"
-                elif value == "10":
-                    data = 1
-                    state = "10"
-                elif value == "20":
-                    data = 2
-                    state = "20"
-                elif value == "30":
-                    data = 3
-                    state = "30"
-                else:
-                    data = 0
-                    state = "00"
-                UpdateDevice_v2(self, Devices, x, int(data), str(state), BatteryLevel, SignalLevel, ForceUpdate_=True)
-
-        if ClusterType == DeviceType == "Lux":
-            UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel)
+        if 'Lux' in ClusterType:
+            if DeviceType == "Lux":
+                nValue = int(value)
+                sValue = value
+                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate)
 
 def ResetDevice(self, Devices, ClusterType, HbCount):
     '''
