@@ -1329,7 +1329,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         loggingWidget( self, "Log", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID)
                         UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
                     else:
-                        loggingWidget( self, "Error", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
+                        loggingWidget( self, "Log", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
+                else:
+                    loggingWidget( self, "Log", "MajDomoDevice - value: %s not found in SWITCH_LVL_MATRIX[ %s ]" %(value, DeviceType), NWKID ) 
+            
+            
 
             elif DeviceType == "DSwitch":
                 # double switch avec EP different 
@@ -1400,6 +1404,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         if Devices[x].sValue == "Off":
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+            
+            else:
+                loggingWidget( self, "Log", "MajDomoDevice - DeviceType: %s not found in  SWITCH_LVL_MATRIX" %( DeviceType), NWKID )
 
         if 'WindowCovering' in ClusterType: # 0x0102
             if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
