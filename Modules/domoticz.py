@@ -1429,7 +1429,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             # We do update only if this is a On/off
                             UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
 
-        if 'WindowsCovering' in ClusterType:
+        if 'WindowCovering' in ClusterType: # 0x0102
             if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
                 value = int(value,16)
                 loggingWidget( self, "Debug", "MajDomoDevice - %s/%s Updating %s Value: %s" %(NWKID, Ep, DeviceType,value), NWKID)
