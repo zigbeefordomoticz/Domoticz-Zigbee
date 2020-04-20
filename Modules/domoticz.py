@@ -1353,10 +1353,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if DeviceType in SWITCH_MATRIX:
                 nValue = int(value,16)
                 if nValue in SWITCH_MATRIX[ DeviceType ]:
-                    sValue = SWITCH_MATRIX[ DeviceType ][ value ]
-                _ForceUpdate =  SWITCH_MATRIX[ DeviceType ]['ForceUpdate']
-                loggingWidget( self, "Log", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_MATRIX[ DeviceType ])), NWKID)
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate)  
+                    sValue = SWITCH_MATRIX[ DeviceType ][ nValue ]
+                    _ForceUpdate =  SWITCH_MATRIX[ DeviceType ]['ForceUpdate']
+                    loggingWidget( self, "Log", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_MATRIX[ DeviceType ])), NWKID)
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate)  
 
             elif DeviceType == "DSwitch":
                 # double switch avec EP different 
