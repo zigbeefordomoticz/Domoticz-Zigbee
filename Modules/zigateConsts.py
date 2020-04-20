@@ -604,7 +604,7 @@ SWITCH_LVL_MATRIX = {
 
     'Motion': { 
             '00': ( 0, 'Off'), 
-            '01': ( 1,'On') , 
+            '01': ( 1, 'On') , 
             'ForceUpdate': True},
 
     'LivoloSWL': { 
@@ -669,23 +669,29 @@ SWITCH_LVL_MATRIX = {
             'LevelNames': 'Off|On|Move Up|Move Down|Stop'},
 
     'SwitchAQ2': { 
-            '01': (0, '00'), 
-            '02': (1, '10'), 
-            '03': (2, '20'), 
-            '04': (3, '30'), 
-            '80': (3, '30'), 
-            '255': (3, '30'), 
-            'ForceUpdate': True, 
-            "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks"},
+        '1': (0, '00'),
+        '2': (1, '10'),
+        '3': (2, '20'),
+        '4': (3, '30'),
+        '01': (0, '00'), 
+        '02': (1, '10'), 
+        '03': (2, '20'), 
+        '04': (3, '30'), 
+        '80': (3, '30'), 
+        '255': (3, '30'), 
+        'ForceUpdate': True, 
+        "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks"},
 
     'SwitchAQ3': { 
-            '01': (0, '00'), 
-            '02': (1, '10'), 
-            '16': (2, '20'), 
-            '17': (3, '30'), 
-            '18': (4, '40'), 
-            'ForceUpdate': True, 
-            "LevelNames": "Click|Double Click|Long Click|Release Click|Shake"},
+        '1': (0, '00'), 
+        '2': (1, '10'), 
+        '01': (0, '00'), 
+        '02': (1, '10'), 
+        '16': (2, '20'), 
+        '17': (3, '30'), 
+        '18': (4, '40'), 
+        'ForceUpdate': True, 
+        "LevelNames": "Click|Double Click|Long Click|Release Click|Shake"},
 
     'DSwitch': {
             "LevelNames": "Off|Left Click|Right Click|Both Click" },
