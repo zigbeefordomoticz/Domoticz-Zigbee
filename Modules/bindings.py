@@ -279,6 +279,9 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
         for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
             if 'Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]:
                 if self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase'] == 'requested':
+                    if 'Stamp' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]:
+                        if time() < self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Stamp']  + 5 : # Let's wait 5s before trying again
+                            continue
                     loggingOutput( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
                     sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['SourceIEEE']
                     destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetIEEE']
@@ -286,4 +289,4 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
                     # Perforning the bind
                     webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
-
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
