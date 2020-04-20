@@ -569,8 +569,8 @@ class BasePlugin:
 
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
-        if self.pluginconf.pluginConf['zigatePDMonHost'] and self.transport != 'None' and not self.PDMready:
-            Domoticz.Log(" zigatePDMonHost: %s, PDMready: %s" %(self.pluginconf.pluginConf['zigatePDMonHost'], self.PDMready))
+        if self.transport != 'None' and not self.PDMready:
+            loggingPlugin( self, 'Debug', "PDMready: %s requesting Get version" %( self.PDMready))
             sendZigateCmd(self, "0010", "")
             return
 
