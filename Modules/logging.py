@@ -45,10 +45,10 @@ def _loggingStatus( self, message):
     else:
         if self.loggingFileHandle is None:
             openLogFile( self )
+        Domoticz.Status( message )
         message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
         self.loggingFileHandle.write( message )
         self.loggingFileHandle.flush()
-        Domoticz.Status( message )
 
 def _loggingLog( self, message):
 
@@ -57,10 +57,10 @@ def _loggingLog( self, message):
     else: 
         if self.loggingFileHandle is None:
             openLogFile( self )
+        Domoticz.Log( message )
         message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
         self.loggingFileHandle.write( message )
         self.loggingFileHandle.flush()
-        Domoticz.Log( message )
 
 def _loggingDebug(self, message):
 

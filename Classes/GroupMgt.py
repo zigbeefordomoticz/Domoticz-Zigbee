@@ -100,10 +100,10 @@ class GroupsManagement(object):
             Domoticz.Status( message )
         else:
             if self.loggingFileHandle:
+                Domoticz.Status( message )
                 message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
                 self.loggingFileHandle.write( message )
                 self.loggingFileHandle.flush()
-                Domoticz.Status( message )
             else:
                 Domoticz.Status( message )
 
@@ -113,10 +113,10 @@ class GroupsManagement(object):
             Domoticz.Log( message )
         else: 
             if self.loggingFileHandle:
+                Domoticz.Log( message )
                 message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
                 self.loggingFileHandle.write( message )
                 self.loggingFileHandle.flush()
-                Domoticz.Log( message )
             else:
                 Domoticz.Log( message )
 
