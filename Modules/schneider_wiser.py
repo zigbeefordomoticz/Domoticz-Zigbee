@@ -10,13 +10,17 @@
 
 """
 
+from time import time
+import json
+import os.path
+
 import Domoticz
 import Modules.output
 import struct
 
 from Modules.logging import loggingOutput
 from Modules.zigateConsts import ZIGATE_EP
-from time import time
+
 
 def pollingSchneider( self, key ):
 
@@ -534,3 +538,93 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
             %( fcf, sqn, cmd, data), srcNWKID)
 
     return
+
+def importSchneiderZoning( self ):
+    """
+    Import Schneider Zoning Configuration, and populate the corresponding datastructutre
+
+    {
+        "zone1": {
+        "ieee_thermostat" : "ieee of my thermostat",
+        "actuator" : ["IEE3"],["IEEE"]
+        }
+        "zone2": {
+        "ieee_thermostat" : "ieee of my thermostat",
+        "actuator" : ["IEE3"],["IEEE"]
+        }
+    }
+    """
+
+    if self.SchneiderZone is not None:
+        # Alreday imported. We do it only once
+        return
+
+    SCHNEIDER_ZONING = 'schneider_zoning.json'
+
+    self.SchneiderZoningFilename = self.pluginconf.pluginConf['pluginConfig'] + SCHNEIDER_ZONING
+
+    if not os.path.isfile( self.SchneiderZoningFilename ) :
+        self.logging( 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
+        return
+
+    with open( self.SchneiderZoningFilename, 'rt') as handle:
+        SchneiderZoning = json.load( handle)
+
+    self.SchneiderZone = {}
+    for zone in SchneiderZoning:
+        if 'ieee_thermostat' not in SchneiderZoning[zone]:
+            # Missing Thermostat
+            self.logging( 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone])
+            continue
+
+        if SchneiderZoning[zone]['ieee_thermostat'] not in self.IEEE2NWK:
+            # Thermostat IEEE not known!
+            self.logging( 'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
+            continue
+        
+        self.SchneiderZone[ zone ] = {}
+        self.SchneiderZone[ zone ]['Thermostat'] = {}
+
+        self.SchneiderZone[ zone ]['Thermostat']['IEEE'] = SchneiderZoning[zone]['ieee_thermostat']
+        self.SchneiderZone[ zone ]['Thermostat']['NWKID'] = self.IEEE2NWK[ SchneiderZoning[zone]['ieee_thermostat'] ]
+        self.SchneiderZone[ zone ]['Thermostat']['HACT'] = {}
+        
+        if 'actuator' not in SchneiderZoning:
+            # We just have a simple Thermostat
+            self.logging( 'Debug', "importSchneiderZoning - Not actuators for this Zone: %s" %zone)
+            continue
+
+        for hact in SchneiderZoning[zone]['actuator']:
+            _nwkid = self.IEEE2NWK[ hact ]
+            if hact not in self.IEEE2NWK:
+                # Unknown in IEEE2NWK
+                self.logging( 'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
+                continue
+
+            if self.IEEE2NWK[ hact ] not in self.ListOfDevices:
+                # Unknown in ListOfDevices
+                self.logging( 'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
+                continue
+            
+            self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
+            self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ]['IEEE'] = hact
+
+    # At that stage we have imported all informations
+    self.logging( 'Log', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
+
+    return
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
