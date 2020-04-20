@@ -1326,14 +1326,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     if len(SWITCH_LVL_MATRIX[ DeviceType ][ value] ) == 2:
                         nValue, sValue = SWITCH_LVL_MATRIX[ DeviceType ][ value ]
                         _ForceUpdate =  SWITCH_LVL_MATRIX[ DeviceType ]['ForceUpdate']
-                        loggingWidget( self, "Log", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID)
+                        loggingWidget( self, "Debug", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID)
                         UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
                     else:
-                        loggingWidget( self, "Log", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
+                        loggingWidget( self, "Error", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
                 else:
-                    loggingWidget( self, "Log", "MajDomoDevice - value: %s not found in SWITCH_LVL_MATRIX[ %s ]" %(value, DeviceType), NWKID ) 
-            
-            
+                    loggingWidget( self, "Error", "MajDomoDevice - value: %s not found in SWITCH_LVL_MATRIX[ %s ]" %(value, DeviceType), NWKID ) 
 
             elif DeviceType == "DSwitch":
                 # double switch avec EP different 
@@ -1406,7 +1404,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
             
             else:
-                loggingWidget( self, "Log", "MajDomoDevice - DeviceType: %s not found in  SWITCH_LVL_MATRIX" %( DeviceType), NWKID )
+                loggingWidget( self, "Debug", "MajDomoDevice - DeviceType: %s not found in  SWITCH_LVL_MATRIX" %( DeviceType), NWKID )
 
         if 'WindowCovering' in ClusterType: # 0x0102
             if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
