@@ -1090,7 +1090,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue = 0
                 sValue = "%s;%s;%s;%s;%s;%s" %(summation,0,0,0,conso,0)
                 loggingWidget( self, "Debug", "MajDomoDevice P1Meter : " + sValue, NWKID)
-                UpdateDevice_v2(self, Devices, x, 0, str(sValue), BatteryLevel, SignalLevel
+                UpdateDevice_v2(self, Devices, x, 0, str(sValue), BatteryLevel, SignalLevel)
 
             elif DeviceType == "Power" and ( Attribute_== '' or clusterID == "000c"):  # kWh
                 nValue = round(float(value),2)
@@ -1104,47 +1104,47 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 (DeviceType == "Power" and clusterID == "000c" ):  # kWh
 
             # Let's check if we have Summation in the datastructutre
-            summation = 0
-            if '0702' in self.ListOfDevices[NWKID]['Ep'][Ep]:
-                if '0000' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
-                    if self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != {} and self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '' and \
-                            self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '0':
-                        summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
+                summation = 0
+                if '0702' in self.ListOfDevices[NWKID]['Ep'][Ep]:
+                    if '0000' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
+                        if self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != {} and self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '' and \
+                                self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'] != '0':
+                            summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
 
-            Options = {}
-            # Do we have the Energy Mode calculation already set ?
-            if 'EnergyMeterMode' in Devices[ x ].Options:
-                # Yes, let's retreive it
-                Options = Devices[ x ].Options
-            else:
-                # No, let's set to compute
-                Options['EnergyMeterMode'] = '0' # By default from device
+                Options = {}
+                # Do we have the Energy Mode calculation already set ?
+                if 'EnergyMeterMode' in Devices[ x ].Options:
+                    # Yes, let's retreive it
+                    Options = Devices[ x ].Options
+                else:
+                    # No, let's set to compute
+                    Options['EnergyMeterMode'] = '0' # By default from device
 
-            # Did we get Summation from Data Structure
-            if summation:
-                # We got summation from Device, let's check that EnergyMeterMode is
-                # correctly set to 0, if not adjust
-                if Options['EnergyMeterMode'] != '0':
-                    oldnValue = Devices[ x ].nValue
-                    oldsValue = Devices[ x ].sValue
-                    Options = {}
-                    Options['EnergyMeterMode'] = '0'
-                    Devices[ x ].Update( oldnValue, oldsValue, Options=Options )
-            else:
-                # No summation retreive, so we make sure that EnergyMeterMode is
-                # correctly set to 1 (compute), if not adjust
-                if Options['EnergyMeterMode'] != '1':
-                    oldnValue = Devices[ x ].nValue
-                    oldsValue = Devices[ x ].sValue
-                    Options = {}
-                    Options['EnergyMeterMode']='1'
-                    Devices[ x ].Update( oldnValue, oldsValue, Options=Options )
+                # Did we get Summation from Data Structure
+                if summation:
+                    # We got summation from Device, let's check that EnergyMeterMode is
+                    # correctly set to 0, if not adjust
+                    if Options['EnergyMeterMode'] != '0':
+                        oldnValue = Devices[ x ].nValue
+                        oldsValue = Devices[ x ].sValue
+                        Options = {}
+                        Options['EnergyMeterMode'] = '0'
+                        Devices[ x ].Update( oldnValue, oldsValue, Options=Options )
+                else:
+                    # No summation retreive, so we make sure that EnergyMeterMode is
+                    # correctly set to 1 (compute), if not adjust
+                    if Options['EnergyMeterMode'] != '1':
+                        oldnValue = Devices[ x ].nValue
+                        oldsValue = Devices[ x ].sValue
+                        Options = {}
+                        Options['EnergyMeterMode']='1'
+                        Devices[ x ].Update( oldnValue, oldsValue, Options=Options )
 
-            nValue = round(float(value),2)
-            summation = round(float(summation),2)
-            sValue = "%s;%s" % (nValue, summation)
-            loggingWidget( self, "Debug", "MajDomoDevice Meter : " + sValue)
-            UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+                nValue = round(float(value),2)
+                summation = round(float(summation),2)
+                sValue = "%s;%s" % (nValue, summation)
+                loggingWidget( self, "Debug", "MajDomoDevice Meter : " + sValue)
+                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
         if 'Voltage' in ClusterType:  # Volts
             # value is str
