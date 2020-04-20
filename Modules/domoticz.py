@@ -1326,35 +1326,36 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
 
             SWITCH_MATRIX = {
-                'Plug': { '01': 'On', '00': 'Off', 'ForceUpdate': False },
-                'Door':  { '00': 'Closed', '01': 'Open', 'ForceUpdate': False},
-                'Smoke': { '00': 'Off', '01': 'On', 'ForceUpdate': False},
-                'Water': { '00': 'Off', '01': 'On', 'ForceUpdate': False},
-                'Switch': { '00': 'Off', '01': 'On' , 'ForceUpdate': False},
-                'Motion': { '00': 'Off', '01': 'On' , 'ForceUpdate': True},
-                'LivoloSWL': { '00': 'Off', '01': 'On', 'ForceUpdate': False },
-                'LivoloSWR': { '00': 'Off', '01': 'On', 'ForceUpdate': False },
-                'INNR_RC110_SCENE': {'00': '00', '01': '01', 'ForceUpdate': False},
-                'INNR_RC110_LIGHT': {'00': '00', '01': '01', 'ForceUpdate': False},
-                'Button': { '01': 'On' , 'ForceUpdate': True},
-                'Button_3': { '00': '00', '01': '10', '02': '20', '03': '30' , 'ForceUpdate': True},
-                'Generic_5_buttons': { '00': '00', '01': '10', '02': '20', '03': '30', '04': '40', 'ForceUpdate': True},
-                'GenericLvlControl': { '00': '00', '01': '10', '02': '20', '03': '30', '04': '40', '05': '50', 'ForceUpdate': True},
-                'LegrandSelector': { '00': '00', '01': '10', '02': '20', '03': '30', '04': '40', 'ForceUpdate': True},
-                'SwitchAQ2': { '01': '00', '02': '10', '03': '20', '04': '30', '80': '30', '255': '30', 'ForceUpdate': True},
-                'SwitchAQ3': { '01': '00', '02': '10', '16': '20', '17': '30', '18': '40', 'ForceUpdate': True},
-                'SwitchIKEA': { '00': 'Off', '01': 'On', 'ForceUpdate': True },
-                'Ikea_Round_OnOff': { '00': '00', '01':'10', 'ForceUpdate': True},
-                'Ikea_Round_5b': {'00': '00','01': '10','02': '20','03': '30','04': '40','05': '50',
-                                  '06': '60','07': '70','08': '80','09': '90','10': '100','11': '110',
-                                  '12': '120','13': '130', 'ForceUpdate': True}
+                'Plug': { 1: 'On', 0: 'Off', 'ForceUpdate': False },
+                'Door':  { 0: 'Closed', 1: 'Open', 'ForceUpdate': False},
+                'Smoke': { 0: 'Off', 1: 'On', 'ForceUpdate': False},
+                'Water': { 0: 'Off', 1: 'On', 'ForceUpdate': False},
+                'Switch': { 0: 'Off', 1: 'On' , 'ForceUpdate': False},
+                'Motion': { 0: 'Off', 1: 'On' , 'ForceUpdate': True},
+                'LivoloSWL': { 0: 'Off', 1: 'On', 'ForceUpdate': False },
+                'LivoloSWR': { 0: 'Off', 1: 'On', 'ForceUpdate': False },
+                'INNR_RC110_SCENE': {0: '00', 1: '01', 'ForceUpdate': False},
+                'INNR_RC110_LIGHT': {0: '00', 1: '01', 'ForceUpdate': False},
+                'Button': { 1: 'On' , 'ForceUpdate': True},
+                'Button_3': { 0: '00', 1: '10', 2: '20', 3: '30' , 'ForceUpdate': True},
+                'Generic_5_buttons': { 0: '00', 1: '10', 2: '20', 3: '30', 4: '40', 'ForceUpdate': True},
+                'GenericLvlControl': { 0: '00', 1: '10', 2: '20', 3: '30', 4: '40', 5: '50', 'ForceUpdate': True},
+                'LegrandSelector': { 0: '00', 1: '10', 2: '20', 3: '30', 4: '40', 'ForceUpdate': True},
+                'SwitchAQ2': { 1: '00', 2: '10', 3: '20', 4: '30', 80: '30', 255: '30', 'ForceUpdate': True},
+                'SwitchAQ3': { 1: '00', 2: '10', 16: '20', 17: '30', 18: '40', 'ForceUpdate': True},
+                'SwitchIKEA': { 0: 'Off', 1: 'On', 'ForceUpdate': True },
+                'Ikea_Round_OnOff': { 0: '00', 1:'10', 'ForceUpdate': True},
+                'Ikea_Round_5b': { 0: '00', 1: '10',2: '20',3: '30',4: '40',5: '50',
+                                  6: '60',7: '70',8: '80',9: '90',10: '100',11: '110',
+                                  12: '120',13: '130', 'ForceUpdate': True}
             }
 
             if DeviceType in SWITCH_MATRIX:
                 nValue = int(value,16)
-                sValue = SWITCH_MATRIX[ DeviceType ][ value ]
+                if nValue in SWITCH_MATRIX[ DeviceType ]:
+                    sValue = SWITCH_MATRIX[ DeviceType ][ value ]
                 _ForceUpdate =  SWITCH_MATRIX[ DeviceType ]['ForceUpdate']
-                loggingWidget( self, "Debug", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_MATRIX[ DeviceType ])), NWKID)
+                loggingWidget( self, "Log", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_MATRIX[ DeviceType ])), NWKID)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate)  
 
             elif DeviceType == "DSwitch":
