@@ -1588,21 +1588,25 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if DeviceType == "Aqara":
                 if Ep == "02":  # Magic Cube Aqara
                     loggingWidget( self, "Debug", "MajDomoDevice - XCube update device with data = " + str(value), NWKID)
-                    UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                    nValue = int(value)
+                    sValue = value
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
                 if Ep == "03":  # Magic Cube Aqara Rotation
                     if Attribute_ == '0055': # Rotation Angle
                         # Update Text widget ( unit + 1 )
-                        UpdateDevice_v2(self, Devices, x + 1, 0 , value, BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                        nValue = 0
+                        sValue = value
+                        UpdateDevice_v2(self, Devices, x + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
                     else:
-                        state = value
-                        data = value
-                        if value == "80":
-                            data = 8
-                        elif value == "90":
-                            data = 9
-                    loggingWidget( self, "Debug", "MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, data, state), NWKID)
-                    UpdateDevice_v2(self, Devices, x, int(value), str(value), BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                        nValue = int(value)
+                        sValue =  value
+                        if nValue == 80:
+                            nValue = 8
+                        elif nValue == 90:
+                            nValue = 9
+                    loggingWidget( self, "Debug", "MajDomoDevice - XCube update device with data = %s , nValue: %s sValue: %s" %(value, nValue, sValue), NWKID)
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             elif DeviceType == "XCube" and Ep == "02":  # cube xiaomi
                 if value == "0000":  # shake
