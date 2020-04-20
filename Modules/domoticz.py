@@ -4,20 +4,16 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_domoticz.py
+    Module: domoticz.py
     Description: All interactions with Domoticz database
 """
 
-import binascii
 import json
-import struct
 import time
 
 import Domoticz
 from Modules.logging import loggingWidget
-from Modules.output import schneider_EHZBRTS_thermoMode
 from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
-
 
 def CreateDomoDevice(self, Devices, NWKID):
     """
@@ -986,6 +982,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     x = 0
     # For each single Domoticz Widget (Device) we will look if the Widget needs update  from that request
     for x in Devices:
+
+        # Search for the Widgets which have IEEE as the DeviceID
         if Devices[x].DeviceID != DeviceID_IEEE:
             continue
 
@@ -996,8 +994,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         loggingWidget( self, "Debug", "MajDomoDevice - " + str(self.ListOfDevices[NWKID]['Ep'][Ep]), NWKID)
 
         # Before plugin v3.0 pragma Type was only available on full scope (not Endpoint specific)
-        # 
-        newFashon = True
+        # pragmaTypeV3 is True if we are in the new style. This means we have found a Type in Endpoint
+        pragmaTypeV3 = True
         if 'ClusterType' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['ClusterType'] != {}:
                 # We are in the old fasho V. 3.0.x Where ClusterType has been migrated from Domoticz
@@ -1008,8 +1006,10 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
                     self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID), NWKID)
                 DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
-                newFashon = False
-        if newFashon:
+                pragmaTypeV3 = False
+        #At that stage we have pragmaTypeV3 which indicate if we are post or pre V3
+        # Now if we are post V3 we have Type in Endpoint, we need to see if we have only One Endpoint with Type, or several
+        if pragmaTypeV3:
             # Are we in a situation with one Devices whatever Eps are ?
             # To do that, check there is only 1 ClusterType even if several EPs
             nbClusterType = 0
@@ -1021,14 +1021,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             loggingWidget( self, "Debug", "MajDomoDevice - We have " + str(nbClusterType) + " EPs with ClusterType", NWKID)
 
-            if nbClusterType == 1:  # All Updates are redirected to the same EP
-                # We must redirect all to the EP where there is a ClusterType
-                # ptEP_single is be the Only  EP where we have found ClusterType
+            if nbClusterType == 1:  
+                # All status to a single Endpoint
+                # 
                 for key in self.ListOfDevices[NWKID]['Ep'][ptEP_single]['ClusterType']:
                     if str(ID) == str(key):
                         DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEP_single]['ClusterType'][key])
+                        break
 
             else:
+                # Status must be done accordingly to the Endpoint
                 ptEp_multi = Ep
                 loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
                     self.ListOfDevices[NWKID]['Ep'][ptEp_multi]) + " for : " + str(ID), NWKID)
@@ -1038,17 +1040,21 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     for key in self.ListOfDevices[NWKID]['Ep'][ptEp_multi]['ClusterType']:
                         if str(ID) == str(key):
                             DeviceType = str(self.ListOfDevices[NWKID]['Ep'][ptEp_multi]['ClusterType'][key])
+                            break
                 else:
                     loggingWidget( self, "Debug", "MajDomoDevice - receive an update on an Ep which doesn't have any ClusterType !", NWKID)
                     loggingWidget( self, "Debug", "MajDomoDevice - Network Id : " + NWKID + " Ep : " + str(
                         ptEp_multi) + " Expected Cluster is " + str(clusterID), NWKID)
                     continue
+        
+        # Check that we have found one DeviceType ( Device Idx )
         if DeviceType == "":  # No match with ClusterType
             continue
 
         loggingWidget( self, "Debug", "MajDomoDevice - NWKID: %s SwitchType: %s, DeviceType: %s, ClusterType: %s, old_nVal: %s , old_sVal: %s" \
                         % (NWKID, Devices[x].SwitchType, DeviceType, ClusterType, Devices[x].nValue, Devices[x].sValue), NWKID)
 
+        # Manage battery and Signal level
         if self.ListOfDevices[NWKID]['RSSI'] != 0:
             SignalLevel = self.ListOfDevices[NWKID]['RSSI']
         else:
@@ -1058,32 +1064,46 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         else:
             BatteryLevel = 255
 
-        if ('Power' in ClusterType and DeviceType == 'P1Meter' and Attribute_ == '0000'):
-            conso = 0
-            if '0702' in self.ListOfDevices[NWKID]['Ep'][Ep]:
-                if '0400' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
-                    conso = round(float(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0400']),2)
+        # Start the Big block where to manage the update.
+        # we have know identify the Device Idx to be updated if applicable
+        # What we have:
+        # ID         : Widget Idx
+        # ClusterType: This the Cluster action extracted for the particular Endpoint
+        # DeviceType : This is the Type of Widget defined at Widget Creation
+        # value      : this is value comming mostelikely from readCluster. Be carreful depending on the cluster, the value is String or Int
+        # Attribute_ : If used This is the Attribute from readCluster. Will help to route to the right action
+        # Color_     : If used This is the color value to be set
 
-            summation = round(float(value),2)
-            sValue = "%s;%s;%s;%s;%s;%s" %(summation,0,0,0,conso,0)
-            loggingWidget( self, "Debug", "MajDomoDevice P1Meter : " + sValue, NWKID)
-            UpdateDevice_v2(self, Devices, x, 0, str(sValue), BatteryLevel, SignalLevel)
+        # Power and Meter usage are triggered only with the Instant Power usage.
+        # it is assumed that if there is also summation provided by the device, that
+        # such information is stored on the data structuture and here we will retreive it.
+        if 'Power' in ClusterType: # Instant Power/Watts
+            # value is expected as String
+            if DeviceType == 'P1Meter' and Attribute_ == '0000' :
+                # P1Meter report Instant and Cummulative Power.
+                # We need to retreive the Cummulative Power.
+                conso = 0
+                if '0702' in self.ListOfDevices[NWKID]['Ep'][Ep]:
+                    if '0400' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
+                        conso = round(float(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0400']),2)
+                summation = round(float(value),2)
+                nValue = 0
+                sValue = "%s;%s;%s;%s;%s;%s" %(summation,0,0,0,conso,0)
+                loggingWidget( self, "Debug", "MajDomoDevice P1Meter : " + sValue, NWKID)
+                UpdateDevice_v2(self, Devices, x, 0, str(sValue), BatteryLevel, SignalLevel
 
-        # Instant Watts. 
-        # PowerMeter is for Compatibility , as it was created as a PowerMeter device.
-        # if ( DeviceType=="Power" or DeviceType=="PowerMeter") and clusterID == "000c":
-        if ('Power' in ClusterType and DeviceType == "Power" and Attribute_== '') or \
-                (clusterID == "000c" and DeviceType == "Power"):  # kWh
-            nValue = round(float(value),2)
-            sValue = value
-            loggingWidget( self, "Debug", "MajDomoDevice Power : " + sValue, NWKID)
-            UpdateDevice_v2(self, Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel)
+            elif DeviceType == "Power" and ( Attribute_== '' or clusterID == "000c"):  # kWh
+                nValue = round(float(value),2)
+                sValue = value
+                loggingWidget( self, "Debug", "MajDomoDevice Power : " + sValue, NWKID)
+                UpdateDevice_v2(self, Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel)
 
-        # Meter Usage. EnergyMode 0 from Device, 1 from Compute
-        if 'Meter' in ClusterType and \
-                (DeviceType == "Meter" and Attribute_== '') or \
-                (clusterID == "000c" and DeviceType == "Power"):  # kWh
+        if 'Meter' in ClusterType: # Meter Usage. 
+            # value is string an represent the Instant Usage
+            if (DeviceType == "Meter" and Attribute_== '') or \
+                (DeviceType == "Power" and clusterID == "000c" ):  # kWh
 
+            # Let's check if we have Summation in the datastructutre
             summation = 0
             if '0702' in self.ListOfDevices[NWKID]['Ep'][Ep]:
                 if '0000' in self.ListOfDevices[NWKID]['Ep'][Ep]['0702']:
@@ -1092,24 +1112,27 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         summation = int(self.ListOfDevices[NWKID]['Ep'][Ep]['0702']['0000'])
 
             Options = {}
+            # Do we have the Energy Mode calculation already set ?
             if 'EnergyMeterMode' in Devices[ x ].Options:
+                # Yes, let's retreive it
                 Options = Devices[ x ].Options
             else:
+                # No, let's set to compute
                 Options['EnergyMeterMode'] = '0' # By default from device
 
+            # Did we get Summation from Data Structure
             if summation:
-                # Make sure we are set as from Device
+                # We got summation from Device, let's check that EnergyMeterMode is
+                # correctly set to 0, if not adjust
                 if Options['EnergyMeterMode'] != '0':
                     oldnValue = Devices[ x ].nValue
                     oldsValue = Devices[ x ].sValue
                     Options = {}
-                    Options['EnergyMeterMode']='0'
+                    Options['EnergyMeterMode'] = '0'
                     Devices[ x ].Update( oldnValue, oldsValue, Options=Options )
             else:
-                # Report summation as Conso
-                #summation = value
-
-                # Make sure we are set as Compute
+                # No summation retreive, so we make sure that EnergyMeterMode is
+                # correctly set to 1 (compute), if not adjust
                 if Options['EnergyMeterMode'] != '1':
                     oldnValue = Devices[ x ].nValue
                     oldsValue = Devices[ x ].sValue
@@ -1121,64 +1144,73 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             summation = round(float(summation),2)
             sValue = "%s;%s" % (nValue, summation)
             loggingWidget( self, "Debug", "MajDomoDevice Meter : " + sValue)
-
             UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType == DeviceType == "Voltage":  # Volts
-            nValue = round(float(value),2)
-            sValue = "%s;%s" % (nValue, nValue)
-            loggingWidget( self, "Debug", "MajDomoDevice Voltage : " + sValue, NWKID)
-            UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
-
-        if 'ThermoSetpoint' in ClusterType and DeviceType == 'ThermoSetpoint' and Attribute_ in ( '4003', '0012'):
-
-            setpoint = round(float(value),2)
-            # Normalize SetPoint value with 2 digits
-            Round = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
-            setpoint = Round( float(setpoint), 2 )
-
-            loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
-            UpdateDevice_v2(self, Devices, x, 0, setpoint, BatteryLevel, SignalLevel)
-
-        # Wiser specific Thermostat Mode
-        if 'ThermoMode' in ClusterType and DeviceType == 'ThermoModeEHZBRTS' and Attribute_ in ( '001c', 'e010'):
-            loggingWidget( self, "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
-            # Decode value
-            THERMOSTAT_MODE = {
-                    0:0, 1:10, 2:20, 3:30, 4:40, 5:50, 6:60 }
-
-            if value in THERMOSTAT_MODE:
-                sValue = THERMOSTAT_MODE[ value ]
-                UpdateDevice_v2(self, Devices, x, value, str(sValue), BatteryLevel, SignalLevel)
-
-        # Wiser specific Fil Pilote
-        if 'ThermoMode' in ClusterType and DeviceType == 'HACTMODE' and Attribute_ == "e011":
-            loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s" %(value), NWKID)
-            if value == '00':  # Conventional
-                nValue = 1
-                sValue = '10'
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
-            elif value == '02': #Setpoint
-                nvalue = 2
-                sValue = '20'
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
-            elif value == '03':  # FIP
-                nValue = 3 
-                sValue = '30'
-                UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
-
-        if 'ThermoMode' in ClusterType and DeviceType == 'ThermoMode' and Attribute_ == '001c':
-            loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode %s" %value, NWKID)
-            if isinstance( value, str):
-                nValue = int(value,16)
-            else:
-                nValue = value
-            if nValue in THERMOSTAT_MODE_2_LEVEL:
-                sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
+        if 'Voltage' in ClusterType:  # Volts
+            # value is str
+            if DeviceType == "Voltage": 
+                nValue = round(float(value),2)
+                sValue = "%s;%s" % (nValue, nValue)
+                loggingWidget( self, "Debug", "MajDomoDevice Voltage : " + sValue, NWKID)
                 UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
-                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if ClusterType == "Temp":  # temperature
+        if 'ThermoSetpoint' in ClusterType: # Thermostat SetPoint
+            # value is a str
+            if  DeviceType == 'ThermoSetpoint' and Attribute_ in ( '4003', '0012'):
+                setpoint = round(float(value),2)
+                # Normalize SetPoint value with 2 digits
+                strRound = lambda x, n: eval('"%.' + str(int(n)) + 'f" % ' + repr(x))
+                nValue = 0
+                sValue = strRound( float(setpoint), 2 )
+                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Setpoint: %s %s" %(0,setpoint), NWKID)
+                UpdateDevice_v2(self, Devices, x, 0, sValue, BatteryLevel, SignalLevel)
+    
+        if 'ThermoMode' in ClusterType: # Thermostat Mode
+           
+            if DeviceType == 'ThermoModeEHZBRTS' and Attribute_ in ( '001c', 'e010'): # Thermostat Wiser
+                 # value is str
+                loggingWidget( self, "Debug", "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
+                THERMOSTAT_MODE = { 0:'00', # Mode Off
+                    1:'10', # Manual
+                    2:'20', # Schedule
+                    3:'30', # Energy Saver
+                    4:'40', # Schedule Ebergy Saver
+                    5:'50', # Holiday Off
+                    6:'60'  # Holiday Frost Protection
+                    }
+                _mode = int(value,16)
+                if _mode in THERMOSTAT_MODE:
+                    nValue = _mode
+                    sValue = THERMOSTAT_MODE[ _mode ]
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)    
+
+            elif DeviceType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
+                 # value is str
+                loggingWidget( self, "Debug", "MajDomoDevice ThermoMode HACTMODE: %s" %(value), NWKID)
+                THERMOSTAT_MODE = { 0:'00', # Conventional
+                    1:'10', 
+                    2:'20', # Setpoint
+                    3:'30'  # FIP
+                    }
+                _mode = int(value,16)
+
+                if _mode in THERMOSTAT_MODE:
+                    nValue = _mode
+                    sValue = THERMOSTAT_MODE[ _mode ]
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)            
+                    
+            elif DeviceType == 'ThermoMode' and Attribute_ == '001c':
+                # value seems to come as int or str. To be fixed
+                loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode %s" %value, NWKID)
+                nValue = value
+                if isinstance( value, str):
+                    nValue = int(value,16)
+                if nValue in THERMOSTAT_MODE_2_LEVEL:
+                    sValue = THERMOSTAT_MODE_2_LEVEL[nValue]
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
+                    loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
+
+        if 'Temp' in ClusterType:  # temperature
             loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -1197,20 +1229,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewNvalue = round(value + adjvalue,1)
                 NewSvalue = str(round(value + adjvalue,1))
                 loggingWidget( self, "Debug", "MajDomoDevice Temp update: %s - %s" %(NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
             elif DeviceType == "Temp+Hum":
                 NewNvalue = 0
                 NewSvalue = '%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2])
                 loggingWidget( self, "Debug", "MajDomoDevice Temp+Hum update: %s - %s" %(NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
             elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
                 NewNvalue = 0
                 NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Humi":  # humidite
+        if 'Humi' in ClusterType:  # humidite
             loggingWidget( self, "Debug", "MajDomoDevice Humi: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
             CurrentnValue = Devices[x].nValue
             CurrentsValue = Devices[x].sValue
@@ -1232,20 +1264,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewNvalue = value
                 NewSvalue = "%s" %humiStatus
                 loggingWidget( self, "Debug", "MajDomoDevice Humi update: %s - %s" %(NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
             elif DeviceType == "Temp+Hum":  # temp+hum xiaomi
                 NewNvalue = 0
                 NewSvalue = '%s;%s;%s' % (SplitData[0], value, humiStatus)
                 loggingWidget( self, "Debug", "MajDomoDevice Temp+Hum update: %s - %s" %(NewNvalue, NewSvalue))
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
             elif DeviceType == "Temp+Hum+Baro":  # temp+hum+Baro xiaomi
                 NewNvalue = 0
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == "Baro":  # barometre
+        if 'Baro' in ClusterType:  # barometre
             loggingWidget( self, "Debug", "MajDomoDevice Baro: %s, DeviceType: %s" %(value,DeviceType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -1274,11 +1306,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             if DeviceType == "Baro":
                 NewSvalue = '%s;%s' %(baroValue, Bar_forecast)
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
             elif DeviceType == "Temp+Hum+Baro":
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], SplitData[1], SplitData[2], baroValue, Bar_forecast)
-                UpdateDevice_v2(self, Devices, x, NewNvalue, str(NewSvalue), BatteryLevel, SignalLevel)
+                UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
         if ClusterType == "Orientation" and DeviceType == "Orientation":
             UpdateDevice_v2(self, Devices, x, 0, str(value), BatteryLevel, SignalLevel)
