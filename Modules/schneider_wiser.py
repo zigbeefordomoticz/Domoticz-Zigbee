@@ -12,6 +12,7 @@
 
 import Domoticz
 import Modules.output
+import struct
 
 from Modules.logging import loggingOutput
 from Modules.zigateConsts import ZIGATE_EP
@@ -285,6 +286,26 @@ def schneider_setpoint( self, key, setpoint):
     #                                                             |--|---------------------------> Command 0xe0
     #                                                        |--|--------------------------------> SQN
     #                                                   |--|-------------------------------------> Cluster Frame
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
+            EPout = '0b'
+            ClusterID = '0201'
+            attr = '0012'
+            NWKID = key
+            if EPout not in self.ListOfDevices[NWKID]['Ep']:
+                self.ListOfDevices[NWKID]['Ep'][EPout] = {}
+            if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
+                self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
+            if not isinstance( self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] , dict):
+                self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
+            if attr not in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
+                self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = {}
+            if 'Ep' in self.ListOfDevices[NWKID]:
+                if EPout in self.ListOfDevices[NWKID]['Ep']:
+                    if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
+                        if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
+                            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
+            return 
 
     cluster_frame = '11'
     sqn = '00'
@@ -412,7 +433,44 @@ def schneiderRenforceent( self, NWKID):
 
     return rescheduleAction
 
-def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, attr, dataType, data):
+def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawAttr):
+    loggingOutput( self, 'Log', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s,data: %s" \
+            %(NWKID, EPout, ClusterID, sqn, rawAttr ), NWKID)
+
+    attr = rawAttr[2:4] + rawAttr[0:2]
+    data = ''
+    dataType = ''
+    payload = ''
+    if attr == 'e010':
+        dataType = '30'
+        data = '01'
+    elif attr == '0015': #min setpoint temp
+        dataType = '29'
+        data = '0032' #0.5 degree
+    elif attr == '0016': #max setpoint temp
+        dataType = '29'
+        data = '0DAC' #35.00 degree
+    elif attr == '0012': #occupied setpoint temp
+        dataType = '29'
+
+        if EPout not in self.ListOfDevices[NWKID]['Ep']:
+            self.ListOfDevices[NWKID]['Ep'][EPout] = {}
+        if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
+            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
+        if not isinstance( self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] , dict):
+            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
+        if attr not in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
+            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = {}
+        if 'Ep' in self.ListOfDevices[NWKID]:
+            if EPout in self.ListOfDevices[NWKID]['Ep']:
+                if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
+                    if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
+                        if self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] == {}:
+                            loggingOutput( self, 'Log', "Schneider send attributes: could not find value, setting 20",NWKID)
+                            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = 2000
+                        loggingOutput( self, 'Log', "Schneider send attributes: FOUND value %s"%(self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]),NWKID)
+                        value = self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]
+                        data = '%04X' %value
 
     cmd = "01"
     status = "00"
@@ -422,16 +480,40 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, attr
             %(NWKID, EPout, ClusterID, sqn, attr, dataType, data ), NWKID)
 
     if dataType == '29':
-        payload = cluster_frame + sqn + cmd + attr + status + dataType + data[2:4] + data[0:2]
+        payload = cluster_frame + sqn + cmd + rawAttr + status + dataType + data[2:4] + data[0:2]
     elif dataType == '30':
-        payload = cluster_frame + sqn + cmd + attr + status + dataType + data
+        payload = cluster_frame + sqn + cmd + rawAttr + status + dataType + data
 
     loggingOutput( self, 'Log', "Schneider calls raw_APS_request payload %s" \
             %(payload), NWKID)
 
     Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
 
-def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+
+def updateThermostat (self, Devices, NWKID, srcEp, ClusterID, data):
+
+    # Check if nwkid is the ListOfDevices
+
+    if NWKID not in self.ListOfDevices:
+        return
+    sTemp = data [4:8]
+    temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
+    domoTemp = round(temp/100,1)
+
+    loggingOutput( self, 'Log', "Schneider updateThermostat data:%s , temp:%s , domoTemp : %s" \
+            %(data, temp, domoTemp), NWKID)
+
+    # Look for TargetSetPoint
+    from Modules.domoticz import MajDomoDevice
+    MajDomoDevice(self, Devices, NWKID,  srcEp, ClusterID, domoTemp, '0012')
+    if 'Ep' in self.ListOfDevices[NWKID]:
+        if srcEp in self.ListOfDevices[NWKID]['Ep']:
+            if ClusterID in self.ListOfDevices[NWKID]['Ep'][srcEp]:
+                if '0012' in self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]:
+                    self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]['0012'] = temp
+
+
+def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
 
     loggingOutput( self, 'Log', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
@@ -442,45 +524,13 @@ def schneiderReadRawAPS(self, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPa
     cmd = MsgPayload[4:6] # uint8
     data = MsgPayload[6:] # all the rest
 
-    if data == '10e0':
-       schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '30', "01")
-    elif data == '1500': #min setpoint temp
-        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '29', "0032")#0.5 degree
-    elif data == '1600': #max setpoint temp
-        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '29', "0DAC")#35.00 degree
-    elif data == '1200': #occupied setpoint temp
-        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data, '29', "079E") #19.50 degree
+    if cmd == '00': #read attributes
+        loggingOutput( self, 'Log','Schneider cmd 0x00',srcNWKID)
+        schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
+    elif cmd == 'e0': # setpoint from thermostat
+        updateThermostat(self, Devices, srcNWKID, srcEp, ClusterID, data)
 
     loggingOutput( self, 'Log', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
             %( fcf, sqn, cmd, data), srcNWKID)
-
-    if 'WebBind' in self.ListOfDevices[srcNWKID]:
-       for Ep in list(self.ListOfDevices[srcNWKID]['WebBind']):
-           for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
-               if self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase'] == 'requested':
-                   Domoticz.Error ("FOUND !!!!!!!!!!! bind to be redone " + srcNWKID)
-
-                   # Write Location to 0x0000/0x5000 for all devices
-                   manuf_id = "0000"
-                   manuf_spec = "00"
-                   cluster_id = "%04x" %0x0000
-                   Hattribute = "%04x" %0x0010
-                   data_type = "42"
-                   data = 'Zigate_zone4'.encode('utf-8').hex()  # Zigate zone
-                   loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s data: %s"
-                            %(srcNWKID,data,cluster_id,Hattribute,data_type,data), nwkid=srcNWKID)
-                   Modules.output.write_attribute( self, srcNWKID, ZIGATE_EP, Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
-
-                   # Set Language
-                   manuf_id = "105e"
-                   manuf_spec = "01"
-                   cluster_id = "%04x" %0x0000
-                   Hattribute = "%04x" %0x5011
-                   data_type = "42" # String
-                   data = 'en'.encode('utf-8').hex()   # 'en'
-                   loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-                           %(srcNWKID,data,cluster_id,Hattribute,data_type), nwkid=srcNWKID)
-                   Modules.output.write_attribute( self, srcNWKID, ZIGATE_EP, Ep, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
-
 
     return

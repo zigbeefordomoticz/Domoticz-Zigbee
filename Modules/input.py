@@ -400,7 +400,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
 
-    inRawAps( self, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
+    inRawAps( self, Devices, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
 
     callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
 

@@ -5,7 +5,7 @@ from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 
 
-def inRawAps( self, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
+def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
 
     """
     This function is called by Decode8002
@@ -30,7 +30,7 @@ def inRawAps( self, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
 
     if manuf in CALLBACK_TABLE:
         func = CALLBACK_TABLE[ manuf ]
-        func( self, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
+        func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
 
     return
