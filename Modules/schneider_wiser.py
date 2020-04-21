@@ -560,18 +560,17 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
 
 def importSchneiderZoning( self ):
     """
-    Import Schneider Zoning Configuration, and populate the corresponding datastructutre
-
-{
-	"zone1": {
+    Import Schneider Zoning Configuration, and populate the corresponding datastructutreÒ
+    {
+	    "zone1": {
 		"ieee_thermostat": "ieee of my thermostat",
 		"actuator": ["IEEE1","IEEE2"]
-	},
-	"zone2": {
+	    },
+	    " zone2": {
 		"ieee_thermostat": "ieee of my thermostat",
 		"actuator": ["IEEE1","IEEE2"]
-	}
-}
+	    }
+    }
     """
 
     if self.SchneiderZone is not None:
@@ -580,17 +579,16 @@ def importSchneiderZoning( self ):
 
     SCHNEIDER_ZONING = 'schneider_zoning.json'
 
+    self.SchneiderZone = {}
     self.SchneiderZoningFilename = self.pluginconf.pluginConf['pluginConfig'] + SCHNEIDER_ZONING
 
     if not os.path.isfile( self.SchneiderZoningFilename ) :
         loggingSchneider(self, 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
-        self.SchneiderZone = {}
         return
 
     with open( self.SchneiderZoningFilename, 'rt') as handle:
         SchneiderZoning = json.load( handle)
 
-    self.SchneiderZone = {}
     for zone in SchneiderZoning:
         if 'ieee_thermostat' not in SchneiderZoning[zone]:
             # Missing Thermostat
@@ -633,4 +631,3 @@ def importSchneiderZoning( self ):
     loggingSchneider(self, 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
     return
-
