@@ -143,13 +143,22 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    cluster_frame = '11'
+    # Frame Control Field:
+    #   0x10: Client to Server
+    #   0x18: Server to Client
+    #   0x14: Manuf Specific / Client to Server
+    #   0x1c: Manuf Specific / Server to Client
+
+    cluster_frame = '18'
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
             sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
 
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
+
+    if level:
+        level = ( 254 * level ) // 100
 
     if level is None and tilt:
         option = 0x02
@@ -159,6 +168,12 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
         tilt = 0x00
     elif level and tilt:
         option = 0x03
+
+    # payload: 11 45 10 03 55 2d ffff
+    # Option Parameter uint8   Bit0 Ask for lift action, Bit1 Ask fr a tilt action
+    # Lift Parameter   uint8   Lift value between 1 to 254
+    # Tilt Parameter   uint8   Tilt value between 0 and 90
+    # Transition Time  uint16  Transition Time between current and asked position
 
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)

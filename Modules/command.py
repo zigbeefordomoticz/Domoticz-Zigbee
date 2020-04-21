@@ -177,8 +177,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
             return
         if DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveWithOnOff
-            profalux_MoveWithOnOff( self, NWKID, 0x00 )
+            from Modules.profalux import profalux_MoveWithOnOff, profalux_MoveToLiftAndTilt
+            profalux_MoveToLiftAndTilt( self, NWKID, level=0)
+            #profalux_MoveWithOnOff( self, NWKID, 0x00 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -225,8 +226,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 UpdateDevice_v2(self, Devices, Unit, 1, "On",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 return
         if DeviceType == 'BSO':
-            from Modules.profalux import profalux_MoveWithOnOff
-            profalux_MoveWithOnOff( self, NWKID, 0x01 )
+            from Modules.profalux import profalux_MoveWithOnOff, profalux_MoveToLiftAndTilt
+            profalux_MoveToLiftAndTilt( self, NWKID, level=0, tilt=15)
+            #profalux_MoveWithOnOff( self, NWKID, 0x01 )
 
         elif DeviceType == "WindowCovering":
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
@@ -269,6 +271,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+ 
         if DeviceType == 'TempSetCurrent':
 
             loggingCommand( self, 'Debug', "mgtCommand : Set Temp for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
@@ -359,16 +362,20 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             return
 
         elif DeviceType == 'BSO':
+
             from Modules.profalux import profalux_MoveToLiftAndTilt
 
             if Level == 0:
                 Level = 1
-            elif Level >= 100:
-                Level = 99
+            elif Level > 100:
+                Level = 100
 
             orientation = self.pluginconf.pluginConf['profaluxOrientBSO']
-            if orientation > 90: orientation = 90
+            if orientation > 90:
+                orientation = 90
+            
             loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Level: %s Orientation: %s" %(NWKID, Level, orientation), NWKID)
+
             profalux_MoveToLiftAndTilt( self, NWKID, level=Level, tilt=orientation)
 
         elif DeviceType == "WindowCovering": # Blind Inverted
