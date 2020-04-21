@@ -288,9 +288,10 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
 
     if PacketType=="0012":
         # Let's trigget a zigate_Start
-        self.startZigateNeeded = self.HeartbeatCount
-        if self.HeartbeatCount == 0:
-            self.startZigateNeeded = 1
+        #self.startZigateNeeded = self.HeartbeatCount
+        #if self.HeartbeatCount == 0:
+        #    self.startZigateNeeded = 1
+        pass
 
     # Group Management
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
@@ -476,9 +477,9 @@ def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
 
-    self.startZigateNeeded = self.HeartbeatCount
-    if self.HeartbeatCount == 0:
-        self.startZigateNeeded = 1
+    #self.startZigateNeeded = self.HeartbeatCount
+    #if self.HeartbeatCount == 0:
+    #    self.startZigateNeeded = 1
     loggingInput( self, 'Status', "Non 'Factory new' Restart status: %s" %(Status) )
 
 def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
@@ -495,9 +496,9 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
 
-    self.startZigateNeeded = self.HeartbeatCount
-    if self.HeartbeatCount == 0:
-        self.startZigateNeeded = 1
+    #self.startZigateNeeded = self.HeartbeatCount
+    #if self.HeartbeatCount == 0:
+    #    self.startZigateNeeded = 1
     loggingInput( self, 'Status', "'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
