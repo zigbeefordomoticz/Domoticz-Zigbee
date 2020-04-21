@@ -80,7 +80,7 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
 
     return
 
-def schneider_wiser_registration( self, key ):
+def schneider_wiser_registration( self, Devices, key ):
     """
     This method is called during the pairing/discovery process.
     Purpose is to do some initialisation (write) on the coming device.
@@ -119,6 +119,15 @@ def schneider_wiser_registration( self, key ):
         loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+        cluster_id = "%04x" %0x0201
+        Hattribute = "%04x" %0x0012
+        default_temperature = 2000
+        setpoint = schneider_find_attribute_and_set(self,key,EPout,cluster_id,Hattribute,default_temperature)
+        schneiderUpdateThermostatDevice(self, Devices, key, EPout, cluster_id, setpoint)
+
+        loggingSchneider( self, 'Debug', "Schneider set default value Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
 
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT'): # Thermostatic Valve
@@ -284,10 +293,13 @@ def schneider_fip_mode( self, key, mode):
 
 def schneider_setpoint_thermostat( self, key, setpoint):
 
+    # SetPoint is in centidegrees
+
     EPout = '0b'
     ClusterID = '0201'
     attr = '0012'
     NWKID = key
+    schneider_find_attribute_and_set (self,NWKID,EPout,ClusterID,attr,setpoint,setpoint)
     if EPout not in self.ListOfDevices[NWKID]['Ep']:
         self.ListOfDevices[NWKID]['Ep'][EPout] = {}
     if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
@@ -313,7 +325,7 @@ def schneider_setpoint_thermostat( self, key, setpoint):
 
 
 def schneider_setpoint_actuator( self, key, setpoint):
-    # SetPoint 21°C ==> 2100 => 0x0834
+    # SetPoint 2100 (21 degree C) => 0x0834
     # APS Data: 0x00 0x0b 0x01 0x02 0x04 0x01 0x0b 0x45 0x11 0xc1 0xe0 0x00 0x01 0x34 0x08 0xff
     #                                                                            |---------------> LB HB Setpoint
     #                                                             |--|---------------------------> Command 0xe0
@@ -357,8 +369,7 @@ def schneider_setpoint( self, key, setpoint):
 
 
 def schneider_temp_Setcurrent( self, key, setpoint):
-
-    # SetPoint 21°C ==> 2100 => 0x0834
+    # SetPoint 2100 (21 degree C) => 0x0834
     # APS Data: 0x00 0x0b 0x01 0x02 0x04 0x01 0x0b 0x45 0x11 0xc1 0xe0 0x00 0x01 0x34 0x08 0xff
     #                                                                            |---------------> LB HB Setpoint
     #                                                             |--|---------------------------> Command 0xe0
@@ -475,25 +486,8 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
         data = '0DAC' #35.00 degree
     elif attr == '0012': #occupied setpoint temp
         dataType = '29'
-
-        if EPout not in self.ListOfDevices[NWKID]['Ep']:
-            self.ListOfDevices[NWKID]['Ep'][EPout] = {}
-        if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
-            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
-        if not isinstance( self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] , dict):
-            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
-        if attr not in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
-            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = {}
-        if 'Ep' in self.ListOfDevices[NWKID]:
-            if EPout in self.ListOfDevices[NWKID]['Ep']:
-                if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
-                    if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
-                        if self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] == {}:
-                            loggingSchneider( self, 'Debug', "Schneider send attributes: could not find value, setting 20",NWKID)
-                            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = 2000
-                        loggingSchneider( self, 'Debug', "Schneider send attributes: FOUND value %s"%(self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]),NWKID)
-                        value = self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]
-                        data = '%04X' %value
+        value = schneider_find_attribute_and_set(self,NWKID, EPout, ClusterID,attr, 2000)
+        data = '%04X' %value
 
     cmd = "01"
     status = "00"
@@ -513,27 +507,25 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
     Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
 
 
-def schneiderUpdateThermostat (self, Devices, NWKID, srcEp, ClusterID, data):
+def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
 
     # Check if nwkid is the ListOfDevices
 
     if NWKID not in self.ListOfDevices:
         return
-    sTemp = data [4:8]
-    temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
-    domoTemp = round(temp/100,1)
-
-    loggingSchneider( self, 'Debug', "Schneider updateThermostat data:%s , temp:%s , domoTemp : %s" \
-            %(data, temp, domoTemp), NWKID)
 
     # Look for TargetSetPoint
     from Modules.domoticz import MajDomoDevice
+    domoTemp = round(setpoint/100,1)
     MajDomoDevice(self, Devices, NWKID,  srcEp, ClusterID, domoTemp, '0012')
+
     if 'Ep' in self.ListOfDevices[NWKID]:
         if srcEp in self.ListOfDevices[NWKID]['Ep']:
             if ClusterID in self.ListOfDevices[NWKID]['Ep'][srcEp]:
                 if '0012' in self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]:
-                    self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]['0012'] = temp
+                    self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]['0012'] = setpoint
+    loggingSchneider( self, 'Debug', "Schneider updateThermostat setpoint:%s  , domoTemp : %s" \
+            %(setpoint, domoTemp), NWKID)
 
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
@@ -551,7 +543,9 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
         schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
     elif cmd == 'e0': # setpoint from thermostat
-        schneiderUpdateThermostat(self, Devices, srcNWKID, srcEp, ClusterID, data)
+        sTemp = data [4:8]
+        setpoint = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
+        schneiderUpdateThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
 
     loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
             %( fcf, sqn, cmd, data), srcNWKID)
@@ -630,4 +624,33 @@ def importSchneiderZoning( self ):
     # At that stage we have imported all informations
     loggingSchneider(self, 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
-    return
+def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultValue , newValue = None):
+
+    loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set NWKID:%s, EP:%s, ClusterID:%s, attr:%s ,defaultValue:%s, newValue:%s" 
+                %(NWKID,EP,ClusterID,attr,defaultValue,newValue),NWKID)
+    if EP not in self.ListOfDevices[NWKID]['Ep']:
+        self.ListOfDevices[NWKID]['Ep'][EP] = {}
+    if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EP]:
+        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID] = {}
+    if not isinstance( self.ListOfDevices[NWKID]['Ep'][EP][ClusterID] , dict):
+        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID] = {}
+    if attr not in self.ListOfDevices[NWKID]['Ep'][EP][ClusterID]:
+        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = {}
+    if 'Ep' in self.ListOfDevices[NWKID]:
+        if EP in self.ListOfDevices[NWKID]['Ep']:
+            if ClusterID in self.ListOfDevices[NWKID]['Ep'][EP]:
+                if attr in self.ListOfDevices[NWKID]['Ep'][EP][ClusterID]:
+                    if self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] == {}:
+                        if newValue == None:
+                            loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set: could not find value, setting default value  %s" %defaultValue,NWKID)
+                            self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = defaultValue
+                        else:
+                            loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set: could not find value, setting new value  %s" %newValue,NWKID)
+                            self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
+
+                    loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : found value %s"%(self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]),NWKID)
+                    found = self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]
+                    if newValue != None:
+                        loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : setting new value %s"%newValue,NWKID)
+                        self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
+    return found

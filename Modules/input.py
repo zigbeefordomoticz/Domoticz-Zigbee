@@ -193,7 +193,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
                 loggingInput( self, 'Debug', "Decode8401 - PST03A-V2.2.5  tamper alarm", MsgSrcAddr)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
         else :
-            loggingInput( self, 'Debug', "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgDataSrcEp, MsgSrcAddr)
+            loggingInput( self, 'Debug', "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgEp, MsgSrcAddr)
     else :      ## default 
         alarm1 =  int(MsgZoneStatus,16) & 1 
         alarm2 =  ( int(MsgZoneStatus,16)  >> 1 ) & 1
@@ -1567,7 +1567,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     MsgClusterData=MsgData[24:len(MsgData)]
 
     loggingInput( self, 'Debug', "Decode8100 - Report Attributes Response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
-            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8100)
     loggingMessages( self, '8100', MsgSrcAddr, None, MsgRSSI, MsgSQN)
@@ -2116,7 +2116,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # Let's check if this is a Schneider Wiser
         if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '105e':
-                schneider_wiser_registration( self, MsgSrcAddr )
+                schneider_wiser_registration( self, Devices, MsgSrcAddr )
     else:
         # New Device coming for provisioning
 
