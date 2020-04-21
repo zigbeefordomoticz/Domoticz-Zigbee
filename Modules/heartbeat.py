@@ -402,13 +402,13 @@ def processListOfDevices( self , Devices ):
                         Domoticz.Log("processListOfDevices - No corresponding device in Domoticz for %s" %( NWKID))
                     fnd = False
 
-                if not fnd:
-                    # Not devices found in Domoticz, so we are safe to remove it from Plugin
-                    if self.ListOfDevices[NWKID]['IEEE'] in self.IEEE2NWK:
-                        Domoticz.Status("processListOfDevices - Removing %s / %s from IEEE2NWK." %(self.ListOfDevices[NWKID]['IEEE'], NWKID))
-                        del self.IEEE2NWK[self.ListOfDevices[NWKID]['IEEE']]
-                    Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" %(NWKID))
-                    removeNwkInList( self, NWKID)
+                #if not fnd:
+                #    # Not devices found in Domoticz, so we are safe to remove it from Plugin
+                #    if self.ListOfDevices[NWKID]['IEEE'] in self.IEEE2NWK:
+                #        Domoticz.Status("processListOfDevices - Removing %s / %s from IEEE2NWK." %(self.ListOfDevices[NWKID]['IEEE'], NWKID))
+                #        del self.IEEE2NWK[self.ListOfDevices[NWKID]['IEEE']]
+                #    Domoticz.Status("processListOfDevices - Removing the entry %s from ListOfDevice" %(NWKID))
+                #    removeNwkInList( self, NWKID)
 
         elif status != "inDB" and status != "UNKNOW":
             # Discovery process 0x004d -> 0x0042 -> 0x8042 -> 0w0045 -> 0x8045 -> 0x0043 -> 0x8043
