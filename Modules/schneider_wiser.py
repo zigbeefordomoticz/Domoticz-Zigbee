@@ -19,7 +19,7 @@ import Modules.output
 import struct
 
 from Modules.logging import loggingOutput
-from Modules.zigateConsts import ZIGATE_EP
+from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
 
 
 def pollingSchneider( self, key ):
@@ -184,7 +184,7 @@ def schneider_wiser_registration( self, key ):
     cluster_id = "%04x" %0x0000
     Hattribute = "%04x" %0x0010
     data_type = "42"
-    data = '5A6967617465205A6F6E65'  # Zigate zone
+    data = 'Zigate zone'.encode('utf-8').hex()  # Zigate zone 
     loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
@@ -256,10 +256,10 @@ def schneider_fip_mode( self, key, mode):
 
     # Make sure that we are in FIP Mode
     setFIPModeRequired = True
-    if 'EPOut' in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPOut]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPOut]['0201']:
-                if self.ListOfDevices[ key ]['Ep'][EPOut]['0201'] == '03':
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
+                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '03':
                     setFIPModeRequired = False
 
     if setFIPModeRequired:
@@ -282,34 +282,42 @@ def schneider_fip_mode( self, key, mode):
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
-def schneider_setpoint( self, key, setpoint):
+def schneider_setpoint_thermostat( self, key, setpoint):
 
+    EPout = '0b'
+    ClusterID = '0201'
+    attr = '0012'
+    NWKID = key
+    if EPout not in self.ListOfDevices[NWKID]['Ep']:
+        self.ListOfDevices[NWKID]['Ep'][EPout] = {}
+    if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
+        self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
+    if not isinstance( self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] , dict):
+        self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
+    if attr not in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
+        self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = {}
+    if 'Ep' in self.ListOfDevices[NWKID]:
+        if EPout in self.ListOfDevices[NWKID]['Ep']:
+            if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
+                if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
+                    self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
+    importSchneiderZoning(self)
+    for zone in self.SchneiderZone:
+        loggingOutput(self, 'Log', "schneider_setpoint - Zone Information: %s " %zone )
+        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
+            loggingOutput( self, 'Log', "schneider_setpoint - found %s " %zone )
+            for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                loggingOutput( self, 'Log', "schneider_setpoint - found hact %s " %hact )
+                schneider_setpoint_actuator(self, hact, setpoint)
+
+
+def schneider_setpoint_actuator( self, key, setpoint):
     # SetPoint 21°C ==> 2100 => 0x0834
     # APS Data: 0x00 0x0b 0x01 0x02 0x04 0x01 0x0b 0x45 0x11 0xc1 0xe0 0x00 0x01 0x34 0x08 0xff
     #                                                                            |---------------> LB HB Setpoint
     #                                                             |--|---------------------------> Command 0xe0
     #                                                        |--|--------------------------------> SQN
     #                                                   |--|-------------------------------------> Cluster Frame
-    if 'Model' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
-            EPout = '0b'
-            ClusterID = '0201'
-            attr = '0012'
-            NWKID = key
-            if EPout not in self.ListOfDevices[NWKID]['Ep']:
-                self.ListOfDevices[NWKID]['Ep'][EPout] = {}
-            if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
-                self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
-            if not isinstance( self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] , dict):
-                self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
-            if attr not in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
-                self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = {}
-            if 'Ep' in self.ListOfDevices[NWKID]:
-                if EPout in self.ListOfDevices[NWKID]['Ep']:
-                    if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
-                        if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
-                            self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
-            return 
 
     cluster_frame = '11'
     sqn = '00'
@@ -336,6 +344,16 @@ def schneider_setpoint( self, key, setpoint):
 
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
+
+
+def schneider_setpoint( self, key, setpoint):
+
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
+            schneider_setpoint_thermostat(self, key, setpoint)
+        else:
+            schneider_setpoint_actuator( self,key, setpoint)
+
 
 def schneider_temp_Setcurrent( self, key, setpoint):
 
@@ -494,7 +512,7 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
     Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
 
 
-def updateThermostat (self, Devices, NWKID, srcEp, ClusterID, data):
+def schneiderUpdateThermostat (self, Devices, NWKID, srcEp, ClusterID, data):
 
     # Check if nwkid is the ListOfDevices
 
@@ -532,7 +550,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         loggingOutput( self, 'Log','Schneider cmd 0x00',srcNWKID)
         schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
     elif cmd == 'e0': # setpoint from thermostat
-        updateThermostat(self, Devices, srcNWKID, srcEp, ClusterID, data)
+        schneiderUpdateThermostat(self, Devices, srcNWKID, srcEp, ClusterID, data)
 
     loggingOutput( self, 'Log', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
             %( fcf, sqn, cmd, data), srcNWKID)
@@ -543,16 +561,16 @@ def importSchneiderZoning( self ):
     """
     Import Schneider Zoning Configuration, and populate the corresponding datastructutre
 
-    {
-        "zone1": {
-        "ieee_thermostat" : "ieee of my thermostat",
-        "actuator" : ["IEE3"],["IEEE"]
-        }
-        "zone2": {
-        "ieee_thermostat" : "ieee of my thermostat",
-        "actuator" : ["IEE3"],["IEEE"]
-        }
-    }
+{
+	"zone1": {
+		"ieee_thermostat": "ieee of my thermostat",
+		"actuator": ["IEEE1","IEEE2"]
+	},
+	"zone2": {
+		"ieee_thermostat": "ieee of my thermostat",
+		"actuator": ["IEEE1","IEEE2"]
+	}
+}
     """
 
     if self.SchneiderZone is not None:
@@ -564,7 +582,7 @@ def importSchneiderZoning( self ):
     self.SchneiderZoningFilename = self.pluginconf.pluginConf['pluginConfig'] + SCHNEIDER_ZONING
 
     if not os.path.isfile( self.SchneiderZoningFilename ) :
-        self.logging( 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
+        loggingOutput(self, 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
         return
 
     with open( self.SchneiderZoningFilename, 'rt') as handle:
@@ -574,12 +592,12 @@ def importSchneiderZoning( self ):
     for zone in SchneiderZoning:
         if 'ieee_thermostat' not in SchneiderZoning[zone]:
             # Missing Thermostat
-            self.logging( 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone])
+            loggingOutput( self, 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone])
             continue
 
         if SchneiderZoning[zone]['ieee_thermostat'] not in self.IEEE2NWK:
             # Thermostat IEEE not known!
-            self.logging( 'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
+            loggingOutput(self,  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
             continue
         
         self.SchneiderZone[ zone ] = {}
@@ -589,42 +607,28 @@ def importSchneiderZoning( self ):
         self.SchneiderZone[ zone ]['Thermostat']['NWKID'] = self.IEEE2NWK[ SchneiderZoning[zone]['ieee_thermostat'] ]
         self.SchneiderZone[ zone ]['Thermostat']['HACT'] = {}
         
-        if 'actuator' not in SchneiderZoning:
+        if 'actuator' not in SchneiderZoning[zone]:
             # We just have a simple Thermostat
-            self.logging( 'Debug', "importSchneiderZoning - Not actuators for this Zone: %s" %zone)
+            loggingOutput(self,  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone)
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
             _nwkid = self.IEEE2NWK[ hact ]
             if hact not in self.IEEE2NWK:
                 # Unknown in IEEE2NWK
-                self.logging( 'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
+                loggingOutput(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
                 continue
 
             if self.IEEE2NWK[ hact ] not in self.ListOfDevices:
                 # Unknown in ListOfDevices
-                self.logging( 'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
+                loggingOutput(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
                 continue
             
             self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
             self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ]['IEEE'] = hact
 
     # At that stage we have imported all informations
-    self.logging( 'Log', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
+    loggingOutput(self, 'Log', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
     return
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
