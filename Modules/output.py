@@ -1144,7 +1144,7 @@ def maskChannel( channel ):
 
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
-            #12: 0x00001000, # Not Zigate
+            12: 0x00001000, # Not Zigate
             #13: 0x00002000, # Not Zigate
             #14: 0x00004000, # Not Zigate
             15: 0x00008000,
