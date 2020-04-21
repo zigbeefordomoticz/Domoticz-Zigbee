@@ -110,6 +110,7 @@ class WebServer(object):
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
+        # Start the WebServer
         self.startWebServer()
         
     def _loggingStatus( self, message):
@@ -807,7 +808,7 @@ class WebServer(object):
                             if x != '0000' and x not in self.ListOfDevices: continue
                             if item == x: continue
                             if 'Neighbours' not in reportLQI[item]:
-                                Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
+                                Domoticz.Error("Missing attribute :%s for (%s,%s)" %('Neighbours', item, x))
                                 continue
 
                             for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
@@ -1949,11 +1950,11 @@ class WebServer(object):
                                 Domoticz.Error("Not able to find nwkid: %s" %(nwkid))
                                 continue
                             if 'IEEE' not in self.ListOfDevices[nwkid]:
-                                Domoticz.Error("Not able to find IEEE for %s %s - no IEEE entry in %s" %(_dev, _ep, self.ListOfDevices[nwkid]))
+                                Domoticz.Error("Not able to find IEEE for %s - no IEEE entry in %s" %(nwkid, self.ListOfDevices[nwkid]))
                                 continue
                             ieee = self.ListOfDevices[nwkid]['IEEE']
                         else: 
-                            Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
+                            Domoticz.Error("Not able to find IEEE for %s" %(_dev))
                             continue
                         self.logging( 'Debug', "------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
                         # Check if this is not an Ikea Tradfri Remote
@@ -2156,7 +2157,7 @@ class WebServer(object):
                 data = json.loads(data)
                 Domoticz.Log("---> Data: %s" %str(data))
                 if 'Command' not in data and 'payload' not in data:
-                    domoticz.Error("Unexpected request: %s" %data)
+                    Domoticz.Error("Unexpected request: %s" %data)
                     _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) )
                     return _response
                 msgtype = int( data['Command'] , 16 )
