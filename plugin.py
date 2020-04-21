@@ -190,6 +190,8 @@ class BasePlugin:
         self.ErasePDMDone = False
         self.startZigateNeeded = False
 
+        self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
+
         return
 
     def onStart(self):
