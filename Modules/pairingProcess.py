@@ -361,7 +361,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             # In case of Schneider Wiser, let's do the Registration Process
             if 'Manufacturer' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
-                    schneider_wiser_registration( self, NWKID )
+                    schneider_wiser_registration( self, Devices, NWKID )
 
             # Identify for ZLL compatible devices
             # Search for EP to be used 
