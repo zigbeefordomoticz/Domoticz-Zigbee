@@ -302,10 +302,11 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                 if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
                     self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
     importSchneiderZoning(self)
+
     for zone in self.SchneiderZone:
         loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
         if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
-            loggingOutput( self, 'Debug', "schneider_setpoint - found %s " %zone )
+            loggingSchneider( self, 'Debug', "schneider_setpoint - found %s " %zone )
             for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
                 loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
                 schneider_setpoint_actuator(self, hact, setpoint)
@@ -583,6 +584,7 @@ def importSchneiderZoning( self ):
 
     if not os.path.isfile( self.SchneiderZoningFilename ) :
         loggingSchneider(self, 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
+        self.SchneiderZone = {}
         return
 
     with open( self.SchneiderZoningFilename, 'rt') as handle:
