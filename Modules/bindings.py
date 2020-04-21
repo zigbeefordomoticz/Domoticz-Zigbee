@@ -289,4 +289,4 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
                     # Perforning the bind
                     webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
+                    self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Stamp'] = int(time())
