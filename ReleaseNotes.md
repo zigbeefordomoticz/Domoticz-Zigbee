@@ -1,5 +1,9 @@
 # Release Notes 
 
+# 21 April 2020 - 4.7.10
+- [Issue] - Prevent removing entry from the plugin database
+- [Issue] - Fix potential issue at startup in the Transport layer
+
 # 17 April 2020 - 4.7.9
 - [Issue] - Fix potential issue, due to uninitialized parameter
 - [Hardware] - Enable support of new Xiaomi Lum sensor ( lumi.sen_ill.mgl01 )
