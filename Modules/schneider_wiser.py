@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # coding: utf-8 -*-
 #
-# Author: zaraki673 & pipiche38
+# Author: zaraki673 & pipiche38 & badz
 #
 """
     Module: schneider_wiser.py
@@ -18,7 +18,7 @@ import Domoticz
 import Modules.output
 import struct
 
-from Modules.logging import loggingOutput
+from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
 
 
@@ -41,8 +41,8 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     The function is called after processing the readCluster part
     """
 
-    Domoticz.Log("callbackDeviceAwake_Schneider - Nwkid: %s, EndPoint: %s cluster: %s" \
-            %(NwkId, EndPoint, cluster))
+    loggingSchneider( self, 'Debug', "callbackDeviceAwake_Schneider - Nwkid: %s, EndPoint: %s cluster: %s" \
+            %(NwkId, EndPoint, cluster),NwkId )
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
 
@@ -86,7 +86,7 @@ def schneider_wiser_registration( self, key ):
     Purpose is to do some initialisation (write) on the coming device.
     """
 
-    loggingOutput( self, 'Log', "schneider_wiser_registration for device %s" %key)
+    loggingSchneider( self, 'Debug', "schneider_wiser_registration for device %s" %key)
 
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
@@ -104,7 +104,7 @@ def schneider_wiser_registration( self, key ):
     Hattribute = "%04x" %0xe050
     data_type = "10" # Bool
     data = "%02x" %True
-    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -116,7 +116,7 @@ def schneider_wiser_registration( self, key ):
         Hattribute = "%04x" %0x5011
         data_type = "42" # String
         data = '656e'  # 'en'
-        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -131,7 +131,7 @@ def schneider_wiser_registration( self, key ):
         # 0x00  After a first Pairing
         # 0x04  After a restart of the Hub or when changing battery of Valve
         data = '00'  
-        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -144,7 +144,7 @@ def schneider_wiser_registration( self, key ):
         Hattribute = "%04x" %0x0010
         data_type = "28" 
         data = '00'  
-        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -160,7 +160,7 @@ def schneider_wiser_registration( self, key ):
         # 0x02 User Mode Schedule
         # 0x03 User Mode Manual Energy Saver
         data = '01'  
-        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
                 %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -174,7 +174,7 @@ def schneider_wiser_registration( self, key ):
         data_type = "18"
         data = '03'   # By default register as CONVENTIONEL mode
                       # E attente pour @hairv en FIP
-        loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+        loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -185,7 +185,7 @@ def schneider_wiser_registration( self, key ):
     Hattribute = "%04x" %0x0010
     data_type = "42"
     data = 'Zigate zone'.encode('utf-8').hex()  # Zigate zone 
-    loggingOutput( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
@@ -213,7 +213,7 @@ def schneider_thermostat_behaviour( self, key, mode ):
 
     MODE = { 'conventionel': 0x00, 'setpoint' : 0x02, 'FIP': 0x03 }
 
-    loggingOutput( self, 'Log', "schneider_thermostat_behaviour for device %s requesting mode: %s" %(key, mode))
+    loggingSchneider( self, 'Debug', "schneider_thermostat_behaviour for device %s requesting mode: %s" %(key, mode))
     if mode not in MODE:
         Domoticz.Error("schneider_thermostat_behaviour - %s unknown mode %s" %(key, mode))
         return
@@ -228,7 +228,7 @@ def schneider_thermostat_behaviour( self, key, mode ):
     Hattribute = "%04x" %0xe011
     data_type = "18"
     data = '%02X' %MODE[ mode ]
-    loggingOutput( self, 'Log', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     # Reset Heartbeat in order to force a ReadAttribute when possible
@@ -303,11 +303,11 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                     self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
     importSchneiderZoning(self)
     for zone in self.SchneiderZone:
-        loggingOutput(self, 'Log', "schneider_setpoint - Zone Information: %s " %zone )
+        loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
         if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
-            loggingOutput( self, 'Log', "schneider_setpoint - found %s " %zone )
+            loggingOutput( self, 'Debug', "schneider_setpoint - found %s " %zone )
             for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-                loggingOutput( self, 'Log', "schneider_setpoint - found hact %s " %hact )
+                loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
                 schneider_setpoint_actuator(self, hact, setpoint)
 
 
@@ -406,7 +406,7 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
             }
 
 
-    Domoticz.Log("schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode))
+    loggingSchneider( self, 'Debug', "schneider_EHZBRTS_thermoMode - %s Mode: %s" %(key, mode), key)
 
 
     if mode not in EHZBRTS_THERMO_MODE:
@@ -430,7 +430,7 @@ def schneider_EHZBRTS_thermoMode( self, key, mode):
         if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    loggingOutput( self, 'Log', "Schneider EH-ZB-RTS Thermo Mode  %s with value %s / cluster: %s, attribute: %s type: %s"
+    loggingSchneider( self, 'Debug', "Schneider EH-ZB-RTS Thermo Mode  %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     self.ListOfDevices[key]['Heartbeat'] = 0
@@ -456,7 +456,7 @@ def schneiderRenforceent( self, NWKID):
     return rescheduleAction
 
 def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawAttr):
-    loggingOutput( self, 'Log', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s,data: %s" \
+    loggingSchneider( self, 'Debug', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s,data: %s" \
             %(NWKID, EPout, ClusterID, sqn, rawAttr ), NWKID)
 
     attr = rawAttr[2:4] + rawAttr[0:2]
@@ -488,9 +488,9 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
                 if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
                     if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
                         if self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] == {}:
-                            loggingOutput( self, 'Log', "Schneider send attributes: could not find value, setting 20",NWKID)
+                            loggingSchneider( self, 'Debug', "Schneider send attributes: could not find value, setting 20",NWKID)
                             self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = 2000
-                        loggingOutput( self, 'Log', "Schneider send attributes: FOUND value %s"%(self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]),NWKID)
+                        loggingSchneider( self, 'Debug', "Schneider send attributes: FOUND value %s"%(self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]),NWKID)
                         value = self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr]
                         data = '%04X' %value
 
@@ -498,7 +498,7 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
     status = "00"
     cluster_frame = "18"
 
-    loggingOutput( self, 'Log', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s, attr: %s, dataType: %s, data: %s" \
+    loggingSchneider( self, 'Debug', "Schneider send attributes: nwkid %s ep: %s , clusterId: %s, sqn: %s, attr: %s, dataType: %s, data: %s" \
             %(NWKID, EPout, ClusterID, sqn, attr, dataType, data ), NWKID)
 
     if dataType == '29':
@@ -506,7 +506,7 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
     elif dataType == '30':
         payload = cluster_frame + sqn + cmd + rawAttr + status + dataType + data
 
-    loggingOutput( self, 'Log', "Schneider calls raw_APS_request payload %s" \
+    loggingSchneider( self, 'Debug', "Schneider calls raw_APS_request payload %s" \
             %(payload), NWKID)
 
     Modules.output.raw_APS_request( self, NWKID, EPout, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
@@ -522,7 +522,7 @@ def schneiderUpdateThermostat (self, Devices, NWKID, srcEp, ClusterID, data):
     temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
     domoTemp = round(temp/100,1)
 
-    loggingOutput( self, 'Log', "Schneider updateThermostat data:%s , temp:%s , domoTemp : %s" \
+    loggingSchneider( self, 'Debug', "Schneider updateThermostat data:%s , temp:%s , domoTemp : %s" \
             %(data, temp, domoTemp), NWKID)
 
     # Look for TargetSetPoint
@@ -538,7 +538,7 @@ def schneiderUpdateThermostat (self, Devices, NWKID, srcEp, ClusterID, data):
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
 
-    loggingOutput( self, 'Log', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
+    loggingSchneider( self, 'Debug', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
 
     fcf = MsgPayload[0:2] # uint8
@@ -547,12 +547,12 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     data = MsgPayload[6:] # all the rest
 
     if cmd == '00': #read attributes
-        loggingOutput( self, 'Log','Schneider cmd 0x00',srcNWKID)
+        loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
         schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
     elif cmd == 'e0': # setpoint from thermostat
         schneiderUpdateThermostat(self, Devices, srcNWKID, srcEp, ClusterID, data)
 
-    loggingOutput( self, 'Log', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
+    loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
             %( fcf, sqn, cmd, data), srcNWKID)
 
     return
@@ -582,7 +582,7 @@ def importSchneiderZoning( self ):
     self.SchneiderZoningFilename = self.pluginconf.pluginConf['pluginConfig'] + SCHNEIDER_ZONING
 
     if not os.path.isfile( self.SchneiderZoningFilename ) :
-        loggingOutput(self, 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
+        loggingSchneider(self, 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
         return
 
     with open( self.SchneiderZoningFilename, 'rt') as handle:
@@ -592,12 +592,12 @@ def importSchneiderZoning( self ):
     for zone in SchneiderZoning:
         if 'ieee_thermostat' not in SchneiderZoning[zone]:
             # Missing Thermostat
-            loggingOutput( self, 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone])
+            loggingSchneider( self, 'Error', "importSchneiderZoning - Missing Thermostat entry in %s" %SchneiderZoning[zone])
             continue
 
         if SchneiderZoning[zone]['ieee_thermostat'] not in self.IEEE2NWK:
             # Thermostat IEEE not known!
-            loggingOutput(self,  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
+            loggingSchneider(self,  'Error', "importSchneiderZoning - Thermostat IEEE %s do not exist" %SchneiderZoning[zone]['ieee_thermostat'])
             continue
         
         self.SchneiderZone[ zone ] = {}
@@ -609,26 +609,26 @@ def importSchneiderZoning( self ):
         
         if 'actuator' not in SchneiderZoning[zone]:
             # We just have a simple Thermostat
-            loggingOutput(self,  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone)
+            loggingSchneider(self,  'Debug', "importSchneiderZoning - No actuators for this Zone: %s" %zone)
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
             _nwkid = self.IEEE2NWK[ hact ]
             if hact not in self.IEEE2NWK:
                 # Unknown in IEEE2NWK
-                loggingOutput(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
+                loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
                 continue
 
             if self.IEEE2NWK[ hact ] not in self.ListOfDevices:
                 # Unknown in ListOfDevices
-                loggingOutput(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
+                loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
                 continue
             
             self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
             self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ]['IEEE'] = hact
 
     # At that stage we have imported all informations
-    loggingOutput(self, 'Log', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
+    loggingSchneider(self, 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )
 
     return
 
