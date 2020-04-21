@@ -547,7 +547,7 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
 
     self.zigatedata['IEEE'] = extaddr
     self.zigatedata['Short Address'] = addr
-    self.zigatedata['Channel'] = Channel
+    self.zigatedata['Channel'] = int(Channel,16)
     self.zigatedata['PANID'] = PanID
     self.zigatedata['Extended PANID'] = extPanID
     saveZigateNetworkData( self , self.zigatedata )
