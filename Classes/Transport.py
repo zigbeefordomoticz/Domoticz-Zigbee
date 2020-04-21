@@ -388,6 +388,7 @@ class ZigateTransport(object):
         MsgLength = frame[6:10]
         MsgCRC = frame[10:12]
         self.loggingReceive( 'Debug', "         - MsgType: %s MsgLength: %s MsgCRC: %s" %(MsgType, MsgLength, MsgCRC))
+        Status = None
 
         if len(frame) >= 18:
             #Payload
@@ -400,7 +401,8 @@ class ZigateTransport(object):
 
         if MsgType == "8000":  # We are receiving a Status
             # We have receive a Status code in response to a command.
-            self._process8000(Status, PacketType, frame)
+            if Status:
+                self._process8000(Status, PacketType, frame)
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
