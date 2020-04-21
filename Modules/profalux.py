@@ -68,7 +68,7 @@ def profalux_stop( self, nwkid ):
     # determine which Endpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[nwkid]['Ep']:
-        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+        if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -90,7 +90,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
     # determine which Endpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[nwkid]['Ep']:
-        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+        if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -114,7 +114,7 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
     # determine which Endpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[nwkid]['Ep']:
-        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+        if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'
@@ -140,7 +140,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # determine which Endpoint
     EPout = '01'
     for tmpEp in self.ListOfDevices[nwkid]['Ep']:
-        if "fc21" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
+        if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
     cluster_frame = '11'

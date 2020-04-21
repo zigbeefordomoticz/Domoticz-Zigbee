@@ -361,9 +361,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif DeviceType == 'BSO':
             from Modules.profalux import profalux_MoveToLiftAndTilt
 
-            orientation = (Level * 90 ) // 100
+            if Level == 0:
+                Level = 1
+            elif Level >= 100:
+                Level = 99
+
+            orientation = self.pluginconf.pluginConf['profaluxOrientBSO']
             if orientation > 90: orientation = 90
-            profalux_MoveToLiftAndTilt( self, NWKID, tilt=orientation)
+            loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Level: %s Orientation: %s" %(NWKID, Level, orientation), NWKID)
+            profalux_MoveToLiftAndTilt( self, NWKID, level=Level, tilt=orientation)
 
         elif DeviceType == "WindowCovering": # Blind Inverted
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
