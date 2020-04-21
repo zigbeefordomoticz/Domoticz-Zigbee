@@ -1,0 +1,6 @@
+{
+	"zone1": {
+		"ieee_thermostat": "00124b00029a94a8",
+		"actuator": ["00124b0002ce71e1"]
+	}
+}
