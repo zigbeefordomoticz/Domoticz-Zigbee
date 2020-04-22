@@ -103,7 +103,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             
         Options[ 'LevelNames' ] = ''
         Options[ 'LevelActions'] = ''
-        Options[ 'LevelOffHidden'] = False
+        Options[ 'LevelOffHidden'] = 'False'
         Options[ 'SelectorStyle'] = '0'
         for bt in range(1, nbSelector):
             Options[ 'LevelNames' ] += 'BT %02s | ' %bt
@@ -115,7 +115,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         if SelectorStyle:
             Options[ 'SelectorStyle'] = '%s' %SelectorStyle
         if OffHidden:
-            Options[ 'LevelOffHidden'] = TypeFromCluster
+            Options[ 'LevelOffHidden'] = 'True'
 
         return Options
 
