@@ -267,18 +267,9 @@ def CreateDomoDevice(self, Devices, NWKID):
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             # 4 Selectors, Style 1  
-            if t in ('Vibration', 'Button_3' ):  
+            if t in ('Vibration', 'Button_3' , 'SwitchAQ2'):  
                 Options = createSwitchSelector( 4, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            # 4 Selectors, Style 1 or 0
-            if t in ('SwitchAQ2'):  
-               # interrupteur multi lvl lumi.sensor_switch.aq2
-               if self.ListOfDevices[NWKID]['Model'] == 'lumi.sensor_switch':
-                   Options = createSwitchSelector( 4, SelectorStyle = 1 )
-               else:
-                   Options = createSwitchSelector( 4, SelectorStyle = 0 )
-               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             # 5 Selectors, Style 0 ( mode command)
             if t in ('ThermoMode' ):
@@ -295,7 +286,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector( 6, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
-            # 6 Buttons, Selector Style 1, OffHidden
+            # 6 Buttons, Style 1, OffHidden
             if t in ('GenericLvlControl'): 
             
                Options = createSwitchSelector( 6, OffHidden= True, SelectorStyle = 1 )
@@ -306,12 +297,12 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options = createSwitchSelector( 7, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t,widgetOptions = Options)
 
-            # 7 Selectors, Style 0, OffHidden = True
+            # 7 Selectors, Style 0, OffHidden
             if t in ('FIP', 'LegrandFilPilote' ):             
                Options = createSwitchSelector( 7, OffHidden = True, SelectorStyle = 0 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
-            # 10 Selectors, Style 1, OffHidden = True
+            # 10 Selectors, Style 1, OffHidden
             if t in ('DButton_3'):  
                Options = createSwitchSelector( 10, OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options) 
