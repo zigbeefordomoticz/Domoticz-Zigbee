@@ -178,7 +178,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             return
         if DeviceType == 'BSO':
             from Modules.profalux import profalux_MoveWithOnOff, profalux_MoveToLiftAndTilt
-            profalux_MoveToLiftAndTilt( self, NWKID, level=0)
+            profalux_MoveToLiftAndTilt( self, NWKID, level=1)
             #profalux_MoveWithOnOff( self, NWKID, 0x00 )
 
         elif DeviceType == "WindowCovering":
@@ -227,7 +227,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 return
         if DeviceType == 'BSO':
             from Modules.profalux import profalux_MoveWithOnOff, profalux_MoveToLiftAndTilt
-            profalux_MoveToLiftAndTilt( self, NWKID, level=0, tilt=15)
+            profalux_MoveToLiftAndTilt( self, NWKID, level=100, tilt=15)
             #profalux_MoveWithOnOff( self, NWKID, 0x01 )
 
         elif DeviceType == "WindowCovering":
