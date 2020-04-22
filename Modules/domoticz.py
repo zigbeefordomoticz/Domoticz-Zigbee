@@ -109,8 +109,8 @@ def CreateDomoDevice(self, Devices, NWKID):
             Options[ 'LevelNames' ] += 'BT %02s | ' %bt
             Options[ 'LevelActions'] += '|'
 
-        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][-2]
-        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][-2]
+        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-3] # Remove the last '| '
+        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-2] # Remove the last '|'
     
         if SelectorStyle:
             Options[ 'SelectorStyle'] = '%s' %SelectorStyle
