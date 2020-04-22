@@ -1136,7 +1136,6 @@ def identifySend( self, nwkid, ep, duration=0):
 
 def maskChannel( channel ):
 
-
     # https://github.com/fairecasoimeme/ZiGate/blob/c5a6b5569f6651f72daec9dabbc0d8688e797426/Module%20Radio/Firmware/src/ZiGate/Source/ZigbeeNodeControlBridge/ZigbeeNodeControlBridgeCoordinator.zpscfg#L513https
     #  <ChannelMask Channel11="true" Channel12="false" Channel13="false" Channel14="false" Channel15="true" 
     #  Channel16="false" Channel17="false" Channel18="false" Channel19="true" Channel20="true" Channel21="false" 
@@ -1144,19 +1143,19 @@ def maskChannel( channel ):
 
     CHANNELS = { 0: 0x00000000, # Scan for all channels
             11: 0x00000800,
-            #12: 0x00001000, # Not Zigate
-            #13: 0x00002000, # Not Zigate
-            #14: 0x00004000, # Not Zigate
+            12: 0x00001000, 
+            13: 0x00002000, 
+            14: 0x00004000, 
             15: 0x00008000,
-            #16: 0x00010000, # Not Zigate
-            #17: 0x00020000, # Not Zigate
-            #18: 0x00040000, # Not Zigate
+            16: 0x00010000, 
+            17: 0x00020000, 
+            18: 0x00040000, 
             19: 0x00080000,
             20: 0x00100000,
-            #21: 0x00200000, # Not Zigate
-            #22: 0x00400000, # Not Zigate
-            #23: 0x00800000, # Not Zigate
-            #24: 0x01000000, # Not Zigate
+            21: 0x00200000, 
+            22: 0x00400000, 
+            23: 0x00800000, 
+            24: 0x01000000, 
             25: 0x02000000,
             26: 0x04000000 }
 
@@ -1199,7 +1198,8 @@ def setChannel( self, channel):
 def channelChangeInitiate( self, channel ):
 
     loggingOutput( self, "Status", "Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
-    NwkMgtUpdReq( self, channel, 'change')
+    Domoticz.Log("Not Implemented")
+    #NwkMgtUpdReq( self, channel, 'change')
 
 def channelChangeContinue( self ):
 

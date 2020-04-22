@@ -1539,7 +1539,6 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     ColorControlWW    = 0x08  # WW
 
 
-    loggingWidget( self, "Debug", "subtypeRGB_FromProfile_Device_IDs - Model: %s, ProfileID: %s, ZDeviceID: %s ColorInfos: %s" %(Model, ProfileID, ZDeviceID, ColorInfos))
     Subtype = None
     ZLL_Commissioning = False
 
@@ -1580,7 +1579,6 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     if Subtype is None and ProfileID == '0104': # Home Automation
         if ZLL_Commissioning and ZDeviceID == '0100': # Most likely IKEA Tradfri bulb LED1622G12
             Subtype = ColorControlWW
-            loggingWidget( self, "Debug", "subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
         elif ZDeviceID == '0101': # Dimable light
             pass
         elif ZDeviceID == '0102': # Color dimable light
@@ -1595,15 +1593,13 @@ def subtypeRGB_FromProfile_Device_IDs( EndPoints, Model, ProfileID, ZDeviceID, C
     if Subtype is None and ColorInfos:
         if ColorMode == 2:
             Subtype = ColorControlWW
-            loggingWidget( self, "Debug", "subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         elif ColorMode == 1:
             Subtype = ColorControlRGB
-            loggingWidget( self, "Debug", "subtypeRGB_FromProfile_Device_IDs - ColorMode: %s Subtype: %s" %(ColorMode,Subtype))
         else:
             Subtype = ColorControlFull
 
     if Subtype is None:
         Subtype = ColorControlFull
 
-    loggingWidget( self, "Debug", "subtypeRGB_FromProfile_Device_IDs - ProfileID: %s ZDeviceID: %s Subtype: %s" %(ProfileID, ZDeviceID, Subtype))
+ 
     return Subtype

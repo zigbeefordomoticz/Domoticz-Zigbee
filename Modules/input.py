@@ -32,7 +32,9 @@ from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpD
 
 from Modules.callback import callbackDeviceAwake
 from Modules.inRawAps import inRawAps
-from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, PDMDeleteRecord, PDMDeleteAllRecord
+from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, \
+            PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, \
+            PDMDeleteRecord, PDMDeleteAllRecord, PDMCreateBitmap, PDMDeleteBitmapRequest
 
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget
@@ -193,7 +195,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
                 loggingInput( self, 'Debug', "Decode8401 - PST03A-V2.2.5  tamper alarm", MsgSrcAddr)
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEp, "0006", value)
         else :
-            loggingInput( self, 'Debug', "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgDataSrcEp, MsgSrcAddr)
+            loggingInput( self, 'Debug', "Decode8401 - PST03A-v2.2.5, unknow EndPoint : " + MsgEp, MsgSrcAddr)
     else :      ## default 
         alarm1 =  int(MsgZoneStatus,16) & 1 
         alarm2 =  ( int(MsgZoneStatus,16)  >> 1 ) & 1
@@ -288,9 +290,10 @@ def Decode8000_v2(self, Devices, MsgData, MsgRSSI) : # Status
 
     if PacketType=="0012":
         # Let's trigget a zigate_Start
-        self.startZigateNeeded = self.HeartbeatCount
-        if self.HeartbeatCount == 0:
-            self.startZigateNeeded = 1
+        #self.startZigateNeeded = self.HeartbeatCount
+        #if self.HeartbeatCount == 0:
+        #    self.startZigateNeeded = 1
+        pass
 
     # Group Management
     if PacketType in ('0060', '0061', '0062', '0063', '0064', '0065'):
@@ -476,9 +479,9 @@ def Decode8006(self, Devices, MsgData, MsgRSSI): # Non “Factory new” Restart
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
 
-    self.startZigateNeeded = self.HeartbeatCount
-    if self.HeartbeatCount == 0:
-        self.startZigateNeeded = 1
+    #self.startZigateNeeded = self.HeartbeatCount
+    #if self.HeartbeatCount == 0:
+    #    self.startZigateNeeded = 1
     loggingInput( self, 'Status', "Non 'Factory new' Restart status: %s" %(Status) )
 
 def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
@@ -495,9 +498,9 @@ def Decode8007(self, Devices, MsgData, MsgRSSI): # “Factory new” Restart
     elif MsgData[0:2] == "06":
         Status = "RUNNING"
 
-    self.startZigateNeeded = self.HeartbeatCount
-    if self.HeartbeatCount == 0:
-        self.startZigateNeeded = 1
+    #self.startZigateNeeded = self.HeartbeatCount
+    #if self.HeartbeatCount == 0:
+    #    self.startZigateNeeded = 1
     loggingInput( self, 'Status', "'Factory new' Restart status: %s" %(Status) )
 
 def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm v3.0d)
@@ -546,7 +549,7 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
 
     self.zigatedata['IEEE'] = extaddr
     self.zigatedata['Short Address'] = addr
-    self.zigatedata['Channel'] = Channel
+    self.zigatedata['Channel'] = int(Channel,16)
     self.zigatedata['PANID'] = PanID
     self.zigatedata['Extended PANID'] = extPanID
     saveZigateNetworkData( self , self.zigatedata )
@@ -1567,7 +1570,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     MsgClusterData=MsgData[24:len(MsgData)]
 
     loggingInput( self, 'Debug', "Decode8100 - Report Attributes Response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
-            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
+            %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8100)
     loggingMessages( self, '8100', MsgSrcAddr, None, MsgRSSI, MsgSQN)
@@ -2116,7 +2119,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # Let's check if this is a Schneider Wiser
         if 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '105e':
-                schneider_wiser_registration( self, MsgSrcAddr )
+                schneider_wiser_registration( self, Devices, MsgSrcAddr )
     else:
         # New Device coming for provisioning
 

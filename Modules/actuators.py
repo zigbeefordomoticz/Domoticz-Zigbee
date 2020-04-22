@@ -78,7 +78,7 @@ def actuator_off(  self, nwkid, EPout, DeviceType):
         sendZigateCmd(self, "00FA","02" + nwkid + ZIGATE_EP + EPout + "01")
 
     elif DeviceType == "AlarmWD":
-        Domoticz.Log("Alarm WarningDevice - value: %s" %value)
+        Domoticz.Log("Alarm WarningDevice - value: %s" %'off')
         self.iaszonemgt.alarm_off( nwkid, EPout)
 
     else:
@@ -141,9 +141,8 @@ def actuator_setthermostat( self, nwkid, ep, value ):
     #'Emergency Heating' : 0x05,
     #'Pre-cooling' : 0x06,
     #'Fan only' : 0x07 
-    if value == 0:
-        value = 'off'
-        thermostat_Mode( self, nwkid, value)
+
+    return
 
 
 def actuator_setpoint(  self, nwkid, ep, value ):
