@@ -35,7 +35,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     else :
         Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
         return
-    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ), NWKID)
+    loggingCommand( self, 'Log', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ), NWKID)
     loggingCommand( self, 'Debug', "mgtCommand - NWKID = " +str(NWKID) , NWKID)
 
     if self.ListOfDevices[NWKID]['RSSI'] != '' :
@@ -115,7 +115,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
-    loggingCommand( self, 'Debug', "mgtCommand - DeviceType : " +str(DeviceType) , NWKID)
+    loggingCommand( self, 'Log', "mgtCommand - DeviceType : " +str(DeviceType) , NWKID)
 
     # A ce stade ClusterSearch est connu
     EPin="01"
