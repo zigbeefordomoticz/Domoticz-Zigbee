@@ -257,19 +257,18 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 242, Subtype_ = 1)
 
             if t == "ThermoMode":
-                Options = {"LevelActions": "|||", "LevelNames": "Off|Auto|Cool|Heat|Force Heat",
-                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                Options = createSwitchSelector( 5, SelectorStyle = 0 )
+ 
+ 
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "HACTMODE":
-                    Options = {"LevelActions": "||", "LevelNames": "Off|Conventional|Set Point|Fil Pilote",
-                            "LevelOffHidden": "true", "SelectorStyle": "0"}
-                    createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                Options = createSwitchSelector( 4, OffHidden = true, SelectorStyle = 0 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t in ("FIP", 'LegrandFilPilote' ):
-                    Options = {"LevelActions": "||||||", "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
-                            "LevelOffHidden": "true", "SelectorStyle": "0"}
-                    createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                Options = createSwitchSelector( 7, OffHidden = true, SelectorStyle = 0 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Temp":  
                 # Detecteur temp
@@ -285,8 +284,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "AlarmWD": 
                 # IAS object / matching 0x0502 Cluster / Alarm/Siren
-                Options = {"LevelActions": "|||||", "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
-                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                Options = createSwitchSelector( 6, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 
             if t == "Door":  
@@ -375,9 +373,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Xiaomi Magic Cube
                 self.ListOfDevices[NWKID]['Status'] = "inDB"
                 # Create the XCube Widget
-                Options = {"LevelActions": "||||||||||",
-                           "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
-                           "LevelOffHidden": "true", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 10, OffHidden = True, SelectorStyle = 1 )
                 unit = FreeUnit(self, Devices, nbunit_=2) # Look for 2 consecutive slots
                 myDev = Domoticz.Device(DeviceID=str(DeviceID_IEEE), Name=deviceName( self, NWKID, t, DeviceID_IEEE, Ep), 
                                 Unit=unit, Type=244, Subtype=62, Switchtype=18, Options=Options)
@@ -402,8 +398,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Vibration":  
                 # Aqara Vibration Sensor v1
-                Options = {"LevelActions": "|||", "LevelNames": "Off|Tilt|Vibrate|Free Fall", \
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 4, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Strength":
