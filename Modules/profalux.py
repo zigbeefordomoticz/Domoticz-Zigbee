@@ -160,22 +160,25 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     if level:
         level = ( 254 * level ) // 100
 
-    if level is None and tilt:
+    if level and tilt:
+        option = 0x03
+    elif tilt:
         option = 0x02
         level = 0x00
-    elif level and tilt is None:
-        option = 0x01
-        tilt = 0x00
-    elif level and tilt:
-        option = 0x03
-
+    elif level:
+       option = 0x01
+       tilt = 0x00
+    else:
+        Domoticz.Error( "profalux_MoveToLiftAndTilt - level: %s titl: %s" %(level, tilt) )
+        return
+    
     # payload: 11 45 10 03 55 2d ffff
     # Option Parameter uint8   Bit0 Ask for lift action, Bit1 Ask fr a tilt action
     # Lift Parameter   uint8   Lift value between 1 to 254
     # Tilt Parameter   uint8   Tilt value between 0 and 90
     # Transition Time  uint16  Transition Time between current and asked position
 
-    payload = cluster_frame + sqn + cmd + '%02x' %tilt + '%02x' %level + '%02x' %tilt + 'ffff'
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
 
