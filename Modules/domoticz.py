@@ -249,28 +249,88 @@ def CreateDomoDevice(self, Devices, NWKID):
         for t in Type:
             loggingWidget( self, "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
-            if t == "ThermoModeEHZBRTS":
+            # === Selector Switches
+
+            # 3 Selectors, Style 0
+            if t == "Toggle": 
+                Options = createSwitchSelector( 3 , SelectorStyle = 0)
+                createDomoticzWidget( self, subtypeRGB_FromProfile_Device_IDs, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 4 Selector , OffHidden, Style 0 (command)
+            if t in ('HACTMODE', 'DSwitch'):
+               Options = createSwitchSelector( 4, OffHidden = True, SelectorStyle = 0 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 4 Selectors, OffHidden, Style 1
+            if t in ('DButton'):  
+               Options = createSwitchSelector( 4, OffHidden= True, SelectorStyle = 1 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 4 Selectors, Style 1  
+            if t in ('Vibration', 'Button_3' ):  
+                Options = createSwitchSelector( 4, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 4 Selectors, Style 1 or 0
+            if t in ('SwitchAQ2'):  
+               # interrupteur multi lvl lumi.sensor_switch.aq2
+               if self.ListOfDevices[NWKID]['Model'] == 'lumi.sensor_switch':
+                   Options = createSwitchSelector( 4, SelectorStyle = 1 )
+               else:
+                   Options = createSwitchSelector( 4, SelectorStyle = 0 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 5 Selectors, Style 0 ( mode command)
+            if t in ('ThermoMode' ):
+                Options = createSwitchSelector( 5, SelectorStyle = 0 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 5 Selectors, Style 1
+            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA'): 
+                Options = createSwitchSelector( 5, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 6 Selectors, Style 1
+            if t in ('AlarmWD' ):        
+                Options = createSwitchSelector( 6, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 6 Buttons, Selector Style 1, OffHidden
+            if t in ('GenericLvlControl'): 
+            
+               Options = createSwitchSelector( 6, OffHidden= True, SelectorStyle = 1 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+            
+            # 7 Selectors, Style 1
+            if t in ('ThermoModeEHZBRTS', 'INNR_RC110_LIGHT'):             
                 Options = createSwitchSelector( 7, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t,widgetOptions = Options)
 
+            # 7 Selectors, Style 0, OffHidden = True
+            if t in ('FIP', 'LegrandFilPilote' ):             
+               Options = createSwitchSelector( 7, OffHidden = True, SelectorStyle = 0 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 10 Selectors, Style 1, OffHidden = True
+            if t in ('DButton_3'):  
+               Options = createSwitchSelector( 10, OffHidden = True, SelectorStyle = 1 )
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options) 
+
+            # 13 Selectors, Style 1
+            if t in ('INNR_RC110_SCENE'):
+                Options = createSwitchSelector( 13, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # 14 Selectors, Style 1
+            if t in ('Ikea_Round_5b'): 
+                Options = createSwitchSelector( 14, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+
+            # ==== Classic Widget
             if t in ( "ThermoSetpoint", "TempSetCurrent"):
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 242, Subtype_ = 1)
-
-            if t == "ThermoMode":
-                Options = createSwitchSelector( 5, SelectorStyle = 0 )
- 
- 
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "HACTMODE":
-                Options = createSwitchSelector( 4, OffHidden = true, SelectorStyle = 0 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t in ("FIP", 'LegrandFilPilote' ):
-                Options = createSwitchSelector( 7, OffHidden = true, SelectorStyle = 0 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "Temp":  
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 242, Subtype_ = 1)  
+               
+            if t == "Temp":
                 # Detecteur temp
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Temperature")
 
@@ -281,11 +341,6 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Baro":  
                 # Detecteur Baro
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
-
-            if t == "AlarmWD": 
-                # IAS object / matching 0x0502 Cluster / Alarm/Siren
-                Options = createSwitchSelector( 6, SelectorStyle = 0 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 
             if t == "Door":  
                 # capteur ouverture/fermeture xiaomi
@@ -299,47 +354,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Livolo Switch Left and Right
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
 
-            if t == 'Generic_5_buttons': 
-                # 5 Buttons , Selector Style 1
-                Options = createSwitchSelector( 5, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
- 
-            if t == 'GenericLvlControl': # 6 Buttons, Selector Style 1, OffHidden
-                Options = createSwitchSelector( 6, OffHidden= True, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == 'LegrandSelector':
-                Options = createSwitchSelector( 5, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "SwitchAQ2":  
-                # interrupteur multi lvl lumi.sensor_switch.aq2
-                if self.ListOfDevices[NWKID]['Model'] == 'lumi.sensor_switch':
-                    Options = createSwitchSelector( 4, SelectorStyle = 1 )
-                else:
-                    Options = createSwitchSelector( 4, SelectorStyle = 0 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "SwitchAQ3":  
-                # interrupteur multi lvl lumi.sensor_switch.aq2
-                Options = createSwitchSelector( 5, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "DSwitch":  
-                # interrupteur double sur EP different
-                Options = createSwitchSelector( 4, OffHidden= True, SelectorStyle = 0 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "DButton":  
-                # interrupteur double sur EP different lumi.sensor_86sw2
-                Options = createSwitchSelector( 4, OffHidden= True, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "DButton_3":  
-                # interrupteur double sur EP different lumi.sensor_86sw2
-                Options = createSwitchSelector( 10, OffHidden = True, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
             if t == "Smoke":  
                 # detecteur de fumee
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 5 )
@@ -348,11 +362,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Lux sensors
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
 
-            if t == "Toggle": 
-                # Switch selector provding On, Off and Toggle
-                Options = createSwitchSelector( 3 )
-                createDomoticzWidget( self, subtypeRGB_FromProfile_Device_IDs, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
             if t == "Switch":  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
@@ -360,11 +369,6 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Button":  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 9 )
-
-            if t == "Button_3":  
-                # inter sans fils 1 touche 86sw1 xiaomi 3 States 
-                Options = createSwitchSelector( 4, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Aqara" or t == "XCube": 
                 # Do not use the generic createDomoticzWidget , because this one required 2 continuous widget.
@@ -396,11 +400,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                 else:
                     self.ListOfDevices[NWKID]['Ep'][Ep]['ClusterType'][str(ID)] = 'Text'
 
-            if t == "Vibration":  
-                # Aqara Vibration Sensor v1
-                Options = createSwitchSelector( 4, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
             if t == "Strength":
                 # Vibration strength
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 31 )
@@ -416,7 +415,24 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Plug":  
                 # prise pilote
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0, Image = 1 )
-   
+
+            if t == "P1Meter":
+                # P1 Smart Meter Energy Type 250, Subtype = 250
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 250, Subtype_ = 1, Switchtype_ = 1 )
+
+            if t == "Power":  
+                # Will display Watt real time
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Usage")
+
+            if t == "Meter":  
+                # Will display kWh
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Usage") 
+
+            if t == "Voltage":  
+                # Voltage
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Voltage") 
+
+            # ====== Blind and Venetian
             # Subtype = 
             # Blind / Window covering
             #   13 Blind percentage
@@ -447,6 +463,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 elif self.ListOfDevices[NWKID]['ProfileID'] == '0104' and self.ListOfDevices[NWKID]['ZDeviceID'] == '0200':
                     createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 15 )
 
+            # ======= Level Control / Dimmer
             if t == "LvlControl":
                 if self.ListOfDevices[NWKID]['Model'] != '' and self.ListOfDevices[NWKID]['Model'] != {} :  
                     loggingWidget( self, "Debug", "---> Shade based on ZDeviceID" , NWKID)
@@ -468,6 +485,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                         # variateur de luminosite + On/off
                         createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 7 )
 
+            # ======= Color Control: RGB, WW, Z or combinaisons
             if t in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                 # variateur de couleur/luminosite/on-off
 
@@ -491,38 +509,6 @@ def CreateDomoDevice(self, Devices, NWKID):
                     else:                  t = 'ColorControlFull'
 
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 241, Subtype_ = Subtype_, Switchtype_ = 7 )
-
-            if t == "P1Meter":
-                # P1 Smart Meter Energy Type 250, Subtype = 250
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 250, Subtype_ = 1, Switchtype_ = 1 )
-
-            if t == "Power":  
-                # Will display Watt real time
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Usage")
-
-            if t == "Meter":  
-                # Will display kWh
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Usage") 
-
-            if t == "Voltage":  
-                # Voltage
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Voltage") 
-
-            if t == 'INNR_RC110_SCENE': # INNR Remote Control
-                Options = createSwitchSelector( 13, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == 'INNR_RC110_LIGHT': # INNR Remote Control
-                Options = createSwitchSelector( 7, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "SwitchIKEA":
-                Options = createSwitchSelector( 5, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-
-            if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
-                Options = createSwitchSelector( 14, SelectorStyle = 1 )
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
     # for Ep
     loggingWidget( self, "Debug", "GlobalType: %s" %(str(GlobalType)), NWKID)
