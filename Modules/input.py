@@ -32,7 +32,9 @@ from Modules.zigate import  initLODZigate, receiveZigateEpList, receiveZigateEpD
 
 from Modules.callback import callbackDeviceAwake
 from Modules.inRawAps import inRawAps
-from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, PDMDeleteRecord, PDMDeleteAllRecord
+from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequest, \
+            PDMGetBitmapRequest, PDMIncBitmapRequest, PDMExistanceRequest, pdmLoadConfirmed, \
+            PDMDeleteRecord, PDMDeleteAllRecord, PDMCreateBitmap, PDMDeleteBitmapRequest
 
 
 #from Modules.adminWidget import updateNotificationWidget, updateStatusWidget

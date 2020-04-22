@@ -1198,7 +1198,8 @@ def setChannel( self, channel):
 def channelChangeInitiate( self, channel ):
 
     loggingOutput( self, "Status", "Change channel from [%s] to [%s] with nwkUpdateReq" %(self.currentChannel, channel))
-    NwkMgtUpdReq( self, channel, 'change')
+    Domoticz.Log("Not Implemented")
+    #NwkMgtUpdReq( self, channel, 'change')
 
 def channelChangeContinue( self ):
 

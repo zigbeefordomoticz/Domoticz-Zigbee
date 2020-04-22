@@ -204,7 +204,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
     write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
-def legrand_fc40( self, Mode ):
+def legrand_fc40( self, nwkid, Mode ):
     # With the permission of @Thorgal789 who did the all reverse enginnering of this cluster
 
     CABLE_OUTLET_MODE = { 
@@ -231,7 +231,7 @@ def legrand_fc40( self, Mode ):
             EPout= tmpEp
 
     loggingLegrand( self, 'Debug', "legrand %s Set Fil pilote mode - for %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(command, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
+            %( Mode, nwkid,Hdata,cluster_id,Hattribute,data_type), nwkid=nwkid)
     write_attribute( self, nwkid, "01", EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
 
