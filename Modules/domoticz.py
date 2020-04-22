@@ -87,6 +87,38 @@ def CreateDomoDevice(self, Devices, NWKID):
             loggingWidget( self, "Debug", "FreeUnit - device " + str(len(Devices) + 1))
             return len(Devices) + 1
 
+    def createSwitchSelector( nbSelector, OffHidden = False, SelectorStyle = 0 ):
+        """
+        Generate an Options attribute to handle the number of required button, if Off is hidden or notand SelectorStype
+
+        Options = {"LevelActions": "|||", 
+                    "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
+                    "LevelOffHidden": "false", "SelectorStyle": "1"}
+        """
+
+        Options = {}
+        
+        if nbSelector <= 1:
+            return Options
+            
+        Options[ 'LevelNames' ] = ''
+        Options[ 'LevelOffHidden'] = False
+        Options[ 'SelectorStyle'] = '0'
+        for bt in range(1, nbSelector):
+            Options[ 'LevelNames' ] += 'BT %02s | ' %bt
+            Options[ 'LevelActions'] += '|'
+
+        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][-2]
+        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][-2]
+    
+        if SelectorStyle:
+            Options[ 'SelectorStyle'] = '%s' %SelectorStyle
+        if OffHidden:
+            Options[ 'LevelOffHidden'] = TypeFromCluster
+
+        return Options
+
+
     def createDomoticzWidget( self, Devices, nwkid, ieee, ep, cType, 
                                 widgetType = None, Type_ = None, Subtype_ = None, Switchtype_ = None, 
                                 widgetOptions = None, 
@@ -217,8 +249,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             loggingWidget( self, "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
 
             if t == "ThermoModeEHZBRTS":
-                Options = {"LevelActions": "||||||", "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection",
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 7, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t,widgetOptions = Options)
 
             if t in ( "ThermoSetpoint", "TempSetCurrent"):
@@ -269,53 +300,45 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # Livolo Switch Left and Right
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
 
-            if t == 'Generic_5_buttons':
-                Options = {"LevelActions": "||||", "LevelNames": "button1|button2|button3|button4|button5",
-                            "LevelOffHidden": "false", "SelectorStyle": "1"}
+            if t == 'Generic_5_buttons': 
+                # 5 Buttons , Selector Style 1
+                Options = createSwitchSelector( 5, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
  
-            if t == 'GenericLvlControl':
-                Options = {"LevelActions": "||||", "LevelNames": "Off|Off|On|Move Up|Move Down|Stop",
-                            "LevelOffHidden": "true", "SelectorStyle": "1"}
+            if t == 'GenericLvlControl': # 6 Buttons, Selector Style 1, OffHidden
+                Options = createSwitchSelector( 6, OffHidden= True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == 'LegrandSelector':
-                Options = {"LevelActions": "||||", "LevelNames": "Off|On|Move Up|Move Down|Stop",
-                            "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 5, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "SwitchAQ2":  
                 # interrupteur multi lvl lumi.sensor_switch.aq2
                 if self.ListOfDevices[NWKID]['Model'] == 'lumi.sensor_switch':
-                    Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
-                            "LevelOffHidden": "false", "SelectorStyle": "1"}
+                    Options = createSwitchSelector( 4, SelectorStyle = 1 )
                 else:
-                    Options = {"LevelActions": "|||", "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
-                            "LevelOffHidden": "false", "SelectorStyle": "0"}
+                    Options = createSwitchSelector( 4, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "SwitchAQ3":  
                 # interrupteur multi lvl lumi.sensor_switch.aq2
-                Options = {"LevelActions": "||||", "LevelNames": "Click|Double Click|Long Click|Release Click|Shake",
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 5, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "DSwitch":  
                 # interrupteur double sur EP different
-                Options = {"LevelActions": "|||", "LevelNames": "Off|Left Click|Right Click|Both Click",
-                           "LevelOffHidden": "true", "SelectorStyle": "0"}
+                Options = createSwitchSelector( 4, OffHidden= True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "DButton":  
                 # interrupteur double sur EP different lumi.sensor_86sw2
-                Options = {"LevelActions": "|||", "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
-                           "LevelOffHidden": "true", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 4, OffHidden= True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "DButton_3":  
                 # interrupteur double sur EP different lumi.sensor_86sw2
-                Options = {"LevelActions": "|||||||||", "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click",
-                           "LevelOffHidden": "true", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 10, OffHidden = True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Smoke":  
@@ -328,8 +351,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Toggle": 
                 # Switch selector provding On, Off and Toggle
-                Options = {"LevelActions": "||", "LevelNames": "Off|On|Toggle",
-                           "LevelOffHidden": "false", "SelectorStyle": "0"}
+                Options = createSwitchSelector( 3 )
                 createDomoticzWidget( self, subtypeRGB_FromProfile_Device_IDs, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Switch":  
@@ -342,8 +364,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Button_3":  
                 # inter sans fils 1 touche 86sw1 xiaomi 3 States 
-                Options = {"LevelActions": "|||", "LevelNames": "Off|Click|Double Click|Long Click", \
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 4, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Aqara" or t == "XCube": 
@@ -492,26 +513,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Voltage") 
 
             if t == 'INNR_RC110_SCENE': # INNR Remote Control
-                Options = {"LevelActions": "||||||||||||", "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6", \
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 13, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == 'INNR_RC110_LIGHT': # INNR Remote Control
-                self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "||||||", "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop", \
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 7, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "SwitchIKEA":
-                self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "||||", "LevelNames": "Off|On|Push Up|Push Down|Release", \
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 5, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
             if t == "Ikea_Round_5b": # IKEA Remote 5 buttons round one.
-                self.ListOfDevices[NWKID]['Status'] = "inDB"
-                Options = {"LevelActions": "|||||||||||||", "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release", \
-                           "LevelOffHidden": "false", "SelectorStyle": "1"}
+                Options = createSwitchSelector( 14, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
 
     # for Ep
