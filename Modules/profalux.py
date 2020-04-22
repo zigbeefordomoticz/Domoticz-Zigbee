@@ -144,12 +144,13 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
             EPout= tmpEp
 
     # Frame Control Field:
+    #   0x01: Cluster Specific
     #   0x10: Client to Server
     #   0x18: Server to Client
     #   0x14: Manuf Specific / Client to Server
     #   0x1c: Manuf Specific / Server to Client
 
-    cluster_frame = '18'
+    cluster_frame = '01'
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
@@ -177,7 +178,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Lift Parameter   uint8   Lift value between 1 to 254
     # Tilt Parameter   uint8   Tilt value between 0 and 90
     # Transition Time  uint16  Transition Time between current and asked position
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x18 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x01 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
  
