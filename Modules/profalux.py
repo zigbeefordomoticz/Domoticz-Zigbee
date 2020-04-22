@@ -177,9 +177,22 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Lift Parameter   uint8   Lift value between 1 to 254
     # Tilt Parameter   uint8   Tilt value between 0 and 90
     # Transition Time  uint16  Transition Time between current and asked position
-
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x18 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+ 
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x10 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)   
+    cluster_frame = '10'
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+ 
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    cluster_frame = '14'
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1c ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    cluster_frame = '1c'
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     return
