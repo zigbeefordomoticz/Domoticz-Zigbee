@@ -102,6 +102,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             return Options
             
         Options[ 'LevelNames' ] = ''
+        Options[ 'LevelActions'] = ''
         Options[ 'LevelOffHidden'] = False
         Options[ 'SelectorStyle'] = '0'
         for bt in range(1, nbSelector):
