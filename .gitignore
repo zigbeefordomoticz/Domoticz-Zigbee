@@ -5,6 +5,7 @@ OTAFirmware/*/*
 Conf/ZigateGroupsConfig-*
 Data/DeviceList-*
 Data/GroupsList-*
+Data/zigatePDM-*
 Data/Zigate.json
 www/zigate/reports/*
 Reports/*
