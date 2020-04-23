@@ -103,7 +103,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             
         Options[ 'LevelNames' ] = ''
         Options[ 'LevelActions'] = ''
-        Options[ 'LevelOffHidden'] = 'False'
+        Options[ 'LevelOffHidden'] = 'false'
         Options[ 'SelectorStyle'] = '0'
 
         if DeviceType:
@@ -126,8 +126,9 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         if SelectorStyle:
             Options[ 'SelectorStyle'] = '%s' %SelectorStyle
+
         if OffHidden:
-            Options[ 'LevelOffHidden'] = 'True'
+            Options[ 'LevelOffHidden'] = 'true'
 
         Domoticz.Log(" --> Options: %s" %str(Options))
         return Options
