@@ -1538,44 +1538,79 @@ def Thermostat_LockMode( self, key, lockmode):
 def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zigate_ep=ZIGATE_EP):
 
     """" Command
-    This function submits a request to send data to a remote node, with no restrictions
-    on the type of transmission, destination address, destination application profile,
-    destination cluster and destination endpoint number - these destination parameters
-    do not need to be known to the stack or defined in the ZPS configuration. In this
-    sense, this is most general of the Data Transfer functions.
+        This function submits a request to send data to a remote node, with no restrictions
+        on the type of transmission, destination address, destination application profile,
+        destination cluster and destination endpoint number - these destination parameters
+        do not need to be known to the stack or defined in the ZPS configuration. In this
+        sense, this is most general of the Data Transfer functions.
 
-    The data is sent in an Application Protocol Data Unit (APDU) instance,
+        The data is sent in an Application Protocol Data Unit (APDU) instance,
 
-    Command 0x0530
-    address mode
-    target short address 4
-    source endpoint 2
-    destination endpoint 2
-    clusterId 4
-    profileId 4
-    security mode 2
-    radius 2
-    data length 2
-    data Array of 2
+            Command 0x0530
+            address mode
+            target short address 4
+            source endpoint 2
+            destination endpoint 2
+            clusterId 4
+            profileId 4
+            security mode 2
+            radius 2
+            data length 2
+            data Array of 2
 
-    eSecurityMode is the security mode for the data transfer, one of:
+        eSecurityMode is the security mode for the data transfer, one of:
             0x00 : ZPS_E_APL_AF_UNSECURE (no security enabled)
             0x01 : ZPS_E_APL_AF_SECURE Application-level security using link key and network key)
             0x02 : ZPS_E_APL_AF_SECURE_NWK (Network-level security using network key)
             0x10 : ZPS_E_APL_AF_SECURE | ZPS_E_APL_AF_EXT_NONCE (Application-level security using link key and network key with the extended NONCE included in the frame)
             0x20 : ZPS_E_APL_AF_WILD_PROFILE (May be combined with above flags using OR operator. Sends the message using the wild card profile (0xFFFF) instead of the profile in the associated Simple descriptor)
-    u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
+        u8Radius is the maximum number of hops permitted to the destination node (zero value specifies that default maximum is to be used)
 
     """
     """ APS request command Payload
 
-    target addr ( IEEE )
-    target ep
-    clusterID
-    dest addr mode
-    dest addr
-    dest ep
+        target addr ( IEEE )
+        target ep
+        clusterID
+        dest addr mode
+        dest addr
+        dest ep
 
+    """
+    """
+    Frame Control Field ( 8 bits lenght )
+        Frame Type:                 0-1
+        Manufacturer specific:      2
+        Direction:                  3
+        Disable Default Response:   4
+        Reserved:                   5-7
+
+    Frame Type:
+        00 - Command isglobal for all clusters, including manufacturer specific clusters
+        01 - Command is specific or local to a cluster
+
+    Manufacturer specific:
+        The manufacturer specific sub-field is 1 bit in length and specifies whether this
+        command refers to a manu-facturer specific extension. If this value is set to 1,
+        the manufacturer code field SHALL be present in the ZCL frame.
+        If  this  value  is  set  to  0,  the  manufacturer  code  field  SHALL  not  be
+        included  in  the  ZCL  frame. Manufacturer specific clustersSHALLsupport global
+        commands (Frame Type 0b00)
+
+    Direction :
+        The  direction  sub-field  specifies  the  client/server  direction  for  this  
+        command.  If  this  value  is  set  to  1,  the command is being sent from the 
+        server side of a cluster to the client side of a cluster. If this value is set to 0, 
+        the command is being sent from the client side of a cluster to the server side of 
+        a cluster.
+
+    Disable Default Response:
+        If it is set to 0, the Default Response command will be returned, under the 
+        conditions specified in 2.5.12.2. If it is set to 1,the Default Response 
+        command will only be returned if there is an error, 
+        This field SHALL be set to 1, for all response frames generated as the 
+        immediate and direct effect of a pre-viously received frame
+    
     """
 
     #SECURITY = 0x33
