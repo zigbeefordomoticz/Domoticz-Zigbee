@@ -114,9 +114,10 @@ def CreateDomoDevice(self, Devices, NWKID):
         #            for bt in range(1, count):
         #                Options[ 'LevelActions'] += '|'
         #else:
-        for bt in range(1, nbSelector):
-            Options[ 'LevelNames' ] += 'BT %02s | ' %bt
+        for bt in range(0, nbSelector):
+            Options[ 'LevelNames' ] += 'BT %03s | ' %bt
             Options[ 'LevelActions'] += '|'
+    
         Domoticz.Log(" --> Options: %s" %str(Options))  
 
         Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
