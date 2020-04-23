@@ -196,12 +196,13 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Transition Time  uint16  Transition Time between current and asked position
     
     ManfufacturerCode = '1110'
-    #cluster_frame = '01' # 0001
+    
+    #cluster_frame = '01' # 0001 - Command is specific or local to a cluster - Client to Server 
     #payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     #loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x01 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     #raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
  
-    #cluster_frame = '10' # 10000
+    #cluster_frame = '10' # 10000 - - Client to Server - Default Response
     #sqn = '%02x' %(int(sqn,16) + 1)
     #payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     #loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x10 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
@@ -213,25 +214,25 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
+    cluster_frame = '15' # 10101 - Command is specific or local to a cluster - Manuf Specific - Client to Server - Default Response
+    sqn = '%02x' %(int(sqn,16) + 1)
+    payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x15 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+
     cluster_frame = '1c' # 11100 - Manuf Specific - Server to Client - Default Response
     sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1c ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    cluster_frame = '15' # 10101 - Manuf Specific - Client to Server - Default Response
-    sqn = '%02x' %(int(sqn,16) + 1)
-    payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x15 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
-    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-
-    cluster_frame = '1d' # 11101 - Manuf Specific - Server to Client - Default Response
+    cluster_frame = '1d' # 11101 - Command is specific or local to a cluster -  Manuf Specific - Server to Client - Default Response
     sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1d ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    #cluster_frame = '19' # 11001
+    #cluster_frame = '19' # 11001 - Command is specific or local to a cluster - Server to Client
     #sqn = '%02x' %(int(sqn,16) + 1)
     #payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     #loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x19 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
