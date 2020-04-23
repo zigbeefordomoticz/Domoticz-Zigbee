@@ -111,7 +111,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
                     Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
                     count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
-                    Domoticz.Log("----> How many Levels: %s" %count)
+                    #Domoticz.Log("----> How many Levels: %s" %count)
                     for bt in range(0, count):
                         Options[ 'LevelActions'] += '|'
         else:
@@ -130,7 +130,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         if OffHidden:
             Options[ 'LevelOffHidden'] = 'true'
 
-        Domoticz.Log(" --> Options: %s" %str(Options))
+        #Domoticz.Log(" --> Options: %s" %str(Options))
         return Options
 
 
