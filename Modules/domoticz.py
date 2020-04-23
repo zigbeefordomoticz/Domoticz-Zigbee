@@ -106,26 +106,27 @@ def CreateDomoDevice(self, Devices, NWKID):
         Options[ 'LevelOffHidden'] = 'False'
         Options[ 'SelectorStyle'] = '0'
 
-        if DeviceType:
-            if DeviceType in SWITCH_LVL_MATRIX:
-                if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
-                    Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
-                    count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
-                    for bt in range(0, count):
-                        Options[ 'LevelActions'] += '|'
-        else:
-            for bt in range(0, nbSelector):
-                Options[ 'LevelNames' ] += 'BT %02s | ' %bt
-                Options[ 'LevelActions'] += '|'
+        #if DeviceType:
+        #    if DeviceType in SWITCH_LVL_MATRIX:
+        #        if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
+        #            Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
+        #            count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
+        #            for bt in range(1, count):
+        #                Options[ 'LevelActions'] += '|'
+        #else:
+        for bt in range(1, nbSelector):
+            Options[ 'LevelNames' ] += 'BT %02s | ' %bt
+            Options[ 'LevelActions'] += '|'
 
-            Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-3] # Remove the last '| '
-            Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-2] # Remove the last '|'
-    
+        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-3] # Remove the last '| '
+        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-2] # Remove the last '|'
+
         if SelectorStyle:
             Options[ 'SelectorStyle'] = '%s' %SelectorStyle
         if OffHidden:
             Options[ 'LevelOffHidden'] = 'True'
 
+        Domoticz.Log(" --> Options: %s" %str(Options))
         return Options
 
 
@@ -432,19 +433,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "P1Meter":
                 # P1 Smart Meter Energy Type 250, Subtype = 250
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 250, Subtype_ = 1, Switchtype_ = 1 )
-
  
- 
- 
-
- 
- 
- 
-
- 
- 
- 
-
             # ====== Blind and Venetian
             # Subtype = 
             # Blind / Window covering
