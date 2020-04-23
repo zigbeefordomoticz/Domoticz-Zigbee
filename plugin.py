@@ -582,8 +582,9 @@ class BasePlugin:
                 %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMLockStatus() ))
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
-
             # Require Transport
+
+            # Perform erasePDM if required
             if not self.InitPhase1:
                 zigateInit_Phase1( self)
                 return
@@ -591,6 +592,14 @@ class BasePlugin:
             # Check if Restart is needed ( After an ErasePDM or a Soft Reset
             if self.startZigateNeeded:
                 if ( self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE):
+                    # Need to check if and ErasePDM has been performed.
+                    # In case case, we have to set the extendedPANID
+                            # ErasePDM has been requested, we are in the next Loop.
+                    if self.ErasePDMDone == True:
+                        if self.pluginconf.pluginConf['extendedPANID'] is not None:
+                            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
+                            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+
                     start_Zigate( self )
                     self.startZigateNeeded = False
                 return
@@ -723,10 +732,10 @@ def zigateInit_Phase1(self ):
             self.HeartbeatCount = 1
             return
 
-        # ErasePDM has been requested, we are in the next Loop.
-        if self.pluginconf.pluginConf['extendedPANID'] is not None:
-            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
-            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+
+
+
+
 
         # After an Erase PDM we have to do a full start of Zigate
         loggingPlugin( self, 'Debug', "----> starZigate")
