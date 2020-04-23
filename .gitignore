@@ -1,4 +1,7 @@
 Conf/PluginConf-*
+OTAFirmware/*/*
+!OTAFirmware/*/README.me
+!OTAFirmware/*/.PRECIOUS
 Conf/ZigateGroupsConfig-*
 Data/DeviceList-*
 Data/GroupsList-*
