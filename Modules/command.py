@@ -365,7 +365,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
             from Modules.profalux import profalux_MoveToLiftAndTilt
 
-            loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Level: %s Orientation: %s" %(NWKID, Level), NWKID)
+            loggingCommand( self, 'Log', "mgtCommand : profalux_MoveToLiftAndTilt: %s Level: %s" %(NWKID, Level), NWKID)
             profalux_MoveToLiftAndTilt( self, NWKID, level=Level)
             
 
