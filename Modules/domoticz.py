@@ -147,9 +147,9 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         unit = FreeUnit(self, Devices)
-        loggingWidget( self, "Log", "CreateDomoDevice - unit: %s" %unit, nwkid)
+        loggingWidget( self, "Debug", "CreateDomoDevice - unit: %s" %unit, nwkid)
         
-        loggingWidget( self, "Log", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" \
+        loggingWidget( self, "Debug", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" \
             %(cType, widgetType , Type_ , Subtype_, Switchtype_ , widgetOptions , Image ,ForceClusterType), nwkid)
      
         widgetName = deviceName( self, nwkid, cType, ieee, ep)
