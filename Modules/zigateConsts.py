@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_consts.py
+    Module: zigateConst.py
 
     Description: All Constants
 
@@ -21,7 +21,6 @@ MAX_LOAD_ZIGATE = 4
 
 # Threshold before switching to Busy state. If we have or more than MAX_FOR_ZIGATE_BUZY in the FIFO queue
 MAX_FOR_ZIGATE_BUZY = 4
-
 
 # If there is a need to read more than 4 Attributes at a time, then breakdown the request into several.
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
@@ -125,7 +124,6 @@ SIZE_DATA_TYPE = {
         '31': 2,    # enum16
              }
 
-
 ZLL_DEVICES = {
         # https://www.nxp.com/docs/en/user-guide/JN-UG-3091.pdf
         0x0000: 'On/Off Light', 
@@ -141,8 +139,6 @@ ZLL_DEVICES = {
         0x0830: 'Non-Colour Scene Controller',
         0x0840: 'Control Bridge',
         0x0850: 'On/Off sensor'}
-
-
 
 # https://www.nxp.com/docs/en/user-guide/JN-UG-3076.pdf
 ZHA_DEVICES = {
@@ -220,14 +216,15 @@ BULB_ACTIONS = {
 }
 
 # Possible Widget SubType 
-DOMOTICZ_LED_DIMMERS = { 'RGB_W'   : 1,  # RGB + white, either RGB or white can be lit
-                         'RGB'     : 2,  # RGB
-                         'White'   : 3,  # Monochrome White
-                         'RGB_CW_W': 4,  # RGB + cold white + warm white, either RGB or white can be lit
-                         'RGB_W_Z' : 6,  # Like RGBW, but allows combining RGB and white
-                         'RGB_CW_WW_Z' : 7, # Like RGBWW, but allows combining RGB and white
-                         'CW_WW'   : 8  # Cold white + Warm white
-                       }
+DOMOTICZ_LED_DIMMERS = { 
+        'RGB_W'   : 1,  # RGB + white, either RGB or white can be lit
+        'RGB'     : 2,  # RGB
+        'White'   : 3,  # Monochrome White
+        'RGB_CW_W': 4,  # RGB + cold white + warm white, either RGB or white can be lit
+        'RGB_W_Z' : 6,  # Like RGBW, but allows combining RGB and white
+        'RGB_CW_WW_Z' : 7, # Like RGBWW, but allows combining RGB and white
+        'CW_WW'   : 8  # Cold white + Warm white
+        }
 
 DOMOTICZ_COLOR_MODE = {
     0 : 'Illegal',
@@ -445,7 +442,6 @@ ZIGATE_RESPONSES = {
         0x004D: 'Device Annouce' 
         }
 
-
 # Used in output/thermostat_Mode
 SYSTEM_MODE = { 'Off' : 0x00 ,
         'Auto' : 0x01 ,
@@ -455,7 +451,6 @@ SYSTEM_MODE = { 'Off' : 0x00 ,
         'Emergency Heating' : 0x05,
         'Pre-cooling' : 0x06,
         'Fan only' : 0x07 }
-
 
 # Used in onCommand
 THERMOSTAT_LEVEL_2_MODE = {
@@ -474,9 +469,9 @@ THERMOSTAT_MODE_2_LEVEL = {
         0x05: '40'  # Force Heat
         }
 
-
 # Ordered List - Important for binding
-CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
+CLUSTERS_LIST = [ 
+        'fc00',  # Private cluster Philips Hue - Required for Remote
         '0500',            # IAS Zone
         '0406',            # Occupancy Sensing
         '0400',            # Illuminance Measurement
@@ -501,8 +496,6 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         'ff02',             # Used by Xiaomi devices for battery informations.
         'fc21'              # Cluster Profalux PFX
         ]
-
-
 
 LEGRAND_REMOTES = ( 'Remote switch', 'Double gangs remote switch', 'Shutters central remote switch')
 LEGRAND_REMOTE_SWITCHS = ( 'Remote switch', 'Double gangs remote switch')
