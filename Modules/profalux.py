@@ -142,6 +142,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     for tmpEp in self.ListOfDevices[nwkid]['Ep']:
         if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
+            break
 
     # Frame Control Field:
     #   0x01: Cluster Specific
@@ -150,7 +151,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     #   0x14: Manuf Specific / Client to Server
     #   0x1c: Manuf Specific / Server to Client
 
-    cluster_frame = '01'
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
@@ -188,7 +188,6 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     else:
         Domoticz.Error( "profalux_MoveToLiftAndTilt - level: %s titl: %s" %(level, tilt) )
         return
-
     
     # payload: 11 45 10 03 55 2d ffff
     # Option Parameter uint8   Bit0 Ask for lift action, Bit1 Ask fr a tilt action
@@ -202,17 +201,38 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
  
     cluster_frame = '10'
+    sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x01 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x10 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
     cluster_frame = '14'
+    sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x01 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
     cluster_frame = '1c'
+    sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x01 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1c ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+
+    cluster_frame = '15'
+    sqn = '%02x' %(int(sqn,16) + 1)
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x15 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+
+    cluster_frame = '1d'
+    sqn = '%02x' %(int(sqn,16) + 1)
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1d ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+    raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+
+    cluster_frame = '19'
+    sqn = '%02x' %(int(sqn,16) + 1)
+    payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+    loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x19 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     return
