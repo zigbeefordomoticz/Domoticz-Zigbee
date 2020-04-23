@@ -111,10 +111,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
                     Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
                     count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
-                    for bt in range(1, count):
+                    for bt in range(0, count):
                         Options[ 'LevelActions'] += '|'
         else:
-            for bt in range(1, nbSelector):
+            for bt in range(0, nbSelector):
                 Options[ 'LevelNames' ] += 'BT %02s | ' %bt
                 Options[ 'LevelActions'] += '|'
 
@@ -344,7 +344,17 @@ def CreateDomoDevice(self, Devices, NWKID):
             if t == "Baro":  
                 # Detecteur Baro
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Barometer")
-                
+            if t == "Power":  
+               # Will display Watt real time
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Usage")
+
+            if t == "Meter":  
+               # Will display kWh
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "kWh") 
+            if t == "Voltage":  
+               # Voltage
+               createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Voltage")                 
+
             if t == "Door":  
                 # capteur ouverture/fermeture xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 11 )
@@ -423,17 +433,17 @@ def CreateDomoDevice(self, Devices, NWKID):
                 # P1 Smart Meter Energy Type 250, Subtype = 250
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 250, Subtype_ = 1, Switchtype_ = 1 )
 
-            if t == "Power":  
-                # Will display Watt real time
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Usage")
+ 
+ 
+ 
 
-            if t == "Meter":  
-                # Will display kWh
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "kWh") 
+ 
+ 
+ 
 
-            if t == "Voltage":  
-                # Voltage
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Voltage") 
+ 
+ 
+ 
 
             # ====== Blind and Venetian
             # Subtype = 
