@@ -97,7 +97,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         Options = {}
-        
+        Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
             
@@ -142,8 +142,11 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         unit = FreeUnit(self, Devices)
-        loggingWidget( self, "Debug", "CreateDomoDevice - unit: %s" %unit, nwkid)
+        loggingWidget( self, "Log", "CreateDomoDevice - unit: %s" %unit, nwkid)
         
+        loggingWidget( self, "Log", "--- cType: %s widgetType: %s Type: %s Subtype: %s SwitchType: %s widgetOption: %s Image: %s ForceCluster: %s" \
+            %(cType, widgetType , Type_ , Subtype_, Switchtype_ , widgetOptions , Image ,ForceClusterType), nwkid)
+     
         widgetName = deviceName( self, nwkid, cType, ieee, ep)
         #oldFashionWidgetName = cType + "-" + ieee + "-" + ep
 
