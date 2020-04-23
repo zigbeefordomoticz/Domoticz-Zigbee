@@ -158,8 +158,24 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     cmd = '10' # Propriatary Command: Ask the Tilt Blind to go to a Certain Position and Orientate to a certain angle
 
+    # Normalized level and 
+    if level == 0:
+        level = 1
+    elif level > 100:
+        level = 100
+
+    # translate from % to level
     if level:
         level = ( 254 * level ) // 100
+    
+    # If tilt is not provided when calling the method,
+    # we will take the parameter from Settings
+    if tilt is None:
+        tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
+        if tilt > 90:
+            tilt = 90
+
+    # compute option 0x01 level, 0x02 tilt, 0x03 level + tilt
 
     if level and tilt:
         option = 0x03
@@ -172,6 +188,7 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     else:
         Domoticz.Error( "profalux_MoveToLiftAndTilt - level: %s titl: %s" %(level, tilt) )
         return
+
     
     # payload: 11 45 10 03 55 2d ffff
     # Option Parameter uint8   Bit0 Ask for lift action, Bit1 Ask fr a tilt action
