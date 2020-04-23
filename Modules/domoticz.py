@@ -426,7 +426,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             if t == "Meter":  
                 # Will display kWh
-                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Usage") 
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "kWh") 
 
             if t == "Voltage":  
                 # Voltage
