@@ -207,25 +207,25 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     #loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x10 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     #raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    cluster_frame = '14' # 10100 - Manuf Specific
+    cluster_frame = '14' # 10100 - Manuf Specific - Client to Server - Default Response
     sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    cluster_frame = '1c' # 11100 - Manuf Specific
+    cluster_frame = '1c' # 11100 - Manuf Specific - Server to Client - Default Response
     sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1c ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    cluster_frame = '15' # 10101 - Manuf Specific
+    cluster_frame = '15' # 10101 - Manuf Specific - Client to Server - Default Response
     sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x15 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    cluster_frame = '1d' # 11101 - Manuf Specific
+    cluster_frame = '1d' # 11101 - Manuf Specific - Server to Client - Default Response
     sqn = '%02x' %(int(sqn,16) + 1)
     payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
     loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1d ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
