@@ -117,9 +117,10 @@ def CreateDomoDevice(self, Devices, NWKID):
         for bt in range(1, nbSelector):
             Options[ 'LevelNames' ] += 'BT %02s | ' %bt
             Options[ 'LevelActions'] += '|'
+        Domoticz.Log(" --> Options: %s" %str(Options))  
 
-        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-3] # Remove the last '| '
-        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-2] # Remove the last '|'
+        Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
+        Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
 
         if SelectorStyle:
             Options[ 'SelectorStyle'] = '%s' %SelectorStyle
