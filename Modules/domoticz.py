@@ -97,7 +97,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         Options = {}
-        Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+        #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
             
@@ -106,19 +106,19 @@ def CreateDomoDevice(self, Devices, NWKID):
         Options[ 'LevelOffHidden'] = 'False'
         Options[ 'SelectorStyle'] = '0'
 
-        #if DeviceType:
-        #    if DeviceType in SWITCH_LVL_MATRIX:
-        #        if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
-        #            Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
-        #            count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
-        #            for bt in range(1, count):
-        #                Options[ 'LevelActions'] += '|'
-        #else:
-        for bt in range(0, nbSelector):
-            Options[ 'LevelNames' ] += 'BT %03s | ' %bt
-            Options[ 'LevelActions'] += '|'
+        if DeviceType:
+            if DeviceType in SWITCH_LVL_MATRIX:
+                if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
+                    Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
+                    count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
+                    for bt in range(1, count):
+                        Options[ 'LevelActions'] += '|'
+        else:
+            for bt in range(0, nbSelector):
+                Options[ 'LevelNames' ] += 'BT %03s | ' %bt
+                Options[ 'LevelActions'] += '|'
     
-        Domoticz.Log(" --> Options: %s" %str(Options))  
+        #Domoticz.Log(" --> Options: %s" %str(Options))  
 
         Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
         Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
