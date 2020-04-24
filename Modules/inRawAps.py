@@ -38,11 +38,14 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
     manuf = self.ListOfDevices[srcnwkid]['Manufacturer']
     Domoticz.Log("  - Manuf: %s" %manuf)
+    Domoticz.Log("  - Manuf: %s" %manuf_name)
 
     if manuf in CALLBACK_TABLE:
+        Domoticz.Log("Found in CALLBACK_TABLE")
         func = CALLBACK_TABLE[ manuf ]
         func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
     elif manuf_name in CALLBACK_TABLE2:
+        Domoticz.Log("Found in CALLBACK_TABLE2")
         func = CALLBACK_TABLE2[manuf_name]
         func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
