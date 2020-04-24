@@ -14,6 +14,7 @@ import Domoticz
 import os.path
 import datetime
 import json
+import pickle
 
 import Modules.tools
 from Modules.logging import loggingDatabase
@@ -181,23 +182,35 @@ def WriteDeviceList(self, count):
     if self.HBcount >= count :
 
         if self.pluginconf.pluginConf['pluginData'] is None or self.DeviceListName is None:
-            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
+            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" \
+                %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
 
-        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
-        loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+        # Write in classic format ( .txt )
+        try:
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            with open( _DeviceListFileName , 'wt') as file:
+                for key in self.ListOfDevices :
+                    try:
+                        file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
+                    except IOError:
+                        Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
+        except IOError:
+            Domoticz.Error("Error while Opening plugin Database %s" %_DeviceListFileName)
 
-        with open( _DeviceListFileName , 'wt') as file:
-            json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
+        # If enabled, write in JSON
+        if self.pluginconf.pluginConf['expJsonDatabase']:
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
+            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            with open( _DeviceListFileName , 'wt') as file:
+                json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
 
-        #try:
-        #    with open( _DeviceListFileName , 'wt') as file:
-        #        for key in self.ListOfDevices :
-        #            try:
-        #                file.write(key + " : " + str(self.ListOfDevices[key]) + "\n")
-        #            except IOError:
-        #                Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
-        #except IOError:
-        #    Domoticz.Error("Error while Opening plugin Database %s" %_DeviceListFileName)
+        # If enabled, write in Pickkle
+        if self.pluginconf.pluginConf['expPickleDatabase']:
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'pckl'
+            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            with open( _DeviceListFileName , 'wb') as file:
+                pickle.dump( self.ListOfDevices, file, protocol=pickle.HIGHEST_PROTOCOL)
 
         self.HBcount=0
         loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
