@@ -47,8 +47,8 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         # Interupteur Autocolalant / 
         '3c4e4fc81ed442efaf69353effcdfc5f': { 
             '03': 10, # Top Left,
-            '07': 20, # Middle Left
-            '0b': 30, # Top Right
+            '0b': 20, # Middle Left
+            '07': 30, # Top Right
             '0f': 40, # Mddle Right
             }
     }
