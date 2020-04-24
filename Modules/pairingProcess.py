@@ -33,6 +33,7 @@ from Modules.output import  sendZigateCmd,  \
 
 from Modules.lumi import enableOppleSwitch
 from Modules.livolo import livolo_bind
+from Modules.orvibo import OrviboRegistration
 from Modules.configureReporting import processConfigureReporting
 from Modules.profalux import profalux_fake_deviceModel
 from Modules.logging import loggingHeartbeat, loggingPairing
@@ -363,6 +364,11 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 if self.ListOfDevices[NWKID]['Manufacturer'] == '105e':
                     schneider_wiser_registration( self, Devices, NWKID )
 
+            # In case of Orvibo Scene controller let's Registration
+            if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
+                if self.ListOfDevices[NWKID][ 'Manufacturer Name'] == '欧瑞博':
+                    OrviboRegistration( self, NWKID )
+                    
             # Identify for ZLL compatible devices
             # Search for EP to be used 
             ep = '01'

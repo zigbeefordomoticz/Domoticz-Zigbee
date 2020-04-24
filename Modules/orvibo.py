@@ -40,9 +40,9 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
     BUTTON_MAP = {
         # d0d2422bbf3a4982b31ea843bfedb559
         'd0d2422bbf3a4982b31ea843bfedb559': {
-            '01': '01', # Top
-            '02': '02', # Middle
-            '03': '03', # Button
+            '01': 1, # Top
+            '02': 2, # Middle
+            '03': 3, # Bottom
             },
         # Interupteur Autocolalant / 
         '3c4e4fc81ed442efaf69353effcdfc5f': { 
@@ -111,4 +111,5 @@ def OrviboRegistration( self, nwkid ):
     data_type = "20" # Bool
     data = '01'
    
+    Domoticz.Log("Orvibo registration for %s" %nwkid)
     Modules.output.write_attribute( self, nwkid, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)    
