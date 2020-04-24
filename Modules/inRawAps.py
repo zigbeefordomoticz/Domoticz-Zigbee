@@ -3,6 +3,7 @@ import Domoticz
 
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
+from Modules.orvibo import orviboReadRawAPS
 
 
 def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
@@ -17,6 +18,11 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         '1021' : legrandReadRawAPS ,
         }
 
+    CALLBACK_TABLE2 = {
+        # Manufacturer Name
+        '欧瑞博': orviboReadRawAPS,
+    }
+
     Domoticz.Log("inRawAps - NwkId: %s Ep: %s, Cluster: %s, dstNwkId: %s, dstEp: %s, Payload: %s" \
             %(srcnwkid, srcep, cluster, dstnwkid, dstep, payload))
 
@@ -24,6 +30,11 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         return
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
+    
+    manuf = manuf_name = ''
+
+    if 'Manufacturer Name' in self.ListOfDevices[srcnwkid]:
+        manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer']
 
     manuf = self.ListOfDevices[srcnwkid]['Manufacturer']
     Domoticz.Log("  - Manuf: %s" %manuf)
@@ -31,6 +42,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
     if manuf in CALLBACK_TABLE:
         func = CALLBACK_TABLE[ manuf ]
         func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
-
+    elif manuf_name in CALLBACK_TABLE2:
+        func = CALLBACK_TABLE2[manuf_name]
+        func( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
 
     return
