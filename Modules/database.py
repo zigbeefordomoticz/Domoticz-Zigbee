@@ -121,13 +121,13 @@ def LoadDeviceList( self ):
     # we fall back to the old fashion .txt
     jsonFormatDB = True
     
-    if os.path.isfile( self.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
+    if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
         # JSON Format
-        _DeviceListFileName = self.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
+        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
         jsonFormatDB = True
         res = loadJsonDatabase( self , _DeviceListFileName)
 
-    elif os.path.isfile( self.pluginConf['pluginData'] + self.DeviceListName ):
+    elif os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ):
         _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
         jsonFormatDB = False
         res = loadTxtDatabase( self , _DeviceListFileName)
