@@ -34,7 +34,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
     manuf = manuf_name = ''
 
     if 'Manufacturer Name' in self.ListOfDevices[srcnwkid]:
-        manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer']
+        manuf_name = self.ListOfDevices[srcnwkid][ 'Manufacturer Name']
 
     manuf = self.ListOfDevices[srcnwkid]['Manufacturer']
     Domoticz.Log("  - Manuf: %s" %manuf)
