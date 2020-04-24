@@ -61,6 +61,7 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
 
     
     if srcNWKID not in self.ListOfDevices:
+        Domoticz.Error("%s not found in Database")
         return
 
     if ClusterID != '0017':
@@ -77,6 +78,8 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
     if cmd == '08':
         button = data[0:2]
         action = data[2:]
+
+        Domoticz.Log("button: %s, action: %s" %(button, action))
 
         if action in ACTIONS_MAP and button in BUTTON_MAP:
            selector = BUTTON_MAP[ button ] + '-' + ACTIONS_MAP[ action ]
