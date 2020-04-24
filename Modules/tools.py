@@ -88,59 +88,74 @@ def getClusterListforEP( self, NWKID, Ep ) :
     return ClusterList
 
 
-def DeviceExist(self, Devices, newNWKID , IEEE = ''):
-
-    #Validity check
-    if newNWKID == '':
-        return False
+def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
+    """
+    DeviceExist 
+        check if the Device is existing in the ListOfDevice.
+        lookupNwkId Mandatory field
+        lookupIEEE Optional
+    Return
+        True if object found
+        False if not found
+    """
 
     found = False
+    #Validity check
+    if lookupNwkId == '':
+        return False
 
-    #check in ListOfDevices, we can return only Found
-    if newNWKID in self.ListOfDevices:
-        if 'Status' in self.ListOfDevices[newNWKID] :
-            if self.ListOfDevices[newNWKID]['Status'] != 'UNKNOWN':
+    #1- Check if found in ListOfDevices
+    #   Verify that Status is not 'UNKNOWN' otherwise condider not found
+    if lookupNwkId in self.ListOfDevices:
+        if 'Status' in self.ListOfDevices[lookupNwkId] :
+            # Found, let's check the Status
+            if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
                 found = True
 
-                if not IEEE :
-                    return True
+    # 2- We might have found it with the lookupNwkId   
+    if lookupIEEE:
+        if lookupIEEE not in self.IEEE2NWK:
+            # Not found
+            return found
+        
+        # We found IEEE, let's get the Short Address 
+        exitsingNwkId = self.IEEE2NWK[ lookupIEEE ]
+        if exitsingNwkId == lookupNwkId:
+            # Everything fine, we have found it
+            found = True
 
-    # Not found with NWKID, let's check in the IEEE
-    #If given, let's check if the IEEE is already existing. In such we have a device communicating with a new Saddr
-    if IEEE:
-        for existingIEEEkey in list(self.IEEE2NWK):
-            if existingIEEEkey == IEEE :
-                # This device is already in Domoticz 
-                existingNWKkey = self.IEEE2NWK[IEEE]
-                if existingNWKkey == newNWKID :        #Check that I'm not myself
-                    continue
+        elif exitsingNwkId not in self.ListOfDevices:
+            # We have an entry in IEEE2NWK, but no corresponding
+            # in ListOfDevices !!
+            # Let's clenup
+            del self.IEEE2NWK[ lookupIEEE ]
+            found = False
 
-                if existingNWKkey not in self.ListOfDevices:
-                    # In fact this device doesn't really exist ... The cleanup was not correctly done in IEEE2NWK
-                    del self.IEEE2NWK[IEEE]
-                    found = False
-                    continue
+        elif 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+            # That seems not correct
+            # We might have to do some cleanup here !
+            found = False
 
-                # Make sure this device is valid 
-                if 'Status' not in  self.ListOfDevices[existingNWKkey]:
-                    found = False
-                    continue
-                    
-                if self.ListOfDevices[existingNWKkey]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
-                    found = False
-                    continue
+        elif self.ListOfDevices[ exitsingNwkId ]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
+            # That seems not correct
+            # Could be under Creation
+            found = False
 
-                reconnectNWkDevice( self, newNWKID, IEEE, existingNWKkey)
-                devName = ''
-                for x in Devices:
-                    if Devices[x].DeviceID == existingIEEEkey:
-                        devName = Devices[x].Name
-                        break
-                self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, newNWKID, existingIEEEkey ))
+        else:
+            # At that stage, we have found an entry for the IEEE, but doesn't match
+            # the coming Short Address lookupNwkId.
+            # Most likely , device has changed its NwkId   
+            found = True        
+            reconnectNWkDevice( self, lookupNwkId, lookupIEEE, exitsingNwkId)
 
-                found = True
-                break
-
+            # Let's send a Notfification
+            devName = ''
+            for x in Devices:
+                if Devices[x].DeviceID == lookupIEEE:
+                    devName = Devices[x].Name
+                    break
+            self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
+ 
     return found
 
 def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
