@@ -283,7 +283,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in HACTMODE ..." %(t), NWKID)
 
             # 4 Selectors, OffHidden, Style 1
-            if t in ('DButton'):  
+            if t in ('DButton', ):  
                 Options = createSwitchSelector( 4, DeviceType = t, OffHidden= True, SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in DButton" %(t), NWKID)
@@ -295,7 +295,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Vibration" %(t), NWKID)
 
             # 5 Selectors, Style 0 ( mode command)
-            if t in ('ThermoMode' ):
+            if t in ('ThermoMode', ):
                 Options = createSwitchSelector( 5,  DeviceType = t,SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
@@ -307,13 +307,13 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
 
             # 6 Selectors, Style 1
-            if t in ('AlarmWD' ):        
+            if t in ('AlarmWD', ):        
                 Options = createSwitchSelector( 6,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in AlarmWD" %(t), NWKID)
 
             # 6 Buttons, Style 1, OffHidden
-            if t in ('GenericLvlControl'): 
+            if t in ('GenericLvlControl', ): 
             
                Options = createSwitchSelector( 6,  DeviceType = t,OffHidden= True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
@@ -332,19 +332,19 @@ def CreateDomoDevice(self, Devices, NWKID):
                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in FIP" %(t), NWKID)
 
             # 10 Selectors, Style 1, OffHidden
-            if t in ('DButton_3'):  
+            if t in ('DButton_3', ):  
                Options = createSwitchSelector( 10,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in DButton3" %(t), NWKID) 
 
             # 13 Selectors, Style 1
-            if t in ('INNR_RC110_SCENE'):
+            if t in ('INNR_RC110_SCENE', ):
                 Options = createSwitchSelector( 13,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in INNR SCENE" %(t), NWKID)
 
             # 14 Selectors, Style 1
-            if t in ('Ikea_Round_5b'): 
+            if t in ('Ikea_Round_5b', ): 
                 Options = createSwitchSelector( 14,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
@@ -418,7 +418,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 9 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Button" %(t), NWKID)
 
-            if t == "Aqara" or t == "XCube": 
+            if t in ( "Aqara", "XCube"): 
                 # Do not use the generic createDomoticzWidget , because this one required 2 continuous widget.
                 # usage later on is based on that assumption
                 #  
