@@ -121,20 +121,31 @@ def LoadDeviceList( self ):
     # we fall back to the old fashion .txt
     jsonFormatDB = True
     
-    if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
-        # JSON Format
-        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
-        jsonFormatDB = True
-        res = loadJsonDatabase( self , _DeviceListFileName)
+    if self.pluginconf.pluginConf['expJsonDatabase']:
+        if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
+            # JSON Format
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
+            jsonFormatDB = True
+            res = loadJsonDatabase( self , _DeviceListFileName)
 
-    elif os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ):
-        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
-        jsonFormatDB = False
-        res = loadTxtDatabase( self , _DeviceListFileName)
+        elif os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ):
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+            jsonFormatDB = False
+            res = loadTxtDatabase( self , _DeviceListFileName)
+        else:
+            # Do not exist 
+            self.ListOfDevices = {}
+            return True 
     else:
-        # Do not exist 
-        self.ListOfDevices = {}
-        return True 
+        if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ):
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+            jsonFormatDB = False
+            res = loadTxtDatabase( self , _DeviceListFileName)
+        else:
+            # Do not exist 
+            self.ListOfDevices = {}
+            return True 
+      
 
     loggingDatabase( self, 'Debug', "LoadDeviceList - DeviceList filename : " + _DeviceListFileName )
 
