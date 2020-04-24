@@ -619,11 +619,22 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
 
-    MsgSrcAddr = MsgData[0:4]
-    MsgSrcEp = MsgData[4:6]
-    MsgClusterId = MsgData[6:10]
-    loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s, Cluster: %s" \
-            %(MsgSrcAddr, MsgSrcEp, MsgClusterId))
+    MsgStatus = MsgData[0:2]
+    MsgSrcEp = MsgData[2:4]
+    MsgDstEp = MsgData[4:6]
+    MsgAddrMode = MsgData[6:8]
+
+    if int(MsgAddrMode,16) == 0x03: # IEEE
+        MsgSrcIEEE = MsgData[8:24]
+        MsgSQN = MsgData[24:26]
+        if MsgSrcIEEE in self.IEEE2NWK:
+            MsgSrcNwkId = self.IEEE2NWK[MsgSrcIEEE ]
+    else:
+        MsgSrcNwkid = MsgData[8:12]
+        MsgSQN = MsgData[12:14]
+ 
+    loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
+            %(MsgSrcNwkid, MsgSrcEp, MsgStatus))
 
 
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
