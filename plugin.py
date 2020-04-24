@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.8" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.8" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
     <h3> Short description </h3>
