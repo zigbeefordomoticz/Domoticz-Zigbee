@@ -216,28 +216,28 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
 
     if self.pluginconf.pluginConf['Profalux2']:
         cluster_frame = '05' # 0b00000101
-        sqn = '%02x' %(int(sqn,16) + 1)
+        sqn = '%02x' %(int(sqn,16) + 2)
         payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
         loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
         raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
     if self.pluginconf.pluginConf['Profalux3']:
         cluster_frame = '11' # 0b00010001
-        sqn = '%02x' %(int(sqn,16) + 1)
+        sqn = '%02x' %(int(sqn,16) + 3)
         payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
         loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
         raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
     if self.pluginconf.pluginConf['Profalux4']:
         cluster_frame = '14' # 0b00010100
-        sqn = '%02x' %(int(sqn,16) + 1)
+        sqn = '%02x' %(int(sqn,16) + 4)
         payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
         loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
         raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
     if self.pluginconf.pluginConf['Profalux5']:
         cluster_frame = '15' # 0b00010101
-        sqn = '%02x' %(int(sqn,16) + 1)
+        sqn = '%02x' %(int(sqn,16) + 5)
         payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
         loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
         raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
