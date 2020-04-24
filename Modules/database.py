@@ -112,7 +112,7 @@ def LoadDeviceList( self ):
                 Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
         
         for key in _listOfDevices:
-            CheckDeviceList( self, key, _listOfDevices[key])
+            CheckDeviceList( self, key, str(_listOfDevices[key]))
 
         return res
 
