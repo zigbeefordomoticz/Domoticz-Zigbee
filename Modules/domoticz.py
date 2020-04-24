@@ -1437,12 +1437,8 @@ def GetType(self, Addr, Ep):
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']), Addr)
 
     _Model = self.ListOfDevices[Addr]['Model']
-
     if _Model != {} and _Model in list(self.DeviceConf.keys()):
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-        
-        Domoticz.Log("Reference Model: %s --> %s" %(_Model, self.DeviceConf[ _Model] ))
-
         if Ep in self.DeviceConf[ _Model ]['Ep']:
             Domoticz.Log( "Ep: %s found in DeviceConf" %Ep)
             if 'Type' in self.DeviceConf[ _Model ]['Ep'][Ep]:
@@ -1457,8 +1453,7 @@ def GetType(self, Addr, Ep):
                 loggingWidget( self, 'Debug'"GetType - EpType not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
         else:
             Type = self.DeviceConf[ _Model ]['Type']
-            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " %(Addr, Ep, Type), Addr)
-            
+            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " %(Addr, Ep, Type), Addr)            
     else:
         loggingWidget( self, "Debug", "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep), Addr)
         loggingWidget( self, "Debug", "        - List of Entries: %s" %str(self.DeviceConf.keys() ), Addr)
