@@ -618,6 +618,11 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
                     loggingInput( self, 'Debug', "Receive NACK from %s clusterId: %s" %(MsgSrcAddr, MsgClusterId), MsgSrcAddr)
 
 def Decode8012( self, Devices, MsgData, MsgRSSI ):
+    """
+    confirms that a data packet sent by the local node has been successfully 
+    passed down the stack to the MAC layer and has made its first hop towards
+    its destination (an acknowledgment has been received from the next hop node).
+    """
 
     MsgStatus = MsgData[0:2]
     MsgSrcEp = MsgData[2:4]
@@ -633,7 +638,7 @@ def Decode8012( self, Devices, MsgData, MsgRSSI ):
         MsgSrcNwkid = MsgData[8:12]
         MsgSQN = MsgData[12:14]
  
-    loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s" \
+    loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s,Status: %s" \
             %(MsgSrcNwkid, MsgSrcEp, MsgStatus))
 
 
