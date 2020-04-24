@@ -14,6 +14,7 @@ import Domoticz
 import os.path
 import datetime
 import json
+import pickle
 
 import Modules.tools
 from Modules.logging import loggingDatabase
@@ -55,57 +56,104 @@ def _versionFile( source , nbversion ):
 def LoadDeviceList( self ):
     # Load DeviceList.txt into ListOfDevices
     #
-    loggingDatabase( self, 'Debug', "LoadDeviceList - DeviceList filename : " +self.DeviceListName )
 
-    _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
-    # Check if the DeviceList file exist.
-    if not os.path.isfile( _DeviceListFileName ) :
-        self.ListOfDevices = {}
-        return True    
+        # File exists, let's go one
+    def loadTxtDatabase( self , dbName ):
+
+        res = "Success"
+        nb = 0
+        with open( dbName , 'r') as myfile2:
+            loggingDatabase( self, 'Debug',  "Open : " + dbName )
+            for line in myfile2:
+                if not line.strip() :
+                    #Empty line
+                    continue
+                (key, val) = line.split(":",1)
+                key = key.replace(" ","")
+                key = key.replace("'","")
+
+                #if key in  ( 'ffff', '0000'): continue
+                if key in  ( 'ffff'): continue
+
+                try:
+                    dlVal=eval(val)
+                except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+                    Domoticz.Error("LoadDeviceList failed on %s" %val)
+                    continue
+
+                loggingDatabase( self, 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
+
+                if not dlVal.get('Version') :
+                    if key == '0000': # Bug fixed in later version
+                        continue
+                    Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+                    res = "Failed"
+                    continue
+
+                if dlVal['Version'] != '3' :
+                    Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
+                    res = "Failed"
+                    continue
+                else:
+                    nb = nb +1
+                    CheckDeviceList( self, key, val )
+
+        return res
+
+    def loadJsonDatabase( self , dbName ):
+        
+        res = "Success"
+
+        with open( dbName , 'rt') as handle:
+            _listOfDevices = {}
+            try:
+                _listOfDevices = json.load( handle, encoding=dict)
+            except json.decoder.JSONDecodeError as e:
+                res = "Failed"
+                Domoticz.Error("loadJsonDatabase poorly-formed %s, not JSON: %s" %(self.pluginConf['filename'],e))
+        
+        for key in _listOfDevices:
+            CheckDeviceList( self, key, str(_listOfDevices[key]))
+
+        return res
+
+
+    # Let's check if we have a .json version. If so, we will be using it, otherwise
+    # we fall back to the old fashion .txt
+    jsonFormatDB = True
+    
+    if self.pluginconf.pluginConf['expJsonDatabase']:
+        if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json' ):
+            # JSON Format
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
+            jsonFormatDB = True
+            res = loadJsonDatabase( self , _DeviceListFileName)
+
+        elif os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ):
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+            jsonFormatDB = False
+            res = loadTxtDatabase( self , _DeviceListFileName)
+        else:
+            # Do not exist 
+            self.ListOfDevices = {}
+            return True 
+    else:
+        if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + self.DeviceListName ):
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+            jsonFormatDB = False
+            res = loadTxtDatabase( self , _DeviceListFileName)
+        else:
+            # Do not exist 
+            self.ListOfDevices = {}
+            return True 
+      
+
+    loggingDatabase( self, 'Debug', "LoadDeviceList - DeviceList filename : " + _DeviceListFileName )
 
     _versionFile( _DeviceListFileName , self.pluginconf.pluginConf['numDeviceListVersion'])
 
     # Keep the Size of the DeviceList in order to check changes
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
-
-    # File exists, let's go one
-    res = "Success"
-    nb = 0
-    with open( _DeviceListFileName , 'r') as myfile2:
-        loggingDatabase( self, 'Debug',  "Open : " + _DeviceListFileName )
-        for line in myfile2:
-            if not line.strip() :
-                #Empty line
-                continue
-            (key, val) = line.split(":",1)
-            key = key.replace(" ","")
-            key = key.replace("'","")
-
-            #if key in  ( 'ffff', '0000'): continue
-            if key in  ( 'ffff'): continue
-
-            try:
-                dlVal=eval(val)
-            except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-                Domoticz.Error("LoadDeviceList failed on %s" %val)
-                continue
-
-            loggingDatabase( self, 'Debug', "LoadDeviceList - " +str(key) + " => dlVal " +str(dlVal) , key)
-
-            if not dlVal.get('Version') :
-                if key == '0000': # Bug fixed in later version
-                    continue
-                Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
-                res = "Failed"
-                continue
-
-            if dlVal['Version'] != '3' :
-                Domoticz.Error("LoadDeviceList - entry " +key +" not loaded - not Version 3 - " +str(dlVal) )
-                res = "Failed"
-                continue
-            else:
-                nb = nb +1
-                CheckDeviceList( self, key, val )
 
     for addr in self.ListOfDevices:
         if self.pluginconf.pluginConf['resetReadAttributes']:
@@ -124,7 +172,7 @@ def LoadDeviceList( self ):
                 self.ListOfDevices[addr]['ConfigureReporting']['Ep'][iterEp] = {}
                 self.ListOfDevices[addr]['ConfigureReporting']['TimeStamps'] = {}
 
-    loggingDatabase( self, "Status", "Entries loaded from " +str(_DeviceListFileName) + " : " +str(nb) )
+    loggingDatabase( self, "Status", "Entries loaded from " +str(_DeviceListFileName)  )
 
     return res
 
@@ -132,11 +180,15 @@ def LoadDeviceList( self ):
 def WriteDeviceList(self, count):
 
     if self.HBcount >= count :
+
         if self.pluginconf.pluginConf['pluginData'] is None or self.DeviceListName is None:
-            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
-        _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
-        loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            Domoticz.Error("WriteDeviceList - self.pluginconf.pluginConf['pluginData']: %s , self.DeviceListName: %s" \
+                %(self.pluginconf.pluginConf['pluginData'], self.DeviceListName))
+
+        # Write in classic format ( .txt )
         try:
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName
+            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
             with open( _DeviceListFileName , 'wt') as file:
                 for key in self.ListOfDevices :
                     try:
@@ -145,6 +197,13 @@ def WriteDeviceList(self, count):
                         Domoticz.Error("Error while writing to plugin Database %s" %_DeviceListFileName)
         except IOError:
             Domoticz.Error("Error while Opening plugin Database %s" %_DeviceListFileName)
+
+        # If enabled, write in JSON
+        if self.pluginconf.pluginConf['expJsonDatabase']:
+            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'json'
+            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
+            with open( _DeviceListFileName , 'wt') as file:
+                json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
 
         self.HBcount=0
         loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
