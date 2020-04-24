@@ -1439,21 +1439,24 @@ def GetType(self, Addr, Ep):
     if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
         _Model = self.ListOfDevices[Addr]['Model']
+        Domoticz.Log("Reference Model: %s --> %s" %(_Model, self.DeviceConf[ _Model] ))
 
         if Ep in self.DeviceConf[ _Model ]['Ep']:
+            Domoticz.Log( "Ep: %s found in DeviceConf" %Ep)
             if 'Type' in self.DeviceConf[ _Model ]['Ep'][Ep]:
+                Domoticz.Log(" 'Type' entry found inf DeviceConf")
                 if self.DeviceConf[ _Model ]['Ep'][Ep]['Type'] != "":
                     loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : %s" %self.DeviceConf[ _Model ]['Ep'][Ep]['Type'], Addr)
                     Type = self.DeviceConf[ _Model ]['Ep'][Ep]['Type']
                     Type = str(Type)
                 else:
-                    loggingWidget( self, 'Debug'"GetType - Found Empty Type in DeviceConf for %s/%s" %(Addr, Ep), Addr)
+                    loggingWidget( self, 'Debug'"GetType - Found EpEmpty Type in DeviceConf for %s/%s" %(Addr, Ep), Addr)
             else:
-                loggingWidget( self, 'Debug'"GetType - Type not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
+                loggingWidget( self, 'Debug'"GetType - EpType not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
         else:
-            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
-                self.DeviceConf[ _Model ]['Type']))
             Type = self.DeviceConf[ _Model ]['Type']
+            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " %(Addr, Ep, Type), Addr)
+            
     else:
         loggingWidget( self, "Debug", "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep), Addr)
         loggingWidget( self, "Debug", "        - List of Entries: %s" %str(self.DeviceConf.keys() ), Addr)
@@ -1496,6 +1499,11 @@ def GetType(self, Addr, Ep):
             Type = Type[1:]
 
         loggingWidget( self, "Debug", "GetType - ClusterSearch return : %s" %Type, Addr)
+
+    loggingWidget(self, 'Debug', "GetType returning: %s" %Type, Addr)
+
+    if Type == '':
+        Type = 'Voltage'
     return Type
 
 
