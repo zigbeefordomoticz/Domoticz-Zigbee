@@ -77,7 +77,7 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
 
     if cmd == '08':
         button = data[0:2]
-        action = data[2:]
+        action = data[4:6]
 
         Domoticz.Log("button: %s, action: %s" %(button, action))
 
