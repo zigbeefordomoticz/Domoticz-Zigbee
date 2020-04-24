@@ -1436,9 +1436,11 @@ def GetType(self, Addr, Ep):
     loggingWidget( self, "Debug", "GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']), Addr)
 
-    if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
+    _Model = self.ListOfDevices[Addr]['Model']
+
+    if _Model != {} and _Model in list(self.DeviceConf.keys()):
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-        _Model = self.ListOfDevices[Addr]['Model']
+        
         Domoticz.Log("Reference Model: %s --> %s" %(_Model, self.DeviceConf[ _Model] ))
 
         if Ep in self.DeviceConf[ _Model ]['Ep']:
@@ -1502,8 +1504,6 @@ def GetType(self, Addr, Ep):
 
     loggingWidget(self, 'Debug', "GetType returning: %s" %Type, Addr)
 
-    if Type == '':
-        Type = 'Voltage'
     return Type
 
 
