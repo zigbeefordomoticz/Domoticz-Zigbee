@@ -774,4 +774,21 @@ SWITCH_LVL_MATRIX = {
 
     'AlarmWD': { 
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed" },
+
+    'OrviboRemoteSquare': {
+        0: (0, 'Off'), 
+        1: (1, '10'), 
+        2: (2, '20'), 
+        3: (3, '30'), 
+        4: (4, '40'),
+        5: (5, '50'),
+        6: (6, '60'),
+        7: (7, '70'),
+        8: (8, '80'),
+        9: (9, '90'),
+        10: (10, '100'),
+        11: (11, '110'),
+        12: (12, '120'),
+        'ForceUpdate': True,
+        "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
     }

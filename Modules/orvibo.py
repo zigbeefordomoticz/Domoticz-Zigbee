@@ -46,17 +46,17 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
             },
         # Interupteur Autocolalant / 
         '3c4e4fc81ed442efaf69353effcdfc5f': { 
-            '03': '01', # Top Left,
-            '07': '02', # Middle Left
-            '0b': '03', # TOp Right
-            '0f': '04', # Mddle Right
+            '03': 1, # Top Left,
+            '07': 2, # Middle Left
+            '0b': 3, # Top Right
+            '0f': 4, # Mddle Right
             }
     }
 
     ACTIONS_MAP ={
-        '00': 'Click',
-        '02': 'Long Click',
-        '03': 'Release',
+        '00': 1, # Click
+        '02': 2, # Long Click 
+        '03': 3, # Release
     }
 
  
@@ -86,9 +86,9 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         Domoticz.Log("button: %s, action: %s" %(button, action))
 
         if action in ACTIONS_MAP and button in BUTTON_MAP[ _Model]:
-           selector = BUTTON_MAP[ _Model][ button ] + '-' + ACTIONS_MAP[ action ]
+           selector = BUTTON_MAP[ _Model][ button ] * + ACTIONS_MAP[ action ]
            Domoticz.Log("---> Selector: %s" %selector)
-           MajDomoDevice(self, Devices, srcNWKID, dstEP, ClusterID, selector)
+           MajDomoDevice(self, Devices, srcNWKID, '01', '0006', selector)
 
 
 def OrviboRegistration( self, nwkid ):
