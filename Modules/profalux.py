@@ -71,7 +71,7 @@ def profalux_stop( self, nwkid ):
         if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    cluster_frame = '11'
+    cluster_frame = '01'
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
@@ -93,7 +93,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
         if "0008" in self.ListOfDevices[nwkid]['Ep'][tmpEp]:
             EPout= tmpEp
 
-    cluster_frame = '11'
+    cluster_frame = '01'
     sqn = '00'
     if 'SQN' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
@@ -204,31 +204,40 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     # Transition Time  uint16  Transition Time between current and asked position
     
     ManfufacturerCode = '1110'
-    
+
+    # Should be Client to Server ( Profalux is the Server Side)
+
     if self.pluginconf.pluginConf['Profalux1']:
-        cluster_frame = '14' # 10100 - Manuf Specific - Client to Server - Default Response
+        cluster_frame = '00' # 0b00000000
+        sqn = '%02x' %(int(sqn,16) + 1)
+        payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+        loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+        raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+
+    if self.pluginconf.pluginConf['Profalux2']:
+        cluster_frame = '05' # 0b00000101
         sqn = '%02x' %(int(sqn,16) + 1)
         payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
         loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
         raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
-    if self.pluginconf.pluginConf['Profalux2']:
-       cluster_frame = '15' # 10101 - Command is specific or local to a cluster - Manuf Specific - Client to Server - Default Response
-       sqn = '%02x' %(int(sqn,16) + 1)
-       payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-       loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x15 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
-       raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
-
     if self.pluginconf.pluginConf['Profalux3']:
-       cluster_frame = '1c' # 11100 - Manuf Specific - Server to Client - Default Response
-       sqn = '%02x' %(int(sqn,16) + 1)
-       payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-       loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1c ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
-       raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+        cluster_frame = '11' # 0b00010001
+        sqn = '%02x' %(int(sqn,16) + 1)
+        payload = cluster_frame + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+        loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+        raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
 
     if self.pluginconf.pluginConf['Profalux4']:
-       cluster_frame = '1d' # 11101 - Command is specific or local to a cluster -  Manuf Specific - Server to Client - Default Response
-       sqn = '%02x' %(int(sqn,16) + 1)
-       payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
-       loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x1d ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
-       raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+        cluster_frame = '14' # 0b00010100
+        sqn = '%02x' %(int(sqn,16) + 1)
+        payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+        loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+        raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
+
+    if self.pluginconf.pluginConf['Profalux5']:
+        cluster_frame = '15' # 0b00010101
+        sqn = '%02x' %(int(sqn,16) + 1)
+        payload = cluster_frame + ManfufacturerCode + sqn + cmd + '%02x' %option + '%02x' %level + '%02x' %tilt + 'ffff'
+        loggingProfalux( self, 'Log', "profalux_MoveToLiftAndTilt 0x14 ++++ %s/%s level: %s tilt: %s option: %s payload: %s" %( nwkid, EPout, level, tilt, option, payload), nwkid)
+        raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)

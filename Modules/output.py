@@ -1611,7 +1611,12 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
         This field SHALL be set to 1, for all response frames generated as the 
         immediate and direct effect of a pre-viously received frame
     
-
+    0x01: 
+        Cluster-Specific: 0x1 
+        Manufacturer Specifc: False
+        Direction: Client to Server
+        Disable Default Response: False
+        
     All docmentation can be found : https://zigbeealliance.org/wp-content/uploads/2019/12/07-5123-06-zigbee-cluster-library-specification.pdf
     Section 2.4 : Command Frame Format
     """
