@@ -1438,17 +1438,22 @@ def GetType(self, Addr, Ep):
 
     if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-        if Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:
-            if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
-                if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                    loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
-                        self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
-                    Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+        _Model = self.ListOfDevices[Addr]['Model']
+
+        if Ep in self.DeviceConf[ _Model ]['Ep']:
+            if 'Type' in self.DeviceConf[ _Model ]['Ep'][Ep]:
+                if self.DeviceConf[ _Model ]['Ep'][Ep]['Type'] != "":
+                    loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : %s" %self.DeviceConf[ _Model ]['Ep'][Ep]['Type'], Addr)
+                    Type = self.DeviceConf[ _Model ]['Ep'][Ep]['Type']
                     Type = str(Type)
+                else:
+                    loggingWidget( self, 'Debug'"GetType - Found Empty Type in DeviceConf for %s/%s" %(Addr, Ep), Addr)
+            else:
+                loggingWidget( self, 'Debug'"GetType - Type not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
         else:
             loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
-                self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
-            Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+                self.DeviceConf[ _Model ]['Type']))
+            Type = self.DeviceConf[ _Model ]['Type']
     else:
         loggingWidget( self, "Debug", "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep), Addr)
         loggingWidget( self, "Debug", "        - List of Entries: %s" %str(self.DeviceConf.keys() ), Addr)
