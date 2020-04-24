@@ -324,6 +324,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                Options = createSwitchSelector( 10,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options) 
 
+            # 12 Selectors
+            if t in ( 'OrviboRemoteSquare'):
+                Options = createSwitchSelector( 13,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)                 
+
             # 13 Selectors, Style 1
             if t in ('INNR_RC110_SCENE'):
                 Options = createSwitchSelector( 13,  DeviceType = t,SelectorStyle = 1 )
@@ -894,7 +899,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(percent_value)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
 
