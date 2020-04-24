@@ -512,7 +512,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     # Power Cluster
     '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'0001'},
                              '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
-                             '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'}}},
+                             '0021': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
 
     # On/Off Cluster
     '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01'}}},
@@ -774,4 +774,21 @@ SWITCH_LVL_MATRIX = {
 
     'AlarmWD': { 
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed" },
+
+    'OrviboRemoteSquare': {
+        0: (0, 'Off'), 
+        11: (1, '10'), 
+        12: (2, '20'), 
+        13: (3, '30'), 
+        21: (4, '40'),
+        22: (5, '50'),
+        23: (6, '60'),
+        31: (7, '70'),
+        32: (8, '80'),
+        33: (9, '90'),
+        41: (10, '100'),
+        42: (11, '110'),
+        43: (12, '120'),
+        'ForceUpdate': True,
+        "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
     }
