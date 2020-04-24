@@ -97,7 +97,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         Options = {}
-        #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+        Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
             
@@ -119,7 +119,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options[ 'LevelNames' ] += 'BT %03s | ' %bt
                 Options[ 'LevelActions'] += '|'
     
-            #Domoticz.Log(" --> Options: %s" %str(Options))  
+            Domoticz.Log(" --> Options: %s" %str(Options))  
 
             Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
             Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
@@ -130,7 +130,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         if OffHidden:
             Options[ 'LevelOffHidden'] = 'true'
 
-        #Domoticz.Log(" --> Options: %s" %str(Options))
+        Domoticz.Log(" --> Options: %s" %str(Options))
         return Options
 
 
@@ -231,7 +231,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             break  # We have created already the Devices (as GlobalEP is set)
 
         # Check if Type is known
-        if Type == '':
+        if len(Type) == 1 and Type[0] == '':
             continue
 
         for iterType in Type:
