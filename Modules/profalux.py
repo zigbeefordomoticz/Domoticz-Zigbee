@@ -178,6 +178,9 @@ def profalux_MoveToLiftAndTilt( self, nwkid, level=None, tilt=None):
     
     # If tilt is not provided when calling the method,
     # we will take the parameter from Settings
+
+    tilt = 45
+    
     if tilt is None:
         tilt = self.pluginconf.pluginConf['profaluxOrientBSO'] 
         if tilt > 90:
