@@ -83,6 +83,7 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
 
         if action in ACTIONS_MAP and button in BUTTON_MAP:
            selector = BUTTON_MAP[ button ] + '-' + ACTIONS_MAP[ action ]
+           Domoticz.Log("---> Selector: %s" %selector)
            MajDomoDevice(self, Devices, srcNWKID, dstEP, ClusterID, selector)
 
 
