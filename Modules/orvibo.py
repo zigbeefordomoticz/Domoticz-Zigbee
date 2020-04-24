@@ -48,7 +48,7 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         '3c4e4fc81ed442efaf69353effcdfc5f': { 
             '03': '01', # Top Left,
             '07': '02', # Middle Left
-            '0b': '03', # Tp Right
+            '0b': '03', # TOp Right
             '0f': '04', # Mddle Right
             }
     }
@@ -59,11 +59,15 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         '03': 'Release',
     }
 
-    
+ 
+ 
     if srcNWKID not in self.ListOfDevices:
         Domoticz.Error("%s not found in Database")
         return
+    if 'Model' not in self.ListOfDevices[ srcNWKID]:
+        return
 
+    _Model = self.ListOfDevices[ srcNWKID]['Model']
     if ClusterID != '0017':
         Domoticz.Error("orviboReadRawAPS - unexpected ClusterId %s for NwkId: %s" %(ClusterID, srcNWKID))
         return
@@ -81,7 +85,7 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
 
         Domoticz.Log("button: %s, action: %s" %(button, action))
 
-        if action in ACTIONS_MAP and button in BUTTON_MAP:
+        if action in ACTIONS_MAP and button in BUTTON_MAP[ _Model]:
            selector = BUTTON_MAP[ button ] + '-' + ACTIONS_MAP[ action ]
            Domoticz.Log("---> Selector: %s" %selector)
            MajDomoDevice(self, Devices, srcNWKID, dstEP, ClusterID, selector)
