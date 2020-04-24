@@ -205,13 +205,6 @@ def WriteDeviceList(self, count):
             with open( _DeviceListFileName , 'wt') as file:
                 json.dump( self.ListOfDevices, file, sort_keys=True, indent=2)
 
-        # If enabled, write in Pickkle
-        if self.pluginconf.pluginConf['expPickleDatabase']:
-            _DeviceListFileName = self.pluginconf.pluginConf['pluginData'] + self.DeviceListName[:-3] + 'pckl'
-            loggingDatabase( self, 'Debug', "Write " + _DeviceListFileName + " = " + str(self.ListOfDevices))
-            with open( _DeviceListFileName , 'wb') as file:
-                pickle.dump( self.ListOfDevices, file, protocol=pickle.HIGHEST_PROTOCOL)
-
         self.HBcount=0
         loggingDatabase( self, 'Debug', "WriteDeviceList - flush Plugin db to %s" %_DeviceListFileName)
     else :
