@@ -34,8 +34,8 @@ def callbackDeviceAwake_Orvibo(self, NwkId, EndPoint, cluster):
 
 def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
-    Domoticz.Log("OrviboReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
-            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
+    #Domoticz.Log("OrviboReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+    #        %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
 
     BUTTON_MAP = {
         # d0d2422bbf3a4982b31ea843bfedb559
@@ -83,11 +83,11 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         button = data[0:2]
         action = data[4:6]
 
-        Domoticz.Log("button: %s, action: %s" %(button, action))
+        #Domoticz.Log("button: %s, action: %s" %(button, action))
 
         if action in ACTIONS_MAP and button in BUTTON_MAP[ _Model]:
            selector = BUTTON_MAP[ _Model][ button ] + ACTIONS_MAP[ action ]
-           Domoticz.Log("---> Selector: %s" %selector)
+           #Domoticz.Log("---> Selector: %s" %selector)
            MajDomoDevice(self, Devices, srcNWKID, '01', '0006', selector)
 
 
