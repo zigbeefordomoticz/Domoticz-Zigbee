@@ -299,4 +299,25 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Arrêt|Alarme|Sirène|Flash|Armée|Désarmée"}
         }
     },
+
+    'OrviboRemoteSquare': {
+    0: (0, 'Off'), 
+    11: (1, '10'), 
+    12: (2, '20'), 
+    13: (3, '30'), 
+    21: (4, '40'),
+    22: (5, '50'),
+    23: (6, '60'),
+    31: (7, '70'),
+    32: (8, '80'),
+    33: (9, '90'),
+    41: (10, '100'),
+    42: (11, '110'),
+    43: (12, '120'),
+    'ForceUpdate': True,
+    "LevelNames": "Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release",
+    "Language": {
+        "fr-FR": {"Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
+        }
+    }
 }
