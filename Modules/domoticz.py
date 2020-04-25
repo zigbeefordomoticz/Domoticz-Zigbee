@@ -14,7 +14,8 @@ import time
 import Domoticz
 
 from Modules.logging import loggingWidget
-from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL, SWITCH_LVL_MATRIX
+from Modules.zigateConsts import THERMOSTAT_MODE_2_LEVEL
+from Modules.widgets import SWITCH_LVL_MATRIX
 
 def CreateDomoDevice(self, Devices, NWKID):
     """
