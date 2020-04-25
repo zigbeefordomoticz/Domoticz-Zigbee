@@ -48,7 +48,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': False, 
         "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6",
         "Language": { 
-            "fr": { "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6"}
+            "fr-FR": { "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop|scene1|scene2|scene3|scene4|scene5|scene6"}
             }
         },
 
@@ -58,7 +58,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': False, 
         "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop",
         "Language": {
-            "fr": { "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop"}
+            "fr-FR": { "LevelNames": "Off|On|click_up|click_down|move_up|move_down|stop"}
             }
         },
 
@@ -74,7 +74,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "Off|Click|Double Click|Long Click",
         "Language": {
-            "fr": { "LevelNames": "Off|Click|Double Click|Long Click"}
+            "fr-FR": { "LevelNames": "Off|Click|Double Click|Long Click"}
             }
         },
 
@@ -87,7 +87,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "button1|button2|button3|button4|button5",
         "Language": {
-            "fr": {"LevelNames": "button1|button2|button3|button4|button5"}
+            "fr-FR": {"LevelNames": "button1|button2|button3|button4|button5"}
             }
         },
 
@@ -100,7 +100,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "Off|Off|On|Move Up|Move Down|Stop",
         "Language": {
-            "fr": {"LevelNames": "Off|Off|On|Move Up|Move Down|Stop"}
+            "fr-FR": {"LevelNames": "Off|Off|On|Move Up|Move Down|Stop"}
             }
         },
 
@@ -113,7 +113,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         'LevelNames': 'Off|On|Move Up|Move Down|Stop',
         "Language": {
-            "fr": {'LevelNames': 'Off|On|Move Up|Move Down|Stop'}
+            "fr-FR": {'LevelNames': 'Off|On|Move Up|Move Down|Stop'}
             }
         },
 
@@ -131,7 +131,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
         "Language": {
-            "fr": {"LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks"}
+            "fr-FR": {"LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks"}
             }
         },
 
@@ -146,49 +146,49 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "Click|Double Click|Long Click|Release Click|Shake",
         "Language": {
-            "fr": {"LevelNames": "Click|Double Click|Long Click|Release Click|Shake"}
+            "fr-FR": {"LevelNames": "Click|Double Click|Long Click|Release Click|Shake"}
             }
         },
 
     'DSwitch': {
         "LevelNames": "Off|Left Click|Right Click|Both Click" ,
         "Language": {
-            "fr": {"LevelNames": "Off|Left Click|Right Click|Both Click" }
+            "fr-FR": {"LevelNames": "Off|Left Click|Right Click|Both Click" }
             }
         },
 
     'DButton': {
         "LevelNames": "Off|Switch 1|Switch 2|Both_Click",
         "Language": {
-            "fr": {"LevelNames": "Off|Switch 1|Switch 2|Both_Click"}
+            "fr-FR": {"LevelNames": "Off|Switch 1|Switch 2|Both_Click"}
             }
         },
 
     "DButton_3": {
         "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click",
         "Language": {
-            "fr": {"LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click"}
+            "fr-FR": {"LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click"}
         }
     },
 
     'Toggle': {
         "LevelNames": "Off|On|Toggle",
         "Language": {
-            "fr": {"LevelNames": "Off|On|Toggle"}
+            "fr-FR": {"LevelNames": "Off|On|Toggle"}
         }
     },
 
     'Aqara': {
         "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
         "Language": {
-            "fr": {"LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"}
+            "fr-FR": {"LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"}
         }
     },
 
     'XCube': {
         "LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise",
         "Language": {
-            "fr": {"LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"}
+            "fr-FR": {"LevelNames": "Off|Shake|Alert|Free_Fall|Flip_90|Flip_180|Move|Tap|Clock_Wise|Anti_Clock_Wise"}
         }
     },
 
@@ -210,7 +210,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True , 
         "LevelNames": "Off|On|Push Up|Push Down|Release",
         "Language": {
-            "fr": {"LevelNames": "Off|On|Push Up|Push Down|Release"}
+            "fr-FR": {"LevelNames": "Off|On|Push Up|Push Down|Release"}
         }
     },
 
@@ -237,7 +237,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release",
         "Language": {
-            "fr": {"LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release"}
+            "fr-FR": {"LevelNames": "Off|ToggleOnOff|Left_click|Right_click|Up_click|Up_push|Up_release|Down_click|Down_push|Down_release|Right_push|Right_release|Left_push|Left_release"}
         }
     },
 
@@ -252,7 +252,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': False,  
         "LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection",
         "Language": {
-            "fr": {"LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection"}
+            "fr-FR": {"LevelNames": "Off| Manual| Schedule| Manual Energy Saver| Schedule Energy Saver| Holiday| Holiday Frost Protection"}
         }
     },
 
@@ -265,7 +265,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': False,
         "LevelNames": "Off|Auto|Cool|Heat|Force Heat",
         "Language": {
-            "fr": {"LevelNames": "Off|Auto|Cool|Heat|Force Heat"}
+            "fr-FR": {"LevelNames": "Off|Auto|Cool|Heat|Force Heat"}
         }
     },
 
@@ -275,28 +275,28 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': False,
         "LevelNames": "Off|Conventional|Set Point|Fil Pilote",
         "Language": {
-            "fr": {"LevelNames": "Off|Conventional|Set Point|Fil Pilote"}
+            "fr-FR": {"LevelNames": "Off|Conventional|Set Point|Fil Pilote"}
         }
     },
 
     'FIP': { 
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {
-            "fr": {"LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off"}
+            "fr-FR": {"LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off"}
         }
     },
 
     'LegrandFilPilote': { 
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {
-            "fr": {"LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off"}
+            "fr-FR": {"LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off"}
         }
     },
 
     'AlarmWD': { 
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
-            "fr": {"LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed"}
+            "fr-FR": {"LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed"}
         }
     },
 }
