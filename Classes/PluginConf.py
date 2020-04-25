@@ -35,6 +35,7 @@ SETTINGS = {
                     }},
 
         'WebInterface': { 'Order': 3, 'param': {
+                    'Lang':            { 'type':'str', 'default':'en-US', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
                     'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableChunk':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
