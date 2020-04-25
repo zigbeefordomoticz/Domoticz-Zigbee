@@ -511,7 +511,7 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     # Power Cluster
     '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'0001'},
                              '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
-                             '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'}}},
+                             '0021': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
 
     # On/Off Cluster
     '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01'}}},

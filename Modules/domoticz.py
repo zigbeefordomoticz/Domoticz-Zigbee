@@ -98,7 +98,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         Options = {}
-        #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+        Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
             
@@ -131,7 +131,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options[ 'LevelNames' ] += 'BT %03s | ' %bt
                 Options[ 'LevelActions'] += '|'
     
-            #Domoticz.Log(" --> Options: %s" %str(Options))  
+            Domoticz.Log(" --> Options: %s" %str(Options))  
 
             Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
             Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
@@ -142,7 +142,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         if OffHidden:
             Options[ 'LevelOffHidden'] = 'true'
 
-        #Domoticz.Log(" --> Options: %s" %str(Options))
+        Domoticz.Log(" --> Options: %s" %str(Options))
         return Options
 
 
@@ -243,7 +243,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             break  # We have created already the Devices (as GlobalEP is set)
 
         # Check if Type is known
-        if Type == '':
+        if len(Type) == 1 and Type[0] == '':
             continue
 
         for iterType in Type:
@@ -348,6 +348,11 @@ def CreateDomoDevice(self, Devices, NWKID):
                Options = createSwitchSelector( 10,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in DButton3" %(t), NWKID) 
+
+            # 12 Selectors
+            if t in ( 'OrviboRemoteSquare'):
+                Options = createSwitchSelector( 13,  DeviceType = t,OffHidden = True, SelectorStyle = 1 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)                 
 
             # 13 Selectors, Style 1
             if t in ('INNR_RC110_SCENE', ):
@@ -949,7 +954,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(percent_value)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
 
@@ -1491,19 +1496,24 @@ def GetType(self, Addr, Ep):
     loggingWidget( self, "Debug", "GetType - Model " + str(self.ListOfDevices[Addr]['Model']) + " Profile ID : " + str(
         self.ListOfDevices[Addr]['ProfileID']) + " ZDeviceID : " + str(self.ListOfDevices[Addr]['ZDeviceID']), Addr)
 
-    if self.ListOfDevices[Addr]['Model'] != {} and self.ListOfDevices[Addr][ 'Model'] in self.DeviceConf:
+    _Model = self.ListOfDevices[Addr]['Model']
+    if _Model != {} and _Model in list(self.DeviceConf.keys()):
         # verifie si le model a ete detecte et est connu dans le fichier DeviceConf.txt
-        if Ep in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep']:
-            if 'Type' in self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]:
-                if self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type'] != "":
-                    loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
-                        self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']))
-                    Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Ep'][Ep]['Type']
+        if Ep in self.DeviceConf[ _Model ]['Ep']:
+            Domoticz.Log( "Ep: %s found in DeviceConf" %Ep)
+            if 'Type' in self.DeviceConf[ _Model ]['Ep'][Ep]:
+                Domoticz.Log(" 'Type' entry found inf DeviceConf")
+                if self.DeviceConf[ _Model ]['Ep'][Ep]['Type'] != "":
+                    loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : %s" %self.DeviceConf[ _Model ]['Ep'][Ep]['Type'], Addr)
+                    Type = self.DeviceConf[ _Model ]['Ep'][Ep]['Type']
                     Type = str(Type)
+                else:
+                    loggingWidget( self, 'Debug'"GetType - Found EpEmpty Type in DeviceConf for %s/%s" %(Addr, Ep), Addr)
+            else:
+                loggingWidget( self, 'Debug'"GetType - EpType not found in DeviceConf for %s/%s" %(Addr, Ep), Addr)   
         else:
-            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf : " + str(
-                self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']))
-            Type = self.DeviceConf[self.ListOfDevices[Addr]['Model']]['Type']
+            Type = self.DeviceConf[ _Model ]['Type']
+            loggingWidget( self, "Debug", "GetType - Found Type in DeviceConf for %s/%s: %s " %(Addr, Ep, Type), Addr)            
     else:
         loggingWidget( self, "Debug", "GetType - Model:  >%s< not found with Ep: %s in DeviceConf. Continue with ClusterSearch" %( self.ListOfDevices[Addr]['Model'], Ep), Addr)
         loggingWidget( self, "Debug", "        - List of Entries: %s" %str(self.DeviceConf.keys() ), Addr)
@@ -1546,6 +1556,9 @@ def GetType(self, Addr, Ep):
             Type = Type[1:]
 
         loggingWidget( self, "Debug", "GetType - ClusterSearch return : %s" %Type, Addr)
+
+    loggingWidget(self, 'Debug', "GetType returning: %s" %Type, Addr)
+
     return Type
 
 
