@@ -114,7 +114,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                     Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
 
                 # In case we have a localized version, we will overwrite the standard vesion
-                if self.pluginConf.pluginConf['Lang'] != 'en-US':
+                if self.pluginconf.pluginConf['Lang'] != 'en-US':
                     lang = self.pluginConf.pluginConf['Lang']
                     if 'Language' in SWITCH_LVL_MATRIX[ DeviceType ]:
                         if self.pluginConf.pluginConf['Lang'] in SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]:
