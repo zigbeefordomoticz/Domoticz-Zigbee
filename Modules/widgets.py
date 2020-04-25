@@ -296,7 +296,7 @@ SWITCH_LVL_MATRIX = {
     'AlarmWD': { 
         "LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed",
         "Language": {
-            "fr-FR": {"LevelNames": "Stop|Alarm|Siren|Strobe|Armed|Disarmed"}
+            "fr-FR": {"LevelNames": "Arrêt|Alarme|Sirène|Flash|Armée|Désarmée"}
         }
     },
 }
