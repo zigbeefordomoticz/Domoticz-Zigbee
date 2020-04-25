@@ -87,7 +87,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "button1|button2|button3|button4|button5",
         "Language": {
-            "fr-FR": {"LevelNames": "button1|button2|button3|button4|button5"}
+            "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}
             }
         },
 
@@ -100,7 +100,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "Off|Off|On|Move Up|Move Down|Stop",
         "Language": {
-            "fr-FR": {"LevelNames": "Off|Off|On|Move Up|Move Down|Stop"}
+            "fr-FR": {"LevelNames": "Off|Eteint|On|Monté|Descente|Arrêt"}
             }
         },
 
@@ -113,7 +113,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         'LevelNames': 'Off|On|Move Up|Move Down|Stop',
         "Language": {
-            "fr-FR": {'LevelNames': 'Off|On|Move Up|Move Down|Stop'}
+            "fr-FR": {"LevelNames": "Eteint|Allumer|Montée|Descente|Arrêt"}
             }
         },
 
@@ -131,7 +131,7 @@ SWITCH_LVL_MATRIX = {
         'ForceUpdate': True, 
         "LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks",
         "Language": {
-            "fr-FR": {"LevelNames": "1 Click|2 Clicks|3 Clicks|4+ Clicks"}
+            "fr-FR": {"LevelNames": "Simple Click|Double Click|Triple Clicl|Quadruple+ Click"}
             }
         },
 

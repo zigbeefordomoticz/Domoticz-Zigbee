@@ -109,8 +109,19 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         if DeviceType:
             if DeviceType in SWITCH_LVL_MATRIX:
+                # In all cases let's populate with the Standard LevelNames
                 if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ]:
                     Options[ 'LevelNames' ] = SWITCH_LVL_MATRIX[ DeviceType ]['LevelNames']
+
+                # In case we have a localized version, we will overwrite the standard vesion
+                if self.pluginConf.pluginConf['Lang'] != 'en-US':
+                    lang = self.pluginConf.pluginConf['Lang']
+                    if 'Language' in SWITCH_LVL_MATRIX[ DeviceType ]:
+                        if self.pluginConf.pluginConf['Lang'] in SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]:
+                            if 'LevelNames' in SWITCH_LVL_MATRIX[ DeviceType ][ lang ]:
+                                Options[ 'LevelNames'] = SWITCH_LVL_MATRIX[ DeviceType ]['Language'][ lang ]['LevelNames']
+
+                if Options[ 'LevelNames' ] != '':
                     count = sum(map(lambda x : 1 if '|' in x else 0, Options[ 'LevelNames' ]))
                     #Domoticz.Log("----> How many Levels: %s" %count)
                     for bt in range(0, count):
