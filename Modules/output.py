@@ -293,6 +293,7 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
                     for attr in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes'][cluster]:
                         #Domoticz.Log("----> Device: %s Adding Attribute %s for Cluster %s" %(key, attr, cluster))
                         targetAttribute.append( int(attr,16) )
+                    return targetAttribute
 
     # Attribute based on the Attributes List given by the device
     if targetAttribute is None and 'Attributes List' in self.ListOfDevices[key]:
