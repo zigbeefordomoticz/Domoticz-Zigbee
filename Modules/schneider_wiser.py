@@ -87,7 +87,11 @@ def schneider_wiser_registration( self, Devices, key ):
     """
 
     loggingSchneider( self, 'Debug', "schneider_wiser_registration for device %s" %key)
-
+    
+    # nwkid might have changed so we need to reload the zoning
+    self.SchneiderZone = None
+    importSchneiderZoning (self)
+    
     EPout = '01'
     for tmpEp in self.ListOfDevices[key]['Ep']:
         if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]:
@@ -253,6 +257,8 @@ def schneider_fip_mode( self, key, mode):
             'Eco': 0x03,
             'Frost Protection': 0x04,
             'Off': 0x05 }
+
+    loggingSchneider( self, 'Debug', "schneider_fip_mode for device %s requesting mode: %s" %(key, mode))
 
     if mode not in MODE:
         Domoticz.Error("schneider_fip_mode - %s unknown mode: %s" %mode)
