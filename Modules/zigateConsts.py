@@ -41,9 +41,10 @@ SQN_ANSWERS = ( 0x8401, 0x8000, 0x802B, 0x802C, 0x8030, 0x8031, 0x8034,
         0x8120 )
 
 ADDRESS_MODE = { 'bound':0x00, 
-        'group':0x01, # Group
-        'short':0x02, # Short address
-        'ieee':0x03 # IEEE
+        'group':0x01,     # Group
+        'short':0x02,     # Short address
+        'ieee':0x03,      # IEEE
+        'broadcast': 0x04 # Broadcast
         }
 
 PROFILE_ID = {
