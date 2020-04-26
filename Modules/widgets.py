@@ -279,6 +279,13 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
+    'ContractPower': {
+        "LevelNames": "3KVA|6KVA|9KVA|12KVA|15KVA",
+        "Language": {
+            "fr-FR": {"LevelNames": "3KVA|6KVA|9KVA|12KVA|15KVA"}
+        }
+    },
+
     'FIP': { 
         "LevelNames": "Off|Confort|Confort -1|Confort -2|Eco|Frost Protection|Off",
         "Language": {

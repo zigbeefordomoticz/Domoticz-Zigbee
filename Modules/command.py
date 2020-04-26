@@ -22,7 +22,7 @@ from Modules.logging import loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
-from Modules.schneider_wiser import  schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_thermostat_behaviour, schneider_temp_Setcurrent
+from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_thermostat_behaviour
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
@@ -102,7 +102,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if tmpDeviceType == "AlarmWD":
             ClusterSearch = '0502'
             DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'LegrandFilPilote', 'FIP', 'HACTMODE'):
+        if tmpDeviceType in ( 'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower'):
             DeviceType = tmpDeviceType
 
     if DeviceType == '' and self.pluginconf.pluginConf['forcePassiveWidget']:
@@ -317,6 +317,26 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 schneider_thermostat_behaviour( self, NWKID, 'FIP')
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
+            return
+
+        elif DeviceType == 'ContractPower':
+            loggingCommand( self, 'Debug', "mgtCommand : Set Level for ContractPower Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            CONTRACT_MODE = {
+                10: 3,
+                20: 6,
+                30: 9,
+                40: 12,
+                50: 15,
+                }
+            if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+            if Level in CONTRACT_MODE:
+                loggingCommand( self, 'Log', "mgtCommand : -----> Contract Power : %s - %s" %(Level, CONTRACT_MODE[ Level ]), NWKID)
+                if 'Model' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-BMS':
+                        self.ListOfDevices[NWKID]['Schneider Wiser']['Contract Power'] = CONTRACT_MODE[ Level ]
+                        schneider_set_contract( self, NWKID,  CONTRACT_MODE[ Level ] )
+                        UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
         elif DeviceType == 'FIP':
