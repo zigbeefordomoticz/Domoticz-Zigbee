@@ -270,12 +270,12 @@ def CreateDomoDevice(self, Devices, NWKID):
         if "Humi" in Type and "Temp" in Type and "Baro" in Type:
              # Detecteur temp + Hum + Baro
             createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Hum+Baro", "Temp+Hum+Baro")
-            loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Humi and Temp and Baro" %(t), NWKID)
+            loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Humi and Temp and Baro" %(Type), NWKID)
 
         if "Humi" in Type and "Temp" in Type:
             # Temp + Hum
             createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, "Temp+Hum", "Temp+Hum")
-            loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Humi and Temp" %(t), NWKID)
+            loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Humi and Temp" %(Type), NWKID)
 
         for t in Type:
             loggingWidget( self, "Debug", "CreateDomoDevice - DevId: %s DevEp: %s Type: %s" %(DeviceID_IEEE, Ep, t), NWKID)
