@@ -314,18 +314,28 @@ def PDMCreateBitmap( self, MsgData):
     if self.PDM is None:
         openPDM( self )
 
-    datas = RecordId
-    if RecordId not in self.PDM:
-        self.PDM[RecordId] = {}
-    if 'Bitmap' not in self.PDM[RecordId]:
-        self.PDM[RecordId]['Bitmap'] = '%08x' %0
-    self.PDM[RecordId]['Bitmap'] = BitMapValue
 
-    sendZigateCmd(self, "8204", datas )
+    if RecordId not in self.PDM:
+    	self.PDM[ RecordId ] = {}
+
+    if 'Bitmap' not in self.PDM[ RecordId] :
+        self.PDM[ RecordId ][ 'Bitmap' ] = {}
+
+    self.PDM[ RecordId ]['Bitmap'] = BitMapValue
+
+    sendZigateCmd(self, "8204", RecordId )
 
 def PDMDeleteBitmapRequest( self, MsgData):
-    "Delete a bitmap record"
-    "Decode0205"
+    """
+    This function deletes the specified counter in the EEPROM. The counter must be identified using 
+    the user-defined ID value assigned when the bitmap was created using the function PDM_eCreateBitmap().
+    The function can be used to formally delete a counter. It clears the current segment occupied by the 
+    counter and also all the older (expired) segments used for the counter. This deletion increments the 
+    Wear Counts for these segments and should be done only if absolutely necessary, as the expired segments 
+    can be re-used directly via the PDM without formal deletion.
+ 
+    """
+    #Decode0205
 
     RecordId = MsgData[0:4]
 
@@ -334,6 +344,14 @@ def PDMDeleteBitmapRequest( self, MsgData):
     
     if self.PDM is None:
         openPDM( self )
+
+    if RecordId not in self.PDM:
+        return
+
+    if 'Bitmap' in self.PDM[ RecordId]:
+        del self.PDM[ RecordId]['Bitmap']
+
+    return
 
 def PDMGetBitmapRequest( self, MsgData):
     """
@@ -372,8 +390,7 @@ def PDMGetBitmapRequest( self, MsgData):
 
     counter = int(self.PDM[RecordId]['Bitmap'],16)
     datas = status + RecordId + '%08x' %counter
-    counter += 1
-    datas = status + RecordId + '%08x' %counter
+
     sendZigateCmd(self, "8206", datas )
     loggingPDM( self, 'Debug',  "PDMGetBitmapRequest - Sending 0x8206 data: %s" %(datas))
 
@@ -442,6 +459,7 @@ def PDMExistanceRequest( self, MsgData):
             recordExist = 0x01
             persistedData = self.PDM[RecordId]['PersistedData']
             size = self.PDM[RecordId]['RecSize']
+            
     if not recordExist:
         recordExist = 0x00
         size = '%04x' %0
