@@ -160,11 +160,9 @@ class NetworkMap():
 
         self.logging( 'Debug', "LQIreq - nwkid: %s" %nwkid)
 
-
         if nwkid not in self.Neighbours:
             self._initNeighboursTableEntry( nwkid)
-
-        
+   
         tobescanned = False
         if nwkid != '0000' and nwkid not in self.ListOfDevices:
             return
@@ -190,7 +188,7 @@ class NetworkMap():
         # u8StartIndex is the Neighbour table index of the first entry to be included in the response to this request
         index = self.Neighbours[ nwkid ]['TableCurSize']
 
-        self.LQIreq
+        ############self.LQIreq
         self.LQIreqInProgress.append ( nwkid )
         datas = "%s%02X" %(nwkid, index)
 
@@ -228,11 +226,13 @@ class NetworkMap():
     def continue_scan(self):
 
         self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
+
         self.prettyPrintNeighbours()
         if len(self.LQIreqInProgress) > 0 and self.LQIticks < 2:
-            self.logging( 'Debug', "Command pending")
+            self.logging( 'Debug', "continue_scan - Command pending")
             self.LQIticks += 1
             return
+
         elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
             entry = self.LQIreqInProgress.pop()
             self.logging( 'Debug', "Commdand pending Timeout: %s" % entry)
@@ -247,17 +247,26 @@ class NetworkMap():
             self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
 
         waitResponse = False
-        for entry in self.Neighbours:
+        for entry in list(self.Neighbours):
+            if entry not in self.ListOfDevices:
+                self.logging( 'Log', "LQIreq - device %s not found removing from the device to be scaned" %entry)
+                # Most likely this device as been removed, or change it Short Id
+                del self.Neighbours[ entry ]
+                continue
+
             if self.Neighbours[entry]['Status'] == 'Completed':
                 continue
+
             elif self.Neighbours[entry]['Status'] in ( 'TimedOut', 'NotReachable'):
                 continue
+
             elif self.Neighbours[entry]['Status'] in ( 'WaitResponse', 'WaitResponse2'):
                 waitResponse = True
                 continue
+
             elif self.Neighbours[entry]['Status'] in ( 'ScanRequired', 'ScanRequired2') :
-                    self.LQIreq( entry )
-                    return
+                self.LQIreq( entry )
+                return
         else:
             # We have been through all list of devices and not action triggered
             if not waitResponse:

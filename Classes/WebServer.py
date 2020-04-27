@@ -628,7 +628,7 @@ class WebServer(object):
                 if not self.networkmap.NetworkMapPhase():
                     self.networkmap.start_scan()
                 else:
-                    self.logging( 'Log', "Cannot start Network Topology as one is in the pipe")
+                    self.logging( 'Log', "Cannot start Network Topology as one is in progress...")
         return _response
 
     def rest_zigate_erase_PDM( self, verb, data, parameters):
