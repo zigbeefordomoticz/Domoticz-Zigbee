@@ -569,6 +569,13 @@ class BasePlugin:
 
         busy_ = False
 
+        # Quiet a bad hack. In order to get the needs for ZigateRestart 
+        # from WebServer
+        if 'startZigateNeeded' in self.zigatedata:
+            if self.zigatedata['startZigateNeeded']:
+                self.startZigateNeeded = self.HeartbeatCount
+                del self.zigatedata['startZigateNeeded']
+
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
         if self.transport != 'None' and not self.PDMready:
@@ -732,11 +739,6 @@ def zigateInit_Phase1(self ):
             self.startZigateNeeded = 1
             self.HeartbeatCount = 1
             return
-
-
-
-
-
 
         # After an Erase PDM we have to do a full start of Zigate
         loggingPlugin( self, 'Debug', "----> starZigate")

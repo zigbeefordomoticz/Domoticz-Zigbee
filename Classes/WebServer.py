@@ -697,8 +697,10 @@ class WebServer(object):
         action = {}
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
-                sendZigateCmd(self, "0011", "" ) # Software Reset
+                self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
+                sendZigateCmd(self, "0011", "" ) # Software Reset
+
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
         _response["Data"] = json.dumps( action , sort_keys=True )
