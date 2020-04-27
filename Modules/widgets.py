@@ -328,10 +328,10 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    "ContractPower": {
-        "LevelNames": "3KVA|6KVA|9KVA|12KVA|15KVA",
+    'ContractPower': {
+        "LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA",
         "Language": {
-            "fr-FR": {"LevelNames": "3KVA|6KVA|9KVA|12KVA|15KVA"}
+            "fr-FR": {"LevelNames": "Off|3KVA|6KVA|9KVA|12KVA|15KVA"}
         }
     },
 

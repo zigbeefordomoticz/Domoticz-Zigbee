@@ -296,7 +296,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
             # 5 Selector , OffHidden, Style 0 (command)
             if t in ('ContractPower', ):
-                Options = createSwitchSelector( 4, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
+                Options = createSwitchSelector( 6, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in ContractPower ..." %(t), NWKID)
 
