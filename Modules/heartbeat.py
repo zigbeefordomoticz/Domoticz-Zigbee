@@ -136,12 +136,11 @@ def pollingManufSpecificDevices( self, NWKID):
     if brand is None:
         return
     
-    loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
-                %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
-
     _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
     if _FEQ and ( _HB % _FEQ ) == 0:
+        loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+            %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
         rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 
     return rescheduleAction
