@@ -697,7 +697,7 @@ class WebServer(object):
         action = {}
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
-                self.ZigateData['startZigateNeeded'] = True
+                self.zigatedate['startZigateNeeded'] = True
                 #start_Zigate( self )
                 sendZigateCmd(self, "0011", "" ) # Software Reset
 

@@ -571,10 +571,10 @@ class BasePlugin:
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart 
         # from WebServer
-        if 'startZigateNeeded' in self.ZigateData:
-            if self.ZigateData['startZigateNeeded']:
+        if 'startZigateNeeded' in self.zigatedata:
+            if self.zigatedata['startZigateNeeded']:
                 self.startZigateNeeded = self.HeartbeatCount
-                del self.ZigateData['startZigateNeeded']
+                del self.zigatedata['startZigateNeeded']
 
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
