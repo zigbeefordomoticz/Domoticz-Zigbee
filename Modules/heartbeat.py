@@ -128,10 +128,10 @@ def pollingManufSpecificDevices( self, NWKID):
     
     brand = func = param = None
     if devManufCode in POLLING_TABLE_SPECIFICS:
-        brand, func, param =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+        brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
 
     if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
-        brand, func, param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
+        brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
     if brand is None:
         return
