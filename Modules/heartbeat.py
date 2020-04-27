@@ -441,7 +441,7 @@ def processListOfDevices( self , Devices ):
                 loggingHeartbeat( self, 'Sattus', "Starting Network Topology")
                 self.start_scan( )
             elif phase == 2:
-                loggingHeartbeat( self, 'Log', "processListOfDevices Topology scan is possible" %self.ZigateComm.loadTransmit())
+                loggingHeartbeat( self, 'Log', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
                 if self.ZigateComm.loadTransmit() < 2 :
                      self.networkmap.continue_scan( )
 
@@ -451,7 +451,7 @@ def processListOfDevices( self , Devices ):
             if self.ZigateComm.loadTransmit() < 2:
                 self.networkenergy.do_scan()
 
-    loggingHeartbeat( self, 'Log', "processListOfDevices END with Busy: %s, Enroll: %s, Load: %s" %(self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
+    loggingHeartbeat( self, 'Log', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
     return True
 
 
