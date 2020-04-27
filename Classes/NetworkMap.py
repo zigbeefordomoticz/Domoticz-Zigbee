@@ -160,12 +160,6 @@ class NetworkMap():
 
         self.logging( 'Debug', "LQIreq - nwkid: %s" %nwkid)
 
-
-
-
-
-
-
         if nwkid not in self.Neighbours:
             self._initNeighboursTableEntry( nwkid)
    
@@ -255,7 +249,7 @@ class NetworkMap():
         waitResponse = False
         for entry in list(self.Neighbours):
             if entry not in self.ListOfDevices:
-                self.logging( 'Debug', "LQIreq - device %s not found removing from the device to be scaned" %entry)
+                self.logging( 'Log', "LQIreq - device %s not found removing from the device to be scaned" %entry)
                 # Most likely this device as been removed, or change it Short Id
                 del self.Neighbours[ entry ]
                 continue
