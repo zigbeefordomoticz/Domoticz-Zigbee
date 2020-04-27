@@ -523,12 +523,18 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
         Domoticz.Error("Zigate not correctly initialized")
         return
 
+    # At that stage IEEE is set to 0x0000 which is correct for the Coordinator
     if extaddr not in self.IEEE2NWK:
         if self.IEEE2NWK != addr:
             initLODZigate( self, addr, extaddr )
 
     if self.currentChannel != int(Channel,16):
         self.adminWidgets.updateNotificationWidget( Devices, 'Zigate Channel: %s' %str(int(Channel,16)))
+
+    # Let's check if this is a first initialisation, and then we need to update the Channel setting
+    if int(Channel,16) != self.pluginconf.pluginConf['channel']:
+        self.pluginconf.pluginConf['channel'] = int(Channel,16)
+        self.pluginconf.pluginConf.write_Settings()
 
     self.currentChannel = int(Channel,16)
 
