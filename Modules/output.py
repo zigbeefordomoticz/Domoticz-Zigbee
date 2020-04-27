@@ -1157,11 +1157,7 @@ def maskChannel( channel ):
 
     mask = 0x00000000
 
-    
-    Domoticz.Log("maskChannel: channel %s type: %s" %(channel, type(channel)))
-
     if isinstance(channel, list):
-        Domoticz.Log("----List")
         for c in channel:
             if c.isdigit():
                 if int(c) in CHANNELS:
@@ -1170,18 +1166,14 @@ def maskChannel( channel ):
                 Domoticz.Error("maskChannel - invalid channel %s" %c)
 
     elif isinstance(channel, int):
-        Domoticz.Log("----Int")
         if channel in CHANNELS:
             mask = CHANNELS( channel )
         else:
             Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
 
     elif isinstance(channel, str):
-        Domoticz.Log("---Str")
         lstOfChannels = channel.strip().split(',')
-        Domoticz.Log("List of Channels: %s" %str(lstOfChannels))
         for channel in lstOfChannels:
-            Domoticz.Log("Processing: %s" %channel)
             if channel.isdigit():
                 if int(channel) in CHANNELS:
                     mask += CHANNELS[int(channel)]

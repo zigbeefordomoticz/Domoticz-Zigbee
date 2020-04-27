@@ -534,6 +534,7 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
     if 'startZigateNeeded' not in self.zigatedata and not self.startZigateNeeded:    
         if int(Channel,16) != self.pluginconf.pluginConf['channel']:
+            Domoticz.Status("Updating Channel in Plugin Configuration to: %s" %int(Channel,16))
             self.pluginconf.pluginConf['channel'] = str(int(Channel,16))
             self.pluginconf.write_Settings()
 
@@ -783,7 +784,7 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
         # Let's check if this is a first initialisation, and then we need to update the Channel setting
         if 'startZigateNeeded' not in self.zigatedata and not self.startZigateNeeded:
             if int(MsgChannel,16) != self.pluginconf.pluginConf['channel']:
-                Domoticz.Log("Updating Channel to: %s" %int(MsgChannel,16))
+                Domoticz.Status("Updating Channel in Plugin Configuration to: %s" %int(MsgChannel,16))
                 self.pluginconf.pluginConf['channel'] = str(int(MsgChannel,16))
                 self.pluginconf.write_Settings()
 
