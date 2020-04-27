@@ -87,7 +87,6 @@ SCHNEIDER_FEATURES =  300 // HEARTBEAT
 NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
 
-
 def attributeDiscovery( self, NWKID ):
 
     rescheduleAction = False
