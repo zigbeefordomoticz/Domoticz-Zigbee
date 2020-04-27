@@ -1184,7 +1184,6 @@ def maskChannel( channel ):
     else:
         Domoticz.Errors("Requested channel is invalid: %s" %channel)
 
-    Domoticz.Log("maskChannel returning: %s" %mask)
     return mask
 
 
