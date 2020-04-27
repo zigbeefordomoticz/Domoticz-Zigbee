@@ -230,7 +230,7 @@ class NetworkMap():
         self.logging( 'Debug', "continue_scan - %s" %( len(self.LQIreqInProgress) ))
         self.prettyPrintNeighbours()
         if len(self.LQIreqInProgress) > 0 and self.LQIticks < 2:
-            self.logging( 'Debug', "Command pending")
+            self.logging( 'Debug', "continue_scan - Command pending")
             self.LQIticks += 1
             return
         elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:

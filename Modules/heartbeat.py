@@ -84,7 +84,7 @@ QUIET_AFTER_START =    60 // HEARTBEAT # Quiet periode after a plugin start
 CONFIGURERPRT_FEQ =    30 // HEARTBEAT
 LEGRAND_FEATURES =    300 // HEARTBEAT
 SCHNEIDER_FEATURES =  300 // HEARTBEAT
-NETWORK_TOPO_START =  60  // HEARTBEAT
+NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
 
 
@@ -425,33 +425,33 @@ def processListOfDevices( self , Devices ):
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-
     if self.HeartbeatCount > QUIET_AFTER_START and (( self.HeartbeatCount % CONFIGURERPRT_FEQ ) )== 0:
         # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
     # Network Topology management
     if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):
-        loggingHeartbeat( self, 'Log', "processListOfDevices Time for Network Topology")
+        loggingHeartbeat( self, 'Debug', "processListOfDevices Time for Network Topology")
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
-            loggingHeartbeat( self, 'Log', "processListOfDevices checking Topology phase: %s" %phase)
+            loggingHeartbeat( self, 'Debug', "processListOfDevices checking Topology phase: %s" %phase)
             if phase == 1:
                 loggingHeartbeat( self, 'Sattus', "Starting Network Topology")
                 self.start_scan( )
             elif phase == 2:
-                loggingHeartbeat( self, 'Log', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
-                if self.ZigateComm.loadTransmit() < 2 :
+                loggingHeartbeat( self, 'Debug', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
+                if self.ZigateComm.loadTransmit() < 3:
                      self.networkmap.continue_scan( )
 
     if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
         # Network Energy Level
         if self.networkenergy:
-            if self.ZigateComm.loadTransmit() < 2:
+            if self.ZigateComm.loadTransmit() < 3:
                 self.networkenergy.do_scan()
 
-    loggingHeartbeat( self, 'Log', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
+    loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \
+        %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
     return True
 
 
