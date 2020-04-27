@@ -1182,7 +1182,7 @@ def maskChannel( channel ):
         Domoticz.Log("List of Channels: %s" %str(lstOfChannels))
         for channel in lstOfChannels:
             Domoticz.Log("Processing: %s" %channel)
-            if c.isdigit():
+            if channel.isdigit():
                 if int(channel) in CHANNELS:
                     mask += CHANNELS[int(channel)]
                 else:
