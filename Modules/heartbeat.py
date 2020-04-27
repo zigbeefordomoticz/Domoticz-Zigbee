@@ -138,7 +138,9 @@ def pollingManufSpecificDevices( self, NWKID):
     
     _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
-    if _FEQ and ( _HB % _FEQ ) == 0:
+
+    Domoticz.Log("Polling find: %s %s %s %s" %(brand, param, _HB, _FEQ))
+    if _FEQ and (( _HB % _FEQ ) == 0):
         loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
             %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
         rescheduleAction = ( rescheduleAction or func( self, NWKID) )
