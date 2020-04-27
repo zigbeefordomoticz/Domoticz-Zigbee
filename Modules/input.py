@@ -534,7 +534,7 @@ def Decode8009(self,Devices, MsgData, MsgRSSI) : # Network State response (Firm 
     # Let's check if this is a first initialisation, and then we need to update the Channel setting
     if int(Channel,16) != self.pluginconf.pluginConf['channel']:
         self.pluginconf.pluginConf['channel'] = str(int(Channel,16))
-        self.pluginconf.pluginConf.write_Settings()
+        self.pluginconf.write_Settings()
 
     self.currentChannel = int(Channel,16)
 
@@ -782,7 +782,7 @@ def Decode8024(self, Devices, MsgData, MsgRSSI) : # Network joined / formed
         # Let's check if this is a first initialisation, and then we need to update the Channel setting
         if int(MsgChannel,16) != self.pluginconf.pluginConf['channel']:
             self.pluginconf.pluginConf['channel'] = str(int(MsgChannel,16))
-            self.pluginconf.pluginConf.write_Settings()
+            self.pluginconf.write_Settings()
 
         self.currentChannel = int(MsgChannel,16)
         self.ZigateIEEE = MsgExtendedAddress
