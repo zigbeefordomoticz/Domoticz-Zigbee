@@ -111,33 +111,38 @@ def attributeDiscovery( self, NWKID ):
 
 def pollingManufSpecificDevices( self, NWKID):
 
-    # Polling Manuf specific devices like Gledopto, Philips
     POLLING_TABLE_SPECIFICS = {
-        'pollingPhilips':  ( pollingPhilips , '100b', 'Philips' ),
-        'pollingGledopto': ( pollingGledopto , 'unknow', 'GLEDOPTO')
-        }
+        '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
+        'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
+        'Legrand':  ( 'Philips',  'pollingPhilips', pollingPhilips),
+        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto )
+    }
 
     rescheduleAction = False
+
     devManufCode = devManufName = ''
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
         devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
     if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
         devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
+    
+    brand = func = param = None
+    if devManufCode in POLLING_TABLE_SPECIFICS:
+        brand, func, param =  POLLING_TABLE_SPECIFICS[ devManufCode ]
 
-    loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s %s" \
-            %(NWKID, devManufCode, devManufName), NWKID)
-    for brand in POLLING_TABLE_SPECIFICS:
-        if brand not in self.pluginconf.pluginConf:
-            continue
-        if not self.pluginconf.pluginConf[ brand]:
-            continue
-        _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
-        _FEQ = self.pluginconf.pluginConf[ brand ] // HEARTBEAT
+    if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
+        brand, func, param =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
-        if ( _HB % _FEQ ) == 0:
-            func , manufCode, manufName = POLLING_TABLE_SPECIFICS[ brand ]
-            if (devManufCode == manufCode) or (devManufName == manufName):
-                rescheduleAction = ( rescheduleAction or func( self, NWKID) )
+    if brand is None:
+        return
+    
+    loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+                %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
+
+    _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
+    _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
+    if _FEQ and ( _HB % _FEQ ) == 0:
+        rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 
     return rescheduleAction
 
