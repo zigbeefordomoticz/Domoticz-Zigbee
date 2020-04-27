@@ -1176,7 +1176,7 @@ def maskChannel( channel ):
         else:
             Domoticz.Error("Requested channel not supported by Zigate: %s" %channel)
 
-    elif isinstance(str):
+    elif isinstance(channel, str):
         Domoticz.Log("---Str")
         lstOfChannels = channel.strip().split(',')
         Domoticz.Log("List of Channels: %s" %str(lstOfChannels))
