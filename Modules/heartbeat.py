@@ -136,7 +136,7 @@ def pollingManufSpecificDevices( self, NWKID):
     if brand is None:
         return
     
-    loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+    loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
                 %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
 
     _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
