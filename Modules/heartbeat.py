@@ -114,7 +114,6 @@ def pollingManufSpecificDevices( self, NWKID):
     POLLING_TABLE_SPECIFICS = {
         '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
         'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
-        'Legrand':  ( 'Philips',  'pollingPhilips', pollingPhilips),
         'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto )
     }
 
@@ -129,7 +128,6 @@ def pollingManufSpecificDevices( self, NWKID):
     brand = func = param = None
     if devManufCode in POLLING_TABLE_SPECIFICS:
         brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
-
     if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
         brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
@@ -139,7 +137,6 @@ def pollingManufSpecificDevices( self, NWKID):
     _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
 
-    Domoticz.Log("Polling find: %s %s %s %s" %(brand, param, _HB, _FEQ))
     if _FEQ and (( _HB % _FEQ ) == 0):
         loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
             %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
