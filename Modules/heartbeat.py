@@ -436,7 +436,7 @@ def processListOfDevices( self , Devices ):
             phase = self.networkmap.NetworkMapPhase()
             loggingHeartbeat( self, 'Debug', "processListOfDevices checking Topology phase: %s" %phase)
             if phase == 1:
-                loggingHeartbeat( self, 'Satus', "Starting Network Topology")
+                loggingHeartbeat( self, 'Status', "Starting Network Topology")
                 self.start_scan( )
             elif phase == 2:
                 loggingHeartbeat( self, 'Debug', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
