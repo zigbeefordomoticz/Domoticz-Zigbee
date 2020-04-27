@@ -29,7 +29,7 @@ import Domoticz
 from Modules.output import sendZigateCmd, maskChannel
 from Classes.AdminWidgets import AdminWidgets
 
-CHANNELS = [ '11','15','19','20','25','26']
+CHANNELS = [ '11', '12', '13','14','15','16','17','18','19','20','21','22','23','24','25','26']
 DURATION = 0x03
 
 class NetworkEnergy():
