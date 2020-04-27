@@ -5,7 +5,7 @@
 #
 
 """
-<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.8" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/sasu-drooz/Domoticz-Zigate/wiki">
+<plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.8" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
         <h2> Plugin Zigate for Domoticz </h2><br/>
     <h3> Short description </h3>
@@ -190,13 +190,15 @@ class BasePlugin:
         self.ErasePDMDone = False
         self.startZigateNeeded = False
 
+        self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
+
         return
 
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
         self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.8.017'
+        self.pluginParameters['PluginVersion'] = '4.8.018'
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -567,6 +569,13 @@ class BasePlugin:
 
         busy_ = False
 
+        # Quiet a bad hack. In order to get the needs for ZigateRestart 
+        # from WebServer
+        if 'startZigateNeeded' in self.zigatedata:
+            if self.zigatedata['startZigateNeeded']:
+                self.startZigateNeeded = self.HeartbeatCount
+                del self.zigatedata['startZigateNeeded']
+
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
         if self.transport != 'None' and not self.PDMready:
@@ -576,12 +585,14 @@ class BasePlugin:
 
         self.HeartbeatCount += 1
 
-        loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
+        if self.transport != 'None':
+            loggingPlugin( self, 'Debug', "onHeartbeat - busy = %s, Health: %s, startZigateNeeded: %s/%s, InitPhase1: %s InitPhase2: %s, InitPhase3: %s PDM_LOCK: %s" \
                 %(self.busy, self.PluginHealth, self.startZigateNeeded, self.HeartbeatCount, self.InitPhase1, self.InitPhase2, self.InitPhase3, self.ZigateComm.PDMLockStatus() ))
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
-
             # Require Transport
+
+            # Perform erasePDM if required
             if not self.InitPhase1:
                 zigateInit_Phase1( self)
                 return
@@ -589,6 +600,14 @@ class BasePlugin:
             # Check if Restart is needed ( After an ErasePDM or a Soft Reset
             if self.startZigateNeeded:
                 if ( self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE):
+                    # Need to check if and ErasePDM has been performed.
+                    # In case case, we have to set the extendedPANID
+                            # ErasePDM has been requested, we are in the next Loop.
+                    if self.ErasePDMDone == True:
+                        if self.pluginconf.pluginConf['extendedPANID'] is not None:
+                            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
+                            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+
                     start_Zigate( self )
                     self.startZigateNeeded = False
                 return
@@ -720,11 +739,6 @@ def zigateInit_Phase1(self ):
             self.startZigateNeeded = 1
             self.HeartbeatCount = 1
             return
-
-        # ErasePDM has been requested, we are in the next Loop.
-        if self.pluginconf.pluginConf['extendedPANID'] is not None:
-            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
-            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
 
         # After an Erase PDM we have to do a full start of Zigate
         loggingPlugin( self, 'Debug', "----> starZigate")

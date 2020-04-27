@@ -1,7 +1,11 @@
 Conf/PluginConf-*
+OTAFirmware/*/*
+!OTAFirmware/*/README.me
+!OTAFirmware/*/.PRECIOUS
 Conf/ZigateGroupsConfig-*
 Data/DeviceList-*
 Data/GroupsList-*
+Data/zigatePDM-*
 Data/Zigate.json
 www/zigate/reports/*
 Reports/*

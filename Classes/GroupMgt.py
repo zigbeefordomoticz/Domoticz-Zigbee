@@ -509,8 +509,8 @@ class GroupsManagement(object):
                 group_list_ = "%04x" %(group_list)
                 lenGrpLst = 1
             else:
-                lenGrpLst = len(goup_list)
-                for x in goup_list:
+                lenGrpLst = len(group_list)
+                for x in group_list:
                     group_list_ += "%04x" %(x)
             datas += "%02.x" %(lenGrpLst) + group_list_
 

@@ -110,6 +110,7 @@ class WebServer(object):
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
+        # Start the WebServer
         self.startWebServer()
         
     def _loggingStatus( self, message):
@@ -627,7 +628,7 @@ class WebServer(object):
                 if not self.networkmap.NetworkMapPhase():
                     self.networkmap.start_scan()
                 else:
-                    self.logging( 'Log', "Cannot start Network Topology as one is in the pipe")
+                    self.logging( 'Log', "Cannot start Network Topology as one is in progress...")
         return _response
 
     def rest_zigate_erase_PDM( self, verb, data, parameters):
@@ -696,8 +697,10 @@ class WebServer(object):
         action = {}
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
-                sendZigateCmd(self, "0011", "" ) # Software Reset
+                self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
+                sendZigateCmd(self, "0011", "" ) # Software Reset
+
             action['Name'] = 'Software reboot of Zigate'
             action['TimeStamp'] = int(time())
         _response["Data"] = json.dumps( action , sort_keys=True )
@@ -807,7 +810,7 @@ class WebServer(object):
                             if x != '0000' and x not in self.ListOfDevices: continue
                             if item == x: continue
                             if 'Neighbours' not in reportLQI[item]:
-                                Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
+                                Domoticz.Error("Missing attribute :%s for (%s,%s)" %('Neighbours', item, x))
                                 continue
 
                             for attribute in ( '_relationshp', '_lnkqty', '_devicetype', '_depth' ):
@@ -1949,11 +1952,11 @@ class WebServer(object):
                                 Domoticz.Error("Not able to find nwkid: %s" %(nwkid))
                                 continue
                             if 'IEEE' not in self.ListOfDevices[nwkid]:
-                                Domoticz.Error("Not able to find IEEE for %s %s - no IEEE entry in %s" %(_dev, _ep, self.ListOfDevices[nwkid]))
+                                Domoticz.Error("Not able to find IEEE for %s - no IEEE entry in %s" %(nwkid, self.ListOfDevices[nwkid]))
                                 continue
                             ieee = self.ListOfDevices[nwkid]['IEEE']
                         else: 
-                            Domoticz.Error("Not able to find IEEE for %s %s" %(_dev, _ep))
+                            Domoticz.Error("Not able to find IEEE for %s" %(_dev))
                             continue
                         self.logging( 'Debug', "------>Checking device : %s/%s" %(devselected['_NwkId'], devselected['Ep']))
                         # Check if this is not an Ikea Tradfri Remote
@@ -2156,7 +2159,7 @@ class WebServer(object):
                 data = json.loads(data)
                 Domoticz.Log("---> Data: %s" %str(data))
                 if 'Command' not in data and 'payload' not in data:
-                    domoticz.Error("Unexpected request: %s" %data)
+                    Domoticz.Error("Unexpected request: %s" %data)
                     _response["Data"] = json.dumps( "Executing %s on %s" %(data['Command'], data['payload']) )
                     return _response
                 msgtype = int( data['Command'] , 16 )

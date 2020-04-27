@@ -87,7 +87,6 @@ SCHNEIDER_FEATURES =  300 // HEARTBEAT
 NETWORK_TOPO_START =  900 // HEARTBEAT
 NETWORK_ENRG_START = 1800 // HEARTBEAT
 
-
 def attributeDiscovery( self, NWKID ):
 
     rescheduleAction = False
@@ -111,33 +110,36 @@ def attributeDiscovery( self, NWKID ):
 
 def pollingManufSpecificDevices( self, NWKID):
 
-    # Polling Manuf specific devices like Gledopto, Philips
     POLLING_TABLE_SPECIFICS = {
-        'pollingPhilips':  ( pollingPhilips , '100b', 'Philips' ),
-        'pollingGledopto': ( pollingGledopto , 'unknow', 'GLEDOPTO')
-        }
+        '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
+        'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
+        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto )
+    }
 
     rescheduleAction = False
+
     devManufCode = devManufName = ''
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
         devManufCode = self.ListOfDevices[NWKID]['Manufacturer']
     if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
         devManufName = self.ListOfDevices[NWKID]['Manufacturer Name']
+    
+    brand = func = param = None
+    if devManufCode in POLLING_TABLE_SPECIFICS:
+        brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufCode ]
+    if brand is None and devManufName in POLLING_TABLE_SPECIFICS:
+        brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
-    loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s %s" \
-            %(NWKID, devManufCode, devManufName), NWKID)
-    for brand in POLLING_TABLE_SPECIFICS:
-        if brand not in self.pluginconf.pluginConf:
-            continue
-        if not self.pluginconf.pluginConf[ brand]:
-            continue
-        _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
-        _FEQ = self.pluginconf.pluginConf[ brand ] // HEARTBEAT
+    if brand is None:
+        return
+    
+    _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
+    _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
 
-        if ( _HB % _FEQ ) == 0:
-            func , manufCode, manufName = POLLING_TABLE_SPECIFICS[ brand ]
-            if (devManufCode == manufCode) or (devManufName == manufName):
-                rescheduleAction = ( rescheduleAction or func( self, NWKID) )
+    if _FEQ and (( _HB % _FEQ ) == 0):
+        loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+            %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
+        rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 
     return rescheduleAction
 
@@ -422,29 +424,33 @@ def processListOfDevices( self , Devices ):
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
         return  # We don't go further as we are Commissioning a new object and give the prioirty to it
 
-
-    if self.HeartbeatCount > QUIET_AFTER_START and ( self.HeartbeatCount % CONFIGURERPRT_FEQ ) == 0:
+    if self.HeartbeatCount > QUIET_AFTER_START and (( self.HeartbeatCount % CONFIGURERPRT_FEQ ) )== 0:
         # Trigger Configure Reporting to eligeable devices
         processConfigureReporting( self )
 
-    if self.HeartbeatCount > QUIET_AFTER_START and self.HeartbeatCount > NETWORK_TOPO_START:
+    # Network Topology management
+    if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_TOPO_START):
+        loggingHeartbeat( self, 'Debug', "processListOfDevices Time for Network Topology")
         # Network Topology
         if self.networkmap:
             phase = self.networkmap.NetworkMapPhase()
+            loggingHeartbeat( self, 'Debug', "processListOfDevices checking Topology phase: %s" %phase)
             if phase == 1:
-                Domoticz.Log("Start NetworkMap process")
+                loggingHeartbeat( self, 'Status', "Starting Network Topology")
                 self.start_scan( )
             elif phase == 2:
-                if self.ZigateComm.loadTransmit() < 1 : # Equal 0
+                loggingHeartbeat( self, 'Debug', "processListOfDevices Topology scan is possible %s" %self.ZigateComm.loadTransmit())
+                if self.ZigateComm.loadTransmit() < 3:
                      self.networkmap.continue_scan( )
 
-    if self.HeartbeatCount > QUIET_AFTER_START and self.HeartbeatCount > NETWORK_ENRG_START:
+    if (self.HeartbeatCount > QUIET_AFTER_START) and (self.HeartbeatCount > NETWORK_ENRG_START):
         # Network Energy Level
         if self.networkenergy:
-            if self.ZigateComm.loadTransmit() < 1: # Equal 0
+            if self.ZigateComm.loadTransmit() < 3:
                 self.networkenergy.do_scan()
 
-
+    loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \
+        %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
     return True
 
 

@@ -473,7 +473,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
     elif MsgAttrID in ( 'ff0d', 'ff22', 'ff23'): # Xiaomi Code
-        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - %s/%s Attribut %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttrSize, MsgClusterData) , MsgSrcAddr)
+        loggingCluster( self, 'Debug', "ReadCluster - 0x0000 - %s/%s Attribut %s %s %s %s" %(MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData) , MsgSrcAddr)
 
     elif MsgAttrID in ( 'ff01', 'ff02'):
         
@@ -689,9 +689,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == '0007': # Power Source
         if MsgClusterData == '01':
             self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
-            if 'Model' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['Model'] != {}:
-                    if self.ListOfDevices[key]['Model'] == 'TI0001':
+            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+                if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
                         # Patch some status as Device Annouced doesn't provide much info
                         self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'Router'
                         self.ListOfDevices[MsgSrcAddr]['DevideType'] = 'FFD'

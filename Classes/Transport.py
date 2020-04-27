@@ -185,7 +185,7 @@ class ZigateTransport(object):
             self._connection = Domoticz.Connection(Name="Zigate", Transport="TCP/IP", Protocol="None ",
                          Address=self._wifiAddress, Port=self._wifiPort)
         else:
-            Domoticz.Error("Unknown Transport Mode: %s" %transport)
+            Domoticz.Error("Unknown Transport Mode: %s" %self._transp)
 
 
     def PDMLock( self , lock):

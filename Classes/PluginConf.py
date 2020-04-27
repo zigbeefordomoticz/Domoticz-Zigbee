@@ -35,6 +35,7 @@ SETTINGS = {
                     }},
 
         'WebInterface': { 'Order': 3, 'param': {
+                    'Lang':            { 'type':'str', 'default':'en-US', 'current':None, 'restart':False, 'hidden':False, 'Advanced':False},
                     'enableGzip':      { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableDeflate':   { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
                     'enableChunk':     { 'type':'bool', 'default':1, 'current':None, 'restart':False, 'hidden':False, 'Advanced':True},
@@ -205,6 +206,7 @@ SETTINGS = {
 
         # Experimental
         'Experimental': { 'Order': 15, 'param': {
+                'expJsonDatabase': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'ExpDeviceAnnoucement1': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'ExpDeviceAnnoucement2': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'ExpDeviceAnnoucement3': { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},

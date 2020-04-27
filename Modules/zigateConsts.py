@@ -4,7 +4,7 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: z_consts.py
+    Module: zigateConst.py
 
     Description: All Constants
 
@@ -21,7 +21,6 @@ MAX_LOAD_ZIGATE = 4
 
 # Threshold before switching to Busy state. If we have or more than MAX_FOR_ZIGATE_BUZY in the FIFO queue
 MAX_FOR_ZIGATE_BUZY = 4
-
 
 # If there is a need to read more than 4 Attributes at a time, then breakdown the request into several.
 MAX_READATTRIBUTES_REQ = 4   # Number of Attributes to be requested via 0x0100
@@ -42,9 +41,10 @@ SQN_ANSWERS = ( 0x8401, 0x8000, 0x802B, 0x802C, 0x8030, 0x8031, 0x8034,
         0x8120 )
 
 ADDRESS_MODE = { 'bound':0x00, 
-        'group':0x01, # Group
-        'short':0x02, # Short address
-        'ieee':0x03 # IEEE
+        'group':0x01,     # Group
+        'short':0x02,     # Short address
+        'ieee':0x03,      # IEEE
+        'broadcast': 0x04 # Broadcast
         }
 
 PROFILE_ID = {
@@ -125,7 +125,6 @@ SIZE_DATA_TYPE = {
         '31': 2,    # enum16
              }
 
-
 ZLL_DEVICES = {
         # https://www.nxp.com/docs/en/user-guide/JN-UG-3091.pdf
         0x0000: 'On/Off Light', 
@@ -141,8 +140,6 @@ ZLL_DEVICES = {
         0x0830: 'Non-Colour Scene Controller',
         0x0840: 'Control Bridge',
         0x0850: 'On/Off sensor'}
-
-
 
 # https://www.nxp.com/docs/en/user-guide/JN-UG-3076.pdf
 ZHA_DEVICES = {
@@ -220,14 +217,15 @@ BULB_ACTIONS = {
 }
 
 # Possible Widget SubType 
-DOMOTICZ_LED_DIMMERS = { 'RGB_W'   : 1,  # RGB + white, either RGB or white can be lit
-                         'RGB'     : 2,  # RGB
-                         'White'   : 3,  # Monochrome White
-                         'RGB_CW_W': 4,  # RGB + cold white + warm white, either RGB or white can be lit
-                         'RGB_W_Z' : 6,  # Like RGBW, but allows combining RGB and white
-                         'RGB_CW_WW_Z' : 7, # Like RGBWW, but allows combining RGB and white
-                         'CW_WW'   : 8  # Cold white + Warm white
-                       }
+DOMOTICZ_LED_DIMMERS = { 
+        'RGB_W'   : 1,  # RGB + white, either RGB or white can be lit
+        'RGB'     : 2,  # RGB
+        'White'   : 3,  # Monochrome White
+        'RGB_CW_W': 4,  # RGB + cold white + warm white, either RGB or white can be lit
+        'RGB_W_Z' : 6,  # Like RGBW, but allows combining RGB and white
+        'RGB_CW_WW_Z' : 7, # Like RGBWW, but allows combining RGB and white
+        'CW_WW'   : 8  # Cold white + Warm white
+        }
 
 DOMOTICZ_COLOR_MODE = {
     0 : 'Illegal',
@@ -445,7 +443,6 @@ ZIGATE_RESPONSES = {
         0x004D: 'Device Annouce' 
         }
 
-
 # Used in output/thermostat_Mode
 SYSTEM_MODE = { 'Off' : 0x00 ,
         'Auto' : 0x01 ,
@@ -455,7 +452,6 @@ SYSTEM_MODE = { 'Off' : 0x00 ,
         'Emergency Heating' : 0x05,
         'Pre-cooling' : 0x06,
         'Fan only' : 0x07 }
-
 
 # Used in onCommand
 THERMOSTAT_LEVEL_2_MODE = {
@@ -474,9 +470,9 @@ THERMOSTAT_MODE_2_LEVEL = {
         0x05: '40'  # Force Heat
         }
 
-
 # Ordered List - Important for binding
-CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
+CLUSTERS_LIST = [ 
+        'fc00',  # Private cluster Philips Hue - Required for Remote
         '0500',            # IAS Zone
         '0406',            # Occupancy Sensing
         '0400',            # Illuminance Measurement
@@ -502,24 +498,21 @@ CLUSTERS_LIST = [ 'fc00',  # Private cluster Philips Hue - Required for Remote
         'fc21'              # Cluster Profalux PFX
         ]
 
-
-
 LEGRAND_REMOTES = ( 'Remote switch', 'Double gangs remote switch', 'Shutters central remote switch')
 LEGRAND_REMOTE_SWITCHS = ( 'Remote switch', 'Double gangs remote switch')
 LEGRAND_REMOTE_SHUTTER = ( 'Shutters central remote switch', )
 
 
 CFG_RPT_ATTRIBUTESbyCLUSTERS = {
-        # 0xFFFF sable reporting- # 6460   - 6 hours # 0x0E10 - 3600s A hour # 0x0708 - 30' # 0x0384 - 15' # 0x012C - 5' # 0x003C - 1'
-
-        # Datatype   
-        #   10 - Boolean - 8bit #   18 - 8bitmap #   19 - 16bitmap #   20 - BbitUint #   21 - 16bitUint #   25 - 48bitUnint #   29 - 16BitInt
-        #   2a - 24bitInt #   30 - 8bitenum #   31 - 16bitenum
+    # 0xFFFF sable reporting- # 6460   - 6 hours # 0x0E10 - 3600s A hour # 0x0708 - 30' # 0x0384 - 15' # 0x012C - 5' # 0x003C - 1'
+    # Datatype   
+    #   10 - Boolean - 8bit #   18 - 8bitmap #   19 - 16bitmap #   20 - BbitUint #   21 - 16bitUint #   25 - 48bitUnint #   29 - 16BitInt
+    #   2a - 24bitInt #   30 - 8bitenum #   31 - 16bitenum
 
     # Power Cluster
     '0001': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'FFFE', 'TimeOut':'0000','Change':'0001'},
                              '0020': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
-                             '0021': {'DataType': '29', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'}}},
+                             '0021': {'DataType': '21', 'MinInterval':'0E10', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'01'}}},
 
     # On/Off Cluster
     '0006': {'Attributes': { '0000': {'DataType': '10', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01'}}},
@@ -532,20 +525,25 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
                              '0004': {'DataType': '21', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
                              '0008': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'},
                              '0009': {'DataType': '20', 'MinInterval':'0001', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'}}},
+ 
     # Thermostat
     '0201': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'},
                              '0008': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
                              '0012': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'},
                              '0014': {'DataType': '29', 'MinInterval':'012C', 'MaxInterval':'0E10', 'TimeOut':'0000','Change':'0001'}}},
+
     # Colour Control
     '0300': {'Attributes': { '0003': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color X
                              '0004': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001', 'ZDeviceID':{ "010D", "0210", "0200"}}, # Color Y
                              '0007': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001', 'ZDeviceID':{ "0102", "010D", "0210", "0220"}}, # Color Temp
                              '0008': {'DataType': '30', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01', 'ZDeviceID':{ }}}}, # Color Mode
+ 
     # Illuminance Measurement
     '0400': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'000F'}}},
+
     # Temperature
     '0402': {'Attributes': { '0000': {'DataType': '29', 'MinInterval':'000A', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'}}},
+ 
     # Pression Atmo
     '0403': {'Attributes': { '0000': {'DataType': '20', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'},
                              '0010': {'DataType': '29', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
@@ -554,14 +552,18 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
 
     # Occupancy Sensing
     '0406': {'Attributes': { '0000': {'DataType': '18', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'01'},
-                             # Sensitivy for HUE Motion
+ 
+    # Sensitivy for HUE Motion
                              '0030': {'DataType': '20', 'MinInterval':'0005', 'MaxInterval':'1C20', 'TimeOut':'0000','Change':'01'}}},
+ 
     # IAS ZOne
     '0500': {'Attributes': { '0000': {'DataType': '30', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'01'},
                              '0001': {'DataType': '31', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'},
                              '0002': {'DataType': '19', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
+
     # IAS Warning Devices
     '0502': {'Attributes': { '0000': {'DataType': '21', 'MinInterval':'003C', 'MaxInterval':'0384', 'TimeOut':'0000','Change':'0001'}}},
+
 
     # Power
     '0702': {'Attributes': { 
@@ -572,7 +574,5 @@ CFG_RPT_ATTRIBUTESbyCLUSTERS = {
     '0b04': {'Attributes': {
                             '0505': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'},
                             '0508': {'DataType': '21', 'MinInterval':'0001', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'},
-                            '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'}}},
-
-    }
-
+                            '050b': {'DataType': '29', 'MinInterval':'0005', 'MaxInterval':'012C', 'TimeOut':'0000','Change':'0001'}}}
+}
