@@ -1161,7 +1161,10 @@ def maskChannel( channel ):
             26: 0x04000000 }
 
     mask = 0x00000000
+    Domoticz.Log("maskChannel: channel %s type: %s" %(channel, type(channel)))
+
     if isinstance(channel, list):
+        Domoticz.Log("----List")
         for c in channel:
             if c.isdigit():
                 if int(c) in CHANNELS:
@@ -1170,6 +1173,7 @@ def maskChannel( channel ):
                 Domoticz.Error("maskChannel - invalid channel %s" %c)
     else:
             if isinstance( channel, int):
+                Domoticz.Log("----Int")
                 if channel in CHANNELS:
                     mask = CHANNELS( channel )
                 else:
@@ -1206,7 +1210,7 @@ def channelChangeContinue( self ):
 
     loggingOutput( self, "Status", "Restart network")
     sendZigateCmd(self, "0024", "" )   # Start Network
-    sendZigateCmd(self, "0009", "") # In order to get Zigate IEEE and NetworkID
+    sendZigateCmd(self, "0009", "")     # In order to get Zigate IEEE and NetworkID
 
 
 def setExtendedPANID(self, extPANID):
