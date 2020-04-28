@@ -2276,6 +2276,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        Domoticz.Log("Decode8085 - No Model Name !")
         return
 
     if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
@@ -2503,7 +2504,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
 
         step_mod = MsgData[14:16]
         up_down = step_size = transition = None
