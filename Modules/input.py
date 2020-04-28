@@ -2480,7 +2480,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
+    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
     
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
     
@@ -2634,7 +2634,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
+    elif _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
 
     else:
