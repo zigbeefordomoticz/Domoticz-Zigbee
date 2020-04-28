@@ -2262,6 +2262,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
     if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
         return
 
@@ -2276,11 +2277,15 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         Domoticz.Log("Decode8085 - No Model Name !")
         return
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    Domoticz.Log("Decode8085 - Model Name : %s" %_ModelName)
+
     if _ModelName == 'TRADFRI remote control':
         if MsgClusterId == '0008':
             if MsgCmd in TYPE_ACTIONS:
@@ -2345,7 +2350,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
-    elif _ModelName in 'TRADFRI wireless dimmer':
+    elif _ModelName == 'TRADFRI wireless dimmer':
 
         TYPE_ACTIONS = { None: '', 
                 '01': 'moveleft', 
@@ -2439,8 +2444,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                     #loggingInput( self, 'Log',"Receive: %s/%s %s REQUEST UPDATE" %(MsgSrcAddr,MsgEP,selector))
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
-
-    
+   
     elif _ModelName == 'Lightify Switch Mini':
         """
         OSRAM Lightify Switch Mini
@@ -2476,9 +2480,12 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
+    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
+    
+        AqaraOppleDecoding( self, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
+    
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
-        if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110':
-            # Profalux
+        if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110': # Profalux
             loggingInput( self, 'Log',"MsgData: %s" %MsgData)
 
             TYPE_ACTIONS = { None: '', '03': 'stop', '05': 'move' }
@@ -2505,10 +2512,6 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Debug', "Decode8085 - Profalux remote selector: %s" %selector, MsgSrcAddr)
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
-
-    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
-        
-        AqaraOppleDecoding( self, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
 
     else:
        loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
