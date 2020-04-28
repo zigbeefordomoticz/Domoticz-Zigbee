@@ -2257,7 +2257,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             }
 
     #loggingInput( self, 'Debug', "Decode8085 - MsgData: %s "  %MsgData, MsgSrcAddr)
-    loggingInput( self, 'Log', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
+    loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
     if MsgSrcAddr not in self.ListOfDevices:
@@ -2283,8 +2283,6 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         return
 
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
-
-    Domoticz.Log("Decode8085 - Model Name : %s" %_ModelName)
 
     if _ModelName == 'TRADFRI remote control':
         if MsgClusterId == '0008':
@@ -2552,7 +2550,9 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
+    
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
+
     if _ModelName == 'TRADFRI remote control':
         """
         Ikea Remote 5 buttons round.
