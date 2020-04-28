@@ -29,6 +29,8 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
 
         Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s,  ON/OFF, Cmd: %s" \
             %(nwkid, Ep, Command))
+
+        OnOff = Command
         MajDomoDevice( self, Devices, nwkid, '01', "0006", Command)
 
     elif ClusterId == '0008': # Level Control
@@ -37,10 +39,14 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         TransitionTime = payload[18:22]
         unknown = payload[22:26]
 
+
         Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s" \
             %(nwkid, Ep,StepMode,StepSize,TransitionTime,unknown))
-
-        MajDomoDevice( self, Devices, nwkid, '02', "0006", StepSize)
+        if StepSize == '00':
+            OnOff = '01'
+        else:
+            OnOff = '00'
+        MajDomoDevice( self, Devices, nwkid, '02', "0006", OnOff)
 
     elif ClusterId == '0300': # Step Color Temperature
         StepMode = payload[14:16]
@@ -54,6 +60,4 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired))
  
  
- 
-
     return
