@@ -534,31 +534,35 @@ def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, set
             %(setpoint, domoTemp), NWKID)
 
 def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, payload):
-    loggingSchneider( self, 'Debug', "Schneider schneiderAlarmReceived start:%s, payload: %s" \
-            %(start, payload), NWKID)
+    """
+    Function called when a command is received from the schneider device to alert about over consumption
+    """
+
+    #if (start): # force fast reporting
+    #    Modules.configureReporting.processConfigureReporting (self, key)
+    #else: # do normal reporting
+    #    Modules.configureReporting.processConfigureReporting (self, key)
+
     AlertCode = payload [0:2] # uint8
     AlertClusterId = payload [4:6]  + payload [2:4]# uint16
     loggingSchneider( self, 'Debug', "Schneider schneiderAlarmReceived start:%s, AlertCode: %s, AlertClusterID: %s" \
             %(start, AlertCode,AlertClusterId), NWKID)
 
 
-def schneider_set_contract( self, key, kva):
+def schneider_set_contract( self, key, EPout, kva):
+    """
+    Configure the schneider device to report an alarm when consumption is above a threshold in miliamps
+    """
 
-
-    loggingSchneider( self, 'Debug', "schneider_set_contract for device %s requesting mode: %sKVA" %(key, kva))
-
-    # determine which Endpoint
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0702" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
+    EPout = '0b' #pipiche - help - I cant find the ep that the domoticz device is coming from
+    kva = 1
     POWER_FACTOR = 0.92
     max_real_power_in_kwh = kva * 1000 * POWER_FACTOR
     max_real_amps = max_real_power_in_kwh / 235
     max_real_amps_before_tripping = max_real_amps * 110 / 100
     max_real_milli_amps_before_tripping = round (max_real_amps_before_tripping * 1000)
-    loggingSchneider( self, 'Debug', "schneider_set_contract for device %s requesting max_real_milli_amps_before_tripping: %s milliamps" 
-        %(key, max_real_milli_amps_before_tripping))
+    loggingSchneider( self, 'Debug', "schneider_set_contract for device %s %s requesting max_real_milli_amps_before_tripping: %s milliamps"
+        %(key,EPout, max_real_milli_amps_before_tripping))
 
     ClusterId = '0702' # Simple Metering
     ManufacturerID = '0000'
@@ -568,10 +572,17 @@ def schneider_set_contract( self, key, kva):
     data = "%06x" %max_real_milli_amps_before_tripping
 
     Modules.output.write_attribute(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
-    self.ListOfDevices[key]['Heartbeat'] = 0
+
+    AttributeID = '7003' # Contract Name
+    DataType = '42' # String
+    data = 'BASE'.encode('utf-8').hex()  # BASE
+
+    Modules.output.write_attribute(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
-
+    """
+    Function called when raw APS indication are received for a schneider device - it then decide how to handle it
+    """
 
     loggingSchneider( self, 'Debug', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
@@ -585,7 +596,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         if cmd == '00': #read attributes
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
             schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
-        if cmd == '00': #read attributes
+        if cmd == 'e0': #read attributes
             sTemp = data [4:8]
             setpoint = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
             schneiderUpdateThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
@@ -594,7 +605,7 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
             schneiderAlarmReceived (self, srcNWKID, srcEp, ClusterID, sqn, True, data)
         elif cmd == '50': #end of alarm
-            loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
+            loggingSchneider( self, 'Debug','Schneider cmd 0x50',srcNWKID)
             schneiderAlarmReceived (self, srcNWKID, srcEp, ClusterID, sqn, False, data)
 
 

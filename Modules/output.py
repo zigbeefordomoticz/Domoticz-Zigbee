@@ -21,7 +21,7 @@ from time import time
 from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ, LEGRAND_REMOTES, ADDRESS_MODE, CFG_RPT_ATTRIBUTESbyCLUSTERS, SIZE_DATA_TYPE, ZIGATE_EP
 from Modules.tools import getClusterListforEP, mainPoweredDevice
 from Modules.logging import loggingOutput
-from Modules.schneider_wiser import schneider_setpoint, schneider_EHZBRTS_thermoMode
+from Modules.schneider_wiser import schneider_setpoint
 
 def ZigatePermitToJoin( self, permit ):
 
@@ -1406,7 +1406,7 @@ def thermostat_Setpoint( self, key, setpoint):
 
             elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
                 loggingOutput( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
-                schneider_setpoint( self, key, setpoint)
+                schneider_setpoint(self, key, setpoint)
                 return
 
     loggingOutput( self, 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)
