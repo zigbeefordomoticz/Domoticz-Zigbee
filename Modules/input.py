@@ -2482,7 +2482,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
     
-        AqaraOppleDecoding( self, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
+        AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
     
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
         if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110': # Profalux
@@ -2635,7 +2635,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
     elif _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
-        AqaraOppleDecoding( self, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
+        AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
 
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
