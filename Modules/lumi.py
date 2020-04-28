@@ -34,19 +34,36 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         MajDomoDevice( self, Devices, nwkid, '01', "0006", Command)
 
     elif ClusterId == '0008': # Level Control
+
         StepMode = payload[14:16]
         StepSize = payload[16:18]
         TransitionTime = payload[18:22]
         unknown = payload[22:26]
 
 
-        Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s" \
-            %(nwkid, Ep,StepMode,StepSize,TransitionTime,unknown))
-        if StepSize == '00':
-            OnOff = '01'
-        else:
-            OnOff = '00'
-        MajDomoDevice( self, Devices, nwkid, '02', "0006", OnOff)
+        if StepMode == '02': # 1 Click
+            action = 'click_'
+        elif StepMode == '01': # Long Click
+            action = 'long_'
+        elif StepMode == '03': # Release
+            action = 'release'
+
+        if StepSize == '00': # Right
+            action += 'right'            
+        elif StepSize == '01': # Left
+            action += 'left'
+
+        OPPLE_MAPPING_4_6_BUTTONS = {
+            'click_left': '00',
+            'click_right': '01',
+            'long_left': '02',
+            'long_righ': '03',
+            'release': '04'
+        }
+        Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s action: %s" \
+            %(nwkid, Ep,StepMode,StepSize,TransitionTime,unknown, action))
+        if action in OPPLE_MAPPING_4_6_BUTTONS:
+            MajDomoDevice( self, Devices, nwkid, '02', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
 
     elif ClusterId == '0300': # Step Color Temperature
         StepMode = payload[14:16]

@@ -319,7 +319,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
             # 5 Selectors, Style 1
-            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA'): 
+            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddle'): 
                 Options = createSwitchSelector( 5,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
@@ -431,7 +431,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Lux" %(t), NWKID)
 
-            if t == "Switch":  
+            if t in ( "Switch", "SwitchButton"):  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)
@@ -960,7 +960,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(percent_value)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Door', 'Switch', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
 
