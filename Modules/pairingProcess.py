@@ -388,7 +388,8 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
 
-            if  self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
+            # Enable Opple with Magic Word
+            if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01'):
                 Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
                 enableOppleSwitch( self, NWKID)
 
