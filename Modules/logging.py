@@ -175,7 +175,7 @@ def loggingLegrand( self, logType, message, nwkid=None):
 
 def loggingLumi( self, logType, message, nwkid=None):
 
-    if self.pluginconf.pluginConf['debugLegrand'] and logType == 'Debug':
+    if self.pluginconf.pluginConf['debugLumi'] and logType == 'Debug':
         _logginfilter( self, message, nwkid)
     elif  logType == 'Log':
         _loggingLog( self,  message )
