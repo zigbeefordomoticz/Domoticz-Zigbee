@@ -5,7 +5,7 @@ import Domoticz
 from Modules.domoticz import MajDomoDevice
 from Modules.output import write_attribute
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.lumi import loggingLumi
+from Modules.logging import loggingLumi
 
 def enableOppleSwitch( self, nwkid ):
 
