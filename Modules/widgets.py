@@ -41,7 +41,7 @@ SWITCH_LVL_MATRIX = {
     'SwitchButton': { 
         '00': ( 0,'Off'), 
         '01': ( 1,'On') , 
-        'ForceUpdate': False},
+        'ForceUpdate': True},
 
     'Motion': { 
         '00': ( 0, 'Off'), 
