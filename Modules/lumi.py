@@ -57,7 +57,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             'click_left': '00',
             'click_right': '01',
             'long_left': '02',
-            'long_righ': '03',
+            'long_right': '03',
             'release': '04'
         }
         Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s action: %s" \
