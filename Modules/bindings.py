@@ -65,7 +65,11 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
                 if self.ListOfDevices[nwkid]['Model'] != {}:
                     _model = self.ListOfDevices[nwkid]['Model']
                     if _model in self.DeviceConf:
-
+                        # Do Unbinding if required
+                        if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
+                            if cluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                                unbindDevice( self, ieee, ep, cluster)
+                                
                         # Bind and use Zigate Endpoint specified as overwriteZigateEpBind
                         if 'overwriteZigateEpBind' in self.DeviceConf[ _model ]:
                             destep = self.DeviceConf[ _model ]['overwriteZigateEpBind']
