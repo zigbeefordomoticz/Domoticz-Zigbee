@@ -40,7 +40,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s" \
             %(nwkid, Ep,StepMode,StepSize,TransitionTime,unknown))
 
-        MajDomoDevice( self, Devices, nwkid, '03', "0006", StepSize)
+        MajDomoDevice( self, Devices, nwkid, '02', "0006", StepSize)
 
     elif ClusterId == '0300': # Step Color Temperature
         StepMode = payload[14:16]
