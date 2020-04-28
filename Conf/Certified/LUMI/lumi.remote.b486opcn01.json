@@ -10,7 +10,7 @@
 		"06": { "0006": "", "0008": "", "Type": "LvlControl" }
 	},
 	"Type":"",
-	"ClusterToBind": [ "0001", "0006", "0008"],
+	"ClusterToBind": [ ],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {
