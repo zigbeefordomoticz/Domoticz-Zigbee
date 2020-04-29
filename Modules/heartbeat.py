@@ -131,7 +131,7 @@ def pollingManufSpecificDevices( self, NWKID):
         brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
     if brand is None:
-        return
+        return False
     
     _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
