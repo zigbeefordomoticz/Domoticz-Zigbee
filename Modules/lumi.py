@@ -113,15 +113,15 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
 
         if EnhancedStepSize == '4500': 
             if StepMode == '01':
-                action = 'click_gauche'
+                action = 'click_left'
             elif StepMode == '03':
-                action = 'click_droite'
+                action = 'click_right'
 
         elif EnhancedStepSize == '0f00': 
             if StepMode == '01':
-                action = 'long_gauche'
+                action = 'long_left'
             elif StepMode == '03':
-                action = 'long_droite'
+                action = 'long_right'
             elif StepMode == '00':
                 action = 'release'
 
