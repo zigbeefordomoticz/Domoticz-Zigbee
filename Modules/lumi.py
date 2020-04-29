@@ -61,9 +61,9 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 
-    if 'Model' not in self.ListOfDevices[srcNWKID]:
+    if 'Model' not in self.ListOfDevices[nwkid]:
         return
-    _ModelName = self.ListOfDevices[srcNWKID]['Model']
+    _ModelName = self.ListOfDevices[nwkid]['Model']
 
 
     if ClusterId == '0006': # Top row
@@ -145,7 +145,6 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             OPPLE_MAPPING_4_6_BUTTONS = {
                 'click_left': '02','click_right': '03',
             }            
-
 
         loggingLumi( self, 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, ColorControl, StepMode: %s, EnhancedStepSize: %s, TransitionTime: %s, ColorTempMinimumMired: %s, ColorTempMaximumMired: %s action: %s" \
             %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired, action), nwkid)
