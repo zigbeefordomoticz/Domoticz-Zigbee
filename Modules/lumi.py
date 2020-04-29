@@ -37,8 +37,8 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     if srcNWKID not in self.ListOfDevices:
         return
 
-    Domoticz.Log("lumiReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
-            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
+    loggingLumi( self, 'Debug', "lumiReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
 
     if 'Model' not in self.ListOfDevices[srcNWKID]:
         return
