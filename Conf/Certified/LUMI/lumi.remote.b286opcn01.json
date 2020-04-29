@@ -3,7 +3,7 @@
 	"_actions": "hold, release, single, double, triple",
 	"_version": "Initial Version 1 switch On/Off",
 	"Ep":{
-		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "SwitchButton" },
+		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "AqaraOppleMiddle" },
 		"02": {  "Type": "" },
 		"03": {  "Type": "" },
 		"04": {  "Type": "" },
