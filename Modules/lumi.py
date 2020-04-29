@@ -110,6 +110,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         ColorTempMinimumMired = payload[24:28]
         ColorTempMaximumMired = payload[28:32]
         unknown = payload[32:36]
+        action = ''
 
         if EnhancedStepSize == '4500': 
             if StepMode == '01':
