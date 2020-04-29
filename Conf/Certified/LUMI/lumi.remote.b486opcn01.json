@@ -3,7 +3,7 @@
 	"_version": "Initial Version",
 	"Ep":{
 		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "SwitchButton" },
-		"02": {  "Type": "SwitchButton" },
+		"02": {  "Type": "AqaraOppleMiddle" },
 		"03": {  "Type": "" },
 		"04": {  "Type": "" },
 		"05": {  "Type": "" },

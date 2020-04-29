@@ -61,6 +61,11 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 
+    if 'Model' not in self.ListOfDevices[srcNWKID]:
+        return
+    _ModelName = self.ListOfDevices[srcNWKID]['Model']
+
+
     if ClusterId == '0006': # Top row
         Command =  payload[14:16]    
 
@@ -126,11 +131,21 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             elif StepMode == '00':
                 action = 'release'
 
-        OPPLE_MAPPING_4_6_BUTTONS = {
-            'click_left': '00','click_right': '01',
-            'long_left': '02','long_right': '03',
-            'release': '04'
-        }
+        if _ModelName == 'lumi.remote.b686opcn01':
+            OPPLE_MAPPING_4_6_BUTTONS = {
+                'click_left': '00','click_right': '01',
+                'long_left': '02','long_right': '03',
+                'release': '04'
+            }
+        elif _ModelName == 'lumi.remote.b486opcn01':
+            OPPLE_MAPPING_4_6_BUTTONS = {
+                'click_left': '02','click_right': '03',
+            }            
+        elif _ModelName == 'lumi.remote.b286opcn01':
+            OPPLE_MAPPING_4_6_BUTTONS = {
+                'click_left': '02','click_right': '03',
+            }            
+
 
         loggingLumi( self, 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, ColorControl, StepMode: %s, EnhancedStepSize: %s, TransitionTime: %s, ColorTempMinimumMired: %s, ColorTempMaximumMired: %s action: %s" \
             %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired, action), nwkid)
