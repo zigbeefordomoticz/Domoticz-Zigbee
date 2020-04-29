@@ -131,17 +131,17 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             elif StepMode == '00':
                 action = 'release'
 
-        if _ModelName == 'lumi.remote.b686opcn01':
+        if _ModelName == 'lumi.remote.b686opcn01': # Ok
             OPPLE_MAPPING_4_6_BUTTONS = {
                 'click_left': '00','click_right': '01',
                 'long_left': '02','long_right': '03',
                 'release': '04'
             }
-        elif _ModelName == 'lumi.remote.b486opcn01':
+        elif _ModelName == 'lumi.remote.b486opcn01': # Not seen, just assumption
             OPPLE_MAPPING_4_6_BUTTONS = {
                 'click_left': '02','click_right': '03',
             }            
-        elif _ModelName == 'lumi.remote.b286opcn01':
+        elif _ModelName == 'lumi.remote.b286opcn01': # Ok
             OPPLE_MAPPING_4_6_BUTTONS = {
                 'click_left': '02','click_right': '03',
             }            
