@@ -21,6 +21,7 @@ from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
 from Modules.bindings import rebind_Clusters
 from Modules.livolo import livolo_bind
+from Modules.lumi import AqaraOppleDecoding
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
 from Modules.errorCodes import DisplayStatusCode
@@ -2261,6 +2262,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     if MsgSrcAddr not in self.ListOfDevices:
         return
+
     if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
         return
 
@@ -2275,10 +2277,14 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        Domoticz.Log("Decode8085 - No Model Name !")
         return
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
+    _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    if _ModelName == 'TRADFRI remote control':
         if MsgClusterId == '0008':
             if MsgCmd in TYPE_ACTIONS:
                 selector = TYPE_ACTIONS[MsgCmd]
@@ -2294,7 +2300,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif  self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI on/off switch':
+    elif  _ModelName == 'TRADFRI on/off switch':
         """
         Ikea Switch On/Off
         """
@@ -2307,7 +2313,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = MsgCmd
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
+    elif _ModelName == 'RC 110':
         if MsgClusterId != '0008':
             loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s" \
                     %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
@@ -2342,7 +2348,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in 'TRADFRI wireless dimmer':
+    elif _ModelName == 'TRADFRI wireless dimmer':
 
         TYPE_ACTIONS = { None: '', 
                 '01': 'moveleft', 
@@ -2401,7 +2407,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Log', "Decode8085 - =====> Unknown step_mod: %s up_down: %s step_size: %s transition: %s" \
                     %(step_mod, up_down, step_size, transition), MsgSrcAddr)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
+    elif _ModelName in LEGRAND_REMOTE_SWITCHS:
         loggingInput( self, 'Debug', "Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
@@ -2436,9 +2442,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                     #loggingInput( self, 'Log',"Receive: %s/%s %s REQUEST UPDATE" %(MsgSrcAddr,MsgEP,selector))
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
-
-    
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Lightify Switch Mini':
+   
+    elif _ModelName == 'Lightify Switch Mini':
         """
         OSRAM Lightify Switch Mini
         Force Ep 03 to update Domoticz Widget
@@ -2473,9 +2478,12 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
+    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+    
+        AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
+    
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
-        if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110':
-            # Profalux
+        if self.ListOfDevices[MsgSrcAddr]['Manufacturer'] == '1110': # Profalux
             loggingInput( self, 'Log',"MsgData: %s" %MsgData)
 
             TYPE_ACTIONS = { None: '', '03': 'stop', '05': 'move' }
@@ -2502,20 +2510,6 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Debug', "Decode8085 - Profalux remote selector: %s" %selector, MsgSrcAddr)
             if selector:
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, selector )
-
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
-
-        step_mod = MsgData[14:16]
-        up_down = step_size = transition = None
-        if len(MsgData) >= 18:
-            up_down = MsgData[16:18]
-        if len(MsgData) >= 20:
-            step_size = MsgData[18:20]
-        if len(MsgData) >= 22:
-            transition = MsgData[20:22]
-
-        loggingInput( self, 'Log',"Decode8085 - lumi.remote.b686opcn01 %s/%s Cluster: %s Cmd: %s, Unk: %s, step_mod: %s, up_down: %s, step_size: %s, transition: %s"
-               %( MsgSrcAddr, MsgEP, MsgCmd, unknown_, step_mod, up_down, step_size, transition), MsgSrcAddr)
 
     else:
        loggingInput( self, 'Log',"Decode8085 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
@@ -2556,8 +2550,10 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
+    
+    _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI remote control':
+    if _ModelName == 'TRADFRI remote control':
         """
         Ikea Remote 5 buttons round.
         ( cmd, directioni, cluster )
@@ -2570,7 +2566,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Log',"Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI motion sensor':
+    elif _ModelName == 'TRADFRI motion sensor':
         """
         Ikea Motion Sensor
         """
@@ -2581,14 +2577,14 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Log',"Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif  self.ListOfDevices[MsgSrcAddr]['Model'] == 'TRADFRI on/off switch':
+    elif  _ModelName == 'TRADFRI on/off switch':
         """
         Ikea Switch On/Off
         """
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'RC 110':
+    elif _ModelName == 'RC 110':
         """
         INNR RC 110 Remote command
         """
@@ -2611,7 +2607,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s " %(MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTE_SWITCHS:
+    elif _ModelName in LEGRAND_REMOTE_SWITCHS:
         """
         Legrand remote switch
         """
@@ -2625,7 +2621,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
             loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'Lightify Switch Mini':
+    elif _ModelName == 'Lightify Switch Mini':
         """
         OSRAM Lightify Switch Mini
         """
@@ -2638,16 +2634,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.remote.b686opcn01':
-
-        delayed_all_off = effect_variant = None
-        if len(MsgData) >= 16:
-            delayed_all_off = MsgData[16:18]
-        if len(MsgData) >= 18:
-            effect_variant = MsgData[18:20]
-
-        loggingInput( self, 'Log', "Decode8095 - lumi.remote.b686opcn01 %s/%s, Cluster: %s, Cmd: %s, Unknown: %s, delayed_all_off:%s , effect_variant: %s " \
-                %( MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_, delayed_all_off, effect_variant), MsgSrcAddr)
+    elif _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+        AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
 
     else:
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)

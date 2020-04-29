@@ -20,12 +20,12 @@ SWITCH_LVL_MATRIX = {
 
     'Door':  { 
         '00': ( 0, 'Closed'), 
-        '01': ( 1,'Open'), 
+        '01': ( 1, 'Open'), 
         'ForceUpdate': False},
 
     'Smoke': { 
         '00': ( 0, 'Off'), 
-        '01': ( 1,'On'), 
+        '01': ( 1, 'On'), 
         'ForceUpdate': False},
 
     'Water': { 
@@ -37,6 +37,11 @@ SWITCH_LVL_MATRIX = {
         '00': ( 0,'Off'), 
         '01': ( 1,'On') , 
         'ForceUpdate': False},
+
+    'SwitchButton': { 
+        '00': ( 0,'Off'), 
+        '01': ( 1,'On') , 
+        'ForceUpdate': True},
 
     'Motion': { 
         '00': ( 0, 'Off'), 
@@ -99,6 +104,19 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "button1|button2|button3|button4|button5",
         "Language": {
             "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}
+            }
+        },
+
+    'AqaraOppleMiddle': { 
+        '00': (0, '00'), 
+        '01': (1, '10'), 
+        '02': (2, '20'),
+        '03': (3, '30'), 
+        '04': (4, '40'), 
+        'ForceUpdate': True, 
+        "LevelNames": "Off|On|-|+|Release",
+        "Language": {
+            "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}
             }
         },
 
