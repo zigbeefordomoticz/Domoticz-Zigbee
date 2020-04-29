@@ -22,6 +22,35 @@ def enableOppleSwitch( self, nwkid ):
     loggingLumi( self, 'Debug', "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
+def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
+
+    if srcNWKID not in self.ListOfDevices:
+        return
+
+    Domoticz.Log("lumiReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+            %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
+
+    if 'Model' not in self.ListOfDevices[srcNWKID]:
+        return
+    
+    _ModelName = self.ListOfDevices[srcNWKID]['Model']
+
+    if _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+        # Recompute Data in order to match with a similar content with 0x8085/0x8095
+
+
+
+        fcf = MsgPayload[0:2] # uint8
+        sqn = MsgPayload[2:4] # uint8
+        cmd = MsgPayload[4:6] # uint8
+        data = MsgPayload[6:] # all the rest
+
+        Data = '00000000000000'
+        Data += data
+
+        AqaraOppleDecoding( self, Devices, srcNWKID , srcEp, ClusterID, _ModelName, Data)
+
+
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 

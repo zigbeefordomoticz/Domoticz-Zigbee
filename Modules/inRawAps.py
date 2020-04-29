@@ -4,6 +4,7 @@ import Domoticz
 from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
+from Modules.lumi import lumiReadRawAPS
 
 
 def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
@@ -16,13 +17,15 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         # Manuf : ( callbackDeviceAwake_xxxxx function )
         '105e' : schneiderReadRawAPS ,
         '1021' : legrandReadRawAPS ,
+        '115f' : lumiReadRawAPS,
         }
 
     CALLBACK_TABLE2 = {
         # Manufacturer Name
         '欧瑞博': orviboReadRawAPS,
         'Legrand': legrandReadRawAPS,
-        'Schneider': schneiderReadRawAPS
+        'Schneider': schneiderReadRawAPS,
+        'LUMI': lumiReadRawAPS
     }
 
     #Domoticz.Log("inRawAps - NwkId: %s Ep: %s, Cluster: %s, dstNwkId: %s, dstEp: %s, Payload: %s" \
