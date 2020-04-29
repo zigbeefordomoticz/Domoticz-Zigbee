@@ -1,4 +1,14 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: pipiche38
+#
+"""
+    Module: lumi.py
 
+    Description: Lumi specifics handling
+
+"""
 
 import Domoticz
 
@@ -38,8 +48,6 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
     if _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
         # Recompute Data in order to match with a similar content with 0x8085/0x8095
 
-
-
         fcf = MsgPayload[0:2] # uint8
         sqn = MsgPayload[2:4] # uint8
         cmd = MsgPayload[4:6] # uint8
@@ -49,7 +57,6 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         Data += data
 
         AqaraOppleDecoding( self, Devices, srcNWKID , srcEp, ClusterID, _ModelName, Data)
-
 
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
@@ -104,7 +111,31 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         ColorTempMaximumMired = payload[28:32]
         unknown = payload[32:36]
 
-        Domoticz.Log("AqaraOppleDecoding - Nwkid: %s, Ep: %s, ColorControl , StepMode: %s, EnhancedStepSize: %s, TransitionTime: %s, ColorTempMinimumMired: %s, ColorTempMaximumMired: %s" \
-            %(nwkid, Ep,StepMode,EnhancedStepSize,TransitionTime,ColorTempMinimumMired, ColorTempMaximumMired))
+        if EnhancedStepSize == '4500': 
+            if StepMode == '01':
+                action = 'click_gauche'
+            elif StepMode == '03':
+                action = 'click_droite'
+
+        elif EnhancedStepSize == '0f00': 
+            if StepMode == '01':
+                action = 'long_gauche'
+            elif StepMode == '03':
+                action = 'long_droite'
+            elif StepMode == '00':
+                action = 'release'
+
+        OPPLE_MAPPING_4_6_BUTTONS = {
+            'click_left': '00','click_right': '01',
+            'long_left': '02','long_right': '03',
+            'release': '04'
+        }
+
+    loggingLumi( self, 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s, LvlControl, StepMode: %s, StepSize: %s, TransitionTime: %s, unknown: %s action: %s" \
+        %(nwkid, Ep,StepMode,StepSize,TransitionTime,unknown, action), nwkid)
+        
+    if action in OPPLE_MAPPING_4_6_BUTTONS:
+        MajDomoDevice( self, Devices, nwkid, '03', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
+
  
     return

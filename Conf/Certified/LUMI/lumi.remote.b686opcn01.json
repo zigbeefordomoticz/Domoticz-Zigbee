@@ -5,7 +5,7 @@
 	"Ep":{
 		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "SwitchButton" },
 		"02": {  "Type": "AqaraOppleMiddle" },
-		"03": {  "Type": "Switch" },
+		"03": {  "Type": "AqaraOppleMiddle" },
 		"04": {  "Type": "" },
 		"05": {  "Type": "" },
 		"06": {  "Type": "" }
