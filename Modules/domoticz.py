@@ -98,7 +98,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         Options = {}
-        Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+        #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
             
