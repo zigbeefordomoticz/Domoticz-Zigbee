@@ -1381,6 +1381,12 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
             #Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
             #leaveMgtReJoin( self, sAddr, MsgExtAddress )
+        elif self.ListOfDevices[sAddr]['Status'] in ( '004d', '0043', '8043', '0045', '8045'):
+            loggingInput( self, 'Log', "Removing this not completly provisionned device due to a leave (% , %s)" %(sAddr, MsgExtAddress ))
+            if MsgExtAddress in self.IEEE2NWK:
+                del self.IEEE2NWK[MsgExtAddress]
+            del self.ListOfDevices[sAddr]
+
         elif self.ListOfDevices[sAddr]['Status'] == 'Left':
             Domoticz.Error("Receiving a leave from %s/%s while device is %s status" %( sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
 
