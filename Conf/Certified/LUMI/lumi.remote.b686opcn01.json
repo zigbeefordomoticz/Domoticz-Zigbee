@@ -1,6 +1,5 @@
 {
 	"_comment": "Innovative Wireless Control WXCJKG13LM, 6 Butons On/Off; On/Off, -/+, release; ",
-	"_actions": "hold, release, single, double, triple",
 	"_version": "Initial Version",
 	"Ep":{
 		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "SwitchButton" },
@@ -11,13 +10,13 @@
 		"06": {  "Type": "" }
 	},
 	"Type":"",
-	"ClusterToUnbind": [ "0001", "0006", "0008", "0300"],
+	"ClusterToUnbind": [ "0006", "0008", "0300"],
 	"ClusterToBind": [ "0001", "0006", "0008", "0300" ],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ] ,
-		"0001": [ "0020" ],
+		"0001": [ "0020", "0021" ],
 		"0006": [],
 		"0008": [],
 		"0300": []

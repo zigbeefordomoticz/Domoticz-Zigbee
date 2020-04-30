@@ -1,9 +1,8 @@
 {
 	"_comment": "Innovative Wireless Control WXCJKG11LM, 2 Butons Off/On only",
-	"_actions": "hold, release, single, double, triple",
-	"_version": "Initial Version 1 switch On/Off",
+	"_version": "Initial Version",
 	"Ep":{
-		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "AqaraOppleMiddle" },
+		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0012": "", "0300": "", "Type": "AqaraOppleMiddle" },
 		"02": {  "Type": "" },
 		"03": {  "Type": "" },
 		"04": {  "Type": "" },
@@ -11,14 +10,13 @@
 		"06": {  "Type": "" }
 	},
 	"Type":"",
-	"ClusterToUnbind": [ "0001", "0006", "0008", "0300"],
-	"ClusterToBind": [ "0001", "0006", "0008", "0300" ],
+	"ClusterToUnbind": [ "0006", "0008", "0012", "0300"],
+	"ClusterToBind": [ "0001", "0006", "0008", "0012", "0300" ],
         "ConfigureReporting":{
-			"0001": {"Attributes": { "0020": {"DataType": "29", "MinInterval":"012C", "MaxInterval":"012C", "TimeOut":"0000","Change":"0001"}}}
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ] ,
-		"0001": [ "0020" ],
+		"0001": [ "0020" , "0021"],
 		"0006": [],
 		"0008": [],
 		"0300": []
