@@ -3,7 +3,7 @@
 	"_version": "Initial Version",
 	"Ep":{
 		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0012": "", "0300": "", "Type": "AqaraOppleMiddle" },
-		"02": {  "Type": "" },
+		"02": {  "Type": "AqaraOppleMiddle" },
 		"03": {  "Type": "" },
 		"04": {  "Type": "" },
 		"05": {  "Type": "" },
@@ -11,7 +11,7 @@
 	},
 	"Type":"",
 	"ClusterToUnbind": [ "0006", "0008", "0012", "0300"],
-	"ClusterToBind": [ "0001", "0006", "0008", "0012", "0300", "FCC0" ],
+	"ClusterToBind": [ "0001", "0006", "0008", "0012", "0300" ],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {

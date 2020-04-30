@@ -173,7 +173,8 @@ def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Val
     #        0x0002 - Double click
     #        0x0003 - Tripple click
     #        0x0000 - Long Click
-    #        0x00ff - Releas
+    #        0x00ff - Release
+
 
 
     return
