@@ -11,7 +11,7 @@
 	},
 	"Type":"",
 	"ClusterToUnbind": [ "0006", "0008", "0012", "0300"],
-	"ClusterToBind": [ "0001", "0006", "0008", "0012", "0300" ],
+	"ClusterToBind": [ "0001", "0006", "0008", "0012", "0300", "FCC0" ],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {
