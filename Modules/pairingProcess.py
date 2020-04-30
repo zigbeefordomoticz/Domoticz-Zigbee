@@ -340,6 +340,13 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
 
                         bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
+
+            # Just after Binding Enable Opple with Magic Word
+            if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
+                enableOppleSwitch( self, NWKID)
+    
+
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
@@ -388,10 +395,10 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
 
-            # Enable Opple with Magic Word
-            if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
-                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
-                enableOppleSwitch( self, NWKID)
+ 
+ 
+ 
+ 
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':
