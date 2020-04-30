@@ -323,17 +323,18 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             cluster_to_bind = CLUSTERS_LIST
             if 'Model' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Model'] != {}:
-                    _model = self.ListOfDevices[NWKID]['Model']
-                    # Check if we have to unbind clusters
-                    if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
-                        for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
-                            unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
-
-                    # Check if we have specific clusters to Bind
                     if _model in self.DeviceConf:
-                        if 'ClusterToBind' in self.DeviceConf[ _model ]:
-                            cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
-                            loggingPairing( self, 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
+                        _model = self.ListOfDevices[NWKID]['Model']
+                        # Check if we have to unbind clusters
+                        if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
+                            for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
+    
+                        # Check if we have specific clusters to Bind
+                        
+                            if 'ClusterToBind' in self.DeviceConf[ _model ]:
+                                cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
+                                loggingPairing( self, 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
 
             # Binding devices
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
