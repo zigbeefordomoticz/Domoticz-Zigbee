@@ -2,7 +2,7 @@
 	"_comment": "Innovative Wireless Control WXCJKG13LM, 6 Butons On/Off; On/Off, -/+, release; ",
 	"_version": "Initial Version",
 	"Ep":{
-		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0012": "", "0300": "", "Type": "AqaraOppleMiddle" },
+		"01": { "0000": "", "0001": "", "0012": "", "fc00": "", "fcc0": "", "Type": "AqaraOppleMiddle" },
 		"02": {  "Type": "AqaraOppleMiddle" },
 		"03": {  "Type": "AqaraOppleMiddle" },
 		"04": {  "Type": "AqaraOppleMiddle" },
@@ -10,13 +10,13 @@
 		"06": {  "Type": "AqaraOppleMiddle" }
 	},
 	"Type":"",
-	"ClusterToUnbind": [ "0006", "0008", "0012", "0300"],
-	"ClusterToBind": [ "0001", "0006", "0008", "0012", "0300" ],
+	"ClusterToUnbind": [ "0006", "0008", "0300"],
+	"ClusterToBind": [ "0001", "0012", "fc00", "fcc0"],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {
 		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ] ,
-		"0001": [ "0020", "0021" ],
+		"0001": [ "0020" ],
 		"0006": [],
 		"0008": [],
 		"0300": []

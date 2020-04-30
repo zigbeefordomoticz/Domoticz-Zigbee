@@ -114,9 +114,9 @@ SWITCH_LVL_MATRIX = {
         '03': (3, '30'), 
         '04': (4, '40'), 
         'ForceUpdate': True, 
-        "LevelNames": "Off|On|-|+|Release",
+        "LevelNames": "Click|Double click|Tripple click|Long click|Release",
         "Language": {
-            "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}
+            "fr-FR": {"LevelNames": "Clic|Double clic|Triple clic|Long clic|Relacher"}
             }
         },
 

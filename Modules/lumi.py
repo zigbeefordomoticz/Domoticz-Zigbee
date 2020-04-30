@@ -175,6 +175,14 @@ def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Val
     #        0x0000 - Long Click
     #        0x00ff - Release
 
-
+    OPPLE_MAPPING = {
+        '0001': '01',
+        '0002': '02',
+        '0003': '03',
+        '0000': '04',
+        '00ff': '05'
+    }
+    if Value in OPPLE_MAPPING:
+        MajDomoDevice( self, Devices, nwkid, Ep, "0006", OPPLE_MAPPING[ Value ])  
 
     return
