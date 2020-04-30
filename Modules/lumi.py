@@ -66,7 +66,7 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
             # DataType: 20
             # Attribute: 0020
             # Value: 1e
-            
+
             loggingLumi( self, 'Log', "lumiReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
                 %(srcNWKID,srcEp , ClusterID, cmd, data ))
 
@@ -165,3 +165,12 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             MajDomoDevice( self, Devices, nwkid, '03', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
 
     return
+
+def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Value):)
+
+    # Ep : 01 (left)
+    # Value: 0x0001 - click
+    #        0x0002 - Double click
+    #        0x0003 - Tripple click
+    #        0x0000 - Long Click
+    #        0x00ff - Releas
