@@ -53,10 +53,22 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         cmd = MsgPayload[4:6] # uint8
         data = MsgPayload[6:] # all the rest
 
-        Data = '00000000000000'
-        Data += data
+        if ClusterID in ( '0006', '0008', '0300'):
+            Data = '00000000000000'
+            Data += data
+            AqaraOppleDecoding( self, Devices, srcNWKID , srcEp, ClusterID, _ModelName, Data)
 
-        AqaraOppleDecoding( self, Devices, srcNWKID , srcEp, ClusterID, _ModelName, Data)
+        elif ClusterID == '0001':
+            # 18780a2000201e
+            # fcf: 18
+            # sqn: 78
+            # cmd: 0a
+            # DataType: 20
+            # Attribute: 0020
+            # Value: 1e
+            
+            loggingLumi( self, 'Log', "lumiReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
+                %(srcNWKID,srcEp , ClusterID, cmd, data ))
 
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):

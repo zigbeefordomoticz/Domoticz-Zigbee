@@ -934,6 +934,7 @@ def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
             Domoticz.Error("Decode8031 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
     else:
         Domoticz.Error("Decode8031 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
+        return
 
     loggingInput( self, 'Debug', "Decode8031 - UnBind response, Device: %s SQN: %s Status: %s" %(MsgSrcAddr, MsgSequenceNumber, MsgDataStatus), MsgSrcAddr)
 
