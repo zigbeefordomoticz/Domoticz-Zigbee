@@ -326,7 +326,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     _model = self.ListOfDevices[NWKID]['Model']
                     # Check if we have to unbind clusters
                     if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
-                        for iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                        for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
                             unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
 
                     # Check if we have specific clusters to Bind

@@ -8,7 +8,7 @@
 		"04": {  "Type": "AqaraOppleMiddle" }
 	},
 	"Type":"",
-	"ClusterToUnbind": [ "0006", "0008", "0300" ],
+	"ClusterToUnbind": [ [ "01", "0006"], [ "01", "0008"] , [ "01","0300"] ],
 	"ClusterToBind": [ "0012" ],
         "ConfigureReporting":{
 	},
