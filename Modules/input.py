@@ -2282,6 +2282,11 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
 
+    if 'SQN' in self.ListOfDevices[MsgSrcAddr]:
+        if MsgSQN == self.ListOfDevices[MsgSrcAddr]['SQN']:
+            return
+
+    updSQN( self, MsgSrcAddr, MsgSQN) 
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
@@ -2552,6 +2557,11 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
 
+    if 'SQN' in self.ListOfDevices[MsgSrcAddr]:
+        if MsgSQN == self.ListOfDevices[MsgSrcAddr]['SQN']:
+            return
+
+    updSQN( self, MsgSrcAddr, MsgSQN) 
     timeStamped( self, MsgSrcAddr , 0x8095)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
