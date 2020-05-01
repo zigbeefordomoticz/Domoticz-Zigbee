@@ -25,6 +25,7 @@ from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex
 from Modules.logging import loggingCluster
 from Modules.output import  xiaomi_leave
+from Modules.lumi import AqaraOppleDecoding0012
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
@@ -286,7 +287,23 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if MsgClusterData[idx:idx+2] == '00':
                     break
                 idx += 2
+
             modelName = decodeAttribute( self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
+            # Check if we have / char. If so just remove it
+            modelName = modelName.strip('/')
+
+            if modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+                # Manage the Aqara Bulb mode or not
+                if self.pluginconf.pluginConf['AqaraOppleBulbMode']:
+                    # Overwrite the Confif file
+                    modelName += '-bulb'
+                elif 'Lumi' in self.ListOfDevices[MsgSrcAddr]:
+                    if 'AqaraOppleBulbMode' in self.ListOfDevices[MsgSrcAddr]['Lumi']:
+                        # Case where the Widgets have been already created with Bulbmode,
+                        # but the parameter is not on anymore
+                        # Overwrite the Confif file
+                        modelName += '-bulb'
+
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = modelName
             loggingCluster( self, 'Debug', "ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
             if modelName != '':
@@ -739,12 +756,16 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
-    if self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84', '8e') or \
-            self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main':
-        # This should reflect the main voltage.
-        # Cleanup Battery in case.
-        self.ListOfDevices[ MsgSrcAddr]['Battery'] = {}
-        return
+    if self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main' or self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84' , '8e'):
+        BATTERY_BASED_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01')
+        # There is hack to be done here, as they are some devices which are Battery based and are annouced as 0x84 !
+        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
+            # This should reflect the main voltage.
+             # Cleanup Battery in case.
+            if self.ListOfDevices[MsgSrcAddr]['Model'] not in BATTERY_BASED_DEVICES:
+                self.ListOfDevices[ MsgSrcAddr]['Battery'] = {}
+                return
+
 
     # Compute Battery %
     mainVolt = battVolt = battRemainingVolt = battRemainPer = 0.0
@@ -1942,7 +1963,14 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', \
+
+
+    if self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+        # Hanlding Message from the Aqara Opple Switch 2,4,6 buttons
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
+
+    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', \
                                                     'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
         # 0 -> Hold
         # 1 -> Short Release

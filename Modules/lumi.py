@@ -22,6 +22,15 @@ def enableOppleSwitch( self, nwkid ):
     if nwkid not in self.ListOfDevices:
         return
 
+    if 'Model' not in self.ListOfDevices[nwkid]:
+        return
+
+    if self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):  
+        if 'Lumi' not in self.ListOfDevices[nwkid]:
+            self.ListOfDevices[nwkid]['Lumi'] = {}
+            self.ListOfDevices[nwkid]['Lumi']['AqaraOppleBulbMode'] = True
+            return
+
     manuf_id = '115F'
     manuf_spec = "01"
     cluster_id = 'FCC0'
@@ -31,6 +40,7 @@ def enableOppleSwitch( self, nwkid ):
 
     loggingLumi( self, 'Debug', "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
+
 
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -53,18 +63,37 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
         cmd = MsgPayload[4:6] # uint8
         data = MsgPayload[6:] # all the rest
 
-        Data = '00000000000000'
-        Data += data
+        if ClusterID in ( '0006', '0008', '0300'):
+            Data = '00000000000000'
+            Data += data
+            AqaraOppleDecoding( self, Devices, srcNWKID , srcEp, ClusterID, _ModelName, Data)
 
-        AqaraOppleDecoding( self, Devices, srcNWKID , srcEp, ClusterID, _ModelName, Data)
+        elif ClusterID == '0001':
+            # 18780a2000201e
+            # fcf: 18
+            # sqn: 78
+            # cmd: 0a
+            # DataType: 20
+            # Attribute: 0020
+            # Value: 1e
+
+            loggingLumi( self, 'Log', "lumiReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
+                %(srcNWKID,srcEp , ClusterID, cmd, data ))
 
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
-    _ModelName = self.ListOfDevices[nwkid]['Model']
 
+#    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
+#       if 'Model' in self.ListOfDevices:
+#            _model = self.ListOfDevices[ 'Model' ]
+#            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
+#                %(nwkid, _model ))  
+#            return
+
+    _ModelName = self.ListOfDevices[nwkid]['Model']
 
     if ClusterId == '0006': # Top row
         Command =  payload[14:16]    
@@ -151,5 +180,27 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
         
         if action in OPPLE_MAPPING_4_6_BUTTONS:
             MajDomoDevice( self, Devices, nwkid, '03', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
+
+    return
+ 
+
+def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Value):
+
+    # Ep : 01 (left)
+    # Value: 0x0001 - click
+    #        0x0002 - Double click
+    #        0x0003 - Tripple click
+    #        0x0000 - Long Click
+    #        0x00ff - Release
+
+    OPPLE_MAPPING = {
+        '0001': '01',
+        '0002': '02',
+        '0003': '03',
+        '0000': '04',
+        '00ff': '05'
+    }
+    if Value in OPPLE_MAPPING:
+        MajDomoDevice( self, Devices, nwkid, Ep, "0006", OPPLE_MAPPING[ Value ])  
 
     return

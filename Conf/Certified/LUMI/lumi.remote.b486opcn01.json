@@ -2,16 +2,14 @@
 	"_comment": "Innovative Wireless Control WXCJKG12LM. 4 Buttons Off/on only",
 	"_version": "Initial Version",
 	"Ep":{
-		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "SwitchButton" },
-		"02": {  "Type": "AqaraOppleMiddle" },
-		"03": {  "Type": "" },
-		"04": {  "Type": "" },
-		"05": {  "Type": "" },
-		"06": {  "Type": "" }
+		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "0012": "", "Type": "AqaraOppleMiddle" },
+		"02": { "0003": "", "Type": "AqaraOppleMiddle" },
+		"03": {  "Type": "AqaraOppleMiddle" },
+		"04": {  "Type": "AqaraOppleMiddle" }
 	},
 	"Type":"",
-	"ClusterToUnbind": [ "0006", "0008", "0300"],
-	"ClusterToBind": [ "0006", "0008", "0300" ],
+	"ClusterToUnbind": [ [ "01", "0006"], [ "01", "0008"] , [ "01","0300"] ],
+	"ClusterToBind": [ "0012" ],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {

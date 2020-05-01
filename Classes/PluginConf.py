@@ -201,6 +201,7 @@ SETTINGS = {
                 'numEnergyReports': { 'type':'int', 'default':4 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'PowerOn_OnOff': { 'type':'int', 'default':255 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':False},
                 'TradfriKelvinStep': { 'type':'int', 'default':51 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
+                'AqaraOppleBulbMode': {'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'vibrationAqarasensitivity': { 'type':'str', 'default':'medium' , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 }},
 

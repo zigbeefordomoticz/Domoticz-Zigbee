@@ -98,7 +98,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         """
 
         Options = {}
-        Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
+        #Domoticz.Log( "createSwitchSelector -  nbSelector: %s DeviceType: %s OffHidden: %s SelectorStyle %s " %(nbSelector,DeviceType,OffHidden,SelectorStyle))
         if nbSelector <= 1:
             return Options
             
@@ -131,7 +131,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 Options[ 'LevelNames' ] += 'BT %03s | ' %bt
                 Options[ 'LevelActions'] += '|'
     
-            Domoticz.Log(" --> Options: %s" %str(Options))  
+            #Domoticz.Log(" --> Options: %s" %str(Options))  
 
             Options[ 'LevelNames' ] = Options[ 'LevelNames' ][:-2] # Remove the last '| '
             Options[ 'LevelActions' ] = Options[ 'LevelActions' ][:-1] # Remove the last '|'
@@ -142,7 +142,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         if OffHidden:
             Options[ 'LevelOffHidden'] = 'true'
 
-        Domoticz.Log(" --> Options: %s" %str(Options))
+        #Domoticz.Log(" --> Options: %s" %str(Options))
         return Options
 
 
@@ -319,7 +319,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in ThermoMode" %(t), NWKID)
 
             # 5 Selectors, Style 1
-            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddle'): 
+            if t in ('Generic_5_buttons', 'LegrandSelector', 'SwitchAQ3', 'SwitchIKEA', 'AqaraOppleMiddleBulb'): 
                 Options = createSwitchSelector( 5,  DeviceType = t,SelectorStyle = 1 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Generic_5" %(t), NWKID)
@@ -331,7 +331,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in AlarmWD" %(t), NWKID)
 
             # 6 Buttons, Style 1, OffHidden
-            if t in ('GenericLvlControl', ): 
+            if t in ('GenericLvlControl', 'AqaraOppleMiddle'): 
             
                Options = createSwitchSelector( 6,  DeviceType = t,OffHidden= True, SelectorStyle = 1 )
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
@@ -1377,6 +1377,8 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
 
     loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s_%s:%s_%s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
+    # SignalLvl max is 12
+    # Battery Level 255 means Main Powered device
     rssi = 12
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)

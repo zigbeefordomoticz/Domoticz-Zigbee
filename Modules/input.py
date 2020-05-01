@@ -934,6 +934,7 @@ def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
             Domoticz.Error("Decode8031 - Do no find %s in IEEE2NWK" %MsgSrcAddr)
     else:
         Domoticz.Error("Decode8031 - Unknown addr mode %s in %s" %(MsgSrcAddrMode, MsgData))
+        return
 
     loggingInput( self, 'Debug', "Decode8031 - UnBind response, Device: %s SQN: %s Status: %s" %(MsgSrcAddr, MsgSequenceNumber, MsgDataStatus), MsgSrcAddr)
 
@@ -1380,6 +1381,12 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
             #Domoticz.Status("Calling leaveMgt to request a rejoin of %s/%s " %( sAddr, MsgExtAddress))
             #leaveMgtReJoin( self, sAddr, MsgExtAddress )
+        elif self.ListOfDevices[sAddr]['Status'] in ( '004d', '0043', '8043', '0045', '8045'):
+            loggingInput( self, 'Log', "Removing this not completly provisionned device due to a leave ( %s , %s )" %(sAddr, MsgExtAddress ))
+            if MsgExtAddress in self.IEEE2NWK:
+                del self.IEEE2NWK[MsgExtAddress]
+            del self.ListOfDevices[sAddr]
+
         elif self.ListOfDevices[sAddr]['Status'] == 'Left':
             Domoticz.Error("Receiving a leave from %s/%s while device is %s status" %( sAddr, MsgExtAddress, self.ListOfDevices[sAddr]['Status']))
 
@@ -2275,6 +2282,11 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
 
+    if 'SQN' in self.ListOfDevices[MsgSrcAddr]:
+        if MsgSQN == self.ListOfDevices[MsgSrcAddr]['SQN']:
+            return
+
+    updSQN( self, MsgSrcAddr, MsgSQN) 
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
@@ -2478,8 +2490,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
-    
+    elif _ModelName in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):  
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
     
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
@@ -2527,7 +2538,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
-    loggingInput( self, 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    #loggingInput( self, 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
     loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
@@ -2546,8 +2557,14 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]:
                 self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = {}
 
+    if 'SQN' in self.ListOfDevices[MsgSrcAddr]:
+        if MsgSQN == self.ListOfDevices[MsgSrcAddr]['SQN']:
+            return
+
+    updSQN( self, MsgSrcAddr, MsgSQN) 
     timeStamped( self, MsgSrcAddr , 0x8095)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
     
@@ -2634,7 +2651,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+    elif _ModelName in ( 'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
 
     else:

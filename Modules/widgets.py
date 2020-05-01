@@ -106,8 +106,8 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}
             }
         },
-
-    'AqaraOppleMiddle': { 
+        
+    'AqaraOppleMiddleBulb': { 
         '00': (0, '00'), 
         '01': (1, '10'), 
         '02': (2, '20'),
@@ -117,6 +117,20 @@ SWITCH_LVL_MATRIX = {
         "LevelNames": "Off|On|-|+|Release",
         "Language": {
             "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}
+            }
+        },
+
+    'AqaraOppleMiddle': { 
+        '00': (0, '00'), 
+        '01': (1, '10'), 
+        '02': (2, '20'),
+        '03': (3, '30'), 
+        '04': (4, '40'),
+        '05': (5, '50'),
+        'ForceUpdate': True, 
+        "LevelNames": "off|Click|Double click|Tripple click|Long click|Release",
+        "Language": {
+            "fr-FR": {"LevelNames": "off|Clic|Double clic|Triple clic|Long clic|Relacher"}
             }
         },
 
