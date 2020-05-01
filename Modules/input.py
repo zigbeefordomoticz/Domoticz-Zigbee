@@ -2172,7 +2172,15 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" 
                     %(self.IEEE2NWK[MsgIEEE], self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status']) )
             if self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]['Status'] != 'inDB':
-                loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announced for a device in processing, drop it",MsgSrcAddr)
+                if self.IEEE2NWK[MsgIEEE] != MsgSrcAddr :
+                    loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announce for a device in processing, shortid changed from %s to %s"
+                           %(self.IEEE2NWK[MsgIEEE],MsgSrcAddr) ,MsgSrcAddr)
+                    tmp = self.ListOfDevices[self.IEEE2NWK[MsgIEEE]] # get the device under the previous shortid index
+                    self.ListOfDevices[MsgSrcAddr] = tmp             # apply it to the new shortid index
+                    del self.ListOfDevices[self.IEEE2NWK[MsgIEEE]]   # delete the previous entry
+                    self.IEEE2NWK[MsgIEEE] = MsgSrcAddr              # update the IEEE2NWK table 
+                else:
+                    loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announce for a device in processing, drop it",MsgSrcAddr)
             return
 
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
