@@ -757,7 +757,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     if self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main' or self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84' , '8e'):
-        BATTERY_BASED_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01')
+        BATTERY_BASED_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01', 
+                                  'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb')
         # There is hack to be done here, as they are some devices which are Battery based and are annouced as 0x84 !
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             # This should reflect the main voltage.
