@@ -308,6 +308,9 @@ def updSQN( self, key, newSQN) :
     self.ListOfDevices[key]['SQN'] = newSQN
     return
 
+def updRSSI( self, key, RSSI):
+
+    return
 #### Those functions will be use with the new DeviceConf structutre
 
 def getTypebyCluster( self, Cluster ) :
