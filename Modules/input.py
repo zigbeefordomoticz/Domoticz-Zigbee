@@ -2485,8 +2485,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
 
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
-    elif _ModelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
-    
+    elif _ModelName in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):  
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
     
     elif 'Manufacturer' in self.ListOfDevices[MsgSrcAddr]:
@@ -2534,7 +2533,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
-    loggingInput( self, 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
+    #loggingInput( self, 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
     loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
@@ -2555,6 +2554,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
 
     timeStamped( self, MsgSrcAddr , 0x8095)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
     
@@ -2641,7 +2641,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
             loggingInput( self, 'Log', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
 
-    elif _ModelName in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+    elif _ModelName in ( 'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
         AqaraOppleDecoding( self, Devices, MsgSrcAddr , MsgEP, MsgClusterId, _ModelName, MsgData)
 
     else:

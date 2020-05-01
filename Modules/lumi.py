@@ -32,6 +32,15 @@ def enableOppleSwitch( self, nwkid ):
     loggingLumi( self, 'Debug', "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
 
+    if 'Model' not in self.ListOfDevices[nwkid]:
+        return
+    if self.ListOfDevices[nwkid]['model'] in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):  
+        if 'Lumi' not in self.ListOfDevices[nwkid]:
+            self.ListOfDevices[nwkid]['Lumi'] = {}
+            self.ListOfDevices[nwkid]['Lumi']['AqaraOppleBulbMode'] = True
+
+
+
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
     if srcNWKID not in self.ListOfDevices:
@@ -76,12 +85,12 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
 
-    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
-       if 'Model' in self.ListOfDevices:
-            _model = self.ListOfDevices[ 'Model' ]
-            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
-                %(nwkid, _model ))  
-            return
+#    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
+#       if 'Model' in self.ListOfDevices:
+#            _model = self.ListOfDevices[ 'Model' ]
+#            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
+#                %(nwkid, _model ))  
+#            return
 
     _ModelName = self.ListOfDevices[nwkid]['Model']
 
