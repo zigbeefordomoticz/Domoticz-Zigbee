@@ -1612,6 +1612,7 @@ class WebServer(object):
 
         elif verb == 'DELETE':
             if len(parameters) == 1:
+                ieee = nwkid = None
                 deviceId = parameters[0]
                 if len( deviceId ) == 4: # Short Network Addr
                     if deviceId not in self.ListOfDevices:
@@ -1629,12 +1630,15 @@ class WebServer(object):
                         return _response
                     ieee = deviceId
                     nwkid = self.IEEE2NWK[ ieee ]
-                
-                del self.ListOfDevices[ nwkid ]
-                del self.IEEE2NWK[ ieee ]
+                if nwkid:
+                    del self.ListOfDevices[ nwkid ]
+                if ieee:
+                    del self.IEEE2NWK[ ieee ]
+                    
                 # for a remove in case device didn't send the leave
-                if 'IEEE' in self.zigatedata:
-                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
+                if 'IEEE' in self.zigatedata and ieee:
+                    # uParrentAddress + uChildAddress (uint64)
+                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + ieee )
 
                 action = {}
                 action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
