@@ -543,12 +543,9 @@ def lookupForIEEE( self, nwkid , reconnect=False):
 
         # We are interested only on the last one
         lastScan = self.ListOfDevices[key]['Neighbours'][-1]
-
-        for item in lastScan[ 'Devices' ]:
-            
+        for item in lastScan[ 'Devices' ]:            
             if nwkid not in item:
                 continue
-
             # Found !
             if '_IEEE' in item[ nwkid ]:
                 ieee = item[ nwkid ]['_IEEE']
@@ -560,4 +557,51 @@ def lookupForIEEE( self, nwkid , reconnect=False):
                 Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
                 return ieee
 
+    return None
+
+def lookupForParentDevice( self, nwkid= None, ieee=None):
+
+    """
+    Purpose is to find a router to which this device is connected to.
+    the IEEE will be returned if found otherwise None
+    """
+
+    if nwkid is None and ieee is None:
+        return None
+    
+    # Got Short Address in Input
+    if nwkid and ieee is None:
+        if nwkid not in self.ListOfDevices:
+            return
+        if 'IEEE' in self.ListOfDevices[ nwkid ]:
+            ieee = self.ListOfDevices[ nwkid ]['IEEE']
+
+    # Got IEEE in Input
+    if ieee and nwkid is None:
+        if ieee not in self.IEEE2NWK:
+            return
+        nwkid = self.IEEE2NWK[ nwkid ]
+
+    if mainPoweredDevice( self, nwkid):
+        return ieee
+
+    for PotentialRouter in self.ListOfDevices:
+        if 'Neighbours' not in self.ListOfDevices[PotentialRouter]:
+            continue
+        if len(self.ListOfDevices[PotentialRouter]['Neighbours']) == 0:
+            continue
+        # We are interested only on the last one
+        lastScan = self.ListOfDevices[PotentialRouter]['Neighbours'][-1]
+
+        for item in lastScan[ 'Devices' ]:          
+            if nwkid not in item:
+                continue
+            # found and PotentialRouter is one router
+            if 'IEEE' not in self.ListOfDevices[ PotentialRouter ]:
+                # This is problematic, let's try an other candidate
+                continue
+
+            return self.ListOfDevices[ PotentialRouter ]['IEEE']
+
+    #Nothing found
     return None
