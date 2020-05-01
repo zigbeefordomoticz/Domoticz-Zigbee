@@ -106,6 +106,19 @@ SWITCH_LVL_MATRIX = {
             "fr-FR": {"LevelNames": "Bouton1|Bouton2|Bouton3|Bouton4|Bouton5"}
             }
         },
+        
+    'AqaraOppleMiddleBulb': { 
+        '00': (0, '00'), 
+        '01': (1, '10'), 
+        '02': (2, '20'),
+        '03': (3, '30'), 
+        '04': (4, '40'), 
+        'ForceUpdate': True, 
+        "LevelNames": "Off|On|-|+|Release",
+        "Language": {
+            "fr-FR": {"LevelNames": "Eteindre|Marche|-|+|Arrêt"}
+            }
+        },
 
     'AqaraOppleMiddle': { 
         '00': (0, '00'), 

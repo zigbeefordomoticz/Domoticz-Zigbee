@@ -73,18 +73,16 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
 
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 
-    # This is the route with a Bind on clusters 0x0006, 0x0008 and 0x0300
-    # Shoudl use 0x0012
-
-    if 'Model' in self.ListOfDevices:
-        _model = self.ListOfDevices[ 'Model' ]
-        loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
-            %(nwkid, _model ))  
-    return
-
-    """
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
+
+    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
+       if 'Model' in self.ListOfDevices:
+            _model = self.ListOfDevices[ 'Model' ]
+            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
+                %(nwkid, _model ))  
+            return
+
     _ModelName = self.ListOfDevices[nwkid]['Model']
 
     if ClusterId == '0006': # Top row
@@ -174,7 +172,7 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
             MajDomoDevice( self, Devices, nwkid, '03', "0006", OPPLE_MAPPING_4_6_BUTTONS[ action ])
 
     return
-    """
+ 
 
 def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Value):
 

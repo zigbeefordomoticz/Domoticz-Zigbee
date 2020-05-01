@@ -287,7 +287,19 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 if MsgClusterData[idx:idx+2] == '00':
                     break
                 idx += 2
+
+
+
             modelName = decodeAttribute( self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
+            # Check if we have / char. If so just remove it
+            modelName = modelName.strip('/')
+
+            if modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
+                # We will overwrite the Model, in order to use cluster 0x0006, 0x0008 and 0x0300 instead of 0x0012
+                if self.pluginconf.pluginConf['AqaraOppleBulbMode']:
+                    # Overwrite the Confif file
+                    modelName += '-bulb'
+
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = modelName
             loggingCluster( self, 'Debug', "ReadCluster - %s / %s - Recepion Model: >%s<" %(MsgClusterId, MsgAttrID, modelName), MsgSrcAddr)
             if modelName != '':
