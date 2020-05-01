@@ -11,7 +11,7 @@
 	},
 	"Type":"",
 	"ClusterToUnbind": [ [ "01","0006"], ["01","0008"], ["01", "0300"]],
-	"ClusterToBind": [ "0006", "0008", "0300" ],
+	"ClusterToBind": [ "0001", "0006", "0008", "0300" ],
         "ConfigureReporting":{
 	},
 	"ReadAttributes": {
