@@ -16,7 +16,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE
+from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE
 from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
 from Modules.bindings import rebind_Clusters
@@ -154,6 +154,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
 
     timeStamped( self, MsgSrcAddr , 0x8401)
     updSQN( self, MsgSrcAddr, MsgSQN)
+    updRSSI( self, MsgSrcAddr, MsgRSSI)
 
     Model = ''
     if MsgSrcAddr in self.ListOfDevices:
@@ -404,6 +405,7 @@ def Decode8002(self, Devices, MsgData, MsgRSSI) : # Data indication
     if 'Manufacturer' not in self.ListOfDevices[srcnwkid]:
         return
 
+    updRSSI( self, srcnwkid, MsgRSSI )
     inRawAps( self, Devices, srcnwkid, MsgSourcePoint,  MsgClusterID, dstnwkid, MsgDestPoint, MsgPayload)
 
     callbackDeviceAwake( self, srcnwkid, MsgSourcePoint, MsgClusterID)
@@ -598,6 +600,8 @@ def Decode8011( self, Devices, MsgData, MsgRSSI ):
     if MsgSrcAddr not in self.ListOfDevices:
         return
 
+    updRSSI( self, MsgSrcAddr, MsgRSSI )
+
     _powered = mainPoweredDevice( self, MsgSrcAddr)
     loggingInput( self, 'Debug', "Decode8011 - Src: %s, SrcEp: %s, Cluster: %s, Status: %s MainPowered: %s" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgStatus, _powered), MsgSrcAddr)
@@ -651,7 +655,6 @@ def Decode8012( self, Devices, MsgData, MsgRSSI ):
     loggingInput( self, 'Log', "Decode8012 - Src: %s, SrcEp: %s,Status: %s" \
             %(MsgSrcNwkid, MsgSrcEp, MsgStatus))
 
-
 def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
 
     MsgLen=len(MsgData)
@@ -701,7 +704,7 @@ def Decode8014(self, Devices, MsgData, MsgRSSI): # "Permit Join" status response
     loggingInput( self, 'Debug', "Ping - received", 'ffff')
     return
 
-def Decode8017(self, Devices, MsgData, MsgRSSI) : # 
+def Decode8017(self, Devices, MsgData, MsgRSSI) : # Get Time
 
     ZigateTime = MsgData[0:8]
 
@@ -1026,6 +1029,8 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
         loggingInput( self, 'Log',"Decode8042 receives a message from a non existing device %s" %addr)
         return
 
+    updRSSI( self, addr, MsgRSSI )
+
     self.ListOfDevices[addr]['Max Buffer Size'] = max_buffer
     self.ListOfDevices[addr]['Max Rx'] = max_rx
     self.ListOfDevices[addr]['Max Tx'] = max_tx
@@ -1039,8 +1044,7 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     DeviceType  =   ( mac_capability >> 1 ) & 1
     PowerSource =   ( mac_capability >> 2 ) & 1
     ReceiveonIdle = ( mac_capability >> 3 ) & 1
-
-    
+   
     if DeviceType == 1 : 
         DeviceType = "FFD"
     else : 
@@ -1100,19 +1104,24 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
 
-    updSQN( self, MsgDataShAddr, MsgDataSQN)
+    if int(MsgDataLenght,16) == 0 :
+        return
 
-    if int(MsgDataLenght,16) == 0 : return
-
+    MsgDataEp=MsgData[10:12]
+    MsgDataProfile=MsgData[12:16]
     MsgDataEp=MsgData[10:12]
     MsgDataProfile=MsgData[12:16]
     MsgDataDeviceId=MsgData[16:20]
     MsgDataBField=MsgData[20:22]
     MsgDataInClusterCount=MsgData[22:24]
 
+    updSQN( self, MsgDataShAddr, MsgDataSQN)
+    updRSSI( self, MsgDataShAddr, MsgRSSI )
+
     if MsgDataShAddr == '0000': # Ep list for Zigate
         receiveZigateEpDescriptor( self, MsgData)
         return
+        
     elif MsgDataShAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8043 - receive message for non existing device")
         return
@@ -1243,8 +1252,9 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     if self.ListOfDevices[MsgDataShAddr]['Status'] != "inDB" :
         self.ListOfDevices[MsgDataShAddr]['Status'] = "8043"
         self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
-    else :
+    else:
         updSQN( self, MsgDataShAddr, MsgDataSQN)
+
 
     loggingPairing( self, 'Debug', "Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
     return
@@ -1334,6 +1344,7 @@ def Decode8046(self, Devices, MsgData, MsgRSSI) : # Match Descriptor response
     MsgDataMatchList=MsgData[10:len(MsgData)]
 
     updSQN( self, MsgDataShAddr, MsgDataSQN)
+    updRSSI( self, MsgDataShAddr, MsgRSSI)
     loggingInput( self, 'Log',"Decode8046 - Match Descriptor response : SQN : " + MsgDataSQN + ", Status " + DisplayStatusCode( MsgDataStatus ) + ", short Addr " + MsgDataShAddr + ", Lenght list  " + MsgDataLenList + ", Match list " + MsgDataMatchList)
     return
 
@@ -1398,6 +1409,8 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
             # Will set to Leave in order to protect Domoticz Widget, Just need to make sure that we can reconnect at a point of time
             self.ListOfDevices[sAddr]['Status'] = 'Leave'
             self.ListOfDevices[sAddr]['Heartbeat'] = 0
+
+    updRSSI( self, sAddr, MsgRSSI )
 
     return
 
@@ -1562,6 +1575,8 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
     MsgUnknown = MsgData[10:30]
     MsgStatus = MsgData[30:32]
 
+   updRSSI( self, MsgSrcAddr, MsgRSSI )
+
     # What is expected on the Widget is:
     # Left Off: 00
     # Left On: 01
@@ -1602,6 +1617,7 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
 
 #Reponses Attributs
 def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute response
+
     MsgSQN=MsgData[0:2]
     MsgSrcAddr=MsgData[2:6]
     MsgSrcEp=MsgData[6:8]
@@ -1615,13 +1631,9 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     loggingInput( self, 'Debug', "Decode8100 - Report Attributes Response : [%s:%s] ClusterID: %s AttributeID: %s Status: %s Type: %s Size: %s ClusterData: >%s<" \
             %(MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData ), MsgSrcAddr)
 
+    updRSSI( self, MsgSrcAddr, MsgRSSI )
     timeStamped( self, MsgSrcAddr , 0x8100)
     loggingMessages( self, '8100', MsgSrcAddr, None, MsgRSSI, MsgSQN)
-    try :
-        self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
-    except : 
-        self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
-
         if self.pluginconf.pluginConf['debugRSSI']:
             if self.ListOfDevices[MsgSrcAddr]['RSSI'] <= self.pluginconf.pluginConf['debugRSSI']:
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
@@ -1639,6 +1651,7 @@ def Decode8100(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
     if 'Health' in self.ListOfDevices[MsgSrcAddr]:
         self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
     updSQN( self, MsgSrcAddr, MsgSQN)
+    updRSSI( self, MsgSrcAddr, MsgRSSI)
     ReadCluster(self, Devices, MsgData) 
     callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
 
@@ -1692,12 +1705,9 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
     loggingMessages( self, '8102', MsgSrcAddr, None, MsgRSSI, MsgSQN)
 
-    if DeviceExist(self, Devices, MsgSrcAddr) == True :
-        try:
-            self.ListOfDevices[MsgSrcAddr]['RSSI']= int(MsgRSSI,16)
-        except:
-            self.ListOfDevices[MsgSrcAddr]['RSSI']= 0
+    updRSSI( self, MsgSrcAddr, MsgRSSI )
 
+    if DeviceExist(self, Devices, MsgSrcAddr) == True :
         if self.pluginconf.pluginConf['debugRSSI']:
             if self.ListOfDevices[MsgSrcAddr]['RSSI'] <= self.pluginconf.pluginConf['debugRSSI']:
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
@@ -1721,6 +1731,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
             self.ListOfDevices[MsgSrcAddr]['Health'] = 'Live'
         timeStamped( self, MsgSrcAddr , 0x8102)
         updSQN( self, MsgSrcAddr, str(MsgSQN) )
+        updRSSI( self, MsgSrcAddr, MsgRSSI)
         ReadCluster(self, Devices, MsgData) 
         callbackDeviceAwake( self, MsgSrcAddr, MsgSrcEp, MsgClusterId)
     else :
@@ -1762,6 +1773,7 @@ def Decode8110(self, Devices, MsgData, MsgRSSI) :  # Write Attribute response
 
     timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
+    updRSSI( self, MsgSrcAddr, MsgRSSI)
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)
@@ -1807,7 +1819,7 @@ def Decode8120(self, Devices, MsgData, MsgRSSI) :  # Configure Reporting respons
 
     timeStamped( self, MsgSrcAddr , 0x8120)
     updSQN( self, MsgSrcAddr, MsgSQN)
-
+    updRSSI( self, MsgSrcAddr, MsgRSSI)
     if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
         if 'Ep' in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']:
             if MsgSrcEp in self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']['Ep']:
@@ -1980,7 +1992,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
 
     timeStamped( self, NWKID , 0x8702)
     updSQN( self, NWKID, MsgDataSQN)
-
+    updRSSI( self, NWKID, MsgRSSI)
     return
 
 #Device Announce
@@ -2254,6 +2266,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
+
+    updRSSI( self, MsgSrcAddr, MsgRSSI )
     TYPE_ACTIONS = {
             '01':'hold_down',
             '02':'click_down',
@@ -2287,6 +2301,7 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             return
 
     updSQN( self, MsgSrcAddr, MsgSQN) 
+    updRSSI( self,MsgSrcAddr, MsgRSSI )
     timeStamped( self, MsgSrcAddr , 0x8085)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
@@ -2538,6 +2553,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     MsgSrcAddr = MsgData[10:14]
     MsgCmd = MsgData[14:16]
 
+    updRSSI( self, MsgSrcAddr, MsgRSSI )
+
     #loggingInput( self, 'Debug', "Decode8095 - MsgData: %s "  %MsgData, MsgSrcAddr)
     loggingInput( self, 'Debug', "Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " \
             %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_), MsgSrcAddr)
@@ -2562,6 +2579,7 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             return
 
     updSQN( self, MsgSrcAddr, MsgSQN) 
+    updRSSI( self,MsgSrcAddr, MsgRSSI )
     timeStamped( self, MsgSrcAddr , 0x8095)
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
@@ -2694,6 +2712,8 @@ def Decode80A7(self, Devices, MsgData, MsgRSSI) :
     if self.ListOfDevices[MsgSrcAddr]['Status'] != 'inDB':
         return
 
+    updRSSI( self, MsgSrcAddr, MsgRSSI )
+
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] = {}
     if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId] , dict):
@@ -2762,7 +2782,6 @@ def Decode8807(self, Devices, MsgData, MsgRSSI):
         loggingInput( self, 'Status', "Get TxPower Attenuation : %s dBm" % ATTENUATION_dBm['JN516x'][int(TxPower,16)])
     else:
         loggingInput( self, 'Status', "Get TxPower : %s" %int(TxPower,16))
-
 
 def Decode8035(self, Devices, MsgData, MsgRSSI):
 
@@ -2842,7 +2861,6 @@ def Decode0205( self, Devices, MsgData, MsgRSSI):
 
     #loggingInput( self, 'Debug',  "Decode0205 - E_SL_MSG_DELETE_BITMAP_RECORD_REQUEST: %20.20s" %(MsgData))
     PDMDeleteBitmapRequest( self, MsgData)
-
 
 def Decode0206( self, Devices, MsgData, MsgRSSI):
 
