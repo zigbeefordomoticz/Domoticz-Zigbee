@@ -315,8 +315,12 @@ def updRSSI( self, key, RSSI):
 
     if 'RSSI' not in self.ListOfDevices[ key ]:
         self.ListOfDevices[ key ]['RSSI'] = {}
+        
+    if RSSI == '00':
+        return
     
     if is_hex( RSSI ): # Check if the RSSI is Correct
+
         self.ListOfDevices[ key ]['RSSI'] = int( RSSI, 16)
 
         if 'RollingRSSI' not in self.ListOfDevices[ key ]:
