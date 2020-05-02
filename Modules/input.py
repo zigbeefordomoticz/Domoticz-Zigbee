@@ -1158,7 +1158,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
 
     if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
         self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
-        
+
     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ProfileID'] = MsgDataProfile
     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
 
@@ -1344,7 +1344,7 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
             self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ClusterIn'] = {}
             self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ClusterOut'] = {}
             self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ProfileID'] = {}
-            self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ZdeviceID'] = {}
+            self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ZDeviceID'] = {}
 
         if self.pluginconf.pluginConf['capturePairingInfos']:
             self.DiscoveryDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
