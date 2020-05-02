@@ -214,13 +214,15 @@ def importDeviceConf( self ) :
     #Import DeviceConf.txt
     tmpread=""
     self.DeviceConf = {}
-    with open( self.pluginconf.pluginConf['pluginConfig']  + "DeviceConf.txt", 'r') as myfile:
-        tmpread+=myfile.read().replace('\n', '')
-        try:
-            self.DeviceConf=eval(tmpread)
-        except (SyntaxError, NameError, TypeError, ZeroDivisionError):
-            Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConf['pluginConfig']+"DeviceConf.txt", tmpread))
-            return
+
+    if os.path.isfile( self.pluginconf.pluginConf['pluginConfig']  + "DeviceConf.txt" ):
+        with open( self.pluginconf.pluginConf['pluginConfig']  + "DeviceConf.txt", 'r') as myfile:
+            tmpread+=myfile.read().replace('\n', '')
+            try:
+                self.DeviceConf=eval(tmpread)
+            except (SyntaxError, NameError, TypeError, ZeroDivisionError):
+                Domoticz.Error("Error while loading %s in line : %s" %(self.pluginconf.pluginConf['pluginConfig']+"DeviceConf.txt", tmpread))
+                return
 
     # Remove comments
     for iterDevType in list(self.DeviceConf):
@@ -385,6 +387,7 @@ def CheckDeviceList(self, key, val) :
             'ConfigSource',
             'DeviceType', 
             'Ep', 
+            'Epv2'
             'HW Version', 
             'Heartbeat', 
             'IAS',
