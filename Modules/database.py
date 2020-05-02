@@ -271,8 +271,6 @@ def importDeviceConfV2( self ):
 
                 try:
                     device_model_name = model_device.rsplit('.',1)[0]
-                    if device_model_name == 'Dimmer switch wo neutral':
-                        device_model_name = 'Dimmer switch w/o neutral'
     
                     if device_model_name not in self.DeviceConf:
                         loggingDatabase( self, "Debug", "--> Config for %s/%s" %( str(brand), str(device_model_name)))
