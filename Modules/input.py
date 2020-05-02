@@ -1214,6 +1214,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
                 if 'ClusterIn' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
                     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterIn'] = {}
+                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterIn']:
                     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterIn'][MsgDataCluster] = {}  
             else:
                 loggingPairing( self, 'Debug', "[%s]    NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
@@ -1252,6 +1253,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
                     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
                 if 'ClusterOut' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
                     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterOut'] = {}
+                if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterOut']:
                     self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterOut'][MsgDataCluster] = {}  
                 else:
                     loggingInput( self, 'Debug', "[%s]    NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr), MsgDataShAddr)
