@@ -1155,10 +1155,12 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     if 'Epv2' not in self.ListOfDevices[MsgDataShAddr]:
         # This should not happen. We are receiving 0x8043 while not 0x8045
         self.ListOfDevices[MsgDataShAddr]['Epv2'] = {}
-    if 'ProfileID' not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
-        self.ListOfDevices[MsgDataShAddr]['Epv2']['ProfileID'] = MsgDataProfile
-    if 'ZDeviceID' not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
-        self.ListOfDevices[MsgDataShAddr]['Epv2']['ZDeviceID'] = MsgDataDeviceId
+    if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
+        self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
+    if 'ProfileID' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
+        self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ProfileID'] = MsgDataProfile
+    if 'ZDeviceID' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
+        self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
     
     # Endpoint V1
     if 'ProfileID' in self.ListOfDevices[MsgDataShAddr]:
