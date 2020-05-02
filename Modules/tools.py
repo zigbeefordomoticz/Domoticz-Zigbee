@@ -112,7 +112,8 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
                 found = True
 
-    # 2- We might have found it with the lookupNwkId   
+    # 2- We might have found it with the lookupNwkId 
+    # If we didnt find it, we should check if this is not a new ShortId  
     if lookupIEEE:
         if lookupIEEE not in self.IEEE2NWK:
             # Not found
@@ -122,24 +123,46 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
         exitsingNwkId = self.IEEE2NWK[ lookupIEEE ]
         if exitsingNwkId == lookupNwkId:
             # Everything fine, we have found it
-            found = True
+            # and this is the same ShortId as the one existing
+            return True
 
         elif exitsingNwkId not in self.ListOfDevices:
+            # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
             # Let's clenup
             del self.IEEE2NWK[ lookupIEEE ]
-            found = False
+            return False
 
         elif 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+            # Should not happen
             # That seems not correct
             # We might have to do some cleanup here !
-            found = False
+            # Cleanup
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
 
-        elif self.ListOfDevices[ exitsingNwkId ]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
-            # That seems not correct
-            # Could be under Creation
-            found = False
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
+
+            return False
+
+        elif self.ListOfDevices[ exitsingNwkId ]['Status'] in ( '004d', '0045', '0043', '8045', '8043', 'UNKNOW'):
+            # We are in the discovery/provisioning process,
+            # and the device got a new Short Id
+            # we need to restart from the begiging and remove all existing datastructutre.
+            # In case we receive asynchronously messages (which should be possible), they must be
+            # droped in the corresponding Decodexxx function
+            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioing. Restarting !" 
+                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
+
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
+
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
+
+            return False
 
         else:
             # At that stage, we have found an entry for the IEEE, but doesn't match

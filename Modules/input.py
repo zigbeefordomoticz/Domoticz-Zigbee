@@ -2045,9 +2045,11 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             '99': '0x99 - Unknown value received.'
             }
 
-    if MsgSrcAddr in self.ListOfDevices:
+    if MsgIEEE in self.IEEE2NWK and MsgSrcAddr in self.ListOfDevices:
+        # In case we receive a Device Annoucement we are alreday doing the provisioning.
+        # Same IEEE and same Short Address.
+        # We will drop the message, as there is no reason to process it.
         if self.ListOfDevices[MsgSrcAddr]['Status'] in ( '004d', '0045', '0043', '8045', '8043'):
-            # Let's skip it has this is a duplicate message from the device
             loggingInput( self, 'Debug', "Decode004D - Already known device %s with status: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Status']), MsgSrcAddr)
             return
 
@@ -2175,6 +2177,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # New device comming. The IEEE is not known
         loggingInput( self, 'Debug', "Decode004D - New Device %s %s" %(MsgSrcAddr, MsgIEEE), MsgSrcAddr)
 
+        # I wonder if this code makes sense ? ( PP 02/05/2020 ), This should not happen!
         if MsgIEEE in self.IEEE2NWK :
             Domoticz.Error("Decode004d - New Device %s %s already exist in IEEE2NWK" %(MsgSrcAddr, MsgIEEE))
             loggingPairing( self, 'Debug', "Decode004d - self.IEEE2NWK[MsgIEEE] = %s with Status: %s" 
@@ -2183,15 +2186,18 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                 loggingInput( self, 'Debug', "Decode004d - receiving a new Device Announced for a device in processing, drop it",MsgSrcAddr)
             return
 
+        # 1- Create the entry in IEEE - 
         self.IEEE2NWK[MsgIEEE] = MsgSrcAddr
+
+        # This code should not happen !( PP 02/05/2020 )
         if IEEEExist( self, MsgIEEE ):
             # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
-                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " 
+                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " 
                         %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
                 return
 
-        # 1- Create the Data Structutre
+        # 2- Create the Data Structutre
         initDeviceInList(self, MsgSrcAddr)
         loggingPairing( self, 'Debug',"Decode004d - Looks like it is a new device sent by Zigate")
         self.CommiSSionning = True
@@ -2214,7 +2220,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.DevicesInPairingMode.append( MsgSrcAddr )
         loggingPairing( self, 'Log',"--> %s" %str(self.DevicesInPairingMode))
 
-        # 2- Store the Pairing info if needed
+        # 3- Store the Pairing info if needed
         if self.pluginconf.pluginConf['capturePairingInfos']:
             if MsgSrcAddr not in self.DiscoveryDevices:
                 self.DiscoveryDevices[MsgSrcAddr] = {}
@@ -2225,7 +2231,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             self.DiscoveryDevices[MsgSrcAddr]['MacCapa'] = MsgMacCapa
             self.DiscoveryDevices[MsgSrcAddr]['Decode-MacCapa'] = deviceMacCapa
 
-        # 3- We will request immediatly the List of EndPoints
+        # 4- We will request immediatly the List of EndPoints
         PREFIX_IEEE_XIAOMI = '00158d000'
         if MsgIEEE[0:len(PREFIX_IEEE_XIAOMI)] == PREFIX_IEEE_XIAOMI:
             ReadAttributeRequest_0000(self, MsgSrcAddr, fullScope=False ) # In order to request Model Name
