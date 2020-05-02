@@ -385,6 +385,7 @@ def CheckDeviceList(self, key, val) :
             'ConfigSource',
             'DeviceType', 
             'Ep', 
+            'Epv2'
             'HW Version', 
             'Heartbeat', 
             'IAS',
