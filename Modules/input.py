@@ -1122,7 +1122,7 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
         receiveZigateEpDescriptor( self, MsgData)
         return
         
-    elif MsgDataShAddr not in self.ListOfDevices:
+    if MsgDataShAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8043 - receive message for non existing device")
         return
 
@@ -1151,6 +1151,16 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
 
     loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Simple Descriptor Response EP: 0x%s RSSI: %s" %('-', MsgDataShAddr, MsgDataEp, int(MsgRSSI,16)))
 
+    # Endpoint V2
+    if 'Epv2' not in self.ListOfDevices[MsgDataShAddr]:
+        # This should not happen. We are receiving 0x8043 while not 0x8045
+        self.ListOfDevices[MsgDataShAddr]['Epv2'] = {}
+    if 'ProfileID' not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
+        self.ListOfDevices[MsgDataShAddr]['Epv2']['ProfileID'] = MsgDataProfile
+    if 'ZDeviceID' not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
+        self.ListOfDevices[MsgDataShAddr]['Epv2']['ZDeviceID'] = MsgDataDeviceId
+    
+    # Endpoint V1
     if 'ProfileID' in self.ListOfDevices[MsgDataShAddr]:
         if self.ListOfDevices[MsgDataShAddr]['ProfileID'] != MsgDataProfile:
             #loggingInput( self, 'Log',"Decode8043 - Overwrite ProfileID %s with %s from Ep: %s " \
@@ -1180,6 +1190,11 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     if self.pluginconf.pluginConf['capturePairingInfos']:
         self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
 
+    configSourceAvailable = False
+    if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
+        if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] == 'DeviceConf':
+            configSourceAvailable = True
+
     # Decoding Cluster IN
     loggingInput( self, 'Status', "[%s]    NEW OBJECT: %s Cluster IN Count: %s" %('-', MsgDataShAddr, MsgDataInClusterCount))
     idx = 24
@@ -1187,31 +1202,33 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     if int(MsgDataInClusterCount,16)>0 :
         while i <= int(MsgDataInClusterCount,16) :
             MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
-            if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
-                if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] != 'DeviceConf':
-                    if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
-                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
-                    if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster] = {}
-                else:
-                    loggingPairing( self, 'Debug', "[%s]    NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
-            else: # Not 'ConfigSource'
-                self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
+            if not configSourceAvailable:  
+                self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'         
                 if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+                    self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster] = {}
+
+                # Endpoint V2
+                if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
+                    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
+                if 'ClusterIn' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
+                    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterIn'] = {}
+                    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterIn'][MsgDataCluster] = {}  
+            else:
+                loggingPairing( self, 'Debug', "[%s]    NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr))
 
             if MsgDataCluster in ZCL_CLUSTERS_LIST:
-                loggingInput( self, 'Status', "[%s]       NEW OBJECT: %s Cluster In %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
+                loggingInput( self, 'Status', "[%s]       NEW OBJECT: %s Cluster In %s: %s (%s)" 
+                    %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
             else:
-                loggingInput( self, 'Status', "[%s]       NEW OBJECT: %s Cluster In %s: %s" %('-', MsgDataShAddr, i, MsgDataCluster))
+                loggingInput( self, 'Status', "[%s]       NEW OBJECT: %s Cluster In %s: %s" 
+                    %('-', MsgDataShAddr, i, MsgDataCluster))
 
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[MsgDataShAddr]['Ep'][MsgDataEp]['ClusterIN'].append( MsgDataCluster )
             MsgDataCluster=""
             i=i+1
-
 
     # Decoding Cluster Out
     idx = 24 + int(MsgDataInClusterCount,16) *4
@@ -1220,23 +1237,24 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     loggingInput( self, 'Status', "[%s]    NEW OBJECT: %s Cluster OUT Count: %s" %('-', MsgDataShAddr, MsgDataOutClusterCount))
     idx += 2
     i=1
+
     if int(MsgDataOutClusterCount,16)>0 :
         while i <= int(MsgDataOutClusterCount,16) :
             MsgDataCluster = MsgData[idx+((i-1)*4):idx+(i*4)]
-            if 'ConfigSource' in self.ListOfDevices[MsgDataShAddr]:
-                if self.ListOfDevices[MsgDataShAddr]['ConfigSource'] != 'DeviceConf':
-                    if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
-                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
-                    if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
-                        self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
-                else:
-                    loggingInput( self, 'Debug', "[%s]    NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr), MsgDataShAddr)
-            else: # Not 'ConfigSource'
-                self.ListOfDevices[MsgDataShAddr]['ConfigSource'] = '8043'
+            if not configSourceAvailable:  
                 if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Ep']:
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] = {}
                 if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                     self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
+
+                # Endpoint V2
+                if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
+                    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
+                if 'ClusterOut' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
+                    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterOut'] = {}
+                    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ClusterOut'][MsgDataCluster] = {}  
+                else:
+                    loggingInput( self, 'Debug', "[%s]    NEW OBJECT: %s we keep DeviceConf info" %('-',MsgDataShAddr), MsgDataShAddr)
 
             if MsgDataCluster in ZCL_CLUSTERS_LIST:
                 loggingInput( self, 'Status', "[%s]       NEW OBJECT: %s Cluster Out %s: %s (%s)" %('-', MsgDataShAddr, i, MsgDataCluster, ZCL_CLUSTERS_LIST[MsgDataCluster]))
@@ -1252,9 +1270,6 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
     if self.ListOfDevices[MsgDataShAddr]['Status'] != "inDB" :
         self.ListOfDevices[MsgDataShAddr]['Status'] = "8043"
         self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
-    else:
-        updSQN( self, MsgDataShAddr, MsgDataSQN)
-
 
     loggingPairing( self, 'Debug', "Decode8043 - Processed " + MsgDataShAddr + " end results is : " + str(self.ListOfDevices[MsgDataShAddr]) )
     return
@@ -1299,38 +1314,52 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
         receiveZigateEpList( self, MsgDataEpCount, MsgDataEPlist)
         return
 
-    if DeviceExist(self, Devices, MsgDataShAddr) == False:
+    if not DeviceExist(self, Devices, MsgDataShAddr):
         #Pas sur de moi, mais si le device n'existe pas, je vois pas pkoi on continuerait
         Domoticz.Error("Decode8045 - KeyError : MsgDataShAddr = " + MsgDataShAddr)
         return
-    else :
-        if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
-            self.ListOfDevices[MsgDataShAddr]['Status']="8045"
-        else :
-            updSQN( self, MsgDataShAddr, MsgDataSQN)
-            
-        i=0
-        while i < 2 * int(MsgDataEpCount,16) :
-            tmpEp = MsgDataEPlist[i:i+2]
-            if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(tmpEp) :
-                self.ListOfDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
-            if self.pluginconf.pluginConf['capturePairingInfos']:
-                self.DiscoveryDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
-            loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Active Endpoint Response Ep: %s RSSI: %s" %( '-', MsgDataShAddr, tmpEp, int(MsgRSSI,16)))
-            i += 2
 
-        self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16))     # Store the number of EPs
+    if self.ListOfDevices[MsgDataShAddr]['Status'] == 'inDB':
+        # This should not happen
+        return
+
+    self.ListOfDevices[MsgDataShAddr]['Status']="8045"
+
+    updSQN( self, MsgDataShAddr, MsgDataSQN)
+    updRSSI( self, MsgDataShAddr, MsgRSSI )
+    
+    i=0
+    while i < 2 * int(MsgDataEpCount,16) :
+        tmpEp = MsgDataEPlist[i:i+2]
+        if not self.ListOfDevices[MsgDataShAddr]['Ep'].get(tmpEp) :
+            self.ListOfDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
+
+            # Endpoint v2, we store Ccluster In and Cluster Out
+            self.ListOfDevices[MsgDataShAddr]['Epv2'] = {}
+            self.ListOfDevices[MsgDataShAddr]['Epv2']['ClusterIn'] = {}
+            self.ListOfDevices[MsgDataShAddr]['Epv2']['ClusterOut'] = {}
+
         if self.pluginconf.pluginConf['capturePairingInfos']:
-            self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
+            self.DiscoveryDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
+        loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Active Endpoint Response Ep: %s RSSI: %s" %( '-', MsgDataShAddr, tmpEp, int(MsgRSSI,16)))
+        i += 2
 
-        for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
-            loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
-            sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
-        if self.ListOfDevices[MsgDataShAddr]['Status']!="inDB" :
-            self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
-            self.ListOfDevices[MsgDataShAddr]['Status'] = "0043"
+    self.ListOfDevices[MsgDataShAddr]['NbEp'] =  str(int(MsgDataEpCount,16))     # Store the number of EPs
+    if self.pluginconf.pluginConf['capturePairingInfos']:
+        self.DiscoveryDevices[MsgDataShAddr]['NbEp'] = MsgDataEpCount
 
-        loggingPairing( self, 'Debug', "Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
+    for iterEp in self.ListOfDevices[MsgDataShAddr]['Ep']:
+        loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Request Simple Descriptor for Ep: %s" %( '-', MsgDataShAddr, iterEp))
+        sendZigateCmd(self,"0043", str(MsgDataShAddr)+str(iterEp))
+
+    if self.ListOfDevices[MsgDataShAddr]['Status'] != '8045' :
+        loggingInput( self, 'Log', "[%s] NEW OBJECT: %s/%s receiving 0x8043 while in status: %s" 
+            %( '-', MsgDataShAddr, tmpEp, self.ListOfDevices[MsgDataShAddr]['Status']))
+
+    self.ListOfDevices[MsgDataShAddr]['Heartbeat'] = "0"
+    self.ListOfDevices[MsgDataShAddr]['Status'] = "0043"
+
+    loggingPairing( self, 'Debug', "Decode8045 - Device : " + str(MsgDataShAddr) + " updated ListofDevices with " + str(self.ListOfDevices[MsgDataShAddr]['Ep']) )
 
     return
 
