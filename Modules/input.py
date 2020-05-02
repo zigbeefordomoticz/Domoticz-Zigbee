@@ -1151,17 +1151,15 @@ def Decode8043(self, Devices, MsgData, MsgRSSI) : # Reception Simple descriptor 
 
     loggingInput( self, 'Status', "[%s] NEW OBJECT: %s Simple Descriptor Response EP: 0x%s RSSI: %s" %('-', MsgDataShAddr, MsgDataEp, int(MsgRSSI,16)))
 
-    # Endpoint V2
+    # Endpoint V2 (ProfileID and ZDeviceID)
     if 'Epv2' not in self.ListOfDevices[MsgDataShAddr]:
         # This should not happen. We are receiving 0x8043 while not 0x8045
         self.ListOfDevices[MsgDataShAddr]['Epv2'] = {}
     if MsgDataEp not in self.ListOfDevices[MsgDataShAddr]['Epv2']:
         self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp] = {}
-    if 'ProfileID' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
-        self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ProfileID'] = MsgDataProfile
-    if 'ZDeviceID' not in self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]:
-        self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
-    
+    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ProfileID'] = MsgDataProfile
+    self.ListOfDevices[MsgDataShAddr]['Epv2'][MsgDataEp]['ZDeviceID'] = MsgDataDeviceId
+
     # Endpoint V1
     if 'ProfileID' in self.ListOfDevices[MsgDataShAddr]:
         if self.ListOfDevices[MsgDataShAddr]['ProfileID'] != MsgDataProfile:
@@ -1340,8 +1338,9 @@ def Decode8045(self, Devices, MsgData, MsgRSSI) : # Reception Active endpoint re
 
             # Endpoint v2, we store Ccluster In and Cluster Out
             self.ListOfDevices[MsgDataShAddr]['Epv2'] = {}
-            self.ListOfDevices[MsgDataShAddr]['Epv2']['ClusterIn'] = {}
-            self.ListOfDevices[MsgDataShAddr]['Epv2']['ClusterOut'] = {}
+            self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp] = {}
+            self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ClusterIn'] = {}
+            self.ListOfDevices[MsgDataShAddr]['Epv2'][tmpEp]['ClusterOut'] = {}
 
         if self.pluginconf.pluginConf['capturePairingInfos']:
             self.DiscoveryDevices[MsgDataShAddr]['Ep'][tmpEp] = {}
