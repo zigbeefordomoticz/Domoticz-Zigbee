@@ -102,9 +102,9 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
                 decode = ''
             else:
                 decode = binascii.unhexlify(Attribute).decode('utf-8', errors = 'ignore')
-                decode = decode.strip('\x00')
+                decode = decode.replace('\x00', '')
                 decode = decode.strip()
-                loggingCluster( self, 'Debug', "decodeAttribute - seems errors, returning with errors ignore From: %s to >%s<" %( Attribute, decode))
+                loggingCluster( self, 'Debug', "decodeAttribute - seems errors, returning with errors ignore From: %s to >%s<" %( str(Attribute), str(decode)))
 
         # Cleaning
         decode = decode.strip('\x00')
@@ -279,10 +279,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         if self.pluginconf.pluginConf['capturePairingInfos'] and MsgSrcAddr in self.DiscoveryDevices:
             self.DiscoveryDevices[MsgSrcAddr]['Manufacturer']=str(decodeAttribute( self, MsgAttType, MsgClusterData) )
 
-    elif MsgAttrID=="0005":  # We receive a Model Name
-        if MsgClusterData == '':
-            return
-            
+    elif MsgAttrID=="0005" and MsgClusterData != '':  # We receive a Model Name
         # Remove Null Char
         idx = 0
         for byt in MsgClusterData:
