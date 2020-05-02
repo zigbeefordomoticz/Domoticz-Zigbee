@@ -2193,7 +2193,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if IEEEExist( self, MsgIEEE ):
             # we are getting a dupplicate. Most-likely the Device is existing and we have to reconnect.
             if not DeviceExist(self, Devices, MsgSrcAddr,MsgIEEE):
-                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: % -> %s " 
+                loggingPairing( self, 'Error', "Decode004d - Paranoia .... NwkID: %s, IEEE: %s -> %s " 
                         %(MsgSrcAddr, MsgIEEE, str(self.ListOfDevices[MsgSrcAddr])))
                 return
 
