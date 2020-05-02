@@ -331,6 +331,30 @@ def updSQN( self, key, newSQN) :
     self.ListOfDevices[key]['SQN'] = newSQN
     return
 
+def updRSSI( self, key, RSSI):
+
+    if key not in self.ListOfDevices:
+        return
+
+    if 'RSSI' not in self.ListOfDevices[ key ]:
+        self.ListOfDevices[ key ]['RSSI'] = {}
+        
+    if RSSI == '00':
+        return
+    
+    if is_hex( RSSI ): # Check if the RSSI is Correct
+
+        self.ListOfDevices[ key ]['RSSI'] = int( RSSI, 16)
+
+        if 'RollingRSSI' not in self.ListOfDevices[ key ]:
+           self.ListOfDevices[ key ]['RollingRSSI'] = []   
+
+        if len(self.ListOfDevices[key]['RollingRSSI']) > 10:
+            del self.ListOfDevices[key]['RollingRSSI'][0]
+        self.ListOfDevices[ key ]['RollingRSSI'].append( int(RSSI, 16))
+
+    return
+
 #### Those functions will be use with the new DeviceConf structutre
 
 def getTypebyCluster( self, Cluster ) :
