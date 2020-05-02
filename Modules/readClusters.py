@@ -294,7 +294,7 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         AttrModelName = decodeAttribute( self, MsgAttType, MsgClusterData[0:idx], handleErrors=True)  # In case there is an error while decoding then return ''
 
         # Continue Cleanup and remove '/'
-        modelName = AttrModelName.strip('/')
+        modelName = AttrModelName.replace('/','')
 
         if modelName  in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
             # Manage the Aqara Bulb mode or not
