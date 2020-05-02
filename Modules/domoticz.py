@@ -1384,8 +1384,12 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         rssi = round((SignalLvl * 12) / 255)
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
 
-    if BatteryLvl == '' or (not isinstance(BatteryLvl, int)):
+    if BatteryLvl == ''or not isinstance( BatteryLvl, int):
         BatteryLvl = 255
+
+    elif isinstance(BatteryLvl, float):
+        BatteryLvl = round( BatteryLvl)
+
     else:
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " BatteryLevel = " + str(BatteryLvl), self.IEEE2NWK[Devices[Unit].DeviceID])
 

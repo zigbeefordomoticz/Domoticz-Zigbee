@@ -44,7 +44,7 @@ def voltage2batteryP( voltage, volt_max, volt_min):
         ValueBattery = 0
     else: 
         ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
-    return ValueBattery
+    return round(ValueBattery)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
@@ -803,14 +803,15 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = battRemainPer
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in BATTERY_200PERCENT:
-                value = battRemainPer / 2
+                value = round(battRemainPer / 2)
 
     elif battRemainingVolt != 0: 
         max_voltage = 30 ; min_voltage = 27
         if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             if '0036' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
                 if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != {} and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != '':
-                    battery_voltage_threshold = int(str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036']))/10
+                    battery_voltage_threshold = round(int(str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036']))/10)
+                    
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
                 max_voltage = 30 ; min_voltage = 25
