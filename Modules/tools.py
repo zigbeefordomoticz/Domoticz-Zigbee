@@ -22,7 +22,6 @@ from Modules.database import WriteDeviceList
 
 def is_hex(s):
 
-    # Should be replaced by string.hexdigits
     hex_digits = set("0123456789abcdefABCDEF")
     for char in s:
         if not (char in hex_digits):
