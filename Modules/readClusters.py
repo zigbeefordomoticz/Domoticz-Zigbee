@@ -65,7 +65,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
     elif int(AttType,16) == 0x22:   # ZigBee_24BitUint
             return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
     elif int(AttType,16) == 0x23:   # 32BitUint
-            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
+            loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
     elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
