@@ -2471,7 +2471,7 @@ def Cluster000f( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                         value = '%02x' %0
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0102', value)
 
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch w/o neutral' ):
+                elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Dimmer switch wo neutral' ):
                     MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', MsgClusterData)
 
                 elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'Micromodule switch'):
