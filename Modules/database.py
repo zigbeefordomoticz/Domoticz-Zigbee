@@ -448,6 +448,13 @@ def CheckDeviceList(self, key, val) :
                 # Patching unitialize Model to empty
                 if attribute == 'Model' and self.ListOfDevices[key][ attribute ] == {}:
                     self.ListOfDevices[key][ attribute ] = ''
+                # If Model has a '/', just strip it as we strip it from now
+                if attribute == 'Model':
+                    OldModel = self.ListOfDevices[key][ attribute ]
+                    self.ListOfDevices[key][ attribute ] = self.ListOfDevices[key][ attribute ].strip('/')
+                    if OldModel != self.ListOfDevices[key][ attribute ]:
+                        Domoticz.Status("Model adjustement during import from %s to %s"
+                            %(OldModel,self.ListOfDevices[key][ attribute ] ))
 
         self.ListOfDevices[key]['Health'] = ''
 
