@@ -271,8 +271,6 @@ def importDeviceConfV2( self ):
 
                 try:
                     device_model_name = model_device.rsplit('.',1)[0]
-                    if device_model_name == 'Dimmer switch wo neutral':
-                        device_model_name = 'Dimmer switch w/o neutral'
     
                     if device_model_name not in self.DeviceConf:
                         loggingDatabase( self, "Debug", "--> Config for %s/%s" %( str(brand), str(device_model_name)))
@@ -355,108 +353,118 @@ def CheckDeviceList(self, key, val) :
             loggingDatabase( self, 'Status', "Not Loading %s as Status: %s" %( key, DeviceListVal['Status']))
             return
 
-    if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')) == False :
+    if Modules.tools.DeviceExist(self, key, DeviceListVal.get('IEEE','')):
+        return
+        
+    if key == '0000':
+        self.ListOfDevices[ key ] = {}
+        self.ListOfDevices[ key ]['Status'] = ''
+    else:
+        Modules.tools.initDeviceInList(self, key)
 
-        if key == '0000':
-            self.ListOfDevices[ key ] = {}
-            self.ListOfDevices[ key ]['Status'] = ''
-        else:
-            Modules.tools.initDeviceInList(self, key)
+    self.ListOfDevices[key]['RIA']="10"
 
-        self.ListOfDevices[key]['RIA']="10"
+    # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
+    ZIGATE_ATTRIBUTES = {
+            'Version',
+            'ZDeviceName',
+            'Ep',
+            'IEEE',
+            'LogicalType',
+            'PowerSource',
+            'Neighbours',
+            }
 
-        # List of Attribnutes that will be Loaded from the deviceList-xx.txt database
-        ZIGATE_ATTRIBUTES = {
-                'Version',
-                'ZDeviceName',
-                'Ep',
-                'IEEE',
-                'LogicalType',
-                'PowerSource',
-                'Neighbours',
-                }
+    MANDATORY_ATTRIBUTES = ( 'App Version', 
+            'Attributes List', 
+            'Bind', 
+            'WebBind',
+            'Capability'
+            'ColorInfos', 
+            'ClusterType', 
+            'ConfigSource',
+            'DeviceType', 
+            'Ep', 
+            'HW Version', 
+            'Heartbeat', 
+            'IAS',
+            'Location', 
+            'LogicalType', 
+            'MacCapa', 
+            'Manufacturer', 
+            'Manufacturer Name', 
+            'Model', 
+            'NbEp',
+            'OTA',
+            'PowerSource', 
+            'ProfileID', 
+            'ReceiveOnIdle', 
+            'Stack Version', 
+            'RIA', 
+            'SWBUILD_1', 
+            'SWBUILD_2', 
+            'SWBUILD_3', 
+            'Stack Version', 
+            'Status', 
+            'Type',
+            'Version', 
+            'ZCL Version', 
+            'ZDeviceID', 
+            'ZDeviceName')
 
-        MANDATORY_ATTRIBUTES = ( 'App Version', 
-                'Attributes List', 
-                'Bind', 
-                'WebBind',
-                'Capability'
-                'ColorInfos', 
-                'ClusterType', 
-                'ConfigSource',
-                'DeviceType', 
-                'Ep', 
-                'HW Version', 
-                'Heartbeat', 
-                'IAS',
-                'Location', 
-                'LogicalType', 
-                'MacCapa', 
-                'Manufacturer', 
-                'Manufacturer Name', 
-                'Model', 
-                'NbEp',
-                'OTA',
-                'PowerSource', 
-                'ProfileID', 
-                'ReceiveOnIdle', 
-                'Stack Version', 
-                'RIA', 
-                'SWBUILD_1', 
-                'SWBUILD_2', 
-                'SWBUILD_3', 
-                'Stack Version', 
-                'Status', 
-                'Type',
-                'Version', 
-                'ZCL Version', 
-                'ZDeviceID', 
-                'ZDeviceName')
+    # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
+    BUILD_ATTRIBUTES = (
+            'Battery', 
+            'ConfigureReporting',
+            'Last Cmds',
+            'Neighbours',
+            'ReadAttributes', 
+            'RSSI',
+            'SQN', 
+            'Stamp', 
+            'Health')
 
-        # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
-        BUILD_ATTRIBUTES = (
-                'Battery', 
-                'ConfigureReporting',
-                'Last Cmds',
-                'Neighbours',
-                'ReadAttributes', 
-                'RSSI',
-                'SQN', 
-                'Stamp', 
-                'Health')
+    MANUFACTURER_ATTRIBUTES = (
+            'Legrand', 'Schneider', 'Lumi' )
 
-        MANUFACTURER_ATTRIBUTES = (
-                'Legrand', 'Schneider', 'Lumi' )
+    if self.pluginconf.pluginConf['resetPluginDS']:
+        loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
+        IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
 
-        if self.pluginconf.pluginConf['resetPluginDS']:
-            loggingDatabase( self, 'Status', "Reset Build Attributes for %s" %DeviceListVal['IEEE'])
-            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES))
-
-        elif key == '0000':
-            # Reduce the number of Attributes loaded for Zigate
-            loggingDatabase( self, 'Debug', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
-            IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
-            loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
-        else:
-            loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
-            IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
-
+    elif key == '0000':
+        # Reduce the number of Attributes loaded for Zigate
+        loggingDatabase( self, 'Debug', "CheckDeviceList - Zigate (IEEE)  = %s Load Zigate Attributes" %DeviceListVal['IEEE'])
+        IMPORT_ATTRIBUTES = list(set(ZIGATE_ATTRIBUTES))
         loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
-        for attribute in IMPORT_ATTRIBUTES:
-            if attribute in DeviceListVal:
-                self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
-                # Patching unitialize Model to empty
-                if attribute == 'Model' and self.ListOfDevices[key][ attribute ] == {}:
-                    self.ListOfDevices[key][ attribute ] = ''
+    else:
+        loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = %s Load Full Attributes" %DeviceListVal['IEEE'])
+        IMPORT_ATTRIBUTES = list(set(MANDATORY_ATTRIBUTES + BUILD_ATTRIBUTES + MANUFACTURER_ATTRIBUTES))
 
-        self.ListOfDevices[key]['Health'] = ''
+    loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
+    for attribute in IMPORT_ATTRIBUTES:
+        if attribute not in DeviceListVal:
+            continue
 
-        if 'IEEE' in DeviceListVal:
-            self.ListOfDevices[key]['IEEE'] = DeviceListVal['IEEE']
-            loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) , key)
-            if  DeviceListVal['IEEE']:
-                IEEE = DeviceListVal['IEEE']
-                self.IEEE2NWK[IEEE] = key
-            else :
-                loggingDatabase( self, 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
+        self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]
+        # Patching unitialize Model to empty
+        if attribute == 'Model' and self.ListOfDevices[key][ attribute ] == {}:
+            self.ListOfDevices[key][ attribute ] = ''
+        # If Model has a '/', just strip it as we strip it from now
+        if attribute == 'Model':
+            OldModel = self.ListOfDevices[key][ attribute ]
+            self.ListOfDevices[key][ attribute ] = self.ListOfDevices[key][ attribute ].replace('/', '')
+            if OldModel != self.ListOfDevices[key][ attribute ]:
+                Domoticz.Status("Model adjustement during import from %s to %s"
+                    %(OldModel,self.ListOfDevices[key][ attribute ] ))
+
+    self.ListOfDevices[key]['Health'] = ''
+
+    if 'IEEE' in DeviceListVal:
+        self.ListOfDevices[key]['IEEE'] = DeviceListVal['IEEE']
+        loggingDatabase( self, 'Debug', "CheckDeviceList - DeviceID (IEEE)  = " + str(DeviceListVal['IEEE']) + " for NetworkID = " +str(key) , key)
+        if  DeviceListVal['IEEE']:
+            IEEE = DeviceListVal['IEEE']
+            self.IEEE2NWK[IEEE] = key
+        else :
+            loggingDatabase( self, 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
