@@ -2159,14 +2159,14 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
                     return
    
-        if self.pluginconf.pluginConf['ExpDeviceAnnoucement2'] and 'Main Powered' in deviceMacCapa:
-            if 'Health' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
-                    loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live RSSI: %s" \
-                            %(MsgSrcAddr, MsgRSSI), MsgSrcAddr)
-                    timeStamped( self, MsgSrcAddr , 0x004d)
-                    lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
-                    return
+        #if self.pluginconf.pluginConf['ExpDeviceAnnoucement2'] and 'Main Powered' in deviceMacCapa:
+        #    if 'Health' in self.ListOfDevices[MsgSrcAddr]:
+        #        if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
+        #            loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 2: droping packet for %s due to Main Powered and Live RSSI: %s" \
+        #                    %(MsgSrcAddr, MsgRSSI), MsgSrcAddr)
+        #            timeStamped( self, MsgSrcAddr , 0x004d)
+        #            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+        #            return
 
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
             loggingInput( self, 'Log', "        -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
