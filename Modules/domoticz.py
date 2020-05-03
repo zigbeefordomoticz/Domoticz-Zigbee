@@ -960,21 +960,24 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(percent_value)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
+        if ClusterType in ( 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
 
+            AutoUpdate = False
             if DeviceType in SWITCH_LVL_MATRIX:
                 if value in SWITCH_LVL_MATRIX[ DeviceType ]:
-                    if len(SWITCH_LVL_MATRIX[ DeviceType ][ value] ) == 2:
-                        nValue, sValue = SWITCH_LVL_MATRIX[ DeviceType ][ value ]
-                        _ForceUpdate =  SWITCH_LVL_MATRIX[ DeviceType ]['ForceUpdate']
-                        loggingWidget( self, "Debug", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID)
-                        UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
-                    else:
-                        loggingWidget( self, "Error", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
+                    AutoUpdate = True
+                    
+            if AutoUpdate:
+                if len(SWITCH_LVL_MATRIX[ DeviceType ][ value] ) == 2:
+                    nValue, sValue = SWITCH_LVL_MATRIX[ DeviceType ][ value ]
+                    _ForceUpdate =  SWITCH_LVL_MATRIX[ DeviceType ]['ForceUpdate']
+                    loggingWidget( self, "Debug", "Switch update DeviceType: %s with %s" %(DeviceType, str(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID)
+                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
                 else:
-                    loggingWidget( self, "Error", "MajDomoDevice - value: %s not found in SWITCH_LVL_MATRIX[ %s ]" %(value, DeviceType), NWKID ) 
+                    loggingWidget( self, "Error", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
 
             elif DeviceType == "DSwitch":
                 # double switch avec EP different 
