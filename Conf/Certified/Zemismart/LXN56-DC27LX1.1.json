@@ -1,0 +1,24 @@
+{
+	"Ep": {
+		"0b": {
+			"0000": "",
+			"0003": "",
+			"0004": "",
+			"0005": "",
+            "0006": "",
+            "0008": "",
+			"Type": "LvlControl"
+		}
+	},
+	"Type": "",
+	"ClusterToBind": [ "0006", "0008", "0019" ],
+	"ConfigureReporting": {
+		"0006": {"Attributes": { "0000": {"DataType": "10", "MinInterval":"0001", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}},
+		"0008": {"Attributes": { "0000": {"DataType": "20", "MinInterval":"0005", "MaxInterval":"012C", "TimeOut":"0258","Change":"01"}}}
+    },
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007" ],
+		"0006": [ "0000" ],
+		"0008": [ "0000" ] 
+	}
+}
