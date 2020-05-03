@@ -1964,8 +1964,13 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             loggingCluster( self, 'Debug', "cube action: Not expected value %s" %value , MsgSrcAddr)
         return value
 
-    loggingCluster( self, 'Debug', "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s"
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+
+    _modelName = self.ListOfDevices[MsgSrcAddr]['Model']
+
+    loggingCluster( self, 'Debug', "readCluster - %s - %s/%s - MsgAttrID: %s MsgAttType: %s MsgAttSize: %s MsgClusterData: %s Model: %s"
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName), MsgSrcAddr)
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -1974,13 +1979,13 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
 
-    if self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):
-        # Hanlding Message from the Aqara Opple Switch 2,4,6 buttons
+
+    # Hanlding Message from the Aqara Opple Switch 2,4,6 buttons
+    if _modelName in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01'):    
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
         AqaraOppleDecoding0012(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgClusterData)
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.remote.b1acn01', \
-                                                    'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
+    elif _modelName in ( 'lumi.remote.b1acn01', 'lumi.remote.b186acn01', 'lumi.remote.b286acn01'):
         # 0 -> Hold
         # 1 -> Short Release
         # 2 -> Double press
@@ -1988,9 +1993,12 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug',"ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
         if value == 0: value = 3
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
+
+        # Force ClusterType Switch in order to behave as Switch
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
+        # Store the value in Cluster 0x0006 (as well)
         if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
         if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] , dict):
@@ -1999,11 +2007,15 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = value
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_switch.aq3'):
+    elif _modelName in ( 'lumi.sensor_switch.aq3', ):
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
-        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    # Force ClusterType Switch in order to behave as 
+ 
+         # Store the value in Cluster 0x0006 (as well)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
+
+        # Store the value in Cluster 0x0006 (as well)
         if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
         if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] , dict):
@@ -2012,12 +2024,12 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = value
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.ctrl_ln2.aq1'):
+    elif _modelName in ( 'lumi.ctrl_ln2.aq1', ):
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara lumi.ctrl_ln2.aq1: EP: %s Attr: %s Value: %s " %(MsgSrcEp,MsgAttrID, value), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
-    elif self.ListOfDevices[MsgSrcAddr]['Model'] in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube'):
+    elif _modelName in ( 'lumi.sensor_cube.aqgl01', 'lumi.sensor_cube'):
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId,cube_decode(MsgClusterData) )
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = cube_decode(MsgClusterData)
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(MsgClusterData)) , MsgSrcAddr)
