@@ -2171,13 +2171,12 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
         # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
-            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 15:
+            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'][0] + 15:
                 # Looks like we have a duplicate Device Announced in less than 15s
                 loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
                 return
 
-
-        self.ListOfDevices[MsgSrcAddr]['Announced'] = now 
+        self.ListOfDevices[MsgSrcAddr]['Announced'] = ( now , MsgRejoinFlag, newShortId, MsgSrcAddr)
       
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
