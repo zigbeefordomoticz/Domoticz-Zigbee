@@ -2162,25 +2162,27 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
                     return
 
+        if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
+            loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
+                %(MsgSrcAddr, MsgRejoinFlag, MsgRSSI), MsgSrcAddr)
+            timeStamped( self, MsgSrcAddr , 0x004d)
+            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+            return
+
         # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
             if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 15:
                 # Looks like we have a duplicate Device Announced in less than 15s
                 loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
                 return
+
+
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now 
       
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
             loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
             self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
-          
-        if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
-            loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
-                    %(MsgSrcAddr, MsgRejoinFlag, MsgRSSI), MsgSrcAddr)
-            timeStamped( self, MsgSrcAddr , 0x004d)
-            lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
-            return
 
         timeStamped( self, MsgSrcAddr , 0x004d)
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
