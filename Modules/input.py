@@ -107,7 +107,7 @@ def ZigateRead(self, Devices, Data):
         MsgData=""
         MsgRSSI=""
 
-    loggingInput( self, 'Debug', "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s; RSSI: %s" \
+    loggingInput( self, 'Debug2', "ZigateRead - MsgType: %s, MsgLength: %s, MsgCRC: %s, Data: %s; RSSI: %s" \
             %( MsgType, MsgLength, MsgCRC, MsgData, MsgRSSI) )
 
     if MsgType in DECODERS:
@@ -2215,15 +2215,20 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     self.iaszonemgt.IASWD_enroll( MsgSrcAddr, tmpep)
                 break
 
-        if  self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
-                                            'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
-            loggingInput( self, 'Debug', "---> Calling enableOppleSwitch %s" %MsgSrcAddr, MsgSrcAddr)
-            enableOppleSwitch( self, MsgSrcAddr)
+
+
+
+
             
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
-    
+
+        if  self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
+                                        'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+            loggingInput( self, 'Log', "---> Calling enableOppleSwitch %s" %MsgSrcAddr, MsgSrcAddr)
+            enableOppleSwitch( self, MsgSrcAddr)
+   
         # As we are redo bind, we need to redo the Configure Reporting
         if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
             del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
