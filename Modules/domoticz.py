@@ -1375,10 +1375,9 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
     return
 
-
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
 
-    loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s_%s:%s_%s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+    loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     # SignalLvl max is 12
     # Battery Level 255 means Main Powered device
@@ -1387,14 +1386,15 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         rssi = round((SignalLvl * 12) / 255)
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
 
-    if BatteryLvl == ''or not isinstance( BatteryLvl, int):
+    if BatteryLvl == '' or not isinstance( BatteryLvl, int):
+        loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
         BatteryLvl = 255
 
     elif isinstance(BatteryLvl, float):
+        loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
         BatteryLvl = round( BatteryLvl)
 
-    else:
-        loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " BatteryLevel = " + str(BatteryLvl), self.IEEE2NWK[Devices[Unit].DeviceID])
+    loggingWidget( self, "Debug", "UpdateDevice_v2 for : %s BatteryLevel: %s RSSI: %s" %( Devices[Unit].Name, BatteryLvl, rssi))
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
     if (Unit in Devices):
@@ -1412,7 +1412,6 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
             else:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue),               SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
     return
-
 
 def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
  
