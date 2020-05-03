@@ -2176,12 +2176,12 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             return
 
         # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
-        if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
-            if 'TimeStamp' in self.ListOfDevices[MsgSrcAddr]['Announced']:
-                if  now < self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] + 15:
-                    # Looks like we have a duplicate Device Announced in less than 15s
-                    loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
-                    return
+        #if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
+        #    if 'TimeStamp' in self.ListOfDevices[MsgSrcAddr]['Announced']:
+        #        if  now < self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] + 15:
+        #            # Looks like we have a duplicate Device Announced in less than 15s
+        #            loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
+        #            return
 
         self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
 
