@@ -211,9 +211,9 @@ SWITCH_LVL_MATRIX = {
 
     "DButton_3": {
         "ForceUpdate": True, 
-        "LevelNames": "Off|Left Click|Left Double Clink|Left Long Click|Right Click|Right Double Click|Right Long Click|Both Click|Both Double Click|Both Long Click",
+        "LevelNames": "Off|Left click|Left Double click|Left Long click|Right click|Right Double Click|Right Long click|Both click|Both Double click|Both Long click",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Click  Gauche|Double CliCk Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"}
+            "fr-FR": {"LevelNames": "Arrêt|Click Gauche|Double click Gauche|Long Click Gauche|Click Droit|Double Click Droit|Long Click Droit|Click des 2|Double Click des 2|Long Click des 2"}
         }
     },
 
