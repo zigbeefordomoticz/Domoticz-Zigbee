@@ -2101,23 +2101,30 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingInput( self, 'Debug', "Decode004D - Already known device %s with status: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Status']), MsgSrcAddr)
             return
 
+    newShortId = False
+    if MsgIEEE in self.IEEE2NWK:
+        # This device is known
+        newShortId = ( self.IEEE2NWK[ MsgIEEE ] != MsgSrcAddr )
+
+    # Decode Device Capabiities
     deviceMacCapa = list(decodeMacCapa( MsgMacCapa ))
 
     now = time()
 
+    # In case the MsgRejoinFlag is not provided upstream,
     if MsgRejoinFlag not in REJOIN_NETWORK:
         MsgRejoinFlag = '99'
 
     if MsgSrcAddr in self.ListOfDevices:
         if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
-            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s" \
-                    %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+            loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s ChangeShortID: %s " \
+                    %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ))
         else:
-            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" \
-                    %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
+                    %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId))
     else:
-        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" \
-                %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16)))
+        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
+                %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ) )
 
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
 
@@ -2126,13 +2133,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # ############
         # Device exist, Reconnection has been done by DeviceExist()
         #
-        loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s" %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), MsgSrcAddr)
+        loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId), MsgSrcAddr)
 
         # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
             if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 15:
                 # Looks like we have a duplicate Device Announced in less than 15s
-                loggingInput( self, 'Log', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
+                loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
                 return
 
         self.ListOfDevices[MsgSrcAddr]['Announced'] = now
