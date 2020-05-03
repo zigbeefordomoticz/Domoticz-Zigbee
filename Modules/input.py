@@ -2142,7 +2142,13 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # ############
         # Device exist, Reconnection has been done by DeviceExist()
         #
+ 
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId), MsgSrcAddr)
+        if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
+            self.ListOfDevices[MsgSrcAddr]['Announced'] = {}
+
+        self.ListOfDevices[MsgSrcAddr]['Announced']['Rejoin'] = MsgRejoinFlag
+        self.ListOfDevices[MsgSrcAddr]['Announced']['newShortId'] = newShortId
 
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement1'] and MsgRejoinFlag == '99':
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
@@ -2171,13 +2177,14 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
 
         # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
-            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'][0] + 15:
-                # Looks like we have a duplicate Device Announced in less than 15s
-                loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
-                return
+            if 'TimeStamp' in self.ListOfDevices[MsgSrcAddr]['Announced']:
+                if  now < self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] + 15:
+                    # Looks like we have a duplicate Device Announced in less than 15s
+                    loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
+                    return
 
-        self.ListOfDevices[MsgSrcAddr]['Announced'] = ( now , MsgRejoinFlag, newShortId, MsgSrcAddr)
-      
+        self.ListOfDevices[MsgSrcAddr]['Announced']['TimeStamp'] = now
+
         # If this is a rejoin after a leave, let's update the Status
         if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
             loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
