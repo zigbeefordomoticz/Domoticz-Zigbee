@@ -21,7 +21,7 @@ from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
 from Modules.bindings import rebind_Clusters
 from Modules.livolo import livolo_bind
-from Modules.lumi import AqaraOppleDecoding
+from Modules.lumi import AqaraOppleDecoding, enableOppleSwitch
 from Modules.configureReporting import processConfigureReporting
 from Modules.schneider_wiser import schneider_wiser_registration, schneiderReadRawAPS
 from Modules.errorCodes import DisplayStatusCode
@@ -2215,6 +2215,11 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     self.iaszonemgt.IASWD_enroll( MsgSrcAddr, tmpep)
                 break
 
+        if  self.ListOfDevices[MsgSrcAddr]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
+                                            'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+            loggingInput( self, 'Debug', "---> Calling enableOppleSwitch %s" %MsgSrcAddr, MsgSrcAddr)
+            enableOppleSwitch( self, MsgSrcAddr)
+            
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
             rebind_Clusters( self, MsgSrcAddr)
