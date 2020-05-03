@@ -766,6 +766,9 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 
+    XIAOMI_BATTERY_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01', 
+                               'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
+                               'lumi.sen_ill.mgl01')
 
     BATTERY_200PERCENT = ( "SML001" , " RWL021", "SPZB0001", "WarningDevice" , "SmokeSensor-N", "SMOK_V16", "RH3001" ,"TS0201" )
     BATTERY_3VOLTS = ( "lumi.sen_ill.mgl01", "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
@@ -774,11 +777,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     BATTERY_30_VOLTS = ( "3AFE130104020015", "3AFE140103020000", "3AFE14010402000D", "3AFE170100510001" ) + LEGRAND_REMOTES
     BATTERY_45_VOLTS = ( 'EH-ZB-RTS' ,)
 
-    BATTERY_BASED_DEVICES = BATTERY_200PERCENT + BATTERY_3VOLTS + BATTERY_15_VOLTS + BATTERY_30_VOLTS + BATTERY_45_VOLTS + \
-                            ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01', 
-                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
-                                'lumi.sen_ill.mgl01')
-
+    BATTERY_BASED_DEVICES = BATTERY_200PERCENT + BATTERY_3VOLTS + BATTERY_15_VOLTS + BATTERY_30_VOLTS + BATTERY_45_VOLTS + XIAOMI_BATTERY_DEVICES
+                            
     if self.ListOfDevices[ MsgSrcAddr ]['PowerSource'] == 'Main' or self.ListOfDevices[ MsgSrcAddr]['MacCapa'] in( '84' , '8e'):
         # There is hack to be done here, as they are some devices which are Battery based and are annouced as 0x84 !
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
@@ -800,12 +800,6 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0020'])
     if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
         battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0021'])
-
-
-
-
-
-
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
