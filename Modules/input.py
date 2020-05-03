@@ -2147,7 +2147,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['Announced'] = {}
 
-        self.ListOfDevices[MsgSrcAddr]['Announced']['Rejoin'] = MsgRejoinFlag
+        self.ListOfDevices[MsgSrcAddr]['Announced']['Rejoin'] = str(MsgRejoinFlag)
         self.ListOfDevices[MsgSrcAddr]['Announced']['newShortId'] = newShortId
 
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement1'] and MsgRejoinFlag == '99':
@@ -2214,11 +2214,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                         %( MsgSrcAddr), MsgSrcAddr)
                     self.iaszonemgt.IASWD_enroll( MsgSrcAddr, tmpep)
                 break
-
-
-
-
-
             
         if self.pluginconf.pluginConf['allowReBindingClusters']:
             loggingInput( self, 'Debug', "Decode004D - Request rebind clusters for %s" %( MsgSrcAddr), MsgSrcAddr)
