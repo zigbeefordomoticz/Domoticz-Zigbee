@@ -2120,10 +2120,10 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             loggingPairing( self, 'Status', "Device Announcement: %s(%s, %s) Join Flag: %s RSSI: %s ChangeShortID: %s " \
                     %( self.ListOfDevices[MsgSrcAddr]['ZDeviceName'], MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ))
         else:
-            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" \
+            loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
                     %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId))
     else:
-        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s" \
+        loggingPairing( self, 'Status', "Device Announcement Addr: %s, IEEE: %s Join Flag: %s RSSI: %s ChangeShortID: %s" \
                 %( MsgSrcAddr, MsgIEEE, REJOIN_NETWORK[ MsgRejoinFlag ], int(MsgRSSI,16), newShortId ) )
 
     loggingMessages( self, '004D', MsgSrcAddr, MsgIEEE, MsgRSSI, None)
