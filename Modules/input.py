@@ -2085,6 +2085,15 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
             MacCapa.append('NwkAddr need to be allocated')
         return MacCapa
 
+    # When receiving a Device Annoucement the Rejoin Flag can give us some information
+    # 0x00 The device was not on the network. 
+    #      Most-likely it has been reset, and all Unbind, Bind , Report, must be redone
+    # 0x01 The device was on the Network, but change its route
+    #      the devie was not reset
+    # 0x02, 0x03 The device was on the network and coming back. 
+    #       Here we can assumed the device was not reset.
+    # 0x99  We have no clue !
+
     REJOIN_NETWORK = {
             '00': '0x00 - join a network through association',
             '01': '0x01 - joining directly or rejoining the network using the orphaning procedure',
@@ -2135,15 +2144,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         #
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId), MsgSrcAddr)
 
-        # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
-        if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
-            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 15:
-                # Looks like we have a duplicate Device Announced in less than 15s
-                loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
-                return
-
-        self.ListOfDevices[MsgSrcAddr]['Announced'] = now
-
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement1'] and MsgRejoinFlag == '99':
             if 'Health' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Health'] == 'Live':
@@ -2162,6 +2162,19 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
                     return
 
+        # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
+        if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
+            if  now < self.ListOfDevices[MsgSrcAddr]['Announced'] + 15:
+                # Looks like we have a duplicate Device Announced in less than 15s
+                loggingInput( self, 'Debug', "Decode004D - Duplicate Device Annoucement for %s -> Drop" %( MsgSrcAddr), MsgSrcAddr)
+                return
+        self.ListOfDevices[MsgSrcAddr]['Announced'] = now 
+      
+        # If this is a rejoin after a leave, let's update the Status
+        if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
+            loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
+            self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
+          
         if self.pluginconf.pluginConf['ExpDeviceAnnoucement3'] and MsgRejoinFlag in ( '01', '02' ):
             loggingInput( self, 'Log', "   -> ExpDeviceAnnoucement 3: drop packet for %s due to  Rejoining network as %s, RSSI: %s" \
                     %(MsgSrcAddr, MsgRejoinFlag, MsgRSSI), MsgSrcAddr)
@@ -2172,24 +2185,17 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         timeStamped( self, MsgSrcAddr , 0x004d)
         lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
 
+        # If we reach this stage we are in a case of a Device Reset, or
+        # we have no evidence and so will do the same
+
         # Reset the device Hearbeat, This should allow to trigger Read Request
         self.ListOfDevices[MsgSrcAddr]['Heartbeat'] = 0
 
-        # If this is a rejoin after a leave, let's update the Status
-        if self.ListOfDevices[MsgSrcAddr]['Status'] == 'Left':
-            loggingInput( self, 'Debug', "Decode004D -  %s Status from Left to inDB" %( MsgSrcAddr), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['Status'] = 'inDB'
-
-        # Redo the binding if allow
-        if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-            if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
-                    # If Remote Legrand skip, but do req Battery infos
-                    loggingInput( self, 'Debug', "Decode004D - Legrand remote, no rebind, just exit" , MsgSrcAddr)
-                    ReadAttributeRequest_0001( self,  MsgSrcAddr)   # Refresh battery
-                    return
-
         for tmpep in self.ListOfDevices[MsgSrcAddr]['Ep']:
+            if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][tmpep]:
+                # We take the opportunity to retreive Battery
+                ReadAttributeRequest_0001( self,  MsgSrcAddr)   # Refresh battery
+
             if '0500' in self.ListOfDevices[MsgSrcAddr]['Ep'][tmpep]:
                 # We found a Cluster 0x0500 IAS. May be time to start the IAS Zone process
                 loggingInput( self, 'Debug', "Decode004D - IAS Zone controler setting %s" \
@@ -2208,12 +2214,12 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # As we are redo bind, we need to redo the Configure Reporting
         if 'ConfigureReporting' in self.ListOfDevices[MsgSrcAddr]:
             del self.ListOfDevices[MsgSrcAddr]['ConfigureReporting']
+
         processConfigureReporting( self, NWKID=MsgSrcAddr )
 
         # Let's take the opportunity to trigger some request/adjustement / NOT SURE IF THIS IS GOOD/IMPORTANT/NEEDED
         loggingInput( self, 'Debug', "Decode004D - Request attribute 0x0000 %s" %( MsgSrcAddr), MsgSrcAddr)
         ReadAttributeRequest_0000( self,  MsgSrcAddr)
-        ReadAttributeRequest_0001( self,  MsgSrcAddr)
         sendZigateCmd(self,"0042", str(MsgSrcAddr) )
 
         # Let's check if this is a Schneider Wiser
