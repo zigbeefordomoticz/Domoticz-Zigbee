@@ -2133,7 +2133,7 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # ############
         # Device exist, Reconnection has been done by DeviceExist()
         #
-        loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]), newShortId, MsgSrcAddr)
+        loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId), MsgSrcAddr)
 
         # If we got a recent Annoucement in the last 15 secondes, then we drop the new one
         if 'Announced' in  self.ListOfDevices[MsgSrcAddr]:
