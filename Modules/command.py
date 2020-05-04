@@ -331,11 +331,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
             if Level in CONTRACT_MODE:
-                loggingCommand( self, 'Log', "mgtCommand : -----> Contract Power : %s - %s" %(Level, CONTRACT_MODE[ Level ]), NWKID)
+                loggingCommand( self, 'Log', "mgtCommand : -----> Contract Power : %s - %s KVA" %(Level, CONTRACT_MODE[ Level ]), NWKID)
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-BMS':
                         self.ListOfDevices[NWKID]['Schneider Wiser']['Contract Power'] = CONTRACT_MODE[ Level ]
-                        schneider_set_contract( self, NWKID,  CONTRACT_MODE[ Level ] )
+                        schneider_set_contract( self, NWKID, EPout, CONTRACT_MODE[ Level ] )
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
