@@ -2058,7 +2058,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         maccap = int(maccap,16)
         alternatePANCOORDInator = (maccap & 0b00000001)
         deviceType              = (maccap & 0b00000010) >> 1
-        deviceType              = (maccap & 0b00000010) >> 1
         powerSource             = (maccap & 0b00000100) >> 2
         receiveOnIddle          = (maccap & 0b00001000) >> 3
         securityCap             = (maccap & 0b01000000) >> 6
