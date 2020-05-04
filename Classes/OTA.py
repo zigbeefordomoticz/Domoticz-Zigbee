@@ -269,7 +269,7 @@ class OTAManagement(object):
 
         if self.pluginconf.pluginConf['forceOTAUpgrade']:
             forceVersion = headers['image_version'] + self.pluginconf.pluginConf['forceOTAMask']
-            self.logging( 'Log', "Forcing update for Image: 0x%08X from Version: 0x%08X to Version: %s" 
+            self.logging( 'Log', "----> Forcing update for Image: 0x%s from Version: 0x%08X to Version: 0x%08X" 
                 %( image, headers['image_version'], forceVersion))
             headers['image_version'] = forceVersion
 
