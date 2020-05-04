@@ -267,7 +267,7 @@ class OTAManagement(object):
             else:
                 self.logging( 'Debug', "ota_decode_new_image - %21s : 0x%X " %(x,headers[x]))
 
-        if self.pluginconf.pluginConf['forceFirmwareUpgrade']:
+        if self.pluginconf.pluginConf['forceOTAUpgrade']:
             forceVersion = headers['image_version'] + self.pluginconf.pluginConf['forceOTAMask']
             self.logging( 'Log', "Forcing update for Image: %s from Version: %s to Version: %s" 
                 %( image, headers['image_version'], forceVersion))
