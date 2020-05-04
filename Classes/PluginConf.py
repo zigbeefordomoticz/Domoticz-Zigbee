@@ -113,6 +113,8 @@ SETTINGS = {
 
             #Over The Air Upgrade
         'OverTheAirUpgrade': { 'Order': 7, 'param': {
+                'forceOTAUpgrade': { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
+                'forceOTAMask': { 'type':'hex', 'default':0x00050000 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':True},
                 'batteryOTA':  { 'type':'bool', 'default':0 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                 'waitingOTA':  { 'type':'int', 'default':3600 , 'current': None, 'restart':True , 'hidden':False, 'Advanced':False},
                 'OTAwait4nextImage': { 'type':'int', 'default':60 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
