@@ -40,7 +40,7 @@ def debugDevices( self, Devices, Unit):
     Domoticz.Log("       LastLevel: %s" %Devices[Unit].LastLevel)
     Domoticz.Log("       LastUpdate: %s" %Devices[Unit].LastUpdate)
 
-    # Type, Subtype, Switchtype
+# Type, Subtype, Switchtype
 DEVICE_SWITCH_MATRIX = {
     ( 242,  1,   ): ('ThermoSetpoint', 'TempSetCurrent'),
 
@@ -72,7 +72,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if ( deviceType, deviceSubType, deviceSwitchType ) in DEVICE_SWITCH_MATRIX:
         domoticzType = DEVICE_SWITCH_MATRIX[ ( deviceType, deviceSubType, deviceSwitchType ) ] 
-        loggingCommand( self, "Log", "DeviceType: %s" %str( domoticzType ), NWKID)
+        loggingCommand( self, "Log", "--------->  DeviceType: %s" %str( domoticzType ), NWKID)
 
     loggingCommand( self, 'Debug', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
         %(NWKID, Unit , Devices[Unit].Name, deviceSwitchType, Command, Level, Color ), NWKID)
@@ -89,25 +89,25 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if isinstance(BatteryLevel, float):
         # Looks like sometime we got a float instead of int.
         # in that case convert to int
-        loggingCommand( self, "Debug", "mgtCommand for %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        loggingCommand( self, "Debug", "--------->   BatteryLvl rounded")
         BatteryLevel = round( BatteryLevel)
 
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
-        loggingCommand( self, "Debug", "mgtCommand for %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        loggingCommand( self, "Debug", "--------->   BatteryLvl set to 255" )
         BatteryLevel = 255
 
     # Now we have to identify the Endpoint to be use for that command
     # inputs are : Device.ID
     # From the Device.ID we can extract the DeviceType 
 
-    # Determine the possible ClusterType for that Device
+    # Retreive the possible ClusterType for that Device from the ClusterType entry in each Endpoint of the device.
     DeviceTypeList = []
-    newFashon = True
+    pragmaTypeV3 = True
     if 'ClusterType' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['ClusterType'] != {}:
             DeviceTypeList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
-            newFashon = False
-    if newFashon:
+            pragmaTypeV3 = False
+    if pragmaTypeV3:
         for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
             if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                 for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
@@ -116,10 +116,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                         DeviceTypeList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
     
     if len(DeviceTypeList) == 0 :    # No match with ClusterType
+        # Should not happen. We didn't find any Widget references in the Device ClusterType!
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    loggingCommand( self, 'Debug', "mgtCommand - List of TypeName : " +str(DeviceTypeList) , NWKID)
+    loggingCommand( self, 'Debug', "--------->    ClusterType founds: %s" %( DeviceTypeList), NWKID)
+
     # We have list of DeviceType, let's see which one are matching Command style
 
     ClusterSearch = ''
