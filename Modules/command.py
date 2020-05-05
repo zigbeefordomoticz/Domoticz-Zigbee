@@ -50,7 +50,7 @@ DEVICE_SWITCH_MATRIX = {
     ( 241,  8,  7): ('ColorControlWW',),
 
     ( 244, 62, 18): ('Switch Selector',), 
-    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' 'SwitchButton', 'Water', 'Plug'),
+    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' , 'SwitchButton', 'Water', 'Plug'),
     ( 244, 73,  5): ('Smoke',),
     ( 244, 73,  7): ('LvlControl',),
     ( 244, 73,  9): ('Button',),
@@ -115,7 +115,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                     if str(Devices[Unit].ID) == str(key) :
                         loggingCommand( self, "Debug", "--------->   ++ found ( %s, %s)" %( tmpEp, self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key] ))
-                        loggingCommand( self, 'Debug', "mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  , NWKID)
+                        #loggingCommand( self, 'Debug', "mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  , NWKID)
                         DeviceTypeList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
                         ClusterTypeList.append( ( tmpEp, self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]) )
     
@@ -124,78 +124,85 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( DeviceTypeList), NWKID)
+    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
 
-    # We have list of DeviceType, let's see which one are matching Command style
+    if len(ClusterTypeList) == 1 and ClusterTypeList[0][0] != '00':
+        # One element found, we have Endpoint and Devicetype
+        EPout , ClusterType = ClusterTypeList[0]
+        loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , ClusterType), NWKID)
+        # Sanity Check
+    
+    else:
+        # We have list of DeviceType, let's see which one are matching Command style
 
-    ClusterSearch = ''
-    DeviceType = ''
-    forceUpdateDev = False
-    for tmpDeviceType in DeviceTypeList :
-        if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton', 'Toggle'):
-            forceUpdateDev = True
+        ClusterSearch = ''
+        DeviceType = ''
+        forceUpdateDev = False
+        for tmpDeviceType in DeviceTypeList :
+            if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton', 'Toggle'):
+                forceUpdateDev = True
 
-        if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
-            ClusterSearch="0006"
-            DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'Venetian', 'VenetianInverted', "WindowCovering"):
-            ClusterSearch = '0102'
-            DeviceType = tmpDeviceType
-        if tmpDeviceType == 'BSO':
-            ClusterSearch = 'fc21'
-            DeviceType = tmpDeviceType
-        if tmpDeviceType =="LvlControl" :
-            ClusterSearch="0008"
-            DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
-            ClusterSearch="0300"
-            DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS'):
-            ClusterSearch = '0201'
-            DeviceType = tmpDeviceType
-        if tmpDeviceType == 'TempSetCurrent' :
-            ClusterSearch = '0402'
-            DeviceType = tmpDeviceType
-        if tmpDeviceType == 'Motion':
-            ClusterSearch = '0406'
-            DeviceType = tmpDeviceType
-        if tmpDeviceType == "AlarmWD":
-            ClusterSearch = '0502'
-            DeviceType = tmpDeviceType
-        if tmpDeviceType in ( 'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower'):
-            DeviceType = tmpDeviceType
+            if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
+                ClusterSearch="0006"
+                DeviceType = tmpDeviceType
+            if tmpDeviceType in ( 'Venetian', 'VenetianInverted', "WindowCovering"):
+                ClusterSearch = '0102'
+                DeviceType = tmpDeviceType
+            if tmpDeviceType == 'BSO':
+                ClusterSearch = 'fc21'
+                DeviceType = tmpDeviceType
+            if tmpDeviceType =="LvlControl" :
+                ClusterSearch="0008"
+                DeviceType = tmpDeviceType
+            if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
+                ClusterSearch="0300"
+                DeviceType = tmpDeviceType
+            if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS'):
+                ClusterSearch = '0201'
+                DeviceType = tmpDeviceType
+            if tmpDeviceType == 'TempSetCurrent' :
+                ClusterSearch = '0402'
+                DeviceType = tmpDeviceType
+            if tmpDeviceType == 'Motion':
+                ClusterSearch = '0406'
+                DeviceType = tmpDeviceType
+            if tmpDeviceType == "AlarmWD":
+                ClusterSearch = '0502'
+                DeviceType = tmpDeviceType
+            if tmpDeviceType in ( 'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower'):
+                DeviceType = tmpDeviceType
 
-    if DeviceType == '' and self.pluginconf.pluginConf['forcePassiveWidget']:
-        if tmpDeviceType in ( "DButton_3", "SwitchAQ3") :
-            loggingCommand( self, 'Debug', "mgtCommand - forcePassiveWidget")
-            ClusterSearch="0006"
-            DeviceType = "Switch"
+        if DeviceType == '' and self.pluginconf.pluginConf['forcePassiveWidget']:
+            if tmpDeviceType in ( "DButton_3", "SwitchAQ3") :
+                loggingCommand( self, 'Debug', "mgtCommand - forcePassiveWidget")
+                ClusterSearch="0006"
+                DeviceType = "Switch"
 
-    if DeviceType == '':
-        Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
-        return
+        if DeviceType == '':
+            Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
+            return
 
-    loggingCommand( self, 'Debug', "--------->   DeviceType : " +str(DeviceType) , NWKID)
+        loggingCommand( self, 'Debug', "--------->   DeviceType : " +str(DeviceType) , NWKID)
 
-    # A ce stade ClusterSearch est connu
-    EPin="01"
-    EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
-    # We have now the DeviceType, let's look for the corresponding EP
-    if 'ClusterType' in self.ListOfDevices[NWKID]:
-        for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-            if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-                EPout=tmpEp
-    else :
-        for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-            if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-                if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                    for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
-                        if str(Devices[Unit].ID) == str(key) :
-                            loggingCommand( self, 'Debug', "--------->   Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
-                            EPout = tmpEp
+        # A ce stade ClusterSearch est connu
+        EPin="01"
+        EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
+        # We have now the DeviceType, let's look for the corresponding EP
+        if 'ClusterType' in self.ListOfDevices[NWKID]:
+            for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+                if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
+                    EPout=tmpEp
+        else :
+            for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
+                if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
+                    if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
+                        for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
+                            if str(Devices[Unit].ID) == str(key) :
+                                loggingCommand( self, 'Debug', "--------->   Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
+                                EPout = tmpEp
 
-    loggingCommand( self, 'Debug', "--------->   Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
-        %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ),NWKID )  
+        loggingCommand( self, 'Debug', "--------->   Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
+            %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ),NWKID )  
 
 
     profalux = False
