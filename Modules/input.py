@@ -2145,6 +2145,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId), MsgSrcAddr)
         if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['Announced'] = {}
+        if not isinstance( self.ListOfDevices[MsgSrcAddr]['Announced'] , dict):
+            self.ListOfDevices[MsgSrcAddr]['Announced'] = {}
 
         self.ListOfDevices[MsgSrcAddr]['Announced']['Rejoin'] = str(MsgRejoinFlag)
         self.ListOfDevices[MsgSrcAddr]['Announced']['newShortId'] = newShortId
