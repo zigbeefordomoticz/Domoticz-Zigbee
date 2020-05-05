@@ -375,5 +375,14 @@ SWITCH_LVL_MATRIX = {
     "Language": {
         "fr-FR": {"Off|BT 1 Click|BT 1 Long|BT 1 Release|BT 2 Click|BT 2 Long|BT 2 Release|BT 3 Click|BT 3 Long|BT 3 Release|BT 4 Click|BT 4 Long|BT 4 Release"}
         }
+    },
+
+    "Alarm": {
+        '00': ( 0, "No Alert"),
+        '01': ( 1, "Level 1"),
+        '02': ( 2, "Level 2"),
+        '03': ( 3, "Level 3"),
+        '04': ( 4, "Critical"), 
+        "ForceUpdate": True,
     }
 }
