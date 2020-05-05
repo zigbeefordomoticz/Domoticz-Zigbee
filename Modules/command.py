@@ -35,7 +35,7 @@ def debugDevices( self, Devices, Unit):
     Domoticz.Log("       DeviceId: %s" %Devices[Unit].DeviceID)
     Domoticz.Log("       Type: %s" %Devices[Unit].Type)
     Domoticz.Log("       Subtype: %s" %Devices[Unit].SubType)
-    Domoticz.Log("       Switchtype: %s" %Devices[Unit].Switchtype)
+    Domoticz.Log("       SwitchType: %s" %Devices[Unit].SwitchType)
     Domoticz.Log("       Options: %s" %Devices[Unit].Options)
     Domoticz.Log("       LastLevel: %s" %Devices[Unit].LastLevel)
     Domoticz.Log("       LastUpdate: %s" %Devices[Unit].LastUpdate)
