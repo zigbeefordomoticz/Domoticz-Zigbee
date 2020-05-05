@@ -79,10 +79,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     deviceSwitchType = Devices[Unit].SwitchType
 
     if ( deviceType, deviceSubType, deviceSwitchType ) in DEVICE_SWITCH_MATRIX:
-        Domoticz.Log("DeviceType: %s" %str(DEVICE_SWITCH_MATRIX[ ( deviceType, deviceSubType, deviceSwitchType ) ]))
+        domoticzType = DEVICE_SWITCH_MATRIX[ ( deviceType, deviceSubType, deviceSwitchType ) ] 
+        loggingCommand( self, "Log", "DeviceType: %s" %str( domoticzType ), NWKID)
 
     loggingCommand( self, 'Debug', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
-        %(NWKID, Unit , Devices[Unit].Name, SwitchType, Command, Level, Color ), NWKID)
+        %(NWKID, Unit , Devices[Unit].Name, deviceSwitchType, Command, Level, Color ), NWKID)
   
     # SignalLvl max is 12
     SignalLevel = self.ListOfDevices[NWKID]['RSSI']
