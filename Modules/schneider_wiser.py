@@ -22,6 +22,8 @@ import Modules.domoticz
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
 
+SCHNEIDER_BASE_EP = '0b'
+
 
 def pollingSchneider( self, key ):
 
@@ -93,10 +95,7 @@ def schneider_wiser_registration( self, Devices, key ):
     self.SchneiderZone = None
     importSchneiderZoning (self)
     
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
+    EPout = SCHNEIDER_BASE_EP
 
     if 'Model' not in self.ListOfDevices[key]:
         Domoticz.Error("Undefined Model, registration !!!")
@@ -109,8 +108,8 @@ def schneider_wiser_registration( self, Devices, key ):
     Hattribute = "%04x" %0xe050
     data_type = "10" # Bool
     data = "%02x" %True
-    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / Endpoint : %s, cluster: %s, attribute: %s type: %s"
+            %(key,data,EPout,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS': # Thermostat
@@ -191,6 +190,15 @@ def schneider_wiser_registration( self, Devices, key ):
         loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+
+    if self.ListOfDevices[key]['Model'] == 'EH-ZB-BMS': # Thermostat
+        cluster_id = "%04x" %0x0009
+        value = '00'
+        loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
+                %(key,EPout,cluster_id,value), nwkid=key)
+        Modules.domoticz.MajDomoDevice(self, Devices, key, EPout, cluster_id, value)
+
 
     # Write Location to 0x0000/0x5000 for all devices
     manuf_id = "0000"
@@ -275,7 +283,7 @@ def schneider_fip_mode( self, key, mode):
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
             if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '03':
+                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '83':
                     setFIPModeRequired = False
 
     if setFIPModeRequired:
@@ -298,11 +306,46 @@ def schneider_fip_mode( self, key, mode):
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
+def schneider_check_and_set_bind (self, key):
+    loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : %s " %key )
+
+    Cluster_bind1 = '0201'
+    Cluster_bind2 = '0402'
+    if self.SchneiderZone is not None:
+        for zone in self.SchneiderZone:
+            if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
+                for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                    srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
+                    targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+                    loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
+
+                    if 'ZoneBinded' in self.ListOfDevices[key] and \
+                        hact in self.ListOfDevices[key]['ZoneBinded'] and \
+                        Cluster_bind1 in self.ListOfDevices[key]['ZoneBinded'][hact] and \
+                        Cluster_bind2 in self.ListOfDevices[key]['ZoneBinded'][hact] :
+                            continue
+                    if 'ZoneBinded' not in self.ListOfDevices[key]:
+                        self.ListOfDevices[key]['ZoneBinded'] = {}
+                    if hact not in self.ListOfDevices[key]['ZoneBinded']:
+                        self.ListOfDevices[key]['ZoneBinded'][hact] = {}
+                    self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
+                    self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
+                    datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+                    datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+
+                    datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+                    datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+
+
 def schneider_setpoint_thermostat( self, key, setpoint):
 
     # SetPoint is in centidegrees
 
-    EPout = '0b'
+    EPout = SCHNEIDER_BASE_EP
     ClusterID = '0201'
     attr = '0012'
     NWKID = key
@@ -322,13 +365,15 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                     self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
     importSchneiderZoning(self)
 
-    for zone in self.SchneiderZone:
-        loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
-        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
-            loggingSchneider( self, 'Debug', "schneider_setpoint - found %s " %zone )
-            for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-                loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
-                schneider_setpoint_actuator(self, hact, setpoint)
+    if self.SchneiderZone is not None:
+        schneider_check_and_set_bind (self, key)
+        for zone in self.SchneiderZone:
+            loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
+            if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
+                loggingSchneider( self, 'Debug', "schneider_setpoint - found %s " %zone )
+                for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                    loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
+                    schneider_setpoint_actuator(self, hact, setpoint)
 
 
 def schneider_setpoint_actuator( self, key, setpoint):
@@ -341,6 +386,12 @@ def schneider_setpoint_actuator( self, key, setpoint):
 
     cluster_frame = '11'
     sqn = '00'
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
     if 'SQN' in self.ListOfDevices[key]:
         if self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '':
             sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
@@ -352,15 +403,21 @@ def schneider_setpoint_actuator( self, key, setpoint):
     self.ListOfDevices[key]['Schneider']['Target SetPoint'] = setpoint
     self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
 
+    # Make sure that we are in FIP Mode
+    setSetpointModeRequired = True
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
+                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '82': # 02 becomes 82 , 00 becomes, 03 becomes 83
+                    setSetpointModeRequired = False
+
+    if setSetpointModeRequired:
+        schneider_thermostat_behaviour( self, key, 'setpoint')
+
     setpoint = '%04X' %setpoint
     zone = '01'
 
     payload = cluster_frame + sqn + cmd + '00' + zone + setpoint[2:4] + setpoint[0:2] + 'ff'
-
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
 
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
@@ -548,14 +605,21 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
     loggingSchneider( self, 'Debug', "Schneider schneiderAlarmReceived start:%s, AlertCode: %s, AlertClusterID: %s" \
             %(start, AlertCode,AlertClusterId), NWKID)
 
+    cluster_id = "%04x" %0x0009
+    if (start):
+        value = '04'
+    else:
+        value = '00'
+
+    loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
+            %(NWKID,srcEp,cluster_id,value), NWKID)
+    Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
 
 def schneider_set_contract( self, key, EPout, kva):
     """
     Configure the schneider device to report an alarm when consumption is above a threshold in miliamps
     """
 
-    EPout = '0b' #pipiche - help - I cant find the ep that the domoticz device is coming from
-    kva = 1
     POWER_FACTOR = 0.92
     max_real_power_in_kwh = kva * 1000 * POWER_FACTOR
     max_real_amps = max_real_power_in_kwh / 235
@@ -570,14 +634,12 @@ def schneider_set_contract( self, key, EPout, kva):
     AttributeID = '5121' # Max Current
     DataType = '22' # 24 bits unsigned integer
     data = "%06x" %max_real_milli_amps_before_tripping
-
-    Modules.output.write_attribute(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
+    Modules.output.write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
     AttributeID = '7003' # Contract Name
     DataType = '42' # String
     data = 'BASE'.encode('utf-8').hex()  # BASE
-
-    Modules.output.write_attribute(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
+    Modules.output.write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
     """
@@ -603,10 +665,10 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     elif ClusterID == '0009': # Alarm cluster
         if cmd == '00': #start of alarm
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
-            schneiderAlarmReceived (self, srcNWKID, srcEp, ClusterID, sqn, True, data)
+            schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, True, data)
         elif cmd == '50': #end of alarm
             loggingSchneider( self, 'Debug','Schneider cmd 0x50',srcNWKID)
-            schneiderAlarmReceived (self, srcNWKID, srcEp, ClusterID, sqn, False, data)
+            schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, False, data)
 
 
     loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
