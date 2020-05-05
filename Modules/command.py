@@ -44,17 +44,13 @@ def debugDevices( self, Devices, Unit):
 DEVICE_SWITCH_MATRIX = {
 
     ( 244, 62, 18): ('Switch Selector',),
-    ( 243, 22,  0): ('Alarm',),
     ( 242,  1,   ): ('ThermoSetpoint', 'TempSetCurrent'),
-    ( 244, 73, 11): ('Door' ,),
-    ( 244, 73,  8): ('Motion',),
-    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' 'SwitchButton'),
+    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' 'SwitchButton', 'Water', 'Plug'),
     ( 244, 73,  5): ('Smoke',),
     ( 246,  1,  0): ('Lux',),
     ( 244, 73,  9): ('Button',),
     ( 243, 31,   ): ('Strenght',),
     ( 243, 19,   ): ('Orientation',),
-    ( 244, 73,  0): ('Water', 'Plug'),
     ( 250,  1,  1): ('P1Meter',),
     ( 244, 73, 15): ('VenetianInverted', 'Venetian'),
     ( 244, 73, 13): ('BSO',),
