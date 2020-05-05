@@ -970,7 +970,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
-            loggingWidget( self, "Debug", "Generic Widget for %s ClusterType: %s DeviceType: %s " %(NWKID, DeviceType, ClusterType ), NWKID)
+            loggingWidget( self, "Debug", "Generic Widget for %s ClusterType: %s DeviceType: %s Value: %s" %(NWKID, DeviceType, ClusterType , value), NWKID)
             
             AutoUpdate = False
             if DeviceType in SWITCH_LVL_MATRIX:
