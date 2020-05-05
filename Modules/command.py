@@ -42,25 +42,21 @@ def debugDevices( self, Devices, Unit):
 
     # Type, Subtype, Switchtype
 DEVICE_SWITCH_MATRIX = {
-
-    ( 244, 62, 18): ('Switch Selector',),
     ( 242,  1,   ): ('ThermoSetpoint', 'TempSetCurrent'),
-    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' 'SwitchButton', 'Water', 'Plug'),
-    ( 244, 73,  5): ('Smoke',),
-    ( 246,  1,  0): ('Lux',),
-    ( 244, 73,  9): ('Button',),
-    ( 243, 31,   ): ('Strenght',),
-    ( 243, 19,   ): ('Orientation',),
-    ( 250,  1,  1): ('P1Meter',),
-    ( 244, 73, 15): ('VenetianInverted', 'Venetian'),
-    ( 244, 73, 13): ('BSO',),
-    ( 244, 73, 16): ('BlindInverted','WindowCovering'),
-    ( 244, 73,  7): ('LvlControl',),
+
     ( 241,  2,  7): ('ColorControlRGB',),
     ( 241,  4,  7): ('ColorControlRGBWW',),
     ( 241,  7,  7): ('ColorControlFull',),
-    ( 241,  8,  7): ('ColorControlWW',)
+    ( 241,  8,  7): ('ColorControlWW',),
 
+    ( 244, 62, 18): ('Switch Selector',), 
+    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' 'SwitchButton', 'Water', 'Plug'),
+    ( 244, 73,  5): ('Smoke',),
+    ( 244, 73,  7): ('LvlControl',),
+    ( 244, 73,  9): ('Button',),
+    ( 244, 73, 13): ('BSO',),
+    ( 244, 73, 15): ('VenetianInverted', 'Venetian'),
+    ( 244, 73, 16): ('BlindInverted','WindowCovering'),
 }
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
