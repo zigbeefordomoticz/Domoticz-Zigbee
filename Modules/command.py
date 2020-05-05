@@ -40,15 +40,46 @@ def debugDevices( self, Devices, Unit):
     Domoticz.Log("       LastLevel: %s" %Devices[Unit].LastLevel)
     Domoticz.Log("       LastUpdate: %s" %Devices[Unit].LastUpdate)
 
+    # Type, Subtype, Switchtype
+DEVICE_SWITCH_MATRIX = {
+
+    ( 244, 62, 18): ('Switch Selector',),
+    ( 243, 22,  0): ('Alarm',),
+    ( 242,  1,   ): ('ThermoSetpoint', 'TempSetCurrent'),
+    ( 244, 73, 11): ('Door' ,),
+    ( 244, 73,  8): ('Motion',),
+    ( 244, 73,  0): ('Switch', '' 'LivoloSWL', 'LivoloSWR' 'SwitchButton'),
+    ( 244, 73,  5): ('Smoke',),
+    ( 246,  1,  0): ('Lux',),
+    ( 244, 73,  9): ('Button',),
+    ( 243, 31,   ): ('Strenght',),
+    ( 243, 19,   ): ('Orientation',),
+    ( 244, 73,  0): ('Water', 'Plug'),
+    ( 250,  1,  1): ('P1Meter',),
+    ( 244, 73, 15): ('VenetianInverted', 'Venetian'),
+    ( 244, 73, 13): ('BSO',),
+    ( 244, 73, 16): ('BlindInverted','WindowCovering'),
+    ( 244, 73,  7): ('LvlControl',),
+    ( 241,  2,  7): ('ColorControlRGB',),
+    ( 241,  4,  7): ('ColorControlRGBWW',),
+    ( 241,  7,  7): ('ColorControlFull',),
+    ( 241,  8,  7): ('ColorControlWW',)
+
+}
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     if Devices[Unit].DeviceID not in self.IEEE2NWK:
         Domoticz.Error("mgtCommand - something strange the Device %s DeviceID: %s Unknown" %(Devices[Unit].Name, Devices[Unit].DeviceID))
         return
-    debugDevices( self, Devices, Unit)
+
     NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
-    SwitchType = Devices[Unit].SwitchType
+    deviceType = Devices[Unit].Type
+    deviceSubType = Devices[Unit].SubType
+    deviceSwitchType = Devices[Unit].SwitchType
+
+    if ( deviceType, deviceSubType, deviceSwitchType ) in DEVICE_SWITCH_MATRIX:
+        Domoticz.Log("DeviceType: %s" %str(DEVICE_SWITCH_MATRIX[ ( deviceType, deviceSubType, deviceSwitchType ) ]))
 
     loggingCommand( self, 'Debug', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
         %(NWKID, Unit , Devices[Unit].Name, SwitchType, Command, Level, Color ), NWKID)
