@@ -377,7 +377,7 @@ SWITCH_LVL_MATRIX = {
         }
     },
 
-    "Alert": {
+    "Alarm": {
         '00': ( 0, "No Alert"),
         '01': ( 1, "Level 1"),
         '02': ( 2, "Level 2"),
