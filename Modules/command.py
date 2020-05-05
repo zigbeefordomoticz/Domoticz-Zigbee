@@ -127,9 +127,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
 
     if len(ClusterTypeList) == 1 and ClusterTypeList[0][0] != '00':
-        # One element found, we have Endpoint and Devicetype
-        EPout , ClusterType = ClusterTypeList[0]
-        loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , ClusterType), NWKID)
+        # One element found, we have Endpoint and DevicetypeÒ
+        EPout , DeviceType = ClusterTypeList[0]
+        loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , DeviceType), NWKID)
         # Sanity Check
     
     else:
