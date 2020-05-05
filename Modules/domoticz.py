@@ -967,7 +967,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
         if ClusterType in ( 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
-                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
+                            'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare', 'Button_3'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
             loggingWidget( self, "Debug", "Generic Widget for %s ClusterType: %s DeviceType: %s " %(NWKID, DeviceType, ClusterType ), NWKID)
@@ -985,6 +985,20 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= _ForceUpdate) 
                 else:
                     loggingWidget( self, "Error", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
+
+            #elif DeviceType == "Button_3":  # boutton simple 3 states
+            #    state = ''
+            #    if int(value) == 1:
+            #        state = '10'
+            #    elif int(value) == 2:
+            #        state = '20'
+            #    elif int(value) == 3:
+            #        state = '30'
+            #    else:
+            #        value = 0
+            #        state = '00'
+            #    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
+            #                    ForceUpdate_=True)
 
             elif DeviceType == "DSwitch":
                 # double switch avec EP different 
