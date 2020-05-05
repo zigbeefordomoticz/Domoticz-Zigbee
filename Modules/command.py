@@ -82,7 +82,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     rssi = 12
     if isinstance(SignalLevel, int):
         rssi = round((SignalLevel * 12) / 255)
-        loggingCommand( self, "Debug", "mgtCommand for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
+        loggingCommand( self, "Debug", "--------->   RSSI level %s " %rssi)
   
     # Battery Level 255 means Main Powered device
     BatteryLevel = self.ListOfDevices[NWKID]['Battery']
@@ -102,18 +102,22 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
     # Retreive the possible ClusterType for that Device from the ClusterType entry in each Endpoint of the device.
     DeviceTypeList = []
+    ClusterTypeList = []
     pragmaTypeV3 = True
     if 'ClusterType' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['ClusterType'] != {}:
-            DeviceTypeList.append(self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
+            DeviceTypeList.append( self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
+            ClusterTypeList.append( ('00', self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]) )
             pragmaTypeV3 = False
     if pragmaTypeV3:
         for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
             if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                 for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                     if str(Devices[Unit].ID) == str(key) :
+                        loggingCommand( self, "Debug", "--------->   ++ found ( %s, %s)" %( tmpEp, self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key] ))
                         loggingCommand( self, 'Debug', "mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  , NWKID)
                         DeviceTypeList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
+                        ClusterTypeList.append( ( tmpEp, self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]) )
     
     if len(DeviceTypeList) == 0 :    # No match with ClusterType
         # Should not happen. We didn't find any Widget references in the Device ClusterType!
