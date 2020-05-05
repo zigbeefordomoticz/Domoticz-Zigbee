@@ -66,6 +66,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         return
 
     NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
+    loggingCommand( self, 'Debug', "mgtCommand (%s) Devices[%s].Name: %s Command: %s Level: %s Color: %s" 
+        %(NWKID, Unit , Devices[Unit].Name, Command, Level, Color ), NWKID)
+  
+
     deviceType = Devices[Unit].Type
     deviceSubType = Devices[Unit].SubType
     deviceSwitchType = Devices[Unit].SwitchType
@@ -74,9 +78,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         domoticzType = DEVICE_SWITCH_MATRIX[ ( deviceType, deviceSubType, deviceSwitchType ) ] 
         loggingCommand( self, "Log", "--------->  DeviceType: %s" %str( domoticzType ), NWKID)
 
-    loggingCommand( self, 'Debug', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
-        %(NWKID, Unit , Devices[Unit].Name, deviceSwitchType, Command, Level, Color ), NWKID)
-  
     # SignalLvl max is 12
     SignalLevel = self.ListOfDevices[NWKID]['RSSI']
     rssi = 12
@@ -137,6 +138,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
     
     else:
+        Domoticz.Error("THIS IS A CASE PIPICHE IS LOOKING FOR")
+        loggingCommand( self, 'Error', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
+        %(NWKID, Unit , Devices[Unit].Name, deviceSwitchType, Command, Level, Color ), NWKID)
+        loggingCommand( self, 'Error', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
         # We have list of DeviceType, let's see which one are matching Command style
 
         ClusterSearch = ''
