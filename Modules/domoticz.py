@@ -986,20 +986,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 else:
                     loggingWidget( self, "Error", "MajDomoDevice - len(SWITCH_LVL_MATRIX[ %s ][ %s ]) == %s" %(DeviceType,value, len(SWITCH_LVL_MATRIX[ DeviceType ])), NWKID ) 
 
-            #elif DeviceType == "Button_3":  # boutton simple 3 states
-            #    state = ''
-            #    if int(value) == 1:
-            #        state = '10'
-            #    elif int(value) == 2:
-            #        state = '20'
-            #    elif int(value) == 3:
-            #        state = '30'
-            #    else:
-            #        value = 0
-            #        state = '00'
-            #    UpdateDevice_v2(self, Devices, x, int(value), str(state), BatteryLevel, SignalLevel,
-            #                    ForceUpdate_=True)
-
             elif DeviceType == "DSwitch":
                 # double switch avec EP different 
                 value = int(value)
@@ -1071,7 +1057,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
             
             else:
-                loggingWidget( self, "Debug", "MajDomoDevice - DeviceType: %s not found in  SWITCH_LVL_MATRIX" %( DeviceType), NWKID )
+                loggingWidget( self, "Error", "MajDomoDevice - [%s:%s] DeviceType: %s not found in  SWITCH_LVL_MATRIX, ClusterType: %s Value: %s " 
+                    %( NWKID, Ep, DeviceType, ClusterType, value), NWKID )
 
         if 'WindowCovering' in ClusterType: # 0x0102
             if DeviceType in ( 'VenetianInverted', 'Venetian', 'WindowCovering'):
@@ -1474,7 +1461,6 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
                         loggingWidget( self, "Debug",  "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                         Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
-
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     # Purpose is here just to touch the device and update the Last Seen
@@ -1598,7 +1584,6 @@ def GetType(self, Addr, Ep):
     loggingWidget(self, 'Debug', "GetType returning: %s" %Type, Addr)
 
     return Type
-
 
 def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
