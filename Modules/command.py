@@ -131,6 +131,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         EPout , DeviceType = ClusterTypeList[0]
         loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , DeviceType), NWKID)
         # Sanity Check
+        forceUpdateDev = False
         if DeviceType in SWITCH_LVL_MATRIX:
             if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
                 forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
