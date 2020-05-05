@@ -1380,19 +1380,22 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
     loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     # SignalLvl max is 12
-    # Battery Level 255 means Main Powered device
+ 
     rssi = 12
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)
         loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
 
-    if BatteryLvl == '' or not isinstance( BatteryLvl, int):
-        loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
-        BatteryLvl = 255
-
-    elif isinstance(BatteryLvl, float):
+    # Battery Level 255 means Main Powered device
+    if isinstance(BatteryLvl, float):
+        # Looks like sometime we got a float instead of int.
+        # in that case convert to int
         loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
         BatteryLvl = round( BatteryLvl)
+
+    if BatteryLvl == '' or (not isinstance(BatteryLvl, int)):
+        loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        BatteryLvl = 255
 
     loggingWidget( self, "Debug", "UpdateDevice_v2 for : %s BatteryLevel: %s RSSI: %s" %( Devices[Unit].Name, BatteryLvl, rssi))
 
