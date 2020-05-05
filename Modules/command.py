@@ -164,8 +164,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                             loggingCommand( self, 'Debug', "mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
                             EPout = tmpEp
 
-    loggingCommand( self, 'Debug' "mgtcommand - Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
-        %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ))  
+    loggingCommand( self, 'Debug', "mgtcommand - Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
+        %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ),NWKID )  
 
 
     profalux = False
