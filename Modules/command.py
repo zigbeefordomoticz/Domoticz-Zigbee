@@ -89,11 +89,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if isinstance(BatteryLevel, float):
         # Looks like sometime we got a float instead of int.
         # in that case convert to int
-        loggingCommand( self, "Debug", "--------->  BatteryLvl rounded")
+        loggingCommand( self, "Debug", "--------->   BatteryLvl rounded")
         BatteryLevel = round( BatteryLevel)
 
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
-        loggingCommand( self, "Debug", "--------->  BatteryLvl set to 255" )
+        loggingCommand( self, "Debug", "--------->   BatteryLvl set to 255" )
         BatteryLevel = 255
 
     # Now we have to identify the Endpoint to be use for that command
