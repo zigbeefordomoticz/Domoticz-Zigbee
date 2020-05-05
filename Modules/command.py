@@ -23,28 +23,58 @@ from Modules.output import sendZigateCmd, thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_thermostat_behaviour
+
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
+from Modules.widgets import SWITCH_LVL_MATRIX
+
+def debugDevices( self, Devices, Unit):
+
+    Domoticz.Log("Device Name: %s" %Devices[Unit].Name)
+    Domoticz.Log("       DeviceId: %s" %Devices[Unit].DeviceID)
+    Domoticz.Log("       Type: %s" %Devices[Unit].Type)
+    Domoticz.Log("       Subtype: %s" %Devices[Unit].SubType)
+    Domoticz.Log("       Switchtype: %s" %Devices[Unit].Switchtype)
+    Domoticz.Log("       Options: %s" %Devices[Unit].Options)
+    Domoticz.Log("       LastLevel: %s" %Devices[Unit].LastLevel)
+    Domoticz.Log("       LastUpdate: %s" %Devices[Unit].LastUpdate)
+
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
-
-    if Devices[Unit].DeviceID in self.IEEE2NWK:
-        NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
-    else :
-        Domoticz.Error("mgtCommand - something strange the Device " +str(Devices[Unit].Name) + " DeviceID : " +str(Devices[Unit].DeviceID) + " is unknown from the Plugin")
+    if Devices[Unit].DeviceID not in self.IEEE2NWK:
+        Domoticz.Error("mgtCommand - something strange the Device %s DeviceID: %s Unknown" %(Devices[Unit].Name, Devices[Unit].DeviceID))
         return
-    loggingCommand( self, 'Debug', "mgtCommand called for Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" %(Unit , Devices[Unit].Name, Devices[Unit].SwitchType, Command, Level, Color ), NWKID)
-    loggingCommand( self, 'Debug', "mgtCommand - NWKID = " +str(NWKID) , NWKID)
+    debugDevices( self, Devices, Unit)
+    NWKID = self.IEEE2NWK[Devices[Unit].DeviceID]
+    SwitchType = Devices[Unit].SwitchType
 
-    if self.ListOfDevices[NWKID]['RSSI'] != '' :
-        SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-    else : SignalLevel = 15
-    if self.ListOfDevices[NWKID]['Battery'] != '' :
-        BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-    else : BatteryLevel = 255
+    loggingCommand( self, 'Debug', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
+        %(NWKID, Unit , Devices[Unit].Name, SwitchType, Command, Level, Color ), NWKID)
+  
+    # SignalLvl max is 12
+    SignalLevel = self.ListOfDevices[NWKID]['RSSI']
+    rssi = 12
+    if isinstance(SignalLevel, int):
+        rssi = round((SignalLevel * 12) / 255)
+        loggingCommand( self, "Debug", "mgtCommand for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
+  
+    # Battery Level 255 means Main Powered device
+    BatteryLevel = self.ListOfDevices[NWKID]['Battery']
+    if isinstance(BatteryLevel, float):
+        # Looks like sometime we got a float instead of int.
+        # in that case convert to int
+        loggingCommand( self, "Debug", "mgtCommand for %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        BatteryLevel = round( BatteryLevel)
 
+    if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
+        loggingCommand( self, "Debug", "mgtCommand for %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        BatteryLevel = 255
+
+    # Now we have to identify the Endpoint to be use for that command
+    # inputs are : Device.ID
+    # From the Device.ID we can extract the DeviceType 
 
     # Determine the possible ClusterType for that Device
     DeviceTypeList = []
@@ -133,6 +163,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                         if str(Devices[Unit].ID) == str(key) :
                             loggingCommand( self, 'Debug', "mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
                             EPout = tmpEp
+
+    loggingCommand( self, 'Debug' "mgtcommand - Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
+        %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ))  
+
 
     profalux = False
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
