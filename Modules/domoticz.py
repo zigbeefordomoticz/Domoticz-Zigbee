@@ -646,8 +646,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     Domoticz.Error("MajDomoDevice - inconsistency on ClusterType. Id: %s not found in %s" \
                             %( str(ID), str(self.ListOfDevices[NWKID]['ClusterType'])))
                     return
-                loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(
-                    self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID), NWKID)
+                loggingWidget( self, "Debug", "MajDomoDevice - search ClusterType in : " + str(self.ListOfDevices[NWKID]['ClusterType']) + " for : " + str(ID), NWKID)
                 DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
                 pragmaTypeV3 = False
         #At that stage we have pragmaTypeV3 which indicate if we are post or pre V3
@@ -1388,7 +1387,6 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
     loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     # SignalLvl max is 12
- 
     rssi = 12
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)
