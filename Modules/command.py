@@ -89,11 +89,11 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if isinstance(BatteryLevel, float):
         # Looks like sometime we got a float instead of int.
         # in that case convert to int
-        loggingCommand( self, "Debug", "--------->   BatteryLvl rounded")
+        loggingCommand( self, "Debug", "--------->  BatteryLvl rounded")
         BatteryLevel = round( BatteryLevel)
 
     if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
-        loggingCommand( self, "Debug", "--------->   BatteryLvl set to 255" )
+        loggingCommand( self, "Debug", "--------->  BatteryLvl set to 255" )
         BatteryLevel = 255
 
     # Now we have to identify the Endpoint to be use for that command
@@ -120,7 +120,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    loggingCommand( self, 'Debug', "--------->    ClusterType founds: %s" %( DeviceTypeList), NWKID)
+    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( DeviceTypeList), NWKID)
 
     # We have list of DeviceType, let's see which one are matching Command style
 
@@ -171,7 +171,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
         return
 
-    loggingCommand( self, 'Debug', "mgtCommand - DeviceType : " +str(DeviceType) , NWKID)
+    loggingCommand( self, 'Debug', "--------->   DeviceType : " +str(DeviceType) , NWKID)
 
     # A ce stade ClusterSearch est connu
     EPin="01"
@@ -187,10 +187,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
                         if str(Devices[Unit].ID) == str(key) :
-                            loggingCommand( self, 'Debug', "mgtCommand : Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
+                            loggingCommand( self, 'Debug', "--------->   Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
                             EPout = tmpEp
 
-    loggingCommand( self, 'Debug', "mgtcommand - Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
+    loggingCommand( self, 'Debug', "--------->   Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
         %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ),NWKID )  
 
 
