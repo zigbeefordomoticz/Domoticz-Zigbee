@@ -373,6 +373,10 @@ def CreateDomoDevice(self, Devices, NWKID):
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Ikea Round" %(t), NWKID)
 
             # ==== Classic Widget
+            if t in ( 'Alarm', ):
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 243, Subtype_ = 22, Switchtype_= 0) 
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Alarm" %(t), NWKID)
+
             if t in ( "ThermoSetpoint", "TempSetCurrent"):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 242, Subtype_ = 1)  
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in ThermoSetPoint" %(t), NWKID)
@@ -401,6 +405,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                # Will display kWh
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "kWh") 
                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Meter" %(t), NWKID)
+
             if t == "Voltage":  
                # Voltage
                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, "Voltage")
@@ -716,6 +721,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         # it is assumed that if there is also summation provided by the device, that
         # such information is stored on the data structuture and here we will retreive it.
 
+ 
         if 'Power' in ClusterType: # Instant Power/Watts
             # value is expected as String
             if DeviceType == 'P1Meter' and Attribute_ == '0000' :
@@ -960,11 +966,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = str(percent_value)
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
 
-        if ClusterType in ( 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
+        if ClusterType in ( 'Alarm', 'Door', 'Switch', 'SwitchButton', 'AqaraOppleMiddle', 'Motion', 
                             'Ikea_Round_5b', 'Ikea_Round_OnOff', 'Vibration', 'OrviboRemoteSquare'): # Plug, Door, Switch, Button ...
             # We reach this point because ClusterType is Door or Switch. It means that Cluster 0x0006 or 0x0500
             # So we might also have to manage case where we receive a On or Off for a LvlControl DeviceType like a dimming Bulb.
-
+            loggingWidget( self, "Debug", "Generic Widget for %s ClusterType: %s DeviceType: %s " %(NWKID, DeviceType, ClusterType ), NWKID)
+            
             AutoUpdate = False
             if DeviceType in SWITCH_LVL_MATRIX:
                 if value in SWITCH_LVL_MATRIX[ DeviceType ]:
@@ -1588,6 +1595,7 @@ def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_='')
     elif cluster == "0001": TypeFromCluster = "Voltage"
     elif cluster == "0006": TypeFromCluster = "Switch"
     elif cluster == "0008": TypeFromCluster = "LvlControl"
+    elif cluster == "0009": TypeFromCluster = "Alarm"
     elif cluster == "000c" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0012" and not create_: TypeFromCluster = "XCube"
     elif cluster == "0101": TypeFromCluster = "Vibration"
