@@ -948,7 +948,7 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
         data = '%02x' %(len(data)//2) + data
 
     lenght = "01" # Only 1 attribute
-    datas = addr_mode + key + ZIGATE_EP + EPout + clusterID 
+    datas = addr_mode + key + EPin + EPout + clusterID
     datas += direction + manuf_spec + manuf_id
     datas += lenght +attribute + data_type + data
     loggingOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas), key)
