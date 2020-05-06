@@ -624,6 +624,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
  
     x = 0
     # For each single Domoticz Widget (Device) we will look if the Widget needs update  from that request
+    # IT MIGHT BE FASTER , TO FIRST LOOK FOR CLUSTERTYPE in the nwkid entry and then get the potentials 
+    # list of ( EPs, Device.ID, Type) and update accordingly, instead of screening the All Widget list from domotic
     for x in Devices:
 
         # Search for the Widgets which have IEEE as the DeviceID
@@ -855,7 +857,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "MajDomoDevice Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if 'Temp' in ClusterType:  # temperature
+        if ClusterType == 'Temp':  # temperature
             loggingWidget( self, "Debug", "MajDomoDevice Temp: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -887,7 +889,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'Humi' in ClusterType:  # humidite
+        if ClusterType == 'Humi':  # humidite
             loggingWidget( self, "Debug", "MajDomoDevice Humi: %s, DeviceType: >%s<" %(value,DeviceType), NWKID)
             CurrentnValue = Devices[x].nValue
             CurrentsValue = Devices[x].sValue
@@ -922,7 +924,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'Baro' in ClusterType:  # barometre
+        if ClusterType == 'Baro':  # barometre
             loggingWidget( self, "Debug", "MajDomoDevice Baro: %s, DeviceType: %s" %(value,DeviceType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
