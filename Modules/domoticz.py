@@ -1266,16 +1266,18 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
     '''
         Reset all Devices from the ClusterType Motion after 30s
     '''
-
     x = 0
     for x in Devices:
         if Devices[x].nValue == 0 and Devices[x].sValue == "Off":
-            # No need to spend time as it is already in the state we want, go to next device
+            # Nothing to Reset
             continue
-
 
         LUpdate = Devices[x].LastUpdate
         _tmpDeviceID_IEEE = Devices[x].DeviceID
+        if _tmpDeviceID_IEEE not in self.IEEE2NWK:
+            # Unknown !
+            continue
+
         try:
             LUpdate = time.mktime(time.strptime(LUpdate, "%Y-%m-%d %H:%M:%S"))
         except:
@@ -1284,57 +1286,74 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
 
         current = time.time()
 
-        # Look for the corresponding ClusterType
-        if _tmpDeviceID_IEEE in self.IEEE2NWK:
-            NWKID = self.IEEE2NWK[_tmpDeviceID_IEEE]
+        # Look for the corresponding Widget
+        NWKID = self.IEEE2NWK[_tmpDeviceID_IEEE]
 
-            if NWKID not in self.ListOfDevices:
-                Domoticz.Error("ResetDevice " + str(NWKID) + " not found in " + str(self.ListOfDevices))
+        if NWKID not in self.ListOfDevices:
+            Domoticz.Error("ResetDevice " + str(NWKID) + " not found in " + str(self.ListOfDevices))
+            continue
+
+        ID = Devices[x].ID
+        WidgetType = ''
+        for tmpEp in self.ListOfDevices[NWKID]['Ep']:
+            if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
+                if str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']:
+                    WidgetType = self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
+
+        if WidgetType == '':
+            if 'ClusterType' in self.ListOfDevices[NWKID]:
+                if str(ID) in self.ListOfDevices[NWKID]['ClusterType']:
+                    WidgetType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
+        
+        if WidgetType not in ('Motion', 'Vibration'):
+            continue
+
+        if self.domoticzdb_DeviceStatus:
+            from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+
+            # Let's check if we have a Device TimeOut specified by end user
+            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
                 continue
 
-            ID = Devices[x].ID
-            DeviceType = ''
-            for tmpEp in self.ListOfDevices[NWKID]['Ep']:
-                if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                    if str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']:
-                        DeviceType = self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
-            if DeviceType == '':
-                if 'ClusterType' in self.ListOfDevices[NWKID]:
-                    if str(ID) in self.ListOfDevices[NWKID]['ClusterType']:
-                        DeviceType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
-            
-            if DeviceType not in ('Motion', 'Vibration'):
-                continue
+        # Takes the opportunity to update RSSI and Battery
+        SignalLevel = ''
+        BatteryLevel = ''
+        if 'RSSI' in self.ListOfDevices[NWKID]:
+            SignalLevel = self.ListOfDevices[NWKID]['RSSI']
+        if 'Battery' in self.ListOfDevices[NWKID].get('Battery'):
+            BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
-            if self.domoticzdb_DeviceStatus:
-                from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+        # SignalLvl max is 12
+        rssi = 12
+        if isinstance(SignalLevel, int):
+            rssi = round((SignalLevel * 12) / 255)
+            loggingWidget( self, "Debug", "--->  " + str(Devices[x].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[x].DeviceID])
 
-                # Let's check if we have a Device TimeOut specified by end user
-                if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
-                    continue
+        # Battery Level 255 means Main Powered device
+        if isinstance(BatteryLevel, float):
+            # Looks like sometime we got a float instead of int.
+            # in that case convert to int
+            loggingWidget( self, "Debug", "--->  %s BatteryLvl rounded" %self.IEEE2NWK[Devices[x].DeviceID])
+            BatteryLvl = round( BatteryLevel)
 
-            # Takes the opportunity to update RSSI and Battery
-            SignalLevel = ''
-            BatteryLevel = ''
-            if self.ListOfDevices[NWKID].get('RSSI'):
-                SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-            if self.ListOfDevices[NWKID].get('Battery'):
-                BatteryLevel = self.ListOfDevices[NWKID]['Battery']
+        if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
+            loggingWidget( self, "Debug", "--->  %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[x].DeviceID])
+            BatteryLvl = 255
 
-            _timeout = self.pluginconf.pluginConf['resetMotiondelay']
-            #resetMotionDelay = 0
+        _timeout = self.pluginconf.pluginConf['resetMotiondelay']
+        #resetMotionDelay = 0
 
-            #if self.domoticzdb_DeviceStatus:
-            #    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-            #    resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
+        #if self.domoticzdb_DeviceStatus:
+        #    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
+        #    resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
 
-            #if resetMotionDelay > 0:
-            #    _timeout = resetMotionDelay
+        #if resetMotionDelay > 0:
+        #    _timeout = resetMotionDelay
 
-            if (current - LUpdate) >= _timeout: 
-                loggingWidget( self, "Debug", "Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
-                    current) + " this was : " + str(current - LUpdate) + " secondes ago", NWKID)
-                UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
+        if (current - LUpdate) >= _timeout: 
+            loggingWidget( self, "Debug", "Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
+                current) + " this was : " + str(current - LUpdate) + " secondes ago", NWKID)
+            UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
     return
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
