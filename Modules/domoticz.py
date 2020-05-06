@@ -1421,8 +1421,9 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
     if Unit:
         loggingWidget( self, "Debug", "Touch unit %s" %( Devices[Unit].Name ))
-        if not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
-            loggingWidget( self, "Debug", "Not the good Domoticz level for Touch")
+        if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
+            loggingWidget( self, "Debug", "Not the good Domoticz level for lastSeenUpdate %s %s %s" 
+                %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         # Extract NwkId from Device Unit
         IEEE = Devices[Unit].DeviceID
@@ -1451,13 +1452,13 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         self.ListOfDevices[NwkId]['Health'] = 'Live'
 
         if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
-            loggingWidget( self, "Debug", "Too early for a new update of LastSeen %s" %NwkId, NwkId)
+            loggingWidget( self, "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
             return
 
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
 
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
-        if not self.VersionNewFashion or (self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
+        if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547))):
             loggingWidget( self, "Debug", "Not the good Domoticz level for Touch %s %s %s" %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         for x in Devices:
