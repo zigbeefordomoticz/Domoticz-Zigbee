@@ -1458,7 +1458,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
 
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
         if not self.VersionNewFashion or (self.DomoticzMajor <= 4 and ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10547)):
-            loggingWidget( self, "Debug", "Not the good Domoticz level for Touch", NwkId)
+            loggingWidget( self, "Debug", "Not the good Domoticz level for Touch %s %s %s" %(self.VersionNewFashion, self.DomoticzMajor, self.DomoticzMinor ), NwkId)
             return
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
