@@ -186,6 +186,9 @@ def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
 
     # We got a new Network ID for an existing IEEE. So just re-connect.
     # - mapping the information to the new newNWKID
+    if oldNWKID not in self.ListOfDevices:
+        return
+
     self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[oldNWKID])
     self.IEEE2NWK[IEEE] = newNWKID
 
@@ -600,6 +603,11 @@ def lookupForIEEE( self, nwkid , reconnect=False):
                 oldNWKID = 'none'
                 if ieee in self.IEEE2NWK:
                     oldNWKID = self.IEEE2NWK[ ieee ]
+                    if oldNWKID not in self.ListOfDevices:
+                        Domoticz.Log("lookupForIEEE found an inconsitency %s nt existing but pointed by %s"
+                            %( oldNWKID, ieee ))
+                        del self.IEEE2NWK[ ieee ]
+                        return None
                     if reconnect:
                         reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
                 Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
