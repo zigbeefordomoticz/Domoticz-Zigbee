@@ -629,8 +629,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     ClusterTypeList = []
     for iterEp in self.ListOfDevices[NWKID]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-            for item in self.ListOfDevices[NWKID]['Ep'][iterEp]['ClusterType']:
-                WidgetId, WidgetType = self.ListOfDevices[NWKID]['Ep'][iterEp]['ClusterType'][item]
+            for iterEp, WidgetId, WidgetType in self.ListOfDevices:
                 ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
     loggingWidget( self, 'Debug', "------> WidgetList: %s" %str(ClusterTypeList), NWKID)
 
