@@ -14,8 +14,9 @@
 
 SWITCH_LVL_MATRIX = {
     "Plug": { 
-        "01": ( 1, "On") , 
+
         "00": ( 0, "Off"), 
+        "01": ( 1, "On") , 
         "ForceUpdate": False },
 
     "Door":  { 

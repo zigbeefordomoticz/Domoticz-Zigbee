@@ -608,6 +608,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     if NWKID not in self.ListOfDevices:
         Domoticz.Error("MajDomoDevice - %s not known" %NWKID)
         return
+
     if 'IEEE' not in self.ListOfDevices[NWKID]:
         Domoticz.Error("MajDomoDevice - no IEEE for %s" %NWKID)
         return
@@ -617,7 +618,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
     # Get the CluserType ( Action type) from Cluster Id
     ClusterType = TypeFromCluster(self, clusterID)
-    loggingWidget( self, "Debug", "------> Type = " + str(ClusterType), NWKID)
+    loggingWidget( self, "Debug", "------> ClusterType = " + str(ClusterType), NWKID)
  
     # Let's retreive All Widgets entries for the entire entry.
     OldTypeFashion = True
@@ -648,7 +649,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             if Devices[x].ID == int(WidgetId):
                 break
         else:
-            Domoticz.Error("Device %s not found " %WidgetId)
+            Domoticz.Error("Device %s not found !!!" %WidgetId)
             return
 
         # x is the Device unit
@@ -810,7 +811,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if ClusterType == 'Temp':  # temperature
+        if 'Temp' in ClusterType and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro'):  # temperature
             loggingWidget( self, "Debug", "------>  Temp: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -842,7 +843,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == 'Humi':  # humidite
+        if 'Humi' in ClusterType and WidgetType in ( 'Humi', 'Temp+Hum', 'Temp+Hum+Baro'):  # humidite
             loggingWidget( self, "Debug", "------>  Humi: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             CurrentnValue = Devices[x].nValue
             CurrentsValue = Devices[x].sValue
@@ -877,7 +878,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if ClusterType == 'Baro':  # barometre
+        if 'Baro' in ClusterType and Widget in ( 'Baro', 'Temp+Hum+Baro'):  # barometre
             loggingWidget( self, "Debug", "------>  Baro: %s, WidgetType: %s" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
