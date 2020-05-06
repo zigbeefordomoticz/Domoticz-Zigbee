@@ -645,7 +645,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 continue
 
         for x in Devices: # Found the Device Unit
-            if Devices[x].ID == WidgetId:
+            if Devices[x].ID == int(WidgetId):
                 break
         else:
             Domoticz.Error("Device %s not found " %WidgetId)
