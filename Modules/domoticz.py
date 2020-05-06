@@ -1316,11 +1316,12 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
                 continue
 
         # Takes the opportunity to update RSSI and Battery
-        SignalLevel = ''
-        BatteryLevel = ''
+        SignalLevel = '' 
         if 'RSSI' in self.ListOfDevices[NWKID]:
             SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-        if 'Battery' in self.ListOfDevices[NWKID].get('Battery'):
+            
+        BatteryLevel = ''
+        if 'Battery' in self.ListOfDevices[NWKID]:
             BatteryLevel = self.ListOfDevices[NWKID]['Battery']
 
         # SignalLvl max is 12
