@@ -1109,7 +1109,6 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             sValue = 1
                     UpdateDevice_v2(self, Devices, x, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
-
             elif WidgetType == 'LegrandSelector':
                 loggingWidget( self, "Debug", "------> LegrandSelector : Value -> %s" %value, NWKID)
                 if value == '00': nValue = 0 ; sValue = '00' #Off
@@ -1346,20 +1345,20 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
     rssi = 12
     if isinstance(SignalLvl, int):
         rssi = round((SignalLvl * 12) / 255)
-        loggingWidget( self, "Debug", "UpdateDevice_v2 for : " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
+        loggingWidget( self, "Debug", "--->  " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
 
     # Battery Level 255 means Main Powered device
     if isinstance(BatteryLvl, float):
         # Looks like sometime we got a float instead of int.
         # in that case convert to int
-        loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        loggingWidget( self, "Debug", "--->  %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
         BatteryLvl = round( BatteryLvl)
 
     if BatteryLvl == '' or (not isinstance(BatteryLvl, int)):
-        loggingWidget( self, "Debug", "UpdateDevice_v2 for %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
+        loggingWidget( self, "Debug", "--->  %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
         BatteryLvl = 255
 
-    loggingWidget( self, "Debug", "UpdateDevice_v2 for : %s BatteryLevel: %s RSSI: %s" %( Devices[Unit].Name, BatteryLvl, rssi))
+    loggingWidget( self, "Debug", "--->  %s BatteryLevel: %s RSSI: %s" %( Devices[Unit].Name, BatteryLvl, rssi))
 
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
     if (Unit in Devices):
@@ -1371,7 +1370,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
 
             if self.pluginconf.pluginConf['logDeviceUpdate']:
                 Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
-            loggingWidget( self, "Debug", "Update Values %s:%s:%s %s:%s %s (%15s)" %( nValue, sValue, Color_, BatteryLvl, rssi, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+            loggingWidget( self, "Debug", "--->  %s:%s:%s %s:%s %s (%15s)" %( nValue, sValue, Color_, BatteryLvl, rssi, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
             else:
@@ -1541,7 +1540,7 @@ def GetType(self, Addr, Ep):
 
 def TypeFromCluster( self, cluster, create_=False, ProfileID_='', ZDeviceID_=''):
 
-    loggingWidget( self, "Debug", "ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
+    loggingWidget( self, "Debug", "---> ClusterSearch - Cluster: %s, ProfileID: %s, ZDeviceID: %s, create: %s" %(cluster, ProfileID_, ZDeviceID_, create_))
 
     TypeFromCluster = ''
     if ProfileID_ == 'c05e' and ZDeviceID_ == '0830':
