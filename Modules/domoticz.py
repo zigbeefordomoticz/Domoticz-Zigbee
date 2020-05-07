@@ -1229,8 +1229,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                             nValue = 8
                         elif nValue == 90:
                             nValue = 9
-                    loggingWidget( self, "Debug", "-------->  XCube update device with data = %s , nValue: %s sValue: %s" %(value, nValue, sValue), NWKID)
-                    UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
+                        loggingWidget( self, "Debug", "-------->  XCube update device with data = %s , nValue: %s sValue: %s" %(value, nValue, sValue), NWKID)
+                        UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             elif WidgetType == "XCube" and Ep == "02":  # cube xiaomi
                 if value == "0000":  # shake
