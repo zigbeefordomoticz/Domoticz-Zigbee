@@ -1804,12 +1804,23 @@ def Decode8110(self, Devices, MsgData, MsgRSSI) :  # Write Attribute response
     MsgAttSize=MsgData[18:22]
     MsgClusterData=MsgData[22:len(MsgData)]
 
-    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s" \
-            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
+            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
     updRSSI( self, MsgSrcAddr, MsgRSSI)
+
+    nwkid = MsgSrcAddr
+    if 'WriteAttribute' in self.ListOfDevices[nwkid]:
+        if MsgSrcEp in self.ListOfDevices[nwkid]['WriteAttribute']:
+            if MsgClusterId in self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ]:
+                if MsgAttrID in self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId]:
+                    if self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID] == 'requested':
+                        loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse on awake done", MsgSrcAddr)
+                        self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Stamp'] = int(time())
+                        self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['Phase'] = 'fullfilled'
+                        self.ListOfDevices[nwkid]['WriteAttribute'][ MsgSrcEp ][MsgClusterId][ MsgAttrID]['MsgClusterData'] = MsgClusterData
 
     if MsgClusterId == "0500":
         self.iaszonemgt.receiveIASmessages( MsgSrcAddr, 3, MsgClusterData)

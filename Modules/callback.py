@@ -5,6 +5,7 @@ import Domoticz
 from Modules.schneider_wiser import callbackDeviceAwake_Schneider
 from Modules.legrand_netatmo import callbackDeviceAwake_Legrand
 from Modules.bindings import callBackForWebBindIfNeeded
+from Modules.output import callBackForWriteAttributeIfNeeded
 
 
 def callbackDeviceAwake(self, nwkid, endpoint, cluster):
@@ -31,6 +32,8 @@ def callbackDeviceAwake(self, nwkid, endpoint, cluster):
 
     # Let's check if any WebBind have to be established
     callBackForWebBindIfNeeded( self, nwkid )
+
+    callBackForWriteAttributeIfNeeded( self, nwkid )
 
     # Let's checkfor the Manuf Specific callBacks
     if 'Manufacturer' not in self.ListOfDevices[nwkid]:
