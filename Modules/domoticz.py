@@ -878,7 +878,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'Baro' in ClusterType and Widget in ( 'Baro', 'Temp+Hum+Baro'):  # barometre
+        if 'Baro' in ClusterType and WidgetType in ( 'Baro', 'Temp+Hum+Baro'):  # barometre
             loggingWidget( self, "Debug", "------>  Baro: %s, WidgetType: %s" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
