@@ -1643,9 +1643,9 @@ def Decode0100(self, Devices, MsgData, MsgRSSI) :  # Read Attribute request
         elif MsgStatus == '01': # Left / Single - On
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
         if MsgStatus == '02': # Right - Off
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '00')
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '10')
         elif MsgStatus == '03': # Right - On
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '01')
+            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006', '11')
     
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = MsgStatus
     else:
