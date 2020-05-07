@@ -646,16 +646,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         # We don't have any widgets associated to the NwkId
         return
 
+    WidgetByPassEpMatch = ( 'XCube', 'Aqara', 'DSwitch', 'DButton', 'DButton_3')
+
     for WidgetEp , WidgetId, WidgetType in ClusterTypeList:
-        if newTypeFashion:
+        loggingWidget( self, 'Debug', "----> processing WidgetEp: %s, WidgetId: %w, WidgetType: %s" %(WidgetEp, WidgetId, WidgetType), NWKID)
+        if newTypeFashion and (WidgetType not in WidgetByPassEpMatch):
             loggingWidget( self, 'Debug', "------> New Fashion Type: %s" %newTypeFashion)
             # We need to make sure that we are on the right Endpoint
-            if ClusterType != 'Xcube' and  WidgetEp != Ep:
-                loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep or XCube : %s %s" %(WidgetEp, Ep), NWKID)
+            if WidgetEp != Ep:
+                loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep : %s %s" %(WidgetEp, Ep), NWKID)
                 continue
-            loggingWidget( self, 'Debug', "------> WidgetEP %s == Ep %s" %(WidgetEp, Ep), NWKID)
-        else:
-            loggingWidget( self, 'Debug', "------> New Fashion Type: %s we do not need a match between WidgetEp: %s Ep: %s" %(newTypeFashion, WidgetEp, Ep), NWKID)
 
         for x in Devices: # Found the Device Unit
             if Devices[x].ID == int(WidgetId):
