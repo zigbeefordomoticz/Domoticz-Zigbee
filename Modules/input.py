@@ -1800,12 +1800,16 @@ def Decode8110(self, Devices, MsgData, MsgRSSI) :  # Write Attribute response
     MsgSrcEp=MsgData[6:8]
     MsgClusterId=MsgData[8:12]
     MsgAttrID=MsgData[12:16]
-    MsgAttType=MsgData[16:18]
-    MsgAttSize=MsgData[18:22]
-    MsgClusterData=MsgData[22:len(MsgData)]
+    MsgAttrStatus=MsgData[16:18]
+    MsgAttType=MsgData[18:20]
+    MsgAttSize=MsgData[20:24]
+    MsgClusterData=''
+    if MsgAttSize != '0000':
+        MsgClusterData=MsgData[24:len(MsgData)]
 
-    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
-            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
+
+    loggingInput( self, 'Debug', "Decode8110 - WriteAttributeResponse - MsgSQN: %s, MsgSrcAddr: %s, MsgSrcEp: %s, MsgClusterId: %s, MsgAttrID: %s, MsgAttrStatus:%s, MsgAttType: %s, MsgAttSize: %s, MsgClusterData: %s. rawData: %s" \
+            %( MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus, MsgAttType, MsgAttSize, MsgClusterData, MsgData), MsgSrcAddr)
 
     timeStamped( self, MsgSrcAddr , 0x8110)
     updSQN( self, MsgSrcAddr, MsgSQN)
