@@ -1403,7 +1403,7 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
 
             if self.pluginconf.pluginConf['logDeviceUpdate']:
                 Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
-            loggingWidget( self, "Debug", "--->  %s:%s:%s %s:%s %s (%15s)" %( nValue, sValue, Color_, BatteryLvl, rssi, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+            loggingWidget( self, "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, rssi, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
             if Color_:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
             else:
