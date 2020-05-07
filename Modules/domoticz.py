@@ -647,7 +647,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             loggingWidget( self, 'Debug', "------> New Fashion Type: %s" %newTypeFashion)
             # We need to make sure that we are on the right Endpoint
             if WidgetEp != Ep:
-                loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep: %s" %(WidgetEp, Ep), NWKID)
+                loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep: %s %s" %(WidgetEp, Ep), NWKID)
                 continue
             loggingWidget( self, 'Debug', "------> WidgetEP %s == Ep %s" %(WidgetEp, Ep), NWKID)
         else:
