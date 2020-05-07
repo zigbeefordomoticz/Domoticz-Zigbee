@@ -1481,7 +1481,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         self.ListOfDevices[NwkId]['Health'] = 'Live'
 
         if time.time() < self.ListOfDevices[NwkId]['Stamp']['LastSeen'] + 5*60:
-            loggingWidget( self, "Debug", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
+            loggingWidget( self, "Debug2", "Too early for a new update of lastSeenUpdate %s" %NwkId, NwkId)
             return
 
         self.ListOfDevices[NwkId]['Stamp']['LastSeen'] = int(time.time())
