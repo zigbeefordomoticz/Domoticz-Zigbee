@@ -621,11 +621,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     loggingWidget( self, "Debug", "------> ClusterType = " + str(ClusterType), NWKID)
  
     # Let's retreive All Widgets entries for the entire entry.
-    OldTypeFashion = False
+    newTypeFashion = True
     if 'Type' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['Type'] != '' and self.ListOfDevices[NWKID]['Type'] != {}:
             # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
-            OldTypeFashion = True
+            # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
+            newTypeFashion = False
 
     ClusterTypeList = []
     for iterEp in self.ListOfDevices[NWKID]['Ep']:  
@@ -640,7 +641,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         return
 
     for WidgetEp , WidgetId, WidgetType in ClusterTypeList:
-        if not OldTypeFashion:
+        if newTypeFashion:
+            # We need to make sure that we are on the right Endpoint
             if WidgetEp != Ep:
                 loggingWidget( self, 'Debug', "------> skiping Ep: %s" %WidgetEp, NWKID)
                 continue
