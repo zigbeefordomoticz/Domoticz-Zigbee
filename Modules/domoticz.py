@@ -622,11 +622,11 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
  
     # Let's retreive All Widgets entries for the entire entry.
     newTypeFashion = True
-    if 'Type' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Type'] != '' and self.ListOfDevices[NWKID]['Type'] != {}:
+    if 'ClusterType' in self.ListOfDevices[NWKID]:
+        if self.ListOfDevices[NWKID]['ClusterType'] != '' and self.ListOfDevices[NWKID]['ClusterType'] != {}:
             # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
             # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-            loggingWidget( self, 'Debug', "------> 'Type': %s" %self.ListOfDevices[NWKID]['Type'], NWKID)
+            loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NWKID]['ClusterType'], NWKID)
             newTypeFashion = False
     loggingWidget( self, 'Debug', "------> newTypeFashion: %s" %newTypeFashion, NWKID)
 
