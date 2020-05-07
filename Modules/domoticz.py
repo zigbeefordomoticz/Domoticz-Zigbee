@@ -621,7 +621,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     loggingWidget( self, "Debug", "------> ClusterType = " + str(ClusterType), NWKID)
  
     # Let's retreive All Widgets entries for the entire entry.
-    OldTypeFashion = True
+    OldTypeFashion = False
     if 'Type' in self.ListOfDevices[NWKID]:
         if self.ListOfDevices[NWKID]['Type'] != '' and self.ListOfDevices[NWKID]['Type'] != {}:
             # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
