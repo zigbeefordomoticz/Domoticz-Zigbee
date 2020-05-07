@@ -1206,26 +1206,30 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         if 'XCube' in ClusterType: # XCube Aqara or Xcube
             if WidgetType == "Aqara":
-                if Ep == "02":  # Magic Cube Aqara
-                    loggingWidget( self, "Debug", "------>  XCube update device with data = " + str(value), NWKID)
+                loggingWidget( self, "Debug", "-------->  XCube Aqara Ep: %s Attribute_: %s Value: %s = " 
+                    %( Ep, Attribute_, value ), NWKID)
+                if Ep == "02" and Attribute_ == '':  # Magic Cube Aqara
+                    loggingWidget( self, "Debug", "---------->  XCube update device with data = " + str(value), NWKID)
                     nValue = int(value)
                     sValue = value
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
-                if Ep == "03":  # Magic Cube Aqara Rotation
+                elif Ep == "03":  # Magic Cube Aqara Rotation
                     if Attribute_ == '0055': # Rotation Angle
+                        loggingWidget( self, "Debug", "---------->  XCube update Rotaion Angle with data = " + str(value), NWKID)
                         # Update Text widget ( unit + 1 )
                         nValue = 0
                         sValue = value
                         UpdateDevice_v2(self, Devices, x + 1, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
                     else:
+                        loggingWidget( self, "Debug", "---------->  XCube update  with data = " + str(value), NWKID)
                         nValue = int(value)
                         sValue =  value
                         if nValue == 80:
                             nValue = 8
                         elif nValue == 90:
                             nValue = 9
-                    loggingWidget( self, "Debug", "------>  XCube update device with data = %s , nValue: %s sValue: %s" %(value, nValue, sValue), NWKID)
+                    loggingWidget( self, "Debug", "-------->  XCube update device with data = %s , nValue: %s sValue: %s" %(value, nValue, sValue), NWKID)
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_ = True)
 
             elif WidgetType == "XCube" and Ep == "02":  # cube xiaomi
