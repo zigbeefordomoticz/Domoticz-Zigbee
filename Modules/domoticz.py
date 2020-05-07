@@ -649,7 +649,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     WidgetByPassEpMatch = ( 'XCube', 'Aqara', 'DSwitch', 'DButton', 'DButton_3')
 
     for WidgetEp , WidgetId, WidgetType in ClusterTypeList:
-        loggingWidget( self, 'Debug', "----> processing WidgetEp: %s, WidgetId: %w, WidgetType: %s" %(WidgetEp, WidgetId, WidgetType), NWKID)
+        loggingWidget( self, 'Debug', "----> processing WidgetEp: %s, WidgetId: %s, WidgetType: %s" %(WidgetEp, WidgetId, WidgetType), NWKID)
         if newTypeFashion and (WidgetType not in WidgetByPassEpMatch):
             loggingWidget( self, 'Debug', "------> New Fashion Type: %s" %newTypeFashion)
             # We need to make sure that we are on the right Endpoint
