@@ -628,8 +628,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
             # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
             loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NWKID]['ClusterType'], NWKID)
-            for WidgetId  in self.ListOfDevices[NWKID]['Ep'][iterEp]['ClusterType']:
-                WidgetType = self.ListOfDevices[NWKID]['Ep'][iterEp]['ClusterType'][WidgetId]
+            for WidgetId  in self.ListOfDevices[NWKID]['ClusterType']:
+                WidgetType = self.ListOfDevices[NWKID]['ClusterType'][WidgetId]
                 ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
             newTypeFashion = False
     loggingWidget( self, 'Debug', "------> newTypeFashion: %s" %newTypeFashion, NWKID)
@@ -650,8 +650,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         if newTypeFashion:
             loggingWidget( self, 'Debug', "------> New Fashion Type: %s" %newTypeFashion)
             # We need to make sure that we are on the right Endpoint
-            if WidgetEp != Ep:
-                loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep: %s %s" %(WidgetEp, Ep), NWKID)
+            if ClusterType != 'Xcube' and  WidgetEp != Ep:
+                loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep or XCube : %s %s" %(WidgetEp, Ep), NWKID)
                 continue
             loggingWidget( self, 'Debug', "------> WidgetEP %s == Ep %s" %(WidgetEp, Ep), NWKID)
         else:
