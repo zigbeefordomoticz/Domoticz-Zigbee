@@ -717,7 +717,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
                         self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
     return found
 
-def shneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, AttributesConfig= None):
+def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, AttributesConfig= None):
     """
     Will send a Config reporting to a specific Endpoint of a Wiser Device. 
     It is assumed that the device is on Receive at the time we will be sending the command
@@ -796,5 +796,3 @@ def shneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, Attrib
         datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
         datas +=  "%02x" %(attrLen) + attrList
         Modules.output.sendZigateCmd( self, "0120", datas )
-
-            
