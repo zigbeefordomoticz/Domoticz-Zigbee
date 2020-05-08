@@ -720,6 +720,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
 def shneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, AttributesConfig= None):
     """
     Will send a Config reporting to a specific Endpoint of a Wiser Device. 
+    It is assumed that the device is on Receive at the time we will be sending the command
     If ClusterId is not None, it will use the AttributesConfig dictionnary for the reporting config,
     otherwise it will retreive the config from the DeviceConf for this particular Model name
 
