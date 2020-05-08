@@ -1341,8 +1341,9 @@ class WebServer(object):
                     duration = int( data['PermitToJoin'])
                     router = data['Router']
                     if router in self.ListOfDevices:
-                        # Allow Permit to join from this specific router                      
-                        sendZigateCmd( self, "0049", router + '00' + '%02x' %duration) 
+                        # Allow Permit to join from this specific router    
+                        self.logging( 'Log', "Requesting router: %s to switch into Permit to join" %router)             
+                        sendZigateCmd( self, "0049", router + '%02x' %duration) 
                 else:                   
                     if self.pluginparameters['Mode1'] != 'None':
                         ZigatePermitToJoin(self, int( data['PermitToJoin']))
