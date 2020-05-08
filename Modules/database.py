@@ -501,7 +501,7 @@ def fixing_Issue566( self, key ):
             if len(self.ListOfDevices[key]['Ep']['02']['ClusterType']) != 0:
                 if 'ClusterType' in self.ListOfDevices[key]['Ep']['01']:
                     if len(self.ListOfDevices[key]['Ep']['01']['ClusterType']) == 0:
-                        Domoticz.Log("++++Issue #566 ClusterType mixing Ep 01 and 02")
+                        Domoticz.Log("++++Issue #566 ClusterType mixing NwkId: %s Ep 01 and 02" %key)
                         self.ListOfDevices[key]['Ep']['01']['ClusterType'] = dict(self.ListOfDevices[key]['Ep']['02']['ClusterType'])
                         self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
                         res = True
