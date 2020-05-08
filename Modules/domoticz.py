@@ -800,12 +800,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
                  # value is str
                 loggingWidget( self, "Debug", "------>  ThermoMode HACTMODE: %s" %(value), NWKID)
-                THERMOSTAT_MODE = { 0:'00', # Conventional
-                    1:'10', 
-                    2:'20', # Setpoint
-                    3:'30'  # FIP
+                THERMOSTAT_MODE = { 0:'00', # Off
+                    1:'10', # Conventional in setpoint
+                    2:'20', # fip enabled heater in setpoint
+                    3:'30'  # fip enabled heater in fip mode
                     }
-                _mode = int(value,16)
+                _mode = int(value,16) - 0x80
 
                 if _mode in THERMOSTAT_MODE:
                     nValue = _mode
