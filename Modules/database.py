@@ -157,10 +157,11 @@ def LoadDeviceList( self ):
 
     for addr in self.ListOfDevices:
         # Check if 566 fixs are needed
-        if 'Model' in self.ListOfDevices[addr]:
-            if self.ListOfDevices[addr]['Model'] == 'TRADFRI control outlet':
-                fixing_Issue566( self, addr )
-                
+        if self.pluginconf.pluginConf['Bug566']:
+            if 'Model' in self.ListOfDevices[addr]:
+               if self.ListOfDevices[addr]['Model'] == 'TRADFRI control outlet':
+                   fixing_Issue566( self, addr )
+
         if self.pluginconf.pluginConf['resetReadAttributes']:
             loggingDatabase( self, "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             self.ListOfDevices[addr]['ReadAttributes'] = {}
@@ -485,23 +486,22 @@ def fixing_Issue566( self, key ):
         return False
 
     if 'Cluster Revision' in self.ListOfDevices[key]['Ep']:
-        Domoticz.Log("++++Fixing Cluster Revision for NwkId: %s" %key)
+        Domoticz.Log("++++Issue #566: Fixing Cluster Revision for NwkId: %s" %key)
         del self.ListOfDevices[key]['Ep']['Cluster Revision']
         res = True
 
     for ep in self.ListOfDevices[key]['Ep']:
         if 'Cluster Revision' in self.ListOfDevices[key]['Ep'][ep]:
-            Domoticz.Log("++++Fixing Cluster Revision NwkId: %s Ep: %s" %(key, ep))
+            Domoticz.Log("++++Issue #566 Cluster Revision NwkId: %s Ep: %s" %(key, ep))
             del self.ListOfDevices[key]['Ep'][ep]['Cluster Revision']
             res = True
 
-    Domoticz.Log("-- Suspect model")
     if '02' in self.ListOfDevices[key]['Ep'] and '01' in self.ListOfDevices[key]['Ep']:
         if 'ClusterType' in self.ListOfDevices[key]['Ep']['02']:
             if len(self.ListOfDevices[key]['Ep']['02']['ClusterType']) != 0:
                 if 'ClusterType' in self.ListOfDevices[key]['Ep']['01']:
                     if len(self.ListOfDevices[key]['Ep']['01']['ClusterType']) == 0:
-                        Domoticz.Log("+++ Fixing ClusterType")
+                        Domoticz.Log("++++Issue #566 ClusterType mixing Ep 01 and 02")
                         self.ListOfDevices[key]['Ep']['01']['ClusterType'] = dict(self.ListOfDevices[key]['Ep']['02']['ClusterType'])
                         self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
                         res = True
