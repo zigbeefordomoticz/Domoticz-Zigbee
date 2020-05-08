@@ -156,6 +156,11 @@ def LoadDeviceList( self ):
     self.DeviceListSize = os.path.getsize( _DeviceListFileName )
 
     for addr in self.ListOfDevices:
+        # Check if 566 fixs are needed
+        if 'Model' in self.ListOfDevices[addr]:
+            if self.ListOfDevices[addr]['Model'] == 'TRADFRI control outlet':
+                fixing_Issue566( self, addr )
+                
         if self.pluginconf.pluginConf['resetReadAttributes']:
             loggingDatabase( self, "Log", "ReadAttributeReq - Reset ReadAttributes data %s" %addr)
             self.ListOfDevices[addr]['ReadAttributes'] = {}
