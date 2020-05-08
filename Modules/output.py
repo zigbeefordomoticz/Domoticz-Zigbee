@@ -64,11 +64,11 @@ def ZigatePermitToJoin( self, permit ):
     # Request a Status to update the various permitTojoin structure
     sendZigateCmd( self, "0014", "" ) # Request status
 
+
 def PermitToJoin( self, Interval, TargetAddress='FFFC'):
 
-    sendZigateCmd(self, "0049", TargetAddress + '00' + Interval )
-
-    
+    sendZigateCmd(self, "0049", TargetAddress + Interval + 00 )
+  
 
 def start_Zigate(self, Mode='Controller'):
     """
