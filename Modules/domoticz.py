@@ -823,7 +823,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)
                     loggingWidget( self, "Debug", "------>  Thermostat Mode: %s %s" %(nValue,sValue), NWKID)
 
-        if 'Temp' in ClusterType and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro'):  # temperature
+        if ClusterType == 'Temp' and WidgetType in ( 'Temp', 'Temp+Hum', 'Temp+Hum+Baro'):  # temperature
             loggingWidget( self, "Debug", "------>  Temp: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:
@@ -855,7 +855,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' %(round(value + adjvalue,1), SplitData[1], SplitData[2], SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'Humi' in ClusterType and WidgetType in ( 'Humi', 'Temp+Hum', 'Temp+Hum+Baro'):  # humidite
+        if ClusterType == 'Humi' and WidgetType in ( 'Humi', 'Temp+Hum', 'Temp+Hum+Baro'):  # humidite
             loggingWidget( self, "Debug", "------>  Humi: %s, WidgetType: >%s<" %(value,WidgetType), NWKID)
             CurrentnValue = Devices[x].nValue
             CurrentsValue = Devices[x].sValue
@@ -890,7 +890,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 NewSvalue = '%s;%s;%s;%s;%s' % (SplitData[0], value, humiStatus, SplitData[3], SplitData[4])
                 UpdateDevice_v2(self, Devices, x, NewNvalue, NewSvalue, BatteryLevel, SignalLevel)
 
-        if 'Baro' in ClusterType and WidgetType in ( 'Baro', 'Temp+Hum+Baro'):  # barometre
+        if ClusterType == 'Baro' and WidgetType in ( 'Baro', 'Temp+Hum+Baro'):  # barometre
             loggingWidget( self, "Debug", "------>  Baro: %s, WidgetType: %s" %(value,WidgetType), NWKID)
             adjvalue = 0
             if self.domoticzdb_DeviceStatus:

@@ -14,7 +14,7 @@
 	    "Type": "Temp/ThermoSetpoint/ThermoModeEHZBRTS" } 
   },
   "Type": "",
-  "ClusterToBind": [ "0019", "0201", "0000", "0009", "0003", "0201", "0204" ],
+  "ClusterToBind": [ "0019", "0201", "0000", "0009", "0003", "0204" ],
   "ConfigureReporting": {
 	"0001": {"Attributes": { 
 		"0020": {"DataType": "20", "MinInterval":"0E10", "MaxInterval":"0E10", "TimeOut":"0000","Change":"01"}}},
