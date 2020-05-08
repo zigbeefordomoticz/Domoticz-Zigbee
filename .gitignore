@@ -1,3 +1,5 @@
+.DS_store
+*/.DS_store
 Conf/PluginConf-*
 OTAFirmware/*/*
 !OTAFirmware/*/README.me
