@@ -716,3 +716,84 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
                         loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : setting new value %s"%newValue,NWKID)
                         self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
     return found
+
+def shneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, AttributesConfig= None):
+    """
+    Will send a Config reporting to a specific Endpoint of a Wiser Device. 
+    If ClusterId is not None, it will use the AttributesConfig dictionnary for the reporting config,
+    otherwise it will retreive the config from the DeviceConf for this particular Model name
+
+    AttributesConfig must have the same format:
+        {
+            "0000": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"0001"},
+            "0012": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"7FFF"},
+            "e030": {"DataType": "20", "MinInterval":"003C", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"},
+            "e031": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"},
+            "e012": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"}
+        }
+    """
+    MAX_ATTR_PER_REQ = 3
+
+    if NwkId not in self.ListOfDevices:
+        return
+
+    if ClusterId is None:
+        if 'Model' not in self.ListOfDevices[NwkId]:
+            return
+
+        _modelName = self.ListOfDevices[NwkId]['Model']
+        if _modelName not in self.DeviceConf:
+            return
+
+        if 'ConfigureReporting' not in self.DeviceConf[ _modelName ]:
+            return
+        if ClusterId not in self.DeviceConf[ _modelName ]['ConfigureReporting']:
+            return
+        if 'Attributes' not in self.DeviceConf[ _modelName ]['ConfigureReporting'][ClusterId]:
+            return
+
+        AttributesConfig = self.DeviceConf[ self.ListOfDevices[NwkId]['Model'] ]['ConfigureReporting'][ClusterId]['Attributes']
+
+    # We have :
+    # Nwkid and Endpoint we want to configure
+    # ClusterId
+    # AttributesConfig
+
+    manufacturer = "0000"
+    manufacturer_spec = "00"
+    direction = "00"
+    addr_mode = "02"
+
+    attrList = ''
+    attrLen = 0
+    for attr in AttributesConfig:
+        attrdirection = "00"
+        attrType = AttributesConfig[attr]['DataType']
+        minInter = AttributesConfig[attr]['MinInterval']
+        maxInter = AttributesConfig[attr]['MaxInterval']
+        timeOut = AttributesConfig[attr]['TimeOut']
+        chgFlag = AttributesConfig[attr]['Change']
+        attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+        attrLen += 1
+
+        # Let's check if we have to send a chunk
+        if attrLen == MAX_ATTR_PER_REQ:
+            # Prepare the payload
+            datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
+            datas +=  "%02x" %(attrLen) + attrList
+
+            Modules.output.sendZigateCmd( self, "0120", datas )
+
+            #Reset the Lenght to 0
+            attrList = ''
+            attrLen = 0
+    # end for 
+
+    # Let's check if we have some remaining to send
+    if attrLen != 0 :
+        # Prepare the payload
+        datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
+        datas +=  "%02x" %(attrLen) + attrList
+        Modules.output.sendZigateCmd( self, "0120", datas )
+
+            
