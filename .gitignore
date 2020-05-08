@@ -8,3 +8,4 @@ Reports/*
 Zdatas/DiscoveryDevice*
 __pycache__/
 */__pycache__
+Conf/.DS_Store
