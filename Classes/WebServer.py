@@ -1337,9 +1337,15 @@ class WebServer(object):
                 data = data.decode('utf8')
                 data = json.loads(data)
                 self.logging( 'Debug', "parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
-                if self.pluginparameters['Mode1'] != 'None':
-                    ZigatePermitToJoin(self, int( data['PermitToJoin']))
-
+                if 'Router' in data:
+                    duration = int( data['PermitToJoin'])
+                    router = data['Router']
+                    if router in self.ListOfDevices:
+                        # Allow Permit to join from this specific router                      
+                        sendZigateCmd( self, "0049", + '00' + '%02x' %duration) 
+                else:                   
+                    if self.pluginparameters['Mode1'] != 'None':
+                        ZigatePermitToJoin(self, int( data['PermitToJoin']))
         return _response
 
     def rest_Device( self, verb, data, parameters):
