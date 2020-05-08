@@ -471,3 +471,34 @@ def CheckDeviceList(self, key, val) :
         else :
             loggingDatabase( self, 'Debug', "CheckDeviceList - IEEE = " + str(DeviceListVal['IEEE']) + " for NWKID = " +str(key) , key )
 
+
+def fixing_Issue566( self, key ):
+
+    if 'Model' not in self.ListOfDevices[key]:
+        return False
+    if self.ListOfDevices[key]['Model'] != 'TRADFRI control outlet':
+        return False
+
+    if 'Cluster Revision' in self.ListOfDevices[key]['Ep']:
+        Domoticz.Log("++++Fixing Cluster Revision for NwkId: %s" %key)
+        del self.ListOfDevices[key]['Ep']['Cluster Revision']
+        res = True
+
+    for ep in self.ListOfDevices[key]['Ep']:
+        if 'Cluster Revision' in self.ListOfDevices[key]['Ep'][ep]:
+            Domoticz.Log("++++Fixing Cluster Revision NwkId: %s Ep: %s" %(key, ep))
+            del self.ListOfDevices[key]['Ep'][ep]['Cluster Revision']
+            res = True
+
+    Domoticz.Log("-- Suspect model")
+    if '02' in self.ListOfDevices[key]['Ep'] and '01' in self.ListOfDevices[key]['Ep']:
+        if 'ClusterType' in self.ListOfDevices[key]['Ep']['02']:
+            if len(self.ListOfDevices[key]['Ep']['02']['ClusterType']) != 0:
+                if 'ClusterType' in self.ListOfDevices[key]['Ep']['01']:
+                    if len(self.ListOfDevices[key]['Ep']['01']['ClusterType']) == 0:
+                        Domoticz.Log("+++ Fixing ClusterType")
+                        self.ListOfDevices[key]['Ep']['01']['ClusterType'] = dict(self.ListOfDevices[key]['Ep']['02']['ClusterType'])
+                        self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
+                        res = True
+    return True
+
