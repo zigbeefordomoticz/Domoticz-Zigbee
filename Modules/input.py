@@ -2009,7 +2009,7 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         if int(MsgDataDestAddr,16) == ( int(MsgDataDestAddr,16) & 0xffff000000000000):
             MsgDataDestAddr = MsgDataDestAddr[0:4]
     else:    # Fixed by https://github.com/fairecasoimeme/ZiGate/issues/161
-        loggingInput( self, 'Debug', "Decode8702 - with Firmware > 3.0f")
+        #loggingInput( self, 'Debug', "Decode8702 - with Firmware > 3.0f")
         if int(MsgDataDestMode,16) == ADDRESS_MODE['short']:
             MsgDataDestAddr=MsgData[8:12]
             MsgDataSQN=MsgData[12:14]
