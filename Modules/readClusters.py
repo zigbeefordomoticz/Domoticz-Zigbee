@@ -29,21 +29,26 @@ from Modules.lumi import AqaraOppleDecoding0012
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
-    if c == 3: return ''
+    if c == 3: 
+        return ''
     return chain[c:(c+4)]
 
 def retreive8Tag(tag,chain):
     c = str.find(chain,tag) + 4
-    if c == 3: return ''
+    if c == 3: 
+        return ''
     return chain[c:(c+8)]
 
 def voltage2batteryP( voltage, volt_max, volt_min):
     if voltage > volt_max: 
         ValueBattery = 100
+
     elif voltage < volt_min: 
         ValueBattery = 0
+
     else: 
         ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
+
     return round(ValueBattery)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -825,7 +830,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 value = round(battRemainPer / 2)
 
     elif battRemainingVolt != 0: 
-        max_voltage = 30 ; min_voltage = 27
+        max_voltage = 30
+        min_voltage = 27
         if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             if '0036' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
                 if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != {} and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != '':
@@ -833,16 +839,20 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
-                max_voltage = 30 ; min_voltage = 25
+                max_voltage = 30 
+                min_voltage = 25
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
-                max_voltage = 3 * 1.5; min_voltage = 3 * 1
+                max_voltage = 3 * 1.5
+                min_voltage = 3 * 1
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
-                max_voltage = 60 ; min_voltage = 30
+                max_voltage = 60
+                min_voltage = 30
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
-                max_voltage = 2 * 1.5; min_voltage = 2 * 1
+                max_voltage = 2 * 1.5
+                min_voltage = 2 * 1
 
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
@@ -1418,12 +1428,16 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
         if value == '' or value is None:
             return value
+
         if  value == "0001": 
             return '20' # Take/Vibrate/Shake
+
         if value == "0002": 
             return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
+
         if value == "0003": 
             return '30' #Drop
+
         return '00'
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -1485,9 +1499,14 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         x2 = x*x; y2 = y*y; z2 = z*z
         angleX= angleY = angleZ = 0
-        if z2 + y2 != 0: angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
-        if x2 + z2 != 0: angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
-        if x2 + y2 != 0: angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
+        if z2 + y2 != 0: 
+            angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
+
+        if x2 + z2 != 0: 
+            angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
+
+        if x2 + y2 != 0: 
+            angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
 
         loggingCluster( self, 'Debug', " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" \
                 %(MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
@@ -2427,8 +2446,10 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             return   # No need to update
 
         # Check if we reach the limits Min and Max
-        if lvlValue > 255: lvlValue = 255
-        if lvlValue <= 0: lvlValue = 0
+        if lvlValue > 255: 
+            lvlValue = 255
+        if lvlValue <= 0: 
+            lvlValue = 0
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Level: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, lvlValue), MsgSrcAddr)
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -2613,4 +2634,3 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" 
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-
