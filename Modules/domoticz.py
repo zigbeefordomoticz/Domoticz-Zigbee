@@ -201,7 +201,7 @@ def CreateDomoDevice(self, Devices, NWKID):
             else:
                 self.ListOfDevices[nwkid]['Ep'][ep]['ClusterType'][str(ID)] = cType
 
-        return 
+ 
 
     # Sanity check before starting the processing 
     if NWKID == '' or NWKID not in self.ListOfDevices:
@@ -1350,7 +1350,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     sValue = round(((int(value, 16) * 100) / 255))
                     if sValue > 100: 
                         sValue = 100
-                        
+
                     if sValue == 0 and analogValue > 0:
                         sValue = 1
 
