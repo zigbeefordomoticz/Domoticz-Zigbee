@@ -1443,14 +1443,14 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
     '''
         Reset all Devices from the ClusterType Motion after 30s
     '''
-    x = 0
-    for x in Devices:
-        if Devices[x].nValue == 0 and Devices[x].sValue == "Off":
+
+    for unit in Devices:
+        if Devices[unit].nValue == 0 and Devices[unit].sValue == "Off":
             # Nothing to Reset
             continue
 
-        LUpdate = Devices[x].LastUpdate
-        _tmpDeviceID_IEEE = Devices[x].DeviceID
+        LUpdate = Devices[unit].LastUpdate
+        _tmpDeviceID_IEEE = Devices[unit].DeviceID
         if _tmpDeviceID_IEEE not in self.IEEE2NWK:
             # Unknown !
             continue
@@ -1470,7 +1470,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             Domoticz.Error("ResetDevice " + str(NWKID) + " not found in " + str(self.ListOfDevices))
             continue
 
-        ID = Devices[x].ID
+        ID = Devices[unit].ID
         WidgetType = ''
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:
             if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
@@ -1489,7 +1489,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             from Classes.DomoticzDB import DomoticzDB_DeviceStatus
 
             # Let's check if we have a Device TimeOut specified by end user
-            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID) > 0:
+            if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[unit].ID) > 0:
                 continue
 
         # Takes the opportunity to update RSSI and Battery
@@ -1505,31 +1505,31 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         rssi = 12
         if isinstance(SignalLevel, int):
             rssi = round((SignalLevel * 12) / 255)
-            loggingWidget( self, "Debug", "--->  " + str(Devices[x].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[x].DeviceID])
+            loggingWidget( self, "Debug", "--->  " + str(Devices[unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[unit].DeviceID])
 
         # Battery Level 255 means Main Powered device
         if isinstance(BatteryLevel, float):
             # Looks like sometime we got a float instead of int.
             # in that case convert to int
-            loggingWidget( self, "Debug", "--->  %s BatteryLvl rounded" %self.IEEE2NWK[Devices[x].DeviceID])
+            loggingWidget( self, "Debug", "--->  %s BatteryLvl rounded" %self.IEEE2NWK[Devices[unit].DeviceID])
             BatteryLvl = round( BatteryLevel)
 
         if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
-            loggingWidget( self, "Debug", "--->  %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[x].DeviceID])
+            loggingWidget( self, "Debug", "--->  %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[unit].DeviceID])
             BatteryLvl = 255
 
         _timeout = self.pluginconf.pluginConf['resetMotiondelay']
         #resetMotionDelay = 0
         #if self.domoticzdb_DeviceStatus:
         #    from Classes.DomoticzDB import DomoticzDB_DeviceStatus
-        #    resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[x].ID),1)
+        #    resetMotionDelay = round(self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[unit].ID),1)
         #if resetMotionDelay > 0:
         #    _timeout = resetMotionDelay
 
         if (current - LUpdate) >= _timeout: 
-            loggingWidget( self, "Debug", "Last update of the devices " + str(x) + " was : " + str(LUpdate) + " current is : " + str(
+            loggingWidget( self, "Debug", "Last update of the devices " + str(unit) + " was : " + str(LUpdate) + " current is : " + str(
                 current) + " this was : " + str(current - LUpdate) + " secondes ago", NWKID)
-            UpdateDevice_v2(self, Devices, x, 0, "Off", BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLevel, SignalLevel)
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
 
