@@ -144,7 +144,7 @@ def ReadCluster(self, Devices, MsgData):
         Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
         return
 
-    if DeviceExist(self, Devices, MsgSrcAddr) == False:
+    if not DeviceExist(self, Devices, MsgSrcAddr):
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
         return

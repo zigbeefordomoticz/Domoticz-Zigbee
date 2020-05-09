@@ -2181,7 +2181,7 @@ class WebServer(object):
                 
                 cmd = data['Command']
                 payload = data['payload']
-                if payload == None:
+                if payload is None:
                     payload = ""
                 sendZigateCmd( self, data['Command'], data['payload'])
                 self.logging( 'Log', "rest_dev_command - Command: %s payload %s" %(data['Command'], data['payload']))

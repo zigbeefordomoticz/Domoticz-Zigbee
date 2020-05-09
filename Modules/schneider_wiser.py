@@ -765,7 +765,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
             if ClusterID in self.ListOfDevices[NWKID]['Ep'][EP]:
                 if attr in self.ListOfDevices[NWKID]['Ep'][EP][ClusterID]:
                     if self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] == {}:
-                        if newValue == None:
+                        if newValue is None:
                             loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set: could not find value, setting default value  %s" %defaultValue,NWKID)
                             self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = defaultValue
                         else:
@@ -774,7 +774,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
 
                     loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : found value %s"%(self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]),NWKID)
                     found = self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]
-                    if newValue != None:
+                    if newValue is not None:
                         loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : setting new value %s"%newValue,NWKID)
                         self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
     return found

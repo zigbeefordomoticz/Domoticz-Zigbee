@@ -1000,7 +1000,7 @@ def Decode8041(self, Devices, MsgData, MsgRSSI) : # IEEE Address response
 
     if self.ListOfDevices[MsgShortAddress]['Status'] == "8041" :        # We have requested a IEEE address for a Short Address, 
                                                                         # hoping that we can reconnect to an existing Device
-        if DeviceExist(self, Devices, MsgShortAddress, MsgIEEE ) == True :
+        if DeviceExist(self, Devices, MsgShortAddress, MsgIEEE ):
             loggingInput( self, 'Log',"Decode 8041 - Device details : " +str(self.ListOfDevices[MsgShortAddress]) )
         else :
             Domoticz.Error("Decode 8041 - Unknown device : " +str(MsgShortAddress) + " IEEE : " +str(MsgIEEE) )
@@ -1743,7 +1743,7 @@ def Decode8102(self, Devices, MsgData, MsgRSSI) :  # Report Individual Attribute
 
     updRSSI( self, MsgSrcAddr, MsgRSSI )
 
-    if DeviceExist(self, Devices, MsgSrcAddr) == True :
+    if DeviceExist(self, Devices, MsgSrcAddr):
         if self.pluginconf.pluginConf['debugRSSI']:
             if self.ListOfDevices[MsgSrcAddr]['RSSI'] <= self.pluginconf.pluginConf['debugRSSI']:
                 if 'ZDeviceName' in self.ListOfDevices[MsgSrcAddr]:
@@ -2033,7 +2033,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
         if MsgDataDestAddr in self.ListOfDevices:
             NWKID = MsgDataDestAddr
             IEEE = self.ListOfDevices[MsgDataDestAddr]['IEEE']
-    if NWKID == None or IEEE == None:
+
+    if NWKID is None or IEEE is None:
         loggingInput( self, 'Log',"Decode8702 - Unknown Address %s : (%s,%s)" %( MsgDataDestAddr, NWKID, IEEE ))
         return
     
