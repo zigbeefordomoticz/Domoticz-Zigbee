@@ -291,7 +291,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
                         break
 
-        if IsCreated == False:
+        if not IsCreated:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
 
             # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux

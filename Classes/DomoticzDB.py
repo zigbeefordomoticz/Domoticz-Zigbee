@@ -119,7 +119,7 @@ class DomoticzDB_Preferences:
             try:
                 self.dbCursor.execute("SELECT nValue FROM Preferences WHERE Key = 'AcceptNewHardware'" )
                 value = self.dbCursor.fetchone()
-                if value == None:
+                if value is None:
                     self.closeDB()
                     return 0
                 else:
@@ -424,7 +424,7 @@ class DomoticzDB_DeviceStatus:
                 self.dbCursor.execute("SELECT AddjValue2 FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
                 value = self.dbCursor.fetchone()
                 self.logging( "Debug", "--> Value: %s" %value)
-                if value == None:
+                if value is None:
                     self.AdjValue['Baro'][ID]['Value'] = 0
                     self.AdjValue['Baro'][ID]['Stamp'] = int(time())
                     self.closeDB()
@@ -471,7 +471,7 @@ class DomoticzDB_DeviceStatus:
                 self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
                 value = self.dbCursor.fetchone()
                 self.logging( "Debug", "--> Value: %s" %value)
-                if value == None:
+                if value is None:
                     self.closeDB()
                     return 0
                 else:
@@ -518,7 +518,7 @@ class DomoticzDB_DeviceStatus:
                 self.dbCursor.execute("SELECT AddjValue FROM DeviceStatus WHERE ID = '%s' and HardwareID = '%s'" %(ID, self.HardwareID))
                 value = self.dbCursor.fetchone()
                 self.logging( "Debug", "--> Value: %s" %value)
-                if value == None:
+                if value is None:
                     self.closeDB()
                     return 0
                 else:

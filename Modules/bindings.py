@@ -43,7 +43,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     if not destaddr:
         #destaddr = self.ieee # Let's grab the IEEE of Zigate
-        if self.ZigateIEEE != None and self.ZigateIEEE != '':
+        if self.ZigateIEEE is not None and self.ZigateIEEE != '':
             destaddr = self.ZigateIEEE
         else:
             loggingOutput( self, 'Debug', "bindDevice - self.ZigateIEEE not yet initialized")
@@ -156,7 +156,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
     mode = "03"     # IEEE
     if not destaddr:
         #destaddr = self.ieee # Let's grab the IEEE of Zigate
-        if self.ZigateIEEE != None and self.ZigateIEEE != '':
+        if self.ZigateIEEE is not None and self.ZigateIEEE != '':
             destaddr = self.ZigateIEEE
             destep = "01"
         else:

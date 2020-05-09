@@ -29,21 +29,26 @@ from Modules.lumi import AqaraOppleDecoding0012
 
 def retreive4Tag(tag,chain):
     c = str.find(chain,tag) + 4
-    if c == 3: return ''
+    if c == 3: 
+        return ''
     return chain[c:(c+4)]
 
 def retreive8Tag(tag,chain):
     c = str.find(chain,tag) + 4
-    if c == 3: return ''
+    if c == 3: 
+        return ''
     return chain[c:(c+8)]
 
 def voltage2batteryP( voltage, volt_max, volt_min):
     if voltage > volt_max: 
         ValueBattery = 100
+
     elif voltage < volt_min: 
         ValueBattery = 0
+
     else: 
         ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
+
     return round(ValueBattery)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -54,45 +59,60 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
     if int(AttType,16) == 0x10:    # Boolean
         return Attribute
-    elif int(AttType,16) == 0x18:  # 8Bit bitmap
+
+    if int(AttType,16) == 0x18:  # 8Bit bitmap
         return int(Attribute, 16 )
-    elif int(AttType,16) == 0x19:  # 16BitBitMap
+
+    if int(AttType,16) == 0x19:  # 16BitBitMap
         return str(int(Attribute, 16 ))
-    elif int(AttType,16) == 0x20:  # Uint8 / unsigned char
+
+    if int(AttType,16) == 0x20:  # Uint8 / unsigned char
         return int(Attribute, 16 )
-    elif int(AttType,16) == 0x21:   # 16BitUint
+
+    if int(AttType,16) == 0x21:   # 16BitUint
         return str(struct.unpack('H',struct.pack('H',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x22:   # ZigBee_24BitUint
-            return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
-    elif int(AttType,16) == 0x23:   # 32BitUint
+
+    if int(AttType,16) == 0x22:   # ZigBee_24BitUint
+        return str(struct.unpack('I',struct.pack('I',int("0"+Attribute,16)))[0])
+
+    if int(AttType,16) == 0x23:   # 32BitUint
             loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('I',struct.pack('I',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x25:   # ZigBee_48BitUint
+
+    if int(AttType,16) == 0x25:   # ZigBee_48BitUint
             return str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])
-    elif int(AttType,16)  == 0x28: # int8
+
+    if int(AttType,16)  == 0x28: # int8
         return int(Attribute, 16 )
-    elif int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
+
+    if int(AttType,16) == 0x29:   # 16Bitint   -> tested on Measurement clusters
         return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x2a:   # ZigBee_24BitInt
+
+    if int(AttType,16) == 0x2a:   # ZigBee_24BitInt
         loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                 str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])))
         return str(struct.unpack('i',struct.pack('I',int("0"+Attribute,16)))[0])
-    elif int(AttType,16) == 0x2b:   # 32Bitint
+
+    if int(AttType,16) == 0x2b:   # 32Bitint
             loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])))
             return str(struct.unpack('i',struct.pack('I',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x2d:   # ZigBee_48Bitint
+
+    if int(AttType,16) == 0x2d:   # ZigBee_48Bitint
             loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) untested, returning %s " %(AttType, Attribute, \
                                     str(struct.unpack('Q',struct.pack('Q',int(Attribute,16)))[0])))
             return str(struct.unpack('q',struct.pack('Q',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x30:  # 8BitEnum
+    if int(AttType,16) == 0x30:  # 8BitEnum
         return int(Attribute,16 )
-    elif int(AttType,16)  == 0x31: # 16BitEnum 
+
+    if int(AttType,16)  == 0x31: # 16BitEnum 
         return str(struct.unpack('h',struct.pack('H',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x39:  # Xiaomi Float
+
+    if int(AttType,16) == 0x39:  # Xiaomi Float
         return str(struct.unpack('f',struct.pack('I',int(Attribute,16)))[0])
-    elif int(AttType,16) == 0x42:  # CharacterString
+
+    if int(AttType,16) == 0x42:  # CharacterString
         decode = ''
         try:
             decode = binascii.unhexlify(Attribute).decode('utf-8')
@@ -110,9 +130,9 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
         decode = decode.strip('\x00')
         decode = decode.strip()
         return decode
-    else:
-        loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
-        return Attribute
+
+    loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
+    return Attribute
 
 def ReadCluster(self, Devices, MsgData):
 
@@ -144,24 +164,24 @@ def ReadCluster(self, Devices, MsgData):
         Domoticz.Error("ReadCluster - unknown device: %s" %(MsgSrcAddr))
         return
 
-    if DeviceExist(self, Devices, MsgSrcAddr) == False:
+    if not DeviceExist(self, Devices, MsgSrcAddr):
         #Pas sur de moi, mais je vois pas pkoi continuer, pas sur que de mettre a jour un device bancale soit utile
         Domoticz.Error("ReadCluster - KeyError: MsgData = " + MsgData)
         return
-    else:
-        # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????
-        # This looks not possible to me !!!!!!!
-        # This could be in the case of Xiaomi sending Cluster 0x0000 before anything is done on the plugin.
-        # I would consider this doesn't make sense, and we should simply return a warning, that we receive a message from an unknown device !
-        try: 
-            tmpEp=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]
-            try:
-                tmpClusterid=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]
-            except: 
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
-        except:
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
+
+    # Can we receive a Custer while the Device is not yet in the ListOfDevices ??????
+    # This looks not possible to me !!!!!!!
+    # This could be in the case of Xiaomi sending Cluster 0x0000 before anything is done on the plugin.
+    # I would consider this doesn't make sense, and we should simply return a warning, that we receive a message from an unknown device !
+    try: 
+        tmpEp=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]
+        try:
+            tmpClusterid=self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]
+        except: 
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
+    except:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]={}
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]={}
 
 
     loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s AttrId: %s AttrType: %s Attsize: %s Status: %s AttrValue: %s" \
@@ -810,7 +830,8 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 value = round(battRemainPer / 2)
 
     elif battRemainingVolt != 0: 
-        max_voltage = 30 ; min_voltage = 27
+        max_voltage = 30
+        min_voltage = 27
         if '0001' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
             if '0036' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
                 if self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != {} and self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0036'] != '':
@@ -818,16 +839,20 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
             if self.ListOfDevices[MsgSrcAddr]['Model'] in LEGRAND_REMOTES:
-                max_voltage = 30 ; min_voltage = 25
+                max_voltage = 30 
+                min_voltage = 25
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
-                max_voltage = 3 * 1.5; min_voltage = 3 * 1
+                max_voltage = 3 * 1.5
+                min_voltage = 3 * 1
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
-                max_voltage = 60 ; min_voltage = 30
+                max_voltage = 60
+                min_voltage = 30
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-VACT':
-                max_voltage = 2 * 1.5; min_voltage = 2 * 1
+                max_voltage = 2 * 1.5
+                min_voltage = 2 * 1
 
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
@@ -1231,7 +1256,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                      %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
                 return
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2' and MsgSrcEp != '02' and MsgSrcEp != '03':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.ctrl_neutral2' and MsgSrcEp != '02' and MsgSrcEp != '03':
                 # EP 02 ON/OFF LEFT    -- OK
                 # EP 03 ON/ON RIGHT    -- OK
                 # EP 04 EVENT LEFT
@@ -1241,7 +1266,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                    %(MsgClusterId, MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
                 return
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == '3AFE170100510001': 
                 # Konke Multi Purpose Switch
                 value = None
                 if MsgClusterData in ( '01', '80'): # Simple Click
@@ -1259,7 +1284,7 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                 MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, MsgClusterId, value)
                 return
 
-            elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
+            if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
                 # Livolo / Might get something else than On/Off
                  loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - %s/%s MsgAttrID: %s, MsgAttType: %s, MsgAttSize: %s, : %s" \
                          %(MsgSrcAddr, MsgSrcEp,MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -1403,9 +1428,16 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     def decode_vibr(value):         #Decoding XIAOMI Vibration sensor 
         if value == '' or value is None:
             return value
-        if   value == "0001": return '20' # Take/Vibrate/Shake
-        elif value == "0002": return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
-        elif value == "0003": return '30' #Drop
+
+        if  value == "0001": 
+            return '20' # Take/Vibrate/Shake
+
+        if value == "0002": 
+            return '10' # Tilt / we will most-likely receive 0x0503/0x0054 after
+
+        if value == "0003": 
+            return '30' #Drop
+
         return '00'
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
@@ -1467,9 +1499,14 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         x2 = x*x; y2 = y*y; z2 = z*z
         angleX= angleY = angleZ = 0
-        if z2 + y2 != 0: angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
-        if x2 + z2 != 0: angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
-        if x2 + y2 != 0: angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
+        if z2 + y2 != 0: 
+            angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
+
+        if x2 + z2 != 0: 
+            angleY = round( atan( y / sqrt(x2+z2)) * 180 / pi)
+
+        if x2 + y2 != 0: 
+            angleZ = round( atan( z / sqrt(x2+y2)) * 180 / pi)
 
         loggingCluster( self, 'Debug', " ReadCluster %s/%s - AttrType: %s AttrLenght: %s AttrData: %s Vibration ==> angleX: %s angleY: %s angleZ: %s" \
                 %(MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, angleX, angleY, angleZ), MsgSrcAddr)
@@ -1578,7 +1615,7 @@ def Cluster0102( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
                     # do not update
                     return
 
-                elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302':
+                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TS0302':
                     if value > 100:
                         value = 0
                     else:
@@ -1777,7 +1814,8 @@ def Cluster0406( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0406 - Attribut 0030: " + str(MsgClusterData) , MsgSrcAddr)
 
     else:
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " 
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 
 def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -1896,8 +1934,6 @@ def Cluster0500( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
     loggingCluster( self, 'Debug', "ReadCluster0500 - Device: %s Data: %s" %(MsgSrcAddr, MsgClusterData), MsgSrcAddr)
-
-    return
 
 def Cluster0502( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
@@ -2410,8 +2446,10 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             return   # No need to update
 
         # Check if we reach the limits Min and Max
-        if lvlValue > 255: lvlValue = 255
-        if lvlValue <= 0: lvlValue = 0
+        if lvlValue > 255: 
+            lvlValue = 255
+        if lvlValue <= 0: 
+            lvlValue = 0
         loggingCluster( self, 'Debug', "ReadCluster - %s - %s/%s - Level: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, lvlValue), MsgSrcAddr)
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -2596,4 +2634,3 @@ def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAt
 
     loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" 
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-

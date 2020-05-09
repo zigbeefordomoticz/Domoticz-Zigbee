@@ -610,7 +610,7 @@ class BasePlugin:
                     # Need to check if and ErasePDM has been performed.
                     # In case case, we have to set the extendedPANID
                             # ErasePDM has been requested, we are in the next Loop.
-                    if self.ErasePDMDone == True:
+                    if self.ErasePDMDone:
                         if self.pluginconf.pluginConf['extendedPANID'] is not None:
                             loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
                             setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])

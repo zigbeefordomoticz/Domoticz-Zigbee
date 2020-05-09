@@ -1349,7 +1349,7 @@ class GroupsManagement(object):
             return
             
         _widgetColor = self.ListOfGroups[_grpid]['Tradfri Remote']['Color Mode'] 
-        if _widgetColor == None:
+        if _widgetColor is None:
             Domoticz.Error("manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" %_widgetColor)
             return
 
