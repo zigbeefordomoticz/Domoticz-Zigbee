@@ -28,8 +28,8 @@ class ListOfDevices():
 
         if nwkid in self.ListOfDevices:
             return nwkid
-        else:
-            return False
+        
+        return False
 
     def add_Last_Cmds( self, nwkid, data):
         

@@ -233,7 +233,7 @@ class NetworkMap():
             self.LQIticks += 1
             return
 
-        elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
+        if len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
             entry = self.LQIreqInProgress.pop()
             self.logging( 'Debug', "Commdand pending Timeout: %s" % entry)
             if self.Neighbours[entry]['Status'] == 'WaitResponse':

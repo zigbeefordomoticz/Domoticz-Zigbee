@@ -521,11 +521,11 @@ class DomoticzDB_DeviceStatus:
                 if value is None:
                     self.closeDB()
                     return 0
-                else:
-                    self.AdjValue['Temp'][ID]['Value'] = value[0]
-                    self.AdjValue['Temp'][ID]['Stamp'] = int(time())
-                    self.closeDB()
-                    return value[0]
+
+                self.AdjValue['Temp'][ID]['Value'] = value[0]
+                self.AdjValue['Temp'][ID]['Stamp'] = int(time())
+                self.closeDB()
+                return value[0]
     
             except sqlite3.Error as e:
                 Domoticz.Error("retreiveAddjValue_temp - Database error: %s" %e)

@@ -127,7 +127,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             # and this is the same ShortId as the one existing
             return True
 
-        elif exitsingNwkId not in self.ListOfDevices:
+        if exitsingNwkId not in self.ListOfDevices:
             # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
@@ -135,7 +135,7 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             del self.IEEE2NWK[ lookupIEEE ]
             return False
 
-        elif 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
             # Should not happen
             # That seems not correct
             # We might have to do some cleanup here !
@@ -145,10 +145,9 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
 
             # Delete the all Data Structure
             del self.ListOfDevices[ exitsingNwkId ]
-
             return False
 
-        elif self.ListOfDevices[ exitsingNwkId ]['Status'] in ( '004d', '0045', '0043', '8045', '8043', 'UNKNOW'):
+        if self.ListOfDevices[ exitsingNwkId ]['Status'] in ( '004d', '0045', '0043', '8045', '8043', 'UNKNOW'):
             # We are in the discovery/provisioning process,
             # and the device got a new Short Id
             # we need to restart from the begiging and remove all existing datastructutre.
@@ -165,20 +164,19 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
 
             return False
 
-        else:
-            # At that stage, we have found an entry for the IEEE, but doesn't match
-            # the coming Short Address lookupNwkId.
-            # Most likely , device has changed its NwkId   
-            found = True        
-            reconnectNWkDevice( self, lookupNwkId, lookupIEEE, exitsingNwkId)
+        # At that stage, we have found an entry for the IEEE, but doesn't match
+        # the coming Short Address lookupNwkId.
+        # Most likely , device has changed its NwkId   
+        found = True        
+        reconnectNWkDevice( self, lookupNwkId, lookupIEEE, exitsingNwkId)
 
-            # Let's send a Notfification
-            devName = ''
-            for x in Devices:
-                if Devices[x].DeviceID == lookupIEEE:
-                    devName = Devices[x].Name
-                    break
-            self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
+        # Let's send a Notfification
+        devName = ''
+        for x in Devices:
+            if Devices[x].DeviceID == lookupIEEE:
+                devName = Devices[x].Name
+                break
+        self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
  
     return found
 
@@ -271,8 +269,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
 
             return True
-        else:
-            return False
+        return False
 
 
 
@@ -377,10 +374,11 @@ def getTypebyCluster( self, Cluster ) :
 
     if Cluster == '' or Cluster is None :
         return ''
+
     if Cluster in clustersType :
         return clustersType[Cluster]
-    else :
-        return ''
+
+    return ''
 
 def getListofClusterbyModel( self, Model , InOut ) :
     """

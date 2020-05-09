@@ -1567,7 +1567,6 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
             else:
                 Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue),               SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
-    return
 
 def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
  
@@ -1694,8 +1693,10 @@ def GetType(self, Addr, Ep):
             if self.ListOfDevices[Addr]['Manufacturer'] == '117c': # Ikea
                 if ( self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0830') :
                     return "Ikea_Round_5b"
-                elif self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0820':
+
+                if self.ListOfDevices[Addr]['ProfileID'] == 'c05e' and self.ListOfDevices[Addr]['ZDeviceID'] == '0820':
                     return "Ikea_Round_OnOff"
+                    
             elif self.ListOfDevices[Addr]['Manufacturer'] == '100b': # Philipps Hue
                 pass
             elif str(self.ListOfDevices[Addr]['Manufacturer']).find('LIVOLO') != -1:

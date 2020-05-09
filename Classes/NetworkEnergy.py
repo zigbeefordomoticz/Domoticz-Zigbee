@@ -390,17 +390,21 @@ class NetworkEnergy():
         if len(self.nwkidInQueue) == 0 and MsgSrc:
             self.logging( 'Log', "NwkScanResponse - Empty Queue, Receive infos from %s" %MsgSrc)
             return
-        elif len(self.nwkidInQueue) == 0:
+
+        if len(self.nwkidInQueue) == 0:
             self.logging( 'Log', "NwkScanResponse - Empty Queue ")
             return
-        elif len(self.nwkidInQueue) > 0 and MsgSrc:
+
+        if len(self.nwkidInQueue) > 0 and MsgSrc:
             root, entry = self.nwkidInQueue.pop()
             self.logging( 'Debug', "NwkScanResponse - Root: %s, Entry: %s, MsgSrc: %s" %(root, entry, MsgSrc))
             if entry != MsgSrc:
                 Domoticz.Log("NwkScanResponse - Unexpected message >%s< from %s, expecting %s" %( MsgData, MsgSrc, entry))
+
         elif  len(self.nwkidInQueue) > 0 :
             root, entry = self.nwkidInQueue.pop()
             self.logging( 'Debug', "NwkScanResponse - Root: %s, Entry: %s" %(root, entry))
+            
         else:
             self.logging( 'Log', "NwkScanResponse - Unexpected: len: %s, MsgSrc: %s" %(len(self.nwkidInQueue), MsgSrc))
             return
