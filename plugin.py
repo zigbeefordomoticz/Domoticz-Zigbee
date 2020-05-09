@@ -105,6 +105,9 @@ from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.ListOfDevices import ListOfDevices
 
+PLUGIN_GITHUB_BRANCH = 'beta'
+PLUGIN_GITHUB_VERSION = '4.8.025'
+
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5# HB before request Firmware again
@@ -197,8 +200,8 @@ class BasePlugin:
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
-        self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.8.025'
+        self.pluginParameters['PluginBranch'] = PLUGIN_GITHUB_BRANCH
+        self.pluginParameters['PluginVersion'] = PLUGIN_GITHUB_VERSION
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
