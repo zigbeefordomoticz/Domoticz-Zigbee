@@ -16,4 +16,4 @@ Reports/*
 Zdatas/DiscoveryDevice*
 Reports/*
 __pycache__/
-*/__pycache__
+**/__pycache__
