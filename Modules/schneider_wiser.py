@@ -63,7 +63,7 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                     if 'Schneider' not in self.ListOfDevices[NwkId]:
                         self.ListOfDevices[NwkId]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
-                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] * 100):
+                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
                             # Protect against overloading Zigate
                             if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
                                 schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
@@ -574,7 +574,8 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
 def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
 
     # Check if nwkid is the ListOfDevices
-
+    loggingSchneider( self, 'Debug', "schneiderUpdateThermostatDevice nwkid : %s, setpoint: %s" \
+            %(NWKID, setpoint), NWKID)
     if NWKID not in self.ListOfDevices:
         return
 
@@ -654,11 +655,14 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     cmd = MsgPayload[4:6] # uint8
     data = MsgPayload[6:] # all the rest
 
+    loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
+            %( fcf, sqn, cmd, data), srcNWKID)
+
     if ClusterID == '0201' : # Thermostat cluster
         if cmd == '00': #read attributes
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
             schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
-        if cmd == 'e0': #read attributes
+        if cmd == 'e0': # command to change setpoint from thermostat
             sTemp = data [4:8]
             setpoint = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
             schneiderUpdateThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
@@ -669,10 +673,6 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
         elif cmd == '50': #end of alarm
             loggingSchneider( self, 'Debug','Schneider cmd 0x50',srcNWKID)
             schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, False, data)
-
-
-    loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
-            %( fcf, sqn, cmd, data), srcNWKID)
 
     return
 
