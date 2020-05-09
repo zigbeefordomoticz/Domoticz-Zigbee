@@ -53,7 +53,8 @@ def processConfigureReporting( self, NWKID=None ):
 
     for key in target:
         # Let's check that we can do a Configure Reporting. Only during the pairing process (NWKID is provided) or we are on the Main Power
-        if key == '0000': continue
+        if key == '0000': 
+            continue
 
         if key not in self.ListOfDevices:
             Domoticz.Error("processConfigureReporting - Unknown key: %s" %key)
@@ -61,7 +62,8 @@ def processConfigureReporting( self, NWKID=None ):
         if 'Status' not in self.ListOfDevices[key]:
             Domoticz.Error("processConfigureReporting - no 'Status' flag for device %s !!!" %key)
             continue
-        if self.ListOfDevices[key]['Status'] != 'inDB': continue
+        if self.ListOfDevices[key]['Status'] != 'inDB': 
+            continue
 
         if NWKID is None:
             if not mainPoweredDevice(self, key):

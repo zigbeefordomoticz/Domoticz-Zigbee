@@ -14,36 +14,62 @@ def DisplayStatusCode( StatusCode ) :
     # As described in https://www.nxp.com/docs/en/user-guide/JN-UG-3113.pdf section 10.2
 
     StatusMsg=""
-    if str(StatusCode) =="00" :   StatusMsg="Success"
-    elif str(StatusCode) == "01" : StatusMsg ="Incorrect Parameters"
-    elif str(StatusCode) == "02" : StatusMsg ="Unhandled Command"
-    elif str(StatusCode) == "03" : StatusMsg ="Command Failed"
-    elif str(StatusCode) == "04" : StatusMsg ="Busy"
-    elif str(StatusCode) == "05" : StatusMsg ="Stack Already Started"
+    if str(StatusCode) =="00" :   
+        StatusMsg="Success"
+    elif str(StatusCode) == "01" : 
+        StatusMsg ="Incorrect Parameters"
+    elif str(StatusCode) == "02" : 
+        StatusMsg ="Unhandled Command"
+    elif str(StatusCode) == "03" : 
+        StatusMsg ="Command Failed"
+    elif str(StatusCode) == "04" : 
+        StatusMsg ="Busy"
+    elif str(StatusCode) == "05" : 
+        StatusMsg ="Stack Already Started"
     
 # ZCL return status code
     
 #NWK CODES    
-    elif str(StatusCode)=="c1" : StatusMsg="An invalid or out-of-range parameter has been passed"
-    elif str(StatusCode)=="c2" : StatusMsg="Request cannot be processed"
-    elif str(StatusCode)=="c3" : StatusMsg="NLME-JOIN.request not permitted"
-    elif str(StatusCode)=="c4" : StatusMsg="NLME-NETWORK-FORMATION.request failed"
-    elif str(StatusCode)=="c5" : StatusMsg="NLME-DIRECT-JOIN.request failure - device already present"
-    elif str(StatusCode)=="c6" : StatusMsg="NLME-SYNC.request has failed"
-    elif str(StatusCode)=="c7" : StatusMsg="NLME-DIRECT-JOIN.request failure - no space in Router table"
-    elif str(StatusCode)=="c8" : StatusMsg="NLME-LEAVE.request failure - device not in Neighbour table"
-    elif str(StatusCode)=="c9" : StatusMsg="NLME-GET/SET.request unknown attribute identified"
-    elif str(StatusCode)=="ca" : StatusMsg="NLME-JOIN.request detected no networks"
-    elif str(StatusCode)=="cb" : StatusMsg="Reserved"
-    elif str(StatusCode)=="cc" : StatusMsg="Security processing has failed on outgoing frame due to maximum frame counter"
-    elif str(StatusCode)=="cd" : StatusMsg="Security processing has failed on outgoing frame due to no key"
-    elif str(StatusCode)=="ce" : StatusMsg="Security processing has failed on outgoing frame due CCM"
-    elif str(StatusCode)=="cf" : StatusMsg="Attempt at route discovery has failed due to lack of table space"
-    elif str(StatusCode)=="d0" : StatusMsg="Attempt at route discovery has failed due to any reason except lack of table space"
-    elif str(StatusCode)=="d1" : StatusMsg="NLDE-DATA.request has failed due to routing failure on sending device"
-    elif str(StatusCode)=="d2" : StatusMsg="Broadcast or broadcast-mode multicast has failed as there is no room in BTT"
-    elif str(StatusCode)=="d3" : StatusMsg="Unicast mode multi-cast frame was discarded pending route discovery"
-    elif str(StatusCode)=="d4" : StatusMsg="Unicast frame does not have a route available but it is buffered for automatic resend"
+    elif str(StatusCode)=="c1" : 
+        StatusMsg="An invalid or out-of-range parameter has been passed"
+    elif str(StatusCode)=="c2" : 
+        StatusMsg="Request cannot be processed"
+    elif str(StatusCode)=="c3" : 
+        StatusMsg="NLME-JOIN.request not permitted"
+    elif str(StatusCode)=="c4" : 
+        StatusMsg="NLME-NETWORK-FORMATION.request failed"
+    elif str(StatusCode)=="c5" : 
+        StatusMsg="NLME-DIRECT-JOIN.request failure - device already present"
+    elif str(StatusCode)=="c6" : 
+        StatusMsg="NLME-SYNC.request has failed"
+    elif str(StatusCode)=="c7" : 
+        StatusMsg="NLME-DIRECT-JOIN.request failure - no space in Router table"
+    elif str(StatusCode)=="c8" : 
+        StatusMsg="NLME-LEAVE.request failure - device not in Neighbour table"
+    elif str(StatusCode)=="c9" : 
+        StatusMsg="NLME-GET/SET.request unknown attribute identified"
+    elif str(StatusCode)=="ca" : 
+        StatusMsg="NLME-JOIN.request detected no networks"
+    elif str(StatusCode)=="cb" : 
+        StatusMsg="Reserved"
+    elif str(StatusCode)=="cc" : 
+        StatusMsg="Security processing has failed on outgoing frame due to maximum frame counter"
+    elif str(StatusCode)=="cd" : 
+        StatusMsg="Security processing has failed on outgoing frame due to no key"
+    elif str(StatusCode)=="ce" : 
+        StatusMsg="Security processing has failed on outgoing frame due CCM"
+    elif str(StatusCode)=="cf" : 
+        StatusMsg="Attempt at route discovery has failed due to lack of table space"
+    elif str(StatusCode)=="d0" : 
+        StatusMsg="Attempt at route discovery has failed due to any reason except lack of table space"
+    elif str(StatusCode)=="d1" : 
+        StatusMsg="NLDE-DATA.request has failed due to routing failure on sending device"
+    elif str(StatusCode)=="d2" : 
+        StatusMsg="Broadcast or broadcast-mode multicast has failed as there is no room in BTT"
+    elif str(StatusCode)=="d3" : 
+        StatusMsg="Unicast mode multi-cast frame was discarded pending route discovery"
+    elif str(StatusCode)=="d4" : 
+        StatusMsg="Unicast frame does not have a route available but it is buffered for automatic resend"
 
 #APS CODES
     elif str(StatusCode)=="a0": StatusMsg="A transmit request failed since the ASDU is too large and fragmentation is not supported"

@@ -41,8 +41,10 @@ def openPDM( self ):
     def _copyfile( source, dest, move=True ):
         try:
             import shutil
-            if move: shutil.move( source, dest)
-            else: shutil.copy( source, dest)
+            if move: 
+                shutil.move( source, dest)
+            else: 
+                shutil.copy( source, dest)
         except:
             with open(source, 'r') as src, open(dest, 'wt') as dst:
                 for line in src: dst.write(line)

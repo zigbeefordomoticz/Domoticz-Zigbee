@@ -1497,7 +1497,10 @@ def Cluster0101( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         y = (value >> 16) & 0xffff
         z = (value >> 32) & 0xfff
 
-        x2 = x*x; y2 = y*y; z2 = z*z
+        x2 = x*x
+        y2 = y*y
+        z2 = z*z
+        
         angleX= angleY = angleZ = 0
         if z2 + y2 != 0: 
             angleX = round( atan( x / sqrt(z2+y2)) * 180 / pi)
@@ -2032,7 +2035,8 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         # 255 -> Long Release
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug',"ReadCluster - ClusterId=0012 - Switch Aqara: EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
-        if value == 0: value = 3
+        if value == 0: 
+            value = 3
 
         # Force ClusterType Switch in order to behave as Switch
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",str(value))    

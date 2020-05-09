@@ -468,7 +468,8 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         elif DeviceType == 'BSO':
             from Modules.profalux import profalux_MoveToLiftAndTilt
             orientation = (Level * 90 ) // 100
-            if orientation > 90: orientation = 90
+            if orientation > 90: 
+                orientation = 90
             profalux_MoveToLiftAndTilt( self, NWKID, tilt=orientation)
 
         elif DeviceType == "WindowCovering": # Blind Inverted
