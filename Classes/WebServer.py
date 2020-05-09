@@ -1081,7 +1081,7 @@ class WebServer(object):
             Domoticz.Log("Plugin Restart command : %s" %url)
             _cmd = "/usr/bin/curl '%s' &" %url
             try:
-                os.system( _cmd )
+                os.system( _cmd )  # nosec
             except:
                 Domoticz.Error("Error while trying to restart plugin %s" %_cmd)
 
