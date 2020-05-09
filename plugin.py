@@ -106,8 +106,6 @@ from Classes.NetworkEnergy import NetworkEnergy
 from Classes.ListOfDevices import ListOfDevices
 
 VERSION_FILENAME = '.hidden/VERSION'
-PLUGIN_GITHUB_BRANCH = 'beta'
-PLUGIN_GITHUB_VERSION = '4.8.025'
 
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
