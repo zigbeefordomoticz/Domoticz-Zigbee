@@ -13,7 +13,6 @@ from Modules.output import callBackForWriteAttributeIfNeeded
 
 
 def callbackDeviceAwake(self, nwkid, endpoint, cluster):
-
     """
     This is fonction is call when receiving a message from a Manufacturer battery based device.
     The function is called after processing the readCluster part
@@ -26,10 +25,6 @@ def callbackDeviceAwake(self, nwkid, endpoint, cluster):
         '105e' : callbackDeviceAwake_Schneider ,
         '1021' : callbackDeviceAwake_Legrand ,
         }
-
-
-    #Domoticz.Log("callbackDeviceAwake - nwkid: %s ep: %s cluster: %s" \
-    #        %(nwkid, endpoint, cluster))
 
     if nwkid not in self.ListOfDevices:
         return
@@ -47,6 +42,3 @@ def callbackDeviceAwake(self, nwkid, endpoint, cluster):
         manuf = self.ListOfDevices[nwkid]['Manufacturer']
         func = CALLBACK_TABLE[ manuf ]
         func( self, nwkid , endpoint, cluster)
-
-
-    return
