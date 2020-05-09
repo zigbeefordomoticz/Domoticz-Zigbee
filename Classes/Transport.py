@@ -473,7 +473,7 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
             return
 
-        elif MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
+        if MsgType == '8011': # APS Ack/Nck with Firmware 3.1b
 
             MsgStatus = MsgData[0:2]
             MsgSrcAddr = MsgData[2:6]
@@ -484,6 +484,7 @@ class ZigateTransport(object):
 
             if MsgStatus == '00':
                 self.statistics._APSAck += 1
+                
             elif MsgStatus == 'a7':
                 self.statistics._APSNck += 1
 

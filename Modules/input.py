@@ -2383,9 +2383,8 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     elif  _ModelName == 'TRADFRI on/off switch':
-        """
-        Ikea Switch On/Off
-        """
+        #Ikea Switch On/Off
+        
         if  MsgClusterId == '0008' and MsgCmd == '05': #Push Up
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, '0006', '02' )
         elif MsgClusterId == '0008' and MsgCmd == '01': # Push Down
@@ -2526,11 +2525,10 @@ def Decode8085(self, Devices, MsgData, MsgRSSI) :
                     self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = selector
    
     elif _ModelName == 'Lightify Switch Mini':
-        """
-        OSRAM Lightify Switch Mini
-        Force Ep 03 to update Domoticz Widget
-        """
-
+        
+        #OSRAM Lightify Switch Mini
+        #Force Ep 03 to update Domoticz Widget
+        
         step_mod = MsgData[14:16]
         up_down = step_size = transition = None
         if len(MsgData) >= 18:
@@ -2646,11 +2644,10 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
     _ModelName = self.ListOfDevices[MsgSrcAddr]['Model']
 
     if _ModelName == 'TRADFRI remote control':
-        """
-        Ikea Remote 5 buttons round.
-        ( cmd, directioni, cluster )
-        ( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
-        """
+        #Ikea Remote 5 buttons round.
+        #( cmd, directioni, cluster )
+        #( 0x02, 0x0006) - click middle button - Action Toggle On/Off Off/on
+        
         if MsgClusterId == '0006' and MsgCmd == '02': 
             MajDomoDevice(self, Devices, MsgSrcAddr, MsgEP, "rmt1", 'toggle' )
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
@@ -2659,27 +2656,22 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     elif _ModelName == 'TRADFRI motion sensor':
-        """
-        Ikea Motion Sensor
-        """
+        #Ikea Motion Sensor
         if MsgClusterId == '0006' and MsgCmd == '42':   # Motion Sensor On
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0406", '01')
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
+
         else:
             loggingInput( self, 'Log',"Decode8095 - SQN: %s, Addr: %s, Ep: %s, Cluster: %s, Cmd: %s, Unknown: %s " %(MsgSQN, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd, unknown_))
             self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     elif  _ModelName == 'TRADFRI on/off switch':
-        """
-        Ikea Switch On/Off
-        """
+        #Ikea Switch On/Off 
         MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, "0006", MsgCmd)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgEP][MsgClusterId]['0000'] = 'Cmd: %s, %s' %(MsgCmd, unknown_)
 
     elif _ModelName == 'RC 110':
-        """
-        INNR RC 110 Remote command
-        """
+        #INNR RC 110 Remote command
         
         ONOFF_TYPE = { 
                 '40': 'onoff_with_effect',
@@ -2700,9 +2692,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Log', "Decode8095 - RC 110 Unknown Command: %s for %s/%s, Cmd: %s, Unknown: %s " %(MsgCmd, MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
     elif _ModelName in LEGRAND_REMOTE_SWITCHS:
-        """
-        Legrand remote switch
-        """
+        # Legrand remote switch
+
         if MsgCmd == '01': # On
             loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
             MajDomoDevice( self, Devices, MsgSrcAddr, MsgEP, MsgClusterId, MsgCmd)
@@ -2714,9 +2705,8 @@ def Decode8095(self, Devices, MsgData, MsgRSSI) :
             loggingInput( self, 'Debug', "Decode8095 - Legrand: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)
 
     elif _ModelName == 'Lightify Switch Mini':
-        """
-        OSRAM Lightify Switch Mini
-        """
+        #        OSRAM Lightify Switch Mini
+
             # All messages are redirected to 1 Ep in order to process them easyly
         if MsgCmd in ('00', '01'): # On
             loggingInput( self, 'Log', "Decode8095 - OSRAM Lightify Switch Mini: %s/%s, Cmd: %s, Unknown: %s " %( MsgSrcAddr, MsgEP, MsgCmd, unknown_), MsgSrcAddr)

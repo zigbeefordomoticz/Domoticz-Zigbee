@@ -38,7 +38,8 @@ def _versionFile( source , nbversion ):
 
     if nbversion == 0:
         return
-    elif nbversion == 1:
+
+    if nbversion == 1:
         _copyfile( source, source +  "-%02d" %1 )
     else:
         for version in range ( nbversion - 1 , 0, -1 ):

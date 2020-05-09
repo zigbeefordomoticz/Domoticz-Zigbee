@@ -50,8 +50,12 @@ def openPDM( self ):
     
     def _versionFile( source , nbversion ):
     
-        if nbversion == 0: return
-        elif nbversion == 1: _copyfile( source, source +  "-%02d" %1 )
+        if nbversion == 0: 
+            return
+
+        if nbversion == 1: 
+            _copyfile( source, source +  "-%02d" %1 )
+
         else:
             for version in range ( nbversion - 1 , 0, -1 ):
                 _fileversion_n =  source + "-%02d" %version
@@ -62,7 +66,6 @@ def openPDM( self ):
                     _copyfile( _fileversion_n, _fileversion_n1 )
             # Last one
             _copyfile( source, source +  "-%02d" %1 , move=False)
-
 
     self.PDM = {}
     #zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
