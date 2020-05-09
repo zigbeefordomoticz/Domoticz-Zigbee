@@ -65,10 +65,14 @@ def runmode_with_gpiomodule( ):
             ei0 = GPIO.input( 17 )
             ei2 = GPIO.input( 27 )
             Domoticz.Status("Switch PiZigate in RUN mode")
-            if ei0: Domoticz.Log(" + GPIO(RUN) OK")
-            else: Domoticz.Log(" + GPIO(RUN) KO")
-            if ei2: Domoticz.Log(" + GPIO(FLASH) OK")
-            else: Domoticz.Log(" + GPIO(FLASH) KO")
+            if ei0: 
+                Domoticz.Log(" + GPIO(RUN) OK")
+            else: 
+                Domoticz.Log(" + GPIO(RUN) KO")
+            if ei2: 
+                Domoticz.Log(" + GPIO(FLASH) OK")
+            else: 
+                Domoticz.Log(" + GPIO(FLASH) KO")
         except RuntimeError:
             Domoticz.Error("Error executing GPIO API, let's try with GPIO commands!")
             runmode_with_gpiocommand()

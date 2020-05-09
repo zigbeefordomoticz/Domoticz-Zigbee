@@ -52,7 +52,8 @@ def receiveZigateEpDescriptor( self, MsgData):
     MsgDataStatus=MsgData[2:4]
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
-    if int(MsgDataLenght,16) == 0 : return
+    if int(MsgDataLenght,16) == 0 : 
+        return
     MsgDataEp=MsgData[10:12]
     MsgDataProfile=MsgData[12:16]
     MsgDataDeviceId=MsgData[16:20]

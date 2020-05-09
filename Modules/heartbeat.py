@@ -251,11 +251,16 @@ def processKnownDevices( self, Devices, NWKID ):
         # Read Attributes if enabled
         now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
-            if tmpEp == 'ClusterType': continue
+            if tmpEp == 'ClusterType': 
+                continue
+
             for Cluster in READ_ATTRIBUTES_REQUEST:
-                if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                    continue
+
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
+
                 if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
                     self.ListOfDevices[NWKID]['ReadAttributes'] = {}
                     self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
@@ -263,6 +268,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral1' and tmpEp != '02': # All Eps other than '02' are blacklisted
                         continue
+                    
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
 
@@ -349,7 +355,9 @@ def processListOfDevices( self , Devices ):
     entriesToBeRemoved = []
 
     for NWKID in list( self.ListOfDevices.keys() ):
-        if NWKID in ('ffff', '0000'): continue
+        if NWKID in ('ffff', '0000'): 
+            continue
+
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
             loggingHeartbeat( self, 'Debug', "Bad devices detected (empty one), remove it, adr:" + str(NWKID), NWKID)

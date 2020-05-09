@@ -1348,7 +1348,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
                 else:
                     sValue = round(((int(value, 16) * 100) / 255))
-                    if sValue > 100: sValue = 100
+                    if sValue > 100: 
+                        sValue = 100
+                        
                     if sValue == 0 and analogValue > 0:
                         sValue = 1
 
@@ -1705,10 +1707,14 @@ def GetType(self, Addr, Ep):
 
         # Finaly Chec on Cluster
         for cluster in self.ListOfDevices[Addr]['Ep'][Ep]:
-            if cluster in ('Type', 'ClusterType', 'ColorMode'): continue
+            if cluster in ('Type', 'ClusterType', 'ColorMode'): 
+                continue
+
             loggingWidget( self, "Debug", "GetType - check Type for Cluster : " + str(cluster))
+
             if Type != "" and Type[:1] != "/":
                 Type += "/"
+
             Type += TypeFromCluster(self, cluster, create_=True)
             loggingWidget( self, "Debug", "GetType - Type will be set to : " + str(Type))
 
