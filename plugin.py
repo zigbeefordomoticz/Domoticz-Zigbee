@@ -105,6 +105,7 @@ from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.ListOfDevices import ListOfDevices
 
+VERSION_FILENAME = '.hidden/VERSION'
 PLUGIN_GITHUB_BRANCH = 'beta'
 PLUGIN_GITHUB_VERSION = '4.8.025'
 
@@ -200,8 +201,13 @@ class BasePlugin:
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
-        self.pluginParameters['PluginBranch'] = PLUGIN_GITHUB_BRANCH
-        self.pluginParameters['PluginVersion'] = PLUGIN_GITHUB_VERSION
+
+        with open(VERSION_FILENAME, 'rt') as versionfile:
+            _pluginversion = json.load( versionfile, encoding=dict)
+
+        self.pluginParameters['PluginBranch'] = _pluginversion['branch']
+        self.pluginParameters['PluginVersion'] = _pluginversion['version']
+
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
