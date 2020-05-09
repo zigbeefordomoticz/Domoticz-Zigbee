@@ -202,7 +202,7 @@ class BasePlugin:
 
         self.pluginParameters = dict(Parameters)
 
-        with open(VERSION_FILENAME, 'rt') as versionfile:
+        with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
             _pluginversion = json.load( versionfile, encoding=dict)
 
         self.pluginParameters['PluginBranch'] = _pluginversion['branch']
