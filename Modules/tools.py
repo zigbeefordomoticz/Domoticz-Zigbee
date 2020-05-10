@@ -516,6 +516,72 @@ def rgb_to_hsl(rgb):
 
     return h, s, l
 
+def decodeMacCapa( inMacCapa ):
+
+    maccap = int(inMacCapa,16)
+    alternatePANCOORDInator = (maccap & 0b00000001)
+    deviceType              = (maccap & 0b00000010) >> 1
+    powerSource             = (maccap & 0b00000100) >> 2
+    receiveOnIddle          = (maccap & 0b00001000) >> 3
+    securityCap             = (maccap & 0b01000000) >> 6
+    allocateAddress         = (maccap & 0b10000000) >> 7
+
+    MacCapa = []
+    if alternatePANCOORDInator:
+        MacCapa.append('Able to act Coordinator')
+    if deviceType:
+        MacCapa.append('Full-Function Device')
+    else:
+        MacCapa.append('Reduced-Function Device')
+    if powerSource:
+        MacCapa.append('Main Powered')
+    if receiveOnIddle:
+        MacCapa.append('Receiver during Idle')
+    if securityCap:
+        MacCapa.append('High security')
+    else:
+        MacCapa.append('Standard security')
+    if allocateAddress:
+        MacCapa.append('NwkAddr should be allocated')
+    else:
+        MacCapa.append('NwkAddr need to be allocated')
+    return MacCapa
+
+        
+def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
+    """
+    Function to check if the MacCapa should not be updated based on Model.
+    As they are some bogous Devices which tell they are Main Powered and they are not !
+
+    Return the old or the revised MacCapa and eventually fix some Attributes
+    """
+
+    if 'Model' not in self.ListOfDevices[nwkid]:
+        return inMacCapa
+
+    if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
+        # Livol Switch, must be converted to Main Powered
+        # Patch some status as Device Annouced doesn't provide much info
+        self.ListOfDevices[nwkid]['LogicalType'] = 'Router'
+        self.ListOfDevices[nwkid]['DevideType'] = 'FFD'
+        self.ListOfDevices[nwkid]['MacCapa'] = '8e'
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Main'
+        return '8e'
+
+    if self.ListOfDevices[nwkid]['Model'] in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01', 
+                                             'lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb',
+                                             'lumi.remote.b686opcn01' ):
+        # Aqara Opple Switch, must be converted to Battery Devices
+        self.ListOfDevices[nwkid]['MacCapa'] = '80'
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
+        if (
+            'Capability' in self.ListOfDevices[nwkid]
+            and 'Main Powered' in self.ListOfDevices[nwkid]['Capability']
+        ):
+            self.ListOfDevices[nwkid]['Capability'].remove( 'Main Powered')
+        return '80'
+
+    return inMacCapa
 
 def mainPoweredDevice( self, nwkid):
     """
@@ -526,7 +592,6 @@ def mainPoweredDevice( self, nwkid):
     if nwkid not in self.ListOfDevices:
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
         return False
-
 
 
     mainPower = False

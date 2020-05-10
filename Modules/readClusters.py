@@ -734,14 +734,12 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '0007': # Power Source
         if MsgClusterData == '01':
-            self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
             if 'Model' in self.ListOfDevices[MsgSrcAddr]:
                 if self.ListOfDevices[MsgSrcAddr]['Model'] != {}:
-                    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001':
-                        # Patch some status as Device Annouced doesn't provide much info
-                        self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'Router'
-                        self.ListOfDevices[MsgSrcAddr]['DevideType'] = 'FFD'
-                        self.ListOfDevices[MsgSrcAddr]['MacCapa'] = '8e'
+                    if self.ListOfDevices[MsgSrcAddr]['Model'] == 'TI0001': 
+                        return
+
+            self.ListOfDevices[MsgSrcAddr]['PowerSource'] = 'Main'
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = value
 
     elif MsgAttrID == "0010": # Voltage
