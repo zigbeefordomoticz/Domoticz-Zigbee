@@ -31,7 +31,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
-from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fip_mode, schneiderRenforceent
+from Modules.schneider_wiser import schneiderRenforceent
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 

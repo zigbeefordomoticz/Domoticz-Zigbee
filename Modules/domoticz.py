@@ -288,11 +288,17 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, subtypeRGB_FromProfile_Device_IDs, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Toggle" %(t), NWKID)
 
+            # 3 Selector , OffHidden, Style 0 (command)
+            if t in ('HACTMODE', ):
+                Options = createSwitchSelector( 3, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
+                createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in HACTMODE..." %(t), NWKID)
+
             # 4 Selector , OffHidden, Style 0 (command)
-            if t in ('HACTMODE', 'DSwitch'):
+            if t in ('DSwitch',):
                 Options = createSwitchSelector( 4, DeviceType = t, OffHidden = True, SelectorStyle = 0 )
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, widgetOptions = Options)
-                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in HACTMODE ..." %(t), NWKID)
+                loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in DSwitch..." %(t), NWKID)
 
             # 5 Selector , OffHidden, Style 0 (command)
             if t in ('ContractPower', ):
@@ -436,7 +442,7 @@ def CreateDomoDevice(self, Devices, NWKID):
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 246, Subtype_ = 1, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Lux" %(t), NWKID)
 
-            if t in ( "Switch", "SwitchButton"):  
+            if t in ( "Switch", "SwitchButton", "HeatingSwitch"):  
                 # inter sans fils 1 touche 86sw1 xiaomi
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 244, Subtype_ = 73, Switchtype_ = 0 )
                 loggingWidget( self, "Debug", "CreateDomoDevice - t: %s in Switch" %(t), NWKID)
@@ -789,7 +795,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     
         if 'ThermoMode' in ClusterType: # Thermostat Mode
            
-            if WidgetType == 'ThermoModeEHZBRTS' and Attribute_ in ( '001c', 'e010'): # Thermostat Wiser
+            if WidgetType == 'ThermoModeEHZBRTS' and Attribute_ == "e010": # Thermostat Wiser
                  # value is str
                 loggingWidget( self, "Debug", "------>  EHZBRTS Schneider Thermostat Mode %s" %value, NWKID)
                 THERMOSTAT_MODE = { 0:'00', # Mode Off
@@ -806,15 +812,22 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                     sValue = THERMOSTAT_MODE[ _mode ]
                     UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel)    
 
+            elif WidgetType ==  'HeatingSwitch' and Attribute_ == "001c":
+                loggingWidget( self, "Debug", "------>  HeatingSwitch %s" %value, NWKID)
+                if value == 0:
+                    UpdateDevice_v2(self, Devices, x, 0, 'Off', BatteryLevel, SignalLevel)
+                elif value == 4:
+                    UpdateDevice_v2(self, Devices, x, 1, 'On', BatteryLevel, SignalLevel)
+
+
             elif WidgetType == 'HACTMODE' and Attribute_ == "e011":#  Wiser specific Fil Pilote
                  # value is str
                 loggingWidget( self, "Debug", "------>  ThermoMode HACTMODE: %s" %(value), NWKID)
-                THERMOSTAT_MODE = { 0:'00', # Off
-                    1:'10', # Conventional in setpoint
-                    2:'20', # fip enabled heater in setpoint
-                    3:'30'  # fip enabled heater in fip mode
+                THERMOSTAT_MODE = {
+                    0:'10', # Conventional heater
+                    1:'20' # fip enabled heater
                     }
-                _mode = int(value,16) - 0x80
+                _mode = ((int(value,16) - 0x80) >> 1 ) & 1
 
                 if _mode in THERMOSTAT_MODE:
                     nValue = _mode

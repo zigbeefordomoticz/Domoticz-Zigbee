@@ -10,7 +10,7 @@
 	    "0402": "", 
 	    "0702": "",
 	    "fe02": "", 
-	    "Type": "Power/Meter/P1Meter/ThermoSetpoint/TempSetCurrent/HACTMODE/FIP" }
+	    "Type": "HeatingSwitch/Meter/P1Meter/ThermoSetpoint/TempSetCurrent/HACTMODE/FIP" }
   },
   "Type": "",
   "ClusterToBind": [ "0019", "0000", "0009", "0003", "0201", "0702" ],

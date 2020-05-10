@@ -10,7 +10,7 @@
 	    "0019": "", 
 	    "0702": "",
 	    "fe02": "", 
-	    "Type": "Power/Meter/P1Meter/Switch" } 
+	    "Type": "Meter/P1Meter/Switch" }
   },
   "Type": "",
   "ClusterToBind": [ "0019", "0000", "0009", "0003", "0006", "0702" ],
