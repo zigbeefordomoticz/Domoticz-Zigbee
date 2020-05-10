@@ -349,10 +349,6 @@ def processKnownDevices( self, Devices, NWKID ):
 def processListOfDevices( self , Devices ):
     # Let's check if we do not have a command in TimeOut
 
-    if (self.HeartbeatCount % 5) == 0:
-        from Modules.legrand_netatmo import ZigateTimeOfOperation
-        ZigateTimeOfOperation( self)
-
     #self.ZigateComm.checkTOwaitFor()
     entriesToBeRemoved = []
 
