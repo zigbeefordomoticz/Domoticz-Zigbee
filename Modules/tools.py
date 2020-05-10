@@ -530,16 +530,25 @@ def mainPoweredDevice( self, nwkid):
 
 
     mainPower = False
-    if 'MacCapa' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['MacCapa'] != {}:
-            mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
+    if (
+        'MacCapa' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['MacCapa'] != {}
+    ):
+        mainPower = ( '8e' == self.ListOfDevices[nwkid]['MacCapa']) or ( '84' ==  self.ListOfDevices[nwkid]['MacCapa'] )
 
-    if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['PowerSource'] != {}:
-            mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
+    if (
+        not mainPower
+        and 'PowerSource' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['PowerSource'] != {}
+    ):
+        mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
 
     # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
+    # That Aqara Opple are reporting MacCap 0x84 while they are Battery devices
     if 'Model' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
+                                                  'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+            mainPower = False
         if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
             mainPower = True
 
