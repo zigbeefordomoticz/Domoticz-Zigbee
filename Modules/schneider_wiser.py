@@ -458,9 +458,9 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                 for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
                     loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
                     schneider_setpoint_actuator(self, hact, setpoint)
-    # Reset Heartbeat in order to force a ReadAttribute when possible
-    self.ListOfDevices[key]['Heartbeat'] = 0
-    Modules.output.ReadAttributeRequest_0201(self,key)
+                    # Reset Heartbeat in order to force a ReadAttribute when possible
+                    self.ListOfDevices[key]['Heartbeat'] = 0
+                    Modules.output.ReadAttributeRequest_0201(self,key)
 
 
 def schneider_setpoint_actuator( self, key, setpoint):
