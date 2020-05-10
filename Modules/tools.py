@@ -516,6 +516,31 @@ def rgb_to_hsl(rgb):
 
     return h, s, l
 
+def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
+    """
+    Function to check if the MacCapa should not be updated based on Model.
+    As they are some bogous Devices which tell they are Main Powered and they are not !
+
+    Return the old or the revised MacCapa and eventually fix some Attributes
+    """
+
+    if 'Model' not in self.ListOfDevices[nwkid]:
+        return inMacCapa
+
+    if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
+        # Livol Switch, must be converted to Main Powered
+        self.ListOfDevices[nwkid]['MacCapa'] = '84'
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Main'
+        return '84'
+
+    if self.ListOfDevices[nwkid]['Model'] in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01', 
+                                         'lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb'):
+        # Aqara Opple Switch, must be converted to Battery Devices
+        self.ListOfDevices[nwkid]['MacCapa'] = '80'
+        self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
+        return '80'
+
+
 
 def mainPoweredDevice( self, nwkid):
     """
@@ -526,7 +551,6 @@ def mainPoweredDevice( self, nwkid):
     if nwkid not in self.ListOfDevices:
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
         return False
-
 
 
     mainPower = False

@@ -20,7 +20,7 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE
+from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE, ReArrangeMacCapaBasedOnModel
 from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
 from Modules.bindings import rebind_Clusters
@@ -2021,8 +2021,8 @@ def Decode8702(self, Devices, MsgData, MsgRSSI) : # Reception APS Data confirm f
 
 #Device Announce
 def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
-
     """
+    From: Akila
     Il y a un Device Announce interne qui ne peut pas avoir un LQI ni de rejoin
     et un autre Device announce qui a le LQI et le rejoin. 
     J'avais supprimé le premier mais tu en as besoin. 
@@ -2130,6 +2130,9 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
         # Device exist, Reconnection has been done by DeviceExist()
         #
  
+        # If needed fix MacCapa
+        deviceMacCapa = list(decodeMacCapa( ReArrangeMacCapaBasedOnModel( self, MsgSrcAddr, MsgMacCapa ) ))
+
         loggingInput( self, 'Debug', "Decode004D - Already known device %s infos: %s, Change ShortID: %s " %( MsgSrcAddr, self.ListOfDevices[MsgSrcAddr], newShortId), MsgSrcAddr)
         if 'Announced' not in self.ListOfDevices[MsgSrcAddr]:
             self.ListOfDevices[MsgSrcAddr]['Announced'] = {}
