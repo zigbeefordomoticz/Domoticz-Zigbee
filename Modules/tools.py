@@ -21,11 +21,9 @@ from Classes.AdminWidgets import AdminWidgets
 from Modules.database import WriteDeviceList
 
 def is_hex(s):
+
     hex_digits = set("0123456789abcdefABCDEF")
-    for char in s:
-        if not (char in hex_digits):
-            return False
-    return True
+    return all(char in hex_digits for char in s)
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -41,13 +39,12 @@ def Hex_Format(taille, value):
         value="0"+value
     return str(value)
 
-def IEEEExist(self, IEEE) :
+def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
-    if IEEE :
-        if IEEE in self.ListOfDevices and IEEE != '' :
-            return True
-        else:
-            return False
+    return IEEE in self.ListOfDevices and IEEE != ''
+
+def NwkIdExist( self, Nwkid):
+    return Nwkid in self.ListOfDevices
 
 def getSaddrfromIEEE(self, IEEE) :
     # Return Short Address if IEEE found.
@@ -56,9 +53,6 @@ def getSaddrfromIEEE(self, IEEE) :
         for sAddr in self.ListOfDevices :
             if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
                 return sAddr
-
-    Domoticz.Log("getSaddrfromIEEE no IEEE found " )
-
     return ''
 
 def getEPforClusterType( self, NWKID, ClusterType ) :
@@ -112,7 +106,8 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
             if self.ListOfDevices[lookupNwkId]['Status'] != 'UNKNOWN':
                 found = True
 
-    # 2- We might have found it with the lookupNwkId   
+    # 2- We might have found it with the lookupNwkId 
+    # If we didnt find it, we should check if this is not a new ShortId  
     if lookupIEEE:
         if lookupIEEE not in self.IEEE2NWK:
             # Not found
@@ -122,39 +117,59 @@ def DeviceExist(self, Devices, lookupNwkId , lookupIEEE = ''):
         exitsingNwkId = self.IEEE2NWK[ lookupIEEE ]
         if exitsingNwkId == lookupNwkId:
             # Everything fine, we have found it
-            found = True
+            # and this is the same ShortId as the one existing
+            return True
 
-        elif exitsingNwkId not in self.ListOfDevices:
+        if exitsingNwkId not in self.ListOfDevices:
+            # Should not happen
             # We have an entry in IEEE2NWK, but no corresponding
             # in ListOfDevices !!
             # Let's clenup
             del self.IEEE2NWK[ lookupIEEE ]
-            found = False
+            return False
 
-        elif 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+        if 'Status' not in self.ListOfDevices[ exitsingNwkId ]:
+            # Should not happen
             # That seems not correct
             # We might have to do some cleanup here !
-            found = False
+            # Cleanup
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
 
-        elif self.ListOfDevices[ exitsingNwkId ]['Status'] not in ( 'inDB' , 'Left', 'Leave'):
-            # That seems not correct
-            # Could be under Creation
-            found = False
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
+            return False
 
-        else:
-            # At that stage, we have found an entry for the IEEE, but doesn't match
-            # the coming Short Address lookupNwkId.
-            # Most likely , device has changed its NwkId   
-            found = True        
-            reconnectNWkDevice( self, lookupNwkId, lookupIEEE, exitsingNwkId)
+        if self.ListOfDevices[ exitsingNwkId ]['Status'] in ( '004d', '0045', '0043', '8045', '8043', 'UNKNOW'):
+            # We are in the discovery/provisioning process,
+            # and the device got a new Short Id
+            # we need to restart from the begiging and remove all existing datastructutre.
+            # In case we receive asynchronously messages (which should be possible), they must be
+            # droped in the corresponding Decodexxx function
+            Domoticz.Status("DeviceExist - Device %s changed its ShortId: from %s to %s during provisioing. Restarting !" 
+                %( lookupIEEE, exitsingNwkId , lookupNwkId ))
 
-            # Let's send a Notfification
-            devName = ''
-            for x in Devices:
-                if Devices[x].DeviceID == lookupIEEE:
-                    devName = Devices[x].Name
-                    break
-            self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
+            # Delete the entry in IEEE2NWK as it will be recreated in Decode004d
+            del self.IEEE2NWK[ lookupIEEE ]
+
+            # Delete the all Data Structure
+            del self.ListOfDevices[ exitsingNwkId ]
+
+            return False
+
+        # At that stage, we have found an entry for the IEEE, but doesn't match
+        # the coming Short Address lookupNwkId.
+        # Most likely , device has changed its NwkId   
+        found = True        
+        reconnectNWkDevice( self, lookupNwkId, lookupIEEE, exitsingNwkId)
+
+        # Let's send a Notfification
+        devName = ''
+        for x in Devices:
+            if Devices[x].DeviceID == lookupIEEE:
+                devName = Devices[x].Name
+                break
+        self.adminWidgets.updateNotificationWidget( Devices, 'Reconnect %s with %s/%s' %( devName, lookupNwkId, lookupIEEE ))
  
     return found
 
@@ -162,6 +177,9 @@ def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
 
     # We got a new Network ID for an existing IEEE. So just re-connect.
     # - mapping the information to the new newNWKID
+    if oldNWKID not in self.ListOfDevices:
+        return
+
     self.ListOfDevices[newNWKID] = dict(self.ListOfDevices[oldNWKID])
     self.IEEE2NWK[IEEE] = newNWKID
 
@@ -244,8 +262,7 @@ def removeDeviceInList( self, Devices, IEEE, Unit ) :
             Domoticz.Status('Device %s with IEEE: %s fully removed from the system.' %(Devices[Unit].Name, IEEE))
 
             return True
-        else:
-            return False
+        return False
 
 
 
@@ -308,6 +325,30 @@ def updSQN( self, key, newSQN) :
     self.ListOfDevices[key]['SQN'] = newSQN
     return
 
+def updRSSI( self, key, RSSI):
+
+    if key not in self.ListOfDevices:
+        return
+
+    if 'RSSI' not in self.ListOfDevices[ key ]:
+        self.ListOfDevices[ key ]['RSSI'] = {}
+        
+    if RSSI == '00':
+        return
+    
+    if is_hex( RSSI ): # Check if the RSSI is Correct
+
+        self.ListOfDevices[ key ]['RSSI'] = int( RSSI, 16)
+
+        if 'RollingRSSI' not in self.ListOfDevices[ key ]:
+           self.ListOfDevices[ key ]['RollingRSSI'] = []   
+
+        if len(self.ListOfDevices[key]['RollingRSSI']) > 10:
+            del self.ListOfDevices[key]['RollingRSSI'][0]
+        self.ListOfDevices[ key ]['RollingRSSI'].append( int(RSSI, 16))
+
+    return
+
 #### Those functions will be use with the new DeviceConf structutre
 
 def getTypebyCluster( self, Cluster ) :
@@ -326,10 +367,11 @@ def getTypebyCluster( self, Cluster ) :
 
     if Cluster == '' or Cluster is None :
         return ''
+
     if Cluster in clustersType :
         return clustersType[Cluster]
-    else :
-        return ''
+
+    return ''
 
 def getListofClusterbyModel( self, Model , InOut ) :
     """
@@ -361,12 +403,12 @@ def getListofOutClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epout' )
 
     
-def getListofTypebyModel( self, Model ) :
+def getListofTypebyModel( self, Model ):
     """
     Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
         Type is provided as a list of Type already.
     """
-    EpType = list()
+    EpType = []
     if Model in self.DeviceConf :
         for ep in self.DeviceConf[Model]['Epin'] :
             if 'Type' in self.DeviceConf[Model]['Epin'][ep]:
@@ -384,14 +426,14 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
     return ''
 
 
-def getListofType( self, Type ) :
+def getListofType( self, Type ):
     """
     For a given DeviceConf Type "Plug/Power/Meters" return a list of Type [ 'Plug', 'Power', 'Meters' ]
     """
 
     if Type == '' or Type is None :
         return ''
-    retList = list()
+    retList = []
     retList= Type.split("/")
     return retList
 
@@ -485,6 +527,8 @@ def mainPoweredDevice( self, nwkid):
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
         return False
 
+
+
     mainPower = False
     if 'MacCapa' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['MacCapa'] != {}:
@@ -493,6 +537,11 @@ def mainPoweredDevice( self, nwkid):
     if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['PowerSource'] != {}:
             mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
+
+    # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
+    if 'Model' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
+            mainPower = True
 
     return mainPower
 
@@ -543,21 +592,70 @@ def lookupForIEEE( self, nwkid , reconnect=False):
 
         # We are interested only on the last one
         lastScan = self.ListOfDevices[key]['Neighbours'][-1]
-
-        for item in lastScan[ 'Devices' ]:
-            
+        for item in lastScan[ 'Devices' ]:            
             if nwkid not in item:
                 continue
-
             # Found !
             if '_IEEE' in item[ nwkid ]:
                 ieee = item[ nwkid ]['_IEEE']
                 oldNWKID = 'none'
                 if ieee in self.IEEE2NWK:
                     oldNWKID = self.IEEE2NWK[ ieee ]
+                    if oldNWKID not in self.ListOfDevices:
+                        Domoticz.Log("lookupForIEEE found an inconsitency %s nt existing but pointed by %s"
+                            %( oldNWKID, ieee ))
+                        del self.IEEE2NWK[ ieee ]
+                        return None
                     if reconnect:
                         reconnectNWkDevice( self, nwkid, ieee, oldNWKID)
                 Domoticz.Log("lookupForIEEE found IEEE %s for %s in %s known as %s  Neighbourg table" %(ieee, nwkid, oldNWKID, key))
                 return ieee
 
+    return None
+
+def lookupForParentDevice( self, nwkid= None, ieee=None):
+
+    """
+    Purpose is to find a router to which this device is connected to.
+    the IEEE will be returned if found otherwise None
+    """
+
+    if nwkid is None and ieee is None:
+        return None
+    
+    # Got Short Address in Input
+    if nwkid and ieee is None:
+        if nwkid not in self.ListOfDevices:
+            return
+        if 'IEEE' in self.ListOfDevices[ nwkid ]:
+            ieee = self.ListOfDevices[ nwkid ]['IEEE']
+
+    # Got IEEE in Input
+    if ieee and nwkid is None:
+        if ieee not in self.IEEE2NWK:
+            return
+        nwkid = self.IEEE2NWK[ nwkid ]
+
+    if mainPoweredDevice( self, nwkid):
+        return ieee
+
+    for PotentialRouter in self.ListOfDevices:
+        if 'Neighbours' not in self.ListOfDevices[PotentialRouter]:
+            continue
+        if len(self.ListOfDevices[PotentialRouter]['Neighbours']) == 0:
+            continue
+        # We are interested only on the last one
+        lastScan = self.ListOfDevices[PotentialRouter]['Neighbours'][-1]
+
+        for item in lastScan[ 'Devices' ]:          
+            if nwkid not in item:
+                continue
+            # found and PotentialRouter is one router
+            if 'IEEE' not in self.ListOfDevices[ PotentialRouter ]:
+                # This is problematic, let's try an other candidate
+                continue
+
+            return self.ListOfDevices[ PotentialRouter ]['IEEE']
+
+    #Nothing found
     return None

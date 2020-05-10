@@ -144,7 +144,7 @@ class GroupsManagement(object):
             self._loggingStatus( message)
         return
 
-    def updateFirmware( firmware ):
+    def updateFirmware( self, firmware ):
         self.Firmware = firmware
 
     def _identifyEffect( self, nwkid, ep, effect='Okay' ):
@@ -811,12 +811,16 @@ class GroupsManagement(object):
         widget = WIDGET_STYLE['ColorControlFull']    # If not match, will create a RGBWWZ widget
 
         for devNwkid, devEp, iterIEEE in self.ListOfGroups[group_nwkid]['Devices']:
-            if devNwkid == '0000': continue
+            if devNwkid == '0000': 
+                continue
+
             self.logging( 'Log', "bestGroupWidget - Group: %s processing %s" %(group_nwkid,devNwkid))
             if devNwkid not in self.ListOfDevices:
                 continue
+
             if 'ClusterType' not in self.ListOfDevices[devNwkid]['Ep'][devEp]:
                 continue
+
             for iterClusterType in self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType']:
                 if self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType'][iterClusterType] in WIDGETS:
                     devwidget = self.ListOfDevices[devNwkid]['Ep'][devEp]['ClusterType'][iterClusterType]
@@ -826,12 +830,15 @@ class GroupsManagement(object):
                         if code == 10:
                             widget = WIDGET_STYLE['Venetian']
                             widget_style =  'Venetian'
+
                         if code == 12:
                             widget = WIDGET_STYLE['WindowCovering']
                             widget_style =  'WindowCovering'
+
                         if code == 1: 
                             widget = WIDGET_STYLE['Switch']
                             widget_style =  'Switch'
+
                         elif code == 2: 
                             # Let's check if this is not a Blind Percentage Inverted
                             for _dev in self.Devices:
@@ -839,43 +846,54 @@ class GroupsManagement(object):
                                     if self.Devices[ _dev ].SwitchType == 16: # BlindPercentInverted
                                         widget = WIDGET_STYLE['BlindPercentInverted']
                                         widget_style =  'BlindPercentInverted'
+
                                     else:
                                         widget = WIDGET_STYLE['LvlControl']
                                         widget_style =  'LvlControl'
+
                                     break
+
                             else:
                                 Domoticz.Error ('Device not found')
                                 widget = WIDGET_STYLE['LvlControl']
                                 widget_style =  'LvlControl'
+
                         elif code == 3 :
                             if color_widget is None:
                                 if devwidget == 'ColorControlWW': 
                                     widget = WIDGET_STYLE[ devwidget ]
                                     _ikea_colormode = devwidget
+
                                 elif devwidget == 'ColorControlRGB': 
                                     widget = WIDGET_STYLE[ devwidget ]
                                     _ikea_colormode = devwidget
+
                             elif color_widget == devwidget:
                                 continue
+
                             elif (devwidget == 'ColorControlWW' and color_widget == 'ColorControlRGB') or \
                                     ( color_widget == 'ColorControlWW' and devwidget == 'ColorControlRGB' ) :
                                 code = 4
                                 color_widget = 'ColorControlRGBWW'
                                 widget = WIDGET_STYLE[ color_widget ]
                                 _ikea_colormode = color_widget
+
                             elif devwidget == 'ColorControl':
                                 code = 5
                                 color_widget = 'ColorControlFull'
                                 widget = WIDGET_STYLE[ color_widget ]
                                 _ikea_colormode = color_widget
+
                         elif code == 4: 
                             color_widget = 'ColorControlRGBWW'
                             widget = WIDGET_STYLE[ color_widget ]
                             _ikea_colormode = color_widget
+
                         elif code == 5:
                             color_widget = 'ColorControlFull'
                             widget = WIDGET_STYLE[ color_widget ]
                             _ikea_colormode = color_widget
+
                     pre_code = code
             self.logging( 'Debug', "--------------- - processing %s code: %s widget: %s, color_widget: %s _ikea_colormode: %s " 
                     %(devNwkid, code, widget, color_widget, _ikea_colormode))
@@ -883,6 +901,7 @@ class GroupsManagement(object):
 
         if color_widget:
             self.ListOfGroups[group_nwkid]['WidgetStyle'] = color_widget
+
         elif widget_style:
             self.ListOfGroups[group_nwkid]['WidgetStyle'] = widget_style
         else:
@@ -899,6 +918,7 @@ class GroupsManagement(object):
 
         elif self.ListOfGroups[group_nwkid]['WidgetStyle'] in ( 'Venetian', 'WindowCovering', 'VenetianInverted'):
             self.ListOfGroups[group_nwkid]['Cluster'] = '0102'
+
         else:
             self.ListOfGroups[group_nwkid]['Cluster'] = ''
 
@@ -918,6 +938,7 @@ class GroupsManagement(object):
         if group_nwkid not in self.ListOfGroups:
             Domoticz.Error("updateDomoGroupDevice - unknown group: %s" %group_nwkid)
             return
+
         if 'Devices' not in self.ListOfGroups[group_nwkid]:
             self.logging( 'Debug', "updateDomoGroupDevice - no Devices for that group: %s" %self.ListOfGroups[group_nwkid])
             return
@@ -938,11 +959,14 @@ class GroupsManagement(object):
             if len(item) == 2:
                 dev_nwkid, dev_ep = item
                 dev_ieee = self.ListOfDevices[dev_nwkid]['IEEE']
+
             elif len(item) == 3:
                 dev_nwkid, dev_ep, dev_ieee = item
+
             else:
                 Domoticz.Error("Invalid item %s" %str(item))
                 continue
+
             if dev_nwkid in self.ListOfDevices:
                 if 'Ep' in  self.ListOfDevices[dev_nwkid]:
                     if dev_ep in self.ListOfDevices[dev_nwkid]['Ep']:
@@ -972,29 +996,39 @@ class GroupsManagement(object):
                 analogValue = level
                 if analogValue >= 255:
                     sValue = 100
+
                 else:
                     sValue = round((level * 100) / 255)
-                    if sValue > 100: sValue = 100
+                    if sValue > 100: 
+                        sValue = 100
+
                     if sValue == 0 and analogValue > 0:
                         sValue = 1
+
             else:
                 # Shutter/blind
                 if nValue == 0: # we are in an Off mode
                     sValue = 0
+
                 else:
                     # We are on either full or not
                     sValue = round((level * 100) / 255)
                     if sValue >= 100: 
                         sValue = 100
                         nValue = 1
+
                     elif sValue > 0 and sValue < 100:
                         nValue = 2
+
                     else:
                         nValue = 0
+
             sValue = str(sValue)
+
         else:
             if nValue == 0:
                 sValue = 'Off'
+
             else:
                 sValue = 'On'
 
@@ -1015,9 +1049,11 @@ class GroupsManagement(object):
         for unit in self.Devices:
             if self.Devices[unit].DeviceID == group_nwkid:
                 break
+
         else:
             Domoticz.Error("_removeDomoGroupDevice - no Devices found in Domoticz: %s" %group_nwkid)
             return
+
         self.logging( 'Debug', "_removeDomoGroupDevice - removing Domoticz Widget %s" %self.Devices[unit].Name)
         self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %self.Devices[unit].Name)
         self.Devices[unit].Delete()
@@ -1034,9 +1070,11 @@ class GroupsManagement(object):
         for iterDev in list(self.ListOfDevices):
             if 'GroupMgt' not in self.ListOfDevices[iterDev]:
                 continue
+
             for iterEP in self.ListOfDevices[iterDev]['Ep']:
                 if iterEP not in self.ListOfDevices[iterDev]['GroupMgt']:
                     continue
+
                 if grpid in self.ListOfDevices[iterDev]['GroupMgt'][iterEP]:
                     self.logging( 'Debug', "processRemoveGroup - remove %s %s %s" 
                             %(iterDev, iterEP, grpid))
@@ -1056,6 +1094,7 @@ class GroupsManagement(object):
     
         if transit is None:
             transit = '0001'
+
         else:
             transit = '%04x' %transit
 
@@ -1071,8 +1110,10 @@ class GroupsManagement(object):
 
         if transit is None:
             transit = '0001'
+
         else:
             transit = '%04x' %transit
+
         x, y = rgb_to_xy((int(r),int(g),int(b)))
         #Convert 0>1 to 0>FFFF
         x = int(x*65536)
@@ -1093,26 +1134,33 @@ class GroupsManagement(object):
         for iterItem in self.ListOfGroups[grpid]['Devices']:
             if len(iterItem) == 3:
                 iterDev,  iterEp, iterIEEE = iterItem
+
             elif len(iterItem) == 2:
                 iterDev, iterEp = iterItem
                 if iterDev in self.ListOfDevices:
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
+
                 else:
                     Domoticz.Error("Unknown device %s, it is recommended to do a full rescan of Groups" %iterDev)
                     continue
             else:
                 continue
 
-            if iterDev == '0000': continue
+            if iterDev == '0000': 
+                continue
+
             if iterDev not in self.ListOfDevices:
                 Domoticz.Error("_updateDeviceListAttribute - Device: %s of Group: %s not in the list anymore" %(iterDev,grpid))
                 continue
+
             if iterEp not in self.ListOfDevices[iterDev]['Ep']:
                 Domoticz.Error("_updateDeviceListAttribute - Not existing Ep: %s for Device: %s in Group: %s" %(iterEp, iterDev, grpid))
                 continue
+
             if 'ClusterType' not in self.ListOfDevices[iterDev]['Ep'][iterEp] and 'ClusterType' not in self.ListOfDevices[iterDev]:
                 Domoticz.Error("_updateDeviceListAttribute - No Widget attached to Device: %s/%s in Group: %s" %(iterDev,iterEp,grpid))
                 continue
+
             if cluster not in self.ListOfDevices[iterDev]['Ep'][iterEp]:
                 self.logging( 'Debug', "_updateDeviceListAttribute - Cluster: %s doesn't exist for Device: %s/%s in Group: %s" %(cluster,iterDev,iterEp,grpid))
                 continue
@@ -1339,8 +1387,10 @@ class GroupsManagement(object):
         for iterGrp in self.ListOfGroups:
             if 'Tradfri Remote' not in self.ListOfGroups[iterGrp]:
                 continue
+
             if addr != self.ListOfGroups[iterGrp]['Tradfri Remote']['Device Addr']:
                 continue
+
             _grpid = iterGrp
             break
         else:
@@ -1349,7 +1399,7 @@ class GroupsManagement(object):
             return
             
         _widgetColor = self.ListOfGroups[_grpid]['Tradfri Remote']['Color Mode'] 
-        if _widgetColor == None:
+        if _widgetColor is None:
             Domoticz.Error("manageIkeaTradfriRemoteLeftRight - undefined Color Mode for %s" %_widgetColor)
             return
 
@@ -1363,10 +1413,12 @@ class GroupsManagement(object):
 
             if type_dir == 'left':
                 t -= self.pluginconf.pluginConf['TradfriKelvinStep']
-                if t < 0: t = 255
+                if t < 0: 
+                    t = 255
             elif type_dir == 'right':
                 t += self.pluginconf.pluginConf['TradfriKelvinStep']
-                if t > 255: t = 0
+                if t > 255: 
+                    t = 0
                 
             self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - Kelvin T %s" %t)
             self.set_Kelvin_Color( ADDRESS_MODE['group'], _grpid, '01', '01', t)
@@ -1393,11 +1445,17 @@ class GroupsManagement(object):
 
             r, g, b = PRESET_COLOR[seq_idx]
 
-            if type_dir == 'left': seq_idx -= 1
-            elif type_dir == 'right': seq_idx += 1
+            if type_dir == 'left': 
+                seq_idx -= 1
 
-            if seq_idx >= len(PRESET_COLOR): seq_idx = 0
-            if seq_idx < 0: seq_idx = len(PRESET_COLOR) - 1
+            elif type_dir == 'right': 
+                seq_idx += 1
+
+            if seq_idx >= len(PRESET_COLOR): 
+                seq_idx = 0
+
+            if seq_idx < 0: 
+                seq_idx = len(PRESET_COLOR) - 1
 
             self.logging( 'Debug', "manageIkeaTradfriRemoteLeftRight - R %s G %s B %s" %(r,g,b))
             self.set_RGB_color( ADDRESS_MODE['group'], _grpid, '01', '01', r, g, b)

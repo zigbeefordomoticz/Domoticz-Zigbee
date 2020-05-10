@@ -1,0 +1,20 @@
+{
+	"_comment": "Innovative Wireless Control WXCJKG11LM, 2 Butons Off/On only",
+	"_version": "Initial Version",
+	"Ep":{
+		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "0012": "", "Type": "AqaraOppleMiddle" },
+		"02": { "0003": "", "Type": "AqaraOppleMiddle" }
+	},
+	"Type":"",
+	"ClusterToUnbind": [ [ "01", "0006"], [ "01", "0008"] , [ "01","0300"] ],
+	"ClusterToBind": [ "0012" ],
+        "ConfigureReporting":{
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ] ,
+		"0001": [ "0020" ],
+		"0006": [],
+		"0008": [],
+		"0300": []
+	}
+}

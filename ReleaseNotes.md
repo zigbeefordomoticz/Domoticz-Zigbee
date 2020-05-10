@@ -4,12 +4,14 @@
 - [Technical] - Ready for PDM on host.
 - [Technical] - Scrip for PiZiGate on Fedora distribution
 - [Technical] - Provide Firmware
-- [Web Admin] - User Interface Optimisation
+- [WebAdmin] - User Interface Optimisation
 - [Hardware] - Support Schneider Wiser Thermostatic Valve
 - [Technical] - Allo device to device bindings via Web Admin Interface
 - [Technical] - Revise Strategy for OTA device firmware update. Provides only way to retreive/pull the firmware
 - [Technical] - Handle OTA Firmware update for LEDVANCE, Philips, Legrand ( would require 3.1d Zigate)
 - [Technical] - Log mecanishm for the plugin (all Logs save under Logs folder)
+- [Technical] - Refactor a number of Modules
+- [Hardware] - Provides a number of additionnal Devices
 
 ## 22 February 2020 - 4.7.5
 - [Hardware] - More Device Configuration

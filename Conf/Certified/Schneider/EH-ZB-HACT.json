@@ -16,15 +16,14 @@
   "ClusterToBind": [ "0019", "0000", "0009", "0003", "0201", "0702" ],
   "ConfigureReporting": {
      "0201": { "Attributes": { 
-	     "0000": { "DataType": "29", "MinInterval":"003C", "MaxInterval":"0258", "TimeOut":"0000", "Change":"7FFF"},
 	     "0012": { "DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000", "Change":"7FFF"}}},
      	     "0702": { "Attributes": { 
-		  "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" },
-		  "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "001E", "MinInterval": "001E", "TimeOut": "0000" }}}
+		  "0000": { "Change": "0000ffffffffffff", "DataType": "25", "MaxInterval": "0258", "MinInterval": "0258", "TimeOut": "0000" },
+		  "0400": { "Change": "00000190", "DataType": "2a", "MaxInterval": "0258", "MinInterval": "001E", "TimeOut": "0000" }}}
   },
   "ReadAttributes": {
 	 "0000": [ "0000", "0002", "0004", "0005", "0007 ", "0010", "0013 ", "e000 ", "e001 ", "e002" ] ,
-    	 "0201": [ "0000", "0012 ", "0015 ", "0016", "e011", "e020" ] ,
+		 "0201": [ "0012 ", "0015 ", "0016", "001c", "e011", "e020" ] ,
 	 "0402": [ "0000"  ],
     	 "0702": [ "0000 ", "0400 ", "0300", "0301", "0302", "5a20" ]  
   }

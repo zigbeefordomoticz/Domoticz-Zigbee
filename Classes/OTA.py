@@ -267,13 +267,11 @@ class OTAManagement(object):
             else:
                 self.logging( 'Debug', "ota_decode_new_image - %21s : 0x%X " %(x,headers[x]))
 
-
-        # For DEV only in order to force Upgrade
-        #Domoticz.Log('Force Image Version to +0x00050000 - MUST BE REMOVED BEFORE PRODUCTION')
-        #Domoticz.Log("patching Image Version from %s to %s " \
-        #         %( headers['image_version'], headers['image_version']+0x00050000 ))
-        # ATTTTENTION .... Sur le Firmware Legrand, le device à gardé ce numéro de version !!!!
-        #headers['image_version'] += 0x00050000
+        if self.pluginconf.pluginConf['forceOTAUpgrade']:
+            forceVersion = headers['image_version'] + self.pluginconf.pluginConf['forceOTAMask']
+            self.logging( 'Log', "----> Forcing update for Image: 0x%s from Version: 0x%08X to Version: 0x%08X" 
+                %( image, headers['image_version'], forceVersion))
+            headers['image_version'] = forceVersion
 
         key = headers['image_type']
         self.OTA['Images'][key] = {}

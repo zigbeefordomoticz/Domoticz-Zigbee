@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
 #
@@ -131,7 +133,7 @@ def pollingManufSpecificDevices( self, NWKID):
         brand, param , func =  POLLING_TABLE_SPECIFICS[ devManufName ]        
 
     if brand is None:
-        return
+        return False
     
     _HB = int(self.ListOfDevices[NWKID]['Heartbeat'],16)
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
@@ -149,8 +151,6 @@ def pollingDeviceStatus( self, NWKID):
     Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
     """
 
-    rescheduleAction = False
-
     for iterEp in self.ListOfDevices[NWKID]['Ep']:
         if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
             ReadAttributeRequest_0006_0000( self, NWKID)
@@ -162,7 +162,7 @@ def pollingDeviceStatus( self, NWKID):
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
             %(NWKID), NWKID)
 
-    return rescheduleAction
+    return False
 
 
 def processKnownDevices( self, Devices, NWKID ):
@@ -249,11 +249,16 @@ def processKnownDevices( self, Devices, NWKID ):
         # Read Attributes if enabled
         now = int(time.time())   # Will be used to trigger ReadAttributes
         for tmpEp in self.ListOfDevices[NWKID]['Ep']:    
-            if tmpEp == 'ClusterType': continue
+            if tmpEp == 'ClusterType': 
+                continue
+
             for Cluster in READ_ATTRIBUTES_REQUEST:
-                if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                if Cluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                    continue
+
                 if Cluster not in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
                     continue
+
                 if 'ReadAttributes' not in self.ListOfDevices[NWKID]:
                     self.ListOfDevices[NWKID]['ReadAttributes'] = {}
                     self.ListOfDevices[NWKID]['ReadAttributes']['Ep'] = {}
@@ -261,6 +266,7 @@ def processKnownDevices( self, Devices, NWKID ):
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral1' and tmpEp != '02': # All Eps other than '02' are blacklisted
                         continue
+                    
                     if  self.ListOfDevices[NWKID]['Model'] == 'lumi.ctrl_neutral2' and tmpEp not in ( '02' , '03' ):
                         continue
 
@@ -347,7 +353,9 @@ def processListOfDevices( self , Devices ):
     entriesToBeRemoved = []
 
     for NWKID in list( self.ListOfDevices.keys() ):
-        if NWKID in ('ffff', '0000'): continue
+        if NWKID in ('ffff', '0000'): 
+            continue
+
         # If this entry is empty, then let's remove it .
         if len(self.ListOfDevices[NWKID]) == 0:
             loggingHeartbeat( self, 'Debug', "Bad devices detected (empty one), remove it, adr:" + str(NWKID), NWKID)

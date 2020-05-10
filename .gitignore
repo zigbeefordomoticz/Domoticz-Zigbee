@@ -1,3 +1,6 @@
+.DS_store
+*/.DS_store
+*/*/.DS_store
 Conf/PluginConf-*
 OTAFirmware/*/*
 !OTAFirmware/*/README.me
@@ -8,8 +11,9 @@ Data/GroupsList-*
 Data/zigatePDM-*
 Data/Zigate.json
 www/zigate/reports/*
+Logs/*
 Reports/*
 Zdatas/DiscoveryDevice*
 Reports/*
 __pycache__/
-*/__pycache__
+**/__pycache__

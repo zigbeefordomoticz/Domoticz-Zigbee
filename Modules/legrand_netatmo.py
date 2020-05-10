@@ -104,7 +104,7 @@ def legrand_fc01( self, nwkid, command, OnOff):
 
     LEGRAND_REFRESH_TIME = ( 3 * 3600) + 15
     LEGRAND_CLUSTER_FC01 = {
-            'Dimmer switch w/o neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
+            'Dimmer switch wo neutral':  { 'EnableLedInDark': '0001'  , 'EnableDimmer': '0000'   , 'EnableLedIfOn': '0002' },
             'Connected outlet': { 'EnableLedIfOn': '0002' },
             'Mobile outlet': { 'EnableLedIfOn': '0002' },
             'Shutter switch with neutral': { 'EnableLedShutter': '0001' },
@@ -142,8 +142,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
             return
         self.ListOfDevices[nwkid]['Legrand']['EnableLedInDark'] = int(time())
         data_type = "10" # Bool
-        if OnOff == 'On': Hdata = '01' # Enable Led in Dark
-        elif OnOff == 'Off': Hdata = '00' # Disable led in dark
+        if OnOff == 'On': 
+            Hdata = '01' # Enable Led in Dark
+        elif OnOff == 'Off': 
+            Hdata = '00' # Disable led in dark
         else: Hdata = '00'
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
         
@@ -152,8 +154,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
             return
         self.ListOfDevices[nwkid]['Legrand']['EnableLedShutter'] = int(time())
         data_type = "10" # Bool
-        if OnOff == 'On': Hdata = '01' # Enable Led in Dark
-        elif OnOff == 'Off': Hdata = '00' # Disable led in dark
+        if OnOff == 'On': 
+            Hdata = '01' # Enable Led in Dark
+        elif OnOff == 'Off': 
+            Hdata = '00' # Disable led in dark
         else: Hdata = '00'
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
         
@@ -161,9 +165,11 @@ def legrand_fc01( self, nwkid, command, OnOff):
         if time() < self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] + LEGRAND_REFRESH_TIME:
             return
         self.ListOfDevices[nwkid]['Legrand']['EnableDimmer'] = int(time())
-        data_type = "09" #  16-bit Data
-        if OnOff == 'On': Hdata = '0101' # Enable Dimmer
-        elif OnOff == 'Off': Hdata = '0100' # Disable Dimmer
+        data_type = "09" #16-bit Data
+        if OnOff == 'On': 
+            Hdata = '0101' # Enable Dimmer
+        elif OnOff == 'Off': 
+            Hdata = '0100' # Disable Dimmer
         else: Hdata = '0000'
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
 
@@ -172,8 +178,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
             return
         self.ListOfDevices[nwkid]['Legrand']['LegrandFilPilote'] = int(time())
         data_type = "09" #  16-bit Data
-        if OnOff == 'On': Hdata = '0001' # Enable 
-        elif OnOff == 'Off': Hdata = '0002' # Disable
+        if OnOff == 'On': 
+            Hdata = '0001' # Enable 
+        elif OnOff == 'Off': 
+            Hdata = '0002' # Disable
         else: Hdata = '0000'
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
 
@@ -182,8 +190,10 @@ def legrand_fc01( self, nwkid, command, OnOff):
             return
         self.ListOfDevices[nwkid]['Legrand']['EnableLedIfOn'] = int(time())
         data_type = "10" # Bool
-        if OnOff == 'On': Hdata = '01' # Enable Led when On
-        elif OnOff == 'Off': Hdata = '00' # Disable led when On 
+        if OnOff == 'On': 
+            Hdata = '01' # Enable Led when On
+        elif OnOff == 'Off': 
+            Hdata = '00' # Disable led when On 
         else: Hdata = '00'
         loggingLegrand( self, 'Debug', "--------> %s  Nwkid: %s  data_type: %s Hdata: %s " %( command, nwkid, data_type, Hdata), nwkid)
     else:
@@ -247,7 +257,7 @@ def legrand_dimOnOff( self, OnOff):
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch w/o neutral', ):
+                        if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch wo neutral', ):
                             if 'Legrand' in self.ListOfDevices[NWKID]:
                                 self.ListOfDevices[NWKID]['Legrand']['EnableDimmer'] = 0
                             legrand_fc01( self, NWKID, 'EnableDimmer', OnOff)
@@ -265,7 +275,7 @@ def legrand_ledIfOnOnOff( self, OnOff):
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Mobile outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
+                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
                             if 'Legrand' in self.ListOfDevices[NWKID]:
                                 self.ListOfDevices[NWKID]['Legrand']['EnableLedIfOn'] = 0
                             legrand_fc01( self, NWKID, 'EnableLedIfOn', OnOff)
@@ -303,7 +313,7 @@ def legrand_ledInDark( self, OnOff):
             if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Mobile outlet', 'Dimmer switch w/o neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
+                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
                             if 'Legrand' in self.ListOfDevices[NWKID]:
                                 self.ListOfDevices[NWKID]['Legrand']['EnableLedInDark'] = 0
                             legrand_fc01( self, NWKID, 'EnableLedInDark', OnOff)

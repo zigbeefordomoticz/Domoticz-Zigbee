@@ -18,7 +18,7 @@
   "ClusterToBind":[ "0019", "0001", "0000", "0009", "0003", "0201", "0402", "0204" ],
   "overwriteZigateEpBind": "0b",
   "ConfigureReporting": {
-    "0402": { "Attributes": { "0000": { "Change": "0001", "DataType": "29", "MaxInterval": "0600", "MinInterval": "001E", "TimeOut": "0000" }}}
+    "0402": { "Attributes": { "0000": { "Change": "0001", "DataType": "29", "MaxInterval": "0258", "MinInterval": "001E", "TimeOut": "0000" }}}
   },
   "ReadAttributes": {
          "0000": [ "0000", "0002", "0004", "0005", "0006", "0007 ", "0010", "0013", "e000", "e001", "e002" ] ,

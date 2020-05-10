@@ -14,24 +14,24 @@
 	    "Type": "Temp/ThermoSetpoint/ThermoModeEHZBRTS" } 
   },
   "Type": "",
-  "ClusterToBind": [ "0019", "0201", "0000", "0009", "0003", "0201", "0204" ],
+  "ClusterToBind": [ "0019", "0201", "0000", "0009", "0003", "0204" ],
   "ConfigureReporting": {
 	"0001": {"Attributes": { 
 		"0020": {"DataType": "20", "MinInterval":"0E10", "MaxInterval":"0E10", "TimeOut":"0000","Change":"01"}}},
 	"0201": {"Attributes": {
-                "0012": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"7FFF"},
-		"0000": {"DataType": "29", "MinInterval":"003C", "MaxInterval":"058E", "TimeOut":"0000","Change":"0001"},
-		"e030": {"DataType": "20", "MinInterval":"003C", "MaxInterval":"058E", "TimeOut":"0000","Change":"00"},
-		"e031": {"DataType": "30", "MinInterval":"000A", "MaxInterval":"0258", "TimeOut":"0000","Change":"00"},
-		"e012": {"DataType": "30", "MinInterval":"000A", "MaxInterval":"0258", "TimeOut":"0000","Change":"00"}}},
+		"0000": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"0001"},
+		"0012": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"7FFF"},
+		"e030": {"DataType": "20", "MinInterval":"003C", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"},
+		"e031": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"},
+		"e012": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"}}},
 	"0204": {"Attributes": { 
 		"0001": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"00"}}}
   },
   "ReadAttributes": {
-	 "0000": [ "0000", "0002", "0004", "0005", "0007 ", "0010", "0013 ", "e000 ", "e001 ", "e002" ] ,
-	 "0001": [ "0020", "0035", "0036" ],
-    	 "0201": [ "0000", "0010", "0012", "0015", "0016", "e010", "e012", "e013", "e014", "e030", "e031" ],
-	 "0204": [ "0001" ],
-	 "0402": [ ]
+	"0000": [ "0000", "0002", "0004", "0005", "0007 ", "0010", "0013 ", "e000 ", "e001 ", "e002" ] ,
+	"0001": [ "0020", "0035", "0036" ],
+	"0201": [ "0000", "0010", "0012", "0015", "0016", "e010", "e012", "e013", "e014", "e030", "e031" ],
+	"0204": [ "0001" ],
+	"0402": [ ]
   }
 }

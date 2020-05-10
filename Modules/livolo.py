@@ -62,11 +62,15 @@ def livolo_OnOff( self, nwkid , EPout, devunit, onoff):
         sendZigateCmd(self, "0092","02" + nwkid + ZIGATE_EP + EPout + '02')
     else:
         level_value = timing_value = None
-        if onoff == 'On': level_value = '%02x' %108
-        elif onoff == 'Off': level_value = '%02x' %1
+        if onoff == 'On': 
+            level_value = '%02x' %108
+        elif onoff == 'Off': 
+            level_value = '%02x' %1
 
-        if devunit == 'Left': timing_value = '0001'
-        elif devunit == 'Right': timing_value = '0002'
+        if devunit == 'Left': 
+            timing_value = '0001'
+        elif devunit == 'Right': 
+            timing_value = '0002'
 
         if level_value is not None and timing_value is not None:
             loggingOutput( self, 'Debug', "livolo_OnOff - %s/%s Level: %s, Timing: %s" %( nwkid, EPout, level_value, timing_value), nwkid=nwkid)

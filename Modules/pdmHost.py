@@ -41,8 +41,10 @@ def openPDM( self ):
     def _copyfile( source, dest, move=True ):
         try:
             import shutil
-            if move: shutil.move( source, dest)
-            else: shutil.copy( source, dest)
+            if move: 
+                shutil.move( source, dest)
+            else: 
+                shutil.copy( source, dest)
         except:
             with open(source, 'r') as src, open(dest, 'wt') as dst:
                 for line in src: dst.write(line)
@@ -50,8 +52,12 @@ def openPDM( self ):
     
     def _versionFile( source , nbversion ):
     
-        if nbversion == 0: return
-        elif nbversion == 1: _copyfile( source, source +  "-%02d" %1 )
+        if nbversion == 0: 
+            return
+
+        if nbversion == 1: 
+            _copyfile( source, source +  "-%02d" %1 )
+
         else:
             for version in range ( nbversion - 1 , 0, -1 ):
                 _fileversion_n =  source + "-%02d" %version
@@ -62,7 +68,6 @@ def openPDM( self ):
                     _copyfile( _fileversion_n, _fileversion_n1 )
             # Last one
             _copyfile( source, source +  "-%02d" %1 , move=False)
-
 
     self.PDM = {}
     #zigatePDMfilename = self.pluginconf.pluginConf['pluginData'] + "zigatePDM-%02d.pck" %self.HardwareID
@@ -93,7 +98,6 @@ def savePDM( self):
         except IOError:
             Domoticz.Error("Error while writing Zigate Network Details%s" %zigatePDMfile)
     return
-
 
 def pdmHostAvailableRequest(self, MsgData ):
     #Decode0300
@@ -151,21 +155,18 @@ def PDMSaveRequest( self, MsgData):
 
     if RecordId not in self.PDM:
         self.PDM[RecordId] = {}
-        self.PDM[RecordId]['RecSize'] = u16Size
-        self.PDM[RecordId]['PersistedData'] = sWriteData
     else:
         if int(u16BlocksWritten,16) > 0:
             # We assume block comes in the righ order
             sWriteData = self.PDM[RecordId]['PersistedData'] + sWriteData
-        self.PDM[RecordId]['RecSize'] = u16Size
-        self.PDM[RecordId]['PersistedData'] = sWriteData
-
+    self.PDM[RecordId]['RecSize'] = u16Size
+    self.PDM[RecordId]['PersistedData'] = sWriteData
     if int(u16NumberOfWrites,16) == int(u16BlocksWritten,16) + 1:
         Domoticz.Log("Saving on Disk")
         if self.PDMready:
             savePDM(self)
 
-    datas =  PDM_E_STATUS_OK + RecordId +  u16BlocksWritten 
+    datas =  PDM_E_STATUS_OK + RecordId +  u16BlocksWritten
     sendZigateCmd( self, "8200", datas)
 
     if (int(u16BlocksWritten,16) + 1) == int(u16NumberOfWrites,16):
@@ -454,20 +455,17 @@ def PDMExistanceRequest( self, MsgData):
         openPDM( self )
 
     recordExist = 0x00
-    if RecordId in self.PDM:
-        if 'PersistedData' in self.PDM[RecordId]:
-            recordExist = 0x01
-            persistedData = self.PDM[RecordId]['PersistedData']
-            size = self.PDM[RecordId]['RecSize']
-            
+    if RecordId in self.PDM and 'PersistedData' in self.PDM[RecordId]:
+        recordExist = 0x01
+        persistedData = self.PDM[RecordId]['PersistedData']
+        size = self.PDM[RecordId]['RecSize']
+
     if not recordExist:
         recordExist = 0x00
         size = '%04x' %0
         persistedData = None
 
-
-    loggingPDM( self, 'Debug',  "      --------- RecordId: %s, u16Size: %s, recordExist: %s" \
-            %( RecordId, size, ( 0x01 == recordExist)))
+    loggingPDM( self, 'Debug', "      --------- RecordId: %s, u16Size: %s, recordExist: %s" % (RecordId, size, recordExist == 0x01))
 
     datas = RecordId
     datas += '%02x' %recordExist    # 0x00 not exist, 0x01 exist

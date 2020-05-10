@@ -105,6 +105,8 @@ from Classes.NetworkEnergy import NetworkEnergy
 
 from Classes.ListOfDevices import ListOfDevices
 
+VERSION_FILENAME = '.hidden/VERSION'
+
 TEMPO_NETWORK = 2    # Start HB totrigget Network Status
 TIMEDOUT_START = 10  # Timeoud for the all startup
 TIMEDOUT_FIRMWARE = 5# HB before request Firmware again
@@ -197,8 +199,13 @@ class BasePlugin:
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
-        self.pluginParameters['PluginBranch'] = 'beta'
-        self.pluginParameters['PluginVersion'] = '4.8.018'
+
+        with open( Parameters["HomeFolder"] + VERSION_FILENAME, 'rt') as versionfile:
+            _pluginversion = json.load( versionfile, encoding=dict)
+
+        self.pluginParameters['PluginBranch'] = _pluginversion['branch']
+        self.pluginParameters['PluginVersion'] = _pluginversion['version']
+
         self.pluginParameters['TimeStamp'] = 0
         self.pluginParameters['available'] =  None
         self.pluginParameters['available-firmMajor'] =  None
@@ -228,17 +235,16 @@ class BasePlugin:
             self.VersionNewFashion = False
             # Old fashon Versioning
             major, minor = Parameters["DomoticzVersion"].split('.')
-            self.DomoticzMajor = int(major)
-            self.DomoticzMinor = int(minor)
         else:
             self.VersionNewFashion = True
             majorminor, dummy, build = Parameters["DomoticzVersion"].split(' ')
             build = build.strip(')')
+            self.DomoticzBuild = int(build)
             major, minor = majorminor.split('.')
 
-            self.DomoticzMajor = int(major)
-            self.DomoticzMinor = int(minor)
-            self.DomoticzBuild = int(build)
+        self.DomoticzMajor = int(major)
+        self.DomoticzMinor = int(minor)
+
 
         Domoticz.Status( "load PluginConf" )
         self.pluginconf = PluginConf(Parameters["HomeFolder"], self.HardwareID)
@@ -418,8 +424,7 @@ class BasePlugin:
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
 
-        if self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt:
-            if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+        if self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
                 loggingPlugin( self, 'Status', "onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
                 self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
@@ -564,6 +569,7 @@ class BasePlugin:
         
         if self.pluginconf is None:
             return
+
         if self.ZigateComm:
             self.ZigateComm.checkTOwaitFor()
 
@@ -571,14 +577,16 @@ class BasePlugin:
 
         # Quiet a bad hack. In order to get the needs for ZigateRestart 
         # from WebServer
-        if 'startZigateNeeded' in self.zigatedata:
-            if self.zigatedata['startZigateNeeded']:
-                self.startZigateNeeded = self.HeartbeatCount
-                del self.zigatedata['startZigateNeeded']
+        if (
+            'startZigateNeeded' in self.zigatedata
+            and self.zigatedata['startZigateNeeded']
+        ):
+            self.startZigateNeeded = self.HeartbeatCount
+            del self.zigatedata['startZigateNeeded']
 
         # Startding PDM on Host firmware version, we have to wait that Zigate is fully initialized ( PDM loaded into memory from Host).
         # We wait for self.zigateReady which is set to True in th pdmZigate module
-        if self.transport != 'None' and not self.PDMready:
+        if not (self.transport == 'None' or self.PDMready):
             loggingPlugin( self, 'Debug', "PDMready: %s requesting Get version" %( self.PDMready))
             sendZigateCmd(self, "0010", "")
             return
@@ -591,7 +599,6 @@ class BasePlugin:
 
         if self.transport != 'None' and ( self.startZigateNeeded or not self.InitPhase1 or not self.InitPhase2):
             # Require Transport
-
             # Perform erasePDM if required
             if not self.InitPhase1:
                 zigateInit_Phase1( self)
@@ -602,11 +609,13 @@ class BasePlugin:
                 if ( self.HeartbeatCount > self.startZigateNeeded + TEMPO_START_ZIGATE):
                     # Need to check if and ErasePDM has been performed.
                     # In case case, we have to set the extendedPANID
-                            # ErasePDM has been requested, we are in the next Loop.
-                    if self.ErasePDMDone == True:
-                        if self.pluginconf.pluginConf['extendedPANID'] is not None:
-                            loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
-                            setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
+                    # ErasePDM has been requested, we are in the next Loop.
+                    if (
+                        self.ErasePDMDone
+                        and self.pluginconf.pluginConf['extendedPANID'] is not None
+                    ):
+                        loggingPlugin( self, 'Status', "ZigateConf - Setting extPANID : 0x%016x" %( self.pluginconf.pluginConf['extendedPANID']) )
+                        setExtendedPANID(self, self.pluginconf.pluginConf['extendedPANID'])
 
                     start_Zigate( self )
                     self.startZigateNeeded = False
@@ -627,7 +636,7 @@ class BasePlugin:
             self.pluginParameters['available'] , self.pluginParameters['available-firmMajor'], self.pluginParameters['available-firmMinor'] = checkPluginVersion( self.pluginParameters['PluginBranch'] )
             self.pluginParameters['FirmwareUpdate'] = False
             self.pluginParameters['PluginUpdate'] = False
-    
+
             if checkPluginUpdate( self.pluginParameters['PluginVersion'], self.pluginParameters['available']):
                 loggingPlugin( self, 'Status', "There is a newer plugin version available on gitHub")
                 self.pluginParameters['PluginUpdate'] = True
@@ -652,12 +661,12 @@ class BasePlugin:
         ResetDevice( self, Devices, "Motion",5)
 
         # Write the ListOfDevice in HBcount % 200 ( 3' ) or immediatly if we have remove or added a Device
-        if len(Devices) != prevLenDevices:
-            loggingPlugin( self, 'Debug', "Devices size has changed , let's write ListOfDevices on disk")
-            WriteDeviceList(self, 0)       # write immediatly
-        else:
+        if len(Devices) == prevLenDevices:
             WriteDeviceList(self, ( 90 * 5) )
 
+        else:
+            loggingPlugin( self, 'Debug', "Devices size has changed , let's write ListOfDevices on disk")
+            WriteDeviceList(self, 0)       # write immediatly
         if self.CommiSSionning:
             self.PluginHealth['Flag'] = 2
             self.PluginHealth['Txt'] = 'Enrollment in Progress'
@@ -676,13 +685,16 @@ class BasePlugin:
         # OTA upgrade
         if self.OTA:
             self.OTA.heartbeat()
-            
-        # Check PermitToJoin
-        if self.permitTojoin['Duration'] != 255 and self.permitTojoin['Duration'] != 0:
-            if int(time.time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
-                sendZigateCmd( self, "0014", "" ) # Request status
-                self.permitTojoin['Duration'] = 0
 
+        # Check PermitToJoin
+        if (
+            self.permitTojoin['Duration'] != 255
+            and self.permitTojoin['Duration'] != 0
+            and int(time.time())
+            >= (self.permitTojoin['Starttime'] + self.permitTojoin['Duration'])
+        ):
+            sendZigateCmd( self, "0014", "" ) # Request status
+            self.permitTojoin['Duration'] = 0
 
         # Heartbeat - Ping Zigate every minute to check connectivity
         # If fails then try to reConnect
@@ -701,10 +713,12 @@ class BasePlugin:
             self.PluginHealth['Flag'] = 2
             self.PluginHealth['Txt'] = 'Busy'
             self.adminWidgets.updateStatusWidget( Devices, 'Busy')
+
         elif not self.connectionState:
             self.PluginHealth['Flag'] = 3
             self.PluginHealth['Txt'] = 'No Communication' 
             self.adminWidgets.updateStatusWidget( Devices, 'No Communication')
+            
         else:
             self.PluginHealth['Flag'] = 1
             self.PluginHealth['Txt'] = 'Ready' 
@@ -877,9 +891,12 @@ def zigateInit_Phase3( self ):
                     self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle, self.PluginHealth)
 
     # If firmware above 3.0d, Get Network State 
-    if self.FirmwareVersion >= "030d":
-        if (self.HeartbeatCount % ( 3600 // HEARTBEAT ) ) == 0  and self.transport != 'None':
-            sendZigateCmd(self, "0009","")
+    if (
+        self.FirmwareVersion >= "030d"
+        and (self.HeartbeatCount % (3600 // HEARTBEAT)) == 0
+        and self.transport != 'None'
+        ):
+        sendZigateCmd(self, "0009","")
 
 
 def pingZigate( self ):

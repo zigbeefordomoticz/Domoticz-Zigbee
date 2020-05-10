@@ -1,4 +1,8 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 import Domoticz
 from Modules.output import sendZigateCmd
 
@@ -33,14 +37,12 @@ def receiveZigateEpList( self, ep_count, ep_list):
 
     if '0000' not in self.ListOfDevices:
         return
-    i = 0
-    while i < 2 * int(ep_count,16) :
+    for i in range(0, 2 * int(ep_count,16), 2):
         tmpEp = ep_list[i:i+2]
         if tmpEp in self.ListOfDevices['0000']['Ep']:
             return
         self.ListOfDevices['0000']['Ep'][tmpEp] = {}
         epDescrZigate( self, tmpEp)
-        i += 2
 
 def receiveZigateEpDescriptor( self, MsgData):
 
@@ -48,7 +50,8 @@ def receiveZigateEpDescriptor( self, MsgData):
     MsgDataStatus=MsgData[2:4]
     MsgDataShAddr=MsgData[4:8]
     MsgDataLenght=MsgData[8:10]
-    if int(MsgDataLenght,16) == 0 : return
+    if int(MsgDataLenght,16) == 0 : 
+        return
     MsgDataEp=MsgData[10:12]
     MsgDataProfile=MsgData[12:16]
     MsgDataDeviceId=MsgData[16:20]
@@ -57,23 +60,23 @@ def receiveZigateEpDescriptor( self, MsgData):
 
     idx = 24
     i=1
-    if int(MsgDataInClusterCount,16)>0 :
-        while i <= int(MsgDataInClusterCount,16) :
+    if int(MsgDataInClusterCount,16)>0:
+        while i <= int(MsgDataInClusterCount,16):
             MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
             MsgDataCluster=""
-            i=i+1
+            i += 1
     # Decoding Cluster Out
     idx = 24 + int(MsgDataInClusterCount,16) *4
     MsgDataOutClusterCount=MsgData[idx:idx+2]
     idx += 2
     i=1
-    if int(MsgDataOutClusterCount,16)>0 :
-        while i <= int(MsgDataOutClusterCount,16) :
+    if int(MsgDataOutClusterCount,16)>0:
+        while i <= int(MsgDataOutClusterCount,16):
             MsgDataCluster=MsgData[idx+((i-1)*4):idx+(i*4)]
             if MsgDataCluster not in self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp] :
                 self.ListOfDevices[MsgDataShAddr]['Ep'][MsgDataEp][MsgDataCluster]={}
             MsgDataCluster=""
-            i=i+1
+            i += 1
 

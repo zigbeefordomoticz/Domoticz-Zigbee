@@ -253,31 +253,34 @@ class WebServer(object):
 
             parsed_url = urlparse(  Data['URL'] )
             self.logging( 'Debug', "URL: %s , Path: %s" %( Data['URL'], parsed_url.path))
-            if  Data['URL'][0] == '/': parsed_query = Data['URL'][1:].split('/')
-            else: parsed_query = Data['URL'].split('/')
+            if  Data['URL'][0] == '/': 
+                parsed_query = Data['URL'][1:].split('/')
+            else: 
+                parsed_query = Data['URL'].split('/')
 
             # Any Cookie ?
             cookie = None
             if 'Cookie' in Data['Headers']:
                 cookie = Data['Headers']['Cookie']
 
-            if 'Data' not in Data: Data['Data'] = None
+            if 'Data' not in Data: 
+                Data['Data'] = None
 
             if (headerCode != "200 OK"):
                 self.sendResponse( Connection, {"Status": headerCode} )
                 return
-            else:
-                if len(parsed_query) >= 3:
-                    self.logging( 'Debug', "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
-                        %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
-                    if parsed_query[0] == 'rest-zigate' and parsed_query[1] == '1':
-                        # API Version 1
-                        self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
-                    else:
-                        Domoticz.Error("Unknown API  %s" %parsed_query)
-                        headerCode = "400 Bad Request"
-                        self.sendResponse( Connection, {"Status": headerCode} )
-                    return
+
+            if len(parsed_query) >= 3:
+                self.logging( 'Debug', "Receiving a REST API - Version: %s, Verb: %s, Command: %s, Param: %s" \
+                    %( parsed_query[1], Data['Verb'],  parsed_query[2], parsed_query[3:] ))
+                if parsed_query[0] == 'rest-zigate' and parsed_query[1] == '1':
+                    # API Version 1
+                    self.do_rest( Connection, Data['Verb'], Data['Data'], parsed_query[1], parsed_query[2], parsed_query[3:])
+                else:
+                    Domoticz.Error("Unknown API  %s" %parsed_query)
+                    headerCode = "400 Bad Request"
+                    self.sendResponse( Connection, {"Status": headerCode} )
+                return
 
             # Finaly we simply has to serve a File.
             webFilename = self.homedirectory +'www'+ Data['URL']
@@ -789,7 +792,9 @@ class WebServer(object):
         _timestamps_lst = [] # Just the list of Timestamps
         with open( _filename , 'rt') as handle:
             for line in handle:
-                if line[0] != '{' and line[-1] != '}': continue
+                if line[0] != '{' and line[-1] != '}': 
+                    continue
+                
                 entry = json.loads( line, encoding=dict )
                 for _ts in entry:
                     _timestamps_lst.append( int(_ts) )
@@ -802,13 +807,18 @@ class WebServer(object):
                         self.logging( 'Debug', "Node: %s" %item)
                         if item != '0000' and item not in self.ListOfDevices:
                             continue
+
                         if item not in _nwkid_list:
                             _nwkid_list.append( item )
                         for x in  reportLQI[item]['Neighbours']:
                             self.logging( 'Debug', "---> %s" %x)
                             # Report only Child relationship
-                            if x != '0000' and x not in self.ListOfDevices: continue
-                            if item == x: continue
+                            if x != '0000' and x not in self.ListOfDevices: 
+                                continue
+
+                            if item == x: 
+                                continue
+
                             if 'Neighbours' not in reportLQI[item]:
                                 Domoticz.Error("Missing attribute :%s for (%s,%s)" %('Neighbours', item, x))
                                 continue
@@ -817,6 +827,7 @@ class WebServer(object):
                                 if attribute not in reportLQI[item]['Neighbours'][x]:
                                     Domoticz.Error("Missing attribute :%s for (%s,%s)" %(attribute, item, x))
                                     continue
+
                             if x not in _nwkid_list:
                                 _nwkid_list.append( x )
                             
@@ -824,17 +835,21 @@ class WebServer(object):
                             if reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Parent':
                                 _father = item
                                 _child  = x
+
                             elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Child':
                                 _father = x
                                 _child = item
+
                             elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Sibling':
                                 _father = item
                                 _child  = x
+
                             elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'Former Child':
                                 # Not a Parent, not a Child, not a Sibbling
                                 #_father = item
                                 #_child  = x
                                 continue
+
                             elif reportLQI[item]['Neighbours'][x]['_relationshp'] == 'None':
                                 # Not a Parent, not a Child, not a Sibbling
                                 #_father = item
@@ -867,6 +882,7 @@ class WebServer(object):
                             if ( _relation['Child'], _relation['Father'] ) in _check_duplicate:
                                 self.logging( 'Debug', "Skip (%s,%s) as there is already ( %s, %s)" %(_relation['Father'], _relation['Child'], _relation['Child'], _relation['Father']))
                                 continue
+
                             _check_duplicate.append( ( _relation['Father'], _relation['Child']))
                             self.logging( 'Debug', "%10s Relationship - %15.15s - %15.15s %3s %2s" \
                                 %( _ts, _relation['Father'], _relation['Child'], _relation["_lnkqty"],
@@ -930,7 +946,7 @@ class WebServer(object):
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
 
-        elif verb == 'GET':
+        if verb == 'GET':
             if len(parameters) == 0:
                 # Send list of Time Stamps
                 _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
@@ -963,7 +979,9 @@ class WebServer(object):
             self.logging( 'Debug', "Opening file: %s" %_filename)
             with open( _filename , 'rt') as handle:
                 for line in handle:
-                    if line[0] != '{' and line[-1] != '}': continue
+                    if line[0] != '{' and line[-1] != '}': 
+                        continue
+
                     entry = json.loads( line, encoding=dict )
                     for _ts in entry:
                         _timestamps_lst.append( _ts )
@@ -988,12 +1006,14 @@ class WebServer(object):
                             if line[0] != '{' and line[-1] != '}':
                                 handle.write( line )
                                 continue
+
                             entry = json.loads( line, encoding=dict )
                             entry_ts = entry.keys()
                             if len( entry_ts ) == 1:
                                 if timestamp in entry_ts:
                                     self.logging( 'Debug', "--------> Skiping %s" %timestamp)
                                     continue
+
                             else:
                                 continue
                             handle.write( line )
@@ -1006,7 +1026,8 @@ class WebServer(object):
                     Domoticz.Error("Removing Nwk-Energy %s not found" %timestamp )
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
-        elif verb == 'GET':
+
+        if verb == 'GET':
             if len(parameters) == 0:
                 _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
 
@@ -1060,7 +1081,7 @@ class WebServer(object):
             Domoticz.Log("Plugin Restart command : %s" %url)
             _cmd = "/usr/bin/curl '%s' &" %url
             try:
-                os.system( _cmd )
+                os.system( _cmd )  # nosec
             except:
                 Domoticz.Error("Error while trying to restart plugin %s" %_cmd)
 
@@ -1168,13 +1189,17 @@ class WebServer(object):
             if len(parameters) == 0:
                 setting_lst = []
                 for _theme in SETTINGS:
-                    if _theme in ( 'PluginTransport'): continue
+                    if _theme in ( 'PluginTransport'): 
+                        continue
+
                     theme = {}
                     theme['_Order'] = SETTINGS[_theme]['Order']
                     theme['_Theme'] = _theme
                     theme['ListOfSettings'] = []
                     for param in self.pluginconf.pluginConf:
-                        if param not in SETTINGS[_theme]['param']: continue
+                        if param not in SETTINGS[_theme]['param']: 
+                            continue
+
                         if not SETTINGS[_theme]['param'][param]['hidden']:
                             setting = {}
                             setting['Name'] = param
@@ -1210,12 +1235,15 @@ class WebServer(object):
                 # Do we have to update ?
                 for _theme in SETTINGS:
                     for param in SETTINGS[_theme]['param']:
-                        if param != setting: continue
+                        if param != setting: 
+                            continue
+
                         found = True
                         upd = True
                         if str(setting_lst[setting]['current']) == str(self.pluginconf.pluginConf[param]):
                             #Nothing to do
                             continue
+
                         self.logging( 'Debug', "Updating %s from %s to %s" %( param, self.pluginconf.pluginConf[param], setting_lst[setting]['current']))
                         if SETTINGS[_theme]['param'][param]['restart']:
                             self.restart_needed['RestartNeeded'] = True
@@ -1277,11 +1305,13 @@ class WebServer(object):
                                     if len(key) == 4:
                                         if key not in self.ListOfDevices:
                                             continue
+
                                         self.pluginconf.pluginConf['debugMatchId'] += key + ","
                                     if len(key) == 16:
                                         # Expect an IEEE
                                         if key not in self.IEEE2NWK:
                                             continue
+
                                         self.pluginconf.pluginConf['debugMatchId'] += self.IEEE2NWK[key] + ","
                                 self.pluginconf.pluginConf['debugMatchId'] = self.pluginconf.pluginConf['debugMatchId'][:-1] # Remove the last ,
                         else:
@@ -1299,9 +1329,7 @@ class WebServer(object):
                 if upd:
                     # We need to write done the new version of PluginConf
                     self.pluginconf.write_Settings()
-                    pass
-
-            
+       
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
@@ -1309,6 +1337,7 @@ class WebServer(object):
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
             _response["Headers"]["Connection"] = "Keep-alive"
+
         else:
             _response["Headers"]["Connection"] = "Close"
         _response["Status"] = "200 OK"
@@ -1320,10 +1349,13 @@ class WebServer(object):
             info = {}
             if self.permitTojoin['Duration'] == 255:
                 info['PermitToJoin'] = 255
+
             elif self.permitTojoin['Duration'] == 0:
                 info['PermitToJoin'] = 0
+
             elif int(time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
                 info['PermitToJoin'] = 0
+
             else:
                 rest =  ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration'] ) - int(time())
                 self.logging( 'Debug', "remain %s s" %rest)
@@ -1337,9 +1369,17 @@ class WebServer(object):
                 data = data.decode('utf8')
                 data = json.loads(data)
                 self.logging( 'Debug', "parameters: %s value = %s" %( 'PermitToJoin', data['PermitToJoin']))
-                if self.pluginparameters['Mode1'] != 'None':
-                    ZigatePermitToJoin(self, int( data['PermitToJoin']))
+                if 'Router' in data:
+                    duration = int( data['PermitToJoin'])
+                    router = data['Router']
+                    if router in self.ListOfDevices:
+                        # Allow Permit to join from this specific router    
+                        self.logging( 'Log', "Requesting router: %s to switch into Permit to join" %router)             
+                        sendZigateCmd( self, "0049", router + '%02x' %duration + '00') 
 
+                else:                   
+                    if self.pluginparameters['Mode1'] != 'None':
+                        ZigatePermitToJoin(self, int( data['PermitToJoin']))
         return _response
 
     def rest_Device( self, verb, data, parameters):
@@ -1364,6 +1404,7 @@ class WebServer(object):
                 for x in self.Devices:
                     if len(self.Devices[x].DeviceID)  != 16:
                         continue
+
                     device_info = {}
                     device_info['_DeviceID'] = self.Devices[x].DeviceID
                     device_info['Name'] = self.Devices[x].Name
@@ -1382,6 +1423,7 @@ class WebServer(object):
                 for x in self.Devices:
                     if len(self.Devices[x].DeviceID)  != 16:
                         continue
+
                     if parameters[0] == self.Devices[x].DeviceID:
                         _dictDevices = {}
                         _dictDevices['_DeviceID'] = self.Devices[x].DeviceID
@@ -1396,6 +1438,7 @@ class WebServer(object):
                         #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
                         _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
                         break
+
             else:
                 device_lst = []
                 for parm in parameters:
@@ -1403,6 +1446,7 @@ class WebServer(object):
                     for x in self.Devices:
                         if len(self.Devices[x].DeviceID)  != 16:
                             continue
+
                         if parm == self.Devices[x].DeviceID:
                             device_info = {}
                             device_info['_DeviceID'] = self.Devices[x].DeviceID
@@ -1451,7 +1495,9 @@ class WebServer(object):
             device_lst.append( _device )
 
             for x in self.ListOfDevices:
-                if x == '0000':  continue
+                if x == '0000':  
+                    continue
+
                 if 'MacCapa' not in self.ListOfDevices[x]:
                     self.logging( 'Debug', "rest_zGroup_lst_avlble_dev - no 'MacCapa' info found for %s!!!!" %x)
                     continue
@@ -1460,6 +1506,7 @@ class WebServer(object):
                 if 'Type' in self.ListOfDevices[x]:
                     if self.ListOfDevices[x]['Type'] == 'Ikea_Round_5b':
                         IkeaRemote = True
+
                 if self.ListOfDevices[x]['MacCapa'] != '8e' and not IkeaRemote:
                     self.logging( 'Debug', "rest_zGroup_lst_avlble_dev - %s not a Main Powered device. " %x)
                     continue
@@ -1493,12 +1540,14 @@ class WebServer(object):
                                                     if _device not in device_lst:
                                                         device_lst.append( _device )
                                             continue # Next Ep
+
                             if '0004' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 ( 'ClusterType' not in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' not in self.ListOfDevices[x]) and \
                                 '0006' not in self.ListOfDevices[x]['Ep'][ep] and \
                                 '0008' not in  self.ListOfDevices[x]['Ep'][ep] and \
                                 '0102' not in  self.ListOfDevices[x]['Ep'][ep]:
                                 continue
+
                             if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' in self.ListOfDevices[x]:
                                 if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
                                     clusterType= self.ListOfDevices[x]['Ep'][ep]['ClusterType']
@@ -1511,6 +1560,7 @@ class WebServer(object):
                                         'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
                                         'VenetianInverted', 'Venetian', 'WindowCovering' ):
                                         continue
+
                                     for widget in self.Devices:
                                         if self.Devices[widget].ID == int(widgetID):
                                             _widget = {}
@@ -1542,7 +1592,9 @@ class WebServer(object):
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
             device_lst = []
             for x in self.ListOfDevices:
-                if x == '0000': continue
+                if x == '0000': 
+                    continue
+
                 device = {}
                 device['_NwkId'] = x
 
@@ -1612,6 +1664,7 @@ class WebServer(object):
 
         elif verb == 'DELETE':
             if len(parameters) == 1:
+                ieee = nwkid = None
                 deviceId = parameters[0]
                 if len( deviceId ) == 4: # Short Network Addr
                     if deviceId not in self.ListOfDevices:
@@ -1629,12 +1682,15 @@ class WebServer(object):
                         return _response
                     ieee = deviceId
                     nwkid = self.IEEE2NWK[ ieee ]
-                
-                del self.ListOfDevices[ nwkid ]
-                del self.IEEE2NWK[ ieee ]
+                if nwkid:
+                    del self.ListOfDevices[ nwkid ]
+                if ieee:
+                    del self.IEEE2NWK[ ieee ]
+                    
                 # for a remove in case device didn't send the leave
-                if 'IEEE' in self.zigatedata:
-                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + deviceId )
+                if 'IEEE' in self.zigatedata and ieee:
+                    # uParrentAddress + uChildAddress (uint64)
+                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + ieee )
 
                 action = {}
                 action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
@@ -1680,7 +1736,7 @@ class WebServer(object):
                 _response['Data'] = json.dumps( action , sort_keys=True)
             return _response
 
-        elif verb == 'GET':
+        if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
@@ -1726,6 +1782,7 @@ class WebServer(object):
                                 if self.Devices[x].ID == int(widgetId):
                                     widget['WidgetName'] = self.Devices[x].Name
                                     break
+
                             widget['WidgetType'] = self.ListOfDevices[item]['ClusterType'][widgetId]
                             _widget_lst.append( widget )
 
@@ -1737,10 +1794,13 @@ class WebServer(object):
                             _ep['Ep'] = epId
                             _ep['ClusterList'] = []
                             for cluster in self.ListOfDevices[item]['Ep'][epId]:
-                                if cluster == 'ColorMode': continue
+                                if cluster == 'ColorMode': 
+                                    continue
+
                                 if cluster == 'Type':
                                     device['Type'] = self.ListOfDevices[item]['Ep'][epId]['Type']
                                     continue
+
                                 if cluster == 'ClusterType':
                                     for widgetId in self.ListOfDevices[item]['Ep'][epId]['ClusterType']:
                                         widget = {}
@@ -1750,12 +1810,15 @@ class WebServer(object):
                                             if self.Devices[x].ID == int(widgetId):
                                                 widget['WidgetName'] = self.Devices[x].Name
                                                 break
+
                                         widget['WidgetType'] = self.ListOfDevices[item]['Ep'][epId]['ClusterType'][widgetId]
                                         _widget_lst.append( widget )
                                     continue
+
                                 _cluster = {}
                                 if cluster in ZCL_CLUSTERS_LIST:
                                     _cluster[cluster] = ZCL_CLUSTERS_LIST[cluster]
+
                                 else:
                                     _cluster[cluster] = "Unknown"
                                 _ep['ClusterList'].append( _cluster )
@@ -2045,7 +2108,9 @@ class WebServer(object):
 
         bindCluster = []
         for key in self.ListOfDevices:
-            if key == '0000': continue
+            if key == '0000': 
+                continue
+
             for ep in self.ListOfDevices[key]['Ep']:
                 for cluster in self.ListOfDevices[key]['Ep'][ep]:
                     if cluster in ZCL_CLUSTERS_ACT:
@@ -2067,7 +2132,9 @@ class WebServer(object):
             listofdevices = []
             clustertobind = parameters[0]
             for key in self.ListOfDevices:
-                if key == '0000': continue
+                if key == '0000': 
+                    continue
+
                 for ep in self.ListOfDevices[key]['Ep']:
                     if clustertobind in self.ListOfDevices[key]['Ep'][ep]:
                         dev={}
@@ -2170,7 +2237,7 @@ class WebServer(object):
                 
                 cmd = data['Command']
                 payload = data['payload']
-                if payload == None:
+                if payload is None:
                     payload = ""
                 sendZigateCmd( self, data['Command'], data['payload'])
                 self.logging( 'Log', "rest_dev_command - Command: %s payload %s" %(data['Command'], data['payload']))
@@ -2267,15 +2334,19 @@ class WebServer(object):
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
+
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
                 return _response
+
             if len(parameters) == 0:
                 Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" %(parameters))
                 return _response
-            elif len(parameters) == 1:
+
+            if len(parameters) == 1:
                 if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
                     Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
                     return _response
+
                 # Check Capabilities
                 CLUSTER_INFOS = {
                         '0003': [ 
@@ -2389,14 +2460,16 @@ class WebServer(object):
                 _response["Data"] = { "start pairing mode at %s " %int(time()) }
                 return _response
 
-            elif parameters[0] in ( 'cancel', 'disable'):
+            if parameters[0] in ( 'cancel', 'disable'):
                 Domoticz.Log("Disable Assisted pairing")
                 if len(self.DevicesInPairingMode):
                     del self.DevicesInPairingMode
                     self.DevicesInPairingMode = []
+
                 if not self.zigatedata:
                     # Seems we are in None mode - Testing for ben
                     self.fakeDevicesInPairingMode = 0
+
                 if self.permitTojoin['Duration'] != 255 and self.pluginparameters['Mode1'] != 'None':
                     ZigatePermitToJoin(self, 0)
 
@@ -2431,7 +2504,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps( data )
                     return _response
 
-                elif self.fakeDevicesInPairingMode in ( 2, 3 ):
+                if self.fakeDevicesInPairingMode in ( 2, 3 ):
                     self.fakeDevicesInPairingMode += 1
                     newdev = {}
                     newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
@@ -2439,7 +2512,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps( data )
                     return _response
 
-                elif self.fakeDevicesInPairingMode in ( 4, 5 ):
+                if self.fakeDevicesInPairingMode in ( 4, 5 ):
                     self.fakeDevicesInPairingMode += 1
                     newdev = {}
                     newdev['NwkId'] = list(self.ListOfDevices.keys())[0]
@@ -2450,7 +2523,7 @@ class WebServer(object):
                     _response["Data"] = json.dumps( data )
                     return _response
 
-                elif self.fakeDevicesInPairingMode in ( 6, 7 ):
+                if self.fakeDevicesInPairingMode in ( 6, 7 ):
                     self.fakeDevicesInPairingMode += 1
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[0] )
                     self.DevicesInPairingMode.append( list(self.ListOfDevices.keys())[1] )
@@ -2461,102 +2534,104 @@ class WebServer(object):
                 Domoticz.Log("--> Empty queue")
                 _response["Data"] = json.dumps( data )
                 return _response
-            else:
-                listOfPairedDevices = list(self.DevicesInPairingMode)
-                _fake = 0
-                for nwkid in listOfPairedDevices:
-                    if not self.zigatedata:
-                        _fake += 1
-                    newdev = {}
-                    newdev['NwkId'] = nwkid
 
-                    Domoticz.Log("--> New device: %s" %nwkid)
-                    if 'Status' not in self.ListOfDevices[ nwkid ]:
-                        Domoticz.Error("Something went wrong as the device seems not be created")
-                        data['NewDevices'].append( newdev )
-                        continue
+            listOfPairedDevices = list(self.DevicesInPairingMode)
+            _fake = 0
+            for nwkid in listOfPairedDevices:
+                if not self.zigatedata:
+                    _fake += 1
+                newdev = {}
+                newdev['NwkId'] = nwkid
 
-                    if self.ListOfDevices[ nwkid ]['Status'] in ( '004d', '0045', '0043', '8045', '8043') or ( _fake == 1):
-                        # Pairing in progress, just return the Nwkid
-                        data['NewDevices'].append( newdev )
-                        continue
-
-                    elif self.ListOfDevices[ nwkid ]['Status'] == 'UNKNOW' or ( _fake == 2):
-                        Domoticz.Log("--> UNKNOW , removed %s from List" %nwkid)
-                        self.DevicesInPairingMode.remove( nwkid )
-                        newdev['ProvisionStatus'] = 'Failed'
-                        newdev['ProvisionStatusDesc'] = 'Failed'
-
-                    elif self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
-                        Domoticz.Log("--> inDB , removed %s from List" %nwkid)
-                        self.DevicesInPairingMode.remove( nwkid )
-                        newdev['ProvisionStatus'] = 'inDB'
-                        newdev['ProvisionStatusDesc'] = 'inDB'
-                    else:
-                        Domoticz.Log("--> Unexpected , removed %s from List" %nwkid)
-                        self.DevicesInPairingMode.remove( nwkid )
-                        newdev['ProvisionStatus'] = 'Unexpected'
-                        newdev['ProvisionStatusDesc'] = 'Unexpected'
-                        Domoticz.Error('Unexpected')
-                        continue
-
-                    newdev['IEEE'] = 'Unknown'
-                    if 'IEEE' in self.ListOfDevices[ nwkid ]:
-                        newdev['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
-    
-                    newdev['ProfileId'] = ''
-                    newdev['ProfileIdDesc'] = 'Unknow'
-                    if 'ProfileID' in self.ListOfDevices[ nwkid ]:
-                        if self.ListOfDevices[ nwkid ]['ProfileID'] != {}:
-                            newdev['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
-                            if int(newdev['ProfileId'],16) in PROFILE_ID:
-                                newdev['ProfileIdDesc'] = PROFILE_ID[ int(newdev['ProfileId'],16) ]
-
-                    newdev['ZDeviceID'] = ''
-                    newdev['ZDeviceIDDesc'] = 'Unknow'
-                    if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
-                        if self.ListOfDevices[ nwkid ]['ZDeviceID'] != {}:
-                            newdev['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
-                            if int(newdev['ProfileId'],16) == 0x0104: # ZHA
-                                if int(newdev['ZDeviceID'],16) in ZHA_DEVICES:
-                                    newdev['ZDeviceIDDesc'] = ZHA_DEVICES[ int(newdev['ZDeviceID'],16) ]
-                                else:
-                                    newdev['ZDeviceIDDesc'] = 'Unknow'
-                            elif int(newdev['ProfileId'],16) == 0xc05e: # ZLL
-                                if int(newdev['ZDeviceID'],16) in ZLL_DEVICES:
-                                    newdev['ZDeviceIDDesc'] = ZLL_DEVICES[ int(newdev['ZDeviceID'],16) ]
-         
-                    if 'Model' in self.ListOfDevices[ nwkid ]:
-                        newdev['Model'] = self.ListOfDevices[ nwkid ]['Model']
-        
-                    newdev['PluginCertified'] = 'Unknow'
-                    if 'ConfigSource' in self.ListOfDevices[nwkid]:
-                        if self.ListOfDevices[nwkid]['ConfigSource'] == 'DeviceConf':
-                            newdev['PluginCertified'] = 'yes'
-                        else:
-                            newdev['PluginCertified'] = 'no'
-       
-                    newdev['Ep'] = []
-                    if 'Ep' in self.ListOfDevices[ nwkid ]:
-                        for iterEp in  self.ListOfDevices[ nwkid ][ 'Ep' ]:
-                            ep = {}
-                            ep['Ep'] = iterEp
-                            ep['Clusters'] = []
-                            for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
-                                if clusterId in ( 'ClusterType', 'Type', 'ColorControl' ): continue
-                                cluster = {}
-                                cluster['ClusterId'] = clusterId
-                                if clusterId in ZCL_CLUSTERS_LIST:
-                                    cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
-                                else:
-                                    cluster['ClusterDesc'] = 'Unknown'
-                                ep['Clusters'].append( cluster )
-                                Domoticz.Log("------> New Cluster: %s" %str(cluster))
-                            newdev['Ep'].append( ep )
-                            Domoticz.Log("----> New Ep: %s" %str(ep))
+                Domoticz.Log("--> New device: %s" %nwkid)
+                if 'Status' not in self.ListOfDevices[ nwkid ]:
+                    Domoticz.Error("Something went wrong as the device seems not be created")
                     data['NewDevices'].append( newdev )
-                    Domoticz.Log(" --> New Device: %s" %str(newdev))
-                # for nwkid in listOfPairedDevices:
+                    continue
+
+                if self.ListOfDevices[ nwkid ]['Status'] in ( '004d', '0045', '0043', '8045', '8043') or ( _fake == 1):
+                    # Pairing in progress, just return the Nwkid
+                    data['NewDevices'].append( newdev )
+                    continue
+
+                elif self.ListOfDevices[ nwkid ]['Status'] == 'UNKNOW' or ( _fake == 2):
+                    Domoticz.Log("--> UNKNOW , removed %s from List" %nwkid)
+                    self.DevicesInPairingMode.remove( nwkid )
+                    newdev['ProvisionStatus'] = 'Failed'
+                    newdev['ProvisionStatusDesc'] = 'Failed'
+
+                elif self.ListOfDevices[ nwkid ]['Status'] == 'inDB':
+                    Domoticz.Log("--> inDB , removed %s from List" %nwkid)
+                    self.DevicesInPairingMode.remove( nwkid )
+                    newdev['ProvisionStatus'] = 'inDB'
+                    newdev['ProvisionStatusDesc'] = 'inDB'
+                else:
+                    Domoticz.Log("--> Unexpected , removed %s from List" %nwkid)
+                    self.DevicesInPairingMode.remove( nwkid )
+                    newdev['ProvisionStatus'] = 'Unexpected'
+                    newdev['ProvisionStatusDesc'] = 'Unexpected'
+                    Domoticz.Error('Unexpected')
+                    continue
+
+                newdev['IEEE'] = 'Unknown'
+                if 'IEEE' in self.ListOfDevices[ nwkid ]:
+                    newdev['IEEE'] = self.ListOfDevices[ nwkid ]['IEEE']
+
+                newdev['ProfileId'] = ''
+                newdev['ProfileIdDesc'] = 'Unknow'
+                if 'ProfileID' in self.ListOfDevices[ nwkid ]:
+                    if self.ListOfDevices[ nwkid ]['ProfileID'] != {}:
+                        newdev['ProfileId'] = self.ListOfDevices[ nwkid ]['ProfileID']
+                        if int(newdev['ProfileId'],16) in PROFILE_ID:
+                            newdev['ProfileIdDesc'] = PROFILE_ID[ int(newdev['ProfileId'],16) ]
+
+                newdev['ZDeviceID'] = ''
+                newdev['ZDeviceIDDesc'] = 'Unknow'
+                if 'ZDeviceID' in self.ListOfDevices[ nwkid ]:
+                    if self.ListOfDevices[ nwkid ]['ZDeviceID'] != {}:
+                        newdev['ZDeviceID'] = self.ListOfDevices[ nwkid ]['ZDeviceID']
+                        if int(newdev['ProfileId'],16) == 0x0104: # ZHA
+                            if int(newdev['ZDeviceID'],16) in ZHA_DEVICES:
+                                newdev['ZDeviceIDDesc'] = ZHA_DEVICES[ int(newdev['ZDeviceID'],16) ]
+                            else:
+                                newdev['ZDeviceIDDesc'] = 'Unknow'
+                        elif int(newdev['ProfileId'],16) == 0xc05e: # ZLL
+                            if int(newdev['ZDeviceID'],16) in ZLL_DEVICES:
+                                newdev['ZDeviceIDDesc'] = ZLL_DEVICES[ int(newdev['ZDeviceID'],16) ]
+        
+                if 'Model' in self.ListOfDevices[ nwkid ]:
+                    newdev['Model'] = self.ListOfDevices[ nwkid ]['Model']
+    
+                newdev['PluginCertified'] = 'Unknow'
+                if 'ConfigSource' in self.ListOfDevices[nwkid]:
+                    if self.ListOfDevices[nwkid]['ConfigSource'] == 'DeviceConf':
+                        newdev['PluginCertified'] = 'yes'
+                    else:
+                        newdev['PluginCertified'] = 'no'
+    
+                newdev['Ep'] = []
+                if 'Ep' in self.ListOfDevices[ nwkid ]:
+                    for iterEp in  self.ListOfDevices[ nwkid ][ 'Ep' ]:
+                        ep = {}
+                        ep['Ep'] = iterEp
+                        ep['Clusters'] = []
+                        for clusterId in self.ListOfDevices[ nwkid ][ 'Ep' ][ iterEp ]:
+                            if clusterId in ( 'ClusterType', 'Type', 'ColorControl' ): 
+                                continue
+
+                            cluster = {}
+                            cluster['ClusterId'] = clusterId
+                            if clusterId in ZCL_CLUSTERS_LIST:
+                                cluster['ClusterDesc'] = ZCL_CLUSTERS_LIST[ clusterId ]
+                            else:
+                                cluster['ClusterDesc'] = 'Unknown'
+                            ep['Clusters'].append( cluster )
+                            Domoticz.Log("------> New Cluster: %s" %str(cluster))
+                        newdev['Ep'].append( ep )
+                        Domoticz.Log("----> New Ep: %s" %str(ep))
+                data['NewDevices'].append( newdev )
+                Domoticz.Log(" --> New Device: %s" %str(newdev))
+            # for nwkid in listOfPairedDevices:
                     
             _response["Data"] = json.dumps( data )
             return _response

@@ -233,7 +233,7 @@ class NetworkMap():
             self.LQIticks += 1
             return
 
-        elif len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
+        if len(self.LQIreqInProgress) > 0 and self.LQIticks >= 2:
             entry = self.LQIreqInProgress.pop()
             self.logging( 'Debug', "Commdand pending Timeout: %s" % entry)
             if self.Neighbours[entry]['Status'] == 'WaitResponse':
@@ -451,27 +451,42 @@ class NetworkMap():
             self.logging( 'Debug', "--> _rxonwhenidl:-%s" %_rxonwhenidl)
 
             # s a 2-bit value representing the ZigBee device type of the neighbouring node
-            if  _devicetype   == 0x00: _devicetype = 'Coordinator'
-            elif  _devicetype == 0x01: _devicetype = 'Router'
-            elif  _devicetype == 0x02: _devicetype = 'End Device'
-            elif  _devicetype == 0x03: _devicetype = '??'
-
+            if  _devicetype   == 0x00: 
+                _devicetype = 'Coordinator'
+            elif  _devicetype == 0x01: 
+                _devicetype = 'Router'
+            elif  _devicetype == 0x02: 
+                _devicetype = 'End Device'
+            elif  _devicetype == 0x03: 
+                _devicetype = '??'
 
             #is a 3-bit value representing the neighbouring node’s relationship to the local node
-            if _relationshp   == 0x00: _relationshp = 'Parent'
-            elif _relationshp == 0x01: _relationshp = 'Child'
-            elif _relationshp == 0x02: _relationshp = 'Sibling'
+            if _relationshp   == 0x00: 
+                _relationshp = 'Parent'
+            elif _relationshp == 0x01: 
+                _relationshp = 'Child'
+            elif _relationshp == 0x02: 
+                _relationshp = 'Sibling'
             #else: _relationshp = 'Child'
-            elif _relationshp == 0x03: _relationshp = 'None'
-            elif _relationshp == 0x04: _relationshp = 'Former Child'
+            elif _relationshp == 0x03: 
+                _relationshp = 'None'
+            elif _relationshp == 0x04: 
+                _relationshp = 'Former Child'
 
-            if _permitjnt   == 0x00: _permitjnt = 'Off'
-            elif _permitjnt == 0x01 : _permitjnt = 'On'
-            elif _permitjnt == 0x02 : _permitjnt = '--'
+            if _permitjnt   == 0x00: 
+                _permitjnt = 'Off'
+            elif _permitjnt == 0x01 : 
+                _permitjnt = 'On'
+            elif _permitjnt == 0x02 : 
+                _permitjnt = '--'
 
-            if _rxonwhenidl   == 0x00: _rxonwhenidl = 'Rx-Off'
-            elif _rxonwhenidl == 0x01: _rxonwhenidl = 'Rx-On'
-            elif _rxonwhenidl == 0x02: _rxonwhenidl = '--'
+            if _rxonwhenidl   == 0x00: 
+                _rxonwhenidl = 'Rx-Off'
+            elif _rxonwhenidl == 0x01: 
+                _rxonwhenidl = 'Rx-On'
+            elif _rxonwhenidl == 0x02: 
+                _rxonwhenidl = '--'
+                
             n = n + 42
             self.logging( 'Debug', "mgtLQIresp - capture a new neighbour %s from %s" %(_nwkid, NwkIdSource))
             self.logging( 'Debug', "---> _nwkid: %s" %(_nwkid))

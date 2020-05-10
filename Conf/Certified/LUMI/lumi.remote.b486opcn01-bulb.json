@@ -1,0 +1,24 @@
+{
+	"_comment": "Innovative Wireless Control WXCJKG12LM. 4 Buttons Off/on only",
+	"_version": "Initial Version (bulb mode)",
+	"Ep":{
+		"01": { "0000": "", "0001": "", "0003": "", "0006": "", "0008": "", "0300": "", "Type": "AqaraOppleMiddleBulb" },
+		"02": {  "Type": "AqaraOppleMiddleBulb" },
+		"03": {  "Type": "" },
+		"04": {  "Type": "" },
+		"05": {  "Type": "" },
+		"06": {  "Type": "" }
+	},
+	"Type":"",
+	"ClusterToUnbind": [ [ "01","0006"], ["01","0008"], ["01", "0300"]],
+	"ClusterToBind": [ "0001", "0006", "0008", "0300" ],
+        "ConfigureReporting":{
+	},
+	"ReadAttributes": {
+		"0000": [ "0000", "0001", "0002", "0003", "0004", "0005", "0006", "0032", "0033" ] ,
+		"0001": [ "0020" ],
+		"0006": [],
+		"0008": [],
+		"0300": []
+	}
+}

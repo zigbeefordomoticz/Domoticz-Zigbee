@@ -167,7 +167,7 @@ class IAS_Zone_Management:
 
         cluster_id = "%04x" %0x0500
         attribute = 0x0000
-        self.__ReadAttributeReq( key, ZIGATE_EP, Epout, cluster_id , attribute ), __write_attribute
+        self.__ReadAttributeReq( key, ZIGATE_EP, Epout, cluster_id , attribute )
 
     def IASZone_enroll_response_( self, nwkid, Epout ):
         '''2.the CIE sends a ‘enroll’ message to the IAS Zone device'''
@@ -228,7 +228,7 @@ class IAS_Zone_Management:
 
         cluster_id = "%04x" %0x0500
         attribute = [ 0x0000, 0x0001, 0x0002 ]
-        self.__ReadAttributeReq( nwkid, ZIGATE_EP, Epout, cluster_id , attribute ), __write_attribute
+        self.__ReadAttributeReq( nwkid, ZIGATE_EP, Epout, cluster_id , attribute )
 
     def IASZone_triggerenrollement( self, nwkid, Epout):
 

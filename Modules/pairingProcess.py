@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
 #
 # Author: zaraki673 & pipiche38
 #
@@ -291,7 +293,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         Domoticz.Error("processNotinDBDevices - Please cross check the consistency of the Domoticz and Plugin database.")
                         break
 
-        if IsCreated == False:
+        if not IsCreated:
             loggingPairing( self, 'Debug', "processNotinDBDevices - ready for creation: %s , Model: %s " %(self.ListOfDevices[NWKID], self.ListOfDevices[NWKID]['Model']))
 
             # Purpose of this call is to patch Model and Manufacturer Name in case of Profalux
@@ -312,21 +314,32 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                 Domoticz.Error("processNotinDBDevices - %s doesn't have Ep in Post creation widget" %NWKID)
                 return
 
+            ######
             ###### Post processing : work done after Domoticz Widget creation
-                
+            ######    
             if 'ConfigSource' in self.ListOfDevices[NWKID]:
                 loggingPairing( self, 'Debug', "Device: %s - Config Source: %s Ep Details: %s" \
                         %(NWKID,self.ListOfDevices[NWKID]['ConfigSource'],str(self.ListOfDevices[NWKID]['Ep'])))
 
-            # Binding devices
+            # Bindings ....
             cluster_to_bind = CLUSTERS_LIST
+
+            # Checking if anything must be done before Bindings, and if we have to take some specific bindings
             if 'Model' in self.ListOfDevices[NWKID]:
                 if self.ListOfDevices[NWKID]['Model'] != {}:
-                    if self.ListOfDevices[NWKID]['Model'] in self.DeviceConf:
-                        if 'ClusterToBind' in self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]:
-                            cluster_to_bind = self.DeviceConf[ self.ListOfDevices[NWKID]['Model'] ]['ClusterToBind']             
+                    _model = self.ListOfDevices[NWKID]['Model']
+                    if _model in self.DeviceConf:
+                        # Check if we have to unbind clusters
+                        if 'ClusterToUnbind' in self.DeviceConf[ _model ]:
+                            for iterEp, iterUnBindCluster in self.DeviceConf[ _model ]['ClusterToUnbind']:
+                                unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterUnBindCluster)
+    
+                        # Check if we have specific clusters to Bind                     
+                        if 'ClusterToBind' in self.DeviceConf[ _model ]:
+                            cluster_to_bind = self.DeviceConf[ _model ]['ClusterToBind']             
                             loggingPairing( self, 'Debug', '%s Binding cluster based on Conf: %s' %(NWKID,  str(cluster_to_bind)) )
 
+            # Binding devices
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 for iterBindCluster in cluster_to_bind:      # Binding order is important
                     if iterBindCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
@@ -334,12 +347,18 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                             self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'BIND_' + iterEp + '_' + iterBindCluster )
 
                         loggingPairing( self, 'Debug', 'Request a Bind for %s/%s on Cluster %s' %(NWKID, iterEp, iterBindCluster) )
-
+                        # If option enabled, unbind
                         if self.pluginconf.pluginConf['doUnbindBind']:
                             unbindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
-
+                        # Finaly binding
                         bindDevice( self, self.ListOfDevices[NWKID]['IEEE'], iterEp, iterBindCluster)
 
+            # Just after Binding Enable Opple with Magic Word
+            if  self.ListOfDevices[NWKID]['Model'] in ('lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01',
+                                                'lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):
+                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
+                enableOppleSwitch( self, NWKID)
+    
             # 2 Enable Configure Reporting for any applicable cluster/attributes
             if self.pluginconf.pluginConf['capturePairingInfos']:
                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'PR-CONFIG' )
@@ -347,7 +366,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
             processConfigureReporting( self, NWKID )  
 
             # 3 Read attributes
-            Domoticz.Log("Start Read Attributes")
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
                 # Let's scan each Endpoint cluster and check if there is anything to read
                 for iterReadAttrCluster in CLUSTERS_LIST:
@@ -355,7 +373,7 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                         if iterReadAttrCluster in READ_ATTRIBUTES_REQUEST:
                             if self.pluginconf.pluginConf['capturePairingInfos']:
                                 self.DiscoveryDevices[NWKID]['CaptureProcess']['Steps'].append( 'RA_' + iterEp + '_' + iterReadAttrCluster )
-                            Domoticz.Log("---> for cluster: %s" %iterReadAttrCluster)
+
                             func = READ_ATTRIBUTES_REQUEST[iterReadAttrCluster][0]
                             func( self, NWKID)
 
@@ -387,10 +405,6 @@ def processNotinDBDevices( self, Devices, NWKID , status , RIA ):
                     if 'ConfigSource' in self.ListOfDevices[NWKID]:
                         if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
                             getListofAttribute( self, NWKID, iterEp, iterCluster)
-
-            if  self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
-                Domoticz.Log("---> Calling enableOppleSwitch %s" %NWKID)
-                enableOppleSwitch( self, NWKID)
 
             # Set the sensitivity for Xiaomi Vibration
             if  self.ListOfDevices[NWKID]['Model'] == 'lumi.vibration.aq1':

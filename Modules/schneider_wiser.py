@@ -22,6 +22,8 @@ import Modules.domoticz
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
 
+SCHNEIDER_BASE_EP = '0b'
+
 
 def pollingSchneider( self, key ):
 
@@ -61,7 +63,7 @@ def callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster):
                     if 'Schneider' not in self.ListOfDevices[NwkId]:
                         self.ListOfDevices[NwkId]['Schneider'] = {}
                     if 'Target SetPoint' in self.ListOfDevices[NwkId]['Schneider']:
-                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] * 100):
+                        if self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] and self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] != int( self.ListOfDevices[NwkId]['Ep'][EndPoint]['0201']['0012'] ):
                             # Protect against overloading Zigate
                             if now > self.ListOfDevices[NwkId]['Schneider']['TimeStamp SetPoint'] + 15:
                                 schneider_setpoint( self, NwkId, self.ListOfDevices[NwkId]['Schneider']['Target SetPoint'] )
@@ -93,10 +95,7 @@ def schneider_wiser_registration( self, Devices, key ):
     self.SchneiderZone = None
     importSchneiderZoning (self)
     
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
+    EPout = SCHNEIDER_BASE_EP
 
     if 'Model' not in self.ListOfDevices[key]:
         Domoticz.Error("Undefined Model, registration !!!")
@@ -109,8 +108,8 @@ def schneider_wiser_registration( self, Devices, key ):
     Hattribute = "%04x" %0xe050
     data_type = "10" # Bool
     data = "%02x" %True
-    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
-            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / Endpoint : %s, cluster: %s, attribute: %s type: %s"
+            %(key,data,EPout,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
 
     if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS': # Thermostat
@@ -191,6 +190,15 @@ def schneider_wiser_registration( self, Devices, key ):
         loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
         Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+
+    if self.ListOfDevices[key]['Model'] == 'EH-ZB-BMS': # Thermostat
+        cluster_id = "%04x" %0x0009
+        value = '00'
+        loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
+                %(key,EPout,cluster_id,value), nwkid=key)
+        Modules.domoticz.MajDomoDevice(self, Devices, key, EPout, cluster_id, value)
+
 
     # Write Location to 0x0000/0x5000 for all devices
     manuf_id = "0000"
@@ -275,7 +283,7 @@ def schneider_fip_mode( self, key, mode):
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
             if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '03':
+                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '83':
                     setFIPModeRequired = False
 
     if setFIPModeRequired:
@@ -298,11 +306,46 @@ def schneider_fip_mode( self, key, mode):
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
+def schneider_check_and_set_bind (self, key):
+    loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : %s " %key )
+
+    Cluster_bind1 = '0201'
+    Cluster_bind2 = '0402'
+    if self.SchneiderZone is not None:
+        for zone in self.SchneiderZone:
+            if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
+                for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                    srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
+                    targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+                    loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
+
+                    if 'ZoneBinded' in self.ListOfDevices[key] and \
+                        hact in self.ListOfDevices[key]['ZoneBinded'] and \
+                        Cluster_bind1 in self.ListOfDevices[key]['ZoneBinded'][hact] and \
+                        Cluster_bind2 in self.ListOfDevices[key]['ZoneBinded'][hact] :
+                            continue
+                    if 'ZoneBinded' not in self.ListOfDevices[key]:
+                        self.ListOfDevices[key]['ZoneBinded'] = {}
+                    if hact not in self.ListOfDevices[key]['ZoneBinded']:
+                        self.ListOfDevices[key]['ZoneBinded'][hact] = {}
+                    self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
+                    self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
+                    datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+                    datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+
+                    datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+                    datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
+                    Modules.output.sendZigateCmd(self, "0030", datas )
+
+
 def schneider_setpoint_thermostat( self, key, setpoint):
 
     # SetPoint is in centidegrees
 
-    EPout = '0b'
+    EPout = SCHNEIDER_BASE_EP
     ClusterID = '0201'
     attr = '0012'
     NWKID = key
@@ -322,13 +365,15 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                     self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
     importSchneiderZoning(self)
 
-    for zone in self.SchneiderZone:
-        loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
-        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
-            loggingSchneider( self, 'Debug', "schneider_setpoint - found %s " %zone )
-            for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-                loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
-                schneider_setpoint_actuator(self, hact, setpoint)
+    if self.SchneiderZone is not None:
+        schneider_check_and_set_bind (self, key)
+        for zone in self.SchneiderZone:
+            loggingSchneider(self, 'Debug', "schneider_setpoint - Zone Information: %s " %zone )
+            if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == NWKID :
+                loggingSchneider( self, 'Debug', "schneider_setpoint - found %s " %zone )
+                for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                    loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
+                    schneider_setpoint_actuator(self, hact, setpoint)
 
 
 def schneider_setpoint_actuator( self, key, setpoint):
@@ -341,6 +386,12 @@ def schneider_setpoint_actuator( self, key, setpoint):
 
     cluster_frame = '11'
     sqn = '00'
+
+    EPout = '01'
+    for tmpEp in self.ListOfDevices[key]['Ep']:
+        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
+            EPout= tmpEp
+
     if 'SQN' in self.ListOfDevices[key]:
         if self.ListOfDevices[key]['SQN'] != {} and self.ListOfDevices[key]['SQN'] != '':
             sqn = '%02x' % (int(self.ListOfDevices[key]['SQN'],16) + 1)
@@ -352,15 +403,21 @@ def schneider_setpoint_actuator( self, key, setpoint):
     self.ListOfDevices[key]['Schneider']['Target SetPoint'] = setpoint
     self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
 
+    # Make sure that we are in FIP Mode
+    setSetpointModeRequired = True
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
+                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '82': # 02 becomes 82 , 00 becomes, 03 becomes 83
+                    setSetpointModeRequired = False
+
+    if setSetpointModeRequired:
+        schneider_thermostat_behaviour( self, key, 'setpoint')
+
     setpoint = '%04X' %setpoint
     zone = '01'
 
     payload = cluster_frame + sqn + cmd + '00' + zone + setpoint[2:4] + setpoint[0:2] + 'ff'
-
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
 
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
     self.ListOfDevices[key]['Heartbeat'] = 0
@@ -517,7 +574,8 @@ def schneiderSendReadAttributesResponse(self, NWKID, EPout, ClusterID, sqn, rawA
 def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, setpoint):
 
     # Check if nwkid is the ListOfDevices
-
+    loggingSchneider( self, 'Debug', "schneiderUpdateThermostatDevice nwkid : %s, setpoint: %s" \
+            %(NWKID, setpoint), NWKID)
     if NWKID not in self.ListOfDevices:
         return
 
@@ -534,31 +592,42 @@ def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, set
             %(setpoint, domoTemp), NWKID)
 
 def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, payload):
-    loggingSchneider( self, 'Debug', "Schneider schneiderAlarmReceived start:%s, payload: %s" \
-            %(start, payload), NWKID)
+    """
+    Function called when a command is received from the schneider device to alert about over consumption
+    """
+
+    #if (start): # force fast reporting
+    #    Modules.configureReporting.processConfigureReporting (self, key)
+    #else: # do normal reporting
+    #    Modules.configureReporting.processConfigureReporting (self, key)
+
     AlertCode = payload [0:2] # uint8
     AlertClusterId = payload [4:6]  + payload [2:4]# uint16
     loggingSchneider( self, 'Debug', "Schneider schneiderAlarmReceived start:%s, AlertCode: %s, AlertClusterID: %s" \
             %(start, AlertCode,AlertClusterId), NWKID)
 
+    cluster_id = "%04x" %0x0009
+    if (start):
+        value = '04'
+    else:
+        value = '00'
 
-def schneider_set_contract( self, key, kva):
+    loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
+            %(NWKID,srcEp,cluster_id,value), NWKID)
+    Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
 
+def schneider_set_contract( self, key, EPout, kva):
+    """
+    Configure the schneider device to report an alarm when consumption is above a threshold in miliamps
+    """
 
-    loggingSchneider( self, 'Debug', "schneider_set_contract for device %s requesting mode: %sKVA" %(key, kva))
-
-    # determine which Endpoint
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0702" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
     POWER_FACTOR = 0.92
     max_real_power_in_kwh = kva * 1000 * POWER_FACTOR
     max_real_amps = max_real_power_in_kwh / 235
     max_real_amps_before_tripping = max_real_amps * 110 / 100
     max_real_milli_amps_before_tripping = round (max_real_amps_before_tripping * 1000)
-    loggingSchneider( self, 'Debug', "schneider_set_contract for device %s requesting max_real_milli_amps_before_tripping: %s milliamps" 
-        %(key, max_real_milli_amps_before_tripping))
+    loggingSchneider( self, 'Debug', "schneider_set_contract for device %s %s requesting max_real_milli_amps_before_tripping: %s milliamps"
+        %(key,EPout, max_real_milli_amps_before_tripping))
 
     ClusterId = '0702' # Simple Metering
     ManufacturerID = '0000'
@@ -566,12 +635,17 @@ def schneider_set_contract( self, key, kva):
     AttributeID = '5121' # Max Current
     DataType = '22' # 24 bits unsigned integer
     data = "%06x" %max_real_milli_amps_before_tripping
+    Modules.output.write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
-    Modules.output.write_attribute(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
-    self.ListOfDevices[key]['Heartbeat'] = 0
+    AttributeID = '7003' # Contract Name
+    DataType = '42' # String
+    data = 'BASE'.encode('utf-8').hex()  # BASE
+    Modules.output.write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
-
+    """
+    Function called when raw APS indication are received for a schneider device - it then decide how to handle it
+    """
 
     loggingSchneider( self, 'Debug', "Schneider read raw APS nwkid: %s ep: %s , clusterId: %s, dstnwkid: %s, dstep: %s, payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
@@ -581,25 +655,24 @@ def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dst
     cmd = MsgPayload[4:6] # uint8
     data = MsgPayload[6:] # all the rest
 
+    loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
+            %( fcf, sqn, cmd, data), srcNWKID)
+
     if ClusterID == '0201' : # Thermostat cluster
         if cmd == '00': #read attributes
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
             schneiderSendReadAttributesResponse(self, srcNWKID, srcEp, ClusterID, sqn, data)
-        if cmd == '00': #read attributes
+        if cmd == 'e0': # command to change setpoint from thermostat
             sTemp = data [4:8]
             setpoint = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
             schneiderUpdateThermostatDevice(self, Devices, srcNWKID, srcEp, ClusterID, setpoint)
     elif ClusterID == '0009': # Alarm cluster
         if cmd == '00': #start of alarm
             loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
-            schneiderAlarmReceived (self, srcNWKID, srcEp, ClusterID, sqn, True, data)
+            schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, True, data)
         elif cmd == '50': #end of alarm
-            loggingSchneider( self, 'Debug','Schneider cmd 0x00',srcNWKID)
-            schneiderAlarmReceived (self, srcNWKID, srcEp, ClusterID, sqn, False, data)
-
-
-    loggingSchneider( self, 'Debug', "         -- FCF: %s, SQN: %s, CMD: %s, Data: %s" \
-            %( fcf, sqn, cmd, data), srcNWKID)
+            loggingSchneider( self, 'Debug','Schneider cmd 0x50',srcNWKID)
+            schneiderAlarmReceived (self, Devices, srcNWKID, srcEp, ClusterID, False, data)
 
     return
 
@@ -692,7 +765,7 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
             if ClusterID in self.ListOfDevices[NWKID]['Ep'][EP]:
                 if attr in self.ListOfDevices[NWKID]['Ep'][EP][ClusterID]:
                     if self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] == {}:
-                        if newValue == None:
+                        if newValue is None:
                             loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set: could not find value, setting default value  %s" %defaultValue,NWKID)
                             self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = defaultValue
                         else:
@@ -701,7 +774,87 @@ def schneider_find_attribute_and_set(self, NWKID, EP, ClusterID ,attr ,defaultVa
 
                     loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : found value %s"%(self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]),NWKID)
                     found = self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr]
-                    if newValue != None:
+                    if newValue is not None:
                         loggingSchneider( self, 'Debug', "schneider_find_attribute_or_set : setting new value %s"%newValue,NWKID)
                         self.ListOfDevices[NWKID]['Ep'][EP][ClusterID][attr] = newValue
     return found
+
+def schneider_UpdateConfigureReporting( self, NwkId, Ep, ClusterId = None, AttributesConfig= None):
+    """
+    Will send a Config reporting to a specific Endpoint of a Wiser Device. 
+    It is assumed that the device is on Receive at the time we will be sending the command
+    If ClusterId is not None, it will use the AttributesConfig dictionnary for the reporting config,
+    otherwise it will retreive the config from the DeviceConf for this particular Model name
+
+    AttributesConfig must have the same format:
+        {
+            "0000": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"0001"},
+            "0012": {"DataType": "29", "MinInterval":"0258", "MaxInterval":"0258", "TimeOut":"0000","Change":"7FFF"},
+            "e030": {"DataType": "20", "MinInterval":"003C", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"},
+            "e031": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"},
+            "e012": {"DataType": "30", "MinInterval":"001E", "MaxInterval":"0258", "TimeOut":"0000","Change":"01"}
+        }
+    """
+    MAX_ATTR_PER_REQ = 3
+
+    if NwkId not in self.ListOfDevices:
+        return
+
+    if ClusterId is None:
+        if 'Model' not in self.ListOfDevices[NwkId]:
+            return
+
+        _modelName = self.ListOfDevices[NwkId]['Model']
+        if _modelName not in self.DeviceConf:
+            return
+
+        if 'ConfigureReporting' not in self.DeviceConf[ _modelName ]:
+            return
+        if ClusterId not in self.DeviceConf[ _modelName ]['ConfigureReporting']:
+            return
+        if 'Attributes' not in self.DeviceConf[ _modelName ]['ConfigureReporting'][ClusterId]:
+            return
+
+        AttributesConfig = self.DeviceConf[ self.ListOfDevices[NwkId]['Model'] ]['ConfigureReporting'][ClusterId]['Attributes']
+
+    # We have :
+    # Nwkid and Endpoint we want to configure
+    # ClusterId
+    # AttributesConfig
+
+    manufacturer = "0000"
+    manufacturer_spec = "00"
+    direction = "00"
+    addr_mode = "02"
+
+    attrList = ''
+    attrLen = 0
+    for attr in AttributesConfig:
+        attrdirection = "00"
+        attrType = AttributesConfig[attr]['DataType']
+        minInter = AttributesConfig[attr]['MinInterval']
+        maxInter = AttributesConfig[attr]['MaxInterval']
+        timeOut = AttributesConfig[attr]['TimeOut']
+        chgFlag = AttributesConfig[attr]['Change']
+        attrList += attrdirection + attrType + attr + minInter + maxInter + timeOut + chgFlag
+        attrLen += 1
+
+        # Let's check if we have to send a chunk
+        if attrLen == MAX_ATTR_PER_REQ:
+            # Prepare the payload
+            datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
+            datas +=  "%02x" %(attrLen) + attrList
+
+            Modules.output.sendZigateCmd( self, "0120", datas )
+
+            #Reset the Lenght to 0
+            attrList = ''
+            attrLen = 0
+    # end for 
+
+    # Let's check if we have some remaining to send
+    if attrLen != 0 :
+        # Prepare the payload
+        datas =   addr_mode + NwkId + ZIGATE_EP + Ep + ClusterId + direction + manufacturer_spec + manufacturer 
+        datas +=  "%02x" %(attrLen) + attrList
+        Modules.output.sendZigateCmd( self, "0120", datas )

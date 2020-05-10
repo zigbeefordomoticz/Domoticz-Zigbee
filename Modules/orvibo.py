@@ -1,4 +1,8 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 
 
@@ -58,8 +62,6 @@ def orviboReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP,
         '02': 2, # Long Click 
         '03': 3, # Release
     }
-
- 
  
     if srcNWKID not in self.ListOfDevices:
         Domoticz.Error("%s not found in Database")
