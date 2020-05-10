@@ -135,8 +135,7 @@ class TransportStatistics:
     def writeReport(self):
 
         timing = int(time())
-        stats = {}
-        stats[timing] = {}
+        stats = {timing: {}}
         stats[timing]['crcErrors'] = self._crcErrors
         stats[timing]['frameErrors'] = self._frameErrors
         stats[timing]['sent'] = self._sent

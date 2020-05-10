@@ -25,11 +25,11 @@ def enableOppleSwitch( self, nwkid ):
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
 
-    if self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b286opcn01-bulb'):  
-        if 'Lumi' not in self.ListOfDevices[nwkid]:
-            self.ListOfDevices[nwkid]['Lumi'] = {}
-            self.ListOfDevices[nwkid]['Lumi']['AqaraOppleBulbMode'] = True
-            return
+    if ( self.ListOfDevices[nwkid]['Model'] in ('lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb' )
+                                                and 'Lumi' not in self.ListOfDevices[nwkid] ):
+        self.ListOfDevices[nwkid]['Lumi'] = {}
+        self.ListOfDevices[nwkid]['Lumi']['AqaraOppleBulbMode'] = True
+        return
 
     manuf_id = '115F'
     manuf_spec = "01"

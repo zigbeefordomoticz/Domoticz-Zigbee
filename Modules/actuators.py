@@ -67,7 +67,11 @@ def actuator_stop( self, nwkid, EPout, DeviceType):
 
 def actuator_off(  self, nwkid, EPout, DeviceType):
 
-    if DeviceType == 'LivoloSWL':
+    if DeviceType == "AlarmWD":
+        Domoticz.Log("Alarm WarningDevice - value: %s" %'off')
+        self.iaszonemgt.alarm_off( nwkid, EPout)
+
+    elif DeviceType == 'LivoloSWL':
         sendZigateCmd(self, "0081","02" + nwkid + ZIGATE_EP + EPout + '00' + '01' + '0001')
 
     elif DeviceType == 'LivoloSWR':
@@ -76,10 +80,6 @@ def actuator_off(  self, nwkid, EPout, DeviceType):
     elif DeviceType == "WindowCovering":
         # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
         sendZigateCmd(self, "00FA","02" + nwkid + ZIGATE_EP + EPout + "01")
-
-    elif DeviceType == "AlarmWD":
-        Domoticz.Log("Alarm WarningDevice - value: %s" %'off')
-        self.iaszonemgt.alarm_off( nwkid, EPout)
 
     else:
         sendZigateCmd(self, "0092","02" + nwkid + ZIGATE_EP + EPout + "00")
@@ -248,17 +248,16 @@ def actuator_identify( self, nwkid, ep, value=None):
         sendZigateCmd(self, "0070", datas )
 
     else:
-
+    
         Domoticz.Log("value: %s" %value)
         Domoticz.Log("Type: %s" %type(value))
-    
+
         color = 0x00 # Default
         if value is None or value == 0:
             value = 0x00 # Blink
-            if 'Manufactuer Name' in self.ListOfDevices:
-                if self.ListOfDevices['Manufacturer Name'] == 'Legrand':
-                    value = 0x00 # Flashing
-                    color = 0x03 # Blue
+            if ('Manufactuer Name' in self.ListOfDevices and self.ListOfDevices['Manufacturer Name'] == 'Legrand'):
+                value = 0x00 # Flashing
+                color = 0x03 # Blue
 
         datas = "02" + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%value  + "%02x" %color
         loggingCommand( self, 'Log', "identifyEffect - send an Identify Effecty Message to: %s for %04x seconds" %( nwkid, duration), nwkid=nwkid)

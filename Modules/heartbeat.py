@@ -151,8 +151,6 @@ def pollingDeviceStatus( self, NWKID):
     Purpose is to trigger ReadAttrbute 0x0006 and 0x0008 on attribute 0x0000 if applicable
     """
 
-    rescheduleAction = False
-
     for iterEp in self.ListOfDevices[NWKID]['Ep']:
         if '0006' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
             ReadAttributeRequest_0006_0000( self, NWKID)
@@ -164,7 +162,7 @@ def pollingDeviceStatus( self, NWKID):
             loggingHeartbeat( self, 'Debug', "++ pollingDeviceStatus -  %s  for LVLControl" \
             %(NWKID), NWKID)
 
-    return rescheduleAction
+    return False
 
 
 def processKnownDevices( self, Devices, NWKID ):
