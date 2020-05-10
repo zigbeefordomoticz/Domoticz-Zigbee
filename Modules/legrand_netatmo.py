@@ -28,9 +28,7 @@ def pollingLegrand( self, key ):
     This fonction is call if enabled to perform any Manufacturer specific polling action
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
-    rescheduleAction= False
-
-    return rescheduleAction
+    return False
 
 
 def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
@@ -345,5 +343,6 @@ def ZigateTimeOfOperation( self):
 
     # Send a Read Attribute Request to Zigate to get it's Reporting Time of Operation
 
+    loggingLegrand( self, 'Log', "ZigateTimeOfOperation sending a Request to Zigate", '0000')
     datas = "02" + '0000' + '01' + '01' + '0000' + '00' + '00' + '0000' + '01' + 'f000'
     sendZigateCmd(self, "0100", datas )
