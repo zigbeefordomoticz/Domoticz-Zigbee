@@ -1040,7 +1040,9 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
  
     if 'Able to act Coordinator' in capabilities:
         AltPAN = 1
-        
+    else:
+        AltPAN = 0
+
     if 'Main Powered' in capabilities:
         PowerSource = "Main"
     else:
