@@ -795,13 +795,15 @@ def importSchneiderZoning( self ):
 
     SCHNEIDER_ZONING = 'schneider_zoning.json'
 
-    self.SchneiderZone = {}
+    
     self.SchneiderZoningFilename = self.pluginconf.pluginConf['pluginConfig'] + SCHNEIDER_ZONING
 
     if not os.path.isfile( self.SchneiderZoningFilename ) :
         loggingSchneider(self, 'Debug', "importSchneiderZoning - Nothing to import from %s" %self.SchneiderZoningFilename)
+        self.SchneiderZone = None
         return
 
+    self.SchneiderZone = {}
     with open( self.SchneiderZoningFilename, 'rt') as handle:
         SchneiderZoning = json.load( handle)
 
