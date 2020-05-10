@@ -35,7 +35,7 @@ from Modules.schneider_wiser import schneider_thermostat_behaviour, schneider_fi
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 
-from Modules.tools import removeNwkInList, mainPoweredDevice
+from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel
 from Modules.logging import loggingPairing, loggingHeartbeat
 from Modules.domoticz import CreateDomoDevice, timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
@@ -174,16 +174,8 @@ def processKnownDevices( self, Devices, NWKID ):
         self.ListOfDevices[NWKID]['Heartbeat'] = intHB
 
     # Hack bad devices
-    # Xiaomi b86opcn01 annouced itself as Main Powered!
-    if self.ListOfDevices[NWKID]['MacCapa'] == '84':
-        if 'Model' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Model'] == 'lumi.remote.b686opcn01':
-                self.ListOfDevices[NWKID]['MacCapa'] = '80'
-                self.ListOfDevices[NWKID]['PowerSource'] = ''
-                if 'Capability' in self.ListOfDevices[NWKID]:
-                    if 'Main Powered' in self.ListOfDevices[NWKID]['Capability']:
-                        self.ListOfDevices[NWKID]['Capability'].remove( 'Main Powered')
-
+    ReArrangeMacCapaBasedOnModel( self, NWKID, self.ListOfDevices[NWKID]['MacCapa'])
+ 
     # Check if this is a Main powered device or Not. Source of information are: MacCapa and PowerSource
     _mainPowered = mainPoweredDevice( self, NWKID)
 
@@ -202,7 +194,6 @@ def processKnownDevices( self, Devices, NWKID ):
             Domoticz.Error("Device Health - Nwkid: %s,Ieee: %s , Model: %s seems to be out of the network" \
                 %(NWKID, self.ListOfDevices[NWKID]['IEEE'], self.ListOfDevices[NWKID]['Model']))
             self.ListOfDevices[NWKID]['Health'] = 'Not seen last 24hours'
-
 
     # If device flag as Not Reachable, don't do anything
     if 'Health' in self.ListOfDevices[NWKID]:

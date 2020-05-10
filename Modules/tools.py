@@ -561,15 +561,24 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
 
     if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
         # Livol Switch, must be converted to Main Powered
-        self.ListOfDevices[nwkid]['MacCapa'] = '84'
+        # Patch some status as Device Annouced doesn't provide much info
+        self.ListOfDevices[MsgSrcAddr]['LogicalType'] = 'Router'
+        self.ListOfDevices[MsgSrcAddr]['DevideType'] = 'FFD'
+        self.ListOfDevices[MsgSrcAddr]['MacCapa'] = '8e'
         self.ListOfDevices[nwkid]['PowerSource'] = 'Main'
-        return '84'
+        return '8e'
 
     if self.ListOfDevices[nwkid]['Model'] in ( 'lumi.remote.b686opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b286opcn01', 
-                                         'lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb'):
+                                             'lumi.remote.b686opcn01-bulb','lumi.remote.b486opcn01-bulb','lumi.remote.b286opcn01-bulb',
+                                             'lumi.remote.b686opcn01' ):
         # Aqara Opple Switch, must be converted to Battery Devices
         self.ListOfDevices[nwkid]['MacCapa'] = '80'
         self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
+        if (
+            'Capability' in self.ListOfDevices[nwkid]
+            and 'Main Powered' in self.ListOfDevices[nwkid]['Capability']
+        ):
+            self.ListOfDevices[nwkid]['Capability'].remove( 'Main Powered')
         return '80'
 
     return inMacCapa
