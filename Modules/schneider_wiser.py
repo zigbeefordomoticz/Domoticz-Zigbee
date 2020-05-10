@@ -384,36 +384,38 @@ def schneider_check_and_set_bind (self, key):
     """
     loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : %s " %key )
 
+    if self.SchneiderZone is None:
+        return
+
     Cluster_bind1 = '0201'
-    Cluster_bind2 = '0402'
-    if self.SchneiderZone is not None:
-        for zone in self.SchneiderZone:
-            if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
-                for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
-                    srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
-                    targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
-                    loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
+    Cluster_bind2 = '0402'       
+    for zone in self.SchneiderZone:
+        if self.SchneiderZone[ zone ]['Thermostat']['NWKID'] == key :
+            for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
+                srcIeee = self.SchneiderZone[ zone ]['Thermostat']['IEEE']
+                targetIeee = self.SchneiderZone[ zone ]['Thermostat']['HACT'][hact]['IEEE']
+                loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : self.ListOfDevices[key]  %s " %self.ListOfDevices[key]  )
 
-                    if 'ZoneBinded' in self.ListOfDevices[key] and \
-                        hact in self.ListOfDevices[key]['ZoneBinded'] and \
-                        Cluster_bind1 in self.ListOfDevices[key]['ZoneBinded'][hact] and \
-                        Cluster_bind2 in self.ListOfDevices[key]['ZoneBinded'][hact] :
-                            continue
-                    if 'ZoneBinded' not in self.ListOfDevices[key]:
-                        self.ListOfDevices[key]['ZoneBinded'] = {}
-                    if hact not in self.ListOfDevices[key]['ZoneBinded']:
-                        self.ListOfDevices[key]['ZoneBinded'][hact] = {}
-                    self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
-                    self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
-                    datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
-                    Modules.output.sendZigateCmd(self, "0030", datas )
-                    datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
-                    Modules.output.sendZigateCmd(self, "0030", datas )
+                if 'ZoneBinded' in self.ListOfDevices[key] and \
+                    hact in self.ListOfDevices[key]['ZoneBinded'] and \
+                    Cluster_bind1 in self.ListOfDevices[key]['ZoneBinded'][hact] and \
+                    Cluster_bind2 in self.ListOfDevices[key]['ZoneBinded'][hact] :
+                        continue
+                if 'ZoneBinded' not in self.ListOfDevices[key]:
+                    self.ListOfDevices[key]['ZoneBinded'] = {}
+                if hact not in self.ListOfDevices[key]['ZoneBinded']:
+                    self.ListOfDevices[key]['ZoneBinded'][hact] = {}
+                self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
+                self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
+                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+                Modules.output.sendZigateCmd(self, "0030", datas )
+                datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
+                Modules.output.sendZigateCmd(self, "0030", datas )
 
-                    datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
-                    Modules.output.sendZigateCmd(self, "0030", datas )
-                    datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
-                    Modules.output.sendZigateCmd(self, "0030", datas )
+                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+                Modules.output.sendZigateCmd(self, "0030", datas )
+                datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
+                Modules.output.sendZigateCmd(self, "0030", datas )
 
 
 def schneider_setpoint_thermostat( self, key, setpoint):
