@@ -203,7 +203,7 @@ def loggingSchneider( self, logType, message, nwkid=None):
         _loggingStatus( self, message )
     return
 
-def loggingphilips( self, logType, message, nwkid=None):
+def loggingPhilips( self, logType, message, nwkid=None):
     
     if self.pluginconf.pluginConf['debugPhilips'] and logType == 'Debug':
         _logginfilter( self, message, nwkid)
