@@ -1038,6 +1038,9 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     mac_capability = ReArrangeMacCapaBasedOnModel( self, addr, mac_capability ) 
     capabilities = decodeMacCapa( mac_capability )
  
+    if 'Able to act Coordinator' in capabilities:
+        AltPAN = 1
+        
     if 'Main Powered' in capabilities:
         PowerSource = "Main"
     else:
