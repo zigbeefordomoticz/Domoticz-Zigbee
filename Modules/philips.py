@@ -40,11 +40,27 @@ def callbackDeviceAwake_Philips(self, NwkId, EndPoint, cluster):
 
 def philipsReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
+    # Zigbee Command:
+    # 0x00: Read Attributes
+    # 0x01: Read Attributes Response
+    # 0x02: Write Attributes
+    # 0x03:
+    # 0x04: Write Attributes Response
+    # 0x06: Configure Reporting
+    # 0x0A: Report Attributes
+    # 0x0C: Discover Attributes
+    # 0x0D: Discover Attributes Response
+    
     if srcNWKID not in self.ListOfDevices:
         return
 
-    loggingPhilips( self, 'Log', "lumiReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
+    loggingPhilips( self, 'Log', "philipsReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload), srcNWKID)
+
+    # Motion
+    # Nwkid: 329c/02 Cluster: 0001, Command: 07 Payload: 00
+    # Nwkid: 329c/02 Cluster: 0001, Command: 0a Payload: 21002050
+
 
     if 'Model' not in self.ListOfDevices[srcNWKID]:
         return

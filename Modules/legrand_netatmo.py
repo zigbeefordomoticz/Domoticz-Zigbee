@@ -20,7 +20,7 @@ from time import time
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE
 from Modules.logging import loggingLegrand
-from Modules.output import raw_APS_request, write_attribute
+from Modules.output import raw_APS_request, write_attribute, sendZigateCmd
 
 def pollingLegrand( self, key ):
 
@@ -341,3 +341,9 @@ def legrandReenforcement( self, NWKID):
 
     return rescheduleAction
 
+def ZigateTimeOfOperation( self):
+
+    # Send a Read Attribute Request to Zigate to get it's Reporting Time of Operation
+
+    datas = "02" + '0000' + '01' + '01' + '0000' + '00' + '00' + '0000' + '01' + 'f000'
+    sendZigateCmd(self, "0100", datas )

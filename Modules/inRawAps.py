@@ -33,7 +33,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         'Legrand': legrandReadRawAPS,
         'Schneider': schneiderReadRawAPS,
         'LUMI': lumiReadRawAPS,
-        'Philips' : philipsReadRawAPS
+        'Philips' : philipsReadRawAPS,
     }
 
     #Domoticz.Log("inRawAps - NwkId: %s Ep: %s, Cluster: %s, dstNwkId: %s, dstEp: %s, Payload: %s" \
