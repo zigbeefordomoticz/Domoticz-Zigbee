@@ -23,10 +23,7 @@ from Modules.database import WriteDeviceList
 def is_hex(s):
 
     hex_digits = set("0123456789abcdefABCDEF")
-    for char in s:
-        if not (char in hex_digits):
-            return False
-    return True
+    return all(char in hex_digits for char in s)
 
 def returnlen(taille , value) :
     while len(value)<taille:
@@ -42,13 +39,12 @@ def Hex_Format(taille, value):
         value="0"+value
     return str(value)
 
-def IEEEExist(self, IEEE) :
+def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
-    if IEEE :
-        if IEEE in self.ListOfDevices and IEEE != '' :
-            return True
-        else:
-            return False
+    return IEEE in self.ListOfDevices and IEEE != ''
+
+def NwkIdExist( self, Nwkid):
+    return Nwkid in self.ListOfDevices
 
 def getSaddrfromIEEE(self, IEEE) :
     # Return Short Address if IEEE found.
@@ -57,9 +53,6 @@ def getSaddrfromIEEE(self, IEEE) :
         for sAddr in self.ListOfDevices :
             if self.ListOfDevices[sAddr]['IEEE'] == IEEE :
                 return sAddr
-
-    Domoticz.Log("getSaddrfromIEEE no IEEE found " )
-
     return ''
 
 def getEPforClusterType( self, NWKID, ClusterType ) :
@@ -410,12 +403,12 @@ def getListofOutClusterbyModel( self, Model ) :
     return getListofClusterbyModel( self, Model, 'Epout' )
 
     
-def getListofTypebyModel( self, Model ) :
+def getListofTypebyModel( self, Model ):
     """
     Provide a list of Tuple ( Ep, Type ) for a given Model name if found. Else return an empty list
         Type is provided as a list of Type already.
     """
-    EpType = list()
+    EpType = []
     if Model in self.DeviceConf :
         for ep in self.DeviceConf[Model]['Epin'] :
             if 'Type' in self.DeviceConf[Model]['Epin'][ep]:
@@ -433,14 +426,14 @@ def getModelbyZDeviceIDProfileID( self, ZDeviceID, ProfileID):
     return ''
 
 
-def getListofType( self, Type ) :
+def getListofType( self, Type ):
     """
     For a given DeviceConf Type "Plug/Power/Meters" return a list of Type [ 'Plug', 'Power', 'Meters' ]
     """
 
     if Type == '' or Type is None :
         return ''
-    retList = list()
+    retList = []
     retList= Type.split("/")
     return retList
 
@@ -534,6 +527,8 @@ def mainPoweredDevice( self, nwkid):
         Domoticz.Log("mainPoweredDevice - Unknown Device: %s" %nwkid)
         return False
 
+
+
     mainPower = False
     if 'MacCapa' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['MacCapa'] != {}:
@@ -542,6 +537,11 @@ def mainPoweredDevice( self, nwkid):
     if not mainPower and 'PowerSource' in self.ListOfDevices[nwkid]:
         if self.ListOfDevices[nwkid]['PowerSource'] != {}:
             mainPower = ('Main' == self.ListOfDevices[nwkid]['PowerSource'])
+
+    # We need to take in consideration that Livolo is reporting a MacCapa of 0x80
+    if 'Model' in self.ListOfDevices[nwkid]:
+        if self.ListOfDevices[nwkid]['Model'] == 'TI0001':
+            mainPower = True
 
     return mainPower
 
