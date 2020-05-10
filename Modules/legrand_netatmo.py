@@ -18,9 +18,9 @@ import json
 from datetime import datetime
 from time import time
 
-from Modules.zigateConsts import MAX_LOAD_ZIGATE
+from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT
 from Modules.logging import loggingLegrand
-from Modules.output import raw_APS_request, write_attribute
+from Modules.output import raw_APS_request, write_attribute, sendZigateCmd, raw_APS_request
 
 def pollingLegrand( self, key ):
 
@@ -28,9 +28,7 @@ def pollingLegrand( self, key ):
     This fonction is call if enabled to perform any Manufacturer specific polling action
     The frequency is defined in the pollingSchneider parameter (in number of seconds)
     """
-    rescheduleAction= False
-
-    return rescheduleAction
+    return False
 
 
 def callbackDeviceAwake_Legrand(self, NwkId, EndPoint, cluster):
@@ -49,9 +47,12 @@ def legrand_fake_read_attribute_response( self, nwkid ):
 
     cluster_frame = '11'
     sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    if (
+        'SQN' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['SQN'] != {}
+        and self.ListOfDevices[nwkid]['SQN'] != ''
+    ):
+        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     payload = cluster_frame + sqn + '0100F0002311000000'
     raw_APS_request( self, nwkid, '01', '0000', '0104', payload)
     loggingLegrand( self, 'Debug', "legrand_fake_read_attribute_response nwkid: %s" %nwkid, nwkid)
@@ -61,6 +62,31 @@ def legrandReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP
 
     Domoticz.Log("legrandReadRawAPS - Nwkid: %s Ep: %s, Cluster: %s, dstNwkid: %s, dstEp: %s, Payload: %s" \
             %(srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload))
+
+    fcf = MsgPayload[0:2] # uint8
+    sqn = MsgPayload[2:4] # uint8
+    cmd = MsgPayload[4:6] # uint8
+    data = MsgPayload[6:] # all the rest
+
+    if cmd == '00':
+        # Read Attribute received
+        attribute = data[2:4] + data[0:2]
+
+        if ClusterID == '0000' and attribute == 'f000':
+            # Respond to Time Of Operation
+            cmd = "01"
+            sqn = '%02x' %(int(sqn,16) + 1)
+            status = "00"
+            cluster_frame = "1c"           
+            dataType = '23' #Uint32
+            PluginTimeOfOperation = '%08X' %(self.HeartbeatCount * HEARTBEAT) # Time since the plugin started
+
+            payload = cluster_frame + sqn + cmd + attribute + status + dataType + PluginTimeOfOperation[6:8] + PluginTimeOfOperation[4:6] + PluginTimeOfOperation[0:2] + PluginTimeOfOperation[2:4]
+            raw_APS_request( self, srcNWKID, srcEp, ClusterID, '0104', payload, zigate_ep=ZIGATE_EP)
+
+            loggingLegrand( self, 'Log', "loggingLegrand - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
+                %(srcNWKID,srcEp , ClusterID, cmd, data ))
+
 
 def rejoin_legrand( self, nwkid):
 
@@ -87,9 +113,12 @@ def rejoin_legrand( self, nwkid):
     # To be use if the Write Attribute is not conclusive
     cluster_frame = '14'
     sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    if (
+        'SQN' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['SQN'] != {}
+        and self.ListOfDevices[nwkid]['SQN'] != ''
+    ):
+        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
     payload = cluster_frame + sqn + '0500f02300000000'
     raw_APS_request( self, 'ffff', '01', '0000', '0104', payload)
 
@@ -253,14 +282,17 @@ def legrand_dimOnOff( self, OnOff):
 
     loggingLegrand( self, 'Debug', "legrand_dimOnOff %s" %OnOff)
     for NWKID in self.ListOfDevices:
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                if 'Model' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Dimmer switch wo neutral', ):
-                            if 'Legrand' in self.ListOfDevices[NWKID]:
-                                self.ListOfDevices[NWKID]['Legrand']['EnableDimmer'] = 0
-                            legrand_fc01( self, NWKID, 'EnableDimmer', OnOff)
+        if (
+            'Manufacturer Name' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
+            and 'Model' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Model'] != {}
+            and self.ListOfDevices[NWKID]['Model']
+            in ('Dimmer switch wo neutral',)
+        ):
+            if 'Legrand' in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Legrand']['EnableDimmer'] = 0
+            legrand_fc01( self, NWKID, 'EnableDimmer', OnOff)
                         #else:
                         #    Domoticz.Error("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -271,14 +303,23 @@ def legrand_ledIfOnOnOff( self, OnOff):
 
     loggingLegrand( self, 'Debug', "legrand_ledIfOnOnOff %s" %OnOff)
     for NWKID in self.ListOfDevices:
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                if 'Model' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
-                            if 'Legrand' in self.ListOfDevices[NWKID]:
-                                self.ListOfDevices[NWKID]['Legrand']['EnableLedIfOn'] = 0
-                            legrand_fc01( self, NWKID, 'EnableLedIfOn', OnOff)
+        if (
+            'Manufacturer Name' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
+            and 'Model' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Model'] != {}
+            and self.ListOfDevices[NWKID]['Model']
+            in (
+                'Connected outlet',
+                'Mobile outlet',
+                'Dimmer switch wo neutral',
+                'Shutter switch with neutral',
+                'Micromodule switch',
+            )
+        ):
+            if 'Legrand' in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Legrand']['EnableLedIfOn'] = 0
+            legrand_fc01( self, NWKID, 'EnableLedIfOn', OnOff)
                         #else:
                         #    Domoticz.Error("legrand_ledOnOff not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -289,14 +330,17 @@ def legrand_ledShutter( self, OnOff):
     loggingLegrand( self, 'Debug', "legrand_ledShutter %s" %OnOff)
 
     for NWKID in self.ListOfDevices:
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                if 'Model' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Shutter switch with neutral' ):
-                            if 'Legrand' in self.ListOfDevices[NWKID]:
-                                self.ListOfDevices[NWKID]['Legrand']['EnableLedShutter'] = 0
-                            legrand_fc01( self, NWKID, 'EnableLedShutter', OnOff)
+        if (
+            'Manufacturer Name' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
+            and 'Model' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Model'] != {}
+            and self.ListOfDevices[NWKID]['Model']
+            in ('Shutter switch with neutral')
+        ):
+            if 'Legrand' in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Legrand']['EnableLedShutter'] = 0
+            legrand_fc01( self, NWKID, 'EnableLedShutter', OnOff)
                         #else:
                         #    Domoticz.Error("legrand_ledInDark not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -309,14 +353,23 @@ def legrand_ledInDark( self, OnOff):
 
     loggingLegrand( self, 'Debug', "legrand_ledInDark %s" %OnOff)
     for NWKID in self.ListOfDevices:
-        if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-            if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-                if 'Model' in self.ListOfDevices[NWKID]:
-                    if self.ListOfDevices[NWKID]['Model'] != {}:
-                        if self.ListOfDevices[NWKID]['Model'] in ( 'Connected outlet', 'Mobile outlet', 'Dimmer switch wo neutral', 'Shutter switch with neutral', 'Micromodule switch' ):
-                            if 'Legrand' in self.ListOfDevices[NWKID]:
-                                self.ListOfDevices[NWKID]['Legrand']['EnableLedInDark'] = 0
-                            legrand_fc01( self, NWKID, 'EnableLedInDark', OnOff)
+        if (
+            'Manufacturer Name' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
+            and 'Model' in self.ListOfDevices[NWKID]
+            and self.ListOfDevices[NWKID]['Model'] != {}
+            and self.ListOfDevices[NWKID]['Model']
+            in (
+                'Connected outlet',
+                'Mobile outlet',
+                'Dimmer switch wo neutral',
+                'Shutter switch with neutral',
+                'Micromodule switch',
+            )
+        ):
+            if 'Legrand' in self.ListOfDevices[NWKID]:
+                self.ListOfDevices[NWKID]['Legrand']['EnableLedInDark'] = 0
+            legrand_fc01( self, NWKID, 'EnableLedInDark', OnOff)
                         #else:
                         #    Domoticz.Error("legrand_ledInDark not a matching device, skip it .... %s " %self.ListOfDevices[NWKID]['Model'])
 
@@ -325,19 +378,24 @@ def legrand_ledInDark( self, OnOff):
 def legrandReenforcement( self, NWKID):
 
     rescheduleAction = False
-    if 'Manufacturer Name' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand':
-            for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
+    if (
+        'Manufacturer Name' in self.ListOfDevices[NWKID]
+        and self.ListOfDevices[NWKID]['Manufacturer Name'] == 'Legrand'
+    ):
+        for cmd in ( 'LegrandFilPilote', 'EnableLedInDark', 'EnableDimmer', 'EnableLedIfOn', 'EnableLedShutter'):
+            if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                 if self.pluginconf.pluginConf[ cmd ]:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, cmd , 'On')
-                    else:
-                        rescheduleAction = True
+                    legrand_fc01( self, NWKID, cmd , 'On')
                 else:
-                    if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                        legrand_fc01( self, NWKID, cmd, 'Off')
-                    else:
-                        rescheduleAction = True
-
+                    legrand_fc01( self, NWKID, cmd, 'Off')
+            else:
+                rescheduleAction = True
     return rescheduleAction
 
+def ZigateTimeOfOperation( self):
+
+    # Send a Read Attribute Request to Zigate to get it's Reporting Time of Operation
+
+    loggingLegrand( self, 'Log', "ZigateTimeOfOperation sending a Request to Zigate", '0000')
+    datas = "02" + '0000' + '01' + '01' + '0000' + '00' + '00' + '0000' + '01' + 'f000'
+    sendZigateCmd(self, "0100", datas )

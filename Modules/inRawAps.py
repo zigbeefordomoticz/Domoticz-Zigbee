@@ -9,7 +9,9 @@ from Modules.schneider_wiser import schneiderReadRawAPS
 from Modules.legrand_netatmo import legrandReadRawAPS
 from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
+from Modules.philips import philipsReadRawAPS
 
+## Requires Zigate firmware > 3.1d
 
 def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
 
@@ -22,6 +24,7 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         '105e' : schneiderReadRawAPS ,
         '1021' : legrandReadRawAPS ,
         '115f' : lumiReadRawAPS,
+        '100b' : philipsReadRawAPS,
         }
 
     CALLBACK_TABLE2 = {
@@ -29,7 +32,8 @@ def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload)
         '欧瑞博': orviboReadRawAPS,
         'Legrand': legrandReadRawAPS,
         'Schneider': schneiderReadRawAPS,
-        'LUMI': lumiReadRawAPS
+        'LUMI': lumiReadRawAPS,
+        'Philips' : philipsReadRawAPS,
     }
 
     #Domoticz.Log("inRawAps - NwkId: %s Ep: %s, Cluster: %s, dstNwkId: %s, dstEp: %s, Payload: %s" \
