@@ -20,7 +20,8 @@ from time import time
 import json
 
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, lookupForIEEE, ReArrangeMacCapaBasedOnModel
+from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, \
+                            lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist
 from Modules.logging import loggingPairing, loggingInput
 from Modules.output import sendZigateCmd, leaveMgtReJoin, ReadAttributeRequest_0000, ReadAttributeRequest_0001, setTimeServer, ZigatePermitToJoin
 from Modules.bindings import rebind_Clusters
@@ -148,6 +149,7 @@ def Decode8401(self, Devices, MsgData, MsgRSSI) : # Reception Zone status change
     # 5d 02 0500 02 0ffd 0011 00 ff 0001
 
     lastSeenUpdate( self, Devices, NwkId=MsgSrcAddr)
+
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("Decode8401 - unknown IAS device %s from plugin" %MsgSrcAddr)
         return
@@ -1033,28 +1035,45 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
     self.ListOfDevices[addr]['Max Rx'] = max_rx
     self.ListOfDevices[addr]['Max Tx'] = max_tx
 
-    mac_capability = int(mac_capability,16)
-
-    if mac_capability == 0x0000:
-        return
-
-    AltPAN      =   ( mac_capability & 0x00000001 )
-    DeviceType  =   ( mac_capability >> 1 ) & 1
-    PowerSource =   ( mac_capability >> 2 ) & 1
-    ReceiveonIdle = ( mac_capability >> 3 ) & 1
-   
-    if DeviceType == 1 : 
-        DeviceType = "FFD"
-    else : 
-        DeviceType = "RFD"
-    if ReceiveonIdle == 1 : 
-        ReceiveonIdle = "On"
-    else : 
-        ReceiveonIdle = "Off"
-    if PowerSource == 1 :
+    mac_capability = ReArrangeMacCapaBasedOnModel( self, addr, mac_capability ) 
+    capabilities = decodeMacCapa( mac_capability )
+ 
+    if 'Main Powered' in capabilities:
         PowerSource = "Main"
-    else :
+    else:
         PowerSource = "Battery"
+
+    if 'Full-Function Device' in capabilities:
+        DeviceType = "FFD"
+    else:
+        DeviceType = "RFD"
+
+    if 'Receiver during Idle' in capabilities:
+        ReceiveonIdle = "On"
+    else:
+        ReceiveonIdle = "Off" 
+
+    #mac_capability = int(mac_capability,16)
+
+    #if mac_capability == 0x0000:
+    #    return 
+    #AltPAN      =   ( mac_capability & 0x00000001 )
+    #DeviceType  =   ( mac_capability >> 1 ) & 1
+    #PowerSource =   ( mac_capability >> 2 ) & 1
+    #ReceiveonIdle = ( mac_capability >> 3 ) & 1
+   
+    #if DeviceType == 1 : 
+    #    DeviceType = "FFD"
+    #else : 
+    #    DeviceType = "RFD"
+    #if ReceiveonIdle == 1 : 
+    #    ReceiveonIdle = "On"
+    #else : 
+    #    ReceiveonIdle = "Off"
+    #if PowerSource == 1 :
+    #    PowerSource = "Main"
+    #else :
+    #    PowerSource = "Battery"
 
     loggingInput( self, 'Debug', "Decode8042 - Alternate PAN Coordinator = " +str(AltPAN ), addr)    # 1 if node is capable of becoming a PAN coordinator
     loggingInput( self, 'Debug', "Decode8042 - Receiver on Idle = " +str(ReceiveonIdle), addr)     # 1 if the device does not disable its receiver to 
@@ -1082,11 +1101,6 @@ def Decode8042(self, Devices, MsgData, MsgRSSI) : # Node Descriptor response
             self.DiscoveryDevices[addr]['LogicalType'] = str(LogicalType)
             self.DiscoveryDevices[addr]['PowerSource'] = str(PowerSource)
             self.DiscoveryDevices[addr]['ReceiveOnIdle'] = str(ReceiveonIdle)
-
-    #if 'Model' in self.ListOfDevices[addr]:
-    #    if self.ListOfDevices[addr]['Model'] != {}:
-    #        if self.ListOfDevices[addr]['Model'] == 'TI0001':
-    #            return
 
     self.ListOfDevices[addr]['Manufacturer']=manufacturer
     self.ListOfDevices[addr]['DeviceType']=str(DeviceType)
@@ -2041,36 +2055,34 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     if len(MsgData) > 22: # Firmware 3.1b 
         MsgRejoinFlag = MsgData[22:24]
 
-    def decodeMacCapa( maccap ):
 
-        maccap = int(maccap,16)
-        alternatePANCOORDInator = (maccap & 0b00000001)
-        deviceType              = (maccap & 0b00000010) >> 1
-        powerSource             = (maccap & 0b00000100) >> 2
-        receiveOnIddle          = (maccap & 0b00001000) >> 3
-        securityCap             = (maccap & 0b01000000) >> 6
-        allocateAddress         = (maccap & 0b10000000) >> 7
 
-        MacCapa = []
-        if alternatePANCOORDInator:
-            MacCapa.append('Able to act Coordinator')
-        if deviceType:
-            MacCapa.append('Full-Function Device')
-        else:
-            MacCapa.append('Reduced-Function Device')
-        if powerSource:
-            MacCapa.append('Main Powered')
-        if receiveOnIddle:
-            MacCapa.append('Receiver during Idle')
-        if securityCap:
-            MacCapa.append('High security')
-        else:
-            MacCapa.append('Standard security')
-        if allocateAddress:
-            MacCapa.append('NwkAddr should be allocated')
-        else:
-            MacCapa.append('NwkAddr need to be allocated')
-        return MacCapa
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     # When receiving a Device Annoucement the Rejoin Flag can give us some information
     # 0x00 The device was not on the network. 

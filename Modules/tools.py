@@ -516,6 +516,38 @@ def rgb_to_hsl(rgb):
 
     return h, s, l
 
+def decodeMacCapa( maccap ):
+
+    maccap = int(maccap,16)
+    alternatePANCOORDInator = (maccap & 0b00000001)
+    deviceType              = (maccap & 0b00000010) >> 1
+    powerSource             = (maccap & 0b00000100) >> 2
+    receiveOnIddle          = (maccap & 0b00001000) >> 3
+    securityCap             = (maccap & 0b01000000) >> 6
+    allocateAddress         = (maccap & 0b10000000) >> 7
+
+    MacCapa = []
+    if alternatePANCOORDInator:
+        MacCapa.append('Able to act Coordinator')
+    if deviceType:
+        MacCapa.append('Full-Function Device')
+    else:
+        MacCapa.append('Reduced-Function Device')
+    if powerSource:
+        MacCapa.append('Main Powered')
+    if receiveOnIddle:
+        MacCapa.append('Receiver during Idle')
+    if securityCap:
+        MacCapa.append('High security')
+    else:
+        MacCapa.append('Standard security')
+    if allocateAddress:
+        MacCapa.append('NwkAddr should be allocated')
+    else:
+        MacCapa.append('NwkAddr need to be allocated')
+    return MacCapa
+
+        
 def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
     """
     Function to check if the MacCapa should not be updated based on Model.
