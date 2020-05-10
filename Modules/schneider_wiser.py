@@ -48,6 +48,12 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
             %(NwkId, EndPoint, cluster),NwkId )
     if cluster == '0201':
         callbackDeviceAwake_Schneider_SetPoints( self, NwkId, EndPoint, cluster)
+    if 'Model' in self.ListOfDevices[NwkId]:
+        if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-BMS':
+            if int(self.ListOfDevices[NwkId]['Heartbeat']) > 24 * 60 * 60:
+                Modules.output.ReadAttributeRequest_0702(self, NwkId)
+                self.ListOfDevices[NwkId]['Heartbeat'] = 0
+
 
     return
 
@@ -185,7 +191,7 @@ def schneider_wiser_registration( self, Devices, key ):
         # Set 0x01 to 0x0201/0xe011
         Hattribute = "%04x" %0xe011
         data_type = "18"
-        data = '03'   # By default register as CONVENTIONEL mode
+        data = '03'   # By default register as CONVENTIONAL mode
                       # E attente pour @hairv en FIP
         loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
@@ -226,38 +232,114 @@ def schneider_wiser_registration( self, Devices, key ):
         Modules.output.sendZigateCmd(self, "0092","02" + key + ZIGATE_EP + EPout + "00")
         self.ListOfDevices[key]['Heartbeat'] = 0
 
-def schneider_thermostat_behaviour( self, key, mode ):
-    """
-    Allow switching between Conventionel and FIP mode
-    Set 0x0201/0xe011
-    HAC into Fil Pilot FIP 0x03, in Covential Mode 0x00
-    """
 
-    MODE = { 'conventionel': 0x00, 'setpoint' : 0x02, 'FIP': 0x03 }
+def schneider_hact_heater_type( self, key, type_heater ):
+    """[summary]
 
-    loggingSchneider( self, 'Debug', "schneider_thermostat_behaviour for device %s requesting mode: %s" %(key, mode))
-    if mode not in MODE:
-        Domoticz.Error("schneider_thermostat_behaviour - %s unknown mode %s" %(key, mode))
+    Arguments:
+        key {[int]} -- id of the device
+        type {[string]} -- type of heater "fip" of "conventional"
+    """
+    EPout = SCHNEIDER_BASE_EP
+
+    current_value = 0
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
+                current_value_string = self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011']
+
+    # value received is :
+    # bit 0 - mode of heating  : 0 is setpoint, 1 is fip mode
+    # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
+    # for validation , 0x80 is added to he value retrived from HACT
+    current_value = int(current_value_string,16)
+    if (current_value) == 0:
+        current_value = 0x80
+    current_value = current_value - 0x80
+    if (type_heater == "conventional"):
+        new_value = current_value & 0xFD # we set the bit 1 to 0 and dont touch the other ones . logical_AND 1111 1101
+    elif (type_heater == "fip"):
+        new_value = current_value | 2  # we set the bit 1 to 1 and dont touch the other ones . logical_OR 0000 0010
+
+    new_value = new_value & 3
+    if (current_value == new_value): # no change , let's get out
         return
 
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
     manuf_id = "105e"
     manuf_spec = "01"
     cluster_id = "%04x" %0x0201
     Hattribute = "%04x" %0xe011
     data_type = "18"
-    data = '%02X' %MODE[ mode ]
+    data = '%02X' %new_value
+    loggingSchneider( self, 'Debug', "schneider_hact_heater_type Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
+            %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+    Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
+
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
+                self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011'] = "%02x" %(new_value + 0x80)
+
+
+def schneider_hact_heating_mode( self, key, mode ):
+    """
+    Allow switching between Conventional and FIP mode
+    Set 0x0201/0xe011
+    HAC into Fil Pilot FIP 0x03, in Covential Mode 0x00
+    """
+
+    MODE = { 'setpoint' : 0x02, 'FIP': 0x03 }
+
+    loggingSchneider( self, 'Debug', "schneider_hact_heating_mode for device %s requesting mode: %s" %(key, mode))
+    if mode not in MODE:
+        Domoticz.Error("schneider_hact_heating_mode - %s unknown mode %s" %(key, mode))
+        return
+
+    EPout = SCHNEIDER_BASE_EP
+
+    current_value = 0
+    if EPout in self.ListOfDevices[ key ]['Ep']:
+        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
+            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
+                current_value_string = self.ListOfDevices[ key ]['Ep'][EPout]['0201']['e011']
+
+    # value received is:
+    # bit 0 - mode of heating  : 0 is setpoint, 1 is fip mode
+    # bit 1 - mode of heater : 0 is conventional heater, 1 is fip enabled heater
+    # for validation , 0x80 is added to he value retrived from HACT
+    current_value = int(current_value_string,16)
+    if (current_value) == 0:
+        current_value = 0x80
+
+    current_value = current_value - 0x80
+    if (mode == "setpoint"):
+        new_value = current_value & 0xFE # we set the bit 0 to 0 and dont touch the other ones . logical_AND 1111 1110
+    elif (mode == "FIP"):
+        new_value = current_value | 1  # we set the bit 0 to 1 and dont touch the other ones . logical_OR 0000 0001
+    new_value = new_value & 3
+    if (current_value == new_value): # no change , let's get out
+        return
+
+    manuf_id = "105e"
+    manuf_spec = "01"
+    cluster_id = "%04x" %0x0201
+    Hattribute = "%04x" %0xe011
+    data_type = "18"
+    data = '%02X' %new_value
     loggingSchneider( self, 'Debug', "Schneider Write Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
+    Modules.output.ReadAttributeRequest_0201(self,key)
 
-def schneider_fip_mode( self, key, mode):
-
+def schneider_hact_fip_mode( self, key, mode):
+    """[summary]
+        set fil pilote mode for the actuator 
+    Arguments:
+        key {[int]} -- id of actuator
+        mode {[string]} -- 'Confort' , 'Confort -1' , 'Confort -2', 'Eco', 'Frost Protection', 'Off'
+    """
     # APS Data: 0x00 0x0b 0x01 0x02 0x04 0x01 0x0b 0x45 0x11 0xc1 0xe1 0x00 0x01 0x03
 
     MODE = { 'Confort': 0x00,
@@ -267,27 +349,14 @@ def schneider_fip_mode( self, key, mode):
             'Frost Protection': 0x04,
             'Off': 0x05 }
 
-    loggingSchneider( self, 'Debug', "schneider_fip_mode for device %s requesting mode: %s" %(key, mode))
+    loggingSchneider( self, 'Debug', "schneider_hact_fip_mode for device %s requesting mode: %s" %(key, mode))
 
     if mode not in MODE:
-        Domoticz.Error("schneider_fip_mode - %s unknown mode: %s" %mode)
+        Domoticz.Error("schneider_hact_fip_mode - %s unknown mode: %s" %mode)
 
-    # determine which Endpoint
-    EPout = '01'
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]:
-            EPout= tmpEp
+    EPout = SCHNEIDER_BASE_EP
 
-    # Make sure that we are in FIP Mode
-    setFIPModeRequired = True
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '83':
-                    setFIPModeRequired = False
-
-    if setFIPModeRequired:
-        schneider_thermostat_behaviour( self, key, 'FIP')
+    schneider_hact_heating_mode( self, key, 'FIP')
 
     cluster_frame = '11'
     sqn = '00'
@@ -303,10 +372,16 @@ def schneider_fip_mode( self, key, mode):
     payload = cluster_frame + sqn + cmd + zone_mode + fipmode + prio + 'ff'
 
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
+    # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
 
 
 def schneider_check_and_set_bind (self, key):
+    """[summary]
+        bind the thermostat to the actuators based on the zoning json fie
+    Arguments:
+        key {[type]} -- [description]
+    """
     loggingSchneider(self, 'Debug', "schneider_check_and_set_bind : %s " %key )
 
     Cluster_bind1 = '0201'
@@ -342,7 +417,14 @@ def schneider_check_and_set_bind (self, key):
 
 
 def schneider_setpoint_thermostat( self, key, setpoint):
-
+    """[summary]
+        update internal value about the current setpoint value of thermostat , we need it to answer the thermostat when it will ask for it
+        update the actuators that are linked to this thermostat based on the zoning json file. 
+        updating linked actuatorswon't apply to vact as it is a thermostat and an actuator
+    Arguments:
+        key {[type]} -- [description]
+        setpoint {[type]} -- [description]
+    """
     # SetPoint is in centidegrees
 
     EPout = SCHNEIDER_BASE_EP
@@ -374,9 +456,22 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                 for hact in self.SchneiderZone[ zone ]['Thermostat']['HACT']:
                     loggingSchneider( self, 'Debug', "schneider_setpoint - found hact %s " %hact )
                     schneider_setpoint_actuator(self, hact, setpoint)
+    # Reset Heartbeat in order to force a ReadAttribute when possible
+    self.ListOfDevices[key]['Heartbeat'] = 0
+    Modules.output.ReadAttributeRequest_0201(self,key)
 
 
 def schneider_setpoint_actuator( self, key, setpoint):
+    """[summary]
+        send new setpoint to actuators via an e0 command with the new setpoint value
+        it is called
+        - via schneider_setpoint_thermostat when actuators are linked to a thermostat
+        - or schneider awake when a vact woke up and we had a setpoint setting pending
+
+    Arguments:
+        key {[type]} -- [description]
+        setpoint {[int]} -- [description]
+    """
     # SetPoint 2100 (21 degree C) => 0x0834
     # APS Data: 0x00 0x0b 0x01 0x02 0x04 0x01 0x0b 0x45 0x11 0xc1 0xe0 0x00 0x01 0x34 0x08 0xff
     #                                                                            |---------------> LB HB Setpoint
@@ -403,16 +498,11 @@ def schneider_setpoint_actuator( self, key, setpoint):
     self.ListOfDevices[key]['Schneider']['Target SetPoint'] = setpoint
     self.ListOfDevices[key]['Schneider']['TimeStamp SetPoint'] = int(time())
 
-    # Make sure that we are in FIP Mode
-    setSetpointModeRequired = True
-    if EPout in self.ListOfDevices[ key ]['Ep']:
-        if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
-            if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
-                if self.ListOfDevices[ key ]['Ep'][EPout]['0201'] == '82': # 02 becomes 82 , 00 becomes, 03 becomes 83
-                    setSetpointModeRequired = False
 
-    if setSetpointModeRequired:
-        schneider_thermostat_behaviour( self, key, 'setpoint')
+    # Make sure that we are in setpoint Mode
+    if 'Model' in self.ListOfDevices[key]:
+        if self.ListOfDevices[key]['Model'] == 'EH-ZB-HACT':
+            schneider_hact_heating_mode( self, key, 'setpoint')
 
     setpoint = '%04X' %setpoint
     zone = '01'
@@ -420,7 +510,10 @@ def schneider_setpoint_actuator( self, key, setpoint):
     payload = cluster_frame + sqn + cmd + '00' + zone + setpoint[2:4] + setpoint[0:2] + 'ff'
 
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
+    # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
+    Modules.output.ReadAttributeRequest_0201(self,key)
+
 
 
 def schneider_setpoint( self, key, setpoint):
@@ -428,6 +521,9 @@ def schneider_setpoint( self, key, setpoint):
     if 'Model' in self.ListOfDevices[key]:
         if self.ListOfDevices[key]['Model'] == 'EH-ZB-RTS':
             schneider_setpoint_thermostat(self, key, setpoint)
+        elif self.ListOfDevices[key]['Model'] == 'EH-ZB-VACT':
+            schneider_setpoint_thermostat(self, key, setpoint)
+            schneider_setpoint_actuator( self,key, setpoint)
         else:
             schneider_setpoint_actuator( self,key, setpoint)
 
@@ -520,12 +616,12 @@ def schneiderRenforceent( self, NWKID):
     if 'Schneider Wiser' in self.ListOfDevices[NWKID]:
         if 'HACT Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
             if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                schneider_thermostat_behaviour( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
+                schneider_hact_heating_mode( self, NWKID, self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'])
             else:
                 rescheduleAction = True
         if 'HACT FIP Mode' in self.ListOfDevices[NWKID]['Schneider Wiser']:
             if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
-                schneider_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
+                schneider_hact_fip_mode( self, NWKID,  self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'])
             else:
                 rescheduleAction = True
 
@@ -615,6 +711,7 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
     loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
             %(NWKID,srcEp,cluster_id,value), NWKID)
     Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
+    Modules.output.ReadAttributeRequest_0702(self, NWKID)
 
 def schneider_set_contract( self, key, EPout, kva):
     """
@@ -641,6 +738,7 @@ def schneider_set_contract( self, key, EPout, kva):
     DataType = '42' # String
     data = 'BASE'.encode('utf-8').hex()  # BASE
     Modules.output.write_attribute_when_awake(self, key, ZIGATE_EP, EPout,ClusterId,ManufacturerID,ManufacturerSpecfic,AttributeID,DataType,data)
+
 
 def schneiderReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
     """
@@ -731,19 +829,20 @@ def importSchneiderZoning( self ):
             continue
 
         for hact in SchneiderZoning[zone]['actuator']:
-            _nwkid = self.IEEE2NWK[ hact ]
-            if hact not in self.IEEE2NWK:
-                # Unknown in IEEE2NWK
-                loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
-                continue
+            if hact in list(self.IEEE2NWK):
+                _nwkid = self.IEEE2NWK[ hact ]
+                if hact not in self.IEEE2NWK:
+                    # Unknown in IEEE2NWK
+                    loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %hact)
+                    continue
 
-            if self.IEEE2NWK[ hact ] not in self.ListOfDevices:
-                # Unknown in ListOfDevices
-                loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
-                continue
-            
-            self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
-            self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ]['IEEE'] = hact
+                if self.IEEE2NWK[ hact ] not in self.ListOfDevices:
+                    # Unknown in ListOfDevices
+                    loggingSchneider(self,  'Error', "importSchneiderZoning - Unknown HACT: %s" %_nwkid)
+                    continue
+
+                self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ] = {}
+                self.SchneiderZone[ zone ]['Thermostat']['HACT'][ _nwkid ]['IEEE'] = hact
 
     # At that stage we have imported all informations
     loggingSchneider(self, 'Debug', "importSchneiderZoning - Zone Information: %s " %self.SchneiderZone )

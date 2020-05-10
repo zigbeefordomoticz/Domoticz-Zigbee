@@ -1020,6 +1020,7 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID in ( '5000', '5001', '5101', '5121', '5500', '5501', '5601', '5622', '5a20', '5a22' ):
         ELECTRICAL_MEASURES = { '5000': 'electricCurrentMultiplier',
                 '5001': 'electricCurrentDivisor',
+                '5121': 'maxCurrentBeforeAlarm',
                 'e200': 'ctStatusRegister',
                 'e201': 'ctPowerConfiguration',
                 'e202': 'ctCalibrationMultiplier'

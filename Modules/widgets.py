@@ -329,9 +329,9 @@ SWITCH_LVL_MATRIX = {
         "00": ( 1, "10"),
         "03": ( 2, "20"),
         "ForceUpdate": False,
-        "LevelNames": "Off|Conventional|Set Point|Fil Pilote",
+        "LevelNames": "Off|Conventional|Fil Pilote",
         "Language": {
-            "fr-FR": {"LevelNames": "Arrêt|Normal|Consigne|Fil Pilote"}
+            "fr-FR": {"LevelNames": "Arrêt|Normal|Fil Pilote"}
         }
     },
 

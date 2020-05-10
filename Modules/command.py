@@ -22,7 +22,7 @@ from Modules.logging import loggingCommand
 from Modules.output import sendZigateCmd, thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
-from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_thermostat_behaviour
+from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 
 from Modules.domoticz import UpdateDevice_v2
 from Classes.IAS import IAS_Zone_Management
@@ -65,7 +65,7 @@ ACTIONATORS = ( 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'Button', 'DB
                 'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO',
                 'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
                 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD'
-                'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower'
+                'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch'
 )
 
 def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
@@ -282,6 +282,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             Domoticz.Log("Alarm WarningDevice - value: %s" %Level)
             self.iaszonemgt.alarm_off( NWKID, EPout)
 
+        elif DeviceType == "HeatingSwitch":
+            thermostat_Mode( self, NWKID, 'Off' )
+
         else:
             if profalux: # Profalux are define as LvlControl but should be managed as Blind Inverted
                 sendZigateCmd(self, "0081","02" + NWKID + ZIGATE_EP + EPout + '01' + '%02X' %0 + "0000")
@@ -325,6 +328,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
         elif DeviceType == "Venetian":
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + '01') # Venetian/Blind (On, for Open)
+
+        elif DeviceType == "HeatingSwitch":
+            thermostat_Mode( self, NWKID, 'Heat' )
 
         else:
             if profalux:
@@ -388,17 +394,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             if Level == 10: # Conventional
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
-                schneider_thermostat_behaviour( self, NWKID, 'conventionel')
+                schneider_hact_heater_type( self, NWKID, 'conventional')
 
-            elif Level == 20: # setpoint
+            elif Level == 20: # fip
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'setpoint'
-                schneider_thermostat_behaviour( self, NWKID, 'setpoint')
-
-            elif Level == 30: # Fil Pilote
-                UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'FIP'
-                schneider_thermostat_behaviour( self, NWKID, 'FIP')
+                self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'fip'
+                schneider_hact_heater_type( self, NWKID, 'fip')
 
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
@@ -443,7 +444,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 if 'Model' in self.ListOfDevices[NWKID]:
                     if self.ListOfDevices[NWKID]['Model'] == 'EH-ZB-HACT':
                         self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
-                        schneider_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
+                        schneider_hact_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
