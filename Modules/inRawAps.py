@@ -11,6 +11,7 @@ from Modules.orvibo import orviboReadRawAPS
 from Modules.lumi import lumiReadRawAPS
 from Modules.philips import philipsReadRawAPS
 
+## Requires Zigate firmware > 3.1d
 
 def inRawAps( self, Devices, srcnwkid, srcep, cluster, dstnwkid, dstep, payload):
 
