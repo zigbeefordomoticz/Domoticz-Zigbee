@@ -2046,44 +2046,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     if len(MsgData) == 24 ==> Join Flag 
 
     """
-
-    MsgSrcAddr=MsgData[0:4]
-    MsgIEEE=MsgData[4:20]
-    MsgMacCapa=MsgData[20:22]
-    MsgRejoinFlag = 'XX'
-
-    if len(MsgData) > 22: # Firmware 3.1b 
-        MsgRejoinFlag = MsgData[22:24]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     # When receiving a Device Annoucement the Rejoin Flag can give us some information
     # 0x00 The device was not on the network. 
     #      Most-likely it has been reset, and all Unbind, Bind , Report, must be redone
@@ -2092,14 +2054,21 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     # 0x02, 0x03 The device was on the network and coming back. 
     #       Here we can assumed the device was not reset.
     # 0x99  We have no clue !
-
     REJOIN_NETWORK = {
-            '00': '0x00 - join a network through association',
-            '01': '0x01 - joining directly or rejoining the network using the orphaning procedure',
-            '02': '0x02 - joining the network using the NWK rejoining procedure.',
-            '03': '0x03 - change the operational network channel to that identified in the ScanChannels parameter.',
-            '99': '0x99 - Unknown value received.'
-            }
+        '00': '0x00 - join a network through association',
+        '01': '0x01 - joining directly or rejoining the network using the orphaning procedure',
+        '02': '0x02 - joining the network using the NWK rejoining procedure.',
+        '03': '0x03 - change the operational network channel to that identified in the ScanChannels parameter.',
+        '99': '0x99 - Unknown value received.'
+        }
+
+    MsgSrcAddr = MsgData[0:4]
+    MsgIEEE = MsgData[4:20]
+    MsgMacCapa = MsgData[20:22]
+    MsgRejoinFlag = 'XX'
+
+    if len(MsgData) > 22: # Firmware 3.1b 
+        MsgRejoinFlag = MsgData[22:24]
 
     if MsgIEEE in self.IEEE2NWK and MsgSrcAddr in self.ListOfDevices:
         # In case we receive a Device Annoucement we are alreday doing the provisioning.
@@ -2113,9 +2082,6 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
     if MsgIEEE in self.IEEE2NWK:
         # This device is known
         newShortId = ( self.IEEE2NWK[ MsgIEEE ] != MsgSrcAddr )
-
-    # Decode Device Capabiities
-    deviceMacCapa = list(decodeMacCapa( MsgMacCapa ))
 
     now = time()
 
@@ -2245,6 +2211,8 @@ def Decode004D(self, Devices, MsgData, MsgRSSI) : # Reception Device announce
                 schneider_wiser_registration( self, Devices, MsgSrcAddr )
     else:
         # New Device coming for provisioning
+        # Decode Device Capabiities
+        deviceMacCapa = list(decodeMacCapa( MsgMacCapa ))
 
         # There is a dilem here as Livolo and Schneider Wiser share the same IEEE prefix.
         if not self.pluginconf.pluginConf['enableSchneiderWiser']:

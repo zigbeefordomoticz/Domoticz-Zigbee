@@ -516,9 +516,9 @@ def rgb_to_hsl(rgb):
 
     return h, s, l
 
-def decodeMacCapa( maccap ):
+def decodeMacCapa( inMacCapa ):
 
-    maccap = int(maccap,16)
+    maccap = int(inMacCapa,16)
     alternatePANCOORDInator = (maccap & 0b00000001)
     deviceType              = (maccap & 0b00000010) >> 1
     powerSource             = (maccap & 0b00000100) >> 2
@@ -572,7 +572,7 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
         self.ListOfDevices[nwkid]['PowerSource'] = 'Battery'
         return '80'
 
-
+    return inMacCapa
 
 def mainPoweredDevice( self, nwkid):
     """
