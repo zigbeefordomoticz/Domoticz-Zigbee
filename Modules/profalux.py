@@ -41,11 +41,13 @@ def profalux_fake_deviceModel( self , nwkid):
         return
 
     location =''
-    if 'Ep' in self.ListOfDevices[nwkid]:
-        if '01' in self.ListOfDevices[nwkid]['Ep']:
-            if '0000' in self.ListOfDevices[nwkid]['Ep']['01']:
-                if '0010' in self.ListOfDevices[nwkid]['Ep']['01']['0000']:
-                    location = self.ListOfDevices[nwkid]['Ep']['01']['0000']['0010']
+    if (
+        'Ep' in self.ListOfDevices[nwkid]
+        and '01' in self.ListOfDevices[nwkid]['Ep']
+        and '0000' in self.ListOfDevices[nwkid]['Ep']['01']
+        and '0010' in self.ListOfDevices[nwkid]['Ep']['01']['0000']
+    ):
+        location = self.ListOfDevices[nwkid]['Ep']['01']['0000']['0010']
 
     if self.ListOfDevices[nwkid]['MacCapa'] == '8e' and self.ListOfDevices[nwkid]['ZDeviceID'] == '0200':
         self.ListOfDevices[nwkid]['Manufacturer Name'] = 'Profalux'
@@ -73,13 +75,16 @@ def profalux_stop( self, nwkid ):
 
     cluster_frame = '01'
     sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' % (int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    if (
+        'SQN' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['SQN'] != {}
+        and self.ListOfDevices[nwkid]['SQN'] != ''
+    ):
+        sqn = '%02x' % (int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
 
     cmd = '03' # Ask the Tilt Blind to stop moving
 
-    payload = cluster_frame + sqn + cmd 
+    payload = cluster_frame + sqn + cmd
     raw_APS_request( self, nwkid, EPout, '0008', '0104', payload, zigate_ep=ZIGATE_EP)
     loggingProfalux( self, 'Log', "profalux_stop ++++ %s/%s payload: %s" %( nwkid, EPout, payload), nwkid)
 
@@ -95,9 +100,12 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
     cluster_frame = '01'
     sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    if (
+        'SQN' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['SQN'] != {}
+        and self.ListOfDevices[nwkid]['SQN'] != ''
+    ):
+        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
 
     cmd = '04' # Ask the Tilt Blind to go to a certain Level
 
@@ -108,7 +116,7 @@ def profalux_MoveToLevelWithOnOff( self, nwkid, level):
 
 def profalux_MoveWithOnOff( self, nwkid, OnOff):
 
-    if OnOff != 0x00 and OnOff != 0x01:
+    if OnOff not in [0x00, 0x01]:
         return
 
     # determine which Endpoint
@@ -120,9 +128,12 @@ def profalux_MoveWithOnOff( self, nwkid, OnOff):
     cluster_frame = '11'
 
     sqn = '00'
-    if 'SQN' in self.ListOfDevices[nwkid]:
-        if self.ListOfDevices[nwkid]['SQN'] != {} and self.ListOfDevices[nwkid]['SQN'] != '':
-            sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
+    if (
+        'SQN' in self.ListOfDevices[nwkid]
+        and self.ListOfDevices[nwkid]['SQN'] != {}
+        and self.ListOfDevices[nwkid]['SQN'] != ''
+    ):
+        sqn = '%02x' %(int(self.ListOfDevices[nwkid]['SQN'],16) + 1)
 
     cmd = '05'  # Ask the Tilt Blind to open or Close
 
