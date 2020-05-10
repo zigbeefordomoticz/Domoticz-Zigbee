@@ -177,6 +177,7 @@ SETTINGS = {
                 'debugLumi':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'debugProfalux':        { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'debugSchneider':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugPhilips':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'debugPDM':       { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True}
                 }},
 
@@ -239,29 +240,30 @@ class PluginConf:
         for theme in SETTINGS:
             for param in SETTINGS[theme]['param']:
                 if param == 'pluginHome':
-                    pass
-                elif param == 'homedirectory':
+                    continue
+                if param == 'homedirectory':
                     self.pluginConf[param] = homedir
-                elif param == 'pluginData':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
                 elif param == 'pluginConfig':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Conf/'
-                elif param == 'pluginWWW':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
-                elif param == 'pluginReports':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
-                elif param == 'pluginOTAFirmware':
-                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+                elif param == 'pluginData':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Data/'
                 elif param == 'pluginLogs':
                     self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Logs/'
+                elif param == 'pluginOTAFirmware':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'OTAFirmware/'
+                elif param == 'pluginReports':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'Reports/'
+                elif param == 'pluginWWW':
+                    self.pluginConf[param] = self.pluginConf['pluginHome'] + 'www/'
                 else:
                     self.pluginConf[param] = SETTINGS[theme]['param'][param]['default']
 
         self.pluginConf['filename'] = self.pluginConf['pluginConfig'] + "PluginConf-%02d.json" %hardwareid
-        if not os.path.isfile(self.pluginConf['filename']):
-            self._load_oldfashon( homedir, hardwareid)
-        else:
+        if os.path.isfile(self.pluginConf['filename']):
             self._load_Settings()
+
+        else:
+            self._load_oldfashon( homedir, hardwareid)
 
         # Reset eraseZigatePDM to default
         self.pluginConf['eraseZigatePDM'] = 0
@@ -270,13 +272,14 @@ class PluginConf:
         if self.pluginConf['TradfriKelvinStep'] < 0 or  self.pluginConf['TradfriKelvinStep'] > 255:
             self.pluginConf['TradfriKelvinStep'] = 75
 
-        if self.pluginConf['Certification'] == 'CE':
+        if (
+            self.pluginConf['Certification'] == 'CE'
+            or self.pluginConf['Certification'] != 'FCC'
+        ):
             self.pluginConf['CertificationCode'] = 0x01
 
-        elif self.pluginConf['Certification'] == 'FCC':
-            self.pluginConf['CertificationCode'] = 0x02
         else:
-            self.pluginConf['CertificationCode'] = 0x01
+            self.pluginConf['CertificationCode'] = 0x02
 
         if self.pluginConf['zmode'] == 'Agressive':
             self.zmode = 'Agressive'  # We are only waiting for Ack to send the next Command
@@ -284,9 +287,8 @@ class PluginConf:
         # Check Path
         for theme in SETTINGS:
             for param in SETTINGS[theme]['param']:
-                if SETTINGS[theme]['param'][param]['type'] == 'path':
-                    if not os.path.exists( self.pluginConf[ param] ):
-                        Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
+                if SETTINGS[theme]['param'][param]['type'] == 'path' and not os.path.exists(self.pluginConf[param]):
+                    Domoticz.Error( "Cannot access path: %s" % self.pluginConf[ param] )
 
         # Let's check the Type
         for theme in SETTINGS:
