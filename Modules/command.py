@@ -234,10 +234,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         if self.ListOfDevices[NWKID]['Health'] == 'Not Reachable':
             self.ListOfDevices[NWKID]['Health'] = ''
 
-    self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
+    # Let's force a refresh of Attribute in the next Heartbeat  
+    self.ListOfDevices[NWKID]['Heartbeat'] = 0  
+
     if Command == 'Stop':  # Manage the Stop command. For known seen only on BSO and Windowcoering
         loggingCommand( self, 'Debug', "mgtCommand : Stop for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
-        if DeviceType == 'BSO':
+        if profalux and DeviceType in ( 'BSO', 'LvlControl'):
             from Modules.profalux import profalux_stop
             profalux_stop( self, NWKID)
 
@@ -245,7 +247,6 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             # https://github.com/fairecasoimeme/ZiGate/issues/125#issuecomment-456085847
             sendZigateCmd(self, "00FA","02" + NWKID + ZIGATE_EP + EPout + "02")
             UpdateDevice_v2(self, Devices, Unit, 2, "50", BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
-            self.ListOfDevices[NWKID]['Heartbeat'] = 0  # Let's force a refresh of Attribute in the next Heartbeat
 
     if Command == "Off" :  # Manage the Off command. 
         loggingCommand( self, 'Debug', "mgtCommand : Off for Device: %s EPout: %s Unit: %s DeviceType: %s" %(NWKID, EPout, Unit, DeviceType), NWKID)
@@ -254,12 +255,12 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'LivoloSWR':
+        if DeviceType == 'LivoloSWR':
             livolo_OnOff( self, NWKID , EPout, 'Right', 'Off')
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'ThermoModeEHZBRTS':
+        if DeviceType == 'ThermoModeEHZBRTS':
             loggingCommand( self, 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode Off", NWKID )
             schneider_EHZBRTS_thermoMode( self, NWKID, 0 )
             UpdateDevice_v2(self, Devices, Unit, 0, "Off",BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
@@ -368,24 +369,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'ThermoMode':
-            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
-                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
-            loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
-            if Level in THERMOSTAT_LEVEL_2_MODE:
-                loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
-                thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
-
-        elif DeviceType == 'ThermoModeEHZBRTS':
+        if DeviceType == 'ThermoModeEHZBRTS':
             loggingCommand( self, 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %Level, NWKID)
             schneider_EHZBRTS_thermoMode( self, NWKID, Level)
             UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'HACTMODE':
+        if DeviceType == 'HACTMODE':
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+
             if Level == 10: # Conventional
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
@@ -403,9 +397,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
+
             return
 
-        elif DeviceType == 'ContractPower':
+        if DeviceType == 'ContractPower':
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for ContractPower Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             CONTRACT_MODE = {
@@ -426,7 +421,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'FIP':
+        if DeviceType == 'FIP':
             FIL_PILOT_MODE = {
                 10: 'Confort',
                 20: 'Confort -1',
@@ -439,6 +434,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+
             if Level in FIL_PILOT_MODE:
                 loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOT_MODE[ Level ]), NWKID)
                 if 'Model' in self.ListOfDevices[NWKID]:
@@ -446,9 +442,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                         self.ListOfDevices[NWKID]['Schneider Wiser']['HACT FIP Mode'] = FIL_PILOT_MODE[ Level ]
                         schneider_fip_mode( self, NWKID,  FIL_PILOT_MODE[ Level ] )
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
             return
 
-        elif DeviceType == 'LegrandFilPilote':
+        if DeviceType == 'LegrandFilPilote':
             FIL_PILOTE_MODE = {
                 10: 'Confort',
                 20: 'Confort -1',
@@ -464,7 +461,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 loggingCommand( self, 'Log', "mgtCommand : -----> Fil Pilote mode: %s - %s" %(Level, FIL_PILOTE_MODE[ Level ]), NWKID)
                 legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
+
             return
+
+        if DeviceType == 'ThermoMode':
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
+            if Level in THERMOSTAT_LEVEL_2_MODE:
+                loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
+                thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
 
         elif DeviceType == 'BSO':
             from Modules.profalux import profalux_MoveToLiftAndTilt
