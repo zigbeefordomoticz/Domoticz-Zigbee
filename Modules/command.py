@@ -110,7 +110,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         EPout = '01'
 
     # One element found, we have Endpoint and DevicetypeÒ
-    EPout , DeviceType, DeviceTypeWidgetId = ClusterTypeList[0]
+    EPout , DeviceTypeWidgetId, DeviceType = ClusterTypeList[0]
 
     loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s WidgetID: %s" %( EPout , DeviceType, DeviceTypeWidgetId ), NWKID)
     # Sanity Check
