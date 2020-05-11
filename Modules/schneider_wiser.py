@@ -17,6 +17,7 @@ import os.path
 import Domoticz
 import Modules.output
 import struct
+import Modules.bindings
 import Modules.domoticz
 
 from Modules.logging import loggingSchneider
@@ -51,7 +52,7 @@ def callbackDeviceAwake_Schneider(self, NwkId, EndPoint, cluster):
     if 'Model' in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]['Model'] == 'EH-ZB-BMS':
             if int(self.ListOfDevices[NwkId]['Heartbeat']) > 24 * 60 * 60:
-                Modules.output.ReadAttributeRequest_0702(self, NwkId)
+                #Modules.output.ReadAttributeRequest_0702(self, NwkId)
                 self.ListOfDevices[NwkId]['Heartbeat'] = 0
 
 
@@ -138,6 +139,9 @@ def schneider_wiser_registration( self, Devices, key ):
 
         loggingSchneider( self, 'Debug', "Schneider set default value Attribute %s with value %s / cluster: %s, attribute: %s type: %s"
             %(key,data,cluster_id,Hattribute,data_type), nwkid=key)
+
+        schneider_check_and_set_bind (self, key)
+        
 
 
     if self.ListOfDevices[key]['Model'] in ( 'EH-ZB-VACT'): # Thermostatic Valve
@@ -331,7 +335,7 @@ def schneider_hact_heating_mode( self, key, mode ):
     Modules.output.write_attribute( self, key, ZIGATE_EP, EPout, cluster_id, manuf_id, manuf_spec, Hattribute, data_type, data)
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
-    Modules.output.ReadAttributeRequest_0201(self,key)
+    #Modules.output.ReadAttributeRequest_0201(self,key)
 
 def schneider_hact_fip_mode( self, key, mode):
     """[summary]
@@ -400,14 +404,20 @@ def schneider_check_and_set_bind (self, key):
                     hact in self.ListOfDevices[key]['ZoneBinded'] and \
                     Cluster_bind1 in self.ListOfDevices[key]['ZoneBinded'][hact] and \
                     Cluster_bind2 in self.ListOfDevices[key]['ZoneBinded'][hact] :
-                        continue
+                        continue # binding already done
+
                 if 'ZoneBinded' not in self.ListOfDevices[key]:
                     self.ListOfDevices[key]['ZoneBinded'] = {}
                 if hact not in self.ListOfDevices[key]['ZoneBinded']:
                     self.ListOfDevices[key]['ZoneBinded'][hact] = {}
                 self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
                 self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
-                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
+
+                Modules.bindings.webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                Modules.bindings.webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                Modules.bindings.webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                Modules.bindings.webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+"""                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
                 Modules.output.sendZigateCmd(self, "0030", datas )
                 datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
                 Modules.output.sendZigateCmd(self, "0030", datas )
@@ -416,7 +426,7 @@ def schneider_check_and_set_bind (self, key):
                 Modules.output.sendZigateCmd(self, "0030", datas )
                 datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind2)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
                 Modules.output.sendZigateCmd(self, "0030", datas )
-
+"""
 
 def schneider_setpoint_thermostat( self, key, setpoint):
     """[summary]
@@ -433,20 +443,9 @@ def schneider_setpoint_thermostat( self, key, setpoint):
     ClusterID = '0201'
     attr = '0012'
     NWKID = key
+    
     schneider_find_attribute_and_set (self,NWKID,EPout,ClusterID,attr,setpoint,setpoint)
-    if EPout not in self.ListOfDevices[NWKID]['Ep']:
-        self.ListOfDevices[NWKID]['Ep'][EPout] = {}
-    if ClusterID not in self.ListOfDevices[NWKID]['Ep'][EPout]:
-        self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
-    if not isinstance( self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] , dict):
-        self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID] = {}
-    if attr not in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
-        self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = {}
-    if 'Ep' in self.ListOfDevices[NWKID]:
-        if EPout in self.ListOfDevices[NWKID]['Ep']:
-            if ClusterID in self.ListOfDevices[NWKID]['Ep'][EPout]:
-                if attr in self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID]:
-                    self.ListOfDevices[NWKID]['Ep'][EPout][ClusterID][attr] = setpoint
+
     importSchneiderZoning(self)
 
     if self.SchneiderZone is not None:
@@ -460,7 +459,7 @@ def schneider_setpoint_thermostat( self, key, setpoint):
                     schneider_setpoint_actuator(self, hact, setpoint)
                     # Reset Heartbeat in order to force a ReadAttribute when possible
                     self.ListOfDevices[key]['Heartbeat'] = 0
-                    Modules.output.ReadAttributeRequest_0201(self,key)
+                    #Modules.output.ReadAttributeRequest_0201(self,key)
 
 
 def schneider_setpoint_actuator( self, key, setpoint):
@@ -514,7 +513,7 @@ def schneider_setpoint_actuator( self, key, setpoint):
     Modules.output.raw_APS_request( self, key, EPout, '0201', '0104', payload, zigate_ep=ZIGATE_EP)
     # Reset Heartbeat in order to force a ReadAttribute when possible
     self.ListOfDevices[key]['Heartbeat'] = 0
-    Modules.output.ReadAttributeRequest_0201(self,key)
+    #Modules.output.ReadAttributeRequest_0201(self,key)
 
 
 
@@ -681,11 +680,8 @@ def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, set
     domoTemp = round(setpoint/100,1)
     Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, domoTemp, '0012')
 
-    if 'Ep' in self.ListOfDevices[NWKID]:
-        if srcEp in self.ListOfDevices[NWKID]['Ep']:
-            if ClusterID in self.ListOfDevices[NWKID]['Ep'][srcEp]:
-                if '0012' in self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]:
-                    self.ListOfDevices[NWKID]['Ep'][srcEp][ClusterID]['0012'] = setpoint
+    schneider_find_attribute_and_set(self, NWKID,srcEp,ClusterID,'0012',setpoint,setpoint)
+
     loggingSchneider( self, 'Debug', "Schneider updateThermostat setpoint:%s  , domoTemp : %s" \
             %(setpoint, domoTemp), NWKID)
 
@@ -713,7 +709,7 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
     loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
             %(NWKID,srcEp,cluster_id,value), NWKID)
     Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
-    Modules.output.ReadAttributeRequest_0702(self, NWKID)
+    #Modules.output.ReadAttributeRequest_0702(self, NWKID)
 
 def schneider_set_contract( self, key, EPout, kva):
     """

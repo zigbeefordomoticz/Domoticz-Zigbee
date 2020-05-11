@@ -915,11 +915,15 @@ def Decode8030(self, Devices, MsgData, MsgRSSI) : # Bind response
                     continue
 
                 for cluster in list(self.ListOfDevices[nwkid]['WebBind'][ Ep ]):
-                    if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Phase'] == 'requested':
-                        self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Stamp'] = int(time())
-                        self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Phase'] = 'binded'
-                        self.ListOfDevices[nwkid]['WebBind'][Ep][cluster]['Status'] = MsgDataStatus
-                        return
+                    for destNwkid in list(self.ListOfDevices[nwkid]['WebBind'][ Ep ][cluster]):
+                        if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'): # delete old mechanism
+                            Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
+                            del self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]
+                        if self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] == 'requested':
+                            self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Stamp'] = int(time())
+                            self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Phase'] = 'binded'
+                            self.ListOfDevices[nwkid]['WebBind'][Ep][cluster][destNwkid]['Status'] = MsgDataStatus
+                            return
 
 def Decode8031(self, Devices, MsgData, MsgRSSI) : # Unbind response
     MsgLen=len(MsgData)
