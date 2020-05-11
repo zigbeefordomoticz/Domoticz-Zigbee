@@ -40,6 +40,7 @@ def retreive8Tag(tag,chain):
     return chain[c:(c+8)]
 
 def voltage2batteryP( voltage, volt_max, volt_min):
+
     if voltage > volt_max: 
         ValueBattery = 100
 
@@ -134,7 +135,7 @@ def decodeAttribute(self, AttType, Attribute, handleErrors=False):
     loggingCluster( self, 'Debug', "decodeAttribut(%s, %s) unknown, returning %s unchanged" %(AttType, Attribute, Attribute) )
     return Attribute
 
-def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttrStatus ):
+def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttrStatus ):
 
     if 'ReadAttributes' not in  self.ListOfDevices[MsgSrcAddr]:
          self.ListOfDevices[MsgSrcAddr]['ReadAttributes'] = {}
@@ -150,7 +151,7 @@ def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttrStat
 
     self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
 
-def checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID ):
+def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
 
     if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
@@ -768,7 +769,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery size: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0033": # Battery Quantity
-        scheckAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery Quantity: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
     elif MsgAttrID == "0035":
@@ -1023,12 +1024,12 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         if MsgAttrID in ELECTRICAL_MEASURES:
             loggingCluster( self, 'Debug', "Cluster0702 - %s/%s Schneider %s : %s " %(MsgSrcAddr, MsgSrcEp, ELECTRICAL_MEASURES[MsgAttrID], value), MsgSrcAddr)
-            heckAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         else:
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Attribute: %s  Raw Data: %s Decoded Data: %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgClusterData, value), MsgSrcAddr)
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-        heckAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
 
 def Cluster0300( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
@@ -1266,27 +1267,27 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == '4000': # Global Scene Control
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Global Scene Control Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == '4001': # On Time
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - On Time Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == '4002': # Off Wait Time
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Off Wait Time Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == '4003': # Power On On Off
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == "8001":
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == "8002":
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - Power On OnOff Attr: %s Value: %s" %(MsgAttrID, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     elif MsgAttrID == "f000" and MsgAttType == "23" and MsgAttSize == "0004":
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
@@ -1322,11 +1323,11 @@ def Cluster0006( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     elif MsgAttrID == 'fffd':
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0006 - unknown Attr: %s Value: %s" %(MsgAttrID, MsgClusterData))
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
     else:
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
-        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) )
+        checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, str(decodeAttribute( self, MsgAttType, MsgClusterData) ))
 
 
 def Cluster0008( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
@@ -2214,7 +2215,7 @@ def Cluster0201( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         elif MsgAttrID == 'e030': 
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Position  %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
-            scheckAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
+            checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
         elif MsgAttrID == 'e031':
             loggingCluster( self, 'Debug', "readCluster - %s - %s/%s Schneider Valve Calibration Status %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgClusterData), MsgSrcAddr)
             checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
@@ -2454,6 +2455,6 @@ def Clusterfc21( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 def Clusterfcc0(self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
-    
+
     loggingCluster( self, 'Log', "ReadCluster %s - %s/%s Attribute: %s Type: %s Size: %s Data: %s" 
         %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
