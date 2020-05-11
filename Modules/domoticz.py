@@ -639,7 +639,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
         if WidgetEp == '00':
             # Old fashion
             WidgetEp = '01' # Force to 01
-            
+
         loggingWidget( self, 'Debug', "----> processing WidgetEp: %s, WidgetId: %s, WidgetType: %s" %(WidgetEp, WidgetId, WidgetType), NWKID)
         if (WidgetType not in WidgetByPassEpMatch):
             # We need to make sure that we are on the right Endpoint
@@ -1432,6 +1432,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     """
     Return a list of tuple ( EndPoint, WidgetType, DeviceId)
+    If DeviceUnit provides we have to return the WidgetType matching this Device Unit.
 
     """
 
@@ -1439,6 +1440,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     ClusterTypeList = []
     if DeviceUnit:
         WidgetId = Devices[ DeviceUnit].ID
+        Domoticz.Log("Looking for WigdetID: %s with Unit: %s" %(WidgetId, DeviceUnit))
 
     if 'ClusterType' in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {}:
@@ -1446,7 +1448,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
             # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
             loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
             if DeviceUnit:
-                if WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
+                if str(WidgetId) in self.ListOfDevices[NwkId]['ClusterType']:
                     WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
                     ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
                     return ClusterTypeList
@@ -1458,7 +1460,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     for iterEp in self.ListOfDevices[NwkId]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
             if DeviceUnit:
-                if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                if str(WidgetId) in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
                    ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
                    return ClusterTypeList
 
