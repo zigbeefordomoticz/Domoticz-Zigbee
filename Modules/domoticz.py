@@ -1453,15 +1453,15 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
                     ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
                     return ClusterTypeList
 
-                for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
-                    WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
-                    ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+            for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
+                WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+                ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
 
     for iterEp in self.ListOfDevices[NwkId]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
             if DeviceUnit:
                 if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
-                   WidgetType = self.ListOfDevices[NwkId]['ClusterType'][iterEp][WidgetId] 
+                   WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId] 
                    ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
                    return ClusterTypeList
 
