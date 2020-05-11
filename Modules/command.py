@@ -24,7 +24,7 @@ from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 
-from Modules.domoticz import UpdateDevice_v2
+from Modules.domoticz import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
 from Modules.widgets import SWITCH_LVL_MATRIX
@@ -86,48 +86,15 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         domoticzType = DEVICE_SWITCH_MATRIX[ ( deviceType, deviceSubType, deviceSwitchType ) ] 
         loggingCommand( self, "Debug", "--------->   DeviceType: %s" %str( domoticzType ), NWKID)
 
-    # SignalLvl max is 12
-    SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-    rssi = 12
-    if isinstance(SignalLevel, int):
-        rssi = round((SignalLevel * 12) / 255)
-        loggingCommand( self, "Debug", "--------->   RSSI level %s " %rssi)
-  
-    # Battery Level 255 means Main Powered device
-    BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-    if isinstance(BatteryLevel, float):
-        # Looks like sometime we got a float instead of int.
-        # in that case convert to int
-        loggingCommand( self, "Debug", "--------->   BatteryLvl rounded")
-        BatteryLevel = round( BatteryLevel)
-
-    if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
-        loggingCommand( self, "Debug", "--------->   BatteryLvl set to 255" )
-        BatteryLevel = 255
+    SignalLevel, BatteryLevel =  RetreiveSignalLvlBattery( self, NWKID)
 
     # Now we have to identify the Endpoint, DeviceType to be use for that command
     # inputs are : Device.ID
     # For each Ep of this Device we should find an entry ClusterType where is store Device.ID and DeviceType
 
-    DeviceTypeList = []
-    ClusterTypeList = []
-    pragmaTypeV3 = True
-    if 'ClusterType' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['ClusterType'] != {}:
-            DeviceTypeList.append( self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)])
-            ClusterTypeList.append( ('00', self.ListOfDevices[NWKID]['ClusterType'][str(Devices[Unit].ID)]) )
-            pragmaTypeV3 = False
-    if pragmaTypeV3:
-        for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-            if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
-                    if str(Devices[Unit].ID) == str(key) :
-                        loggingCommand( self, "Debug", "--------->   ++ found ( %s, %s)" %( tmpEp, self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key] ))
-                        #loggingCommand( self, 'Debug', "mgtCommand : found Device : " +str(key) + " in Ep " +str(tmpEp) + " " +str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key])  , NWKID)
-                        DeviceTypeList.append(str(self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]))
-                        ClusterTypeList.append( ( tmpEp, self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][key]) )
-    
-    if len(DeviceTypeList) == 0 :    # No match with ClusterType
+    ClusterTypeList = RetreiveWidgetTypeList( self, Devices, NWKID, Unit )
+
+    if len(ClusterTypeList) == 0 :    # No match with ClusterType
         # Should not happen. We didn't find any Widget references in the Device ClusterType!
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
@@ -135,96 +102,25 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
 
     actionable = False
-    if len(ClusterTypeList) == 1 and ClusterTypeList[0][0] != '00':
-        # One element found, we have Endpoint and DevicetypeÒ
-        EPout , DeviceType = ClusterTypeList[0]
-        loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , DeviceType), NWKID)
-        # Sanity Check
-        forceUpdateDev = False
-        if DeviceType in SWITCH_LVL_MATRIX:
-            if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
-                forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
-        if DeviceType not in ACTIONATORS:
-            Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
-            return
+    if len(ClusterTypeList) != 1:
+        Domoticz.Error("mgtCommand - Not Expected. ClusterType: %s for NwkId: %s" %(ClusterTypeList,NWKID ))
+        return
+
+    if ClusterTypeList[0][0] == '00':
+        EPout = '01'
+
+    # One element found, we have Endpoint and DevicetypeÒ
+    EPout , DeviceType = ClusterTypeList[0]
+    loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , DeviceType), NWKID)
+    # Sanity Check
+    forceUpdateDev = False
+    if DeviceType in SWITCH_LVL_MATRIX:
+        if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
+            forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+    if DeviceType not in ACTIONATORS:
+        Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, ClusterTypeList ))
+        return
     
-    else:
-        # THIS PART OF CODE SHOULD BE REMOVED. I DON'T EXPECT TO REACH That
-        Domoticz.Error("THIS IS A CASE PIPICHE IS LOOKING FOR")
-        loggingCommand( self, 'Error', "mgtCommand (%s) Devices[%s].Name: %s SwitchType: %s Command: %s Level: %s Color: %s" 
-        %(NWKID, Unit , Devices[Unit].Name, deviceSwitchType, Command, Level, Color ), NWKID)
-        loggingCommand( self, 'Error', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
-        # We have list of DeviceType, let's see which one are matching Command style
-
-        ClusterSearch = ''
-        DeviceType = ''
-        forceUpdateDev = False
-        for tmpDeviceType in DeviceTypeList :
-            if tmpDeviceType in ( 'Button', 'Button_3', 'SwitchIKEA' , 'SwitchAQ2', 'SwitchAQ3', 'DButton', 'Toggle'):
-                forceUpdateDev = True
-
-            if tmpDeviceType in ( "Switch", "Plug", "SwitchAQ2", "Smoke", "DSwitch", "Button", "DButton", 'LivoloSWL', 'LivoloSWR', 'Toggle'):
-                ClusterSearch="0006"
-                DeviceType = tmpDeviceType
-            if tmpDeviceType in ( 'Venetian', 'VenetianInverted', "WindowCovering"):
-                ClusterSearch = '0102'
-                DeviceType = tmpDeviceType
-            if tmpDeviceType == 'BSO':
-                ClusterSearch = 'fc21'
-                DeviceType = tmpDeviceType
-            if tmpDeviceType =="LvlControl" :
-                ClusterSearch="0008"
-                DeviceType = tmpDeviceType
-            if tmpDeviceType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl') :
-                ClusterSearch="0300"
-                DeviceType = tmpDeviceType
-            if tmpDeviceType in ( 'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS'):
-                ClusterSearch = '0201'
-                DeviceType = tmpDeviceType
-            if tmpDeviceType == 'TempSetCurrent' :
-                ClusterSearch = '0402'
-                DeviceType = tmpDeviceType
-            if tmpDeviceType == 'Motion':
-                ClusterSearch = '0406'
-                DeviceType = tmpDeviceType
-            if tmpDeviceType == "AlarmWD":
-                ClusterSearch = '0502'
-                DeviceType = tmpDeviceType
-            if tmpDeviceType in ( 'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower'):
-                DeviceType = tmpDeviceType
-
-        if DeviceType == '' and self.pluginconf.pluginConf['forcePassiveWidget']:
-            if tmpDeviceType in ( "DButton_3", "SwitchAQ3") :
-                loggingCommand( self, 'Debug', "mgtCommand - forcePassiveWidget")
-                ClusterSearch="0006"
-                DeviceType = "Switch"
-
-        if DeviceType == '':
-            Domoticz.Log("mgtCommand - Look you are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, DeviceTypeList ))
-            return
-
-        loggingCommand( self, 'Debug', "--------->   DeviceType : " +str(DeviceType) , NWKID)
-
-        # A ce stade ClusterSearch est connu
-        EPin="01"
-        EPout="01"  # If we don't have a cluster search, or if we don't find an EPout for a cluster search, then lets use EPout=01
-        # We have now the DeviceType, let's look for the corresponding EP
-        if 'ClusterType' in self.ListOfDevices[NWKID]:
-            for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-                if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-                    EPout=tmpEp
-        else :
-            for tmpEp in self.ListOfDevices[NWKID]['Ep'] :
-                if ClusterSearch in self.ListOfDevices[NWKID]['Ep'][tmpEp] : #switch cluster
-                    if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                        for key in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'] :
-                            if str(Devices[Unit].ID) == str(key) :
-                                loggingCommand( self, 'Debug', "--------->   Found Ep " +str(tmpEp) + " for Device " +str(key) + " Cluster " +str(ClusterSearch) , NWKID)
-                                EPout = tmpEp
-
-        loggingCommand( self, 'Debug', "--------->   Ready to process Command %s DeviceType: %s ClusterSearch: %s NwkId: %s EPin: %s EPout: %s"
-           %(Command, DeviceType, ClusterSearch, NWKID, EPin, EPout   ),NWKID )  
-
     profalux = False
     if 'Manufacturer' in self.ListOfDevices[NWKID]:
         profalux = ( self.ListOfDevices[NWKID]['Manufacturer'] == '1110' and self.ListOfDevices[NWKID]['ZDeviceID'] in ('0200', '0202') )
@@ -373,24 +269,17 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             UpdateDevice_v2(self, Devices, Unit, 0, str(Level),BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'ThermoMode':
-            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
-                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
-            loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
-            if Level in THERMOSTAT_LEVEL_2_MODE:
-                loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
-                thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
-
-        elif DeviceType == 'ThermoModeEHZBRTS':
+        if DeviceType == 'ThermoModeEHZBRTS':
             loggingCommand( self, 'Debug', "MajDomoDevice EHZBRTS Schneider Thermostat Mode %s" %Level, NWKID)
             schneider_EHZBRTS_thermoMode( self, NWKID, Level)
             UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'HACTMODE':
+        if DeviceType == 'HACTMODE':
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for HACT Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+
             if Level == 10: # Conventional
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
                 self.ListOfDevices[NWKID]['Schneider Wiser']['HACT Mode'] = 'conventionel'
@@ -403,9 +292,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
 
             else:
                 Domoticz.Error("Unknown mode %s for HACTMODE for device %s" %( Level, NWKID))
+
             return
 
-        elif DeviceType == 'ContractPower':
+        if DeviceType == 'ContractPower':
             loggingCommand( self, 'Debug', "mgtCommand : Set Level for ContractPower Mode: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
                 %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
             CONTRACT_MODE = {
@@ -417,6 +307,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 }
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
+                
             if Level in CONTRACT_MODE:
                 loggingCommand( self, 'Log', "mgtCommand : -----> Contract Power : %s - %s KVA" %(Level, CONTRACT_MODE[ Level ]), NWKID)
                 if 'Model' in self.ListOfDevices[NWKID]:
@@ -426,7 +317,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'FIP':
+        if DeviceType == 'FIP':
             FIL_PILOT_MODE = {
                 10: 'Confort',
                 20: 'Confort -1',
@@ -448,7 +339,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                         UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
 
-        elif DeviceType == 'LegrandFilPilote':
+        if DeviceType == 'LegrandFilPilote':
             FIL_PILOTE_MODE = {
                 10: 'Confort',
                 20: 'Confort -1',
@@ -465,6 +356,16 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 legrand_fc40( self, FIL_PILOTE_MODE[ Level ])
                 UpdateDevice_v2(self, Devices, Unit, int(Level)//10, Level,BatteryLevel, SignalLevel,  ForceUpdate_=forceUpdateDev)
             return
+
+
+        if DeviceType == 'ThermoMode':
+            loggingCommand( self, 'Log', "mgtCommand : Set Level for Device: %s EPout: %s Unit: %s DeviceType: %s Level: %s" 
+                %(NWKID, EPout, Unit, DeviceType, Level), NWKID)
+            loggingCommand( self, 'Debug', "ThermoMode - requested Level: %s" %Level, NWKID)
+            if Level in THERMOSTAT_LEVEL_2_MODE:
+                loggingCommand( self, 'Debug', " - Set Thermostat Mode to : %s / %s" %( Level, THERMOSTAT_LEVEL_2_MODE[Level]), NWKID)
+                thermostat_Mode( self, NWKID, THERMOSTAT_LEVEL_2_MODE[Level] )
+
 
         elif DeviceType == 'BSO':
             from Modules.profalux import profalux_MoveToLiftAndTilt

@@ -54,16 +54,6 @@ def CreateDomoDevice(self, Devices, NWKID):
 
         return devName
 
- #   def getCreatedID(self, Devices, DeviceID, Name):
- #       """
- #       getCreateID
- #       Return DeviceID of the recently created device based  on its creation name.
- #       """
- #       # for x in Devices :
- #       #    if Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0 :
- #       #        return Devices[x].ID
- #       return (Devices[x].ID for x in Devices if (Devices[x].DeviceID == DeviceID and Devices[x].Name.find(Name) >= 0))
-
     def FreeUnit(self, Devices, nbunit_=1):
         '''
         FreeUnit
@@ -218,29 +208,31 @@ def CreateDomoDevice(self, Devices, NWKID):
         dType = aType = Type = ''
         # Use 'type' at level EndPoint if existe
         loggingWidget( self, "Debug", "CreatDomoDevice - Process EP : " + str(Ep), NWKID)
-        if not GlobalEP:  # First time, or we dont't GlobalType
-            if 'Type' in self.ListOfDevices[NWKID]['Ep'][Ep]:
-                if self.ListOfDevices[NWKID]['Ep'][Ep]['Type'] != '':
-                    dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
-                    aType = str(dType)
-                    Type = aType.split("/")
-                    loggingWidget( self, "Debug", "CreateDomoDevice - Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep), NWKID)
-                else:
-                    Type = GetType(self, NWKID, Ep).split("/")
-                    loggingWidget( self, "Debug", "CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep), NWKID)
+        if GlobalEP:
+            # We have created already the Devices (as GlobalEP is set)
+            break
 
+        # First time, or we dont't GlobalType
+        if 'Type' in self.ListOfDevices[NWKID]['Ep'][Ep]:
+            if self.ListOfDevices[NWKID]['Ep'][Ep]['Type'] != '':
+                dType = self.ListOfDevices[NWKID]['Ep'][Ep]['Type']
+                aType = str(dType)
+                Type = aType.split("/")
+                loggingWidget( self, "Debug", "CreateDomoDevice - Type via ListOfDevice: " + str(Type) + " Ep : " + str(Ep), NWKID)
             else:
-                if self.ListOfDevices[NWKID]['Type'] == {} or self.ListOfDevices[NWKID]['Type'] == '':
-                    Type = GetType(self, NWKID, Ep).split("/")
-                    loggingWidget( self, "Debug", "CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep), NWKID)
-                else:
-                    GlobalEP = True
-                    if 'Type' in self.ListOfDevices[NWKID]:
-                        if self.ListOfDevices[NWKID]['Type'] != '':
-                            Type = self.ListOfDevices[NWKID]['Type'].split("/")
-                            loggingWidget( self, "Debug", "CreateDomoDevice - Type : '" + str(Type) + "'", NWKID)
+                Type = GetType(self, NWKID, Ep).split("/")
+                loggingWidget( self, "Debug", "CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep), NWKID)
+
         else:
-            break  # We have created already the Devices (as GlobalEP is set)
+            if self.ListOfDevices[NWKID]['Type'] == {} or self.ListOfDevices[NWKID]['Type'] == '':
+                Type = GetType(self, NWKID, Ep).split("/")
+                loggingWidget( self, "Debug", "CreateDomoDevice - Type via GetType: " + str(Type) + " Ep : " + str(Ep), NWKID)
+            else:
+                GlobalEP = True
+                if 'Type' in self.ListOfDevices[NWKID]:
+                    if self.ListOfDevices[NWKID]['Type'] != '':
+                        Type = self.ListOfDevices[NWKID]['Type'].split("/")
+                        loggingWidget( self, "Debug", "CreateDomoDevice - Type : '" + str(Type) + "'", NWKID)
 
         # Check if Type is known
         if len(Type) == 1 and Type[0] == '':
@@ -635,27 +627,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     ClusterType = TypeFromCluster(self, clusterID)
     loggingWidget( self, "Debug", "------> ClusterType = " + str(ClusterType), NWKID)
  
-    # Let's retreive All Widgets entries for the entire entry.
-    newTypeFashion = True
-    ClusterTypeList = []
-    if 'ClusterType' in self.ListOfDevices[NWKID]:
-        if self.ListOfDevices[NWKID]['ClusterType'] != '' and self.ListOfDevices[NWKID]['ClusterType'] != {}:
-            # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
-            # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-            loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NWKID]['ClusterType'], NWKID)
-            for WidgetId  in self.ListOfDevices[NWKID]['ClusterType']:
-                WidgetType = self.ListOfDevices[NWKID]['ClusterType'][WidgetId]
-                ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
-            newTypeFashion = False
-    loggingWidget( self, 'Debug', "------> newTypeFashion: %s" %newTypeFashion, NWKID)
-
-    ClusterTypeList = []
-    for iterEp in self.ListOfDevices[NWKID]['Ep']:  
-        if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-            for WidgetId  in self.ListOfDevices[NWKID]['Ep'][iterEp]['ClusterType']:
-                WidgetType = self.ListOfDevices[NWKID]['Ep'][iterEp]['ClusterType'][WidgetId]
-                ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
-    loggingWidget( self, 'Debug', "------> WidgetList: %s" %str(ClusterTypeList), NWKID)
+    ClusterTypeList = RetreiveWidgetTypeList( self, Devices, NWKID )
 
     if len(ClusterTypeList) == 0:
         # We don't have any widgets associated to the NwkId
@@ -664,9 +636,12 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     WidgetByPassEpMatch = ( 'XCube', 'Aqara', 'DSwitch', 'DButton', 'DButton_3')
 
     for WidgetEp , WidgetId, WidgetType in ClusterTypeList:
+        if WidgetEp == '00':
+            # Old fashion
+            WidgetEp = '01' # Force to 01
+            
         loggingWidget( self, 'Debug', "----> processing WidgetEp: %s, WidgetId: %s, WidgetType: %s" %(WidgetEp, WidgetId, WidgetType), NWKID)
-        if newTypeFashion and (WidgetType not in WidgetByPassEpMatch):
-            loggingWidget( self, 'Debug', "------> New Fashion Type: %s" %newTypeFashion)
+        if (WidgetType not in WidgetByPassEpMatch):
             # We need to make sure that we are on the right Endpoint
             if WidgetEp != Ep:
                 loggingWidget( self, 'Debug', "------> skiping this WidgetEp as do not match Ep : %s %s" %(WidgetEp, Ep), NWKID)
@@ -692,15 +667,17 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
         loggingWidget( self, 'Debug', "------> WidgetEp: %s WidgetId: %s WidgetType: %s" %( WidgetEp , WidgetId, WidgetType), NWKID)
 
-        # Manage battery and Signal level
-        if self.ListOfDevices[NWKID]['RSSI'] != 0:
-            SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-        else:
-            SignalLevel = 15
-        if self.ListOfDevices[NWKID]['Battery'] != '':
-            BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-        else:
-            BatteryLevel = 255
+
+
+
+
+
+
+
+
+
+
+        SignalLevel,BatteryLevel = RetreiveSignalLvlBattery( self, NWKID)
 
         if 'Power' in ClusterType: # Instant Power/Watts
             # Power and Meter usage are triggered only with the Instant Power usage.
@@ -1452,6 +1429,87 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 sValue = value
                 UpdateDevice_v2(self, Devices, x, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= True)
 
+def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
+    """
+    Return a list of tuple ( EndPoint, WidgetType, DeviceId)
+
+    """
+
+    # Let's retreive All Widgets entries for the entire entry.
+    ClusterTypeList = []
+    if DeviceUnit:
+        WidgetId = Devices[ DeviceUnit].ID
+
+    if 'ClusterType' in self.ListOfDevices[NwkId]:
+        if self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {}:
+            # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
+            # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
+            loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
+            if DeviceUnit:
+                if WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
+                    WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+                    ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+                    return ClusterTypeList
+
+                for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
+                    WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+                    ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+
+    for iterEp in self.ListOfDevices[NwkId]['Ep']:  
+        if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
+            if DeviceUnit:
+                if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                   ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
+                   return ClusterTypeList
+
+            for WidgetId  in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId]
+                ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
+
+    return ClusterTypeList
+
+def RetreiveSignalLvlBattery( self, NwkID):
+    
+    # Takes the opportunity to update RSSI and Battery
+    SignalLevel = '' 
+    if 'RSSI' in self.ListOfDevices[NwkID]:
+        SignalLevel = self.ListOfDevices[NwkID]['RSSI']
+
+    # SignalLvl max is 12
+    rssi = 12
+    if isinstance(SignalLevel, int):
+        rssi = round((SignalLevel * 12) / 255)
+        
+    BatteryLevel = ''
+    if 'Battery' in self.ListOfDevices[NwkID]:
+        BatteryLevel = self.ListOfDevices[NwkID]['Battery']
+
+    # Battery Level 255 means Main Powered device
+    if isinstance(BatteryLevel, float):
+        # Looks like sometime we got a float instead of int.
+        # in that case convert to int
+        BatteryLvl = round( BatteryLevel)
+
+    if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
+        BatteryLevel = 255
+
+    return (SignalLevel, BatteryLevel )
+
+def WidgetForDeviceId( self, NwkId, DeviceId):
+    
+    WidgetType = ''
+    for tmpEp in self.ListOfDevices[NwkId]['Ep']:
+        if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][tmpEp]:
+            if str(DeviceId) in self.ListOfDevices[NwkId]['Ep'][tmpEp]['ClusterType']:
+                WidgetType = self.ListOfDevices[NwkId]['Ep'][tmpEp]['ClusterType'][str(DeviceId)]
+
+    if WidgetType == '':
+        if 'ClusterType' in self.ListOfDevices[NwkId]:
+            if str(DeviceId) in self.ListOfDevices[NwkId]['ClusterType']:
+                WidgetType = self.ListOfDevices[NwkId]['ClusterType'][str(DeviceId)]
+
+    return WidgetType
+
 def ResetDevice(self, Devices, ClusterType, HbCount):
     '''
         Reset all Devices from the ClusterType Motion after 30s
@@ -1484,17 +1542,9 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             continue
 
         ID = Devices[unit].ID
-        WidgetType = ''
-        for tmpEp in self.ListOfDevices[NWKID]['Ep']:
-            if 'ClusterType' in self.ListOfDevices[NWKID]['Ep'][tmpEp]:
-                if str(ID) in self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType']:
-                    WidgetType = self.ListOfDevices[NWKID]['Ep'][tmpEp]['ClusterType'][str(ID)]
+        WidgetType = ''        
+        WidgetType = WidgetForDeviceId( self, NWKID, ID)
 
-        if WidgetType == '':
-            if 'ClusterType' in self.ListOfDevices[NWKID]:
-                if str(ID) in self.ListOfDevices[NWKID]['ClusterType']:
-                    WidgetType = self.ListOfDevices[NWKID]['ClusterType'][str(ID)]
-        
         if WidgetType not in ('Motion', 'Vibration'):
             continue
 
@@ -1505,31 +1555,7 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
             if self.domoticzdb_DeviceStatus.retreiveTimeOut_Motion( Devices[unit].ID) > 0:
                 continue
 
-        # Takes the opportunity to update RSSI and Battery
-        SignalLevel = '' 
-        if 'RSSI' in self.ListOfDevices[NWKID]:
-            SignalLevel = self.ListOfDevices[NWKID]['RSSI']
-            
-        BatteryLevel = ''
-        if 'Battery' in self.ListOfDevices[NWKID]:
-            BatteryLevel = self.ListOfDevices[NWKID]['Battery']
-
-        # SignalLvl max is 12
-        rssi = 12
-        if isinstance(SignalLevel, int):
-            rssi = round((SignalLevel * 12) / 255)
-            loggingWidget( self, "Debug", "--->  " + str(Devices[unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[unit].DeviceID])
-
-        # Battery Level 255 means Main Powered device
-        if isinstance(BatteryLevel, float):
-            # Looks like sometime we got a float instead of int.
-            # in that case convert to int
-            loggingWidget( self, "Debug", "--->  %s BatteryLvl rounded" %self.IEEE2NWK[Devices[unit].DeviceID])
-            BatteryLvl = round( BatteryLevel)
-
-        if BatteryLevel == '' or (not isinstance(BatteryLevel, int)):
-            loggingWidget( self, "Debug", "--->  %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[unit].DeviceID])
-            BatteryLvl = 255
+        SignalLevel, BatteryLvl = RetreiveSignalLvlBattery( self, NWKID)
 
         _timeout = self.pluginconf.pluginConf['resetMotiondelay']
         #resetMotionDelay = 0
@@ -1542,46 +1568,29 @@ def ResetDevice(self, Devices, ClusterType, HbCount):
         if (current - LUpdate) >= _timeout: 
             loggingWidget( self, "Debug", "Last update of the devices " + str(unit) + " was : " + str(LUpdate) + " current is : " + str(
                 current) + " this was : " + str(current - LUpdate) + " secondes ago", NWKID)
-            UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLevel, SignalLevel)
+            UpdateDevice_v2(self, Devices, unit, 0, "Off", BatteryLvl, SignalLevel)
 
 def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, Color_='', ForceUpdate_=False):
 
     loggingWidget( self, "Debug", "UpdateDevice_v2 %s:%s:%s   %3s:%3s:%5s (%15s)" %( nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
 
-    # SignalLvl max is 12
-    rssi = 12
-    if isinstance(SignalLvl, int):
-        rssi = round((SignalLvl * 12) / 255)
-        loggingWidget( self, "Debug", "--->  " + str(Devices[Unit].Name) + " RSSI = " + str(rssi), self.IEEE2NWK[Devices[Unit].DeviceID])
-
-    # Battery Level 255 means Main Powered device
-    if isinstance(BatteryLvl, float):
-        # Looks like sometime we got a float instead of int.
-        # in that case convert to int
-        loggingWidget( self, "Debug", "--->  %s BatteryLvl rounded" %self.IEEE2NWK[Devices[Unit].DeviceID])
-        BatteryLvl = round( BatteryLvl)
-
-    if BatteryLvl == '' or (not isinstance(BatteryLvl, int)):
-        loggingWidget( self, "Debug", "--->  %s BatteryLvl set to 255" %self.IEEE2NWK[Devices[Unit].DeviceID])
-        BatteryLvl = 255
-
-    loggingWidget( self, "Debug", "--->  %s BatteryLevel: %s RSSI: %s" %( Devices[Unit].Name, BatteryLvl, rssi))
-
     # Make sure that the Domoticz device still exists (they can be deleted) before updating it
-    if (Unit in Devices):
-        if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
-            ( Color_ !='' and Devices[Unit].Color != Color_) or \
-            ForceUpdate_ or \
-            Devices[Unit].BatteryLevel != int(BatteryLvl) or \
-            Devices[Unit].TimedOut:
+    if Unit not in Devices:
+        return
 
-            if self.pluginconf.pluginConf['logDeviceUpdate']:
-                Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
-            loggingWidget( self, "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, rssi, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
-            if Color_:
-                Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
-            else:
-                Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue),               SignalLevel=int(rssi), BatteryLevel=int(BatteryLvl), TimedOut=0)
+    if (Devices[Unit].nValue != int(nValue)) or (Devices[Unit].sValue != sValue) or \
+        ( Color_ !='' and Devices[Unit].Color != Color_) or \
+        ForceUpdate_ or \
+        Devices[Unit].BatteryLevel != int(BatteryLvl) or \
+        Devices[Unit].TimedOut:
+
+        if self.pluginconf.pluginConf['logDeviceUpdate']:
+            Domoticz.Log("UpdateDevice - (%15s) %s:%s" %( Devices[Unit].Name, nValue, sValue ))
+        loggingWidget( self, "Debug", "--->  [Unit: %s] %s:%s:%s %s:%s %s (%15s)" %( Unit, nValue, sValue, Color_, BatteryLvl, SignalLvl, ForceUpdate_, Devices[Unit].Name), self.IEEE2NWK[Devices[Unit].DeviceID])
+        if Color_:
+            Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue), Color=Color_, SignalLevel=int(SignalLvl), BatteryLevel=int(BatteryLvl), TimedOut=0)
+        else:
+            Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue),               SignalLevel=int(SignalLvl), BatteryLevel=int(BatteryLvl), TimedOut=0)
 
 def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
  
