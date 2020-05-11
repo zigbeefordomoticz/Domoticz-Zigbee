@@ -110,8 +110,9 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         EPout = '01'
 
     # One element found, we have Endpoint and DevicetypeÒ
-    EPout , DeviceType = ClusterTypeList[0]
-    loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s" %( EPout , DeviceType), NWKID)
+    EPout , DeviceType, DeviceTypeWidgetId = ClusterTypeList[0]
+
+    loggingCommand( self, "Debug", "--------->   EPOut: %s DeviceType: %s WidgetID: %s" %( EPout , DeviceType, DeviceTypeWidgetId ), NWKID)
     # Sanity Check
     forceUpdateDev = False
     if DeviceType in SWITCH_LVL_MATRIX:
@@ -307,7 +308,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
                 }
             if 'Schneider Wiser' not in self.ListOfDevices[NWKID]:
                 self.ListOfDevices[NWKID]['Schneider Wiser'] ={}
-                
+
             if Level in CONTRACT_MODE:
                 loggingCommand( self, 'Log', "mgtCommand : -----> Contract Power : %s - %s KVA" %(Level, CONTRACT_MODE[ Level ]), NWKID)
                 if 'Model' in self.ListOfDevices[NWKID]:
