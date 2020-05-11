@@ -31,7 +31,7 @@ from Modules.output import  sendZigateCmd,  \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
 from Modules.configureReporting import processConfigureReporting
 from Modules.legrand_netatmo import  legrandReenforcement
-from Modules.schneider_wiser import schneiderRenforceent
+from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
 
@@ -115,7 +115,9 @@ def pollingManufSpecificDevices( self, NWKID):
     POLLING_TABLE_SPECIFICS = {
         '100b':     ( 'Philips',  'pollingPhilips', pollingPhilips ),
         'Philips':  ( 'Philips',  'pollingPhilips', pollingPhilips),
-        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto )
+        'GLEDOPTO': ( 'Gledopto', 'pollingGledopto',pollingGledopto ),
+        '105e':     ( 'Schneider', 'pollingSchneider', pollingSchneider),
+        'Schneider':( 'Schneider', 'pollingSchneider', pollingSchneider)
     }
 
     rescheduleAction = False
@@ -139,7 +141,7 @@ def pollingManufSpecificDevices( self, NWKID):
     _FEQ = self.pluginconf.pluginConf[ param ] // HEARTBEAT
 
     if _FEQ and (( _HB % _FEQ ) == 0):
-        loggingHeartbeat( self, 'Log', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
+        loggingHeartbeat( self, 'Debug', "++ pollingManufSpecificDevices -  %s Found: %s - %s %s %s" \
             %(NWKID, brand, devManufCode, devManufName, param), NWKID)       
         rescheduleAction = ( rescheduleAction or func( self, NWKID) )
 

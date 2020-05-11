@@ -48,6 +48,7 @@ SETTINGS = {
                 'pingDevicesFeq':       { 'type':'int', 'default':3600 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'pollingPhilips':       { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'pollingGledopto':      { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'pollingSchneider':     { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'polling0000':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'polling0001':          { 'type':'int', 'default':86400 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'pollingONOFF':         { 'type':'int', 'default':900 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
