@@ -25,14 +25,14 @@ def CreateDomoDevice(self, Devices, NWKID):
 
     """
 
-    def deviceName( self, NWKID, type_, IEEE_, EP_ ):
+    def deviceName( self, NWKID, DeviceType, IEEE_, EP_ ):
         """
         Return the Name of device to be created
         """
 
         _Model = _NickName = None
         devName = ''
-        loggingWidget( self, "Debug", "deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, type_), NWKID)
+        loggingWidget( self, "Debug", "deviceName - %s/%s - %s %s" %(NWKID, EP_, IEEE_, DeviceType), NWKID)
         if 'Model' in self.ListOfDevices[NWKID]:
             if self.ListOfDevices[NWKID]['Model'] != {}:
                 _Model = self.ListOfDevices[NWKID]['Model']
@@ -49,7 +49,7 @@ def CreateDomoDevice(self, Devices, NWKID):
         elif _Model:
             devName = _Model+ '_'
 
-        devName +=  type_ + "-" + IEEE_ + "-" + EP_
+        devName +=  DeviceType + "-" + IEEE_ + "-" + EP_
         loggingWidget( self, "Debug", "deviceName - Dev Name: %s" %devName, NWKID)
 
         return devName
@@ -1439,7 +1439,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     # Let's retreive All Widgets entries for the entire entry.
     ClusterTypeList = []
     if DeviceUnit:
-        WidgetId = Devices[ DeviceUnit].ID
+        WidgetId = str(Devices[ DeviceUnit].ID)
         Domoticz.Log("Looking for WigdetID: %s with Unit: %s" %(WidgetId, DeviceUnit))
 
     if 'ClusterType' in self.ListOfDevices[NwkId]:
@@ -1448,7 +1448,7 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
             # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
             loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
             if DeviceUnit:
-                if str(WidgetId) in self.ListOfDevices[NwkId]['ClusterType']:
+                if WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
                     WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
                     ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
                     return ClusterTypeList
@@ -1460,7 +1460,8 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     for iterEp in self.ListOfDevices[NwkId]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
             if DeviceUnit:
-                if str(WidgetId) in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                   WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId] 
                    ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
                    return ClusterTypeList
 
