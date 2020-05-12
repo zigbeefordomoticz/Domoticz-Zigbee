@@ -24,8 +24,8 @@ from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS,
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
 from Modules.logging import loggingCluster
-from Modules.output import  xiaomi_leave
-from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster
+
+from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):

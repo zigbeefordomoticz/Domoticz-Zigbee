@@ -18,22 +18,23 @@ import struct
 import json
 
 from Modules.actuators import actuators
-from Modules.output import  sendZigateCmd,  \
-        identifyEffect, setXiaomiVibrationSensitivity, \
-        getListofAttribute, \
-        setPowerOn_OnOff, \
-        scene_membership_request, \
-        ReadAttributeRequest_0000_basic, \
+
+from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribute
+
+from Modules.readAttributes import ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+
 from Modules.configureReporting import processConfigureReporting
+
 from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
+from Modules.lumi import setXiaomiVibrationSensitivity
 
 from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel
 from Modules.logging import loggingPairing, loggingHeartbeat

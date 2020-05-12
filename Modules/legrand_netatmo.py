@@ -20,7 +20,8 @@ from time import time
 
 from Modules.zigateConsts import MAX_LOAD_ZIGATE, ZIGATE_EP, HEARTBEAT
 from Modules.logging import loggingLegrand
-from Modules.output import raw_APS_request, write_attribute, sendZigateCmd, raw_APS_request
+from Modules.basicOutputs import raw_APS_request, sendZigateCmd, raw_APS_request, write_attribute
+
 
 def pollingLegrand( self, key ):
 

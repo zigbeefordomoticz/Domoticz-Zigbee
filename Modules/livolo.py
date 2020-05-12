@@ -16,7 +16,7 @@ import struct
 import json
 
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.output import sendZigateCmd
+from Modules.basicOutputs import sendZigateCmd
 from Modules.logging import loggingOutput
 
 """

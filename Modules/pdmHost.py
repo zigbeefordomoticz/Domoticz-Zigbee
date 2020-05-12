@@ -12,7 +12,7 @@
 
 
 from Modules.logging import loggingPDM
-from Modules.output import sendZigateCmd
+from Modules.basicOutputs import sendZigateCmd
 
 import Domoticz
 import datetime

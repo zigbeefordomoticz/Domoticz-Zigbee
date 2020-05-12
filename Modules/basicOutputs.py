@@ -134,21 +134,6 @@ def zigateBlueLed( self, OnOff):
         loggingBasicOutput( self, 'Log', "Switch Blue Led off" )
         sendZigateCmd(self, "0018","00")
 
-def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
-    
-    addr_mode = "02" # Short address
-    direction = "00"
-    if data_type == '42': # String
-        # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
-        data = '%02x' %(len(data)//2) + data
-
-    lenght = "01" # Only 1 attribute
-    datas = addr_mode + key + EPin + EPout + clusterID
-    datas += direction + manuf_spec + manuf_id
-    datas += lenght +attribute + data_type + data
-    loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
-    sendZigateCmd(self, "0110", str(datas) )
-
 def getListofAttribute(self, nwkid, EpOut, cluster):
     
     datas = "{:02n}".format(2) + nwkid + ZIGATE_EP + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"
@@ -437,6 +422,21 @@ def raw_APS_request( self, targetaddr, dest_ep, cluster, profileId, payload, zig
 
     sendZigateCmd(self, "0530", addr_mode + targetaddr + zigate_ep + dest_ep + cluster + profileId + security + radius + len_payload + payload)
 
+def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
+    
+    addr_mode = "02" # Short address
+    direction = "00"
+    if data_type == '42': # String
+        # In case of Data Type 0x42 ( String ), we have to add the length of string before the string.
+        data = '%02x' %(len(data)//2) + data
+
+    lenght = "01" # Only 1 attribute
+    datas = addr_mode + key + EPin + EPout + clusterID
+    datas += direction + manuf_spec + manuf_id
+    datas += lenght +attribute + data_type + data
+    loggingBasicOutput( self, 'Debug', "write_attribute for %s/%s - >%s<" %(key, EPout, datas) )
+    sendZigateCmd(self, "0110", str(datas) )
+
 ## Scene
 
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
@@ -444,15 +444,13 @@ def scene_membership_request( self, nwkid, ep, groupid='0000'):
     datas = '02' + nwkid + ZIGATE_EP + ep +  groupid
     sendZigateCmd(self, "00A6", datas )
 
-def xiaomi_leave( self, NWKID):
 
-    if self.permitTojoin['Duration'] != 255:
-        loggingBasicOutput( self, 'Log', "------> switch zigate in pairing mode")
-        ZigatePermitToJoin(self, ( 1 * 60 ))
 
-    # sending a Leave Request to device, so the device will send a leave
-    loggingBasicOutput( self, 'Log', "------> Sending a leave to Xiaomi battery devive: %s" %(NWKID))
-    leaveRequest( self, IEEE= self.ListOfDevices[NWKID]['IEEE'], Rejoin=True )
+
+
+
+
+
 
 def identifyEffect( self, nwkid, ep, effect='Blink' ):
 

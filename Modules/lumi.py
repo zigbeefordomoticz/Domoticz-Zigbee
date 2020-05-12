@@ -15,10 +15,20 @@ import struct
 import Domoticz
 
 from Modules.domoticz import MajDomoDevice
-from Modules.basicOutputs import write_attribute
+from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.logging import loggingLumi, loggingCluster
 from Modules.tools import voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
+
+def xiaomi_leave( self, NWKID):
+    
+    if self.permitTojoin['Duration'] != 255:
+        loggingLumi( self, 'Log', "------> switch zigate in pairing mode")
+        ZigatePermitToJoin(self, ( 1 * 60 ))
+
+    # sending a Leave Request to device, so the device will send a leave
+    loggingLumi( self, 'Log', "------> Sending a leave to Xiaomi battery devive: %s" %(NWKID))
+    leaveRequest( self, IEEE= self.ListOfDevices[NWKID]['IEEE'], Rejoin=True )
 
 def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
     
