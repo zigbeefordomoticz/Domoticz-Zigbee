@@ -70,7 +70,7 @@ def ZigatePermitToJoin( self, permit ):
 
     PermitToJoin( self, '%02x' %permit )
 
-    loggingBasicOutput( self, 'Debug', "Permit Join set :" , 'ffff' )
+    loggingBasicOutput( self, 'Debug', "Permit Join set :" )
     loggingBasicOutput( self, 'Debug', "---> self.permitTojoin['Starttime']: %s" %self.permitTojoin['Starttime'] )
     loggingBasicOutput( self, 'Debug', "---> self.permitTojoin['Duration'] : %s" %self.permitTojoin['Duration'] )
 
