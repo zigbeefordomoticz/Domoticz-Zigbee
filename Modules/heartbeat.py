@@ -38,7 +38,7 @@ from Modules.lumi import setXiaomiVibrationSensitivity
 
 from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel
 from Modules.logging import loggingPairing, loggingHeartbeat
-from Modules.domoticz import CreateDomoDevice, timedOutDevice
+from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 

@@ -82,7 +82,7 @@ from Modules.basicOutputs import sendZigateCmd, removeZigateDevice, start_Zigate
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, importDeviceConfV2, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
-from Modules.domoticz import ResetDevice
+from Modules.domoTools import ResetDevice
 from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower

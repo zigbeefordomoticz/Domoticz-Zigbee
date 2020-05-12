@@ -19,7 +19,8 @@ import queue
 from time import time
 import json
 
-from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
+from Modules.domoMaj import MajDomoDevice
+from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import timeStamped, updSQN, updRSSI, DeviceExist, getSaddrfromIEEE, IEEEExist, initDeviceInList, mainPoweredDevice, loggingMessages, \
                             lookupForIEEE, ReArrangeMacCapaBasedOnModel, decodeMacCapa, NwkIdExist
 from Modules.logging import loggingPairing, loggingInput

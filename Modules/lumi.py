@@ -14,7 +14,7 @@ import struct
 
 import Domoticz
 
-from Modules.domoticz import MajDomoDevice
+from Modules.domoMaj import MajDomoDevice
 from Modules.basicOutputs import ZigatePermitToJoin, leaveRequest, write_attribute
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.logging import loggingLumi, loggingCluster

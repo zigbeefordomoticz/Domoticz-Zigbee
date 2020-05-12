@@ -21,7 +21,8 @@ import string
 from math import atan, sqrt, pi
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
-from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
+from Modules.domoMaj import MajDomoDevice
+from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
 from Modules.logging import loggingCluster
 

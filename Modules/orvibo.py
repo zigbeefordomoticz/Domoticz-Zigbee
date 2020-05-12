@@ -8,7 +8,7 @@
 
 import Domoticz
 from  Modules.basicOutputs import sendZigateCmd, write_attribute
-from Modules.domoticz import MajDomoDevice
+from Modules.domoMaj import MajDomoDevice
 from Modules.zigateConsts import ZIGATE_EP
 
 

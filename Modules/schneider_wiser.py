@@ -13,14 +13,16 @@
 from time import time
 import json
 import os.path
+import struct
 
 import Domoticz
 
-import struct
-import Modules.bindings
-import Modules.domoticz
+from Modules.domoMaj import MajDomoDevice
 
 from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
+from Modules.domoMaj import MajDomoDevice
+from Modules.bindings import webBind
+
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.logging import loggingSchneider
@@ -210,7 +212,7 @@ def schneider_wiser_registration( self, Devices, key ):
         value = '00'
         loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
                 %(key,EPout,cluster_id,value), nwkid=key)
-        Modules.domoticz.MajDomoDevice(self, Devices, key, EPout, cluster_id, value)
+        MajDomoDevice(self, Devices, key, EPout, cluster_id, value)
 
 
     # Write Location to 0x0000/0x5000 for all devices
@@ -416,10 +418,10 @@ def schneider_check_and_set_bind (self, key):
                 self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind1] = 'Done'
                 self.ListOfDevices[key]['ZoneBinded'][hact][Cluster_bind2] = 'Done'
 
-                Modules.bindings.webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                Modules.bindings.webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
-                Modules.bindings.webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
-                Modules.bindings.webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind1)
+                webBind(self, srcIeee,SCHNEIDER_BASE_EP,targetIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
+                webBind(self, targetIeee,SCHNEIDER_BASE_EP,srcIeee,SCHNEIDER_BASE_EP,Cluster_bind2)
 """                datas =  str(srcIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(targetIeee)+str(SCHNEIDER_BASE_EP)
                 sendZigateCmd(self, "0030", datas )
                 datas =  str(targetIeee)+str(SCHNEIDER_BASE_EP)+str(Cluster_bind1)+str("03")+str(srcIeee)+str(SCHNEIDER_BASE_EP)
@@ -681,7 +683,7 @@ def schneiderUpdateThermostatDevice (self, Devices, NWKID, srcEp, ClusterID, set
 
     # Look for TargetSetPoint
     domoTemp = round(setpoint/100,1)
-    Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, domoTemp, '0012')
+    MajDomoDevice(self, Devices, NWKID, srcEp, ClusterID, domoTemp, '0012')
 
     schneider_find_attribute_and_set(self, NWKID,srcEp,ClusterID,'0012',setpoint,setpoint)
 
@@ -711,7 +713,7 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
 
     loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
             %(NWKID,srcEp,cluster_id,value), NWKID)
-    Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
+    MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
     #ReadAttributeRequest_0702(self, NWKID)
 
 def schneider_set_contract( self, key, EPout, kva):
