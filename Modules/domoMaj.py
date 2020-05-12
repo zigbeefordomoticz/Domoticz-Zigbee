@@ -4,8 +4,8 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: domoticz.py
-    Description: All interactions with Domoticz database
+    Module: domoMaj.py
+    Description: Update of Domoticz Widget
 """
 
 import json

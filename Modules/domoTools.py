@@ -4,8 +4,8 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: domoticz.py
-    Description: All interactions with Domoticz database
+    Module: domoTools.py
+    Description: Tools to manage Domoticz widget inetractions
 """
 
 import json

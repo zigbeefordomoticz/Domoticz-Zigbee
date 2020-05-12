@@ -4,8 +4,8 @@
 # Author: zaraki673 & pipiche38
 #
 """
-    Module: domoticz.py
-    Description: All interactions with Domoticz database
+    Module: domoCreat.py
+    Description: Creation of Domoticz Widgets
 """
 
 import json
@@ -595,7 +595,7 @@ def CreateDomoDevice(self, Devices, NWKID):
 
                 createDomoticzWidget( self, Devices, NWKID, DeviceID_IEEE, Ep, t, Type_ = 241, Subtype_ = Subtype_, Switchtype_ = 7 )
 
-                
+
     # for Ep
     loggingWidget( self, "Debug", "GlobalType: %s" %(str(GlobalType)), NWKID)
     if len(GlobalType) != 0:
