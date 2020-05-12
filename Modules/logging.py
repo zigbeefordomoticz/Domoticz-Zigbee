@@ -71,7 +71,7 @@ def _logginfilter( self, message, nwkid):
         if ('ffff' in _debugMatchId) or (nwkid in _debugMatchId) or (nwkid == 'ffff'):
             _loggingDebug( self, message )
 
-def loggingDirector( self, Module, logType, message):
+def loggingDirector( self, logType, message):
 
     if  logType == 'Log':
         _loggingLog( self,  message )
