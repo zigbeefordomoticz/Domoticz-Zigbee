@@ -9,13 +9,17 @@
     Description: Lumi specifics handling
 
 """
+import time
+import struct
 
 import Domoticz
 
 from Modules.domoticz import MajDomoDevice
 from Modules.output import write_attribute
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.logging import loggingLumi
+from Modules.logging import loggingLumi, loggingCluster
+from Modules.tools import voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
+
 
 def enableOppleSwitch( self, nwkid ):
 
@@ -40,7 +44,6 @@ def enableOppleSwitch( self, nwkid ):
 
     loggingLumi( self, 'Debug', "Write Attributes LUMI Magic Word Nwkid: %s" %nwkid, nwkid)
     write_attribute( self, nwkid, ZIGATE_EP, '01', cluster_id, manuf_id, manuf_spec, Hattribute, data_type, Hdata)
-
 
 def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, MsgPayload):
 
@@ -80,18 +83,17 @@ def lumiReadRawAPS(self, Devices, srcNWKID, srcEp, ClusterID, dstNWKID, dstEP, M
             loggingLumi( self, 'Log', "lumiReadRawAPS - Nwkid: %s/%s Cluster: %s, Command: %s Payload: %s" \
                 %(srcNWKID,srcEp , ClusterID, cmd, data ))
 
-
 def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload):
 
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
 
-#    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
-#       if 'Model' in self.ListOfDevices:
-#            _model = self.ListOfDevices[ 'Model' ]
-#            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
-#                %(nwkid, _model ))  
-#            return
+    #    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
+    #       if 'Model' in self.ListOfDevices:
+    #            _model = self.ListOfDevices[ 'Model' ]
+    #            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
+    #                %(nwkid, _model ))  
+    #            return
 
     _ModelName = self.ListOfDevices[nwkid]['Model']
 
@@ -183,7 +185,6 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
 
     return
  
-
 def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Value):
 
     # Ep : 01 (left)
@@ -204,3 +205,125 @@ def AqaraOppleDecoding0012(self, Devices, nwkid, Ep, ClusterId, AttributeId, Val
         MajDomoDevice( self, Devices, nwkid, Ep, "0006", OPPLE_MAPPING[ Value ])  
 
     return
+
+def retreive4Tag(tag,chain):
+    c = str.find(chain,tag) + 4
+    if c == 3: 
+        return ''
+    return chain[c:(c+4)]
+
+def retreive8Tag(tag,chain):
+    c = str.find(chain,tag) + 4
+    if c == 3: 
+        return ''
+    return chain[c:(c+8)]
+
+def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
+
+
+    if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
+        return
+    
+    # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
+    # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
+
+    sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
+    sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
+    stag04 = retreive4Tag( '0424', MsgClusterData )
+    sRSSI = retreive4Tag( '0521', MsgClusterData )[0:2] # RSSI
+    sLQI = retreive8Tag( '0620', MsgClusterData ) # LQI
+    sLighLevel = retreive4Tag( '0b21', MsgClusterData)
+
+    sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
+    sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
+    sTemp =   retreive4Tag( "6429", MsgClusterData )
+    sOnOff3 =  retreive4Tag( "6510", MsgClusterData ) # On/off lumi.ctrl_ln2 EP 02
+    sHumid =  retreive4Tag( "6521", MsgClusterData )
+    sHumid2 = retreive4Tag( "6529", MsgClusterData )
+    sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
+    sPress =  retreive8Tag( "662b", MsgClusterData )
+    #sConso = retreive8Tag( '9539', MsgClusterData )
+    #sPower = retreive8Tag( '9839', MsgClusterData )
+
+    #if sConso != '':
+    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso ))
+    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sConso ))))
+    #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sConso ))))
+    #    if 'Consumtpion' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+    #        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
+    #    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeAttribute( self, '39', sConso ))
+    #if sPower != '':
+    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower ))
+    #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sPower ))))
+    #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sPower ))))
+    if sLighLevel != '':
+        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" 
+            %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
+
+    if sRSSI != '':
+        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" 
+            %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sRSSI,16)), MsgSrcAddr)
+
+    if sLQI != '':
+        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" 
+            %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
+
+    if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main':
+        voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
+        voltage = int(voltage, 16 )
+        ValueBattery = voltage2batteryP( voltage, 3150, 2750)
+        loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
+        self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
+        self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0001', '0000' , voltage)
+
+    if sTemp != '':
+        Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
+        ValueTemp=round(Temp/100,1)
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) , MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0402', '0000' , ValueTemp)
+
+    if sHumid != '':
+        ValueHumid = struct.unpack('H',struct.pack('>H',int(sHumid,16)))[0]
+        ValueHumid = round(ValueHumid/100,1)
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) , MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",ValueHumid)
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0405', '0000' , ValueHumid)
+
+    if sHumid2 != '':
+        Humid2 = struct.unpack('h',struct.pack('>H',int(sHumid2,16)))[0]
+        ValueHumid2=round(Humid2/100,1)
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) , MsgSrcAddr)
+
+    if sPress != '':
+        Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
+        ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0403', '0000' , sPress)
+
+    if sOnOff != '':
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
+            loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
+            # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
+            return
+
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff), MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
+
+
+    if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb / Lumi Curtain - Position
+        if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
+            loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
+            # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
+            return
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
+
+    if sLevel != '':
+        loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
+        MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
+        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)

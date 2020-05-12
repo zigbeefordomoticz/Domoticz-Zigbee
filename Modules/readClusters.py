@@ -22,35 +22,11 @@ from math import atan, sqrt, pi
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
 from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
-from Modules.tools import DeviceExist, getEPforClusterType, is_hex
+from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
 from Modules.logging import loggingCluster
 from Modules.output import  xiaomi_leave
-from Modules.lumi import AqaraOppleDecoding0012
+from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster
 
-def retreive4Tag(tag,chain):
-    c = str.find(chain,tag) + 4
-    if c == 3: 
-        return ''
-    return chain[c:(c+4)]
-
-def retreive8Tag(tag,chain):
-    c = str.find(chain,tag) + 4
-    if c == 3: 
-        return ''
-    return chain[c:(c+8)]
-
-def voltage2batteryP( voltage, volt_max, volt_min):
-
-    if voltage > volt_max: 
-        ValueBattery = 100
-
-    elif voltage < volt_min: 
-        ValueBattery = 0
-
-    else: 
-        ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
-
-    return round(ValueBattery)
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
 
@@ -150,24 +126,6 @@ def storeReadAttributeStatus( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrI
         self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId] = {}
 
     self.ListOfDevices[MsgSrcAddr]['ReadAttributes']['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgAttrStatus
-
-def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
-
-    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
-
-    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
-
-    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
-
-def checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, Value ):
-    
-    checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )    
-
-    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
-
 
 def ReadCluster(self, Devices, MsgData):
 
@@ -536,152 +494,8 @@ def Cluster0000( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
         loggingCluster( self, 'Debug', "ReadCluster - %s %s Saddr: %s ClusterData: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, MsgClusterData), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = MsgClusterData
+        readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData )
 
-        # Taging: https://github.com/dresden-elektronik/deconz-rest-plugin/issues/42#issuecomment-370152404
-        # 0x0624 might be the LQI indicator and 0x0521 the RSSI dB
-
-        sBatteryLvl = retreive4Tag( "0121", MsgClusterData )
-        sTemp2 =  retreive4Tag( "0328", MsgClusterData )   # Device Temperature
-        stag04 = retreive4Tag( '0424', MsgClusterData )
-        sRSSI = retreive4Tag( '0521', MsgClusterData )[0:2] # RSSI
-        sLQI = retreive8Tag( '0620', MsgClusterData ) # LQI
-        sLighLevel = retreive4Tag( '0b21', MsgClusterData)
-
-        sOnOff =  retreive4Tag( "6410", MsgClusterData )[0:2]
-        sOnOff2 = retreive4Tag( "6420", MsgClusterData )[0:2]    # OnOff for Aqara Bulb / Current position lift for lumi.curtain
-        sTemp =   retreive4Tag( "6429", MsgClusterData )
-        sOnOff3 =  retreive4Tag( "6510", MsgClusterData ) # On/off lumi.ctrl_ln2 EP 02
-        sHumid =  retreive4Tag( "6521", MsgClusterData )
-        sHumid2 = retreive4Tag( "6529", MsgClusterData )
-        sLevel =  retreive4Tag( "6520", MsgClusterData )[0:2]     # Dim level for Aqara Bulb
-        sPress =  retreive8Tag( "662b", MsgClusterData )
-        sConso = retreive8Tag( '9539', MsgClusterData )
-        sPower = retreive8Tag( '9839', MsgClusterData )
-
-
-        #if sConso != '':
-        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sConso ))
-        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sConso ))))
-        #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Consumption %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sConso ))))
-        #    if 'Consumtpion' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-        #        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = 0
-        #    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] = self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['Consumption'] + float(decodeAttribute( self, '39', sConso ))
-        #if sPower != '':
-        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, sPower ))
-        #    #Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, int(decodeAttribute( self, '2b', sPower ))))
-        #    Domoticz.Log("ReadCluster - %s/%s Saddr: %s Power %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, float(decodeAttribute( self, '39', sPower ))))
-        if sLighLevel != '':
-            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Light Level: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLighLevel,16)), MsgSrcAddr)
-        if sRSSI != '':
-            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s RSSI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sRSSI,16)), MsgSrcAddr)
-        if sLQI != '':
-            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s LQI: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr,  int(sLQI,16)), MsgSrcAddr)
-
-        if sBatteryLvl != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '8e' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] != '84' and self.ListOfDevices[MsgSrcAddr]['PowerSource'] != 'Main':
-            voltage = '%s%s' % (str(sBatteryLvl[2:4]),str(sBatteryLvl[0:2]))
-            voltage = int(voltage, 16 )
-            ValueBattery = voltage2batteryP( voltage, 3150, 2750)
-            loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
-            self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
-            self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-
-            # Store Voltage in 0x0001
-            if '0001' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0000'] = voltage
-
-        if sTemp != '':
-            Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
-            ValueTemp=round(Temp/100,1)
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) , MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-
-            if '0402' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0402']['0000'] = ValueTemp
-
-        if sHumid != '':
-            ValueHumid = struct.unpack('H',struct.pack('>H',int(sHumid,16)))[0]
-            ValueHumid = round(ValueHumid/100,1)
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) , MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",ValueHumid)
-            if '0405' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0405']['0000'] = ValueHumid
-
-        if sHumid2 != '':
-            Humid2 = struct.unpack('h',struct.pack('>H',int(sHumid2,16)))[0]
-            ValueHumid2=round(Humid2/100,1)
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity2 : " + str(ValueHumid2) , MsgSrcAddr)
-
-        if sPress != '':
-            Press = '%s%s%s%s' % (str(sPress[6:8]),str(sPress[4:6]),str(sPress[2:4]),str(sPress[0:2])) 
-            ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
-            if '0403' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0403']['0000'] = sPress
-
-        if sOnOff != '':
-            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
-                    loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
-                    # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
-                    return
-
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
-            if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = sOnOff
-
-        if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb / Lumi Curtain - Position
-            if 'Model' in self.ListOfDevices[MsgSrcAddr]:
-                if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
-                    loggingCluster( self, 'Debug', " --- Do not process this sOnOff: %s  because it is a leak sensor : %s" %(sOnOff, MsgSrcAddr), MsgSrcAddr)
-                    # Wleak send status via 0x8401 and Zone change. Looks like we get some false positive here.
-                    return
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
-            if '0006' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0006']['0000'] = sOnOff
-
-        if sLevel != '':
-            loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
-            MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
-            if '0008' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008'] = {}
-            if not isinstance(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008'], dict):
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008'] = {}
-            if '0000' not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']:
-                self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = {}
-            self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0008']['0000'] = sLevel
     elif MsgAttrID in ( 'ffe0', 'ffe1', 'ffe2'):
         # Tuya, Zemismart
         loggingCluster( self, 'Debug', "ReadCluster - 0000 %s/%s attribute Tuya/Zemismat - %s: 0x%s %s" 
@@ -783,6 +597,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     elif MsgAttrID == 'fffd': # Cluster Version
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Cluster Version: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
+
     else:
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
@@ -809,7 +624,6 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
             if self.ListOfDevices[MsgSrcAddr]['Model'] not in BATTERY_BASED_DEVICES:
                 self.ListOfDevices[ MsgSrcAddr]['Battery'] = {}
                 return
-
 
     # Compute Battery %
     mainVolt = battVolt = battRemainingVolt = battRemainPer = 0.0
@@ -875,9 +689,6 @@ def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     if MsgAttrID == '0000': # IdentifyTime Attribute
         loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s Remaining time to identify itself %s" %(MsgClusterId, MsgSrcAddr, MsgSrcEp, int(MsgClusterData, 16)))
 
-
-
-
 def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
     def compute_conso( self, MsgSrcAddr, raw_value ):
@@ -908,7 +719,6 @@ def Cluster0702( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     
     checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )
     
-
     # Convert to int
     value = decodeAttribute( self, MsgAttType, MsgClusterData )
     try:
