@@ -76,7 +76,7 @@ def ZigatePermitToJoin( self, permit ):
 
 def PermitToJoin( self, Interval, TargetAddress='FFFC'):
     
-    sendZigateCmd(self, "0049", TargetAddress + Interval + 00 )
+    sendZigateCmd(self, "0049", TargetAddress + Interval + '00' )
     if TargetAddress == 'FFFC':
         # Request a Status to update the various permitTojoin structure
         sendZigateCmd( self, "0014", "" ) # Request status
