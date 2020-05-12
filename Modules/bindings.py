@@ -5,8 +5,8 @@
 #
 
 import Domoticz
+import Modules.output
 from time import time
-from Modules.output import sendZigateCmd
 from Modules.logging import loggingOutput
 from Modules.zigateConsts import CLUSTERS_LIST
 
@@ -20,7 +20,7 @@ def bindGroup( self, ieee, ep, cluster, groupid ):
 
     loggingOutput( self, 'Debug', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid
-    sendZigateCmd(self, "0030", datas )
+    Modules.output.sendZigateCmd(self, "0030", datas )
 
 
 def unbindGroup( self, ieee , ep, cluster, groupid):
@@ -32,7 +32,7 @@ def unbindGroup( self, ieee , ep, cluster, groupid):
 
     loggingOutput( self, 'Debug', "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid
-    sendZigateCmd(self, "0031", datas )
+    Modules.output.sendZigateCmd(self, "0031", datas )
 
 
 
@@ -106,7 +106,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         mode = "03"     # Addres Mode to use
 
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep)
-        sendZigateCmd(self, "0030", datas )
+        Modules.output.sendZigateCmd(self, "0030", datas )
 
     return
 
@@ -179,7 +179,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     loggingOutput( self, 'Debug', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
-    sendZigateCmd(self, "0031", datas )
+    Modules.output.sendZigateCmd(self, "0031", datas )
 
     return
 
@@ -212,7 +212,7 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
-    sendZigateCmd(self, "0030", datas )
+    Modules.output.sendZigateCmd(self, "0030", datas )
     loggingOutput( self, 'Debug', "---> %s %s" %("0030", datas), sourceNwkid)
 
     if 'WebBind' not in self.ListOfDevices[sourceNwkid]:
@@ -221,14 +221,16 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
         self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp] = {}
     if Cluster not in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]:
         self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster] = {}
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['SourceIEEE'] = sourceIeee
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Target'] = destNwkid
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetIEEE'] = destIeee
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['TargetEp'] = destEp
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Stamp'] = int(time())
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Phase'] = 'requested'
-    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]['Status'] = ''
+    if destNwkid not in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]:
+        self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid] = {}
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['SourceIEEE'] = sourceIeee
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Target'] = destNwkid
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['TargetIEEE'] = destIeee
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['TargetEp'] = destEp
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Stamp'] = int(time())
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Phase'] = 'requested'
+    self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]['Status'] = ''
 
 
 def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
@@ -259,21 +261,31 @@ def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
-    sendZigateCmd(self, "0031", datas )
+    Modules.output.sendZigateCmd(self, "0031", datas )
     loggingOutput( self, 'Debug', "---> %s %s" %("0031", datas), sourceNwkid)
 
     if (
         'WebBind' in self.ListOfDevices[sourceNwkid]
         and sourceEp in self.ListOfDevices[sourceNwkid]['WebBind']
         and Cluster in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]
+        and destNwkid in self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]
     ):
-        del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]
+        del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster][destNwkid]
+        if len(self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]) == 0:
+            del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp][Cluster]
         if len(self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]) == 0:
             del self.ListOfDevices[sourceNwkid]['WebBind'][sourceEp]
         if len(self.ListOfDevices[sourceNwkid]['WebBind']) == 0:
             del self.ListOfDevices[sourceNwkid]['WebBind']
 
 
+def iterable(obj):
+    try:
+        iter(obj)
+    except Exception:
+        return False
+    else:
+        return True
 
 def callBackForWebBindIfNeeded( self , srcNWKID ):
 
@@ -288,14 +300,19 @@ def callBackForWebBindIfNeeded( self , srcNWKID ):
 
     for Ep in list(self.ListOfDevices[srcNWKID]['WebBind']):
         for ClusterId in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ]):
-            if ('Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId] and self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Phase']== 'requested'):
-                if ('Stamp' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId] and time() < self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Stamp']+ 5):    # Let's wait 5s before trying again
-                    continue
-                loggingOutput( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
-                sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['SourceIEEE']
-                destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetIEEE']
-                destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['TargetEp']
-                # Perforning the bind
-                webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
+            for destNwkid in list(self.ListOfDevices[srcNWKID]['WebBind'][ Ep ][ClusterId]):
+                if destNwkid in ('Stamp','Target','TargetIEEE','SourceIEEE','TargetEp','Phase','Status'):
+                    Domoticz.Error("---> delete  destNwkid: %s" %( destNwkid))
+                    del self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]
+                elif ('Phase' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and \
+                                 self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Phase'] == 'requested'):
+                    if ('Stamp' in self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid] and time() < self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Stamp']+ 5):    # Let's wait 5s before trying again
+                        continue
+                    loggingOutput( self, 'Log', "Redo a WebBind for device %s" %(srcNWKID))
+                    sourceIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['SourceIEEE']
+                    destIeee = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetIEEE']
+                    destEp = self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['TargetEp']
+                    # Perforning the bind
+                    webBind(self, sourceIeee, Ep, destIeee, destEp, ClusterId)
 
-                self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId]['Stamp'] = int(time())
+                    self.ListOfDevices[srcNWKID]['WebBind'][Ep][ClusterId][destNwkid]['Stamp'] = int(time())
