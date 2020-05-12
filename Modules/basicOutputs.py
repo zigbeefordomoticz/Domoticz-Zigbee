@@ -137,7 +137,7 @@ def zigateBlueLed( self, OnOff):
 def getListofAttribute(self, nwkid, EpOut, cluster):
     
     datas = "{:02n}".format(2) + nwkid + ZIGATE_EP + EpOut + cluster + "0000" + "00" + "00" + "0000" + "FF"
-    loggingBasicOutput( self, 'Debug', "attribute_discovery_request - " +str(datas) , nwkid=nwkid)
+    loggingBasicOutput( self, 'Debug', "attribute_discovery_request - " +str(datas) )
     sendZigateCmd(self, "0140", datas )
 
 def initiateTouchLink( self):
@@ -438,19 +438,10 @@ def write_attribute( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, at
     sendZigateCmd(self, "0110", str(datas) )
 
 ## Scene
-
 def scene_membership_request( self, nwkid, ep, groupid='0000'):
 
     datas = '02' + nwkid + ZIGATE_EP + ep +  groupid
     sendZigateCmd(self, "00A6", datas )
-
-
-
-
-
-
-
-
 
 def identifyEffect( self, nwkid, ep, effect='Blink' ):
 
