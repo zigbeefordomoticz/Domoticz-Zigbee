@@ -39,6 +39,19 @@ def Hex_Format(taille, value):
         value="0"+value
     return str(value)
 
+def voltage2batteryP( voltage, volt_max, volt_min):
+    
+    if voltage > volt_max: 
+        ValueBattery = 100
+
+    elif voltage < volt_min: 
+        ValueBattery = 0
+
+    else: 
+        ValueBattery = 100 - round( ((volt_max - (voltage))/(volt_max - volt_min)) * 100 )
+
+    return round(ValueBattery)
+
 def IEEEExist(self, IEEE):
     #check in ListOfDevices for an existing IEEE
     return IEEE in self.ListOfDevices and IEEE != ''
@@ -733,3 +746,21 @@ def lookupForParentDevice( self, nwkid= None, ieee=None):
 
     #Nothing found
     return None
+
+
+def checkAttribute( self, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID ):
+    
+    if MsgClusterId not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+
+    if not isinstance( self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] , dict):
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId] = {}
+
+    if MsgAttrID not in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = {}
+
+def checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, Value ):
+    
+    checkAttribute( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID )    
+
+    self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID] = Value
