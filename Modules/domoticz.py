@@ -1440,7 +1440,6 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     ClusterTypeList = []
     if DeviceUnit:
         WidgetId = str(Devices[ DeviceUnit].ID)
-        Domoticz.Log("Looking for WigdetID: %s with Unit: %s" %(WidgetId, DeviceUnit))
 
     if 'ClusterType' in self.ListOfDevices[NwkId]:
         if self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {}:
