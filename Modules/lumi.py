@@ -224,7 +224,6 @@ def retreive8Tag(tag,chain):
 
 def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
-
     if 'Model' not in self.ListOfDevices[MsgSrcAddr]:
         return
     

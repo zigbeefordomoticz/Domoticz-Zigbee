@@ -603,6 +603,12 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
 
 
+    UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp )
+
+    ### End of Cluster0001
+    
+def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
+
     XIAOMI_BATTERY_DEVICES = ( 'lumi.remote.b286opcn01', 'lumi.remote.b486opcn01', 'lumi.remote.b686opcn01', 
                                'lumi.remote.b286opcn01-bulb', 'lumi.remote.b486opcn01-bulb', 'lumi.remote.b686opcn01-bulb',
                                'lumi.sen_ill.mgl01')
@@ -628,14 +634,14 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
     # Compute Battery %
     mainVolt = battVolt = battRemainingVolt = battRemainPer = 0.0
 
-    if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        mainVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0000'])
-    if '0010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        battVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0010'])
-    if '0020' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0020'])
-    if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
-        battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]['0021'])
+    if '0000' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+        mainVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0000'])
+    if '0010' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+        battVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0010'])
+    if '0020' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+        battRemainingVolt = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0020'])
+    if '0021' in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']:
+        battRemainPer = float(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp]['0001']['0021'])
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
