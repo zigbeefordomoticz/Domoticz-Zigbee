@@ -122,6 +122,24 @@ def loggingCluster( self, logType, message, nwkid=None):
         _loggingStatus( self, message )
     return
 
+def loggingBasicOutput( self, logType, message):
+    
+    if  logType in ('Log', 'Debug'):
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return
+
+def loggingReadAttributes( self, logType, message, nwkid=None):
+
+    if self.pluginconf.pluginConf['debugReadAttributes'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return
+
 def loggingOutput( self, logType, message, nwkid=None):
 
     if self.pluginconf.pluginConf['debugOutput'] and logType == 'Debug':

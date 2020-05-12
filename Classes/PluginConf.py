@@ -156,6 +156,8 @@ SETTINGS = {
                 'debugRSSI':            { 'type':'int', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':False},
                 'debugInput':           { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'debugOutput':          { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugBasicOutput':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
+                'debugReadAttributes':  { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},
                 'debugTransportTx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'debugTransportRx':     { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':True, 'Advanced':True},
                 'debugCluster':         { 'type':'bool', 'default':0 , 'current': None, 'restart':False , 'hidden':False, 'Advanced':True},

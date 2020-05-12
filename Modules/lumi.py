@@ -15,11 +15,25 @@ import struct
 import Domoticz
 
 from Modules.domoticz import MajDomoDevice
-from Modules.output import write_attribute
+from Modules.basicOutputs import write_attribute
 from Modules.zigateConsts import ZIGATE_EP
 from Modules.logging import loggingLumi, loggingCluster
 from Modules.tools import voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
 
+def setXiaomiVibrationSensitivity( self, key, sensitivity = 'medium'):
+    
+    VIBRATION_SENSIBILITY = { 'high':0x01, 'medium':0x0B, 'low':0x15}
+
+    if sensitivity not in VIBRATION_SENSIBILITY:
+        sensitivity = 'medium'
+
+    manuf_id = "115F"
+    manuf_spec = "00"
+    cluster_id = "%04x" %0x0000
+    attribute = "%04x" %0xFF0D
+    data_type = "20" # Int8
+    data = "%02x" %VIBRATION_SENSIBILITY[sensitivity]
+    write_attribute( self, key, "01", "01", cluster_id, manuf_id, manuf_spec, attribute, data_type, data)
 
 def enableOppleSwitch( self, nwkid ):
 
@@ -108,7 +122,6 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
 
         return action
 
-
     def actionFromCluster0300(StepMode , EnhancedStepSize ):
 
         action =''
@@ -127,7 +140,6 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
                 action = 'release'
 
         return action
-
 
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
