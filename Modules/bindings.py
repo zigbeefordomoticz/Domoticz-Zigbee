@@ -21,7 +21,7 @@ def bindGroup( self, ieee, ep, cluster, groupid ):
 
     loggingOutput( self, 'Debug', "bindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid
-    Modules.output.sendZigateCmd(self, "0030", datas )
+    sendZigateCmd(self, "0030", datas )
 
 
 def unbindGroup( self, ieee , ep, cluster, groupid):
@@ -33,7 +33,7 @@ def unbindGroup( self, ieee , ep, cluster, groupid):
 
     loggingOutput( self, 'Debug', "unbindGroup - ieee: %s, ep: %s, cluster: %s, Group: %s" %(ieee,ep,cluster,groupid) , nwkid=nwkid)
     datas =  ieee + ep + cluster + mode + groupid
-    Modules.output.sendZigateCmd(self, "0031", datas )
+    sendZigateCmd(self, "0031", datas )
 
 
 
@@ -107,7 +107,7 @@ def bindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
         mode = "03"     # Addres Mode to use
 
         datas =  str(ieee)+str(ep)+str(cluster)+str(mode)+str(destaddr)+str(destep)
-        Modules.output.sendZigateCmd(self, "0030", datas )
+        sendZigateCmd(self, "0030", datas )
 
     return
 
@@ -180,7 +180,7 @@ def unbindDevice( self, ieee, ep, cluster, destaddr=None, destep="01"):
 
     loggingOutput( self, 'Debug', "unbindDevice - ieee: %s, ep: %s, cluster: %s, Zigate_ieee: %s, Zigate_ep: %s" %(ieee,ep,cluster,destaddr,destep) , nwkid=nwkid)
     datas = str(ieee) + str(ep) + str(cluster) + str(mode) + str(destaddr) + str(destep)
-    Modules.output.sendZigateCmd(self, "0031", datas )
+    sendZigateCmd(self, "0031", datas )
 
     return
 
@@ -213,7 +213,7 @@ def webBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
-    Modules.output.sendZigateCmd(self, "0030", datas )
+    sendZigateCmd(self, "0030", datas )
     loggingOutput( self, 'Debug', "---> %s %s" %("0030", datas), sourceNwkid)
 
     if 'WebBind' not in self.ListOfDevices[sourceNwkid]:
@@ -262,7 +262,7 @@ def webUnBind( self, sourceIeee, sourceEp, destIeee, destEp, Cluster):
 
     mode = "03"     # IEEE
     datas =  str(sourceIeee)+str(sourceEp)+str(Cluster)+str(mode)+str(destIeee)+str(destEp)
-    Modules.output.sendZigateCmd(self, "0031", datas )
+    sendZigateCmd(self, "0031", datas )
     loggingOutput( self, 'Debug', "---> %s %s" %("0031", datas), sourceNwkid)
 
     if (

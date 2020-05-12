@@ -14,7 +14,6 @@
 import Domoticz
 from datetime import datetime
 
-from Modules.output import *
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Classes.PluginConf import PluginConf
 

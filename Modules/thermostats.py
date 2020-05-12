@@ -9,6 +9,7 @@ import Domoticz
 from Modules.logging import loggingOutput
 from Modules.readAttributes import ReadAttributeRequest_0201
 from Modules.basicOutputs import write_attribute
+from Modules.schneider_wiser import schneider_setpoint
  
 def thermostat_Setpoint_SPZB(  self, key, setpoint):
 
@@ -34,16 +35,15 @@ def thermostat_Setpoint( self, key, setpoint):
 
     loggingOutput( self, 'Debug', "thermostat_Setpoint - for %s with value %s" %(key,setpoint), nwkid=key)
 
-    if 'Model' in self.ListOfDevices[key]:
-        if self.ListOfDevices[key]['Model'] != {}:
-            if self.ListOfDevices[key]['Model'] == 'SPZB0001':
-                loggingOutput( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
-                thermostat_Setpoint_SPZB( self, key, setpoint)
+    if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} ):
+        if self.ListOfDevices[key]['Model'] == 'SPZB0001':
+            loggingOutput( self, 'Debug', "thermostat_Setpoint - calling SPZB for %s with value %s" %(key,setpoint), nwkid=key)
+            thermostat_Setpoint_SPZB( self, key, setpoint)
 
-            elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
-                loggingOutput( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
-                schneider_setpoint(self, key, setpoint)
-                return
+        elif self.ListOfDevices[key]['Model'] in ( 'EH-ZB-RTS', 'EH-ZB-HACT', 'EH-ZB-VACT' ):
+            loggingOutput( self, 'Debug', "thermostat_Setpoint - calling Schneider for %s with value %s" %(key,setpoint), nwkid=key)
+            schneider_setpoint(self, key, setpoint)
+            return
 
     loggingOutput( self, 'Debug', "thermostat_Setpoint - standard for %s with value %s" %(key,setpoint), nwkid=key)
     manuf_id = "0000"

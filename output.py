@@ -21,7 +21,7 @@ from time import time
 from Modules.zigateConsts import ZLL_DEVICES, MAX_LOAD_ZIGATE, CLUSTERS_LIST, MAX_READATTRIBUTES_REQ, LEGRAND_REMOTES, ADDRESS_MODE, CFG_RPT_ATTRIBUTESbyCLUSTERS, SIZE_DATA_TYPE, ZIGATE_EP
 from Modules.tools import getClusterListforEP, mainPoweredDevice
 from Modules.logging import loggingOutput
-
+from Modules.readAttributes import ReadAttributeRequest_0406
 from Modules.basicOutputs import write_attribute
 
 
