@@ -264,21 +264,21 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         loggingCluster( self, 'Debug', "ReadCluster - %s/%s Saddr: %s Battery: %s Voltage: %s MacCapa: %s PowerSource: %s" %(MsgClusterId, MsgAttrID, MsgSrcAddr, ValueBattery, voltage,  self.ListOfDevices[MsgSrcAddr]['MacCapa'], self.ListOfDevices[MsgSrcAddr]['PowerSource']), MsgSrcAddr)
         self.ListOfDevices[MsgSrcAddr]['Battery'] = ValueBattery
         self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0001', '0000' , voltage)
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0001', '0000' , voltage)
 
     if sTemp != '':
         Temp = struct.unpack('h',struct.pack('>H',int(sTemp,16)))[0]
         ValueTemp=round(Temp/100,1)
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Temperature : " + str(ValueTemp) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0402", ValueTemp)
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0402', '0000' , ValueTemp)
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0402', '0000' , ValueTemp)
 
     if sHumid != '':
         ValueHumid = struct.unpack('H',struct.pack('>H',int(sHumid,16)))[0]
         ValueHumid = round(ValueHumid/100,1)
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Humidity : " + str(ValueHumid) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0405",ValueHumid)
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0405', '0000' , ValueHumid)
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0405', '0000' , ValueHumid)
 
     if sHumid2 != '':
         Humid2 = struct.unpack('h',struct.pack('>H',int(sHumid2,16)))[0]
@@ -290,7 +290,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
         ValuePress=round((struct.unpack('i',struct.pack('i',int(Press,16)))[0])/100,1)
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: " + str(MsgSrcAddr) + " Atmospheric Pressure : " + str(ValuePress) , MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0403",ValuePress)
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0403', '0000' , sPress)
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0403', '0000' , sPress)
 
     if sOnOff != '':
         if self.ListOfDevices[MsgSrcAddr]['Model'] == 'lumi.sensor_wleak.aq1':
@@ -300,7 +300,7 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
 
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff: %s" %(MsgSrcAddr, sOnOff), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, "0006",sOnOff)
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
+        checkAndStoreAttributeValue( self,  MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
 
 
     if sOnOff2 != '' and self.ListOfDevices[MsgSrcAddr]['MacCapa'] == '8e': # Aqara Bulb / Lumi Curtain - Position
@@ -310,9 +310,9 @@ def readXiaomiCluster( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId
             return
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sOnOff2: %s" %(MsgSrcAddr, sOnOff2), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0006',sOnOff2)
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
+        checkAndStoreAttributeValue( self,  MsgSrcAddr , MsgSrcEp, '0006', '0000' , sOnOff)
 
     if sLevel != '':
         loggingCluster( self, 'Debug', "ReadCluster - 0000/ff01 Saddr: %s sLevel: %s" %(MsgSrcAddr, sLevel), MsgSrcAddr)
         MajDomoDevice(self, Devices, MsgSrcAddr, MsgSrcEp, '0008',sLevel)
-        checkAndStoreAttributeValue( self, Devices, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)
+        checkAndStoreAttributeValue( self, MsgSrcAddr , MsgSrcEp, '0008', '0000' , sLevel)
