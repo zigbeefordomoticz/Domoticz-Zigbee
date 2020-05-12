@@ -88,26 +88,15 @@ def AqaraOppleDecoding( self, Devices, nwkid, Ep, ClusterId, ModelName, payload)
     if 'Model' not in self.ListOfDevices[nwkid]:
         return
 
-    #    if not self.pluginconf.pluginConf['AqaraOppleBulbMode']:
-    #       if 'Model' in self.ListOfDevices:
-    #            _model = self.ListOfDevices[ 'Model' ]
-    #            loggingLumi( self, 'Log', "Miss Configuration of Device - Nwkid: %s Model: %s, try to delete and redo the pairing" \
-    #                %(nwkid, _model ))  
-    #            return
-
     _ModelName = self.ListOfDevices[nwkid]['Model']
 
     if ClusterId == '0006': # Top row
         Command =  payload[14:16]    
-
         loggingLumi( self, 'Debug', "AqaraOppleDecoding - Nwkid: %s, Ep: %s,  ON/OFF, Cmd: %s" \
             %(nwkid, Ep, Command), nwkid)
-
-        OnOff = Command
         MajDomoDevice( self, Devices, nwkid, '01', "0006", Command)
 
     elif ClusterId == '0008': # Middle row
-
         StepMode = payload[14:16]
         StepSize = payload[16:18]
         TransitionTime = payload[18:22]
