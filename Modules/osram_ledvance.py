@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author:  pipiche38
+#   French translation: @martial83
+#
+"""
+    Module: osram_ledvance.py
+
+    Description: Widget management
+
+"""
 
 
 from Modules.basicOutputs import write_attribute

@@ -123,8 +123,10 @@ def loggingCluster( self, logType, message, nwkid=None):
     return
 
 def loggingBasicOutput( self, logType, message):
-    
-    if  logType in ('Log', 'Debug'):
+
+    if self.pluginconf.pluginConf['debugBasicOutput'] and logType == 'Debug':   
+        _loggingLog( self,  message )       
+    elif  logType in ('Log'):
         _loggingLog( self,  message )
     elif logType == 'Status':
         _loggingStatus( self, message )
@@ -140,15 +142,46 @@ def loggingReadAttributes( self, logType, message, nwkid=None):
         _loggingStatus( self, message )
     return
 
-def loggingOutput( self, logType, message, nwkid=None):
-
-    if self.pluginconf.pluginConf['debugOutput'] and logType == 'Debug':
+def loggingBinding( self, logType, message, nwkid=None):
+    
+    if self.pluginconf.pluginConf['debugBinding'] and logType == 'Debug':
         _logginfilter( self, message, nwkid)
     elif  logType == 'Log':
         _loggingLog( self,  message )
     elif logType == 'Status':
         _loggingStatus( self, message )
     return
+
+def loggingConfigureReporting( self, logType, message, nwkid=None):
+    
+    if self.pluginconf.pluginConf['debugConfigureReporting'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return    
+
+def loggingWriteAttributes( self, logType, message, nwkid=None):
+    
+    if self.pluginconf.pluginConf['debugWriteAttributes'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return    
+
+def loggingThermostats( self, logType, message, nwkid=None):
+    
+    if self.pluginconf.pluginConf['debugThermostats'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return    
+
 
 def loggingInput( self, logType, message, nwkid=None):
 
@@ -169,7 +202,6 @@ def loggingWidget( self, logType, message, nwkid=None):
     elif logType == 'Status':
         _loggingStatus( self, message )
     return
-
 
 def loggingHeartbeat( self, logType, message, nwkid=None):
 
@@ -222,6 +254,16 @@ def loggingSchneider( self, logType, message, nwkid=None):
     return
 
 def loggingPhilips( self, logType, message, nwkid=None):
+    
+    if self.pluginconf.pluginConf['debugPhilips'] and logType == 'Debug':
+        _logginfilter( self, message, nwkid)
+    elif  logType == 'Log':
+        _loggingLog( self,  message )
+    elif logType == 'Status':
+        _loggingStatus( self, message )
+    return
+
+def loggingLivolo( self, logType, message, nwkid=None):
     
     if self.pluginconf.pluginConf['debugPhilips'] and logType == 'Debug':
         _logginfilter( self, message, nwkid)

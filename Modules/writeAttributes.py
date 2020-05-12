@@ -1,25 +1,19 @@
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author:  pipiche38
+#   French translation: @martial83
+#
+"""
+    Module: writeAttributes.py
 
+    Description: 
 
-
-
+"""
 
 from time import time
 from Modules.basicOutputs import sendZigateCmd
-from Modules.logging import loggingOutput, loggingBasicOutput
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from Modules.logging import loggingWriteAttributes, loggingBasicOutput
 
 def write_attribute_when_awake( self, key, EPin, EPout, clusterID, manuf_id, manuf_spec, attribute, data_type, data):
     
@@ -42,7 +36,7 @@ def write_attribute_when_awake( self, key, EPin, EPout, clusterID, manuf_id, man
     self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['manuf_spec'] = manuf_spec
     self.ListOfDevices[key]['WriteAttribute'][EPout][clusterID][attribute]['data'] = data
 
-    loggingOutput( self, 'Debug', "write_attribute_when_awake for %s/%s - >%s<" %(key, EPout, data), key)
+    loggingWriteAttributes( self, 'Debug', "write_attribute_when_awake for %s/%s - >%s<" %(key, EPout, data), key)
 
 
 
