@@ -285,11 +285,11 @@ class WebServer(object):
 
         _timestamps_lst = [] # Just the list of Timestamps
         _scan = {}
-        if os.path.isfile( _filename ) :
+        if os.path.isfile( _filename ):
             self.logging( 'Debug', "Opening file: %s" %_filename)
             with open( _filename , 'rt') as handle:
                 for line in handle:
-                    if line[0] != '{' and line[-1] != '}': 
+                    if not (line[0] == '{' or line[-1] == '}'):
                         continue
 
                     entry = json.loads( line, encoding=dict )
@@ -300,9 +300,7 @@ class WebServer(object):
         if verb == 'DELETE':
             if len(parameters) == 0:
                 #os.remove( _filename )
-                action = {}
-                action['Name'] = 'File-Removed'
-                action['FileName'] = _filename
+                action = {'Name': 'File-Removed', 'FileName': _filename}
                 _response['Data'] = json.dumps( action , sort_keys=True)
 
             elif len(parameters) == 1:
@@ -329,15 +327,14 @@ class WebServer(object):
                             handle.write( line )
                         handle.truncate()
 
-                    action = {}
-                    action['Name'] = 'Report %s removed' %timestamp
+                    action = {'Name': 'Report %s removed' % timestamp}
                     _response['Data'] = json.dumps( action , sort_keys=True)
                 else:
                     Domoticz.Error("Removing Nwk-Energy %s not found" %timestamp )
                     _response['Data'] = json.dumps( [] , sort_keys=True)
             return _response
 
-        if verb == 'GET':
+        elif verb == 'GET':
             if len(parameters) == 0:
                 _response['Data'] = json.dumps( _timestamps_lst , sort_keys=True)
 
@@ -383,9 +380,7 @@ class WebServer(object):
             url += '&enabled=true'
             url += '&datatimeout=0'
 
-            info = {}
-            info['Text'] = 'Plugin restarted'
-            info['TimeStamp'] = int(time())
+            info = {'Text': 'Plugin restarted', 'TimeStamp': int(time())}
             _response["Data"] = json.dumps( info, sort_keys=True )
 
             Domoticz.Log("Plugin Restart command : %s" %url)
@@ -416,6 +411,7 @@ class WebServer(object):
         self.logging( 'Debug', "self.statistics: %s" %self.statistics)
         self.logging( 'Debug', " --> Type: %s" %type(self.statistics))
 
+        Statistics['Trend'] = [ ]
         if self.pluginparameters['Mode1'] == 'None':
             Statistics['CRC'] = 1
             Statistics['FrameErrors'] = 1
@@ -428,7 +424,6 @@ class WebServer(object):
             Statistics['APSAck'] = 100
             Statistics['APSNck'] =  0
             Statistics['StartTime'] = int(time()) - 120
-            Statistics['Trend'] = [ ]
         else:
             Statistics['CRC'] =self.statistics._crcErrors
             Statistics['FrameErrors'] =self.statistics._frameErrors
@@ -443,9 +438,8 @@ class WebServer(object):
             Statistics['MaxLoad'] = self.statistics._MaxLoad
             Statistics['StartTime'] =self.statistics._start
 
-            Statistics['Trend'] = []
             _nbitems = len(self.statistics.TrendStats)
-            
+
             minTS = 0
             if  len(self.statistics.TrendStats) == 120:
                 # Identify the smallest TS (we cannot assumed the list is sorted)
@@ -500,21 +494,33 @@ class WebServer(object):
                     if _theme in ( 'PluginTransport'): 
                         continue
 
-                    theme = {}
-                    theme['_Order'] = SETTINGS[_theme]['Order']
-                    theme['_Theme'] = _theme
-                    theme['ListOfSettings'] = []
+                    theme = {
+                        '_Order': SETTINGS[_theme]['Order'],
+                        '_Theme': _theme,
+                        'ListOfSettings': [],
+                    }
+
                     for param in self.pluginconf.pluginConf:
                         if param not in SETTINGS[_theme]['param']: 
                             continue
 
                         if not SETTINGS[_theme]['param'][param]['hidden']:
-                            setting = {}
-                            setting['Name'] = param
-                            setting['default_value'] = SETTINGS[_theme]['param'][param]['default']
-                            setting['DataType'] = SETTINGS[_theme]['param'][param]['type']
-                            setting['restart_need'] = SETTINGS[_theme]['param'][param]['restart']
-                            setting['Advanced'] = SETTINGS[_theme]['param'][param]['Advanced']
+                            setting = {
+                                'Name': param,
+                                'default_value': SETTINGS[_theme]['param'][param][
+                                    'default'
+                                ],
+                                'DataType': SETTINGS[_theme]['param'][param][
+                                    'type'
+                                ],
+                                'restart_need': SETTINGS[_theme]['param'][param][
+                                    'restart'
+                                ],
+                                'Advanced': SETTINGS[_theme]['param'][param][
+                                    'Advanced'
+                                ],
+                            }
+
                             if SETTINGS[_theme]['param'][param]['type'] == 'hex':
                                 Domoticz.Debug("--> %s: %s - %s" %(param, self.pluginconf.pluginConf[param], type(self.pluginconf.pluginConf[param])))
                                 if isinstance( self.pluginconf.pluginConf[param], int):
@@ -522,7 +528,7 @@ class WebServer(object):
                                 else:
                                     setting['current_value'] = '%x' %int(self.pluginconf.pluginConf[param] ,16)
                             else:
-                                setting['current_value'] = self.pluginconf.pluginConf[param] 
+                                setting['current_value'] = self.pluginconf.pluginConf[param]
                             theme['ListOfSettings'].append ( setting )
                     setting_lst.append( theme )
                 _response["Data"] = json.dumps( setting_lst, sort_keys=True )
@@ -637,7 +643,7 @@ class WebServer(object):
                 if upd:
                     # We need to write done the new version of PluginConf
                     self.pluginconf.write_Settings()
-       
+
         return _response
 
     def rest_PermitToJoin( self, verb, data, parameters):
@@ -655,20 +661,21 @@ class WebServer(object):
             duration = self.permitTojoin['Duration']
             timestamp = self.permitTojoin['Starttime']
             info = {}
-            if self.permitTojoin['Duration'] == 255:
+            if duration == 255:
                 info['PermitToJoin'] = 255
-
-            elif self.permitTojoin['Duration'] == 0:
+            elif duration == 0:
                 info['PermitToJoin'] = 0
-
-            elif int(time()) >= ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration']):
+            elif int(time()) >= timestamp + duration:
                 info['PermitToJoin'] = 0
-
             else:
-                rest =  ( self.permitTojoin['Starttime'] + self.permitTojoin['Duration'] ) - int(time())
-                self.logging( 'Debug', "remain %s s" %rest)
-                info['PermitToJoin'] = rest
+                rest = (
+                    self.permitTojoin['Starttime']
+                    + self.permitTojoin['Duration']
+                    - int(time())
+                )
 
+                self.logging('Debug', 'remain %s s' % rest)
+                info['PermitToJoin'] = rest
             _response["Data"] = json.dumps( info, sort_keys=True )
 
         elif verb == 'PUT':
@@ -713,15 +720,17 @@ class WebServer(object):
                     if len(self.Devices[x].DeviceID)  != 16:
                         continue
 
-                    device_info = {}
-                    device_info['_DeviceID'] = self.Devices[x].DeviceID
-                    device_info['Name'] = self.Devices[x].Name
-                    device_info['ID'] = self.Devices[x].ID
-                    device_info['sValue'] = self.Devices[x].sValue
-                    device_info['nValue'] = self.Devices[x].nValue
-                    device_info['SignaleLevel'] = self.Devices[x].SignalLevel
-                    device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
-                    device_info['TimedOut'] = self.Devices[x].TimedOut
+                    device_info = {
+                        '_DeviceID': self.Devices[x].DeviceID,
+                        'Name': self.Devices[x].Name,
+                        'ID': self.Devices[x].ID,
+                        'sValue': self.Devices[x].sValue,
+                        'nValue': self.Devices[x].nValue,
+                        'SignaleLevel': self.Devices[x].SignalLevel,
+                        'BatteryLevel': self.Devices[x].BatteryLevel,
+                        'TimedOut': self.Devices[x].TimedOut,
+                    }
+
                     #device_info['Type'] = self.Devices[x].Type
                     #device_info['SwitchType'] = self.Devices[x].SwitchType
                     device_lst.append( device_info )
@@ -733,15 +742,17 @@ class WebServer(object):
                         continue
 
                     if parameters[0] == self.Devices[x].DeviceID:
-                        _dictDevices = {}
-                        _dictDevices['_DeviceID'] = self.Devices[x].DeviceID
-                        _dictDevices['Name'] = self.Devices[x].Name
-                        _dictDevices['ID'] = self.Devices[x].ID
-                        _dictDevices['sValue'] = self.Devices[x].sValue
-                        _dictDevices['nValue'] = self.Devices[x].nValue
-                        _dictDevices['SignaleLevel'] = self.Devices[x].SignalLevel
-                        _dictDevices['BatteryLevel'] = self.Devices[x].BatteryLevel
-                        _dictDevices['TimedOut'] = self.Devices[x].TimedOut
+                        _dictDevices = {
+                            '_DeviceID': self.Devices[x].DeviceID,
+                            'Name': self.Devices[x].Name,
+                            'ID': self.Devices[x].ID,
+                            'sValue': self.Devices[x].sValue,
+                            'nValue': self.Devices[x].nValue,
+                            'SignaleLevel': self.Devices[x].SignalLevel,
+                            'BatteryLevel': self.Devices[x].BatteryLevel,
+                            'TimedOut': self.Devices[x].TimedOut,
+                        }
+
                         #_dictDevices['Type'] = self.Devices[x].Type
                         #_dictDevices['SwitchType'] = self.Devices[x].SwitchType
                         _response["Data"] = json.dumps( _dictDevices, sort_keys=True )
@@ -756,15 +767,17 @@ class WebServer(object):
                             continue
 
                         if parm == self.Devices[x].DeviceID:
-                            device_info = {}
-                            device_info['_DeviceID'] = self.Devices[x].DeviceID
-                            device_info['Name'] = self.Devices[x].Name
-                            device_info['ID'] = self.Devices[x].ID
-                            device_info['sValue'] = self.Devices[x].sValue
-                            device_info['nValue'] = self.Devices[x].nValue
-                            device_info['SignaleLevel'] = self.Devices[x].SignalLevel
-                            device_info['BatteryLevel'] = self.Devices[x].BatteryLevel
-                            device_info['TimedOut'] = self.Devices[x].TimedOut
+                            device_info = {
+                                '_DeviceID': self.Devices[x].DeviceID,
+                                'Name': self.Devices[x].Name,
+                                'ID': self.Devices[x].ID,
+                                'sValue': self.Devices[x].sValue,
+                                'nValue': self.Devices[x].nValue,
+                                'SignaleLevel': self.Devices[x].SignalLevel,
+                                'BatteryLevel': self.Devices[x].BatteryLevel,
+                                'TimedOut': self.Devices[x].TimedOut,
+                            }
+
                             #device_info['Type'] = self.Devices[x].Type
                             #device_info['SwitchType'] = self.Devices[x].SwitchType
                             device_lst.append( device_info )
@@ -781,16 +794,47 @@ class WebServer(object):
         _response["Data"] = {}
         _response["Status"] = "200 OK"
 
-        if verb == 'GET':
+        if verb == 'DELETE':
+            if len(parameters) == 1:
+                ieee = nwkid = None
+                deviceId = parameters[0]
+                if len( deviceId ) == 4: # Short Network Addr
+                    if deviceId not in self.ListOfDevices:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    nwkid = deviceId
+                    ieee = self.ListOfDevices[deviceId]['IEEE']
+                else:
+                    if deviceId not in self.IEEE2NWK:
+                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" %(deviceId))
+                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
+                        _response['Data'] = json.dumps( [] , sort_keys=True)
+                        return _response
+                    ieee = deviceId
+                    nwkid = self.IEEE2NWK[ ieee ]
+                if nwkid:
+                    del self.ListOfDevices[ nwkid ]
+                if ieee:
+                    del self.IEEE2NWK[ ieee ]
+
+                # for a remove in case device didn't send the leave
+                if 'IEEE' in self.zigatedata and ieee:
+                    # uParrentAddress + uChildAddress (uint64)
+                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + ieee )
+
+                action = {'Name': 'Device %s/%s removed' % (nwkid, ieee)}
+                _response['Data'] = json.dumps( action , sort_keys=True)
+
+        elif verb == 'GET':
             _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
             device_lst = []
             for x in self.ListOfDevices:
                 if x == '0000': 
                     continue
 
-                device = {}
-                device['_NwkId'] = x
-
+                device = {'_NwkId': x}
                 for item in ( 'ZDeviceName', 'IEEE', 'Model', 'MacCapa', 'Status', 'ConsistencyCheck', 'Health', 'RSSI', 'Battery'):
                     if item in self.ListOfDevices[x]:
                         if item == 'MacCapa':
@@ -812,20 +856,26 @@ class WebServer(object):
                                 device['MacCapa'].append("Battery")
                             self.logging( 'Debug', "decoded MacCapa from: %s to %s" %(self.ListOfDevices[x][item], str(device['MacCapa'])))
                         else:
-                            if self.ListOfDevices[x][item] != {}:
-                                device[item] = self.ListOfDevices[x][item]
-                            else:
+                            if self.ListOfDevices[x][item] == {}:
                                 device[item] = ''
+                            else:
+                                device[item] = self.ListOfDevices[x][item]
                     else:
                         device[item] = ''
 
                 device['WidgetList'] = []
                 for ep in self.ListOfDevices[x]['Ep']:
-                    if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep] or 'ClusterType' in self.ListOfDevices[x]:
-                        if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
-                            clusterType= self.ListOfDevices[x]['Ep'][ep]['ClusterType']
-                        else:
-                            clusterType = self.ListOfDevices[x]['ClusterType']
+                    if 'ClusterType' in self.ListOfDevices[x]['Ep'][ep]:
+                        clusterType= self.ListOfDevices[x]['Ep'][ep]['ClusterType']
+                        for widgetID in clusterType:
+                            for widget in self.Devices:
+                                if self.Devices[widget].ID == int(widgetID):
+                                    self.logging( 'Debug', "Widget Name: %s %s" %(widgetID, self.Devices[widget].Name))
+                                    if self.Devices[widget].Name not in device['WidgetList']:
+                                        device['WidgetList'].append( self.Devices[widget].Name )
+
+                    elif 'ClusterType' in self.ListOfDevices[x]:
+                        clusterType = self.ListOfDevices[x]['ClusterType']
                         for widgetID in clusterType:
                             for widget in self.Devices:
                                 if self.Devices[widget].ID == int(widgetID):
@@ -854,40 +904,6 @@ class WebServer(object):
                                     %(self.ListOfDevices[dev]['ZDeviceName'], self.ListOfDevices[dev]['IEEE'], dev))
                 else:
                     Domoticz.Error("wrong data received: %s" %data)
-
-        elif verb == 'DELETE':
-            if len(parameters) == 1:
-                ieee = nwkid = None
-                deviceId = parameters[0]
-                if len( deviceId ) == 4: # Short Network Addr
-                    if deviceId not in self.ListOfDevices:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown LOD" %(deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
-                        _response['Data'] = json.dumps( [] , sort_keys=True)
-                        return _response
-                    nwkid = deviceId
-                    ieee = self.ListOfDevices[deviceId]['IEEE']
-                else:
-                    if deviceId not in self.IEEE2NWK:
-                        Domoticz.Error("rest_zDevice - Device: %s to be DELETED unknown in IEEE22NWK" %(deviceId))
-                        Domoticz.Error("Device %s to be removed unknown" %deviceId )
-                        _response['Data'] = json.dumps( [] , sort_keys=True)
-                        return _response
-                    ieee = deviceId
-                    nwkid = self.IEEE2NWK[ ieee ]
-                if nwkid:
-                    del self.ListOfDevices[ nwkid ]
-                if ieee:
-                    del self.IEEE2NWK[ ieee ]
-                    
-                # for a remove in case device didn't send the leave
-                if 'IEEE' in self.zigatedata and ieee:
-                    # uParrentAddress + uChildAddress (uint64)
-                    sendZigateCmd(self, "0026", self.zigatedata['IEEE'] + ieee )
-
-                action = {}
-                action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
-                _response['Data'] = json.dumps( action , sort_keys=True)
 
         return _response
 
@@ -921,15 +937,14 @@ class WebServer(object):
                         return _response
                     ieee = deviceId
                     nwkid = self.IEEE2NWK[ ieee ]
-                
+
                 del self.ListOfDevice[ nwkid ]
                 del self.IEEE2NWK[ ieee ]
-                action = {}
-                action['Name'] = 'Device %s/%s removed' %(nwkid, ieee)
+                action = {'Name': 'Device %s/%s removed' % (nwkid, ieee)}
                 _response['Data'] = json.dumps( action , sort_keys=True)
             return _response
 
-        if verb == 'GET':
+        elif verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
             if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
@@ -939,8 +954,7 @@ class WebServer(object):
                 for item in self.ListOfDevices:
                     if item == '0000': 
                         continue
-                    device = {}
-                    device['_NwkId'] = item
+                    device = {'_NwkId': item}
                     # Main Attributes
                     for attribut in ( 'ZDeviceName', 'ConsistencyCheck', 'Stamp', 'Health', 'Status', 'Battery', 'RSSI', 'Model', 'IEEE', 'ProfileID', 'ZDeviceID', 'Manufacturer', 'DeviceType', 'LogicalType', 'PowerSource', 'ReceiveOnIdle', 'App Version', 'Stack Version', 'HW Version' ):
 
@@ -961,17 +975,17 @@ class WebServer(object):
 
                     # Last Seen Information
                     device['LastSeen'] = ''
-                    if 'Stamp' in self.ListOfDevices[item]:
-                        if 'LastSeen' in self.ListOfDevices[item]['Stamp']:
-                            device['LastSeen'] = self.ListOfDevices[item]['Stamp']['LastSeen']
+                    if (
+                        'Stamp' in self.ListOfDevices[item]
+                        and 'LastSeen' in self.ListOfDevices[item]['Stamp']
+                    ):
+                        device['LastSeen'] = self.ListOfDevices[item]['Stamp']['LastSeen']
 
                     # ClusterType
                     _widget_lst = []
                     if 'ClusterType' in self.ListOfDevices[item]:
                         for widgetId in self.ListOfDevices[item]['ClusterType']:
-                            widget = {}
-                            widget['_WidgetID'] = widgetId
-                            widget['WidgetName'] = ''
+                            widget = {'_WidgetID': widgetId, 'WidgetName': ''}
                             for x in self.Devices:
                                 if self.Devices[x].ID == int(widgetId):
                                     widget['WidgetName'] = self.Devices[x].Name
@@ -984,22 +998,14 @@ class WebServer(object):
                     ep_lst = []
                     if 'Ep' in self.ListOfDevices[item]:
                         for epId in self.ListOfDevices[item]['Ep']:
-                            _ep = {}
-                            _ep['Ep'] = epId
-                            _ep['ClusterList'] = []
+                            _ep = {'Ep': epId, 'ClusterList': []}
                             for cluster in self.ListOfDevices[item]['Ep'][epId]:
                                 if cluster == 'ColorMode': 
                                     continue
 
-                                if cluster == 'Type':
-                                    device['Type'] = self.ListOfDevices[item]['Ep'][epId]['Type']
-                                    continue
-
                                 if cluster == 'ClusterType':
                                     for widgetId in self.ListOfDevices[item]['Ep'][epId]['ClusterType']:
-                                        widget = {}
-                                        widget['_WidgetID'] = widgetId
-                                        widget['WidgetName'] = ''
+                                        widget = {'_WidgetID': widgetId, 'WidgetName': ''}
                                         for x in self.Devices:
                                             if self.Devices[x].ID == int(widgetId):
                                                 widget['WidgetName'] = self.Devices[x].Name
@@ -1007,6 +1013,10 @@ class WebServer(object):
 
                                         widget['WidgetType'] = self.ListOfDevices[item]['Ep'][epId]['ClusterType'][widgetId]
                                         _widget_lst.append( widget )
+                                    continue
+
+                                elif cluster == 'Type':
+                                    device['Type'] = self.ListOfDevices[item]['Ep'][epId]['Type']
                                     continue
 
                                 _cluster = {}
@@ -1028,9 +1038,7 @@ class WebServer(object):
                             timestamp = lastCmd[0]
                             cmd = lastCmd[1]
                             #payload = lastCmd[2]
-                            _cmd = {}
-                            _cmd['CmdCode'] = cmd
-                            _cmd['TimeStamps'] =  timestamp
+                            _cmd = {'CmdCode': cmd, 'TimeStamps': timestamp}
                             lastcmd_lst.append( _cmd )
                     device['LastCmds'] = lastcmd_lst
                     zdev_lst.append( device )
