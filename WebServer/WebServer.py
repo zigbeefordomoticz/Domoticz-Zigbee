@@ -118,7 +118,6 @@ class WebServer(object):
             self.logging( 'Debug', "WebServer onMessage : %s" %Data)
             #DumpHTTPResponseToLog(Data)
 
-
             headerCode = "200 OK"
             if (not 'Verb' in Data):
                 Domoticz.Error("Invalid web request received, no Verb present")
