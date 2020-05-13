@@ -225,7 +225,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
         # Extract NwkId from Device Unit
         IEEE = Devices[Unit].DeviceID
         if Devices[Unit].TimedOut:
-            timedOutDevice( self, Devices, Unit=Unit, TO=0)
+            timedOutDevice( self, Devices, Unit=Unit, MarkTimedOut=0)
         else:
             Devices[Unit].Touch()
         if NwkId is None and 'IEEE' in self.IEEE2NWK:
@@ -262,7 +262,7 @@ def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
             if Devices[x].DeviceID == _IEEE:
                 loggingWidget( self, "Debug",  "Touch unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
                 if Devices[x].TimedOut:
-                    timedOutDevice( self, Devices, Unit=x, TO=0)
+                    timedOutDevice( self, Devices, Unit=x, MarkTimedOut=0)
                 else:
                     Devices[x].Touch()
 
