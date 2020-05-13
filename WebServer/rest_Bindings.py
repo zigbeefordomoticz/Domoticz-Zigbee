@@ -2,7 +2,7 @@
 import Domoticz
 
 from Modules.bindings import webBind, webUnBind
-from WebServer.tools import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse
 
 def rest_bindLSTcluster( self, verb, data, parameters):
     _response = setupHeadersResponse()

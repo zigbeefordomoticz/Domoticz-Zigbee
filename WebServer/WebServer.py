@@ -33,6 +33,8 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
+from WebServer.headerResponse import setupHeadersResponse
+
 MIMETYPES = { 
         "gif": "image/gif" ,
         "htm": "text/html" ,
@@ -61,22 +63,17 @@ MIMETYPES = {
 
 class WebServer(object):
 
-    from WebServer.logging import logging
     from WebServer.com import startWebServer, onStop, onConnect, onDisconnect
-
+    from WebServer.dispatcher import do_rest  
+    from WebServer.logging import logging
     from WebServer.onMessage import onMessage
-    from WebServer.sendresponse import sendResponse
-
-    from WebServer.dispatcher import do_rest
-
-    from WebServer.tools import setupHeadersResponse
-
     from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
-    from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
     from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
     from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev
     from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
-
+    from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
+    from WebServer.sendresponse import sendResponse
+    from WebServer.tools import keepConnectionAlive, DumpHTTPResponseToLog          
 
     hearbeats = 0 
 

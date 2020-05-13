@@ -2,7 +2,7 @@
 
 import Domoticz
 
-from WebServer.tools import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse
 
 
 def rest_req_nwk_inter( self, verb, data, parameters):

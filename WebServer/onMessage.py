@@ -12,7 +12,10 @@ import os.path
 import mimetypes
 from datetime import datetime
 
-from WebServer.tools import setupHeadersResponse, DumpHTTPResponseToLog, MAX_KB_TO_SEND
+from WebServer.headerResponse import setupHeadersResponse
+
+from WebServer.tools import DumpHTTPResponseToLog, MAX_KB_TO_SEND
+
 import mimetypes
 
 def onMessage( self, Connection, Data ):

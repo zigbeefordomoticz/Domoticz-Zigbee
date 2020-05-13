@@ -3,7 +3,7 @@
 
 import Domoticz
 
-from WebServer.tools import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse
 import json
 
 
