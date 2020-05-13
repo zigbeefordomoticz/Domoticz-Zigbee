@@ -33,6 +33,9 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
+from WebServer.startWebServer import startWebServer
+
+
 MAX_KB_TO_SEND = 8 * 1024   # Chunk size
 DEBUG_HTTP = False
 
@@ -162,20 +165,6 @@ class WebServer(object):
             self._loggingStatus( message)
         return
 
-
-    def  startWebServer( self ):
-
-        #self.httpPort = '9440'
-        self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
-        self.httpServerConn.Listen()
-        self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpPort)
-
-        #self.httpsPort = '9443'
-        #self.httpsServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTPS", Port=self.httpsPort)
-        #self.httpsServerConn.Listen()
-        #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)
-
-
     def onConnect(self, Connection, Status, Description):
 
         self.logging( 'Debug', "Connection: %s, description: %s" %(Connection, Description))
@@ -232,7 +221,6 @@ class WebServer(object):
         for connection in self.httpsServerConns:
             self.logging( 'Log', "Closing %s" %connection)
             self.httpServerConns[Connection.Name].close()
-
 
     def onMessage( self, Connection, Data ):
 
@@ -359,7 +347,6 @@ class WebServer(object):
                     self.sendResponse( Connection, _response, AcceptEncoding = Data['Headers']['Accept-Encoding']  )
                 else:
                     self.sendResponse( Connection, _response )
-
 
     def sendResponse( self, Connection, Response, AcceptEncoding=None ):
 
@@ -687,7 +674,6 @@ class WebServer(object):
 
         return _response
 
-
     def rest_reset_zigate( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
@@ -732,7 +718,6 @@ class WebServer(object):
 
                 _response["Data"] = json.dumps( fake_zigate , sort_keys=True )
         return _response
-
 
     def rest_domoticz_env( self, verb, data, parameters):
 
@@ -1099,8 +1084,6 @@ class WebServer(object):
         if verb == 'GET':
             _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
         return _response
-
-
 
     def rest_plugin_stat( self, verb, data, parameters):
 
@@ -1844,7 +1827,6 @@ class WebServer(object):
                 _response["Data"] = json.dumps( zdev_lst, sort_keys=True )
         return _response
 
-
     def rest_zDevice_raw( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
@@ -2149,7 +2131,6 @@ class WebServer(object):
             Domoticz.Error("Must have 1 argument. %s" %parameters)
         return _response
 
-
     def rest_binding( self, verb, data, parameters):
         _response = setupHeadersResponse()
         if self.pluginconf.pluginConf['enableKeepalive']:
@@ -2416,7 +2397,6 @@ class WebServer(object):
 
                 _response["Data"] = json.dumps( dev_capabilities )
                 return _response
-
 
     def rest_new_hrdwr( self, verb, data, parameters):
 
