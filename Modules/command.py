@@ -119,8 +119,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if DeviceType in SWITCH_LVL_MATRIX:
         if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
             forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+
     if DeviceType not in ACTIONATORS:
-        Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, ClusterTypeList ))
+        Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
+            %( Devices[Unit].Name, ClusterTypeList, DeviceType ))
         return
     
     profalux = False
