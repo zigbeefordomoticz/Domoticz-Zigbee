@@ -113,7 +113,7 @@ class WebServer(object):
         self.hardwareID = hardwareID
         mimetypes.init()
         # Start the WebServer
-        startWebServer( self)
+        self.startWebServer( )
         
     def _loggingStatus( self, message):
 

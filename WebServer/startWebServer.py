@@ -60,6 +60,7 @@ def extonStop( self ):
     for connection in self.httpServerConns:
         self.logging( 'Log', "Closing %s" %connection)
         self.httpServerConns[Connection.Name].close()
+        
     for connection in self.httpsServerConns:
         self.logging( 'Log', "Closing %s" %connection)
         self.httpServerConns[Connection.Name].close()
