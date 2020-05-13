@@ -582,7 +582,7 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
 
             elif WidgetType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
                 if Devices[DeviceUnit].nValue != 0 or Devices[DeviceUnit].sValue != 'Off':
-                    nValue, sValue = getDimmerLevelOfColor( self, ClusterType, WidgetType, value)
+                    nValue, sValue = getDimmerLevelOfColor( self,  value)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
             elif WidgetType == 'LegrandSelector':
