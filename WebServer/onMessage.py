@@ -1,9 +1,12 @@
 
-
+import Domoticz
 
 from urllib.parse import urlparse
 from time import gmtime, strftime
 import os
+
+from WebServer.tools import setupHeadersResponse, DumpHTTPResponseToLog, MAX_KB_TO_SEND
+import mimetypes
 
 def onMessage( self, Connection, Data ):
 

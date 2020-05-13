@@ -35,8 +35,8 @@ from Classes.DomoticzDB import DomoticzDB_Preferences
 
 
 
-MAX_KB_TO_SEND = 8 * 1024   # Chunk size
-DEBUG_HTTP = False
+
+
 
 MIMETYPES = { 
         "gif": "image/gif" ,
@@ -67,12 +67,17 @@ MIMETYPES = {
 
 
 class WebServer(object):
-    hearbeats = 0 
 
-    from WebServer.WebServersession import startWebServer, onStop, onConnect, onDisconnect
     from WebServer.WebServerLogging import logging
-    from WebServer.onMessage import onMessage
+    from WebServer.WebServersession import startWebServer, onStop, onConnect, onDisconnect
 
+    from WebServer.onMessage import onMessage
+    from WebServer.sendresponse import sendResponse
+
+    from WebServer.restDispatch import do_rest
+    from WebServer.tools import setupHeadersResponse
+
+    hearbeats = 0 
     def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle):
 
         self.httpServerConn = None
@@ -114,174 +119,81 @@ class WebServer(object):
         # Start the WebServer
         self.startWebServer( )                    
 
-    def sendResponse( self, Connection, Response, AcceptEncoding=None ):
 
-        if 'Data' not in Response:
-            DumpHTTPResponseToLog( Response )
-            Connection.Send( Response )
-            if not self.pluginconf.pluginConf['enableKeepalive']:
-                Connection.Disconnect()
-            return
 
-        if Response['Data'] is None:
-            DumpHTTPResponseToLog( Response )
-            Connection.Send( Response )
-            if not self.pluginconf.pluginConf['enableKeepalive']:
-                Connection.Disconnect()
-            return
 
-        self.logging( 'Debug', "Sending Response to : %s" %(Connection.Name))
 
-        # Compression
-        allowgzip = self.pluginconf.pluginConf['enableGzip']
-        allowdeflate = self.pluginconf.pluginConf['enableDeflate']
 
-        if (allowgzip or allowdeflate ) and 'Data' in Response and AcceptEncoding:
-            self.logging( 'Debug', "sendResponse - Accept-Encoding: %s, Chunk: %s, Deflate: %s , Gzip: %s" %(AcceptEncoding, self.pluginconf.pluginConf['enableChunk'], allowdeflate, allowgzip))
-            if len(Response["Data"]) > MAX_KB_TO_SEND:
-                orig_size = len(Response["Data"])
-                if allowdeflate and AcceptEncoding.find('deflate') != -1:
-                    self.logging( 'Debug', "Compressing - deflate")
-                    zlib_compress = zlib.compressobj( 9, zlib.DEFLATED, -zlib.MAX_WBITS, zlib.DEF_MEM_LEVEL, 2)
-                    deflated = zlib_compress.compress(Response["Data"])
-                    deflated += zlib_compress.flush()
-                    Response["Headers"]['Content-Encoding'] = 'deflate'
-                    Response["Data"] = deflated
 
-                elif allowgzip and AcceptEncoding.find('gzip') != -1:
-                    self.logging( 'Debug', "Compressing - gzip")
-                    Response["Data"] = gzip.compress( Response["Data"] )
-                    Response["Headers"]['Content-Encoding'] = 'gzip'
 
-                self.logging( 'Debug', "Compression from %s to %s (%s %%)" %( orig_size, len(Response["Data"]), int(100-(len(Response["Data"])/orig_size)*100)))
 
-        # Chunking, Follow the Domoticz Python Plugin Framework
 
-        if self.pluginconf.pluginConf['enableChunk'] and len(Response['Data']) > MAX_KB_TO_SEND:
-            idx = 0
-            HTTPchunk = {}
-            HTTPchunk['Status'] = Response['Status']
-            HTTPchunk['Chunk'] = True
-            HTTPchunk['Headers'] = {}
-            HTTPchunk['Headers'] = dict(Response['Headers'])
-            HTTPchunk['Data'] = Response['Data'][0:MAX_KB_TO_SEND]
-            self.logging( 'Debug', "Sending: %s out of %s" %(idx, len((Response['Data']))))
 
-            # Firs Chunk
-            DumpHTTPResponseToLog( HTTPchunk )
-            Connection.Send( HTTPchunk )
 
-            idx = MAX_KB_TO_SEND
-            while idx != -1:
-                tosend={}
-                tosend['Chunk'] = True
-                if idx + MAX_KB_TO_SEND < len(Response['Data']):
-                    # we have to send one chunk and then continue
-                    tosend['Data'] = Response['Data'][idx:idx+MAX_KB_TO_SEND]        
-                    idx += MAX_KB_TO_SEND
-                else:
-                    # Last Chunk with Data
-                    tosend['Data'] = Response['Data'][idx:]        
-                    idx = -1
 
-                self.logging( 'Debug', "Sending Chunk: %s out of %s" %(idx, len((Response['Data']))))
-                Connection.Send( tosend )
 
-            # Closing Chunk
-            tosend={}
-            tosend['Chunk'] = True
-            Connection.Send( tosend )
-            if not self.pluginconf.pluginConf['enableKeepalive']:
-                Connection.Disconnect()
-        else:
-            #Response['Headers']['Content-Length'] = len( Response['Data'] )
-            DumpHTTPResponseToLog( Response )
-            Connection.Send( Response )
-            if not self.pluginconf.pluginConf['enableKeepalive']:
-                Connection.Disconnect()
 
-    def keepConnectionAlive( self ):
 
-        self.heartbeats += 1
-        return
 
-    def do_rest( self, Connection, verb, data, version, command, parameters):
 
-        REST_COMMANDS = { 
-                'unbinding':     {'Name':'unbinding',     'Verbs':{'PUT'}, 'function':self.rest_unbinding},
-                'binding':       {'Name':'binding',       'Verbs':{'PUT'}, 'function':self.rest_binding},
-                'bindLSTcluster':{'Name':'bindLSTcluster','Verbs':{'GET'}, 'function':self.rest_bindLSTcluster},
-                'bindLSTdevice': {'Name':'bindLSTdevice', 'Verbs':{'GET'}, 'function':self.rest_bindLSTdevice},
-                'new-hrdwr':     {'Name':'new-hrdwr',     'Verbs':{'GET'}, 'function':self.rest_new_hrdwr},
-                'rcv-nw-hrdwr':  {'Name':'rcv-nw-hrdwr',  'Verbs':{'GET'}, 'function':self.rest_rcv_nw_hrdwr},
-                'device':        {'Name':'device',        'Verbs':{'GET'}, 'function':self.rest_Device},
-                'dev-cap':       {'Name':'dev-cap',       'Verbs':{'GET'}, 'function':self.rest_dev_capabilities},
-                'dev-command':   {'Name':'dev-command',       'Verbs':{'PUT'}, 'function':self.rest_dev_command},
-                'raw-command':   {'Name':'raw-command',       'Verbs':{'PUT'}, 'function':self.rest_raw_command},
-                'domoticz-env':  {'Name':'domoticz-env',  'Verbs':{'GET'}, 'function':self.rest_domoticz_env},
-                'plugin-health': {'Name':'plugin-health', 'Verbs':{'GET'}, 'function':self.rest_plugin_health},
-                'nwk-stat':      {'Name':'nwk_stat',      'Verbs':{'GET','DELETE'}, 'function':self.rest_nwk_stat},
-                'permit-to-join':{'Name':'permit-to-join','Verbs':{'GET','PUT'}, 'function':self.rest_PermitToJoin},
-                'plugin':        {'Name':'plugin',        'Verbs':{'GET'}, 'function':self.rest_PluginEnv},
-                'plugin-stat':   {'Name':'plugin-stat',   'Verbs':{'GET'}, 'function':self.rest_plugin_stat},
-                'plugin-restart':   {'Name':'plugin-restart',   'Verbs':{'GET'}, 'function':self.rest_plugin_restart},
-                'rescan-groups': {'Name':'rescan-groups', 'Verbs':{'GET'}, 'function':self.rest_rescan_group},
-                'restart-needed':{'Name':'restart-needed','Verbs':{'GET'}, 'function':self.rest_restart_needed},
-                'req-nwk-inter': {'Name':'req-nwk-inter', 'Verbs':{'GET'}, 'function':self.rest_req_nwk_inter},
-                'req-nwk-full':  {'Name':'req-nwk-full',  'Verbs':{'GET'}, 'function':self.rest_req_nwk_full},
-                'req-topologie': {'Name':'req-topologie', 'Verbs':{'GET'}, 'function':self.rest_req_topologie},
-                'sw-reset-zigate':  {'Name':'sw-reset-zigate',  'Verbs':{'GET'}, 'function':self.rest_reset_zigate},
-                'setting':       {'Name':'setting',       'Verbs':{'GET','PUT'}, 'function':self.rest_Settings},
-                'topologie':     {'Name':'topologie',     'Verbs':{'GET','DELETE'}, 'function':self.rest_netTopologie},
-                'zdevice':       {'Name':'zdevice',       'Verbs':{'GET','DELETE'}, 'function':self.rest_zDevice},
-                'zdevice-name':  {'Name':'zdevice-name',  'Verbs':{'GET','PUT','DELETE'}, 'function':self.rest_zDevice_name},
-                'zdevice-raw':   {'Name':'zdevice-raw',  'Verbs':{'GET','PUT'}, 'function':self.rest_zDevice_raw},
-                'zgroup':        {'Name':'device',        'Verbs':{'GET','PUT'}, 'function':self.rest_zGroup},
-                'zgroup-list-available-device':   
-                                 {'Name':'zgroup-list-available-devic',        'Verbs':{'GET'}, 'function':self.rest_zGroup_lst_avlble_dev},
-                'zigate':        {'Name':'zigate',        'Verbs':{'GET'}, 'function':self.rest_zigate},
-                'zigate-erase-PDM':{'Name':'zigate-erase-PDM', 'Verbs':{'GET'}, 'function':self.rest_zigate_erase_PDM}
-                }
 
-        self.logging( 'Debug', "do_rest - Verb: %s, Command: %s, Param: %s" %(verb, command, parameters))
 
-        HTTPresponse = {}
 
-        if command in REST_COMMANDS:
-            if verb in REST_COMMANDS[command]['Verbs']:
-                HTTPresponse = setupHeadersResponse()
-                if self.pluginconf.pluginConf['enableKeepalive']:
-                    HTTPresponse["Headers"]["Connection"] = "Keep-alive"
-                else:
-                    HTTPresponse["Headers"]["Connection"] = "Close"
-                HTTPresponse["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-                HTTPresponse["Headers"]["Pragma"] = "no-cache"
-                HTTPresponse["Headers"]["Expires"] = "0"
-                HTTPresponse["Headers"]["Accept"] = "*/*"
-                if version == '1':
-                    HTTPresponse = REST_COMMANDS[command]['function']( verb, data, parameters)
-                elif version == '2':
-                    HTTPresponse = REST_COMMANDS[command]['functionv2']( verb, data, parameters)
 
-        self.logging( 'Debug', "==> return HTTPresponse: %s" %(HTTPresponse))
-        if HTTPresponse == {} or HTTPresponse is None:
-            # We reach here due to failure !
-            HTTPresponse = setupHeadersResponse()
-            if self.pluginconf.pluginConf['enableKeepalive']:
-                HTTPresponse["Headers"]["Connection"] = "Keep-alive"
-            else:
-                HTTPresponse["Headers"]["Connection"] = "Close"
-            if not self.pluginconf.pluginConf['enableCache']:
-                HTTPresponse["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-                HTTPresponse["Headers"]["Pragma"] = "no-cache"
-                HTTPresponse["Headers"]["Expires"] = "0"
-                HTTPresponse["Headers"]["Accept"] = "*/*"
-            HTTPresponse["Status"] = "400 BAD REQUEST"
-            HTTPresponse["Data"] = 'Unknown REST command: %s' %command
-            HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"
 
-        self.logging( 'Debug', "==> sending HTTPresponse: %s to %s" %(HTTPresponse, Connection))
-        self.sendResponse( Connection, HTTPresponse )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def rest_plugin_health( self, verb, data, parameters):
 
@@ -310,7 +222,25 @@ class WebServer(object):
 
             _response["Data"] = json.dumps( health, sort_keys=True )
 
+
         return _response
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def rest_req_nwk_inter( self, verb, data, parameters):
 
@@ -2382,45 +2312,43 @@ class WebServer(object):
             _response["Data"] = json.dumps( data )
             return _response
 
-def DumpHTTPResponseToLog(httpDict):
 
-    if not DEBUG_HTTP:
-        return
-    if isinstance(httpDict, dict):
-        self.logging( 'Log', "HTTP Details ("+str(len(httpDict))+"):")
-        for x in httpDict:
-            if isinstance(httpDict[x], dict):
-                self.logging( 'Log', "--->'"+x+" ("+str(len(httpDict[x]))+"):")
-                for y in httpDict[x]:
-                    self.logging( 'Log', "------->'" + y + "':'" + str(httpDict[x][y]) + "'")
-            else:
-                if x == 'Data':
-                    self.logging( 'Log', "--->'%s':'%.40s'" %(x, str(httpDict[x])))
-                else:
-                    self.logging( 'Log', "--->'" + x + "':'" + str(httpDict[x]) + "'")
 
-    def setupHeadersResponse( cookie = None ):
-    
-        _response = {}
-        _response["Headers"] = {}
-        _response["Headers"]["Server"] = "Domoticz"
-        _response["Headers"]["User-Agent"] = "Plugin-Zigate/v1"
-    
-        _response["Headers"]['Access-Control-Allow-Headers'] = 'Cache-Control, Pragma, Origin, Authorization,   Content-Type, X-Requested-With'
-        _response["Headers"]['Access-Control-Allow-Methods'] = 'GET, POST, DELETE'
-        _response["Headers"]['Access-Control-Allow-Origin'] = '*'
-    
-        _response["Headers"]["Referrer-Policy"] = "no-referrer"
-    
-        if cookie:
-            _response["Headers"]["Cookie"] = cookie
-    
-        #_response["Headers"]["Accept-Ranges"] = "bytes"
-        # allow users of a web application to include images from any origin in their own conten
-        # and all scripts only to a specific server that hosts trusted code.
-        #_response["Headers"]["Content-Security-Policy"] = "default-src 'self'; img-src *"
-        #_response["Headers"]["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval'"
-    
-        return _response
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
