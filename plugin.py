@@ -98,7 +98,7 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
-from Classes.WebServer import WebServer
+from WebServer.WebServer import WebServer
 
 from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
@@ -866,8 +866,6 @@ def zigateInit_Phase3( self ):
 
     # Starting WebServer
     if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
-        from Classes.WebServer import WebServer
-
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
             Domoticz.Log("self.VersionNewFashion: %s" %self.VersionNewFashion)
             Domoticz.Log("self.DomoticzMajor    : %s" %self.DomoticzMajor)
