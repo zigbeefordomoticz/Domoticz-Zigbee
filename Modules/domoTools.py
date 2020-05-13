@@ -29,28 +29,25 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     if DeviceUnit:
         WidgetId = str(Devices[ DeviceUnit].ID)
 
-    if 'ClusterType' in self.ListOfDevices[NwkId]:
-        if self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {}:
-            # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
-            # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-            loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
-            if DeviceUnit:
-                if WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
-                    WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
-                    ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
-                    return ClusterTypeList
+    if ( 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {} ):
+        # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
+        # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
+        loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
+        if DeviceUnit and WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
+            WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+            ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+            return ClusterTypeList
 
-            for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
-                WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
-                ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+        for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
+            WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+            ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
 
     for iterEp in self.ListOfDevices[NwkId]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
-            if DeviceUnit:
-                if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
-                   WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId] 
-                   ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
-                   return ClusterTypeList
+            if ( DeviceUnit and WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'] ):
+                WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId] 
+                ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
+                return ClusterTypeList
 
             for WidgetId  in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
                 WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId]
@@ -89,14 +86,11 @@ def WidgetForDeviceId( self, NwkId, DeviceId):
     
     WidgetType = ''
     for tmpEp in self.ListOfDevices[NwkId]['Ep']:
-        if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][tmpEp]:
-            if str(DeviceId) in self.ListOfDevices[NwkId]['Ep'][tmpEp]['ClusterType']:
-                WidgetType = self.ListOfDevices[NwkId]['Ep'][tmpEp]['ClusterType'][str(DeviceId)]
+        if ( 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][tmpEp] and str(DeviceId) in self.ListOfDevices[NwkId]['Ep'][tmpEp]['ClusterType'] ):
+            WidgetType = self.ListOfDevices[NwkId]['Ep'][tmpEp]['ClusterType'][str(DeviceId)]
 
-    if WidgetType == '':
-        if 'ClusterType' in self.ListOfDevices[NwkId]:
-            if str(DeviceId) in self.ListOfDevices[NwkId]['ClusterType']:
-                WidgetType = self.ListOfDevices[NwkId]['ClusterType'][str(DeviceId)]
+    if ( WidgetType == '' and 'ClusterType' in self.ListOfDevices[NwkId] and str(DeviceId) in self.ListOfDevices[NwkId]['ClusterType'] ):
+        WidgetType = self.ListOfDevices[NwkId]['ClusterType'][str(DeviceId)]
 
     return WidgetType
 
@@ -182,16 +176,17 @@ def UpdateDevice_v2(self, Devices, Unit, nValue, sValue, BatteryLvl, SignalLvl, 
         else:
             Devices[Unit].Update(nValue=int(nValue), sValue=str(sValue),               SignalLevel=int(SignalLvl), BatteryLevel=int(BatteryLvl), TimedOut=0)
 
-def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
+def timedOutDevice( self, Devices, Unit=None, NwkId=None, MarkTimedOut=True):
  
     _Unit = _nValue = _sValue = None
+    
     if Unit:
         _nValue = Devices[Unit].nValue
         _sValue = Devices[Unit].sValue
         _Unit = Unit
-        if TO and not Devices[_Unit].TimedOut:
+        if MarkTimedOut and not Devices[_Unit].TimedOut:
             Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
-        elif not TO and Devices[_Unit].TimedOut:
+        elif not MarkTimedOut and Devices[_Unit].TimedOut:
             Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
 
     elif NwkId:
@@ -200,23 +195,20 @@ def timedOutDevice( self, Devices, Unit=None, NwkId=None, TO=1):
         if 'IEEE' not in self.ListOfDevices[NwkId]:
             return
         _IEEE = self.ListOfDevices[NwkId]['IEEE']
-        if TO:
-            self.ListOfDevices[NwkId]['Health'] = 'TimedOut'
-        else:
-            self.ListOfDevices[NwkId]['Health'] = 'Live'
-
+        self.ListOfDevices[NwkId]['Health'] = 'TimedOut' if MarkTimedOut else 'Live'
         for x in Devices:
             if Devices[x].DeviceID == _IEEE:
                 _nValue = Devices[x].nValue
                 _sValue = Devices[x].sValue
                 _Unit = x
                 if Devices[_Unit].TimedOut:
-                    if not TO:
-                        loggingWidget( self, "Debug",  "reset timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
-                        Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
+                    if MarkTimedOut:
+                        continue
+                    loggingWidget( self, 'Debug', 'reset timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
+                    Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=0)
                 else:
-                    if TO:
-                        loggingWidget( self, "Debug",  "timedOutDevice unit %s nwkid: %s " %( Devices[x].Name, NwkId ), NwkId)
+                    if MarkTimedOut:
+                        loggingWidget( self, 'Debug', 'timedOutDevice unit %s nwkid: %s ' % (Devices[_Unit].Name, NwkId), NwkId, )
                         Devices[_Unit].Update(nValue=_nValue, sValue=_sValue, TimedOut=1)
 
 def lastSeenUpdate( self, Devices, Unit=None, NwkId=None):
