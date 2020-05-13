@@ -1,4 +1,6 @@
 
+import Domoticz
+
 from Modules.bindings import webBind, webUnBind
 from WebServer.tools import setupHeadersResponse
 

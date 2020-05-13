@@ -1,5 +1,7 @@
 
 
+import Domoticz
+
 from WebServer.tools import setupHeadersResponse
 
 
