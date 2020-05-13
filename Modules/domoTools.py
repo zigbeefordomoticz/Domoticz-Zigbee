@@ -28,30 +28,34 @@ def RetreiveWidgetTypeList( self, Devices, NwkId, DeviceUnit = None):
     ClusterTypeList = []
     if DeviceUnit:
         WidgetId = str(Devices[ DeviceUnit].ID)
+        loggingWidget( self, 'Debug', "------> Looking for %s" %WidgetId, NwkId)
 
     if ( 'ClusterType' in self.ListOfDevices[NwkId] and self.ListOfDevices[NwkId]['ClusterType'] != '' and self.ListOfDevices[NwkId]['ClusterType'] != {} ):
         # we are on the old fashion with Type at the global level like for the ( Xiaomi lumi.remote.n286acn01 )
         # In that case we don't need a match with the incoming Ep as the correct one is the Widget EndPoint
-        loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
-        if DeviceUnit and WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
-            WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
-            ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
-            return ClusterTypeList
-
-        for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
-            WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
-            ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+        loggingWidget( self, 'Debug', "------> OldFashion 'ClusterType': %s" %self.ListOfDevices[NwkId]['ClusterType'], NwkId)
+        if DeviceUnit:
+            if WidgetId in self.ListOfDevices[NwkId]['ClusterType']:
+                WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+                ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
+                return ClusterTypeList
+        else:
+            for WidgetId  in self.ListOfDevices[NwkId]['ClusterType']:
+                WidgetType = self.ListOfDevices[NwkId]['ClusterType'][WidgetId]
+                ClusterTypeList.append(  ( '00', WidgetId, WidgetType )  )
 
     for iterEp in self.ListOfDevices[NwkId]['Ep']:  
         if 'ClusterType' in self.ListOfDevices[NwkId]['Ep'][iterEp]:
-            if ( DeviceUnit and WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'] ):
-                WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId] 
-                ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
-                return ClusterTypeList
-
-            for WidgetId  in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
-                WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId]
-                ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
+            loggingWidget( self, 'Debug', "------> 'ClusterType': %s" %self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'], NwkId)
+            if DeviceUnit:
+                if WidgetId in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                    WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId] 
+                    ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
+                    return ClusterTypeList
+            else:
+                for WidgetId  in self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType']:
+                    WidgetType = self.ListOfDevices[NwkId]['Ep'][iterEp]['ClusterType'][WidgetId]
+                    ClusterTypeList.append(  ( iterEp, WidgetId, WidgetType )  )
 
     return ClusterTypeList
 

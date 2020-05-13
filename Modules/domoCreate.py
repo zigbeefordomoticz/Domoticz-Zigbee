@@ -205,6 +205,8 @@ def CreateDomoDevice(self, Devices, NWKID):
     # If Type needs to be associated to EP, then it must be at EP level and nothing at Global level
     GlobalEP = False
     GlobalType = []
+
+    loggingWidget( self, "Debug", "CreatDomoDevice - Ep to be processed : %s " %self.ListOfDevices[NWKID]['Ep'].keys(), NWKID)
     for Ep in self.ListOfDevices[NWKID]['Ep']:
         dType = aType = Type = ''
         # Use 'type' at level EndPoint if existe
