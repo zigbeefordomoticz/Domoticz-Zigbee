@@ -12,7 +12,7 @@ import mimetypes
 
 from time import time
 
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS, ZCL_CLUSTERS_ACT
+from Modules.zigateConsts import  ZCL_CLUSTERS_LIST , CERTIFICATION_CODE,  ZIGATE_COMMANDS
 
 from Modules.basicOutputs import ZigatePermitToJoin, sendZigateCmd, start_Zigate, setExtendedPANID, zigateBlueLed
 from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, legrand_dimOnOff, legrand_ledShutter
