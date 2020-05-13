@@ -106,8 +106,8 @@ def onMessage( self, Connection, Data ):
 
         if 'Ranges' in Data['Headers']:
             self.logging( 'Debug', "Ranges processing")
-            range = Data['Headers']['Range']
-            fileStartPosition = int(range[range.find('=')+1:range.find('-')])
+            RangeProcess = Data['Headers']['Range']
+            fileStartPosition = int(RangeProcess[RangeProcess.find('=')+1:RangeProcess.find('-')])
             messageFileSize = os.path.getsize(webFilename)
             messageFile = open(webFilename, mode='rb')
             messageFile.seek(fileStartPosition)
