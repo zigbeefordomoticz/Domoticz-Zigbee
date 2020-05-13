@@ -1,6 +1,12 @@
 import Domoticz
-import datetime
 
+
+import Domoticz
+import json
+import os
+import os.path
+import mimetypes
+from datetime import datetime
 
 def logging( self, logType, message):
 

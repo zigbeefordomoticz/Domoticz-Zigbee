@@ -5,6 +5,13 @@ from urllib.parse import urlparse
 from time import gmtime, strftime
 import os
 
+import Domoticz
+import json
+import os
+import os.path
+import mimetypes
+from datetime import datetime
+
 from WebServer.tools import setupHeadersResponse, DumpHTTPResponseToLog, MAX_KB_TO_SEND
 import mimetypes
 

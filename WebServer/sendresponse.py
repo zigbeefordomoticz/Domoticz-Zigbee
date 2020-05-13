@@ -1,5 +1,13 @@
 
 
+import Domoticz
+import json
+import os
+import os.path
+import mimetypes
+from datetime import datetime
+
+
 from WebServer.tools import  DumpHTTPResponseToLog, MAX_KB_TO_SEND
 import zlib
 import gzip

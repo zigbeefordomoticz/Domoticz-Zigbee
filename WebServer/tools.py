@@ -1,4 +1,10 @@
 
+import Domoticz
+import json
+import os
+import os.path
+import mimetypes
+from datetime import datetime
 
 MAX_KB_TO_SEND = 8 * 1024   # Chunk size
 DEBUG_HTTP = False
