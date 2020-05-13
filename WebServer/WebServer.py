@@ -33,7 +33,7 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
-from WebServer.startWebServer import extstartWebServer, extonStop, extonConnect
+
 
 MAX_KB_TO_SEND = 8 * 1024   # Chunk size
 DEBUG_HTTP = False
@@ -68,6 +68,8 @@ MIMETYPES = {
 
 class WebServer(object):
     hearbeats = 0 
+
+    from WebServer.startWebServer import startWebServer, onStop, onConnect, onDisconnect
 
     def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle):
 
@@ -164,54 +166,17 @@ class WebServer(object):
             self._loggingStatus( message)
         return
 
-    def  startWebServer( self ):
+    #def  startWebServer( self ):
+    #    self.extstartWebServer( )
 
-        extstartWebServer( self)
+    #def onDisconnect(self, Connection):
+    #    self.extonDisconnect(  Connection)
 
-    def onStop( self ):
+    #def onStop( self ):
+    #    self.extonStop( )
 
-        extonStop( self)
-
-
-    def onConnect(self, Connection, Status, Description):
-
-        extonConnect( self )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    #def onConnect(self, Connection, Status, Description):
+    #    self.extonConnect(  )
 
 
     def onMessage( self, Connection, Data ):

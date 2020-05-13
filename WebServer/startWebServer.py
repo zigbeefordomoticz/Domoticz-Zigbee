@@ -7,7 +7,7 @@
 import Domoticz
 
 
-def  extstartWebServer( self ):
+def startWebServer( self ):
 
     #self.httpPort = '9440'
     self.httpServerConn = Domoticz.Connection(Name="Zigate Server Connection", Transport="TCP/IP", Protocol="HTTP", Port=self.httpPort)
@@ -20,7 +20,7 @@ def  extstartWebServer( self ):
     #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)len(fileContent))+" bytes will be returned")
 
 
-def extonConnect(self, Connection, Status, Description):
+def onConnect(self, Connection, Status, Description):
 
     self.logging( 'Debug', "Connection: %s, description: %s" %(Connection, Description))
     if Status != 0:
@@ -51,6 +51,29 @@ def extonConnect(self, Connection, Status, Description):
     self.logging( 'Debug', "Number of https Connections : %s" %len(self.httpsServerConns))
 
 
+def onDisconnect ( self, Connection ):
+
+    self.logging( 'Debug', "onDisconnect %s" %(Connection))
+
+    if Connection.Name in self.httpServerConns:
+        self.logging( 'Debug', "onDisconnect - removing from list : %s" %Connection.Name)
+        del self.httpServerConns[Connection.Name]
+    elif Connection.Name in self.httpsServerConns:
+        self.logging( 'Debug', "onDisconnect - removing from list : %s" %Connection.Name)
+        del self.httpsServerConns[Connection.Name]
+    else:
+        # Most likely it is about closing the Server
+        self.logging( "Log", "onDisconnect - Closing %s" %Connection)
+
+
+
+
+
+
+
+
+
+
 def extonStop( self ):
 
     # Make sure that all remaining open connections are closed
@@ -60,7 +83,7 @@ def extonStop( self ):
     for connection in self.httpServerConns:
         self.logging( 'Log', "Closing %s" %connection)
         self.httpServerConns[Connection.Name].close()
-        
+
     for connection in self.httpsServerConns:
         self.logging( 'Log', "Closing %s" %connection)
         self.httpServerConns[Connection.Name].close()
