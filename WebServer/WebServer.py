@@ -33,8 +33,7 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from Classes.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
-from WebServer.startWebServer import startWebServer
-
+from WebServer.startWebServer import extstartWebServer, extonStop, extonConnect
 
 MAX_KB_TO_SEND = 8 * 1024   # Chunk size
 DEBUG_HTTP = False
@@ -114,7 +113,7 @@ class WebServer(object):
         self.hardwareID = hardwareID
         mimetypes.init()
         # Start the WebServer
-        self.startWebServer()
+        startWebServer( self)
         
     def _loggingStatus( self, message):
 
@@ -165,62 +164,55 @@ class WebServer(object):
             self._loggingStatus( message)
         return
 
-    def onConnect(self, Connection, Status, Description):
+    def  startWebServer( self ):
 
-        self.logging( 'Debug', "Connection: %s, description: %s" %(Connection, Description))
-        if Status != 0:
-            Domoticz.Error("Failed to connect ("+str(Status)+") to: "+Connection.Address+":"+Connection.Port+" with error: "+Description)
-            return
-
-        # Search for Protocol
-        for item in str(Connection).split(','):
-            if item.find('Protocol') != -1:
-                label, protocol = item.split(':')
-                protocol = protocol.strip().strip("'")
-                self.logging( 'Debug', '%s:>%s' %(label, protocol))
-
-        if protocol == 'HTTP':
-            # http connection
-            if Connection.Name not in self.httpServerConns:
-                self.logging( 'Debug', "New Connection: %s" %(Connection.Name))
-                self.httpServerConns[Connection.Name] = Connection
-        elif protocol == 'HTTPS':
-            # https connection
-            if Connection.Name not in self.httpsServerConns:
-                self.logging( 'Debug', "New Connection: %s" %(Connection.Name))
-                self.httpServerConns[Connection.Name] = Connection
-        else:
-            Domoticz.Error("onConnect - unexpected protocol for connection: %s" %(Connection))
-
-        self.logging( 'Debug', "Number of http  Connections : %s" %len(self.httpServerConns))
-        self.logging( 'Debug', "Number of https Connections : %s" %len(self.httpsServerConns))
-
-    def onDisconnect ( self, Connection ):
-
-        self.logging( 'Debug', "onDisconnect %s" %(Connection))
-
-        if Connection.Name in self.httpServerConns:
-            self.logging( 'Debug', "onDisconnect - removing from list : %s" %Connection.Name)
-            del self.httpServerConns[Connection.Name]
-        elif Connection.Name in self.httpsServerConns:
-            self.logging( 'Debug', "onDisconnect - removing from list : %s" %Connection.Name)
-            del self.httpsServerConns[Connection.Name]
-        else:
-            # Most likely it is about closing the Server
-            self.logging( "Log", "onDisconnect - Closing %s" %Connection)
+        extstartWebServer( self)
 
     def onStop( self ):
 
-        # Make sure that all remaining open connections are closed
-        self.logging( 'Debug', "onStop()")
+        extonStop( self)
 
-        # Search for Protocol
-        for connection in self.httpServerConns:
-            self.logging( 'Log', "Closing %s" %connection)
-            self.httpServerConns[Connection.Name].close()
-        for connection in self.httpsServerConns:
-            self.logging( 'Log', "Closing %s" %connection)
-            self.httpServerConns[Connection.Name].close()
+
+    def onConnect(self, Connection, Status, Description):
+
+        extonConnect( self )
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def onMessage( self, Connection, Data ):
 
