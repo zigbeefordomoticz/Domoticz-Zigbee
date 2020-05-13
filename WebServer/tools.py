@@ -1,10 +1,9 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 import Domoticz
-import json
-import os
-import os.path
-import mimetypes
-from datetime import datetime
 
 MAX_KB_TO_SEND = 8 * 1024   # Chunk size
 DEBUG_HTTP = False

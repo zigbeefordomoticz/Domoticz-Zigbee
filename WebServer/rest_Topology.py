@@ -1,15 +1,18 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 import Domoticz
 import json
 import os
 import os.path
-import mimetypes
+from time import time
 from datetime import datetime
 
-
 from WebServer.headerResponse import setupHeadersResponse
-from time import time
+
 
 def rest_req_topologie( self, verb, data, parameters):
     _response = setupHeadersResponse()

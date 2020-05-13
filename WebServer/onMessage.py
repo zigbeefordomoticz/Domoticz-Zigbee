@@ -1,22 +1,19 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 import Domoticz
 
 from urllib.parse import urlparse
 from time import gmtime, strftime
-import os
-
-import Domoticz
-import json
 import os
 import os.path
 import mimetypes
 from datetime import datetime
 
 from WebServer.headerResponse import setupHeadersResponse
-
 from WebServer.tools import DumpHTTPResponseToLog, MAX_KB_TO_SEND
-
-import mimetypes
 
 def onMessage( self, Connection, Data ):
 

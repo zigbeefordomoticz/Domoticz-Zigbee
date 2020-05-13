@@ -1,12 +1,15 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 import Domoticz
+import json
 
-from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS, ZCL_CLUSTERS_ACT
-
-
+from Modules.zigateConsts import ZCL_CLUSTERS_ACT
 from Modules.bindings import webBind, webUnBind
 from WebServer.headerResponse import setupHeadersResponse
-import json
+
 
 def rest_bindLSTcluster( self, verb, data, parameters):
     _response = setupHeadersResponse()
@@ -24,9 +27,8 @@ def rest_bindLSTcluster( self, verb, data, parameters):
 
         for ep in self.ListOfDevices[key]['Ep']:
             for cluster in self.ListOfDevices[key]['Ep'][ep]:
-                if cluster in ZCL_CLUSTERS_ACT:
-                    if cluster not in bindCluster:
-                        bindCluster.append( cluster )
+                if cluster in ZCL_CLUSTERS_ACT and cluster not in bindCluster:
+                    bindCluster.append( cluster )
     _response["Data"] = json.dumps( bindCluster )
     return _response
 

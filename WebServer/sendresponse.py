@@ -1,16 +1,23 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 import Domoticz
-import json
-import os
-import os.path
-import mimetypes
-from datetime import datetime
+
+
+try:
+    import zlib
+except Exception as Err:
+    Domoticz.Error("zlib import error: '"+str(Err)+"'")
+try:
+    import gzip
+except Exception as Err:
+    Domoticz.Error("gzip import error: '"+str(Err)+"'")
 
 
 from WebServer.tools import  DumpHTTPResponseToLog, MAX_KB_TO_SEND
-import zlib
-import gzip
 
 
 def sendResponse( self, Connection, Response, AcceptEncoding=None ):

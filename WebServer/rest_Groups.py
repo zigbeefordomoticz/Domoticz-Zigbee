@@ -1,11 +1,15 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 
 import Domoticz
-
-from WebServer.headerResponse import setupHeadersResponse
 import json
 
+
+from WebServer.headerResponse import setupHeadersResponse
 
 
 def rest_zGroup_lst_avlble_dev( self, verb, data, parameters):

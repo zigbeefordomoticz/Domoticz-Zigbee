@@ -1,11 +1,12 @@
-import Domoticz
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 
+
 import Domoticz
-import json
-import os
-import os.path
-import mimetypes
 from datetime import datetime
 
 def logging( self, logType, message):

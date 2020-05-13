@@ -9,19 +9,8 @@ import json
 import os
 import os.path
 import mimetypes
-from datetime import datetime
 
-try:
-    import zlib
-except Exception as Err:
-    Domoticz.Error("zlib import error: '"+str(Err)+"'")
-try:
-    import gzip
-except Exception as Err:
-    Domoticz.Error("gzip import error: '"+str(Err)+"'")
-
-from urllib.parse import urlparse, urlsplit, urldefrag, parse_qs
-from time import time, ctime, strftime, gmtime, mktime, strptime
+from time import time
 
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZCL_CLUSTERS_LIST , CERTIFICATION_CODE, PROFILE_ID, ZHA_DEVICES, ZLL_DEVICES, ZIGATE_COMMANDS, ZCL_CLUSTERS_ACT
 

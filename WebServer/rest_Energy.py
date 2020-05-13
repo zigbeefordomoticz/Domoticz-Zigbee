@@ -1,11 +1,14 @@
-
+#!/usr/bin/env python3
+# coding: utf-8 -*-
+#
+# Author: zaraki673 & pipiche38
+#
 
 import Domoticz
-
-from WebServer.headerResponse import setupHeadersResponse
 import json
 from time import time
 
+from WebServer.headerResponse import setupHeadersResponse
 
 def rest_req_nwk_inter( self, verb, data, parameters):
 
