@@ -69,7 +69,8 @@ MIMETYPES = {
 class WebServer(object):
     hearbeats = 0 
 
-    from WebServer.startWebServer import startWebServer, onStop, onConnect, onDisconnect
+    from WebServer.WebServersession import startWebServer, onStop, onConnect, onDisconnect
+    from WebServer.WebServerLogging import logging
 
     def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle):
 
@@ -98,86 +99,19 @@ class WebServer(object):
 
         self.permitTojoin = permitTojoin
 
-        if groupManagement:
-            self.groupmgt = groupManagement
-        else:
-            self.groupmgt = None
+        self.groupmgt = groupManagement if groupManagement else None
         self.ListOfDevices = ListOfDevices
         self.DevicesInPairingMode = DevicesInPairingMode
         self.fakeDevicesInPairingMode = 0
         self.IEEE2NWK = IEEE2NWK
         self.Devices = Devices
 
-        self.restart_needed = {}
-        self.restart_needed['RestartNeeded'] = False
-
+        self.restart_needed = {'RestartNeeded': False}
         self.homedirectory = HomeDirectory
         self.hardwareID = hardwareID
         mimetypes.init()
         # Start the WebServer
-        self.startWebServer( )
-        
-    def _loggingStatus( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Status( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Status( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Status( message )
-
-    def _loggingLog( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                Domoticz.Log( message )
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
-
-    def _loggingDebug( self, message):
-
-        if self.pluginconf.pluginConf['useDomoticzLog']:
-            Domoticz.Log( message )
-        else:
-            if self.loggingFileHandle:
-                message =  str(datetime.now().strftime('%b %d %H:%M:%S.%f')) + " " + message + '\n'
-                self.loggingFileHandle.write( message )
-                self.loggingFileHandle.flush()
-            else:
-                Domoticz.Log( message )
-
-    def logging( self, logType, message):
-
-        self.debugWebServer = self.pluginconf.pluginConf['debugWebServer']
-        if self.debugWebServer and logType == 'Debug':
-            self._loggingDebug( message)
-        elif logType == 'Log':
-            self._loggingLog( message )
-        elif logType == 'Status':
-            self._loggingStatus( message)
-        return
-
-    #def  startWebServer( self ):
-    #    self.extstartWebServer( )
-
-    #def onDisconnect(self, Connection):
-    #    self.extonDisconnect(  Connection)
-
-    #def onStop( self ):
-    #    self.extonStop( )
-
-    #def onConnect(self, Connection, Status, Description):
-    #    self.extonConnect(  )
-
+        self.startWebServer( )                    
 
     def onMessage( self, Connection, Data ):
 

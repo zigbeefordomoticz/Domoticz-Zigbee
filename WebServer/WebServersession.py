@@ -19,7 +19,6 @@ def startWebServer( self ):
     #self.httpsServerConn.Listen()
     #self.logging( 'Status', "Web backend for Web User Interface started on port: %s" %self.httpsPort)len(fileContent))+" bytes will be returned")
 
-
 def onConnect(self, Connection, Status, Description):
 
     self.logging( 'Debug', "Connection: %s, description: %s" %(Connection, Description))
@@ -50,7 +49,6 @@ def onConnect(self, Connection, Status, Description):
     self.logging( 'Debug', "Number of http  Connections : %s" %len(self.httpServerConns))
     self.logging( 'Debug', "Number of https Connections : %s" %len(self.httpsServerConns))
 
-
 def onDisconnect ( self, Connection ):
 
     self.logging( 'Debug', "onDisconnect %s" %(Connection))
@@ -65,16 +63,7 @@ def onDisconnect ( self, Connection ):
         # Most likely it is about closing the Server
         self.logging( "Log", "onDisconnect - Closing %s" %Connection)
 
-
-
-
-
-
-
-
-
-
-def extonStop( self ):
+def onStop( self ):
 
     # Make sure that all remaining open connections are closed
     self.logging( 'Debug', "onStop()")
