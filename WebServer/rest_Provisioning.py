@@ -56,7 +56,7 @@ def rest_new_hrdwr( self, verb, data, parameters):
 
         if parameters[0] in ( 'cancel', 'disable'):
             Domoticz.Log("Disable Assisted pairing")
-            if len(self.DevicesInPairingMode):
+            if len(self.DevicesInPairingMode) != 0:
                 del self.DevicesInPairingMode
                 self.DevicesInPairingMode = []
 

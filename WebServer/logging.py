@@ -40,4 +40,3 @@ def logging( self, logType, message):
         _loggingLog( self,  message )
     elif logType == 'Status':
         _loggingStatus( self, message)
-    return

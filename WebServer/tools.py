@@ -12,7 +12,7 @@ DEBUG_HTTP = False
 def keepConnectionAlive( self ):
 
     self.heartbeats += 1
-    return
+
 
 def DumpHTTPResponseToLog(httpDict):
     

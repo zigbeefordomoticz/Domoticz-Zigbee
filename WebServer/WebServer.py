@@ -937,7 +937,8 @@ class WebServer(object):
             if len(parameters) == 0:
                 zdev_lst = []
                 for item in self.ListOfDevices:
-                    if item == '0000': continue
+                    if item == '0000': 
+                        continue
                     device = {}
                     device['_NwkId'] = item
                     # Main Attributes
@@ -1255,7 +1256,7 @@ class WebServer(object):
                                     _capabilitie['Value'] = False
                                 else: 
                                     _capabilitie['Value'] = action['Value']
-                                if len( action['Type']):
+                                if len( action['Type']) != 0:
                                     _capabilitie['Type'] = True
                                 else:
                                     _capabilitie['Type'] = False

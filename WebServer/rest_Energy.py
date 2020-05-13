@@ -57,9 +57,3 @@ def rest_req_nwk_full( self, verb, data, parameters):
             self.networkenergy.start_scan( root='0000', target='0000')
 
     return _response
-
-
-
-
-
-
