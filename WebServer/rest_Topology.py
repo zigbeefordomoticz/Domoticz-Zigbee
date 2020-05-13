@@ -8,8 +8,6 @@ import mimetypes
 from datetime import datetime
 
 
-
-
 from WebServer.headerResponse import setupHeadersResponse
 from time import time
 
