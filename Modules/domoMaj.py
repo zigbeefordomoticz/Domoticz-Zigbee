@@ -25,6 +25,23 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
     Update domoticz device accordingly to Type found in EP and value/Color provided
     '''
 
+    def getDimmerLevelOfColor( self, value):
+
+        nValue = 1
+        analogValue = int(value, 16)
+        if analogValue >= 255:
+            sValue = 100
+
+        else:
+            sValue = round(((int(value, 16) * 100) / 255))
+            if sValue > 100: 
+                sValue = 100
+
+            if sValue == 0 and analogValue > 0:
+                sValue = 1
+
+        return ( nValue, sValue )
+
     # Sanity Checks
     if NWKID not in self.ListOfDevices:
         Domoticz.Error("MajDomoDevice - %s not known" %NWKID)
@@ -564,22 +581,8 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                         UpdateDevice_v2(self, Devices, DeviceUnit, 1, str(sValue), BatteryLevel, SignalLevel)
 
             elif WidgetType  in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
-                if Devices[DeviceUnit].nValue == 0 and Devices[DeviceUnit].sValue == 'Off':
-                    pass
-                else:
-                    nValue = 1
-                    analogValue = int(value, 16)
-                    if analogValue >= 255:
-                        sValue = 100
-
-                    else:
-                        sValue = round(((int(value, 16) * 100) / 255))
-                        if sValue > 100: 
-                            sValue = 100
-
-                        if sValue == 0 and analogValue > 0:
-                            sValue = 1
-
+                if Devices[DeviceUnit].nValue != 0 or Devices[DeviceUnit].sValue != 'Off':
+                    nValue, sValue = getDimmerLevelOfColor( self, ClusterType, WidgetType, value)
                     UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
             elif WidgetType == 'LegrandSelector':
@@ -735,21 +738,9 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel)
 
         if ClusterType in ( 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl'):
-            # We just manage the update of the Dimmer (Control Level)
+            # We just manage the update of the Dimmer (Control Level)       
             if ClusterType == WidgetType:
-                nValue = 1
-                analogValue = int(value, 16)
-                if analogValue >= 255:
-                    sValue = 100
-
-                else:
-                    sValue = round(((int(value, 16) * 100) / 255))
-                    if sValue > 100: 
-                        sValue = 100
-
-                    if sValue == 0 and analogValue > 0:
-                        sValue = 1
-
+                nValue, sValue = getDimmerLevelOfColor( self, value)
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, str(sValue), BatteryLevel, SignalLevel, Color_)
 
         if 'XCube' in ClusterType: # XCube Aqara or Xcube
@@ -834,3 +825,16 @@ def MajDomoDevice(self, Devices, NWKID, Ep, clusterID, value, Attribute_='', Col
                 nValue = int(value)
                 sValue = value
                 UpdateDevice_v2(self, Devices, DeviceUnit, nValue, sValue, BatteryLevel, SignalLevel, ForceUpdate_= True)
+
+
+
+
+
+
+
+
+
+
+
+
+
