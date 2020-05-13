@@ -71,6 +71,13 @@ class WebServer(object):
 
     from WebServer.tools import setupHeadersResponse
 
+    from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
+    from WebServer.rest_Topology import rest_netTopologie, rest_req_topologie
+    from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
+    from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev
+    from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
+
+
     hearbeats = 0 
 
     def __init__( self, networkenergy, networkmap, ZigateData, PluginParameters, PluginConf, Statistics, adminWidgets, ZigateComm, HomeDirectory, hardwareID, DevicesInPairingMode, groupManagement, Devices, ListOfDevices, IEEE2NWK , permitTojoin, WebUserName, WebPassword, PluginHealth, httpPort, loggingFileHandle):

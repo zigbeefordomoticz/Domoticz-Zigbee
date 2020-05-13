@@ -17,8 +17,6 @@ from WebServer.rest_Energy import rest_req_nwk_full, rest_req_nwk_inter
 from WebServer.rest_Groups import rest_zGroup, rest_zGroup_lst_avlble_dev
 from WebServer.rest_Provisioning import rest_new_hrdwr, rest_rcv_nw_hrdwr
 
-
-
 def do_rest( self, Connection, verb, data, version, command, parameters):
 
     REST_COMMANDS = { 
