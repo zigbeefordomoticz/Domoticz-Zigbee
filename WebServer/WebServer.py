@@ -67,7 +67,7 @@ class WebServer(object):
     from WebServer.onMessage import onMessage
     from WebServer.sendresponse import sendResponse
 
-    from WebServer.restDispatch import do_rest
+    from WebServer.dispatcher import do_rest
 
     from WebServer.tools import setupHeadersResponse
 
