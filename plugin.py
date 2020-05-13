@@ -866,8 +866,6 @@ def zigateInit_Phase3( self ):
 
     # Starting WebServer
     if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
-        from Classes.WebServer import WebServer
-
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
             Domoticz.Log("self.VersionNewFashion: %s" %self.VersionNewFashion)
             Domoticz.Log("self.DomoticzMajor    : %s" %self.DomoticzMajor)
