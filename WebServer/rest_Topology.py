@@ -11,6 +11,7 @@ from datetime import datetime
 
 
 from WebServer.headerResponse import setupHeadersResponse
+from time import time
 
 def rest_req_topologie( self, verb, data, parameters):
     _response = setupHeadersResponse()
