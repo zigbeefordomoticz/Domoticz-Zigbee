@@ -100,7 +100,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
+    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s for Unit: %s" %( ClusterTypeList, Unit), NWKID)
 
     actionable = False
     if len(ClusterTypeList) != 1:
