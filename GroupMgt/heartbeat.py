@@ -18,13 +18,10 @@ from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 from Classes.AdminWidgets import AdminWidgets
 
 
-from GroupMgt.tool import TIMEOUT
+from GroupMgt.tool import TIMEOUT, MAX_CYCLE
 
-def hearbeatGroupMgt( self ):
-    ' hearbeat to process Group Management actions '
-    # Groups Management
 
-    def modification_date( filename ):
+def modification_date( filename ):
         """
         Try to get the date that a file was created, falling back to when it was
         last modified if that isn't possible.
@@ -32,7 +29,17 @@ def hearbeatGroupMgt( self ):
         """
         return os.path.getmtime( filename )
 
+
+def hearbeatGroupMgt( self ):
+    ' hearbeat to process Group Management actions '
+    # Groups Management
+
+
     def _start( self ):
+        # Check if there is an existing Pickle file. If this file is newer than ZigateConf, we can simply load it and finish the Group startup.
+        # In case the file is older, this means that ZigateGroupConf is newer and has some changes, do the full process.
+        # Check if the DeviceList file exist.
+
         self.logging( 'Log', "Group Management - Init phase")
 
     def _scan( self ):
@@ -505,41 +512,37 @@ def hearbeatGroupMgt( self ):
             self.updateDomoGroupDevice( group_nwkid)
 
     elif self.StartupPhase == 'start':
-        # Check if there is an existing Pickle file. If this file is newer than ZigateConf, we can simply load it and finish the Group startup.
-        # In case the file is older, this means that ZigateGroupConf is newer and has some changes, do the full process.
 
-        # Check if the DeviceList file exist.
-
-        self._start()
+        _start( self )
 
     elif self.StartupPhase == 'scan':
 
-        self._scan()
+        _scan( self )
 
     elif self.StartupPhase in ( 'finish scan', 'finish scan continue') :
 
-        self._finishing_scan()
+        _finishing_scan( self )
 
     elif  self.StartupPhase == 'load config':
 
-        self._load_config()
+        _load_config( self )
 
     elif self.StartupPhase == 'process config':
 
-        self._process_config()
+        _process_config( self )
 
     elif self.StartupPhase == 'processing':
 
-        self._processing()
+        _processing( self )
 
     elif self.StartupPhase == 'finish configuration':
 
-        self._finish_config()
+        _finish_config( self )
 
     elif self.StartupPhase == 'check group list':
 
-        self._checking_group_list()
+        _checking_group_list( self )
 
     elif self.StartupPhase == 'completion':
 
-        self._completion()
+        _completion( self )
