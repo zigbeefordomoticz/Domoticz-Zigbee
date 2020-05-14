@@ -469,6 +469,10 @@ def hearbeatGroupMgt( self ):
         self.StartupPhase = 'ready'
         self.stillWIP = False 
  
+
+
+
+ 
     self.StartupPhase = 'scan'
     last_update_GroupList = 0
     if os.path.isfile( self.groupListFileName ) :
