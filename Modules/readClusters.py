@@ -646,6 +646,7 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
 
     loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s mainVolt:%s , battVolt:%s, battRemainingVolt: %s, battRemainPer:%s " %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], mainVolt, battVolt, battRemainingVolt, battRemainPer) , MsgSrcAddr)
 
+    value = None
     if battRemainPer != 0:
         value = battRemainPer
         if 'Model' in self.ListOfDevices[MsgSrcAddr]:
@@ -679,11 +680,13 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
 
         value = voltage2batteryP( battRemainingVolt, max_voltage, min_voltage)
 
-    loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)
-    if value != self.ListOfDevices[MsgSrcAddr]['Battery']:
-        self.ListOfDevices[MsgSrcAddr]['Battery'] = value
-        self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
-        loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
+    if value:
+       loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery %s to %s" 
+            %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], self.ListOfDevices[MsgSrcAddr]['Battery'], value) , MsgSrcAddr)
+       if value != self.ListOfDevices[MsgSrcAddr]['Battery']:
+           self.ListOfDevices[MsgSrcAddr]['Battery'] = value
+           self.ListOfDevices[MsgSrcAddr]['BatteryUpdateTime'] = int(time.time())
+           loggingCluster( self, 'Debug', "readCluster 0001 - Device: %s Model: %s Updating battery to %s" %(MsgSrcAddr, self.ListOfDevices[MsgSrcAddr]['Model'], value) , MsgSrcAddr)
 
 def Cluster0003( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData ):
 
