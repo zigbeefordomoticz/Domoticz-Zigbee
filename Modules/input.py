@@ -1445,7 +1445,13 @@ def Decode8048(self, Devices, MsgData, MsgRSSI) : # Leave indication
 
 def Decode8049(self, Devices, MsgData, MsgRSSI) : # E_SL_MSG_PERMIT_JOINING_RESPONSE
 
-    loggingInput( self, 'Log',"Decode8049 - MsgData: %s" %MsgData)
+    loggingInput( self, 'Debug',"Decode8049 - MsgData: %s" %MsgData)
+    SQN = MsgData[0:2]
+    Status = MsgData[2:4]
+
+    if Status == '00':
+        loggingInput( self, 'Status', "Pairing Mode enabled")
+
 
 def Decode804A(self, Devices, MsgData, MsgRSSI) : # Management Network Update response
 
