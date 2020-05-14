@@ -78,11 +78,11 @@ import sys
 from Modules.piZigate import switchPiZigate_mode
 from Modules.tools import removeDeviceInList
 from Modules.logging import loggingPlugin
-from Modules.output import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin
+from Modules.basicOutputs import sendZigateCmd, removeZigateDevice, start_Zigate, setExtendedPANID, setTimeServer, leaveRequest, zigateBlueLed, ZigatePermitToJoin
 from Modules.input import ZigateRead
 from Modules.heartbeat import processListOfDevices
 from Modules.database import importDeviceConf, importDeviceConfV2, LoadDeviceList, checkListOfDevice2Devices, checkDevices2LOD, WriteDeviceList
-from Modules.domoticz import ResetDevice
+from Modules.domoTools import ResetDevice
 from Modules.command import mgtCommand
 from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_FOR_ZIGATE_BUZY
 from Modules.txPower import set_TxPower, get_TxPower
@@ -98,7 +98,7 @@ from Classes.GroupMgt import GroupsManagement
 from Classes.AdminWidgets import AdminWidgets
 from Classes.OTA import OTAManagement
 
-from Classes.WebServer import WebServer
+from WebServer.WebServer import WebServer
 
 from Classes.NetworkMap import NetworkMap
 from Classes.NetworkEnergy import NetworkEnergy
@@ -193,8 +193,6 @@ class BasePlugin:
         self.startZigateNeeded = False
 
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
-
-        return
 
     def onStart(self):
 
@@ -313,9 +311,12 @@ class BasePlugin:
             return            
         
         loggingPlugin( self, 'Debug', "ListOfDevices : " )
-        for e in self.ListOfDevices.items(): loggingPlugin( self, 'Debug', " "+str(e))
+        for e in self.ListOfDevices.items(): 
+            loggingPlugin( self, 'Debug', " "+str(e))
+            
         loggingPlugin( self, 'Debug', "IEEE2NWK      : " )
-        for e in self.IEEE2NWK.items(): loggingPlugin( self, 'Debug', "  "+str(e))
+        for e in self.IEEE2NWK.items(): 
+            loggingPlugin( self, 'Debug', "  "+str(e))
 
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices( self, Devices )
@@ -363,8 +364,6 @@ class BasePlugin:
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
         self.ZigateComm.openConn()
         self.busy = False
-
-        return
 
     def onStop(self):
         loggingPlugin( self, 'Status', "onStop called")
@@ -535,8 +534,6 @@ class BasePlugin:
         else:
             Domoticz.Error("onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" \
                     %(Devices[Unit].Name, Unit, Devices[Unit].DeviceID))
-
-        return
 
     def onDisconnect(self, Connection):
 
@@ -796,7 +793,7 @@ def zigateInit_Phase2( self):
 
     # Ready for next phase
     self.InitPhase2 = True
-    return
+
 
 def zigateInit_Phase3( self ):
 
@@ -866,8 +863,6 @@ def zigateInit_Phase3( self ):
 
     # Starting WebServer
     if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
-        from Classes.WebServer import WebServer
-
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
             Domoticz.Log("self.VersionNewFashion: %s" %self.VersionNewFashion)
             Domoticz.Log("self.DomoticzMajor    : %s" %self.DomoticzMajor)
@@ -1009,7 +1004,7 @@ def DumpConfigToLog():
         Domoticz.Log( "Device sValue:   '" + Devices[x].sValue + "'")
         Domoticz.Log( "Device LastLevel: " + str(Devices[x].LastLevel))
         Domoticz.Log( "Device Options: " + str(Devices[x].Options))
-    return
+
 
 
 def DumpHTTPResponseToLog(httpDict):

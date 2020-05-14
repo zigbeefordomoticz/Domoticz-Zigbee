@@ -1,2 +1,0 @@
-ignore-patterns=**/dns/*.py
-ignore-patterns=**/dns/**/*.py

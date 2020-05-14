@@ -21,11 +21,12 @@ import string
 from math import atan, sqrt, pi
 
 from Modules.zigateConsts import LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, LEGRAND_REMOTES
-from Modules.domoticz import MajDomoDevice, lastSeenUpdate, timedOutDevice
+from Modules.domoMaj import MajDomoDevice
+from Modules.domoTools import lastSeenUpdate, timedOutDevice
 from Modules.tools import DeviceExist, getEPforClusterType, is_hex, voltage2batteryP, checkAttribute, checkAndStoreAttributeValue
 from Modules.logging import loggingCluster
-from Modules.output import  xiaomi_leave
-from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster
+
+from Modules.lumi import AqaraOppleDecoding0012, readXiaomiCluster, xiaomi_leave
 
 
 def decodeAttribute(self, AttType, Attribute, handleErrors=False):
@@ -1748,7 +1749,7 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  value )
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,'0006', '0000',  value )
 
-    elif _modelName in ( 'lumi.sensor_switch.aq3', ):
+    elif _modelName in ( 'lumi.sensor_switch.aq3', 'lumi.sensor_switch.aq3'):
         value = int(decodeAttribute( self, MsgAttType, MsgClusterData ))
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - Switch Aqara (AQ2): EP: %s Value: %s " %(MsgSrcEp,value), MsgSrcAddr)
  
@@ -1768,8 +1769,8 @@ def Cluster0012( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         loggingCluster( self, 'Debug', "ReadCluster - ClusterId=0012 - reception Xiaomi Magic Cube Value: " + str(cube_decode(MsgClusterData)) , MsgSrcAddr)
 
     else:
-        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s " 
-            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData), MsgSrcAddr)
+        loggingCluster( self, 'Log', "readCluster - %s - %s/%s unknown attribute: %s %s %s %s Model: %s" 
+            %(MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgAttrID, MsgAttType, MsgAttSize, MsgClusterData, _modelName), MsgSrcAddr)
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID,  MsgClusterData )
 
 

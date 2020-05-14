@@ -31,7 +31,6 @@ def _copyfile( source, dest, move=True ):
         with open(source, 'r') as src, open(dest, 'wt') as dst:
             for line in src:
                 dst.write(line)
-        return
 
 
 def _versionFile( source , nbversion ):
@@ -507,4 +506,3 @@ def fixing_Issue566( self, key ):
                         self.ListOfDevices[key]['Ep']['02']['ClusterType'] = {}
                         res = True
     return True
-
