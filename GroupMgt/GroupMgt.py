@@ -51,7 +51,7 @@ class GroupsManagement(object):
 
     from GroupMgt.heartbeat import hearbeatGroupMgt
     from GroupMgt.logging import logging
-    from GroupMgt.domoticz import deviceChangeNetworkID, FreeUnit, _createDomoGroupDevice, _updateDeviceListAttribute, _updateDomoGroupDeviceWidget, _updateDomoGroupDeviceWidgetName, \
+    from GroupMgt.domoticz import deviceChangeNetworkID,  _createDomoGroupDevice, _updateDeviceListAttribute, _updateDomoGroupDeviceWidget, _updateDomoGroupDeviceWidgetName, \
                             _bestGroupWidget, updateDomoGroupDevice, _removeDomoGroupDevice, processCommand, processRemoveGroup, set_Kelvin_Color, set_RGB_color
     from GroupMgt.config import _write_GroupList, _load_GroupList, load_ZigateGroupConfiguration, load_jsonZigateGroupConfig, write_jsonZigateGroupConfig, _write_GroupList
     from GroupMgt.com import _addGroup, statusGroupRequest, addGroupResponse, _viewGroup, viewGroupResponse, _getGroupMembership, getGroupMembershipResponse,\
