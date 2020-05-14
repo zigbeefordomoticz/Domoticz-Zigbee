@@ -328,9 +328,9 @@ class ZigateTransport(object):
     def _printSendQueue(self):
         cnt = 0
         lenQ = len(self.zigateSendingFIFO)
-        for iter in self.zigateSendingFIFO:
+        for iterFIFO in self.zigateSendingFIFO:
             if cnt < 5:
-                self.loggingSend('Debug',"SendingFIFO[%d:%d] = %s " % (cnt, lenQ, iter[0]))
+                self.loggingSend('Debug',"SendingFIFO[%d:%d] = %s " % (cnt, lenQ, iterFIFO[0]))
                 cnt += 1
         self.loggingSend('Debug',"--")
 
@@ -541,7 +541,6 @@ class ZigateTransport(object):
             self.F_out(frame)  # Forward the message to plugin for further processing
 
         self.checkTOwaitFor()  # Let's take the opportunity to check TimeOut
-        return
 
 
     def receiveDataCmd(self, MsgType):
@@ -566,7 +565,7 @@ class ZigateTransport(object):
                 and len(self._waitForStatus) == 0 and len(self._waitForData) == 0:
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
             self.sendData(cmd, datas)
-        return
+
 
     def _process8000(self, Status, PacketType, frame):
         self.statistics._ack += 1
@@ -602,7 +601,6 @@ class ZigateTransport(object):
             cmd, datas, timestamps, reTx = self._nextCmdFromSendingFIFO()
             self.sendData(cmd, datas)
 
-        return
 
     def checkTOwaitFor(self):
         'look at the waitForStatus, and in case of TimeOut delete the entry'
@@ -657,7 +655,7 @@ class ZigateTransport(object):
 
         # self._printSendQueue()
         self._checkTO_flag = False
-        return
+
 
     def _addNewCmdtoDevice(self, nwk, cmd, payload):
         """ Add Cmd to the nwk list of Command FIFO mode """

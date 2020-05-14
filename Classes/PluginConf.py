@@ -395,4 +395,3 @@ class PluginConf:
 
             for param in _pluginConf:
                 self.pluginConf[param] = _pluginConf[param]
-

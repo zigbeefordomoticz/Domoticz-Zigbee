@@ -101,9 +101,11 @@ def attributeDiscovery( self, NWKID ):
     if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
         if 'Attributes List' not in self.ListOfDevices[NWKID]:
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if iterEp == 'ClusterType': continue
+                if iterEp == 'ClusterType': 
+                    continue
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                        continue
                     if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                         getListofAttribute( self, NWKID, iterEp, iterCluster)
                     else:
@@ -416,11 +418,11 @@ def processListOfDevices( self , Devices ):
             processNotinDBDevices( self , Devices, NWKID, status , RIA )
     #end for key in ListOfDevices
     
-    for iter in entriesToBeRemoved:
-        if 'IEEE' in self.ListOfDevices[iter]:
-            _ieee = self.ListOfDevices[iter]['IEEE']
+    for iterDevToBeRemoved in entriesToBeRemoved:
+        if 'IEEE' in self.ListOfDevices[iterDevToBeRemoved]:
+            _ieee = self.ListOfDevices[iterDevToBeRemoved]['IEEE']
             del _ieee
-        del self.ListOfDevices[iter]
+        del self.ListOfDevices[iterDevToBeRemoved]
 
     if self.CommiSSionning or self.busy:
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
@@ -454,5 +456,3 @@ def processListOfDevices( self , Devices ):
     loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \
         %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
     return True
-
-
