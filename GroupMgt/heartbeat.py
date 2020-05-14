@@ -542,4 +542,4 @@ def hearbeatGroupMgt( self ):
 
     elif self.StartupPhase == 'completion':
 
-        self._completiopn()
+        self._completion()
