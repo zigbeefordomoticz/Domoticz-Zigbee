@@ -18,26 +18,27 @@ import struct
 import json
 
 from Modules.actuators import actuators
-from Modules.output import  sendZigateCmd,  \
-        identifyEffect, setXiaomiVibrationSensitivity, \
-        getListofAttribute, \
-        setPowerOn_OnOff, \
-        scene_membership_request, \
-        ReadAttributeRequest_0000_basic, \
+
+from Modules.basicOutputs import  sendZigateCmd,identifyEffect, getListofAttribute
+
+from Modules.readAttributes import ReadAttributeRequest_0000_basic, \
         ReadAttributeRequest_0000, ReadAttributeRequest_0001, ReadAttributeRequest_0006, ReadAttributeRequest_0008, ReadAttributeRequest_0006_0000, ReadAttributeRequest_0008_0000,\
         ReadAttributeRequest_0100, \
         ReadAttributeRequest_000C, ReadAttributeRequest_0102, ReadAttributeRequest_0201, ReadAttributeRequest_0204, ReadAttributeRequest_0300,  \
         ReadAttributeRequest_0400, ReadAttributeRequest_0402, ReadAttributeRequest_0403, ReadAttributeRequest_0405, \
         ReadAttributeRequest_0406, ReadAttributeRequest_0500, ReadAttributeRequest_0502, ReadAttributeRequest_0702, ReadAttributeRequest_000f, ReadAttributeRequest_fc01, ReadAttributeRequest_fc21
+
 from Modules.configureReporting import processConfigureReporting
+
 from Modules.legrand_netatmo import  legrandReenforcement
 from Modules.schneider_wiser import schneiderRenforceent, pollingSchneider
 from Modules.philips import pollingPhilips
 from Modules.gledopto import pollingGledopto
+from Modules.lumi import setXiaomiVibrationSensitivity
 
 from Modules.tools import removeNwkInList, mainPoweredDevice, ReArrangeMacCapaBasedOnModel
 from Modules.logging import loggingPairing, loggingHeartbeat
-from Modules.domoticz import CreateDomoDevice, timedOutDevice
+from Modules.domoTools import timedOutDevice
 from Modules.zigateConsts import HEARTBEAT, MAX_LOAD_ZIGATE, CLUSTERS_LIST, LEGRAND_REMOTES, LEGRAND_REMOTE_SHUTTER, LEGRAND_REMOTE_SWITCHS, ZIGATE_EP
 from Modules.pairingProcess import processNotinDBDevices
 
@@ -100,9 +101,11 @@ def attributeDiscovery( self, NWKID ):
     if self.ListOfDevices[NWKID]['ConfigSource'] != 'DeviceConf':
         if 'Attributes List' not in self.ListOfDevices[NWKID]:
             for iterEp in self.ListOfDevices[NWKID]['Ep']:
-                if iterEp == 'ClusterType': continue
+                if iterEp == 'ClusterType': 
+                    continue
                 for iterCluster in self.ListOfDevices[NWKID]['Ep'][iterEp]:
-                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): continue
+                    if iterCluster in ( 'Type', 'ClusterType', 'ColorMode' ): 
+                        continue
                     if not self.busy and len(self.ZigateComm.zigateSendingFIFO) <= MAX_LOAD_ZIGATE:
                         getListofAttribute( self, NWKID, iterEp, iterCluster)
                     else:
@@ -415,11 +418,11 @@ def processListOfDevices( self , Devices ):
             processNotinDBDevices( self , Devices, NWKID, status , RIA )
     #end for key in ListOfDevices
     
-    for iter in entriesToBeRemoved:
-        if 'IEEE' in self.ListOfDevices[iter]:
-            _ieee = self.ListOfDevices[iter]['IEEE']
+    for iterDevToBeRemoved in entriesToBeRemoved:
+        if 'IEEE' in self.ListOfDevices[iterDevToBeRemoved]:
+            _ieee = self.ListOfDevices[iterDevToBeRemoved]['IEEE']
             del _ieee
-        del self.ListOfDevices[iter]
+        del self.ListOfDevices[iterDevToBeRemoved]
 
     if self.CommiSSionning or self.busy:
         loggingHeartbeat( self, 'Debug', "Skip LQI, ConfigureReporting and Networkscan du to Busy state: Busy: %s, Enroll: %s" %(self.busy, self.CommiSSionning))
@@ -453,5 +456,3 @@ def processListOfDevices( self , Devices ):
     loggingHeartbeat( self, 'Debug', "processListOfDevices END with HB: %s, Busy: %s, Enroll: %s, Load: %s" \
         %(self.HeartbeatCount, self.busy, self.CommiSSionning, self.ZigateComm.loadTransmit() ))
     return True
-
-

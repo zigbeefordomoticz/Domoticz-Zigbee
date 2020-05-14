@@ -12,7 +12,7 @@
 
 import Domoticz
 from Modules.zigateConsts import ZIGATE_EP
-from Modules.output import sendZigateCmd, raw_APS_request
+from Modules.basicOutputs import sendZigateCmd, raw_APS_request
 from Modules.logging import loggingProfalux
 
 def profalux_fake_deviceModel( self , nwkid):

@@ -18,3 +18,5 @@ Reports/*
 __pycache__/
 **/__pycache__
 .vscode/settings.json
+.pylintrc
+

@@ -15,7 +15,8 @@ import json
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.logging import loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint
+from Modules.basicOutputs import sendZigateCmd
+from Modules.thermostats import thermostat_Setpoint
 from Modules.zigateConsts import ZIGATE_EP
 
 def actuators( self, action, nwkid, epout, DeviceType, cmd=None, value=None, color=None):

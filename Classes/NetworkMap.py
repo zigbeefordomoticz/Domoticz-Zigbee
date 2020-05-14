@@ -30,7 +30,7 @@ import os.path
 import json
 
 import Domoticz
-from Modules.output import sendZigateCmd
+
 from Classes.AdminWidgets import AdminWidgets
 
 class NetworkMap():
@@ -205,7 +205,7 @@ class NetworkMap():
                     self.Neighbours[ nwkid ]['Status'] = 'NotReachable'
                     return
 
-        sendZigateCmd(self, "004E",datas)    
+        self.ZigateComm.sendData( "004E",datas)  
 
         return
 

@@ -85,7 +85,7 @@ class DomoticzDB_Preferences:
             self._loggingLog( message )
         elif logType == 'Status':
             self._loggingStatus( message)
-        return
+
 
 
     def _openDB( self):
@@ -271,7 +271,7 @@ class DomoticzDB_Hardware:
             self._loggingLog( message )
         elif logType == 'Status':
             self._loggingStatus( message)
-        return
+
 
     def _openDB( self ):
 
@@ -375,7 +375,7 @@ class DomoticzDB_DeviceStatus:
             self._loggingLog( message )
         elif logType == 'Status':
             self._loggingStatus( message)
-        return
+
 
     def _openDB( self):
 

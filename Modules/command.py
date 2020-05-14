@@ -19,12 +19,13 @@ import json
 from Modules.actuators import actuators
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.logging import loggingCommand
-from Modules.output import sendZigateCmd, thermostat_Setpoint, thermostat_Mode
+from Modules.basicOutputs import sendZigateCmd
+from Modules.thermostats import thermostat_Setpoint, thermostat_Mode
 from Modules.livolo import livolo_OnOff
 from Modules.legrand_netatmo import  legrand_fc40
 from Modules.schneider_wiser import schneider_EHZBRTS_thermoMode, schneider_hact_fip_mode, schneider_set_contract, schneider_temp_Setcurrent, schneider_hact_heater_type
 
-from Modules.domoticz import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
+from Modules.domoTools import UpdateDevice_v2, RetreiveSignalLvlBattery, RetreiveWidgetTypeList
 from Classes.IAS import IAS_Zone_Management
 from Modules.zigateConsts import THERMOSTAT_LEVEL_2_MODE, ZIGATE_EP
 from Modules.widgets import SWITCH_LVL_MATRIX
@@ -99,7 +100,7 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
         Domoticz.Error("mgtCommand - no ClusterType found !  "  +str(self.ListOfDevices[NWKID]) )
         return
 
-    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s" %( ClusterTypeList), NWKID)
+    loggingCommand( self, 'Debug', "--------->   ClusterType founds: %s for Unit: %s" %( ClusterTypeList, Unit), NWKID)
 
     actionable = False
     if len(ClusterTypeList) != 1:
@@ -118,8 +119,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
     if DeviceType in SWITCH_LVL_MATRIX:
         if 'ForceUpdate' in SWITCH_LVL_MATRIX[DeviceType ]:
             forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
+
     if DeviceType not in ACTIONATORS:
-        Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s " %( Devices[Unit].Name, ClusterTypeList ))
+        Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
+            %( Devices[Unit].Name, ClusterTypeList, DeviceType ))
         return
     
     profalux = False
