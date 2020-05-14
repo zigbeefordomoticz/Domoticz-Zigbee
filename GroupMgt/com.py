@@ -298,27 +298,3 @@ def _identifyEffect( self, nwkid, ep, effect='Okay' ):
             effect = 'Okay'
         datas = "%02d" %ADDRESS_MODE['group'] + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
         self.ZigateComm.sendData( "00E0", datas)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

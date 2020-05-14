@@ -19,32 +19,31 @@ from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 from Classes.AdminWidgets import AdminWidgets
 
 
-
-
-
 def deviceChangeNetworkID( self, old_nwkid, new_nwkid):
     """
     this method is call whenever a device get a new NetworkId.
     We then if this device is own by a group to update the networkid.
     """
-
-    _update = False
+    _updatedGroupFileNeeded = False
     for iterGrp in self.ListOfGroups:
+        _updatedDevice = False
         self.logging( 'Debug', "deviceChangeNetworkID - ListOfGroups[%s]['Devices']: %s" %(iterGrp, self.ListOfGroups[iterGrp]['Devices']))
         old_listDev = list(self.ListOfGroups[iterGrp]['Devices'])
         new_listDev = []
         for iterList in old_listDev:
             if iterList[0] == old_nwkid:
-                _update = True
+                _updatedDevice = True
                 new_listDev.append( (new_nwkid, iterList[1] ) )
             else:
                 new_listDev.append( iterList )
 
-    if _update:
-        self.logging( 'Debug', "deviceChangeNetworkID - Change from %s to %s" %( self.ListOfGroups[iterGrp]['Devices'], new_listDev))
-        del self.ListOfGroups[iterGrp]['Devices']
-        self.ListOfGroups[iterGrp]['Devices'] = new_listDev
+        if _updatedDevice:
+            self.logging( 'Status', "GroupMgr - Update needed for group %s, from device List %s to %s" %( iterGrp, str(self.ListOfGroups[iterGrp]['Devices']), str(new_listDev)))
+            del self.ListOfGroups[iterGrp]['Devices']
+            self.ListOfGroups[iterGrp]['Devices'] = new_listDev
+            _updatedGroupFileNeeded = True
 
+    if _updatedGroupFileNeeded:
         # Store Group in report under json format
         self._write_GroupList()
 
@@ -53,23 +52,25 @@ def deviceChangeNetworkID( self, old_nwkid, new_nwkid):
             json_file.write('\n')
             json.dump( self.ListOfGroups, json_file, indent=4, sort_keys=True)
 
-def FreeUnit(self, Devices):
-    '''
-    FreeUnit
-    Look for a Free Unit number.
-    '''
-    FreeUnit = ""
-    for x in range(1, 255):
-        if x not in Devices:
-            self.logging( 'Debug', "FreeUnit - device " + str(x) + " available")
-            return x
-    else:
-        self.logging( 'Debug', "FreeUnit - device " + str(len(Devices) + 1))
-        return len(Devices) + 1
 
 # Domoticz relaed
 def _createDomoGroupDevice(self, groupname, group_nwkid):
     ' Create Device for just created group in Domoticz. '
+
+    def FreeUnit(self, Devices):
+        '''
+        FreeUnit
+        Look for a Free Unit number.
+        '''
+        FreeUnit = ""
+        for x in range(1, 255):
+            if x not in Devices:
+                self.logging( 'Debug', "FreeUnit - device " + str(x) + " available")
+                return x
+        else:
+            self.logging( 'Debug', "FreeUnit - device " + str(len(Devices) + 1))
+            return len(Devices) + 1
+
 
     if groupname == '' or group_nwkid == '':
         Domoticz.Error("createDomoGroupDevice - Invalid Group Name: %s or GroupdID: %s" %(groupname, group_nwkid))
@@ -671,7 +672,6 @@ def processCommand( self, unit, nwkid, Command, Level, Color_ ) :
 
         if Hue_List['m'] == 1:
             ww = int(Hue_List['ww']) # Can be used as level for monochrome white
-            #TODO : Jamais vu un device avec ca encore
             self.logging( 'Debug', "Not implemented device color 1")
         #ColorModeTemp = 2   // White with color temperature. Valid fields: t
         if Hue_List['m'] == 2:
@@ -687,7 +687,6 @@ def processCommand( self, unit, nwkid, Command, Level, Color_ ) :
             ww = int(Hue_List['ww'])
             cw = int(Hue_List['cw'])
             x, y = rgb_to_xy((int(Hue_List['r']),int(Hue_List['g']),int(Hue_List['b'])))
-            #TODO, Pas trouve de device avec ca encore ...
             self.logging( 'Debug', "Not implemented device color 2")
 
         #With saturation and hue, not seen in domoticz but present on zigate, and some device need it

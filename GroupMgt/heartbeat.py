@@ -189,24 +189,24 @@ def hearbeatGroupMgt( self ):
                                 _completed = False
                                 break
                             del  self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']
-        else:
-            if _completed:
-                for iterGrp in self.ListOfGroups:
-                    self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
-                    self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
-                    for iterDev, iterEp, iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
-                        if iterDev not in self.ListOfDevices:
-                            Domoticz.Error("Group Management - seems that Group %s is refering to a non-existing device %s/%s" \
-                                    %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
-                            continue
-                        if 'IEEE' not in self.ListOfDevices[iterDev]:
-                            Domoticz.Error("Group Management - seems that Group %s is refering to a device %s/%s with an unknown IEEE" \
-                                    %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
-                            continue
 
-                        self.logging( 'Status', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
-                self.logging( 'Status', "Group Management - Discovery Completed" )
-                self.StartupPhase = 'load config'
+        if _completed:
+            for iterGrp in self.ListOfGroups:
+                self.logging( 'Status', "Group: %s - %s" %(iterGrp, self.ListOfGroups[iterGrp]['Name']))
+                self.logging( 'Debug', "Group: %s - %s" %(iterGrp, str(self.ListOfGroups[iterGrp]['Devices'])))
+                for iterDev, iterEp, iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
+                    if iterDev not in self.ListOfDevices:
+                        Domoticz.Error("Group Management - seems that Group %s is refering to a non-existing device %s/%s" \
+                                %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
+                        continue
+                    if 'IEEE' not in self.ListOfDevices[iterDev]:
+                        Domoticz.Error("Group Management - seems that Group %s is refering to a device %s/%s with an unknown IEEE" \
+                                %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
+                        continue
+
+                    self.logging( 'Status', "  - device: %s/%s %s" %( iterDev, iterEp, self.ListOfDevices[iterDev]['IEEE']))
+            self.logging( 'Status', "Group Management - Discovery Completed" )
+            self.StartupPhase = 'load config'
 
     def _load_config( self):
         
@@ -225,115 +225,120 @@ def hearbeatGroupMgt( self ):
         self.StartupPhase = 'process config'
 
     def _process_config( self ):
-        self.stillWIP = True
-        for iterGrp in self.ListOfGroups:
-            if 'Imported' not in self.ListOfGroups[iterGrp]:
-                self.logging( 'Debug', "Nothing to import ...")
-                continue
-            if len(self.ListOfGroups[iterGrp]['Imported']) == 0 and len(self.ListOfGroups[iterGrp]['Devices']) == 0 :
-                self.logging( 'Debug', "Nothing to import and no Devices ...")
-                continue
-
-            self.logging( 'Debug', "Processing Group: %s - Checking Removal" %iterGrp)
-            # Remove group membership
-            self.logging( 'Debug', " - %s" %self.ListOfGroups[iterGrp]['Devices'])
-            self.logging( 'Debug', " - %s" %self.ListOfGroups[iterGrp]['Imported'])
-
-            for iterDev, iterEp, iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
-                if iterDev not in self.ListOfDevices:
-                    Domoticz.Error("hearbeat Group - Most likely, device %s is not paired anymore ..." %iterDev)
+            self.stillWIP = True
+            for iterGrp in self.ListOfGroups:
+                if 'Imported' not in self.ListOfGroups[iterGrp]:
+                    self.logging( 'Debug', "Nothing to import ...")
                     continue
-                if 'IEEE' not in self.ListOfDevices[iterDev]:
-                    break
-                iterIEEE = self.ListOfDevices[iterDev]['IEEE']
+                if len(self.ListOfGroups[iterGrp]['Imported']) == 0 and len(self.ListOfGroups[iterGrp]['Devices']) == 0 :
+                    self.logging( 'Debug', "Nothing to import and no Devices ...")
+                    continue
 
-                self.logging( 'Debug', "    - checking device: %s / %s to be removed " %(iterDev, iterEp))
-                self.logging( 'Debug', "    - checking device: %s " %self.ListOfGroups[iterGrp]['Imported'])
-                self.logging( 'Debug', "    - checking device: IEEE: %s " %iterIEEE)
+                self.logging( 'Debug', "Processing Group: %s - Checking Removal" %iterGrp)
+                # Remove group membership
+                self.logging( 'Debug', " - %s" %self.ListOfGroups[iterGrp]['Devices'])
+                self.logging( 'Debug', " - %s" %self.ListOfGroups[iterGrp]['Imported'])
 
-                _found = False
-                for iterTuple in self.ListOfGroups[iterGrp]['Imported']:
-                    if iterIEEE == iterTuple[0]:
-                        if iterTuple[1]: 
-                            if iterEp == iterTuple[1]:
+                for iterDev, iterEp, iterIEEE in self.ListOfGroups[iterGrp]['Devices']:
+                    if iterDev not in self.ListOfDevices:
+                        Domoticz.Error("hearbeat Group - Most likely, device %s is not paired anymore ..." %iterDev)
+                        continue
+                    if 'IEEE' not in self.ListOfDevices[iterDev]:
+                        break
+                    iterIEEE = self.ListOfDevices[iterDev]['IEEE']
+
+                    self.logging( 'Debug', "    - checking device: %s / %s to be removed " %(iterDev, iterEp))
+                    self.logging( 'Debug', "    - checking device: %s " %self.ListOfGroups[iterGrp]['Imported'])
+                    self.logging( 'Debug', "    - checking device: IEEE: %s " %iterIEEE)
+
+                    _found = False
+                    for iterTuple in self.ListOfGroups[iterGrp]['Imported']:
+                        if iterIEEE == iterTuple[0]:
+                            if iterTuple[1]: 
+                                if iterEp == iterTuple[1]:
+                                    _found = True
+                                    break
+                            else:
                                 _found = True
                                 break
+
+                    if _found:
+                        continue
+
+                    removeIEEE = iterIEEE
+                    if iterIEEE not in self.IEEE2NWK:
+                        Domoticz.Error("Unknown IEEE to be removed %s" %iterIEEE)
+                        continue
+                    removeNKWID = self.IEEE2NWK[iterIEEE]
+                    if removeNKWID not in self.ListOfDevices:
+                        Domoticz.Error("Unknown IEEE to be removed %s" %removeNKWID)
+                        continue
+                    self.logging( 'Debug', " %s/%s to be removed from %s" 
+                            %(removeNKWID, iterEp, iterGrp))
+                    self.TobeRemoved.append( ( removeNKWID, iterEp, iterGrp ) )
+
+                self.logging( 'Debug', "Processing Group: %s - Checking Adding" %iterGrp)
+                # Add group membership
+                for iterIEEE, import_iterEp in self.ListOfGroups[iterGrp]['Imported']:
+                    if iterIEEE not in self.IEEE2NWK:
+                        Domoticz.Error("heartbeat Group - Unknown IEEE %s" %iterIEEE)
+                        continue
+
+                    iterDev = self.IEEE2NWK[iterIEEE]
+                    self.logging( 'Debug', "    - checking device: %s to be added " %iterDev)
+                    if iterDev in self.ListOfGroups[iterGrp]['Devices']:
+                        self.logging( 'Debug', "%s already in group %s" %(iterDev, iterGrp))
+                        continue
+
+                    self.logging( 'Debug', "       - checking device: %s " %iterDev)
+                    if 'Ep' in self.ListOfDevices[iterDev]:
+                        _listDevEp = []
+                        if import_iterEp:
+                            _listDevEp.append(import_iterEp)
                         else:
-                            _found = True
-                            break
+                            _listDevEp = list(self.ListOfDevices[iterDev]['Ep'])
+                        self.logging( 'Debug', 'List of Ep: %s' %_listDevEp)
 
-                if _found:
-                    continue
+                        for iterEp in _listDevEp:
+                            self.logging( 'Debug', "       - Check existing Membership %s/%s" %(iterDev,iterEp))
 
-                removeIEEE = iterIEEE
-                if iterIEEE not in self.IEEE2NWK:
-                    Domoticz.Error("Unknown IEEE to be removed %s" %iterIEEE)
-                    continue
-                removeNKWID = self.IEEE2NWK[iterIEEE]
-                if removeNKWID not in self.ListOfDevices:
-                    Domoticz.Error("Unknown IEEE to be removed %s" %removeNKWID)
-                    continue
-                self.logging( 'Debug', " %s/%s to be removed from %s" 
-                        %(removeNKWID, iterEp, iterGrp))
-                self.TobeRemoved.append( ( removeNKWID, iterEp, iterGrp ) )
+                            if ('GroupMgt' in
+                                self.ListOfDevices[iterDev]
+                                and iterEp in self.
+                                ListOfDevices[iterDev]['GroupMgt']
+                                and iterGrp in self.ListOfDevices[
+                                        iterDev]['GroupMgt'][iterEp]
+                                and self.ListOfDevices[iterDev]
+                                ['GroupMgt'][iterEp][iterGrp]
+                                ['Phase'] == 'OK-Membership'):
+                                    self.logging( 'Debug', "       - %s/%s already in group %s" %(iterDev, iterEp, iterGrp))
+                                    continue
+                            if iterEp not in self.ListOfDevices[iterDev]['Ep']:
+                                Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
+                                continue
 
-            self.logging( 'Debug', "Processing Group: %s - Checking Adding" %iterGrp)
-            # Add group membership
-            for iterIEEE, import_iterEp in self.ListOfGroups[iterGrp]['Imported']:
-                if iterIEEE not in self.IEEE2NWK:
-                    Domoticz.Error("heartbeat Group - Unknown IEEE %s" %iterIEEE)
-                    continue
+                            if  ( iterDev == '0000' or \
+                                    ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
+                                    '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
+                                    ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] or \
+                                        '0102' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
+                                self.logging( 'Debug', " %s/%s to be added to %s"
+                                        %( iterDev, iterEp, iterGrp))
+                                self.TobeAdded.append( ( iterIEEE, iterDev, iterEp, iterGrp ) )
 
-                iterDev = self.IEEE2NWK[iterIEEE]
-                self.logging( 'Debug', "    - checking device: %s to be added " %iterDev)
-                if iterDev in self.ListOfGroups[iterGrp]['Devices']:
-                    self.logging( 'Debug', "%s already in group %s" %(iterDev, iterGrp))
-                    continue
-
-                self.logging( 'Debug', "       - checking device: %s " %iterDev)
-                if 'Ep' in self.ListOfDevices[iterDev]:
-                    _listDevEp = []
-                    if import_iterEp:
-                        _listDevEp.append(import_iterEp)
-                    else:
-                        _listDevEp = list(self.ListOfDevices[iterDev]['Ep'])
-                    self.logging( 'Debug', 'List of Ep: %s' %_listDevEp)
-
-                    for iterEp in _listDevEp:
-                        self.logging( 'Debug', "       - Check existing Membership %s/%s" %(iterDev,iterEp))
-
-                        if 'GroupMgt' in self.ListOfDevices[iterDev]:
-                            if iterEp in self.ListOfDevices[iterDev]['GroupMgt']:
-                                if iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
-                                    if  self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
-                                        self.logging( 'Debug', "       - %s/%s already in group %s" %(iterDev, iterEp, iterGrp))
-                                        continue
-                        if iterEp not in self.ListOfDevices[iterDev]['Ep']:
-                            Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
-                            continue
-
-                        if  ( iterDev == '0000' or \
-                                ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
-                                '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
-                                ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] or \
-                                    '0102' in self.ListOfDevices[iterDev]['Ep'][iterEp] ):
-                            self.logging( 'Debug', " %s/%s to be added to %s"
-                                    %( iterDev, iterEp, iterGrp))
-                            self.TobeAdded.append( ( iterIEEE, iterDev, iterEp, iterGrp ) )
-
-        self.logging( 'Log', "Group Management - End of Configuration processing" )
-        self.logging( 'Log', "  - To be removed : %s" %self.TobeRemoved)
-        self.logging( 'Log', "  - To be added : %s" %self.TobeAdded)
-        if len(self.TobeAdded) == 0 and len(self.TobeRemoved) == 0:
-            self.StartupPhase = 'check group list'
-            self._SaveGroupFile = True
-            self.logging( 'Debug', "Updated Groups are : %s" %self.UpdatedGroups)
-            self._write_GroupList()
-            for iterGroup in self.UpdatedGroups:
-                self._identifyEffect( iterGroup, '01', effect='Okay' )
-                self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s operational' %iterGroup)
-        else:
-            self.StartupPhase = 'processing'
+            self.logging( 'Log', "Group Management - End of Configuration processing" )
+            self.logging( 'Log', "  - To be removed : %s" %self.TobeRemoved)
+            self.logging( 'Log', "  - To be added : %s" %self.TobeAdded)
+            if len(self.TobeAdded) == 0 and len(self.TobeRemoved) == 0:
+                self.StartupPhase = 'check group list'
+                self._SaveGroupFile = True
+                self.logging( 'Debug', "Updated Groups are : %s" %self.UpdatedGroups)
+                self._write_GroupList()
+                for iterGroup in self.UpdatedGroups:
+                    self._identifyEffect( iterGroup, '01', effect='Okay' )
+                    self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s operational' %iterGroup)
+            else:
+                self.StartupPhase = 'processing'
 
     def _processing( self ):
             
@@ -435,21 +440,21 @@ def hearbeatGroupMgt( self ):
 
                         self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
                         self.logging( 'Debug', " - No response receive for %s/%s - assuming no group membership to %s" %(iterDev,iterEp, iterGrp))
-        else:
-            if _completed:
-                self.logging( 'Log', "hearbeatGroupMgt - Configuration mode completed" )
-                self.Cycle += 1
-                if self.Cycle > MAX_CYCLE:
-                    Domoticz.Error("We reach the max number of Cycle and didn't succeed in the Group Creation")
-                    self._SaveGroupFile = False
-                    self.StartupPhase = 'check group list'
-                else:
-                    self.StartupPhase = 'scan'
-                    for iterDev in self.ListOfDevices:
-                        if 'GroupMgt' in self.ListOfDevices[iterDev]:
-                            del self.ListOfDevices[iterDev]['GroupMgt']
-                    for iterGrp in list(self.ListOfGroups):
-                        del self.ListOfGroups[iterGrp] 
+
+        if _completed:
+            self.logging( 'Log', "hearbeatGroupMgt - Configuration mode completed" )
+            self.Cycle += 1
+            if self.Cycle > MAX_CYCLE:
+                Domoticz.Error("We reach the max number of Cycle and didn't succeed in the Group Creation")
+                self._SaveGroupFile = False
+                self.StartupPhase = 'check group list'
+            else:
+                self.StartupPhase = 'scan'
+                for iterDev in self.ListOfDevices:
+                    if 'GroupMgt' in self.ListOfDevices[iterDev]:
+                        del self.ListOfDevices[iterDev]['GroupMgt']
+                for iterGrp in list(self.ListOfGroups):
+                    del self.ListOfGroups[iterGrp] 
  
     def _checking_group_list( self ):
         
