@@ -55,7 +55,7 @@ class GroupsManagement(object):
                             _bestGroupWidget, updateDomoGroupDevice, _removeDomoGroupDevice, processCommand, processRemoveGroup, set_Kelvin_Color, set_RGB_color
     from GroupMgt.config import _write_GroupList, _load_GroupList, load_ZigateGroupConfiguration, load_jsonZigateGroupConfig, write_jsonZigateGroupConfig, _write_GroupList
     from GroupMgt.com import _addGroup, statusGroupRequest, addGroupResponse, _viewGroup, viewGroupResponse, _getGroupMembership, getGroupMembershipResponse,\
-                            _removeGroup, _getGroupMembership, _removeAllGroups, _addGroupifIdentify
+                            _removeGroup, _getGroupMembership, _removeAllGroups, _addGroupifIdentify, removeGroupResponse, _identifyEffect
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
         self.StartupPhase = 'start'

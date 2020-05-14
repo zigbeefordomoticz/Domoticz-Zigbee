@@ -272,3 +272,53 @@ def _removeAllGroups(self, device_addr, device_ep ):
 def _addGroupifIdentify(self, device_addr, device_ep, goup_addr = "0000"):
     datas = "02" + device_addr + ZIGATE_EP + device_ep + goup_addr
     self.ZigateComm.sendData( "0065", datas)
+
+def _identifyEffect( self, nwkid, ep, effect='Okay' ):
+        # Quick and Dirty as this exist already in the Module.
+
+        '''
+            Blink   / Light is switched on and then off (once)
+            Breathe / Light is switched on and off by smoothly increasing and
+                    then decreasing its brightness over a one-second period,
+                    and then this is repeated 15 times
+            Okay    / •  Colour light goes green for one second
+                    •  Monochrome light flashes twice in one second
+        '''
+    
+        effect_command = { 'Blink': 0x00 ,
+                'Breathe': 0x01,
+                'Okay': 0x02,
+                'ChannelChange': 0x0b,
+                'FinishEffect': 0xfe,
+                'StopEffect': 0xff }
+    
+        self.logging( 'Debug', "Identify effect for Group: %s" %nwkid)
+        identify = False
+        if effect not in effect_command:
+            effect = 'Okay'
+        datas = "%02d" %ADDRESS_MODE['group'] + "%s"%(nwkid) + ZIGATE_EP + ep + "%02x"%(effect_command[effect])  + "%02x" %0
+        self.ZigateComm.sendData( "00E0", datas)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
