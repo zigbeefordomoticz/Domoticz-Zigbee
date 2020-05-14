@@ -194,8 +194,6 @@ class BasePlugin:
 
         self.SchneiderZone = None        # Manage Zone for Wiser Thermostat and HACT
 
-        return
-
     def onStart(self):
 
         self.pluginParameters = dict(Parameters)
@@ -313,9 +311,12 @@ class BasePlugin:
             return            
         
         loggingPlugin( self, 'Debug', "ListOfDevices : " )
-        for e in self.ListOfDevices.items(): loggingPlugin( self, 'Debug', " "+str(e))
+        for e in self.ListOfDevices.items(): 
+            loggingPlugin( self, 'Debug', " "+str(e))
+            
         loggingPlugin( self, 'Debug', "IEEE2NWK      : " )
-        for e in self.IEEE2NWK.items(): loggingPlugin( self, 'Debug', "  "+str(e))
+        for e in self.IEEE2NWK.items(): 
+            loggingPlugin( self, 'Debug', "  "+str(e))
 
         # Check proper match against Domoticz Devices
         checkListOfDevice2Devices( self, Devices )
@@ -363,8 +364,6 @@ class BasePlugin:
         loggingPlugin( self, 'Debug', "Establish Zigate connection" )
         self.ZigateComm.openConn()
         self.busy = False
-
-        return
 
     def onStop(self):
         loggingPlugin( self, 'Status', "onStop called")
@@ -535,8 +534,6 @@ class BasePlugin:
         else:
             Domoticz.Error("onCommand - Unknown device or GrpMgr not enabled %s, unit %s , id %s" \
                     %(Devices[Unit].Name, Unit, Devices[Unit].DeviceID))
-
-        return
 
     def onDisconnect(self, Connection):
 
@@ -796,7 +793,7 @@ def zigateInit_Phase2( self):
 
     # Ready for next phase
     self.InitPhase2 = True
-    return
+
 
 def zigateInit_Phase3( self ):
 
@@ -1007,7 +1004,7 @@ def DumpConfigToLog():
         Domoticz.Log( "Device sValue:   '" + Devices[x].sValue + "'")
         Domoticz.Log( "Device LastLevel: " + str(Devices[x].LastLevel))
         Domoticz.Log( "Device Options: " + str(Devices[x].Options))
-    return
+
 
 
 def DumpHTTPResponseToLog(httpDict):
