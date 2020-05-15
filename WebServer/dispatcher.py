@@ -6,7 +6,7 @@
 
 import Domoticz
 
-from WebServer.headerResponse import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 from WebServer.logging import logging
 from WebServer.rest_Bindings import rest_bindLSTcluster, rest_bindLSTdevice, rest_binding, rest_unbinding
@@ -75,16 +75,7 @@ def do_rest( self, Connection, verb, data, version, command, parameters):
     self.logging( 'Debug', "==> return HTTPresponse: %s" %(HTTPresponse))
     if HTTPresponse == {} or HTTPresponse is None:
         # We reach here due to failure !
-        HTTPresponse = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            HTTPresponse["Headers"]["Connection"] = "Keep-alive"
-        else:
-            HTTPresponse["Headers"]["Connection"] = "Close"
-        if not self.pluginconf.pluginConf['enableCache']:
-            HTTPresponse["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            HTTPresponse["Headers"]["Pragma"] = "no-cache"
-            HTTPresponse["Headers"]["Expires"] = "0"
-            HTTPresponse["Headers"]["Accept"] = "*/*"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         HTTPresponse["Status"] = "400 BAD REQUEST"
         HTTPresponse["Data"] = 'Unknown REST command: %s' %command
         HTTPresponse["Headers"]["Content-Type"] = "text/plain; charset=utf-8"

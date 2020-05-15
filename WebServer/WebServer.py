@@ -22,7 +22,7 @@ from Classes.PluginConf import PluginConf,SETTINGS
 from GroupMgt.GroupMgt import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
-from WebServer.headerResponse import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 MIMETYPES = { 
         "gif": "image/gif" ,
@@ -109,7 +109,7 @@ class WebServer(object):
 
     def rest_plugin_health( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         if self.pluginconf.pluginConf['enableKeepalive']:
             _response["Headers"]["Connection"] = "Keep-alive"
         else:
@@ -140,12 +140,12 @@ class WebServer(object):
                     
     def rest_zigate_erase_PDM( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+
+
+
+
+
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             self.logging( 'Status', "Erase Zigate PDM")
@@ -166,12 +166,12 @@ class WebServer(object):
 
     def rest_rescan_group( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+ 
+ 
+ 
+ 
+ 
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         action = {}
         if verb == 'GET':
@@ -192,33 +192,19 @@ class WebServer(object):
 
     def rest_reset_zigate( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-        action = {}
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         if verb == 'GET':
             if self.pluginparameters['Mode1'] != 'None':
                 self.zigatedata['startZigateNeeded'] = True
                 #start_Zigate( self )
                 sendZigateCmd(self, "0011", "" ) # Software Reset
-
-            action['Name'] = 'Software reboot of Zigate'
-            action['TimeStamp'] = int(time())
+            action = {'Name': 'Software reboot of Zigate', 'TimeStamp': int(time())}
         _response["Data"] = json.dumps( action , sort_keys=True )
         return _response
 
     def rest_zigate( self, verb, data, parameters):
 
         _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.zigatedata:
@@ -238,12 +224,7 @@ class WebServer(object):
 
     def rest_domoticz_env( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
                 
@@ -260,12 +241,7 @@ class WebServer(object):
 
     def rest_PluginEnv( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
+        _response = prepResponseMessage( self ,setupHeadersResponse())     
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
                 _response["Data"] = json.dumps( self.pluginparameters, sort_keys=True )
@@ -273,13 +249,7 @@ class WebServer(object):
 
     def rest_nwk_stat( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkEnergy-v3-' + '%02d' %self.hardwareID + '.json'
 
@@ -351,12 +321,7 @@ class WebServer(object):
 
     def rest_plugin_restart( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
         if verb == 'GET':
             if self.WebUsername and self.WebPassword:
@@ -394,13 +359,8 @@ class WebServer(object):
         
     def rest_restart_needed( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+
         if verb == 'GET':
             _response["Data"] = json.dumps( self.restart_needed, sort_keys=True )
         return _response
@@ -466,26 +426,14 @@ class WebServer(object):
         Statistics['Rxpm'] = round(Statistics['Received'] / Statistics['Uptime'] * 60, 2)
         Statistics['Rxph'] = round(Statistics['Received'] / Statistics['Uptime'] * 3600, 2)
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
         if verb == 'GET':
                 _response["Data"] = json.dumps( Statistics, sort_keys=True )
         return _response
 
     def rest_Settings( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         if verb == 'GET':
             if len(parameters) == 0:
@@ -648,14 +596,8 @@ class WebServer(object):
 
     def rest_PermitToJoin( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
         if verb == 'GET':
             duration = self.permitTojoin['Duration']
@@ -700,14 +642,7 @@ class WebServer(object):
     def rest_Device( self, verb, data, parameters):
 
         _dictDevices = {}
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Data"] = {}
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
@@ -786,13 +721,7 @@ class WebServer(object):
 
     def rest_zDevice_name( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Data"] = {}
-        _response["Status"] = "200 OK"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         if verb == 'DELETE':
             if len(parameters) == 1:
@@ -909,14 +838,7 @@ class WebServer(object):
 
     def rest_zDevice( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Data"] = {}
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         if verb == 'DELETE':
             if len(parameters) == 1:
@@ -1048,15 +970,8 @@ class WebServer(object):
 
     def rest_zDevice_raw( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Data"] = {}
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
-
+        _response = prepResponseMessage( self ,setupHeadersResponse())
+ 
         if verb == 'GET':
             if self.Devices is None or len(self.Devices) == 0:
                 return _response
@@ -1080,13 +995,7 @@ class WebServer(object):
     def rest_raw_command( self, verb, data, parameters):
 
         Domoticz.Log("raw_command - %s %s" %(verb, data))
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         if verb == 'PUT':
             _response["Data"] = None
@@ -1116,13 +1025,7 @@ class WebServer(object):
 
     def rest_dev_command( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
         if verb == 'PUT':
             _response["Data"] = None
@@ -1191,97 +1094,90 @@ class WebServer(object):
 
     def rest_dev_capabilities( self, verb, data, parameters):
 
-        _response = setupHeadersResponse()
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        _response["Data"] = {}
-        _response["Status"] = "200 OK"
-        _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+        _response = prepResponseMessage( self ,setupHeadersResponse())
 
-        if verb == 'GET':
-            if self.Devices is None or len(self.Devices) == 0:
-                return _response
+        if verb != 'GET':
+            return _response
 
-            if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
-                return _response
+        if self.Devices is None or len(self.Devices) == 0:
+            return _response
 
-            if len(parameters) == 0:
-                Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" %(parameters))
-                return _response
+        if self.ListOfDevices is None or len(self.ListOfDevices) == 0:
+            return _response
 
-            if len(parameters) == 1:
-                if parameters[0] not in self.ListOfDevices and parameters[0] not in self.IEEE2NWK:
-                    Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
-                    return _response
+        if len(parameters) == 0:
+            Domoticz.Error("rest_dev_capabilities - expecting a device id! %s" %(parameters))
+            return _response
 
-                # Check Capabilities
-                CLUSTER_INFOS = {
-                        '0003': [ 
-                            { 'actuator': 'Identify', 'Value': '', 'Type': ( ) },
-                            { 'actuator': 'IdentifyEffect', 'Value': 'hex', 'Type': ( ) },
-                        ],
-                        '0006': [
-                            { 'actuator': 'On', 'Value':'', 'Type': ( 'Switch',) },
-                            { 'actuator': 'Off', 'Value':'', 'Type': ( 'Switch', ) },
-                            { 'actuator': 'Toggle', 'Value':'', 'Type': ( 'Switch', ) },
-                        ],
-                        '0008': [
-                            { 'actuator': 'SetLevel', 'Value':'int', 'Type': ( 'LvlControl',) },
-                        ],
-                        '0102': [
-                            { 'actuator': 'On', 'Value':'', 'Type': ( 'WindowCovering',) },
-                            { 'actuator': 'Off', 'Value':'', 'Type': ( 'WindowCovering',) },
-                            { 'actuator': 'Stop', 'Value':'', 'Type': ( 'WindowCovering',) },
-                            { 'actuator': 'SetLevel', 'Value':'hex', 'Type': ( 'WindowCovering',) },
-                        ],
-                        '0201': [
-                            { 'actuator': 'SetPoint', 'Value':'hex', 'Type': ( 'ThermoSetpoint',) },
-                        ],
-                        '0300': [
-                            { 'actuator': 'SetColor', 'Value':'rgbww', 'Type': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB') },
-                        ]
+        if len(parameters) != 1:
+            return
 
-                    }
-                dev_capabilities = {}
-                dev_capabilities['NwkId'] = {}
-                dev_capabilities['Capabilities'] = []
-                dev_capabilities['Types'] = []
-                if  parameters[0] in self.ListOfDevices:
-                    _nwkid = parameters[0]
-                elif parameters[0] in self.IEEE2NWK:
-                    _nwkid = self.IEEE2NWK[parameters[0]]
-                dev_capabilities['NwkId'] = _nwkid
+        if not ( parameters[0] in self.ListOfDevices or parameters[0] in self.IEEE2NWK ):
+            Domoticz.Error("rest_dev_capabilities - Device %s doesn't exist" %(parameters[0]))
+            return _response
 
-                for ep in self.ListOfDevices[ _nwkid ]['Ep']:
-                    for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
-                        if cluster in CLUSTER_INFOS:
-                            for action in CLUSTER_INFOS[cluster]:
-                                _capabilitie = {}
-                                _capabilitie['actuator'] = action['actuator']
-                                if action['Value'] == '':
-                                    _capabilitie['Value'] = False
-                                else: 
-                                    _capabilitie['Value'] = action['Value']
-                                if len( action['Type']) != 0:
-                                    _capabilitie['Type'] = True
-                                else:
-                                    _capabilitie['Type'] = False
-                                dev_capabilities['Capabilities'].append( _capabilitie )
+        # Check Capabilities
+        CLUSTER_INFOS = {
+                '0003': [ 
+                    { 'actuator': 'Identify', 'Value': '', 'Type': ( ) },
+                    { 'actuator': 'IdentifyEffect', 'Value': 'hex', 'Type': ( ) },
+                ],
+                '0006': [
+                    { 'actuator': 'On', 'Value':'', 'Type': ( 'Switch',) },
+                    { 'actuator': 'Off', 'Value':'', 'Type': ( 'Switch', ) },
+                    { 'actuator': 'Toggle', 'Value':'', 'Type': ( 'Switch', ) },
+                ],
+                '0008': [
+                    { 'actuator': 'SetLevel', 'Value':'int', 'Type': ( 'LvlControl',) },
+                ],
+                '0102': [
+                    { 'actuator': 'On', 'Value':'', 'Type': ( 'WindowCovering',) },
+                    { 'actuator': 'Off', 'Value':'', 'Type': ( 'WindowCovering',) },
+                    { 'actuator': 'Stop', 'Value':'', 'Type': ( 'WindowCovering',) },
+                    { 'actuator': 'SetLevel', 'Value':'hex', 'Type': ( 'WindowCovering',) },
+                ],
+                '0201': [
+                    { 'actuator': 'SetPoint', 'Value':'hex', 'Type': ( 'ThermoSetpoint',) },
+                ],
+                '0300': [
+                    { 'actuator': 'SetColor', 'Value':'rgbww', 'Type': ( 'ColorControlRGBWW', 'ColorControlWW', 'ColorControlRGB') },
+                ]
 
-                                for cap in action['Type']:
-                                    if cap not in dev_capabilities['Types']:
-                                        dev_capabilities['Types'].append( cap )
+            }
+        dev_capabilities = {'NwkId': {}, 'Capabilities': [], 'Types': []}
+        if  parameters[0] in self.ListOfDevices:
+            _nwkid = parameters[0]
+        elif parameters[0] in self.IEEE2NWK:
+            _nwkid = self.IEEE2NWK[parameters[0]]
+        dev_capabilities['NwkId'] = _nwkid
 
-                                # Adding non generic Capabilities
-                                if 'Model' in self.ListOfDevices[ _nwkid ]:
-                                    if self.ListOfDevices[ _nwkid ]['Model'] != {}:
-                                        if self.ListOfDevices[ _nwkid ]['Model'] =='TI0001':
-                                            if 'LivoloSWL' not in dev_capabilities['Types']:
-                                                dev_capabilities['Types'].append( 'LivoloSWL' )
-                                            if 'LivoloSWR' not in dev_capabilities['Types']:
-                                                dev_capabilities['Types'].append( 'LivoloSWR' )
+        for ep in self.ListOfDevices[ _nwkid ]['Ep']:
+            for cluster in self.ListOfDevices[ _nwkid ]['Ep'][ ep ]:
+                if cluster not in CLUSTER_INFOS:
+                    continue
+                for action in CLUSTER_INFOS[cluster]:
+                    _capabilitie = {
+                        'actuator': action['actuator'],
+                        'Value': False if action['Value'] == '' else action['Value'],
+                        'Type': True if len(action['Type']) != 0 else False,
+                        }
 
-                _response["Data"] = json.dumps( dev_capabilities )
-                return _response
+                    dev_capabilities['Capabilities'].append( _capabilitie )
+
+                    for cap in action['Type']:
+                        if cap not in dev_capabilities['Types']:
+                            dev_capabilities['Types'].append( cap )
+
+                    # Adding non generic Capabilities
+                    if (
+                        'Model' in self.ListOfDevices[_nwkid]
+                        and self.ListOfDevices[_nwkid]['Model'] != {}
+                        and self.ListOfDevices[_nwkid]['Model'] == 'TI0001'
+                    ):
+                        if 'LivoloSWL' not in dev_capabilities['Types']:
+                            dev_capabilities['Types'].append( 'LivoloSWL' )
+                        if 'LivoloSWR' not in dev_capabilities['Types']:
+                            dev_capabilities['Types'].append( 'LivoloSWR' )
+
+        _response["Data"] = json.dumps( dev_capabilities )
+        return _response

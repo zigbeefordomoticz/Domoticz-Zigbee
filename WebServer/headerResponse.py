@@ -4,8 +4,26 @@
 # Author: zaraki673 & pipiche38
 #
 
+def prepResponseMessage( self , _response ):
 
 
+    if self.pluginconf.pluginConf['enableKeepalive']:
+        _response["Headers"]["Connection"] = "Keep-alive"
+    else:
+        _response["Headers"]["Connection"] = "Close"
+    _response["Data"] = {}
+    _response["Status"] = "200 OK"
+    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+    if not self.pluginconf.pluginConf['enableCache']:
+        _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        _response["Headers"]["Pragma"] = "no-cache"
+        _response["Headers"]["Expires"] = "0"
+        _response["Headers"]["Accept"] = "*/*"
+    else:
+        _response["Headers"]["Cache-Control"] = "private"
+
+    return _response
 
 def setupHeadersResponse( cookie = None ):
     
