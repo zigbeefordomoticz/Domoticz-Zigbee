@@ -13,7 +13,7 @@ CURL_COMMAND = '/usr/bin/curl'
 
 def restartPluginViaDomoticzJsonApi( self ):
 
-    if os.path.isfile( CURL_COMMAND ):
+    if not os.path.isfile( CURL_COMMAND ):
         Domoticz.Log("Unable to restart the plugin, %s not available" %CURL_COMMAND)
         return
 
