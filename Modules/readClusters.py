@@ -587,7 +587,7 @@ def Cluster0001( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Battery Quantity: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
-    elif MsgAttrID == "0035":
+    elif MsgAttrID == "0035": # Battery Alarm Mask 
         checkAndStoreAttributeValue( self, MsgSrcAddr, MsgSrcEp,MsgClusterId, MsgAttrID, value )
         loggingCluster( self, 'Debug', "readCluster 0001 - %s Attribut 0035: %s " %(MsgSrcAddr, value) , MsgSrcAddr)
 
@@ -667,8 +667,8 @@ def UpdateBatteryAttribute( self, MsgSrcAddr, MsgSrcEp ):
                 min_voltage = 25
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-RTS':
-                max_voltage = 3 * 1.5
-                min_voltage = 3 * 1
+                max_voltage = 3 * 1.5 * 10 #  3 * 1.5v batteries in RTS - value are stored in volts * 10
+                min_voltage = 3 * 1 * 10
 
             elif self.ListOfDevices[MsgSrcAddr]['Model'] == 'EH-ZB-BMS':
                 max_voltage = 60

@@ -251,7 +251,7 @@ def schneider_hact_heater_type( self, key, type_heater ):
     """
     EPout = SCHNEIDER_BASE_EP
 
-    current_value = 0
+    current_value_string = '0'
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
             if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
@@ -306,7 +306,7 @@ def schneider_hact_heating_mode( self, key, mode ):
 
     EPout = SCHNEIDER_BASE_EP
 
-    current_value = 0
+    current_value_string = '0'
     if EPout in self.ListOfDevices[ key ]['Ep']:
         if '0201' in  self.ListOfDevices[ key ]['Ep'][EPout]:
             if 'e011' in  self.ListOfDevices[ key ]['Ep'][EPout]['0201']:
@@ -700,21 +700,25 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
     #else: # do normal reporting
     #    Modules.configureReporting.processConfigureReporting (self, key)
 
-    AlertCode = payload [0:2] # uint8
+    AlertCode = int(payload [0:2],16) # uint8  0x10: low voltage, 0x11 high voltage, 0x16 high current
+
     AlertClusterId = payload [4:6]  + payload [2:4]# uint16
-    loggingSchneider( self, 'Debug', "Schneider schneiderAlarmReceived start:%s, AlertCode: %s, AlertClusterID: %s" \
+    loggingSchneider( self, 'Debug', "schneiderAlarmReceived start:%s, AlertCode: %s, AlertClusterID: %s" \
             %(start, AlertCode,AlertClusterId), NWKID)
 
-    cluster_id = "%04x" %0x0009
-    if (start):
-        value = '04'
-    else:
-        value = '00'
+    if (AlertCode == 0x16): # max current of contract reached
+        cluster_id = "%04x" %0x0009
+        if (start):
+            value = '04'
+        else:
+            value = '00'
 
-    loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
-            %(NWKID,srcEp,cluster_id,value), NWKID)
-    MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
-    #ReadAttributeRequest_0702(self, NWKID)
+        loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
+                %(NWKID,srcEp,cluster_id,value), NWKID)
+        Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
+    elif (AlertCode == 0x10): # battery low
+        Modules.output.ReadAttributeRequest_0001(self)
+    #Modules.output.ReadAttributeRequest_0702(self, NWKID)
 
 def schneider_set_contract( self, key, EPout, kva):
     """
