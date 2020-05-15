@@ -23,7 +23,7 @@ from Modules.basicOutputs import sendZigateCmd, raw_APS_request, write_attribute
 from Modules.domoMaj import MajDomoDevice
 from Modules.bindings import webBind
 
-from Modules.readAttributes import ReadAttributeRequest_0201
+from Modules.readAttributes import ReadAttributeRequest_0201, ReadAttributeRequest_0001
 from Modules.writeAttributes import write_attribute_when_awake
 from Modules.logging import loggingSchneider
 from Modules.zigateConsts import ZIGATE_EP,MAX_LOAD_ZIGATE
@@ -715,9 +715,9 @@ def schneiderAlarmReceived (self, Devices, NWKID, srcEp, ClusterID, start, paylo
 
         loggingSchneider( self, 'Debug', "Schneider update Alarm Domoticz device Attribute %s Endpoint:%s / cluster: %s to %s"
                 %(NWKID,srcEp,cluster_id,value), NWKID)
-        Modules.domoticz.MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
+        MajDomoDevice(self, Devices, NWKID, srcEp, cluster_id, value)
     elif (AlertCode == 0x10): # battery low
-        Modules.output.ReadAttributeRequest_0001(self)
+        ReadAttributeRequest_0001(self, NWKID)
     #Modules.output.ReadAttributeRequest_0702(self, NWKID)
 
 def schneider_set_contract( self, key, EPout, kva):
