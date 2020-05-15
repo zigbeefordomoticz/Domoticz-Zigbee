@@ -2076,10 +2076,22 @@ def Clusterfc00( self, Devices, MsgSQN, MsgSrcAddr, MsgSrcEp, MsgClusterId, MsgA
 
     loggingCluster( self, 'Debug', "ReadCluster %s - %s/%s - reading self.ListOfDevices[%s]['Ep'][%s][%s][%s] = %s" \
             %( MsgClusterId, MsgSrcAddr, MsgSrcEp, MsgSrcAddr, MsgSrcEp, MsgClusterId , MsgAttrID,  self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]), MsgSrcAddr)
-    
-    prev_Value = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]).split(";")
-    if len(prev_Value) != 3:
-        prev_Value = '0;80;0'.split(';')
+
+    if MsgAttrID in self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId]:
+        prev_Value = str(self.ListOfDevices[MsgSrcAddr]['Ep'][MsgSrcEp][MsgClusterId][MsgAttrID]).split(";")
+        if len(prev_Value) == 3:
+            for val in prev_Value:
+                if not is_hex( val ):
+                    prev_Value = '0;80;0'.split(';')
+                    break
+
+        else:
+            prev_Value = '0;80;0'.split(';')
+            
+    else:
+       prev_Value = '0;80;0'.split(';')
+
+
     move = None
     prev_onoffvalue = onoffValue = int(prev_Value[0],16)
     prev_lvlValue = lvlValue = int(prev_Value[1],16)
