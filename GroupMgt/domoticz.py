@@ -7,16 +7,11 @@
 
 import Domoticz
 import json
-import pickle
-import os.path
-
-from time import time
-from datetime import datetime
 
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
 
-from Classes.AdminWidgets import AdminWidgets
+#from Classes.AdminWidgets import AdminWidgets
 
 
 def deviceChangeNetworkID( self, old_nwkid, new_nwkid):
@@ -194,11 +189,11 @@ def _bestGroupWidget( self, group_nwkid):
                         widget = WIDGET_STYLE['Venetian']
                         widget_style =  'Venetian'
 
-                    if code == 12:
+                    elif code == 12:
                         widget = WIDGET_STYLE['WindowCovering']
                         widget_style =  'WindowCovering'
 
-                    if code == 1: 
+                    if code == 1:
                         widget = WIDGET_STYLE['Switch']
                         widget_style =  'Switch'
 
@@ -221,13 +216,12 @@ def _bestGroupWidget( self, group_nwkid):
                             widget = WIDGET_STYLE['LvlControl']
                             widget_style =  'LvlControl'
 
-                    elif code == 3 :
+                    elif code == 3:
                         if color_widget is None:
-                            if devwidget == 'ColorControlWW': 
-                                widget = WIDGET_STYLE[ devwidget ]
-                                _ikea_colormode = devwidget
-
-                            elif devwidget == 'ColorControlRGB': 
+                            if devwidget in [
+                                'ColorControlWW',
+                                'ColorControlRGB',
+                            ]:
                                 widget = WIDGET_STYLE[ devwidget ]
                                 _ikea_colormode = devwidget
 
@@ -258,15 +252,16 @@ def _bestGroupWidget( self, group_nwkid):
                         _ikea_colormode = color_widget
 
                 pre_code = code
+
         self.logging( 'Debug', "--------------- - processing %s code: %s widget: %s, color_widget: %s _ikea_colormode: %s " 
                 %(devNwkid, code, widget, color_widget, _ikea_colormode))
-
 
     if color_widget:
         self.ListOfGroups[group_nwkid]['WidgetStyle'] = color_widget
 
     elif widget_style:
         self.ListOfGroups[group_nwkid]['WidgetStyle'] = widget_style
+
     else:
         self.ListOfGroups[group_nwkid]['WidgetStyle'] = ''
 
@@ -284,7 +279,6 @@ def _bestGroupWidget( self, group_nwkid):
 
     else:
         self.ListOfGroups[group_nwkid]['Cluster'] = ''
-
 
     # This will be used when receiving left/right click , to know if it is RGB or WW
     if 'Tradfri Remote' in self.ListOfGroups[group_nwkid]:
@@ -445,46 +439,6 @@ def processRemoveGroup( self, unit, grpid):
         del self.ListOfDevices[removeDev]['GroupMgt'][removeEp][grpid]
 
     del self.ListOfGroups[grpid]
-
-    return
-
-def set_Kelvin_Color( self, mode, addr, EPin, EPout, t, transit=None):
-    #Value is in mireds (not kelvin)
-    #Correct values are from 153 (6500K) up to 588 (1700K)
-    # t is 0 > 255
-
-    if transit is None:
-        transit = '0001'
-
-    else:
-        transit = '%04x' %transit
-
-    TempKelvin = int(((255 - int(t))*(6500-1700)/255)+1700)
-    TempMired = 1000000 // TempKelvin
-    zigate_cmd = "00C0"
-    zigate_param = Hex_Format(4,TempMired) + transit
-    datas = "%02d" %mode + addr + EPin + EPout + zigate_param
-    self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
-    self.ZigateComm.sendData( zigate_cmd, datas)
-
-def set_RGB_color( self, mode, addr, EPin, EPout, r, g, b, transit=None):
-
-    if transit is None:
-        transit = '0001'
-
-    else:
-        transit = '%04x' %transit
-
-    x, y = rgb_to_xy((int(r),int(g),int(b)))
-    #Convert 0>1 to 0>FFFF
-    x = int(x*65536)
-    y = int(y*65536)
-    strxy = Hex_Format(4,x) + Hex_Format(4,y)
-    zigate_cmd = "00B7"
-    zigate_param = strxy + transit
-    datas = "%02d" %mode + addr + ZIGATE_EP + EPout + zigate_param
-    self.logging( 'Debug', "Command: %s - data: %s" %(zigate_cmd,datas))
-    self.ZigateComm.sendData( zigate_cmd, datas)
 
 def _updateDeviceListAttribute( self, grpid, cluster, value):
 

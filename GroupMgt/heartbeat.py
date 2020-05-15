@@ -22,12 +22,12 @@ from GroupMgt.tool import TIMEOUT, MAX_CYCLE
 
 
 def modification_date( filename ):
-        """
-        Try to get the date that a file was created, falling back to when it was
-        last modified if that isn't possible.
-        See http://stackoverflow.com/a/39501288/1709587 for explanation.
-        """
-        return os.path.getmtime( filename )
+    """
+    Try to get the date that a file was created, falling back to when it was
+    last modified if that isn't possible.
+    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    """
+    return os.path.getmtime( filename )
 
 
 def hearbeatGroupMgt( self ):
@@ -39,44 +39,43 @@ def hearbeatGroupMgt( self ):
              # Check if there is an existing Pickle file. If this file is newer than ZigateConf, we can simply load it and finish the Group startup.
             # In case the file is older, this means that ZigateGroupConf is newer and has some changes, do the full process.
 
-            # Check if the DeviceList file exist.
-            self.logging( 'Log', "Group Management - Init phase")
-            self.StartupPhase = 'scan'
-            last_update_GroupList = 0
-            if os.path.isfile( self.groupListFileName ) :
-                self.logging( 'Debug', "--->GroupList.pck exists")
-                last_update_GroupList = modification_date( self.groupListFileName )
-                self.logging( 'Debug', "--->Last Update of GroupList: %s" %last_update_GroupList)
-            else:
-                self.logging( 'Debug', "--->GroupList.pck doesn't exist")
+        # Check if the DeviceList file exist.
+        self.logging( 'Log', "Group Management - Init phase")
+        self.StartupPhase = 'scan'
+        last_update_GroupList = 0
+        if os.path.isfile( self.groupListFileName ) :
+            self.logging( 'Debug', "--->GroupList.pck exists")
+            last_update_GroupList = modification_date( self.groupListFileName )
+            self.logging( 'Debug', "--->Last Update of GroupList: %s" %last_update_GroupList)
+        else:
+            self.logging( 'Debug', "--->GroupList.pck doesn't exist")
 
-            if self.groupsConfigFilename or self.json_groupsConfigFilename :
-                if self.groupsConfigFilename:
-                    if os.path.isfile( self.groupsConfigFilename ):
-                        self.logging( 'Debug', "------------>Config file exists %s" %self.groupsConfigFilename)
-                        self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
-                        self.logging( 'Debug', "------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
-                        self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
-                        self.fullScan = False
- 
-                if self.json_groupsConfigFilename:
-                    if os.path.isfile( self.json_groupsConfigFilename):
-                        self.logging( 'Debug', "------------>Json Config file exists")
-                        self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
-                        self.logging( 'Debug', "------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
-                        self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
-                        self.fullScan = False
-                
-                if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
-                    # GroupList is newer , just reload the file and exit
-                    self.logging( 'Status', "--------->No update of Groups needed")
-                    self.StartupPhase = 'completion'
-                    self._load_GroupList()
-            else:   # No config file, so let's move on
-                self.logging( 'Debug', "------>No Config file, let's use the GroupList")
-                self.logging( 'Debug', "------>switch to end of Group Startup")
-                self._load_GroupList()
+        if self.groupsConfigFilename or self.json_groupsConfigFilename:
+            if self.groupsConfigFilename and os.path.isfile( self.groupsConfigFilename ):
+                self.logging( 'Debug', "------------>Config file exists %s" %self.groupsConfigFilename)
+                self.txt_last_update_ConfigFile = modification_date( self.groupsConfigFilename )
+                self.logging( 'Debug', "------------>Last Update of TXT Config File: %s" %self.txt_last_update_ConfigFile)
+                self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
+                self.fullScan = False
+
+            if self.json_groupsConfigFilename and os.path.isfile( self.json_groupsConfigFilename ):
+                self.logging( 'Debug', "------------>Json Config file exists")
+                self.json_last_update_ConfigFile = modification_date( self.json_groupsConfigFilename )
+                self.logging( 'Debug', "------------>Last Update of JSON Config File: %s" %self.json_last_update_ConfigFile)
+                self.load_jsonZigateGroupConfig( load=False ) # Just to load the targetDevices if applicable
+                self.fullScan = False
+
+            if last_update_GroupList > self.txt_last_update_ConfigFile and last_update_GroupList > self.json_last_update_ConfigFile:
+                # GroupList is newer , just reload the file and exit
+                self.logging( 'Status', "--------->No update of Groups needed")
                 self.StartupPhase = 'completion'
+                self._load_GroupList()
+
+        else:    # No config file, so let's move on
+            self.logging( 'Debug', "------>No Config file, let's use the GroupList")
+            self.logging( 'Debug', "------>switch to end of Group Startup")
+            self._load_GroupList()
+            self.StartupPhase = 'completion'
 
     def _scan( self ):
         if self.HB <= 12:
@@ -88,8 +87,10 @@ def hearbeatGroupMgt( self ):
         self.logging( 'Log', "Group Management - Discovery mode - Searching for Group Membership (or continue)")
         self.stillWIP = True
         _workcompleted = True
+
         if self.fullScan:
             listofdevices = list(self.ListOfDevices.keys())
+
         else:
             listofdevices = self.targetDevices
 
@@ -99,25 +100,25 @@ def hearbeatGroupMgt( self ):
             if iterDev not in self.ListOfDevices:
                 # Most likely this device has been removed
                 continue
-            if 'MacCapa' in self.ListOfDevices[iterDev]:
-                if self.ListOfDevices[iterDev]['MacCapa'] == '8e':
-                    _mainPowered = True
-            if 'PowerSource' in self.ListOfDevices[iterDev]:
-                if self.ListOfDevices[iterDev]['PowerSource'] == 'Main':
-                    _mainPowered = True
+
+            if ( 'MacCapa' in self.ListOfDevices[iterDev] and self.ListOfDevices[iterDev]['MacCapa'] == '8e' ):
+                _mainPowered = True
+
+            if ( 'PowerSource' in self.ListOfDevices[iterDev] and self.ListOfDevices[iterDev]['PowerSource'] == 'Main' ):
+                _mainPowered = True
+
             if not _mainPowered:
                 self.logging( 'Debug', " - %s not main Powered" %(iterDev))
                 continue
 
-            if 'Health' in self.ListOfDevices[iterDev]:
-                if self.ListOfDevices[iterDev]['Health'] == 'Not Reachable':
-                    self.logging( 'Debug', "Group Management - Discovery mode - skiping device %s which is Not Reachable" %iterDev)
-                    continue
+            if ( 'Health' in self.ListOfDevices[iterDev] and self.ListOfDevices[iterDev]['Health'] == 'Not Reachable' ):
+                self.logging( 'Debug', "Group Management - Discovery mode - skiping device %s which is Not Reachable" %iterDev)
+                continue
 
             if 'Ep' in self.ListOfDevices[iterDev]:
                 for iterEp in self.ListOfDevices[iterDev]['Ep']:
                     if iterEp == 'ClusterType': continue
-                    if  ( iterDev == '0000' or \
+                    if ( iterDev == '0000' or \
                             ( 'ClusterType' in self.ListOfDevices[iterDev] or 'ClusterType' in self.ListOfDevices[iterDev]['Ep'][iterEp] )) and \
                             '0004' in self.ListOfDevices[iterDev]['Ep'][iterEp] and \
                             ( '0006' in self.ListOfDevices[iterDev]['Ep'][iterEp] or '0008' in self.ListOfDevices[iterDev]['Ep'][iterEp] or \
@@ -126,6 +127,7 @@ def hearbeatGroupMgt( self ):
                         # XXXX is a special group in the code to be used in that case.
                         if 'GroupMgt' not in  self.ListOfDevices[iterDev]:
                             self.ListOfDevices[iterDev]['GroupMgt'] = {}
+
                         if iterEp not in  self.ListOfDevices[iterDev]['GroupMgt']:
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp] = {}
 
@@ -134,9 +136,9 @@ def hearbeatGroupMgt( self ):
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] = {}
                             self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase-Stamp'] = {}
 
-                        if 'Phase' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']:
-                            if self.ListOfDevices[iterDev]['GroupMgt'][iterEp]['XXXX']['Phase'] == 'REQ-Membership':
-                                continue
+                        if ( 'Phase' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][ 'XXXX' ] and \
+                                self.ListOfDevices[iterDev]['GroupMgt'][iterEp][ 'XXXX' ]['Phase'] == 'REQ-Membership' ):
+                            continue
 
                         if  len(self.ZigateComm.zigateSendingFIFO) >= MAX_LOAD_ZIGATE:
                             self.logging( 'Debug', "normalQueue: %s" %len(self.ZigateComm.zigateSendingFIFO))
@@ -158,6 +160,7 @@ def hearbeatGroupMgt( self ):
         # Check for completness or Timeout
         if self.StartupPhase ==  'finish scan':
             self.logging( 'Log', "Group Management - Membership gathering")
+
         self.StartupPhase = 'finish scan continue'
         now = time()
         self.stillWIP = True
@@ -166,7 +169,9 @@ def hearbeatGroupMgt( self ):
             if 'GroupMgt' in self.ListOfDevices[iterDev]:       # We select only the Device for which we have requested Group membership
                 for iterEp in self.ListOfDevices[iterDev]['GroupMgt']:
                     for iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
-                        if iterGrp == 'XXXX': continue
+                        if iterGrp == 'XXXX': 
+                            continue
+
                         if 'Phase' not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]:
                             continue
 
@@ -175,12 +180,14 @@ def hearbeatGroupMgt( self ):
 
                         if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] == 'OK-Membership':
                             continue
+
                         if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] + TIMEOUT > now:
                             _completed = False
                             break # Need to wait a couple of sec.
 
                         self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'TimeOut'
                         self.logging( 'Debug', " - No response receive for %s/%s - assuming no group membership for %s " %(iterDev,iterEp, iterGrp))
+
                     else:
                         if 'XXXX' in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
                             self.logging( 'Debug', 'Checking if process is done for %s/%s - XXXX -> %s' 
@@ -199,6 +206,7 @@ def hearbeatGroupMgt( self ):
                         Domoticz.Error("Group Management - seems that Group %s is refering to a non-existing device %s/%s" \
                                 %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
                         continue
+
                     if 'IEEE' not in self.ListOfDevices[iterDev]:
                         Domoticz.Error("Group Management - seems that Group %s is refering to a device %s/%s with an unknown IEEE" \
                                 %(self.ListOfGroups[iterGrp]['Name'], iterDev, iterEp))
@@ -216,10 +224,12 @@ def hearbeatGroupMgt( self ):
             # Take JSON
             self.logging( 'Debug', "Group Management - Loading Zigate Group Configuration file JSON")
             self.load_jsonZigateGroupConfig()
+
         else:
             #Take TXT
             self.logging( 'Debug', "Group Management - Loading Zigate Group Configuration file TXT")
             self.load_ZigateGroupConfiguration()
+
         self.TobeAdded = []
         self.TobeRemoved = []
         self.StartupPhase = 'process config'
@@ -230,6 +240,7 @@ def hearbeatGroupMgt( self ):
                 if 'Imported' not in self.ListOfGroups[iterGrp]:
                     self.logging( 'Debug', "Nothing to import ...")
                     continue
+
                 if len(self.ListOfGroups[iterGrp]['Imported']) == 0 and len(self.ListOfGroups[iterGrp]['Devices']) == 0 :
                     self.logging( 'Debug', "Nothing to import and no Devices ...")
                     continue
@@ -243,8 +254,10 @@ def hearbeatGroupMgt( self ):
                     if iterDev not in self.ListOfDevices:
                         Domoticz.Error("hearbeat Group - Most likely, device %s is not paired anymore ..." %iterDev)
                         continue
+
                     if 'IEEE' not in self.ListOfDevices[iterDev]:
                         break
+
                     iterIEEE = self.ListOfDevices[iterDev]['IEEE']
 
                     self.logging( 'Debug', "    - checking device: %s / %s to be removed " %(iterDev, iterEp))
@@ -269,10 +282,12 @@ def hearbeatGroupMgt( self ):
                     if iterIEEE not in self.IEEE2NWK:
                         Domoticz.Error("Unknown IEEE to be removed %s" %iterIEEE)
                         continue
+
                     removeNKWID = self.IEEE2NWK[iterIEEE]
                     if removeNKWID not in self.ListOfDevices:
                         Domoticz.Error("Unknown IEEE to be removed %s" %removeNKWID)
                         continue
+
                     self.logging( 'Debug', " %s/%s to be removed from %s" 
                             %(removeNKWID, iterEp, iterGrp))
                     self.TobeRemoved.append( ( removeNKWID, iterEp, iterGrp ) )
@@ -295,6 +310,7 @@ def hearbeatGroupMgt( self ):
                         _listDevEp = []
                         if import_iterEp:
                             _listDevEp.append(import_iterEp)
+
                         else:
                             _listDevEp = list(self.ListOfDevices[iterDev]['Ep'])
                         self.logging( 'Debug', 'List of Ep: %s' %_listDevEp)
@@ -302,17 +318,13 @@ def hearbeatGroupMgt( self ):
                         for iterEp in _listDevEp:
                             self.logging( 'Debug', "       - Check existing Membership %s/%s" %(iterDev,iterEp))
 
-                            if ('GroupMgt' in
-                                self.ListOfDevices[iterDev]
-                                and iterEp in self.
-                                ListOfDevices[iterDev]['GroupMgt']
-                                and iterGrp in self.ListOfDevices[
-                                        iterDev]['GroupMgt'][iterEp]
-                                and self.ListOfDevices[iterDev]
-                                ['GroupMgt'][iterEp][iterGrp]
-                                ['Phase'] == 'OK-Membership'):
-                                    self.logging( 'Debug', "       - %s/%s already in group %s" %(iterDev, iterEp, iterGrp))
-                                    continue
+                            if ('GroupMgt' in self.ListOfDevices[iterDev] and \
+                                    iterEp in self. ListOfDevices[iterDev]['GroupMgt'] and \
+                                    iterGrp in self.ListOfDevices[ iterDev]['GroupMgt'][iterEp] and \
+                                    self.ListOfDevices[iterDev] ['GroupMgt'][iterEp][iterGrp] ['Phase'] == 'OK-Membership'): 
+                                self.logging( 'Debug', "       - %s/%s already in group %s" %(iterDev, iterEp, iterGrp)) 
+                                continue
+
                             if iterEp not in self.ListOfDevices[iterDev]['Ep']:
                                 Domoticz.Error("whearbeatGroupMgt - unknown EP %s for %s against (%s)" %(iterEp, iterDev, self.ListOfDevices[iterDev]['Ep']))
                                 continue
@@ -337,6 +349,7 @@ def hearbeatGroupMgt( self ):
                 for iterGroup in self.UpdatedGroups:
                     self._identifyEffect( iterGroup, '01', effect='Okay' )
                     self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s operational' %iterGroup)
+
             else:
                 self.StartupPhase = 'processing'
 
@@ -350,9 +363,11 @@ def hearbeatGroupMgt( self ):
             if iterDev not in self.ListOfDevices and iterDev != '0000':
                 Domoticz.Error("hearbeatGroupMgt - unconsistency found. %s not found in ListOfDevices." %iterDev)
                 continue
+
             if iterEp not in self.ListOfDevices[iterDev]['GroupMgt']:
                 Domoticz.Error("hearbeatGroupMgt - unconsistency found. %s/%s not found in ListOfDevices." %(iterDev,iterEp))
                 continue
+
             if iterGrp not in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
                 Domoticz.Error("hearbeatGroupMgt - unconsistency found. Group: %s for %s/%s not found in ListOfDevices." \
                         %(iterGrp, iterDev,iterEp))
@@ -364,6 +379,7 @@ def hearbeatGroupMgt( self ):
                 _completed = False
                 self.logging( 'Debug', "Too busy, will come back later")
                 break # will continue in the next cycle
+
             self._removeGroup( iterDev, iterEp, iterGrp )
             self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'DEL-Membership'
             self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] = int(time())
@@ -377,6 +393,7 @@ def hearbeatGroupMgt( self ):
                 _completed = False
                 self.logging( 'Debug', "Too busy, will come back later")
                 break # will continue in the next cycle
+
             if iterDev not in self.ListOfDevices and iterDev != '0000':
                 Domoticz.Error("hearbeatGroupMgt - unconsitecy found. %s not for found in ListOfDevices." %iterDev)
                 continue
@@ -415,6 +432,7 @@ def hearbeatGroupMgt( self ):
         for iterDev in self.ListOfDevices:
             if 'GroupMgt' not in self.ListOfDevices[iterDev]:
                 continue
+
             if 'Ep' in self.ListOfDevices[iterDev]:
                 for iterEp in self.ListOfDevices[iterDev]['GroupMgt']:
                     for iterGrp in self.ListOfDevices[iterDev]['GroupMgt'][iterEp]:
@@ -423,14 +441,17 @@ def hearbeatGroupMgt( self ):
                             # We do not get any response
                         #    self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] = 'OK-Membership'
 
-                        if iterGrp == 'XXXX': continue
+                        if iterGrp == 'XXXX': 
+                            continue
 
                         if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] in ( 'OK-Membership', 'TimmeOut'):
                             continue
+
                         if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase'] not in ( 'DEL-Membership' ,'ADD-Membership' ):
                             self.logging( 'Debug', "Unexpected phase for %s/%s in group %s : phase!: %s"
                             %( iterDev, iterEp, iterGrp,  str(self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp])))
                             continue
+
                         if self.ListOfDevices[iterDev]['GroupMgt'][iterEp][iterGrp]['Phase-Stamp'] + TIMEOUT > now:
                             _completed = False
                             break # Wait a couple of Sec
@@ -448,11 +469,13 @@ def hearbeatGroupMgt( self ):
                 Domoticz.Error("We reach the max number of Cycle and didn't succeed in the Group Creation")
                 self._SaveGroupFile = False
                 self.StartupPhase = 'check group list'
+
             else:
                 self.StartupPhase = 'scan'
                 for iterDev in self.ListOfDevices:
                     if 'GroupMgt' in self.ListOfDevices[iterDev]:
                         del self.ListOfDevices[iterDev]['GroupMgt']
+
                 for iterGrp in list(self.ListOfGroups):
                     del self.ListOfGroups[iterGrp] 
  
@@ -470,17 +493,20 @@ def hearbeatGroupMgt( self ):
                         self.logging( 'Log', "hearbeatGroupMgt - Remove Domotticz Device : %s for Group: %s " %(self.Devices[x].Name, iterGrp))
                         self._removeDomoGroupDevice( iterGrp)
                         del self.ListOfGroups[iterGrp] 
+
                     else:
                         self.ListOfGroups[iterGrp]['Name'] = self.Devices[x].Name
                         # Check if we need to update the Widget
                         self._updateDomoGroupDeviceWidget(self.ListOfGroups[iterGrp]['Name'], iterGrp)
                         self.logging( 'Log', "hearbeatGroupMgt - _updateDomoGroup done")
                     break
+
             else:
                 # Unknown group in Domoticz. Create it
                 if len(self.ListOfGroups[iterGrp]['Devices']) == 0:
                     del self.ListOfGroups[iterGrp] 
                     continue
+                
                 if self.ListOfGroups[iterGrp]['Name'] == '':
                     self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
                 self.logging( 'Log', "hearbeatGroupMgt - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])

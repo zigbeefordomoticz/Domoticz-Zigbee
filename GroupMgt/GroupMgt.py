@@ -52,10 +52,10 @@ class GroupsManagement(object):
     from GroupMgt.heartbeat import hearbeatGroupMgt
     from GroupMgt.logging import logging
     from GroupMgt.domoticz import deviceChangeNetworkID,  _createDomoGroupDevice, _updateDeviceListAttribute, _updateDomoGroupDeviceWidget, _updateDomoGroupDeviceWidgetName, \
-                            _bestGroupWidget, updateDomoGroupDevice, _removeDomoGroupDevice, processCommand, processRemoveGroup, set_Kelvin_Color, set_RGB_color
+                            _bestGroupWidget, updateDomoGroupDevice, _removeDomoGroupDevice, processCommand, processRemoveGroup
     from GroupMgt.config import _write_GroupList, _load_GroupList, load_ZigateGroupConfiguration, load_jsonZigateGroupConfig, write_jsonZigateGroupConfig, _write_GroupList
     from GroupMgt.com import _addGroup, statusGroupRequest, addGroupResponse, _viewGroup, viewGroupResponse, _getGroupMembership, getGroupMembershipResponse,\
-                            _removeGroup, _getGroupMembership, _removeAllGroups, _addGroupifIdentify, removeGroupResponse, _identifyEffect
+                            _removeGroup, _getGroupMembership, _removeAllGroups, _addGroupifIdentify, removeGroupResponse, _identifyEffect, set_Kelvin_Color, set_RGB_color
 
     def __init__( self, PluginConf, adminWidgets, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
         self.StartupPhase = 'start'
