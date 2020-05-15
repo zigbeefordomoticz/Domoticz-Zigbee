@@ -653,11 +653,11 @@ def ReadAttributeRequest_0702(self, key):
             del listAttributes
             listAttributes = listAttrGeneric
     
-        if len(listAttributes):
+        if listAttributes:
             loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes)
     
-        if len(listAttrSpecific):
+        if listAttrSpecific:
             loggingReadAttributes( self, 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
 
@@ -671,7 +671,7 @@ def ReadAttributeRequest_000f(self, key):
             if iterAttr not in listAttributes:
                 listAttributes.append( iterAttr )
 
-        if len(listAttributes):
+        if listAttributes:
             loggingReadAttributes( self, 'Debug', " Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
             ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000f", listAttributes)
 
@@ -685,7 +685,6 @@ def ReadAttributeRequest_fc01(self, key):
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
 
         listAttributes = [ 0x0001 ]
-
         loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
 
