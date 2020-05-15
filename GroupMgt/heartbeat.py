@@ -6,17 +6,12 @@
 
 import Domoticz
 import json
-import pickle
+
 import os.path
 
 from time import time
-from datetime import datetime
 
-from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 from Modules.zigateConsts import ADDRESS_MODE, MAX_LOAD_ZIGATE, ZIGATE_EP
-
-from Classes.AdminWidgets import AdminWidgets
-
 
 from GroupMgt.tool import TIMEOUT, MAX_CYCLE
 
@@ -506,7 +501,7 @@ def hearbeatGroupMgt( self ):
                 if len(self.ListOfGroups[iterGrp]['Devices']) == 0:
                     del self.ListOfGroups[iterGrp] 
                     continue
-                
+
                 if self.ListOfGroups[iterGrp]['Name'] == '':
                     self.ListOfGroups[iterGrp]['Name'] = "Zigate Group %s" %iterGrp
                 self.logging( 'Log', "hearbeatGroupMgt - create Domotciz Widget for %s " %self.ListOfGroups[iterGrp]['Name'])
