@@ -7,8 +7,17 @@
 import Domoticz
 import subprocess
 
+import os  
+
+CURL_COMMAND = '/usr/bin/curl'        
+
 def restartPluginViaDomoticzJsonApi( self ):
-    
+
+    if os.path.isfile( CURL_COMMAND ):
+        Domoticz.Log("Unable to restart the plugin, %s not available" %CURL_COMMAND)
+        return
+
+
     if self.WebUsername and self.WebPassword:
         url = 'http://%s:%s@127.0.0.1:%s' %(self.WebUsername, self.WebPassword, self.pluginconf.pluginConf['port'])
     else:
@@ -32,6 +41,6 @@ def restartPluginViaDomoticzJsonApi( self ):
     url += '&datatimeout=0'
 
     Domoticz.Status( "Plugin Restart command : %s" %url)
-    _cmd = "/usr/bin/curl '%s' &" %url
-
-    subprocess.Popen([ _cmd ], shell=False)
+ 
+    _cmd = CURL_COMMAND + " '%s' &" %url
+    os.system( _cmd )  # nosec
