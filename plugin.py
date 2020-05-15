@@ -3,7 +3,6 @@
 #
 # Author: zaraki673 & pipiche38
 #
-
 """
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.8" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
@@ -1001,8 +1000,6 @@ def DumpConfigToLog():
         Domoticz.Log( "Device sValue:   '" + Devices[x].sValue + "'")
         Domoticz.Log( "Device LastLevel: " + str(Devices[x].LastLevel))
         Domoticz.Log( "Device Options: " + str(Devices[x].Options))
-
-
 
 def DumpHTTPResponseToLog(httpDict):
     if isinstance(httpDict, dict):
