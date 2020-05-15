@@ -49,7 +49,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
-from Classes.GroupMgt import GroupsManagement
+from GroupMgt.GroupMgt import GroupsManagement
 from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
