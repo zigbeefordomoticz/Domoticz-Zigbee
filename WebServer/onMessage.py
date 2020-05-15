@@ -12,7 +12,7 @@ import os.path
 import mimetypes
 from datetime import datetime
 
-from WebServer.headerResponse import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 from WebServer.tools import DumpHTTPResponseToLog, MAX_KB_TO_SEND
 
 def onMessage( self, Connection, Data ):
@@ -70,18 +70,7 @@ def onMessage( self, Connection, Data ):
             self.logging( 'Debug', "Redirecting to /index.html")
 
         # We are ready to send the response
-        _response = setupHeadersResponse( cookie )
-        if self.pluginconf.pluginConf['enableKeepalive']:
-            _response["Headers"]["Connection"] = "Keep-alive"
-        else:
-            _response["Headers"]["Connection"] = "Close"
-        if not self.pluginconf.pluginConf['enableCache']:
-            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
-            _response["Headers"]["Pragma"] = "no-cache"
-            _response["Headers"]["Expires"] = "0"
-            _response["Headers"]["Accept"] = "*/*"
-        else:
-            _response["Headers"]["Cache-Control"] = "private"
+        _response = prepResponseMessage( self ,setupHeadersResponse( cookie ))
 
         self.logging( 'Debug', "Opening: %s" %webFilename)
         currentVersionOnServer = os.path.getmtime(webFilename)
