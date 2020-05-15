@@ -16,18 +16,18 @@ def restartPluginViaDomoticzJsonApi( self ):
 
 
     url += '/json.htm?type=command&param=updatehardware&htype=94'
-    url += '&idx=%s'     %self.pluginparameters['HardwareID']
-    url += '&name=%s'    %self.pluginparameters['Name']
-    url += '&address=%s' %self.pluginparameters['Address']
-    url += '&port=%s'    %self.pluginparameters['Port']
-    url += '&serialport=%s' %self.pluginparameters['SerialPort']
-    url += '&Mode1=%s'   %self.pluginparameters['Mode1']
-    url += '&Mode2=%s'   %self.pluginparameters['Mode2']
-    url += '&Mode3=%s'   %self.pluginparameters['Mode3']
-    url += '&Mode4=%s'   %self.pluginparameters['Mode4']
-    url += '&Mode5=%s'   %self.pluginparameters['Mode5']
-    url += '&Mode6=%s'   %self.pluginparameters['Mode6']
-    url += '&extra=%s'   %self.pluginparameters['Key']
+    url += '&idx=%s'     %self.pluginParameters['HardwareID']
+    url += '&name=%s'    %self.pluginParameters['Name']
+    url += '&address=%s' %self.pluginParameters['Address']
+    url += '&port=%s'    %self.pluginParameters['Port']
+    url += '&serialport=%s' %self.pluginParameters['SerialPort']
+    url += '&Mode1=%s'   %self.pluginParameters['Mode1']
+    url += '&Mode2=%s'   %self.pluginParameters['Mode2']
+    url += '&Mode3=%s'   %self.pluginParameters['Mode3']
+    url += '&Mode4=%s'   %self.pluginParameters['Mode4']
+    url += '&Mode5=%s'   %self.pluginParameters['Mode5']
+    url += '&Mode6=%s'   %self.pluginParameters['Mode6']
+    url += '&extra=%s'   %self.pluginParameters['Key']
     url += '&enabled=true'
     url += '&datatimeout=0'
 
