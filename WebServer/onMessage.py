@@ -70,10 +70,18 @@ def onMessage( self, Connection, Data ):
             self.logging( 'Debug', "Redirecting to /index.html")
 
         # We are ready to send the response
-        _response = prepResponseMessage( self ,setupHeadersResponse( cookie ))
-
-        # As Content-Type is preset to Json and here we will be answering based on Mine, just remove
-        del _response["Headers"]["Content-Type"]
+        _response = setupHeadersResponse( cookie )
+        if self.pluginconf.pluginConf['enableKeepalive']:
+            _response["Headers"]["Connection"] = "Keep-alive"
+        else:
+            _response["Headers"]["Connection"] = "Close"
+        if not self.pluginconf.pluginConf['enableCache']:
+            _response["Headers"]["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            _response["Headers"]["Pragma"] = "no-cache"
+            _response["Headers"]["Expires"] = "0"
+            _response["Headers"]["Accept"] = "*/*"
+        else:
+            _response["Headers"]["Cache-Control"] = "private"
 
         self.logging( 'Debug', "Opening: %s" %webFilename)
         currentVersionOnServer = os.path.getmtime(webFilename)
