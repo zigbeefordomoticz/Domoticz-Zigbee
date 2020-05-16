@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # coding: utf-8 -*-
 #
 # Author: pipiche38
@@ -7,7 +7,7 @@
 
 This is the Version 2 of Zigate Plugin Group Management.
 
-The aim of this Class is to be able to manage groups as they were in the previous version,
+The aim of this Class is to be able to manage groups as they were in the previous version, 
 but also to have instant groupmembership provisioning instead of the batch approach of the previous version.
 
 Important, the aim is not to break any upward compatibility
@@ -22,45 +22,81 @@ Group management rely on 2 files:
 DATA STRUCTURES
 
 - Each device knowns its group membership. ( ListOfDevices)
-  Today there is an attribut 'GroupMgt' which is a list of Group with a status
-  V2 attribut 'GroupMembership' which is a list of Group the device is member of.
+  Today there is an attribute 'GroupMgt' which is a list of Group with a status
+  V2 attribute 'GroupMembership' which is a dictionary of Group the device is member of.
+    - GroupId
        - Status: TobeAdd, AddedReq, Ok, Error, ToBeRemoved, RemovedReq
        - TimeStamp (when the Status has been set)
 
-- ListOfGroups is the Data structutre supporting Groups
+- ListOfGroups is the Data structure supporting Groups
   ListOfGroups[group id]['Name']            - Group Name as it will be created in Domoticz
   ListOfGroups[group id]['Devices']         - List of Devices associed to this group on Zigate
   ListOfGroups[group id]['Tradfri Remote']  - Manage the Tradfri Remote
 
-  
+
 
 SYNOPSIS
 
-- At plugin start, if the group cash file exist, read and populate the data structutre.
+- At plugin start, if the group cash file exist, read and populate the data structure.
                    if the cash doesn't exist, request to each Main Powered device tfor their existing group membership.
-                   collect the information and populate the data structutre accoridngly.
+                   collect the information and populate the data structure accordingly.
 
-- When the data strutcutre is fully loaded, the object will be full operational and able to handle the following request
+- When the data structure is fully loaded, the object will be full operational and able to handle the following request
     - adding group  membership to a specific device
     - removing group membership to a specific device
     - view group membership
 
-    - actioning ( On, Off, LevelControl, ColorControl , WindowCovering )    
+    - actioning ( On, Off, LevelControl, ColorControl , WindowCovering )
 
-    - Managing device short address changes ( could be better to store the IEEE )         
+    - Managing device short address changes ( could be better to store the IEEE )
+
+"""
+
+import os
+import json
+import pickle
+
+class GroupsManagement(object):
+
+  from GroupMgtv2.domoticz import update_domoticz_group_device, process_command
+  from GroupMgtv2.database import  write_groups_list, load_groups_list_from_json
+  from GroupMgtv2.services import process_web_request
+  from GroupMgtv2.logging import logging
+
+  def __init__( self, PluginConf, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
+
+    self.pluginconf = PluginConf
+    self.ZigateComm = ZigateComm        # Point to the ZigateComm object
+    self.homeDirectory = HomeDirectory
+    self.Devices = Devices              # Point to the List of Domoticz Devices
+    self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
+    self.IEEE2NWK = IEEE2NWK            # Point to the List of IEEE to NWKID
+    self.ListOfGroups = {}              # Data structutre to store all groups
+    self.loggingFileHandle = loggingFileHandle
+    self.GroupListFileName = None       # Filename of Group cashing file
 
 
-      
+    # Check if we have to open the old format
+    if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  ):
+        # Open the file and load it.
+        with open( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  , 'rb') as handle:
+          self.ListOfGroups = pickle.load( handle )
+
+        # Save it with new format
+        self.GroupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.json" %hardwareID
+        self.write_groups_list()
+
+        # Remove the old format
+        os.remove( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID )
+        del self.ListOfGroups
+        self.ListOfGroups = {}
+
+    # Open file and load config
+    self.GroupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.json" %hardwareID
+    self.load_groups_list_from_json()
 
 
+  def hearbeat_group_mgt( self ):
 
-
-
-
-
-
-
-
-
-""
-
+    for GroupId in self.ListOfGroups:
+      self.update_domoticz_group_device( GroupId )

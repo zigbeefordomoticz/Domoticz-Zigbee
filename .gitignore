@@ -6,6 +6,7 @@ OTAFirmware/*/*
 !OTAFirmware/*/README.me
 !OTAFirmware/*/.PRECIOUS
 Conf/ZigateGroupsConfig-*
+Data/ZigateGroupsConfig*
 Data/DeviceList-*
 Data/GroupsList-*
 Data/zigatePDM-*
@@ -20,3 +21,5 @@ __pycache__/
 .vscode/settings.json
 .pylintrc
 Tools/JennicModuleProgrammer/Build/JennicModuleProgrammer
+.vscode/.ropeproject/config.py
+
