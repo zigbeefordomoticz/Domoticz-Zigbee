@@ -550,7 +550,8 @@ def Decode8009(self, Devices, MsgData, MsgRSSI): # Network State response (Firm 
 
     if self.iaszonemgt:
         self.iaszonemgt.setZigateIEEE( extaddr )
-
+    if self.groupmgt:
+        self.groupmgt.updateZigateIEEE( extaddr) 
 
     loggingInput( self, 'Status', "Zigate addresses ieee: %s , short addr: %s" %( self.ZigateIEEE,  self.ZigateNWKID) )
 
@@ -795,6 +796,10 @@ def Decode8024(self, Devices, MsgData, MsgRSSI): # Network joined / formed
         self.ZigateNWKID = MsgShortAddress
         if self.iaszonemgt:
             self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
+            
+        if self.groupmgt:
+            self.groupmgt.updateZigateIEEE( extaddr) 
+
         self.zigatedata['IEEE'] = MsgExtendedAddress
         self.zigatedata['Short Address'] = MsgShortAddress
         self.zigatedata['Channel'] = int(MsgChannel,16)

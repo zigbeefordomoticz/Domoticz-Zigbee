@@ -74,6 +74,8 @@ class GroupsManagement(object):
     self.ListOfGroups = {}              # Data structutre to store all groups
     self.loggingFileHandle = loggingFileHandle
     self.GroupListFileName = None       # Filename of Group cashing file
+    self.ZigateIEEE = None
+
 
 
     # Check if we have to open the old format
@@ -95,6 +97,8 @@ class GroupsManagement(object):
     self.GroupListFileName = self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.json" %hardwareID
     self.load_groups_list_from_json()
 
+  def updateZigateIEEE( self, ZigateIEEE):
+      self.ZigateIEEE =   ZigateIEEE
 
   def hearbeat_group_mgt( self ):
 

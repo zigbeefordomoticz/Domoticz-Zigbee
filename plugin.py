@@ -836,11 +836,13 @@ def zigateInit_Phase3( self ):
             sendZigateCmd(self, '0019', '%02x' %self.pluginconf.pluginConf['CertificationCode'])
 
         # Enable Group Management
-        if self.groupmgt is None and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
+        if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
             loggingPlugin( self, 'Status', "Start Group Management")
             self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, Parameters["HomeFolder"],
                     self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
-            self.groupmgt_NotStarted = False
+            if self.groupmgt and self.ZigateIEEE:
+                self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
+
 
             #if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
             #    # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000

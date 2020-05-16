@@ -66,7 +66,7 @@ def update_due_to_nwk_id_change( self, OldNwkId, NewNwkId):
             if device[0] != OldNwkId:
                 continue
             # We have to update the NwkId ( update + add )
-            newdevice = ( NewNwkId, device[1], device[2])
+            newdevice = [ NewNwkId, device[1], device[2] ]
             self.ListOfGroups[ GrpId ]['Devices'].remove ( device )
             self.ListOfGroups[ GrpId ]['Devices'].append( newdevice )
 

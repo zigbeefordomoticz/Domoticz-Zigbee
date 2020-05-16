@@ -348,29 +348,7 @@ def remove_domoticz_group_device(self, GroupId):
     self.Devices[unit].Delete()
 
 def process_remove_group( self, unit, GroupId):
-
-    # Remove all devices from the corresponding group
-    if GroupId not in self.ListOfGroups:
-        return
-
-    _toremove = []
-    for iterDev in list(self.ListOfDevices):
-        if 'GroupMgt' not in self.ListOfDevices[iterDev]:
-            continue
-
-        for iterEP in self.ListOfDevices[iterDev]['Ep']:
-            if iterEP not in self.ListOfDevices[iterDev]['GroupMgt']:
-                continue
-
-            if GroupId in self.ListOfDevices[iterDev]['GroupMgt'][iterEP]:
-                self.logging( 'Debug', "processRemoveGroup - remove %s %s %s" 
-                        %(iterDev, iterEP, GroupId))
-                self._removeGroup(iterDev, iterEP, GroupId )
-                _toremove.append( (iterDev, iterEP) )
-    for removeDev, removeEp in _toremove:
-        del self.ListOfDevices[removeDev]['GroupMgt'][removeEp][GroupId]
-
-    del self.ListOfGroups[GroupId]
+    pass
 
 def update_device_list_attribute( self, GroupId, cluster, value):
 
