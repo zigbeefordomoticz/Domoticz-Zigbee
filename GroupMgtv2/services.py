@@ -4,6 +4,9 @@
 # Author: pipiche38
 #
 
+from GroupMgtv2.domoticz import create_domoticz_group_device
+from GroupMgtv2.grpCommands import add_group_member_ship, remove_group_member_ship
+from GroupMgtv2.database import create_group, add_device_to_group, remove_device_from_group
 
 def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):
     pass
@@ -45,7 +48,7 @@ def process_web_request( self, webInput):
     def update_group_and_remove_devices( self, GrpId, ToBeRemoveDevices):
 
         self.logging( 'Debug', " --  --  --  --  --  > UpdateGroupAndRemoveDevices ")
-        for NwkId, ep, ieee in ToBeAddedDevices:
+        for NwkId, ep, ieee in ToBeRemoveDevices:
             remove_device_from_group(self, (NwkId, ep, ieee), GrpId)
             remove_group_member_ship(self,  NwkId, ep, GrpId )
 
@@ -69,10 +72,7 @@ def process_web_request( self, webInput):
 
     def transform_web_to_group_devices_list( WebDeviceList ):
         self.logging( 'Debug', "TransformWebToGroupDevicesList ")
-        DeviceList = []
-        for item in WebDeviceList:
-            DeviceList.append ( (item['_NwkId'], item['Ep'], item['IEEE']) )
-        return DeviceList
+        return [(item['_NwkId'], item['Ep'], item['IEEE']) for item in WebDeviceList]
 
 
     self.logging( 'Debug', "processWebRequest ")
@@ -93,24 +93,24 @@ def process_web_request( self, webInput):
                 Ep    = dev['Ep']
 
                 # Add Device ( NwkID, Ep, IEEE) to Group GrpId
-                DevicesList.append( (NwkID, Ep, IEEE) )
-                self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % (NwkID, Ep, IEEE) )
+                DevicesList.append( ( NwkId, Ep, IEEE) )
+                self.logging( 'Debug', " --  --  --  -- - > Tuple to add: %s " % (NwkId, Ep, IEEE) )
             self.logging( 'Debug', " --  --  -- - > GroupCreation" )
             create_new_group_and_attach_devices( self, GrpId, GrpName, DevicesList)
 
         # we have to see if any groupmembership have to be added or removed
         self.logging( 'Debug', " -- - > Update GrpName: %s " %GrpName)
-        GrpId = item[_GroupId]
+        GrpId = item['_GroupId']
         if GrpId not in self.ListOfGroups:
             return
         self.logging( 'Debug', " --  -- - > Update GrpId: %s " %GrpId)
-        self.logging( 'Debug', " --  -- - > DeviceList from Web: %s " %item[ devicesSelected ])
+        self.logging( 'Debug', " --  -- - > DeviceList from Web: %s " %item[ 'devicesSelected' ])
 
-        TargetedDevices = transform_web_to_group_devices_list( item[ devicesSelected ] )
+        TargetedDevices = transform_web_to_group_devices_list( item[ 'devicesSelected' ] )
         self.logging( 'Debug', " --  -- - > Target DeviceList: %s " %TargetedDevices)
 
-        if item[ coordinatorInside ]:
-            self.logging( 'Debug', " --  -- - > ZigateMemberShip: %s " %ZigateMemberShip)
+        if item[ 'coordinatorInside' ]:
+            self.logging( 'Debug', " --  -- - > ZigateMemberShip ")
             TargetedDevices.append ( ('0000', '01', self.zigatedata['IEEE']) )
             self.logging( 'Debug', " --  --  -- - > Target DeviceList Updated: %s " %TargetedDevices)
 

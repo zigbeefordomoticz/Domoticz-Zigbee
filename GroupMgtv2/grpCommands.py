@@ -33,7 +33,7 @@ def add_group_member_ship( self, device_addr, device_ep, grpid):
     if 'GroupMemberShip' not in self.ListOfDevices[ device_addr ]:
         self.ListOfDevices[ device_addr ]['GroupMemberShip'] = {}
 
-     if device_ep not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
+    if device_ep not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
         self.ListOfDevices[ device_addr ]['GroupMemberShip'][ device_ep ] = {}
 
     if grpid not in self.ListOfDevices[ device_addr ]['GroupMemberShip'][ device_ep ]:
@@ -57,7 +57,7 @@ def add_group_member_ship_response(self, MsgData):
 
     self.logging( 'Debug', "addGroupMembeShipResponse - MsgData: %s (%s)" %(MsgData, len(MsgData)))
     # search for the Group/dev
-    if len(MsgData) != 14 and len(MsgData) != 18:
+    if len(MsgData) not in [14, 18]:
         Domoticz.Error("addGroupMembeShipResponse - uncomplete message %s" %MsgData)
         return
 
@@ -83,19 +83,21 @@ def add_group_member_ship_response(self, MsgData):
         Domoticz.Error("Requesting to add group %s membership on non existing device %s" %(MsgGroupID, MsgSrcAddr))
         return
 
-    if 'GroupMemberShip' not in self.ListOfDevices[ device_addr ]:
-        return
-    if grpid not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
-        return
-    if MsgEP not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
+    if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
         return
 
-    if self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ]['Status'] != 'addGroupMembeShip':
+    if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
+        return
+
+    if MsgGroupID not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']['MsgEP']:
+        return
+
+    if self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] != 'addGroupMembeShip':
         return
 
     if MsgStatus == '00':
         # Success
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ]['Status'] = 'OK'
+        self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = 'OK'
 
 def check_group_member_ship( self, device_addr, device_ep, goup_addr ):
     """
@@ -142,30 +144,30 @@ def look_for_group_member_ship_response( self, MsgData):
     MsgCapacity = MsgData[8:10]
     MsgGroupCount = MsgData[10:12]
     MsgListOfGroup = MsgData[12:lenMsgData-4]
-    MsgSourceAddress = MsgData[lenMsgData-4:lenMsgData]
+    MsgSrcAddr = MsgData[lenMsgData-4:lenMsgData]
 
     self.logging( 'Debug', "lookForGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, sAddr: %s, Capacity: %s, Count: %s"
-            %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSourceAddress, MsgCapacity, MsgGroupCount))
+            %(MsgSequenceNumber, MsgEP, MsgClusterID, MsgSrcAddr, MsgCapacity, MsgGroupCount))
 
     if MsgSrcAddr not in self.ListOfDevices:
         Domoticz.Error("lookForGroupMemberShipResponse %s membership on non existing device %s" %( MsgSrcAddr))
         return
 
-    if 'GroupMemberShip' not in self.ListOfDevices[ device_addr ]:
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'] = {}
+    if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'] = {}
 
-    if MsgEP not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][ MsgEP ] = {}
+    if MsgEP not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']:
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ] = {}
 
     for idx in range(int(MsgGroupCount, 16)):
         # Let scan eachgroup and update Device data structure
         grpid = MsgData[12+(idx*4):12+(4+(idx*4))]
 
-        if grpid not in self.ListOfDevices[ device_addr ]['GroupMemberShip'][ MsgEP ]:
+        if grpid not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
             self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ] = {}
 
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ]['Status'] = 'OK'
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ]['TimeStamp'] = 0
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]['Status'] = 'OK'
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]['TimeStamp'] = 0
 
 def remove_group_member_ship(self,  device_addr, device_ep, goup_addr ):
 
@@ -176,11 +178,11 @@ def remove_group_member_ship(self,  device_addr, device_ep, goup_addr ):
     if 'GroupMemberShip' not in self.ListOfDevices[ device_addr ]:
         return
 
-    if MsgEP not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
+    if device_ep not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
         return
 
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ]['Status'] = 'removeGroupMemberShip'
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ]['TimeStamp'] = int(time())
+    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['Status'] = 'removeGroupMemberShip'
+    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['TimeStamp'] = int(time())
 
     self.logging( 'Debug', "removeGroupMemberShip - %s/%s on %s" %(device_addr, device_ep, goup_addr))
 
@@ -190,7 +192,7 @@ def remove_group_member_ship(self,  device_addr, device_ep, goup_addr ):
 def remove_group_member_ship_response( self, MsgData):
     ' Decode 0x8063'
 
-    if len(MsgData) != 14 and len(MsgData) != 18:
+    if len(MsgData) not in [14, 18]:
         Domoticz.Error("removeGroupMemberShipResponse - uncomplete message %s" %MsgData)
         return
 
@@ -213,7 +215,7 @@ def remove_group_member_ship_response( self, MsgData):
         self.logging( 'Debug', "removeGroupMemberShipResponse - [%s] GroupID: %s adding: %s with Status: %s " %(MsgSequenceNumber, MsgGroupID, MsgSrcAddr, MsgStatus ))
 
     if MsgSrcAddr not in self.ListOfDevices:
-        Domoticz.Error("removeGroupMemberShipResponse %s membership on non existing device %s" %( device_addr))
+        Domoticz.Error("removeGroupMemberShipResponse %s membership on non existing device %s" %( MsgSrcAddr))
         return
 
     if 'GroupMemberShip' not in self.ListOfDevices[ MsgSrcAddr ]:
@@ -223,9 +225,9 @@ def remove_group_member_ship_response( self, MsgData):
         return
 
     if MsgStatus == '00':
-        del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]
-        if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]) == 0:
-            del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]
+        del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]
+        if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]) == 0:
+            del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]
 
         if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]) == 0:
             del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP]
@@ -234,7 +236,7 @@ def remove_group_member_ship_response( self, MsgData):
             del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']
 
     self.logging( 'Debug', "removeGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
-            %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus)
+            %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
 
 # Operating commands on groups
 def send_group_member_ship_identify(self, device_addr, device_ep, goup_addr = "0000"):
