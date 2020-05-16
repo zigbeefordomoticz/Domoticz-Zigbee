@@ -62,14 +62,13 @@ DEVICE_SWITCH_MATRIX = {
 
 }
 
-ACTIONATORS = ( 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'Button', 'DButton', 'LivoloSWL', 'LivoloSWR', 'Toggle',
-                'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO',
-                'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
-                'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD'
-                'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch'
-)
-
-def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
+ACTIONATORS = [ 'Switch', 'Plug', 'SwitchAQ2', 'Smoke', 'DSwitch', 'LivoloSWL', 'LivoloSWR', 'Toggle',
+            'Venetian', 'VenetianInverted', 'WindowCovering', 'BSO',
+            'LvlControl', 'ColorControlRGB', 'ColorControlWW', 'ColorControlRGBWW', 'ColorControlFull', 'ColorControl',
+            'ThermoSetpoint', 'ThermoMode', 'ThermoModeEHZBRTS', 'TempSetCurrent', 'AlarmWD',
+            'LegrandFilPilote', 'FIP', 'HACTMODE','ContractPower','HeatingSwitch' ]
+            
+def mgtCommand( self, Devices, Unit, Command, Level, Color ):
 
     if Devices[Unit].DeviceID not in self.IEEE2NWK:
         Domoticz.Error("mgtCommand - something strange the Device %s DeviceID: %s Unknown" %(Devices[Unit].Name, Devices[Unit].DeviceID))
@@ -121,9 +120,10 @@ def mgtCommand( self, Devices, Unit, Command, Level, Color ) :
             forceUpdateDev = SWITCH_LVL_MATRIX[DeviceType ]['ForceUpdate']
 
     if DeviceType not in ACTIONATORS:
-        Domoticz.Log("mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
-            %( Devices[Unit].Name, ClusterTypeList, DeviceType ))
-        return
+        if not ( self.pluginconf.pluginConf['forcePassiveWidget'] and DeviceType  in [ 'DButton_3', 'SwitchAQ3' ]):
+            loggingCommand( self, "Debug", "mgtCommand - You are trying to action a non commandable device Device %s has available Type %s and DeviceType: %s" 
+                   %( Devices[Unit].Name, ClusterTypeList, DeviceType ), NWKID )
+            return
     
     profalux = False
     if 'Manufacturer' in self.ListOfDevices[NWKID]:

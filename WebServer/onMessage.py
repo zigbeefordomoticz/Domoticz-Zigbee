@@ -72,6 +72,9 @@ def onMessage( self, Connection, Data ):
         # We are ready to send the response
         _response = prepResponseMessage( self ,setupHeadersResponse( cookie ))
 
+        # As Content-Type is preset to Json and here we will be answering based on Mine, just remove
+        del _response["Headers"]["Content-Type"]
+
         self.logging( 'Debug', "Opening: %s" %webFilename)
         currentVersionOnServer = os.path.getmtime(webFilename)
         _lastmodified = strftime("%a, %d %m %y %H:%M:%S GMT", gmtime(currentVersionOnServer))
