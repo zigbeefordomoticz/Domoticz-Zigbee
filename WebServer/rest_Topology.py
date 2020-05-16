@@ -11,17 +11,13 @@ import os.path
 from time import time
 from datetime import datetime
 
-from WebServer.headerResponse import setupHeadersResponse
+from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage
 
 
 def rest_req_topologie( self, verb, data, parameters):
-    _response = setupHeadersResponse()
-    if self.pluginconf.pluginConf['enableKeepalive']:
-        _response["Headers"]["Connection"] = "Keep-alive"
-    else:
-        _response["Headers"]["Connection"] = "Close"
-    _response["Status"] = "200 OK"
-    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
+
+    _response = prepResponseMessage( self ,setupHeadersResponse(  ))
+
     if verb == 'GET':
         action = {'Name': 'Req-Topology', 'TimeStamp': int(time())}
         _response["Data"] = json.dumps( action, sort_keys=True )
@@ -32,21 +28,15 @@ def rest_req_topologie( self, verb, data, parameters):
                 self.networkmap.start_scan()
             else:
                 self.logging( 'Log', "Cannot start Network Topology as one is in progress...")
+                
     return _response
       
 def rest_netTopologie( self, verb, data, parameters):
 
+    _response = prepResponseMessage( self ,setupHeadersResponse(  ))
+
     _filename = self.pluginconf.pluginConf['pluginReports'] + 'NetworkTopology-v3-' + '%02d' %self.hardwareID + '.json'
     self.logging( 'Debug', "Filename: %s" %_filename)
-
-    _response = setupHeadersResponse()
-    if self.pluginconf.pluginConf['enableKeepalive']:
-        _response["Headers"]["Connection"] = "Keep-alive"
-    else:
-        _response["Headers"]["Connection"] = "Close"
-    _response["Data"] = "{}"
-    _response["Status"] = "200 OK"
-    _response["Headers"]["Content-Type"] = "application/json; charset=utf-8"
 
     if not os.path.isfile( _filename ) :
         _response['Data'] = json.dumps( {} , sort_keys=True ) 

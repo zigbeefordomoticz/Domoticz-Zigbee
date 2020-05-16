@@ -3,7 +3,6 @@
 #
 # Author: zaraki673 & pipiche38
 #
-
 """
 <plugin key="Zigate" name="Zigate plugin" author="zaraki673 & pipiche38" version="4.8" wikilink="https://www.domoticz.com/wiki/Zigate" externallink="https://github.com/pipiche38/Domoticz-Zigate/wiki">
     <description>
@@ -88,6 +87,7 @@ from Modules.zigateConsts import HEARTBEAT, CERTIFICATION, MAX_LOAD_ZIGATE, MAX_
 from Modules.txPower import set_TxPower, get_TxPower
 from Modules.checkingUpdate import checkPluginVersion, checkPluginUpdate, checkFirmwareUpdate
 from Modules.logging import openLogFile, closeLogFile
+from Modules.restartPlugin import restartPluginViaDomoticzJsonApi
 
 from Classes.APS import APSManagement
 from Classes.IAS import IAS_Zone_Management
@@ -494,7 +494,6 @@ class BasePlugin:
 
         return True
 
-
     def onMessage(self, Connection, Data):
         #loggingPlugin( self, 'Debug', "onMessage called on Connection " + " Data = '" +str(Data) + "'")
         if isinstance(Data, dict):
@@ -684,12 +683,8 @@ class BasePlugin:
             self.OTA.heartbeat()
 
         # Check PermitToJoin
-        if (
-            self.permitTojoin['Duration'] != 255
-            and self.permitTojoin['Duration'] != 0
-            and int(time.time())
-            >= (self.permitTojoin['Starttime'] + self.permitTojoin['Duration'])
-        ):
+        if ( self.permitTojoin['Duration'] != 255 and self.permitTojoin['Duration'] != 0 and \
+                 int(time.time()) >= (self.permitTojoin['Starttime'] + self.permitTojoin['Duration']) ):
             sendZigateCmd( self, "0014", "" ) # Request status
             self.permitTojoin['Duration'] = 0
 
@@ -794,7 +789,6 @@ def zigateInit_Phase2( self):
     # Ready for next phase
     self.InitPhase2 = True
 
-
 def zigateInit_Phase3( self ):
 
     # We can now do what must be done when we known the Firmware version
@@ -893,7 +887,6 @@ def zigateInit_Phase3( self ):
         ):
         sendZigateCmd(self, "0009","")
 
-
 def pingZigate( self ):
 
     """
@@ -920,11 +913,14 @@ def pingZigate( self ):
         delta = int(time.time()) - self.Ping['TimeStamp']
         loggingPlugin( self, 'Log', "pingZigate - WARNING: Ping sent but no response yet from Zigate. Status: %s  - Ping: %s sec" %(self.Ping['Status'], delta))
         if delta > 56: # Seems that we have lost the Zigate communication
+
             Domoticz.Error("pingZigate - no Heartbeat with Zigate, try to reConnect")
             self.adminWidgets.updateNotificationWidget( Devices, 'Ping: Connection with Zigate Lost')
-            self.connectionState = 0
-            self.Ping['TimeStamp'] = int(time.time())
-            self.ZigateComm.reConn()
+            #self.connectionState = 0
+            #self.Ping['TimeStamp'] = int(time.time())
+            #self.ZigateComm.reConn()
+            restartPluginViaDomoticzJsonApi( self )
+
         else:
             if ((self.Ping['Nb Ticks'] % 3) == 0):
                 sendZigateCmd( self, "0014", "" ) # Request status
@@ -1004,8 +1000,6 @@ def DumpConfigToLog():
         Domoticz.Log( "Device sValue:   '" + Devices[x].sValue + "'")
         Domoticz.Log( "Device LastLevel: " + str(Devices[x].LastLevel))
         Domoticz.Log( "Device Options: " + str(Devices[x].Options))
-
-
 
 def DumpHTTPResponseToLog(httpDict):
     if isinstance(httpDict, dict):

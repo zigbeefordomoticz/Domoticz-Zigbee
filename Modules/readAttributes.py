@@ -18,6 +18,7 @@ from time import time
 from Modules.zigateConsts import  MAX_READATTRIBUTES_REQ,  ZIGATE_EP
 from Modules.basicOutputs import sendZigateCmd
 from Modules.logging import loggingReadAttributes 
+from Modules.tools import getEPforClusterType
 
 def ReadAttributeReq( self, addr, EpIn, EpOut, Cluster , ListOfAttributes , manufacturer_spec = '00', manufacturer = '0000'):
 
@@ -211,14 +212,13 @@ def retreive_ListOfAttributesByCluster( self, key, Ep, cluster ):
 def ReadAttributeRequest_0000_basic(self, key):
 
     loggingReadAttributes( self, 'Debug', "Ping Device - Key: %s" %(key), nwkid=key)
-    EPout = '01'
+
     listAttributes = []
     listAttributes.append(0x0000)        # Attribut 0x0000
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout= tmpEp 
 
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
+    ListOfEp = getEPforClusterType( self, key, '0000' ) 
+    for EPout in ListOfEp:
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
 
 def ReadAttributeRequest_0000(self, key, fullScope=True):
     # Basic Cluster
@@ -227,12 +227,12 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0000 - Key: %s , Scope: %s" %(key, fullScope), nwkid=key)
     EPout = '01'
 
+    listAttributes = []
+
     # Checking if Ep list is empty, in that case we are in discovery mode and 
-    # we don't really know what are the EPs we can talk to.
+        # we don't really know what are the EPs we can talk to.
     if not fullScope or self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
         loggingReadAttributes( self, 'Debug', "--> Not full scope", nwkid=key)
-        listAttributes = []
-
         loggingReadAttributes( self, 'Debug', "--> Build list of Attributes", nwkid=key)
         skipModel = False
 
@@ -253,23 +253,22 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
                 skipModel = True
 
         # Do We have Model Name
-        if not skipModel and ( self.ListOfDevices[key]['Model'] == {} or self.ListOfDevices[key]['Model'] == ''):
+        if not skipModel and self.ListOfDevices[key]['Model'] in [{}, '']:
             loggingReadAttributes( self, 'Debug', "----> Adding: %s" %'0005', nwkid=key)
             listAttributes.append(0x0005)        # Model Identifier
 
-        if 'Model' in self.ListOfDevices[key]:
-            if self.ListOfDevices[key]['Model'] != {} and self.ListOfDevices[key]['Model'] != '':
-                readAttr = False
-                if self.ListOfDevices[key]['Model'] in self.DeviceConf:
-                    if 'ReadAttributes' in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]:
-                        if '0000' in  self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes']:
-                            readAttr = True
-                            for attr in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes']['0000']:
-                                listAttributes.append( int( attr , 16))  
+        if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} and self.ListOfDevices[key]['Model'] != '' ):
+            readAttr = False
+            if ( self.ListOfDevices[key]['Model'] in self.DeviceConf and \
+                    'ReadAttributes' in self.DeviceConf[self.ListOfDevices[key]['Model']] and \
+                    '0000' in self.DeviceConf[self.ListOfDevices[key]['Model']][ 'ReadAttributes' ] ):
+                readAttr = True
+                for attr in self.DeviceConf[ self.ListOfDevices[key]['Model'] ]['ReadAttributes']['0000']:
+                    listAttributes.append( int( attr , 16))  
 
-                #if not readAttr and self.ListOfDevices[key]['Model'] != 'TI0001':
-                #    loggingReadAttributes( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
-                #    listAttributes.append(0x000A)        # Product Code
+                        #if not readAttr and self.ListOfDevices[key]['Model'] != 'TI0001':
+                        #    loggingReadAttributes( self, 'Debug', "----> Adding: %s" %'000A', nwkid=key)
+                        #    listAttributes.append(0x000A)        # Product Code
 
         if self.ListOfDevices[key]['Ep'] is None or self.ListOfDevices[key]['Ep'] == {}:
             loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request: " + key + " EPout = " + "01, 02, 03, 06, 09" , nwkid=key)
@@ -287,226 +286,173 @@ def ReadAttributeRequest_0000(self, key, fullScope=True):
 
     else:
         loggingReadAttributes( self, 'Debug', "--> Full scope", nwkid=key)
-        listAttributes = []
-        for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "0000" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                EPout= tmpEp 
+        ListOfEp = getEPforClusterType( self, key, '0000' ) 
+        for EPout in ListOfEp:
+            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
+                listAttributes.append( iterAttr )
 
-                for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0000'):
-                    listAttributes.append( iterAttr )
-        
-                if 'Model' in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]['Model'] != {}:
-                        if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
-                            listAttributes.append(0xff01)
-                            listAttributes.append(0xff02)
-        
-                        if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
-                            listAttributes.append(0xfffd)
-                            listAttributes.append(0xfffe)
-                            listAttributes.append(0xffe1)
-                            listAttributes.append(0xffe2)
-                            listAttributes.append(0xffe3)
-        
-                # Adjustement before request
-                listAttrSpecific = []
-                listAttrGeneric = []
-                if 'Manufacturer' in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]['Manufacturer'] == '105e':
-                        # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-                        for _attr in list(listAttributes):
-                            if _attr in ( 0xe000, 0xe001, 0xe002 ):
-                                listAttrSpecific.append( _attr )
-                            else:
-                                listAttrGeneric.append( _attr )
-                        del listAttributes
-                        listAttributes = listAttrGeneric
-        
-                loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
-        
-                if len(listAttrSpecific) > 0:
-                    loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific,manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
+            if ( 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key]['Model'] != {} ):
+                if str(self.ListOfDevices[key]['Model']).find('lumi') != -1:
+                    listAttributes.append(0xff01)
+                    listAttributes.append(0xff02)
+
+                if str(self.ListOfDevices[key]['Model']).find('TS0302') != -1: # Inter Blind Zemismart
+                    listAttributes.append(0xfffd)
+                    listAttributes.append(0xfffe)
+                    listAttributes.append(0xffe1)
+                    listAttributes.append(0xffe2)
+                    listAttributes.append(0xffe3)
+
+            # Adjustement before request
+            listAttrSpecific = []
+            listAttrGeneric = []
+            if ( 'Manufacturer' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer'] == '105e' ):
+                # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
+                for _attr in list(listAttributes):
+                    if _attr in ( 0xe000, 0xe001, 0xe002 ):
+                        listAttrSpecific.append( _attr )
+                    else:
+                        listAttrGeneric.append( _attr )
+                del listAttributes
+                listAttributes = listAttrGeneric
+
+            loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttributes )
+
+            if listAttrSpecific:
+                loggingReadAttributes( self, 'Debug', "Request Basic  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0000", listAttrSpecific,manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
 
 def ReadAttributeRequest_0001(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0001 - Key: %s " %key, nwkid=key)
     # Power Config
-    EPin = EPout = "01"
+    ListOfEp = getEPforClusterType( self, key, '0001' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0001" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0001'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes )
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Power Config via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0001", listAttributes )
 
 def ReadAttributeRequest_0006_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x0000 Key: %s " %key, nwkid=key)
 
-    EPout= None
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                EPout=tmpEp
-    if EPout:
-        listAttributes = [ ]
-        listAttributes.append ( 0x0000 )
+    ListOfEp = getEPforClusterType( self, key, '0006' )
+    for EPout in ListOfEp:
+        listAttributes = [0]
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0006_400x(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 focus on 0x4000x attributes- Key: %s " %key, nwkid=key)
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                EPout=tmpEp
+    ListOfEp = getEPforClusterType( self, key, '0006' )
+    for EPout in ListOfEp:
+        listAttributes = []
 
-                listAttributes = []
+        if 'Model' in self.ListOfDevices[key] and self.ListOfDevices[key][ 'Model' ] in ('LCT001', 'LTW013'):
+            Domoticz.Debug("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
+            listAttributes.append ( 0x4003 )
 
-                if 'Model' in self.ListOfDevices[key]:
-                    if self.ListOfDevices[key]['Model'] in ( 'LCT001', 'LTW013' ):
-                        Domoticz.Debug("-----requesting Attribute 0x0006/0x4003 for PowerOn state for device : %s" %key)
-                        listAttributes.append ( 0x4003 )
-            
-                if len(listAttributes) > 0:
-                    loggingReadAttributes( self, 'Debug', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request OnOff 0x4000x attributes via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0006(self, key):
     # Cluster 0x0006
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0006 - Key: %s " %key, nwkid=key)
+    ListOfEp = getEPforClusterType( self, key, '0006' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0006" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0006'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request OnOff status via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0006", listAttributes)
 
 def ReadAttributeRequest_0008_0000(self, key):
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 focus on 0x0008/0000 Key: %s " %key, nwkid=key)
 
-    EPout= None
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                EPout=tmpEp
-    if EPout:
-        listAttributes = [ ]
-        listAttributes.append ( 0x0000 )
+    ListOfEp = getEPforClusterType( self, key, '0008' )
+    for EPout in ListOfEp:
+
+        listAttributes = [0]
         ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", listAttributes)
 
 def ReadAttributeRequest_0008(self, key):
     # Cluster 0x0008 
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0008 - Key: %s " %key, nwkid=key)
+    ListOfEp = getEPforClusterType( self, key, '0008' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0008'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    EPin = EPout = "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0008" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0008'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request Level Control via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Level Control via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0008", 0)
 
 def ReadAttributeRequest_0300(self, key):
     # Cluster 0x0300 - Color Control
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0300 - Key: %s " %key, nwkid=key)
-    EPin = "01"
-    EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0300" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                    EPout=tmpEp
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0300'):
-        if iterAttr not in listAttributes:
-            listAttributes.append( iterAttr )
+    ListOfEp = getEPforClusterType( self, key, '0300' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0300'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    if len(listAttributes) > 0:
-        loggingReadAttributes( self, 'Debug', "Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0300", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Color Temp infos via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0300", listAttributes)
 
 def ReadAttributeRequest_000C(self, key):
     # Cluster 0x000C with attribute 0x0055 / Xiaomi Power and Metering
-
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000C - Key: %s " %key, nwkid=key)
 
-    EPin = "01"
-    EPout= "02"
-
-    """
-     Attribute Type: 10 Attribut ID: 0051
-     Attribute Type: 39 Attribut ID: 0055
-     Attribute Type: 18 Attribut ID: 006f
-    """
-
-    EPin = "01"
-    EPout= "01"
-    loggingReadAttributes( self, 'Debug', "Request OnOff status for Xiaomi plug via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-    listAttributes = []
-    listAttributes.append(0x0051)
-    listAttributes.append(0x0055)
-    listAttributes.append(0x006f)
-    listAttributes.append(0xff05)
-
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "000c" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                    EPout=tmpEp
-
-    if len(listAttributes) > 0:
-        loggingReadAttributes( self, 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000C", listAttributes)
+    listAttributes = [ 0x0051,0x0055, 0x006f, 0xff05 ]
+    ListOfEp = getEPforClusterType( self, key, '000C' )
+    for EPout in ListOfEp:
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request 0x000c info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000C", listAttributes)
 
 def ReadAttributeRequest_0100(self, key):
 
     loggingReadAttributes( self, 'Debug', "Request shade Configuration status Read Attribute request: " + key , nwkid=key)
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0100" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0100'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
 
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request 0x0100 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0100", listAttributes)
+    ListOfEp = getEPforClusterType( self, key, '0100' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0100'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request 0x0100 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0100", listAttributes)
 
 def ReadAttributeRequest_0102(self, key):
 
     loggingReadAttributes( self, 'Debug', "Request Windows Covering status Read Attribute request: " + key , nwkid=key)
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0102" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
+
+    ListOfEp = getEPforClusterType( self, key, '0102' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0102'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+
+            if listAttributes:
                 loggingReadAttributes( self, 'Debug', "Request 0x0102 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0102", listAttributes)
 
@@ -514,19 +460,16 @@ def ReadAttributeRequest_0201(self, key):
     # Thermostat 
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0201 - Key: %s " %key, nwkid=key)
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0201" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
 
-            listAttributes = []
+    if 'Model' in self.ListOfDevices[key]:
+        _model = True
 
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0201'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if 'Model' in self.ListOfDevices[key]:
-                _model = True
+    ListOfEp = getEPforClusterType( self, key, '0201' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0201'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr ) 
 
             if _model and str(self.ListOfDevices[key]['Model']).find('Super TR') == 0:
                 loggingReadAttributes( self, 'Debug', "- req Attributes for  Super TR", nwkid=key)
@@ -539,279 +482,218 @@ def ReadAttributeRequest_0201(self, key):
             # Adjustement before request
             listAttrSpecific = []
             listAttrGeneric = []
-            if 'Manufacturer' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['Manufacturer'] == '105e':
-                    # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-                    for _attr in list(listAttributes):
-                        if _attr ==  0xe011:
-                            listAttrSpecific.append( _attr )
-                        else:
-                            listAttrGeneric.append( _attr )
-                    del listAttributes
-                    listAttributes = listAttrGeneric
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request 0201 %s/%s-%s 0201 %s " %(key, EPin, EPout, listAttributes), nwkid=key)
+            if ( 'Manufacturer' in self.ListOfDevices[key] and self.ListOfDevices[key]['Manufacturer'] == '105e' ):
+                # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
+                for _attr in list(listAttributes):
+                    if _attr ==  0xe011:
+                        listAttrSpecific.append( _attr )
+                    else:
+                        listAttrGeneric.append( _attr )
+                del listAttributes
+                listAttributes = listAttrGeneric
+
+            if listAttributes:
+                loggingReadAttributes( self, 'Debug', "Request 0201 %s/%s 0201 %s " %(key, EPout, listAttributes), nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttributes )
 
-            if len(listAttrSpecific) > 0:
+            if listAttrSpecific:
                 loggingReadAttributes( self, 'Debug', "Request Thermostat info via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
                 ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0201", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
 
 def ReadAttributeRequest_0204(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0204 - Key: %s " %key, nwkid=key)
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0204" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
 
-            listAttributes = []
-            listAttributes.append(0x0001) # Read KeypadLockout
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request 0204 %s/%s-%s 0204 %s " %(key, EPin, EPout, listAttributes), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0204", listAttributes )
+    ListOfEp = getEPforClusterType( self, key, '0204' )
+    for EPout in ListOfEp:
+        listAttributes = [0x0001]
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request 0204 %s/%s 0204 %s " %(key, EPout, listAttributes), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0204", listAttributes )
 
 def ReadAttributeRequest_fc00(self, key):
 
-    EPin = EPout= "01"
-
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc00" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request 0xfc00 info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc00", listAttributes)
+    pass
 
 def ReadAttributeRequest_0400(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0400 - Key: %s " %key, nwkid=key)
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0400" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0400'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Illuminance info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0400", listAttributes)
+    ListOfEp = getEPforClusterType( self, key, '0400' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0400'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Illuminance info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0400", listAttributes)
 
 def ReadAttributeRequest_0402(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0402 - Key: %s " %key, nwkid=key)
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0402" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
-                if iterAttr not in listAttributes:
-                    if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
-                            continue
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Temperature info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0402", listAttributes)
+    _model = 'Model' in self.ListOfDevices[key]
+    ListOfEp = getEPforClusterType( self, key, '0402' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0402'):
+            if iterAttr not in listAttributes:
+                if (_model and self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02'):    # Aqara Blulb
+                    continue
+                listAttributes.append( iterAttr )
+
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Temperature info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0402", listAttributes)
 
 def ReadAttributeRequest_0403(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0403 - Key: %s " %key, nwkid=key)
+    _model = 'Model' in self.ListOfDevices[key]
+    ListOfEp = getEPforClusterType( self, key, '0403' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
+            if iterAttr not in listAttributes:
+                if ( _model and self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02' ):    # Aqara Blulb
+                    continue
+                listAttributes.append( iterAttr )
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0403" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0403'):
-                if iterAttr not in listAttributes:
-                    if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
-                            continue
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0403", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Pression Atm info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0403", listAttributes)
 
 def ReadAttributeRequest_0405(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0405 - Key: %s " %key, nwkid=key)
+    _model = 'Model' in self.ListOfDevices[key]
+    ListOfEp = getEPforClusterType( self, key, '0405' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
+            if iterAttr not in listAttributes:
+                if _model and self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
+                    continue
+                listAttributes.append( iterAttr )
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0405" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0405'):
-                if iterAttr not in listAttributes:
-                    if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
-                            continue
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Humidity info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0405", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Humidity info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0405", listAttributes)
 
 def ReadAttributeRequest_0406(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0406 - Key: %s " %key, nwkid=key)
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0406" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
+    _model = 'Model' in self.ListOfDevices[key]
+    ListOfEp = getEPforClusterType( self, key, '0406' )
+    for EPout in ListOfEp:
+        listAttributes = []
 
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0406'):
-                if iterAttr not in listAttributes:
-                    if 'Model' in self.ListOfDevices[key]:
-                        if self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
-                            continue
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttributes)
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0406'):
+            if iterAttr not in listAttributes:
+                if _model and self.ListOfDevices[key]['Model'] == 'lumi.light.aqcn02': # Aqara Blulb
+                    continue
+                listAttributes.append( iterAttr )
+
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Occupancy info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0406", listAttributes)
 
 def ReadAttributeRequest_0500(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0500 - Key: %s " %key, nwkid=key)
+    ListOfEp = getEPforClusterType( self, key, '0500' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0500'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0500" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0500'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0500 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0500", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0500 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0500", listAttributes)
         
 def ReadAttributeRequest_0502(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0502 - Key: %s " %key, nwkid=key)
+    ListOfEp = getEPforClusterType( self, key, '0502' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    EPin = EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0502" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-            EPout=tmpEp
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0502'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0502 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0502", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0502 - %s/%s - %s" %(key, EPout, listAttributes), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0502", listAttributes)
 
 def ReadAttributeRequest_0702(self, key):
     # Cluster 0x0702 Metering
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_0702 - Key: %s " %key, nwkid=key)
-
-    EPin = EPout = "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "0702" in self.ListOfDevices[key]['Ep'][tmpEp]: 
-            EPout=tmpEp
-
-            listAttributes = []
-            for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0702'):
-                if iterAttr not in listAttributes:
-                    listAttributes.append( iterAttr )
-        
-        
-            # Adjustement before request
-            listAttrSpecific = []
-            listAttrGeneric = []
-            if 'Manufacturer' in self.ListOfDevices[key]:
-                if self.ListOfDevices[key]['Manufacturer'] == '105e':
-                    # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
-                    for _attr in list(listAttributes):
-                        if _attr in ( 0xe200, 0xe201, 0xe202 ):
-                            listAttrSpecific.append( _attr )
-                        else:
-                            listAttrGeneric.append( _attr )
-                    del listAttributes
-                    listAttributes = listAttrGeneric
-        
-            if len(listAttributes) > 0:
-                loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes)
-        
-            if len(listAttrSpecific) > 0:
-                loggingReadAttributes( self, 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
-                ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
+    _manuf = 'Manufacturer' in self.ListOfDevices[key]
+    ListOfEp = getEPforClusterType( self, key, '0702' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '0702'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
+    
+        # Adjustement before request
+        listAttrSpecific = []
+        listAttrGeneric = []
+        if _manuf and self.ListOfDevices[key]['Manufacturer'] == '105e':
+            # We need to break the Read Attribute between Manufacturer specifcs one and teh generic one
+            for _attr in list(listAttributes):
+                if _attr in ( 0xe200, 0xe201, 0xe202 ):
+                    listAttrSpecific.append( _attr )
+                else:
+                    listAttrGeneric.append( _attr )
+            del listAttributes
+            listAttributes = listAttrGeneric
+    
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttributes)
+    
+        if listAttrSpecific:
+            loggingReadAttributes( self, 'Debug', "Request Metering info  via Read Attribute request Manuf Specific %s/%s %s" %(key, EPout, str(listAttributes)), nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "0702", listAttrSpecific, manufacturer_spec = '01', manufacturer = self.ListOfDevices[key]['Manufacturer'] )
 
 def ReadAttributeRequest_000f(self, key):
 
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_000f - Key: %s " %key, nwkid=key)
+    ListOfEp = getEPforClusterType( self, key, '000f' )
+    for EPout in ListOfEp:
+        listAttributes = []
+        for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '000f'):
+            if iterAttr not in listAttributes:
+                listAttributes.append( iterAttr )
 
-    EPin = "01"
-    EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "000f" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                    EPout=tmpEp
-    listAttributes = []
-    for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  '000f'):
-        if iterAttr not in listAttributes:
-            listAttributes.append( iterAttr )
-
-    if len(listAttributes) == 0:
-        return
-
-    loggingReadAttributes( self, 'Debug', "Request Metering info via Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000f", listAttributes)
+        if listAttributes:
+            loggingReadAttributes( self, 'Debug', " Read Attribute request: " + key + " EPout = " + EPout , nwkid=key)
+            ReadAttributeReq( self, key, ZIGATE_EP, EPout, "000f", listAttributes)
 
 def ReadAttributeRequest_fc01(self, key):
-
+    # Cluster Legrand
     loggingReadAttributes( self, 'Debug', "ReadAttributeRequest_fc01 - Key: %s " %key, nwkid=key)
+    ListOfEp = getEPforClusterType( self, key, 'fc01' )
+    for EPout in ListOfEp:
+        listAttributes = [ 0x0000]
+        loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
 
-    EPin = "01"
-    EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-            if "fc01" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                    EPout=tmpEp
-    listAttributes = []
-    #for iterAttr in retreive_ListOfAttributesByCluster( self, key, EPout,  'fc01'):
-    #    if iterAttr not in listAttributes:
-    #        listAttributes.append( iterAttr )
-    listAttributes.append( 0x0000 )
-    loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
-
-    listAttributes = []
-    listAttributes.append( 0x0001 )
-
-    loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
+        listAttributes = [ 0x0001 ]
+        loggingReadAttributes( self, 'Debug', "Request Legrand info via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc01", listAttributes)
 
 def ReadAttributeRequest_fc21(self, key):
-
     # Cluster PFX Profalux
-    loggingReadAttributes( self, 'Log', "ReadAttributeRequest_fc21 - Key: %s " %key, nwkid=key)
 
-    EPin = "01"
-    EPout= "01"
-    for tmpEp in self.ListOfDevices[key]['Ep']:
-        if "fc21" in self.ListOfDevices[key]['Ep'][tmpEp]: #switch cluster
-                EPout=tmpEp
-    listAttributes = []
-    listAttributes.append( 0x0001 )
-    loggingReadAttributes( self, 'Log', "Request Profalux BSO via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
-    ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc21", listAttributes)
-
-
-
+    ListOfEp = getEPforClusterType( self, key, 'fc1' )
+    for EPout in ListOfEp:
+        loggingReadAttributes( self, 'Log', "ReadAttributeRequest_fc21 - Key: %s " %key, nwkid=key)
+        listAttributes = [ 0x0001 ]
+        loggingReadAttributes( self, 'Log', "Request Profalux BSO via Read Attribute request: " + key + " EPout = " + EPout + " Attributes: " + str(listAttributes), nwkid=key)
+        ReadAttributeReq( self, key, ZIGATE_EP, EPout, "fc21", listAttributes)
