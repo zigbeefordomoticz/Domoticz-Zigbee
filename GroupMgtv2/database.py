@@ -111,18 +111,3 @@ def device_list_for_group( self, GrpId):
     if GrpId not in self.ListOfGroups:
         return []
     return self.ListOfGroups[ GrpId ]['Devices']
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
