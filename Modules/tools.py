@@ -569,6 +569,10 @@ def ReArrangeMacCapaBasedOnModel( self, nwkid, inMacCapa):
     Return the old or the revised MacCapa and eventually fix some Attributes
     """
 
+    if nwkid not in self.ListOfDevices:
+        Domoticz.Error("%s not known !!!" %nwkid)
+        return inMacCapa
+
     if 'Model' not in self.ListOfDevices[nwkid]:
         return inMacCapa
 
