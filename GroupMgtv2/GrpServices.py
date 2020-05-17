@@ -6,15 +6,36 @@
 
 import Domoticz
 
-from GroupMgtv2.domoticz import create_domoticz_group_device
-from GroupMgtv2.grpCommands import add_group_member_ship, remove_group_member_ship
-from GroupMgtv2.database import create_group, add_device_to_group, remove_device_from_group
+from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
+from GroupMgtv2.GrpCommands import add_group_member_ship, remove_group_member_ship, look_for_group_member_ship
+from GroupMgtv2.GrpDatabase import create_group, add_device_to_group, remove_device_from_group
+
+
+def process_remove_group( self, unit, GroupId):
+    
+    if GroupId not in self.ListOfGroups:
+        return
+
+    for NwkId, Ep, IEEE in self.ListOfGroups[ GroupId ]['Devices']:
+        remove_group_member_ship( self,NwkId, Ep, GroupId )
+
+    remove_domoticz_group_device( self, GroupId)
+
+
 
 def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):
     pass
 
 def scan_device_for_grp_membership( self, NwkId, Ep ):
-    pass
+    # Ask this device for list of Group membership
+
+    if NwkId not in self.ListOfDevices:
+        return
+
+    if 'GroupMemberShip' in self.ListOfDevices[ NwkId ]:
+        del self.ListOfDevices[ NwkId ]['GroupMemberShip']
+
+    look_for_group_member_ship(self, NwkId, Ep)
 
 def scan_all_devices_for_grp_membership( self ):
     pass
@@ -82,10 +103,10 @@ def process_web_request( self, webInput):
         DeviceList = []
         for item in WebDeviceList:
             Nwkid = item['_NwkId']
-            Ep = item['Ep']
             if Nwkid in self.ListOfDevices:
-               IEEE = self.ListOfDevices[ Nwkid ]['IEEE']
-               DeviceList.append( [Nwkid, Ep, IEEE ] )
+                IEEE = self.ListOfDevices[ Nwkid ]['IEEE']
+                Ep = item['Ep']
+                DeviceList.append( [Nwkid, Ep, IEEE ] )
         return DeviceList
 
     # Begining

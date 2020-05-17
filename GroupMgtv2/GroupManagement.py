@@ -56,14 +56,17 @@ import os
 import json
 import pickle
 
+from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
+from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
+
 class GroupsManagement(object):
 
-  from GroupMgtv2.grpCommands import statusGroupRequest, remove_group_member_ship_response, look_for_group_member_ship_response, \
-                                      check_group_member_ship_response, add_group_member_ship_response
-  from GroupMgtv2.domoticz import update_domoticz_group_device, process_command
-  from GroupMgtv2.database import  write_groups_list, load_groups_list_from_json
-  from GroupMgtv2.services import process_web_request
-  from GroupMgtv2.logging import logging
+  from GroupMgtv2.GrpCommands import statusGroupRequest, remove_group_member_ship_response, look_for_group_member_ship_response, \
+                                      check_group_member_ship_response, add_group_member_ship, add_group_member_ship_response
+  from GroupMgtv2.GrpDomoticz import update_domoticz_group_device, processCommand
+  from GroupMgtv2.GrpDatabase import  write_groups_list, load_groups_list_from_json, update_due_to_nwk_id_change
+  from GroupMgtv2.GrpServices import process_web_request, process_remove_group
+  from GroupMgtv2.GrpLogging import logging
 
   def __init__( self, PluginConf, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
 
@@ -77,6 +80,7 @@ class GroupsManagement(object):
     self.loggingFileHandle = loggingFileHandle
     self.GroupListFileName = None       # Filename of Group cashing file
     self.ZigateIEEE = None
+    self.RefreshRequired = False
 
     # Check if we have to open the old format
     if os.path.isfile( self.pluginconf.pluginConf['pluginData'] + "/GroupsList-%02d.pck" %hardwareID  ):
@@ -101,6 +105,13 @@ class GroupsManagement(object):
       self.ZigateIEEE =   ZigateIEEE
 
   def hearbeat_group_mgt( self ):
+
+    if self.RefreshRequired:
+      build_group_list_from_list_of_devices( self )
+      for GroupId in self.ListOfGroups:
+        LookForGroupAndCreateIfNeeded( self, GroupId )
+      self.write_groups_list()
+      self.RefreshRequired  = False
 
     for GroupId in self.ListOfGroups:
       self.update_domoticz_group_device( GroupId )

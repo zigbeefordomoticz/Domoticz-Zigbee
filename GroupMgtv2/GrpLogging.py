@@ -30,7 +30,6 @@ def logging( self, logType, message):
         else:
             Domoticz.Log( message )
 
-
     self.debugWebServer = self.pluginconf.pluginConf['debugGroups']
     if self.debugWebServer and logType == 'Debug':
         _loggingDebug( self, message)

@@ -53,8 +53,8 @@ def build_group_list_from_list_of_devices( self ):
             for GrpId in self.ListOfDevices[ NwkId ]['GroupMemberShip'][ Ep ]:
                 if self.ListOfDevices[ NwkId ]['GroupMemberShip'][ Ep ][GrpId]['Status'] == 'OK':
                     ieee = self.ListOfDevices[ NwkId ]['IEEE']
-                    device = ( NwkId, Ep, ieee)
-                    self.addDeviceToGroup( device, GrpId )
+                    device = [ NwkId, Ep, ieee ]
+                    add_device_to_group( self, device, GrpId )
 
 def update_due_to_nwk_id_change( self, OldNwkId, NewNwkId):
     """
@@ -76,6 +76,12 @@ def create_group( self, GrpId, GrpName ):
         self.ListOfGroups[ GrpId ] = {}
         self.ListOfGroups[ GrpId ]['Name'] = GrpName
         self.ListOfGroups[ GrpId ]['Devices'] = []
+
+def remove_group( self, GrpId ):
+
+    if GrpId not in self.ListOfGroups:
+        return  
+    del self.ListOfGroups[ GrpId ]
 
 def add_device_to_group( self, device, GrpId):
     """

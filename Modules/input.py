@@ -49,7 +49,7 @@ from Modules.pdmHost import pdmHostAvailableRequest, PDMSaveRequest, PDMLoadRequ
 
 from Classes.IAS import IAS_Zone_Management
 from Classes.AdminWidgets import  AdminWidgets
-from GroupMgt.GroupMgt import GroupsManagement
+#from GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.OTA import OTAManagement
 from Classes.NetworkMap import NetworkMap
 
@@ -798,7 +798,7 @@ def Decode8024(self, Devices, MsgData, MsgRSSI): # Network joined / formed
             self.iaszonemgt.setZigateIEEE( MsgExtendedAddress )
             
         if self.groupmgt:
-            self.groupmgt.updateZigateIEEE( extaddr) 
+            self.groupmgt.updateZigateIEEE( MsgExtendedAddress ) 
 
         self.zigatedata['IEEE'] = MsgExtendedAddress
         self.zigatedata['Short Address'] = MsgShortAddress

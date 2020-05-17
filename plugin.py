@@ -427,7 +427,7 @@ class BasePlugin:
         if self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
                 loggingPlugin( self, 'Status', "onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
-                self.groupmgt.processRemoveGroup( Unit, Devices[Unit].DeviceID )
+                self.groupmgt.process_remove_group( Unit, Devices[Unit].DeviceID )
 
     def onConnect(self, Connection, Status, Description):
 

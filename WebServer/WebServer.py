@@ -19,7 +19,7 @@ from Modules.legrand_netatmo import legrand_ledInDark, legrand_ledIfOnOnOff, leg
 from Modules.actuators import actuators
 from Modules.tools import is_hex
 from Classes.PluginConf import PluginConf,SETTINGS
-from GroupMgt.GroupMgt import GroupsManagement
+#from GroupMgtv2.GroupManagement import GroupsManagement
 from Classes.DomoticzDB import DomoticzDB_Preferences
 
 from WebServer.headerResponse import setupHeadersResponse, prepResponseMessage

@@ -203,7 +203,7 @@ def reconnectNWkDevice( self, newNWKID, IEEE, oldNWKID):
 
     if self.groupmgt:
         # We should check if this belongs to a group
-        self.groupmgt.deviceChangeNetworkID( oldNWKID, newNWKID)
+        self.groupmgt.update_due_to_nwk_id_change( oldNWKID, newNWKID)
 
     # We will also reset ReadAttributes
     if 'ReadAttributes' in self.ListOfDevices[newNWKID]:
