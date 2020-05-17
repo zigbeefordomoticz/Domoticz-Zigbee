@@ -382,6 +382,7 @@ def CheckDeviceList(self, key, val):
             'LogicalType',
             'PowerSource',
             'Neighbours',
+            'GroupMemberShip',
             }
 
     MANDATORY_ATTRIBUTES = ( 'App Version', 
@@ -420,12 +421,13 @@ def CheckDeviceList(self, key, val):
             'Version', 
             'ZCL Version', 
             'ZDeviceID', 
-            'ZDeviceName')
+            'ZDeviceName',
+            )
 
     # List of Attributes whcih are going to be loaded, ut in case of Reset (resetPluginDS) they will be re-initialized.
     BUILD_ATTRIBUTES = (
             'Battery', 
-            'ConfigureReporting'
+            'ConfigureReporting',
             'GroupMemberShip',
             'Last Cmds',
             'Neighbours',
@@ -433,7 +435,8 @@ def CheckDeviceList(self, key, val):
             'RSSI',
             'SQN', 
             'Stamp', 
-            'Health')
+            'Health',
+            )
 
     MANUFACTURER_ATTRIBUTES = (
             'Legrand', 'Schneider', 'Lumi' )
@@ -454,6 +457,7 @@ def CheckDeviceList(self, key, val):
     loggingDatabase( self, 'Debug', "--> Attributes loaded: %s" %IMPORT_ATTRIBUTES)
     for attribute in IMPORT_ATTRIBUTES:
         if attribute not in DeviceListVal:
+            loggingDatabase( self, 'Debug', "--> Attributes not existing: %s" %attribute)
             continue
 
         self.ListOfDevices[key][ attribute ] = DeviceListVal[ attribute]

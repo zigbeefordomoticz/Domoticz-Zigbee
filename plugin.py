@@ -146,7 +146,6 @@ class BasePlugin:
         self.permitTojoin = {}
         self.permitTojoin['Duration'] = 0
         self.permitTojoin['Starttime'] = 0
-        self.groupmgt_NotStarted = True
         self.CommiSSionning = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
 
         self.busy = False    # This flag is raised when a Device Annocement is receive, in order to give priority to commissioning
@@ -390,6 +389,7 @@ class BasePlugin:
 
         #self.ZigateComm.closeConn()
         WriteDeviceList(self, 0)
+        
         self.statistics.printSummary()
         self.statistics.writeReport()
         self.PluginHealth['Flag'] = 3
@@ -424,7 +424,7 @@ class BasePlugin:
             loggingPlugin( self, 'Debug', "ListOfDevices :After REMOVE " + str(self.ListOfDevices))
             return
 
-        if self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
+        if self.groupmgt and Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
                 loggingPlugin( self, 'Status', "onDeviceRemoved - removing Group of Devices")
                 # Command belongs to a Zigate group
                 self.groupmgt.process_remove_group( Unit, Devices[Unit].DeviceID )
@@ -521,7 +521,7 @@ class BasePlugin:
             # Command belongs to a end node
             mgtCommand( self, Devices, Unit, Command, Level, Color )
 
-        elif self.pluginconf.pluginConf['enablegroupmanagement'] and self.groupmgt:
+        elif self.groupmgt:
             #if Devices[Unit].DeviceID in self.groupmgt.ListOfGroups:
             #    # Command belongs to a Zigate group
             loggingPlugin( self, 'Debug', "Command: %s/%s/%s to Group: %s" %(Command,Level,Color, Devices[Unit].DeviceID))
@@ -838,24 +838,22 @@ def zigateInit_Phase3( self ):
         # Enable Group Management
         if self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
             loggingPlugin( self, 'Status', "Start Group Management")
-            self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, Parameters["HomeFolder"],
+            self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, self.adminWidgets, Parameters["HomeFolder"],
                     self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
             if self.groupmgt and self.ZigateIEEE:
                 self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
 
-
-            #if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
-            #    # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
-            #    self.groupmgt.addGroupMembership( '0000', '01', '0000')
+            if self.pluginconf.pluginConf['zigatePartOfGroup0000']:
+                # Add Zigate NwkId 0x0000 Ep 0x01 to GroupId 0x0000
+                self.groupmgt.add_group_member_ship( '0000', '01', '0000')
 
     # In case we have Transport = None , let's check if we have to active Group management or not. (For Test and Web UI Dev purposes
-    if self.transport == 'None' and self.groupmgt is None and self.groupmgt_NotStarted and self.pluginconf.pluginConf['enablegroupmanagement']:
-            loggingPlugin( self, 'Status', "Start Group Management")
-            self.groupmgt = GroupsManagement( self.pluginconf, self.adminWidgets, self.ZigateComm, Parameters["HomeFolder"], 
-                    self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
-            self.groupmgt._load_GroupList()
-            self.groupmgt_NotStarted = False
-
+    if self.transport == 'None' and self.groupmgt is None and self.pluginconf.pluginConf['enablegroupmanagement']:
+           self.groupmgt = GroupsManagement( self.pluginconf, self.ZigateComm, self.adminWidgets, Parameters["HomeFolder"],
+                   self.HardwareID, Devices, self.ListOfDevices, self.IEEE2NWK, self.loggingFileHandle )
+           if self.groupmgt and self.ZigateIEEE:
+               self.groupmgt.updateZigateIEEE( self.ZigateIEEE) 
+               
     # Starting WebServer
     if self.webserver is None and self.pluginconf.pluginConf['enableWebServer']:
         if (not self.VersionNewFashion and (self.DomoticzMajor < 4 or ( self.DomoticzMajor == 4 and self.DomoticzMinor < 10901))):
