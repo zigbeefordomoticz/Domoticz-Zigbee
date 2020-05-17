@@ -6,21 +6,48 @@
 
 import Domoticz
 
+from time import time
+
 from GroupMgtv2.GrpDomoticz import create_domoticz_group_device, remove_domoticz_group_device
-from GroupMgtv2.GrpCommands import add_group_member_ship, remove_group_member_ship, look_for_group_member_ship
+from GroupMgtv2.GrpCommands import add_group_member_ship, remove_group_member_ship, look_for_group_member_ship, check_group_member_ship
 from GroupMgtv2.GrpDatabase import create_group, add_device_to_group, remove_device_from_group
 
 
+def GroupManagementCheckActions( self ):
+
+    for NwkId in self.ListOfDevices:
+        if 'GroupMemberShip' not in self.ListOfDevices[NwkId]:
+            continue
+
+        for ep in self.ListOfDevices[NwkId]['GroupMemberShip']:
+            for GrpId in self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ]:
+                if self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ][ GrpId ]['Status'] == 'OK':
+                    continue
+
+                if self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ][ GrpId ]['TimeStamp'] + 5 > time():
+                    continue
+
+                if self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ][ GrpId ]['Phase'] in 'addGroupMembeShip':
+                    add_group_member_ship( self, NwkId, ep, GrpId)
+
+                if self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ][ GrpId ]['Phase'] in 'CheckgroupMemberShip':
+                    check_group_member_ship( self, NwkId, ep, GrpId)
+
+                if self.ListOfDevices[NwkId]['GroupMemberShip'][ ep ][ GrpId ]['Phase'] in 'removeGroupMemberShip':
+                    remove_group_member_ship( self, NwkId, ep, GrpId)
+
+
 def process_remove_group( self, unit, GroupId):
+    # Call by onRemove call from Domoticz
+    # The widget has been removed by Domoticz, we have to cleanup
     
+    self.logging( 'Debug', "process_remove_group Unit: %s GroupId: %s" %(unit, GroupId))
+
     if GroupId not in self.ListOfGroups:
         return
 
     for NwkId, Ep, IEEE in self.ListOfGroups[ GroupId ]['Devices']:
         remove_group_member_ship( self,NwkId, Ep, GroupId )
-
-    remove_domoticz_group_device( self, GroupId)
-
 
 
 def provision_Manufacturer_Group( self, GrpId, NwkId, Ep, Ieee):

@@ -109,6 +109,10 @@ def remove_device_from_group(self, device, GrpId):
 
     self.ListOfGroups[ GrpId ]['Devices'].remove( device )
 
+    if len(self.ListOfGroups[ GrpId ]['Devices']) == 0:
+        # No devices attached to that Group.
+        remove_group( self, GrpId )
+
 def device_list_for_group( self, GrpId):
     """
     return a list of tuples ( devices, ep, ieee) for a particular group

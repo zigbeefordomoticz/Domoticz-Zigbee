@@ -58,6 +58,8 @@ import pickle
 
 from GroupMgtv2.GrpDatabase import build_group_list_from_list_of_devices
 from GroupMgtv2.GrpDomoticz import LookForGroupAndCreateIfNeeded
+from GroupMgtv2.GrpServices import GroupManagementCheckActions
+
 
 class GroupsManagement(object):
 
@@ -68,10 +70,12 @@ class GroupsManagement(object):
   from GroupMgtv2.GrpServices import process_web_request, process_remove_group
   from GroupMgtv2.GrpLogging import logging
 
-  def __init__( self, PluginConf, ZigateComm, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
+  def __init__( self, PluginConf, ZigateComm, adminWidgets, HomeDirectory, hardwareID, Devices, ListOfDevices, IEEE2NWK , loggingFileHandle):
 
+    self.HB = 0
     self.pluginconf = PluginConf
     self.ZigateComm = ZigateComm        # Point to the ZigateComm object
+    self.adminWidgets = adminWidgets
     self.homeDirectory = HomeDirectory
     self.Devices = Devices              # Point to the List of Domoticz Devices
     self.ListOfDevices = ListOfDevices  # Point to the Global ListOfDevices
@@ -106,12 +110,19 @@ class GroupsManagement(object):
 
   def hearbeat_group_mgt( self ):
 
-    if self.RefreshRequired:
-      build_group_list_from_list_of_devices( self )
-      for GroupId in self.ListOfGroups:
-        LookForGroupAndCreateIfNeeded( self, GroupId )
-      self.write_groups_list()
-      self.RefreshRequired  = False
+      self.HB += 1
 
-    for GroupId in self.ListOfGroups:
-      self.update_domoticz_group_device( GroupId )
+      # Sanity Check
+      if (self.HB % 2 ) == 0:
+          GroupManagementCheckActions( self ) 
+
+      if self.RefreshRequired:
+          build_group_list_from_list_of_devices( self )
+          for GroupId in self.ListOfGroups:
+              LookForGroupAndCreateIfNeeded( self, GroupId )
+          self.write_groups_list()
+          self.RefreshRequired  = False
+
+      if (self.HB % 2 ) == 0:
+          for GroupId in self.ListOfGroups:
+              self.update_domoticz_group_device( GroupId )

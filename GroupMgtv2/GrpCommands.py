@@ -13,6 +13,9 @@ from time import time
 from Modules.zigateConsts import ADDRESS_MODE, ZIGATE_EP
 from Modules.tools import Hex_Format, rgb_to_xy, rgb_to_hsl
 
+from GroupMgtv2.GrpDatabase import remove_device_from_group
+
+
 # Group Management Command
 def statusGroupRequest( self, MsgData):
     """
@@ -25,25 +28,25 @@ def statusGroupRequest( self, MsgData):
     if Status != '00':
         self.logging( 'Log', "statusOnGrpCommand - Status: %s for Command: %s" %(Status, PacketType))
 
-def add_group_member_ship( self, device_addr, device_ep, grpid):
+def add_group_member_ship( self, NwkId, DeviceEp, GrpId):
     """
-    Add Group Membership grpid to device_addr
+    Add Group Membership GrpId to NwkId
     """
+    self.logging( 'Debug', "add_group_member_ship GrpId: %s, NwkId: %s, Ep: %s" %(GrpId, NwkId, DeviceEp ))
+    if 'GroupMemberShip' not in self.ListOfDevices[ NwkId ]:
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'] = {}
 
-    if 'GroupMemberShip' not in self.ListOfDevices[ device_addr ]:
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'] = {}
+    if DeviceEp not in self.ListOfDevices[ NwkId ]['GroupMemberShip']:
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][ DeviceEp ] = {}
 
-    if device_ep not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][ device_ep ] = {}
+    if GrpId not in self.ListOfDevices[ NwkId ]['GroupMemberShip'][ DeviceEp ]:
+        self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ] = {}
 
-    if grpid not in self.ListOfDevices[ device_addr ]['GroupMemberShip'][ device_ep ]:
-        self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ] = {}
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Phase'] = 'addGroupMembeShip'
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Status'] = 'ff'
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['TimeStamp'] = int(time())
 
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['Phase'] = 'addGroupMembeShip'
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['Status'] = ''
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['TimeStamp'] = int(time())
-
-    datas = "02" + device_addr + ZIGATE_EP + device_ep + grpid
+    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
     self.ZigateComm.sendData( "0060", datas)
 
 def add_group_member_ship_response(self, MsgData):
@@ -98,13 +101,13 @@ def add_group_member_ship_response(self, MsgData):
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['TimeStamp'] = int(time())
         check_group_member_ship( self, MsgSrcAddr, MsgEP , MsgGroupID)
 
-def check_group_member_ship( self, device_addr, device_ep, goup_addr ):
+def check_group_member_ship( self, NwkId, DeviceEp, goup_addr ):
     """
     Check group Membership
     """
 
-    self.logging( 'Debug', "checkGroupMemberShip - addr: %s ep: %s group: %s" %(device_addr, device_ep, goup_addr))  
-    datas = "02" + device_addr + ZIGATE_EP + device_ep + goup_addr
+    self.logging( 'Debug', "checkGroupMemberShip - addr: %s ep: %s group: %s" %(NwkId, DeviceEp, goup_addr))  
+    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
     self.ZigateComm.sendData( "0061", datas)
 
 def check_group_member_ship_response( self, MsgData):
@@ -141,14 +144,13 @@ def check_group_member_ship_response( self, MsgData):
         self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ MsgGroupID ]['Status'] = MsgStatus
         # Failure 
     
-
-def look_for_group_member_ship(self, device_addr, device_ep, group_list = None):
+def look_for_group_member_ship(self, NwkId, DeviceEp, group_list = None):
     """
     Request to a device what are its group membership
     """
 
-    self.logging( 'Debug', "lookForGroupMemberShip - %s/%s from %s" %(device_addr, device_ep, group_list))
-    datas = "02" + device_addr + ZIGATE_EP + device_ep
+    self.logging( 'Debug', "lookForGroupMemberShip - %s/%s from %s" %(NwkId, DeviceEp, group_list))
+    datas = "02" + NwkId + ZIGATE_EP + DeviceEp
     self.ZigateComm.sendData( "0062", datas)
 
 def look_for_group_member_ship_response( self, MsgData):
@@ -181,34 +183,36 @@ def look_for_group_member_ship_response( self, MsgData):
     self.RefreshRequired = True
     for idx in range(int(MsgGroupCount, 16)):
         # Let scan eachgroup and update Device data structure
-        grpid = MsgData[12+(idx*4):12+(4+(idx*4))]
+        GrpId = MsgData[12+(idx*4):12+(4+(idx*4))]
 
-        if grpid not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
-            self.ListOfDevices[ device_addr ]['GroupMemberShip'][MsgEP][ grpid ] = {}
+        if GrpId not in self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][ MsgEP ]:
+            self.ListOfDevices[ NwkId ]['GroupMemberShip'][MsgEP][ GrpId ] = {}
 
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]['Status'] = 'OK'
-        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ grpid ]['TimeStamp'] = 0
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['Status'] = 'OK'
+        self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip'][MsgEP][ GrpId ]['TimeStamp'] = 0
 
-def remove_group_member_ship(self,  device_addr, device_ep, grpid ):
+def remove_group_member_ship(self,  NwkId, DeviceEp, GrpId ):
 
-    if device_addr not in self.ListOfDevices:
-        Domoticz.Error("removeGroupMemberShip %s membership on non existing device %s" %( grpid, device_addr))
+    self.logging( 'Debug', "remove_group_member_ship GrpId: %s NwkId: %s Ep: %s" %(GrpId, NwkId, DeviceEp))
+
+    if NwkId not in self.ListOfDevices:
+        Domoticz.Error("removeGroupMemberShip %s membership on non existing device %s" %( GrpId, NwkId))
         return
 
-    if 'GroupMemberShip' not in self.ListOfDevices[ device_addr ]:
+    if 'GroupMemberShip' not in self.ListOfDevices[ NwkId ]:
         return
-    if device_ep not in self.ListOfDevices[ device_addr ]['GroupMemberShip']:
+    if DeviceEp not in self.ListOfDevices[ NwkId ]['GroupMemberShip']:
         return
-    if grpid not in self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep]:
+    if GrpId not in self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp]:
         return
 
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['Phase'] = 'removeGroupMemberShip'
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['Status'] = ''
-    self.ListOfDevices[ device_addr ]['GroupMemberShip'][device_ep][ grpid ]['TimeStamp'] = int(time())
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Phase'] = 'removeGroupMemberShip'
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['Status'] = 'ff'
+    self.ListOfDevices[ NwkId ]['GroupMemberShip'][DeviceEp][ GrpId ]['TimeStamp'] = int(time())
 
-    self.logging( 'Debug', "removeGroupMemberShip - %s/%s on %s" %(device_addr, device_ep, grpid))
+    self.logging( 'Debug', "removeGroupMemberShip - %s/%s on %s" %(NwkId, DeviceEp, GrpId))
 
-    datas = "02" + device_addr + ZIGATE_EP + device_ep + grpid
+    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + GrpId
     self.ZigateComm.sendData( "0063", datas)
 
 def remove_group_member_ship_response( self, MsgData):
@@ -257,13 +261,22 @@ def remove_group_member_ship_response( self, MsgData):
         if len(self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']) == 0:
             del self.ListOfDevices[ MsgSrcAddr ]['GroupMemberShip']
 
+        if 'IEEE' in self.ListOfDevices[ MsgSrcAddr]:
+            ieee = self.ListOfDevices[ MsgSrcAddr]['IEEE']
+            device = [ MsgSrcAddr,MsgEP,  ]
+            remove_device_from_group( self, device, MsgGroupID )
+
     self.logging( 'Debug', "removeGroupMemberShipResponse - SEQ: %s, EP: %s, ClusterID: %s, GroupID: %s, Status: %s"
             %( MsgSequenceNumber, MsgEP, MsgClusterID, MsgGroupID, MsgStatus))
 
-# Operating commands on groups
-def send_group_member_ship_identify(self, device_addr, device_ep, goup_addr = "0000"):
 
-    datas = "02" + device_addr + ZIGATE_EP + device_ep + goup_addr
+
+
+
+# Operating commands on groups
+def send_group_member_ship_identify(self, NwkId, DeviceEp, goup_addr = "0000"):
+
+    datas = "02" + NwkId + ZIGATE_EP + DeviceEp + goup_addr
     self.ZigateComm.sendData( "0065", datas)
 
 def send_group_member_ship_identify_effect( self, nwkid, ep, effect = 'Okay' ):

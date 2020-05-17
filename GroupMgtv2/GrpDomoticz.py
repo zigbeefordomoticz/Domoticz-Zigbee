@@ -377,13 +377,14 @@ def remove_domoticz_group_device(self, GroupId):
     ' User has removed the Domoticz Device corresponding to this group'
 
     if GroupId not in self.ListOfGroups:
-        Domoticz.Error("_removeDomoGroupDevice - unknown group: %s" %GroupId)
+        Domoticz.Error("remove_domoticz_group_device - unknown group: %s" %GroupId)
         return
 
     unit = unit_for_widget(self, GroupId )
     if unit is None:
         return
-    self.logging( 'Debug', "_removeDomoGroupDevice - removing Domoticz Widget %s" %self.Devices[unit].Name)
+        
+    self.logging( 'Debug', "remove_domoticz_group_device - removing Domoticz Widget %s" %self.Devices[unit].Name)
     self.adminWidgets.updateNotificationWidget( self.Devices, 'Groups %s deleted' %self.Devices[unit].Name)
     self.Devices[unit].Delete()
 
